@@ -5,7 +5,9 @@ import { Database } from "@/integrations/supabase/types";
 export type Tables = Database['public']['Tables'];
 
 // Extend core types to match our database schema
-export type DbUser = Tables['users']['Row'];
+export type DbUser = Tables['users']['Row'] & {
+  website?: string | null; // Add website field to match our database schema
+};
 export type DbPost = Tables['posts']['Row'];
 export type DbCreator = Tables['creators']['Row'];
 export type DbMembershipTier = Tables['membership_tiers']['Row'];
