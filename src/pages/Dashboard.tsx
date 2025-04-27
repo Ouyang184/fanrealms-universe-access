@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/Layout/MainLayout";
@@ -126,6 +125,7 @@ export default function Dashboard() {
         <CreatorsSection />
         <PostsSection 
           posts={posts}
+          isLoading={isLoadingPosts}
           isCreator={!!creatorProfile}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
