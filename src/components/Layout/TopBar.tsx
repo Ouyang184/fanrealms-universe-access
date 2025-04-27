@@ -1,8 +1,6 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
@@ -22,7 +20,7 @@ export function TopBar() {
   return (
     <header className="border-b h-14 px-4 flex items-center justify-between bg-background/60 backdrop-blur-md sticky top-0 z-10">
       <div className="flex items-center gap-2">
-        <SidebarTrigger />
+        {/* Empty div to maintain spacing */}
       </div>
       
       <div className="flex items-center gap-4">

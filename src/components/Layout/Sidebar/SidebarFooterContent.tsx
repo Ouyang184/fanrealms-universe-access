@@ -10,14 +10,14 @@ export function SidebarFooterContent({ isCollapsed = false }: SidebarFooterConte
   
   if (isCollapsed) {
     return (
-      <div className="px-2 py-2 text-center">
+      <div className="px-2 py-4 text-center border-t border-border/40">
         <p className="text-xs text-muted-foreground">©{currentYear}</p>
       </div>
     );
   }
   
   return (
-    <div className="px-4 py-3 border-t border-border/40">
+    <div className="px-4 py-4 border-t border-border/40">
       <p className="text-center text-xs text-muted-foreground">
         © {currentYear} FanRealms
       </p>
