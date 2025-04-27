@@ -27,10 +27,10 @@ interface MessageData {
   message_text: string;
   created_at: string;
   is_read: boolean;
-  sender: {
-    username: string;
-    profile_picture: string | null;
-  };
+  sender_username?: string;
+  sender_profile_picture?: string;
+  receiver_username?: string;
+  receiver_profile_picture?: string;
 }
 
 interface Conversation {
@@ -51,7 +51,7 @@ export default function Messages() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Get user's subscriptions to determine which creators they can message
-  const { data: subscriptions = [] } = useSubscriptions();
+  const { subscriptions = [] } = useSubscriptions();
   const { data: creators = [] } = useCreators();
   const subscribedCreatorIds = subscriptions.map(sub => sub.creator_id);
 
@@ -67,19 +67,11 @@ export default function Messages() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Fetch messages where the user is either sender or receiver
+      // First, fetch all message data
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select(`
-          *,
-          sender:sender_id (
-            username,
-            profile_picture
-          ),
-          receiver:receiver_id (
-            username,
-            profile_picture
-          )
+          *
         `)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
@@ -96,6 +88,29 @@ export default function Messages() {
         return [];
       }
 
+      // Now fetch all users involved in these messages
+      const userIds = new Set<string>();
+      messagesData?.forEach(message => {
+        userIds.add(message.sender_id);
+        userIds.add(message.receiver_id);
+      });
+
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, profile_picture')
+        .in('id', Array.from(userIds));
+
+      if (usersError) {
+        console.error("Error loading users:", usersError);
+        return [];
+      }
+
+      // Create a map of user IDs to user data for quick lookup
+      const userMap = new Map();
+      usersData?.forEach(user => {
+        userMap.set(user.id, user);
+      });
+
       // Process the data to create conversation entries
       const conversationMap = new Map<string, Conversation>();
       
@@ -105,12 +120,14 @@ export default function Messages() {
         // Determine if the message is sent or received
         if (message.sender_id === user.id) {
           conversationPartnerId = message.receiver_id;
-          username = message.receiver?.username;
-          profilePicture = message.receiver?.profile_picture;
+          const userData = userMap.get(message.receiver_id);
+          username = userData?.username;
+          profilePicture = userData?.profile_picture;
         } else {
           conversationPartnerId = message.sender_id;
-          username = message.sender?.username;
-          profilePicture = message.sender?.profile_picture;
+          const userData = userMap.get(message.sender_id);
+          username = userData?.username;
+          profilePicture = userData?.profile_picture;
         }
         
         // If this conversation isn't in the map yet or this message is newer
@@ -118,7 +135,7 @@ export default function Messages() {
             new Date(message.created_at) > new Date(conversationMap.get(conversationPartnerId)!.lastMessageDate)) {
           conversationMap.set(conversationPartnerId, {
             id: message.id,
-            username,
+            username: username || "Unknown User",
             profilePicture,
             lastMessage: message.message_text,
             lastMessageDate: message.created_at,
