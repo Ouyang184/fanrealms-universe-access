@@ -86,7 +86,7 @@ export default function CreatorMessages() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout hideTopBar>
         <div className="flex justify-center items-center min-h-[60vh]">
           <LoadingSpinner />
         </div>
@@ -95,7 +95,7 @@ export default function CreatorMessages() {
   }
 
   return (
-    <MainLayout>
+    <MainLayout hideTopBar>
       <div className="space-y-6">
         <div className="space-y-4">
           {messages.length === 0 ? (
