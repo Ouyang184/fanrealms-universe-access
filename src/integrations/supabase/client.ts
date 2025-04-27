@@ -11,16 +11,19 @@ const getEnvVar = (key: keyof Window['env']) => {
   return value;
 };
 
+let supabase: ReturnType<typeof createClient<Database>>;
+
 try {
   // Get and validate environment variables
   const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
   const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
   // Create the Supabase client
-  export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (error) {
   console.error('Supabase client initialization failed:', error);
   // Re-throw to prevent app from running with invalid configuration
   throw error;
 }
 
+export { supabase };

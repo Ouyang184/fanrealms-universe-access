@@ -3,16 +3,22 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import AuthGuard from "@/components/AuthGuard";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import CompleteProfile from "./pages/CompleteProfile";
 import Dashboard from "./pages/Dashboard";
+import Explore from "./pages/Explore";
+import Notifications from "./pages/Notifications";
+import Community from "./pages/Community";
+import Purchases from "./pages/Purchases";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import CompleteProfile from "./pages/CompleteProfile";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 
@@ -33,22 +39,17 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Protected routes */}
-            <Route 
-              path="/complete-profile" 
-              element={
-                <AuthGuard requireAuth={true} requireCompleteProfile={false}>
-                  <CompleteProfile />
-                </AuthGuard>
-              }
-            />
-            <Route 
-              path="/dashboard" 
-              element={
-                <AuthGuard>
-                  <Dashboard />
-                </AuthGuard>
-              }
-            />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/purchases" element={<Purchases />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            
+            {/* Fallback routes */}
+            <Route path="/home" element={<Navigate to="/" replace />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
