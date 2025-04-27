@@ -2,7 +2,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { 
   GalleryHorizontal,
-  Users2,
+  MessageSquare,
   Bell,
   ShoppingCart,
   Settings
@@ -19,7 +19,7 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   
   const navigationItems = [
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
-    { icon: Users2, label: 'Community', path: '/community' },
+    { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
     { icon: Settings, label: 'Settings', path: '/settings' },

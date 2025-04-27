@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,7 +16,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Explore from "./pages/Explore";
 import Notifications from "./pages/Notifications";
-import Community from "./pages/Community";
+import Messages from "./pages/Messages";  // Import the new Messages page
 import Purchases from "./pages/Purchases";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
@@ -72,6 +73,11 @@ const App: React.FC = () => (
                   <Notifications />
                 </AuthGuard>
               } />
+              <Route path="/messages" element={
+                <AuthGuard>
+                  <Messages />
+                </AuthGuard>
+              } />
               <Route path="/purchases" element={
                 <AuthGuard>
                   <Purchases />
@@ -98,9 +104,7 @@ const App: React.FC = () => (
               } />
               <Route path="/creator-studio/messages" element={
                 <AuthGuard>
-                  <MainLayout>
-                    <CreatorMessages />
-                  </MainLayout>
+                  <CreatorMessages />
                 </AuthGuard>
               } />
               <Route path="/creator-studio/posts" element={

@@ -7,11 +7,15 @@ interface MessageProps {
   messageText: string;
   createdAt: string;
   isRead: boolean;
+  onClick?: () => void;
 }
 
-export function Message({ senderName, messageText, createdAt, isRead }: MessageProps) {
+export function Message({ senderName, messageText, createdAt, isRead, onClick }: MessageProps) {
   return (
-    <Card className={`${!isRead ? 'bg-accent/5' : ''}`}>
+    <Card 
+      className={`${!isRead ? 'bg-accent/5' : ''} ${onClick ? 'cursor-pointer hover:bg-accent/10' : ''}`}
+      onClick={onClick}
+    >
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-center">
           <span className="font-medium">{senderName}</span>
