@@ -1,4 +1,5 @@
 
+import { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import { CreatorStudioSidebar } from './CreatorStudioSidebar';
 import { MainLayout } from '@/components/Layout/MainLayout';
