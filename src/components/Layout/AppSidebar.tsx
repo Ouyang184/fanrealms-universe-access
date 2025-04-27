@@ -1,8 +1,9 @@
 
-import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star } from 'lucide-react';
+import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +37,7 @@ const membershipItems = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -104,8 +106,23 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="text-xs text-muted-foreground">
+      <SidebarFooter className="p-4 mt-auto">
+        <SidebarSeparator className="mb-4" />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={signOut}
+              size="sm"
+              variant="outline"
+              className="w-full text-muted-foreground hover:text-destructive"
+              tooltip="Sign Out"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sign Out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div className="text-xs text-muted-foreground mt-4">
           FanRealms © {new Date().getFullYear()}
         </div>
       </SidebarFooter>

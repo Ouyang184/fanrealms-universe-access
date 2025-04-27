@@ -11,21 +11,11 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Settings, User } from 'lucide-react';
+import { Settings, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function TopBar() {
-  const { user, profile, signOut } = useAuth();
-  const [isSigningOut, setIsSigningOut] = useState(false);
-  
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    try {
-      await signOut();
-    } finally {
-      setIsSigningOut(false);
-    }
-  };
+  const { user, profile } = useAuth();
   
   const userInitial = profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U';
   
@@ -68,15 +58,6 @@ export function TopBar() {
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Settings</span>
               </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="cursor-pointer"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>{isSigningOut ? "Signing out..." : "Sign out"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
