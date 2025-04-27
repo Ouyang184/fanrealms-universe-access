@@ -12,7 +12,6 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 import { NavigationMenu } from './Sidebar/NavigationMenu';
 import { CreatorStudioMenu } from './Sidebar/CreatorStudioMenu';
 import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
@@ -25,7 +24,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
+    <Sidebar collapsible="icon" className="border-r w-[240px]">
       <SidebarHeader>
         <div className="flex items-center justify-center p-4">
           <Link to="/" className="flex items-center gap-2 font-semibold">
@@ -35,19 +34,19 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent className="flex-1">
-        <ScrollArea className="h-full scrollbar-none">
-          <div className="pb-6">
+        <ScrollArea className="h-full sidebar-scrollbar">
+          <div className="pb-6 px-2">
             <NavigationMenu />
             
-            <SidebarSeparator />
+            <SidebarSeparator className="my-2" />
             
             <CreatorStudioMenu />
 
-            <SidebarSeparator />
+            <SidebarSeparator className="my-2" />
 
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={signOut} tooltip="Logout">
+                <SidebarMenuButton onClick={signOut} className="w-full justify-start px-3 py-2">
                   Logout
                 </SidebarMenuButton>
               </SidebarMenuItem>

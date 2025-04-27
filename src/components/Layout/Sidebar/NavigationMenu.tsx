@@ -1,61 +1,43 @@
 
 import { Link, useLocation } from 'react-router-dom';
+import { 
+  Explore,
+  Users2,
+  Bell,
+  ShoppingCart,
+  Settings
+} from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 
 export function NavigationMenu() {
   const location = useLocation();
   
+  const navigationItems = [
+    { icon: Explore, label: 'Explore', path: '/explore' },
+    { icon: Users2, label: 'Community', path: '/community' },
+    { icon: Bell, label: 'Notifications', path: '/notifications' },
+    { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
+  ];
+
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
-        <SidebarMenuButton 
-          asChild
-          isActive={location.pathname === '/explore'}
-          tooltip="Explore"
-        >
-          <Link to="/explore">Explore</Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      
-      <SidebarMenuItem>
-        <SidebarMenuButton 
-          asChild
-          isActive={location.pathname === '/community'}
-          tooltip="Community"
-        >
-          <Link to="/community">Community</Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      
-      <SidebarMenuItem>
-        <SidebarMenuButton 
-          asChild
-          isActive={location.pathname === '/notifications'}
-          tooltip="Notifications"
-        >
-          <Link to="/notifications">Notifications</Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      
-      <SidebarMenuItem>
-        <SidebarMenuButton 
-          asChild
-          isActive={location.pathname === '/purchases'}
-          tooltip="Purchases"
-        >
-          <Link to="/purchases">Purchases</Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      
-      <SidebarMenuItem>
-        <SidebarMenuButton 
-          asChild
-          isActive={location.pathname === '/settings'}
-          tooltip="Settings"
-        >
-          <Link to="/settings">Settings</Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+      {navigationItems.map((item) => (
+        <SidebarMenuItem key={item.path}>
+          <SidebarMenuButton
+            asChild
+            isActive={location.pathname === item.path}
+          >
+            <Link 
+              to={item.path}
+              className="w-full flex items-center gap-3 px-3 py-2"
+            >
+              <item.icon className="h-4 w-4" />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
     </SidebarMenu>
   );
 }

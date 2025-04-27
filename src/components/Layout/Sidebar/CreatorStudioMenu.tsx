@@ -5,13 +5,19 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
   SidebarMenu, 
-  SidebarMenuItem, 
+  SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton
 } from '@/components/ui/sidebar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+const creatorStudioItems = [
+  { label: 'Dashboard', path: '/creator-studio' },
+  { label: 'Posts', path: '/creator-studio/posts' },
+  { label: 'Membership Tiers', path: '/creator-studio/tiers' },
+  { label: 'Subscribers', path: '/creator-studio/subscribers' },
+  { label: 'Payouts', path: '/creator-studio/payouts' },
+  { label: 'Settings', path: '/creator-studio/settings' },
+];
 
 export function CreatorStudioMenu() {
   const location = useLocation();
@@ -30,66 +36,28 @@ export function CreatorStudioMenu() {
           onOpenChange={setIsOpen}
           className="w-full"
         >
-          <CollapsibleTrigger className="flex h-8 w-full items-center justify-between rounded-md px-2 py-0 text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-            <span>Creator Studio</span>
+          <CollapsibleTrigger className="flex h-9 w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+            <span className="flex items-center gap-3">Creator Studio</span>
             <ChevronDown 
               className={cn(
                 "h-4 w-4 transition-transform duration-200",
-                isOpen && "transform rotate-180"
+                isOpen && "rotate-180"
               )} 
             />
           </CollapsibleTrigger>
-          <CollapsibleContent className="animate-accordion-down">
-            <div className="pl-4 mt-1 space-y-1">
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio'}
-                >
-                  <Link to="/creator-studio">Dashboard</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio/posts'}
-                >
-                  <Link to="/creator-studio/posts">Posts</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio/tiers'}
-                >
-                  <Link to="/creator-studio/tiers">Membership Tiers</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio/subscribers'}
-                >
-                  <Link to="/creator-studio/subscribers">Subscribers</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio/payouts'}
-                >
-                  <Link to="/creator-studio/payouts">Payouts</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton
-                  asChild
-                  isActive={location.pathname === '/creator-studio/settings'}
-                >
-                  <Link to="/creator-studio/settings">Settings</Link>
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            </div>
+          <CollapsibleContent className="animate-accordion-down space-y-1 px-1 py-2">
+            {creatorStudioItems.map((item) => (
+              <SidebarMenuButton
+                key={item.path}
+                asChild
+                isActive={location.pathname === item.path}
+                className="w-full pl-8"
+              >
+                <Link to={item.path} className="flex items-center gap-3 px-3 py-2">
+                  {item.label}
+                </Link>
+              </SidebarMenuButton>
+            ))}
           </CollapsibleContent>
         </Collapsible>
       </SidebarMenuItem>
