@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function AppSidebar() {
-  const { user, profile, loading, logout } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const location = useLocation();
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isCreatorStudioExpanded, setIsCreatorStudioExpanded] = useState(false);
@@ -194,7 +195,7 @@ export function AppSidebar() {
           </SidebarMenuItem>
           
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => logout()} tooltip="Logout">
+            <SidebarMenuButton onClick={() => signOut()} tooltip="Logout">
               Logout
             </SidebarMenuButton>
           </SidebarMenuItem>
