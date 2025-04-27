@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
@@ -11,14 +10,17 @@ export type DbCreator = Tables['creators']['Row'];
 export type DbMembershipTier = Tables['membership_tiers']['Row'];
 
 // Frontend types with computed/joined fields
-export interface Post extends Omit<DbPost, 'author_id'> {
+export interface Post {
   id: string;  // Explicitly define as string to match DB UUID
+  title: string;
+  content: string;
   authorName: string;
   authorAvatar: string | null;
+  created_at: string;
   date: string;
   description?: string; // Add for compatibility with existing components
   image?: string;       // Add for compatibility with existing components
-  tier_id?: string | null; // Make tier_id optional to accommodate loading states
+  tier_id: string | null; // Make tier_id nullable but required
 }
 
 export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
