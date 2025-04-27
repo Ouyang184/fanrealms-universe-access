@@ -27,8 +27,7 @@ export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
   popular?: boolean;
 }
 
-export interface CreatorProfile extends DbCreator {
-  id: string;  // Explicitly define as string to match DB UUID
+export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_url'> {
   username?: string;
   fullName?: string;
   email?: string;
