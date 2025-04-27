@@ -1,4 +1,5 @@
 
+
 import { DbPost, Tier, DbUser, CreatorProfile } from '@/types';
 
 // Stats for the dashboard
@@ -35,3 +36,4 @@ export interface CreatorSettings extends CreatorProfile {
   created_at: string;
   user_id: string;
 }
+
