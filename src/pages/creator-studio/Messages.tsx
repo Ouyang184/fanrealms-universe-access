@@ -30,19 +30,19 @@ export default function CreatorMessages() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Use raw fetch query to bypass type checking
-      const response = await fetch(
-        `${window.env.VITE_SUPABASE_URL}/rest/v1/messages?select=*,sender:sender_id(username,profile_picture)&receiver_id=eq.${user.id}&order=created_at.desc`,
-        {
-          headers: {
-            'apikey': window.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${window.env.VITE_SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const { data, error } = await (supabase as any)
+        .from('messages')
+        .select(`
+          *,
+          sender:sender_id (
+            username,
+            profile_picture
+          )
+        `)
+        .eq('receiver_id', user.id)
+        .order('created_at', { ascending: false });
 
-      if (!response.ok) {
+      if (error) {
         toast({
           title: "Error",
           description: "Failed to load messages",
@@ -51,7 +51,7 @@ export default function CreatorMessages() {
         return [];
       }
 
-      return await response.json() as MessageData[];
+      return data || [];
     },
     enabled: !!user?.id,
   });

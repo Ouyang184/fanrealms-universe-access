@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -37,15 +36,14 @@ export function SendMessageDialog({ isOpen, onClose, receiverId, receiverName }:
     
     setIsSending(true);
 
-    // Use the fetch API directly to bypass type checking
-    const { error } = await supabase
-      .rpc('insert_message', {
-        p_sender_id: user.id,
-        p_receiver_id: receiverId,
-        p_message_text: values.message,
-        p_is_read: false
-      })
-      .select('success');
+    const { error } = await (supabase as any)
+      .from('messages')
+      .insert({
+        sender_id: user.id,
+        receiver_id: receiverId,
+        message_text: values.message,
+        is_read: false
+      });
 
     setIsSending(false);
     
