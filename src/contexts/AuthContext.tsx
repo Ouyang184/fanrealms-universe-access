@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
@@ -29,87 +28,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Initialize session from browser storage
-    const initializeSession = async () => {
-      try {
-        // Get current session
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data?.session) {
-          setSession(data.session);
-          setUser(data.session.user);
-          await fetchUserProfile(data.session.user.id);
-        }
-      } catch (error) {
-        console.error('Error initializing session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeSession();
-
-    // Listen for auth state changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        if (currentSession) {
-          setSession(currentSession);
-          setUser(currentSession.user);
-          await fetchUserProfile(currentSession.user.id);
-        } else {
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-        }
+        // Update session and user state synchronously
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         
-        // Don't set loading to false on every auth change event
-        if (event === 'INITIAL_SESSION') {
-          setLoading(false);
+        // If we have a user, fetch their profile in a separate tick
+        if (currentSession?.user) {
+          setTimeout(() => {
+            fetchUserProfile(currentSession.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
         }
       }
     );
 
+    // THEN check for existing session with a timeout
+    const sessionTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    supabase.auth.getSession()
+      .then(({ data: { session: initialSession } }) => {
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+          return fetchUserProfile(initialSession.user.id);
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        clearTimeout(sessionTimeout);
+        setLoading(false);
+      });
+
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
+      clearTimeout(sessionTimeout);
     };
   }, []);
-
-  // Handle redirections after auth state changes
-  useEffect(() => {
-    if (loading) return;
-
-    const redirectBasedOnAuth = async () => {
-      const publicRoutes = ['/', '/login', '/signup'];
-      const isPublicRoute = publicRoutes.includes(location.pathname);
-      
-      // For this demo, we'll consider all profiles as completed
-      // Since we're using the 'users' table which doesn't have a profile_completed field
-      const hasCompletedProfile = profile !== null;
-      
-      if (!user && !isPublicRoute) {
-        // Redirect to login if not authenticated and trying to access protected route
-        navigate('/login');
-      } else if (user && isPublicRoute) {
-        // If logged in and on a public route (like login/signup), redirect appropriately
-        if (hasCompletedProfile) {
-          navigate('/dashboard');
-        } else {
-          navigate('/complete-profile');
-        }
-      } else if (user && !hasCompletedProfile && location.pathname !== '/complete-profile') {
-        // If logged in but profile not completed, and not already on the complete profile page
-        navigate('/complete-profile');
-      }
-    };
-
-    redirectBasedOnAuth();
-  }, [user, profile, loading, location.pathname, navigate]);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -124,7 +86,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data) {
         setProfile(data as Profile);
       } else {
-        // No profile found, set to null
         setProfile(null);
       }
     } catch (error) {
