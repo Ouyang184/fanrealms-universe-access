@@ -25,55 +25,29 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 export function AppSidebar() {
   const { user, profile, loading, signOut } = useAuth();
   const location = useLocation();
-  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [isCreatorStudioExpanded, setIsCreatorStudioExpanded] = useState(false);
 
   useEffect(() => {
-    // Check if the current route is under Creator Studio to expand the section
     const isCreatorStudioRoute = location.pathname.startsWith('/creator-studio');
     setIsCreatorStudioExpanded(isCreatorStudioRoute);
   }, [location.pathname]);
-
-  const toggleProfileExpansion = () => {
-    setIsProfileExpanded(!isProfileExpanded);
-  };
-
-  const toggleCreatorStudioExpansion = () => {
-    setIsCreatorStudioExpanded(!isCreatorStudioExpanded);
-  };
 
   if (loading) {
     return <div>Loading sidebar...</div>;
   }
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="space-y-2">
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarHeader>
         <div className="flex items-center justify-center p-4">
-          <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={profile?.profile_picture || undefined} alt={profile?.username || "User"} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden md:inline">FanRealms</span>
+          <Link to="/" className="flex items-center gap-2 font-semibold">
+            <span className="text-primary text-xl">FanRealms</span>
           </Link>
         </div>
       </SidebarHeader>
       
-      <SidebarContent>
+      <SidebarContent className="pb-6">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              asChild
-              isActive={location.pathname === '/dashboard'}
-              tooltip="Dashboard"
-            >
-              <Link to="/dashboard">Dashboard</Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
           <SidebarMenuItem>
             <SidebarMenuButton 
               asChild
@@ -81,6 +55,16 @@ export function AppSidebar() {
               tooltip="Explore"
             >
               <Link to="/explore">Explore</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/community'}
+              tooltip="Community"
+            >
+              <Link to="/community">Community</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           
@@ -103,18 +87,30 @@ export function AppSidebar() {
               <Link to="/purchases">Purchases</Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/settings'}
+              tooltip="Settings"
+            >
+              <Link to="/settings">Settings</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
 
           <SidebarSeparator />
 
           <SidebarMenuItem>
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="creator-studio">
+              <AccordionItem value="creator-studio" className="border-none">
                 <AccordionTrigger 
-                  className="group-data-[collapsible=icon]:hidden"
-                  onClick={toggleCreatorStudioExpansion}
+                  className={cn(
+                    "flex h-8 w-full items-center justify-between px-2 py-0 text-sm hover:bg-accent hover:no-underline",
+                    isCreatorStudioExpanded && "bg-accent"
+                  )}
                 >
                   Creator Studio
-                  <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform duration-200 peer-data-[state=open]:rotate-180")}/>
+                  <ChevronDown className="h-4 w-4" />
                 </AccordionTrigger>
                 <AccordionContent>
                   <SidebarMenuSub>
@@ -179,19 +175,9 @@ export function AppSidebar() {
           </SidebarMenuItem>
 
           <SidebarSeparator />
-          
+
           <SidebarMenuItem>
-            <SidebarMenuButton 
-              asChild
-              isActive={location.pathname === '/settings'}
-              tooltip="Settings"
-            >
-              <Link to="/settings">Settings</Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => signOut()} tooltip="Logout">
+            <SidebarMenuButton onClick={signOut} tooltip="Logout">
               Logout
             </SidebarMenuButton>
           </SidebarMenuItem>
