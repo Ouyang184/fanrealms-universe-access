@@ -26,3 +26,4 @@ export default defineConfig(({ mode }) => ({
     'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(process.env.VITE_SUPABASE_ANON_KEY),
   }
 }));
+
