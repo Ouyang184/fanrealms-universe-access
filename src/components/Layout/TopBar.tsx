@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Settings, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SearchBar } from '@/components/SearchBar';
 
 export function TopBar() {
   const { user, profile } = useAuth();
@@ -19,7 +20,9 @@ export function TopBar() {
   
   return (
     <header className="border-b h-14 flex items-center px-4 bg-background/60 backdrop-blur-md sticky top-0 z-10">
-      <div className="flex-1" />
+      <div className="flex-1 flex items-center gap-4">
+        <SearchBar />
+      </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full" size="icon">
