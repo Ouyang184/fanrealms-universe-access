@@ -43,11 +43,14 @@ export default function CreatorMessages() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load messages",
-          variant: "destructive",
-        });
+        // Only show toast for actual server errors, not empty results
+        if (error.code !== 'PGRST116') {  // PGRST116 is "No rows returned" which isn't a real error
+          toast({
+            title: "Error",
+            description: "Failed to load messages",
+            variant: "destructive",
+          });
+        }
         return [];
       }
 
