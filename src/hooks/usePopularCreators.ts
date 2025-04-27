@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { CreatorProfile } from "@/types";
+import type { CreatorProfile, Tier } from "@/types";
 
 export const usePopularCreators = () => {
   return useQuery({
@@ -19,7 +19,8 @@ export const usePopularCreators = () => {
             id,
             title,
             price,
-            description
+            description,
+            created_at
           )
         `)
         .limit(3);
@@ -32,7 +33,12 @@ export const usePopularCreators = () => {
         ...creator,
         username: creator.users?.username,
         avatar_url: creator.users?.profile_picture,
-        tiers: creator.membership_tiers
+        tiers: creator.membership_tiers?.map((tier): Tier => ({
+          ...tier,
+          name: tier.title, // Map title to name
+          features: tier.description.split(',').map(item => item.trim()), // Convert description to features array
+          popular: false // Default value for popular
+        }))
       }));
     }
   });
