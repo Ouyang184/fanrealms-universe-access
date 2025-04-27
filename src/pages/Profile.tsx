@@ -10,55 +10,135 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/AuthGuard';
+import { useProfile } from '@/hooks/useProfile';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { X, Upload } from 'lucide-react';
+
+// Form validation schema
+const profileSchema = z.object({
+  username: z.string().min(1, { message: "Username is required" }),
+  email: z.string().email().optional(),
+  profile_picture: z.string().optional().nullable(),
+  website: z.string().url({ message: "Must be a valid URL" }).optional().nullable(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 // Be careful not to use Profile as the component name since it conflicts with the Profile type
 const ProfilePage: React.FC = () => {
-  const { user, profile, updateProfile, loading } = useAuth();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    profile_picture: '',
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const { fetchUserProfile, updateProfile, uploadProfileImage } = useProfile();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        username: profile.username || '',
-        email: profile.email || '',
-        profile_picture: profile.profile_picture || '',
-      });
+  // Initialize form with react-hook-form
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      profile_picture: '',
+      website: null,
     }
-  }, [profile]);
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  useEffect(() => {
+    async function loadProfile() {
+      if (user?.id) {
+        setLoading(true);
+        const profile = await fetchUserProfile(user.id);
+        setProfileData(profile);
+        
+        // Reset form with profile data
+        if (profile) {
+          form.reset({
+            username: profile.username || '',
+            email: profile.email || '',
+            profile_picture: profile.profile_picture || null,
+            website: profile.website || null,
+          });
+        }
+        
+        setLoading(false);
+      }
+    }
+    
+    loadProfile();
+  }, [user, fetchUserProfile, form]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const fileType = file.type;
+      if (!fileType.match(/image\/(jpeg|jpg|png)/)) {
+        toast({
+          title: "Invalid file",
+          description: "Please select a PNG or JPG image.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setSelectedFile(file);
+      
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const clearSelectedImage = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+  };
+
+  const onSubmit = async (formData: ProfileFormValues) => {
+    if (!user?.id) return;
     
     try {
       setIsSubmitting(true);
-      await updateProfile(formData);
-      setIsEditing(false);
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
+      
+      // Upload image if selected
+      let imageUrl = formData.profile_picture;
+      if (selectedFile) {
+        imageUrl = await uploadProfileImage(user.id, selectedFile);
+        if (!imageUrl) {
+          setIsSubmitting(false);
+          return; // Error already shown in toast
+        }
+      }
+      
+      // Prepare data for update
+      const updateData = {
+        username: formData.username,
+        profile_picture: imageUrl,
+        website: formData.website,
+      };
+      
+      // Update profile
+      const updatedProfile = await updateProfile(user.id, updateData);
+      
+      if (updatedProfile) {
+        setProfileData(updatedProfile);
+        setIsEditing(false);
+        
+        // Clear selected file
+        clearSelectedImage();
+      }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Update failed",
-        description: "Failed to update profile. Please try again.",
-        variant: "destructive"
-      });
+      console.error("Form submission error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -84,80 +164,162 @@ const ProfilePage: React.FC = () => {
             </CardHeader>
             <CardContent>
               {isEditing ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="username" className="block text-sm font-medium">
-                      Username
-                    </label>
-                    <Input 
-                      id="username"
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                      control={form.control}
                       name="username"
-                      value={formData.username}
-                      onChange={handleChange}
-                      placeholder="Enter your username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="block text-sm font-medium">
-                      Email
-                    </label>
-                    <Input 
-                      id="email"
+                    
+                    <FormField
+                      control={form.control}
                       name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="Enter your email"
-                      disabled
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input disabled placeholder="Email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="profile_picture" className="block text-sm font-medium">
-                      Profile Picture URL
-                    </label>
-                    <Input 
-                      id="profile_picture"
-                      name="profile_picture"
-                      value={formData.profile_picture}
-                      onChange={handleChange}
-                      placeholder="Enter your profile picture URL"
+                    
+                    <div className="space-y-2">
+                      <FormLabel>Profile Picture</FormLabel>
+                      <div className="flex flex-col gap-4">
+                        {/* Current or preview image */}
+                        {(previewUrl || profileData?.profile_picture) && (
+                          <div className="relative w-24 h-24">
+                            <Avatar className="w-24 h-24">
+                              <AvatarImage 
+                                src={previewUrl || profileData?.profile_picture} 
+                                alt="Profile preview"
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="text-2xl">
+                                {profileData?.username?.charAt(0) || user?.email?.charAt(0) || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            {previewUrl && (
+                              <button 
+                                type="button"
+                                onClick={clearSelectedImage}
+                                className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                                aria-label="Remove image"
+                              >
+                                <X className="h-4 w-4 text-white" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* File upload button */}
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => document.getElementById('profile-image')?.click()}
+                            className="flex gap-2 items-center"
+                          >
+                            <Upload className="h-4 w-4" />
+                            {previewUrl ? "Change Image" : "Upload Image"}
+                          </Button>
+                          <input
+                            type="file"
+                            id="profile-image"
+                            accept="image/png, image/jpeg"
+                            className="hidden"
+                            onChange={handleImageChange}
+                          />
+                          <span className="text-xs text-muted-foreground">PNG or JPG</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Website Link</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://yourwebsite.com" 
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
-                      Save Changes
-                    </Button>
-                  </div>
-                </form>
+
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+                          clearSelectedImage();
+                          form.reset({
+                            username: profileData?.username || '',
+                            email: profileData?.email || '',
+                            profile_picture: profileData?.profile_picture || null,
+                            website: profileData?.website || null,
+                          });
+                        }}
+                        disabled={isSubmitting}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               ) : (
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={profile?.profile_picture || undefined} alt={profile?.username || "User"} />
+                      <AvatarImage src={profileData?.profile_picture || undefined} alt={profileData?.username || "User"} />
                       <AvatarFallback className="text-lg">
-                        {profile?.username?.charAt(0) || user?.email?.charAt(0) || "U"}
+                        {profileData?.username?.charAt(0) || user?.email?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{profile?.username}</h3>
-                      <p className="text-muted-foreground">@{profile?.username}</p>
+                      <h3 className="text-lg font-semibold">{profileData?.username}</h3>
+                      <p className="text-muted-foreground">@{profileData?.username}</p>
+                      {profileData?.website && (
+                        <a 
+                          href={profileData.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm block mt-1"
+                        >
+                          {profileData.website}
+                        </a>
+                      )}
                     </div>
                   </div>
                   <div className="grid gap-3">
                     <div>
                       <h4 className="text-sm font-medium">Email</h4>
-                      <p className="text-muted-foreground">{user?.email}</p>
+                      <p className="text-muted-foreground">{profileData?.email || user?.email}</p>
                     </div>
                   </div>
                   <Button 
