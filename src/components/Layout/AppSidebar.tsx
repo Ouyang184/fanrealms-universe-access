@@ -1,4 +1,5 @@
-import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut, Palette, LayoutDashboard, FileText, Crown, WalletCards } from 'lucide-react';
+
+import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut, Palette } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,9 +15,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarSeparator
 } from '@/components/ui/sidebar';
 
@@ -30,21 +28,17 @@ const mainNavItems = [
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 
-// Creator Studio navigation items
-const creatorStudioItems = [
-  { name: 'Dashboard', path: '/creator-studio', icon: LayoutDashboard },
-  { name: 'Posts', path: '/creator-studio/posts', icon: FileText },
-  { name: 'Membership Tiers', path: '/creator-studio/tiers', icon: Crown },
-  { name: 'Subscribers', path: '/creator-studio/subscribers', icon: Users },
-  { name: 'Payouts', path: '/creator-studio/payouts', icon: WalletCards },
-  { name: 'Settings', path: '/creator-studio/settings', icon: Settings },
+// Example memberships - in a real app, these would come from an API
+const membershipItems = [
+  { id: 1, name: 'Creator Studio', path: '/creators/studio', image: '/placeholder.svg' },
+  { id: 2, name: 'Art Community', path: '/creators/art', image: '/placeholder.svg' },
+  { id: 3, name: 'Game Dev', path: '/creators/gamedev', image: '/placeholder.svg' },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
-  const isCreatorStudioActive = location.pathname.startsWith('/creator-studio');
 
   return (
     <Sidebar className="border-r border-border">
@@ -75,31 +69,18 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               ))}
               
-              {/* Creator Studio Section with Dropdown */}
+              {/* New Creator Studio Link */}
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={isCreatorStudioActive}
+                  asChild
+                  isActive={location.pathname.startsWith('/creator-studio')}
                   tooltip="Creator Studio"
                 >
-                  <Palette className="h-5 w-5" />
-                  <span>Creator Studio</span>
+                  <Link to="/creator-studio" className="flex items-center gap-3">
+                    <Palette className="h-5 w-5" />
+                    <span>Creator Studio</span>
+                  </Link>
                 </SidebarMenuButton>
-
-                <SidebarMenuSub>
-                  {creatorStudioItems.map((item) => (
-                    <SidebarMenuSubItem key={item.name}>
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={isActive(item.path)}
-                      >
-                        <Link to={item.path} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.name}</span>
-                        </Link>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
@@ -162,10 +143,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-// Example memberships - in a real app, these would come from an API
-const membershipItems = [
-  { id: 1, name: 'Creator Studio', path: '/creators/studio', image: '/placeholder.svg' },
-  { id: 2, name: 'Art Community', path: '/creators/art', image: '/placeholder.svg' },
-  { id: 3, name: 'Game Dev', path: '/creators/gamedev', image: '/placeholder.svg' },
-];

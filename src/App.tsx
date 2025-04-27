@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,7 +8,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { MainLayout } from "@/components/Layout/MainLayout";
 
 // Pages
 import Home from "./pages/Home";
@@ -26,6 +26,7 @@ import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 
 // Creator Studio Pages
+import { CreatorStudioLayout } from "./components/creator-studio/CreatorStudioLayout";
 import CreatorStudioDashboard from "./pages/creator-studio/Dashboard";
 import CreatorStudioPosts from "./pages/creator-studio/Posts";
 import CreatorStudioMembershipTiers from "./pages/creator-studio/MembershipTiers";
@@ -91,46 +92,16 @@ const App: React.FC = () => (
               {/* Creator Studio routes */}
               <Route path="/creator-studio" element={
                 <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioDashboard />
-                  </MainLayout>
+                  <CreatorStudioLayout />
                 </AuthGuard>
-              } />
-              <Route path="/creator-studio/posts" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioPosts />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              <Route path="/creator-studio/tiers" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioMembershipTiers />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              <Route path="/creator-studio/subscribers" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioSubscribers />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              <Route path="/creator-studio/payouts" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioPayouts />
-                  </MainLayout>
-                </AuthGuard>
-              } />
-              <Route path="/creator-studio/settings" element={
-                <AuthGuard>
-                  <MainLayout>
-                    <CreatorStudioSettings />
-                  </MainLayout>
-                </AuthGuard>
-              } />
+              }>
+                <Route index element={<CreatorStudioDashboard />} />
+                <Route path="posts" element={<CreatorStudioPosts />} />
+                <Route path="tiers" element={<CreatorStudioMembershipTiers />} />
+                <Route path="subscribers" element={<CreatorStudioSubscribers />} />
+                <Route path="payouts" element={<CreatorStudioPayouts />} />
+                <Route path="settings" element={<CreatorStudioSettings />} />
+              </Route>
               
               {/* Fallback routes */}
               <Route path="/home" element={<Navigate to="/" replace />} />

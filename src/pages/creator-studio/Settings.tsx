@@ -23,9 +23,7 @@ export default function CreatorStudioSettings() {
     bio: 'I create awesome content about technology, design, and more...',
     website: 'https://example.com',
     avatar_url: 'https://i.pravatar.cc/150?u=creator',
-    banner_url: null,
-    created_at: new Date().toISOString(), // Adding the missing property
-    user_id: user?.id || '' // Adding the missing property
+    banner_url: null
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
