@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import AuthGuard from "@/components/AuthGuard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 // Pages
@@ -25,9 +26,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Create React component with explicit React import to ensure React is available
-import React from 'react';
-
 const App: React.FC = () => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -42,22 +40,47 @@ const App: React.FC = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/explore" element={<Explore />} />
 
               {/* Protected routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/purchases" element={<Purchases />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/creator/:id" element={<Creator />} /> {/* New creator page route */}
-              <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/dashboard" element={
+                <AuthGuard>
+                  <Dashboard />
+                </AuthGuard>
+              } />
+              <Route path="/profile" element={
+                <AuthGuard>
+                  <Profile />
+                </AuthGuard>
+              } />
+              <Route path="/creator/:id" element={
+                <AuthGuard requireAuth={false}>
+                  <Creator />
+                </AuthGuard>
+              } />
+              <Route path="/notifications" element={
+                <AuthGuard>
+                  <Notifications />
+                </AuthGuard>
+              } />
+              <Route path="/purchases" element={
+                <AuthGuard>
+                  <Purchases />
+                </AuthGuard>
+              } />
+              <Route path="/settings" element={
+                <AuthGuard>
+                  <Settings />
+                </AuthGuard>
+              } />
+              <Route path="/complete-profile" element={
+                <AuthGuard requireCompleteProfile={false}>
+                  <CompleteProfile />
+                </AuthGuard>
+              } />
               
               {/* Fallback routes */}
               <Route path="/home" element={<Navigate to="/" replace />} />
-              
-              {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

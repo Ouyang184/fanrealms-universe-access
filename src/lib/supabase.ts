@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 
 // Safely access window.env with optional chaining and fallback to empty strings
 const supabaseUrl = window?.env?.VITE_SUPABASE_URL || '';
@@ -10,26 +11,18 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase environment variables. Please check window.env settings in index.html.');
 }
 
-// Create a single instance of the Supabase client
-export const supabase = createClient(
+// Create a single instance of the Supabase client with proper typing
+export const supabase = createClient<Database>(
   supabaseUrl,
-  supabaseKey
+  supabaseKey,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true
+    }
+  }
 );
 
-export type Profile = {
-  id: string;
-  username: string;
-  full_name: string;
-  avatar_url: string | null;
-  website: string | null;
-  profile_completed: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-export type Session = {
-  user: {
-    id: string;
-    email: string;
-  };
-};
+// Export types for ease of use
+export type Profile = Database['public']['Tables']['users']['Row'];
+export type Session = Database['auth']['Tables']['sessions']['Row'];

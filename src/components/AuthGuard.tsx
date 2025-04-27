@@ -22,14 +22,17 @@ const AuthGuard = ({
   useEffect(() => {
     if (loading) return;
 
-    if (!user && requireAuth) {
+    // If no user and auth is required, redirect to login
+    if (requireAuth && !user) {
+      // Save the current location to redirect back after login
       const returnTo = location.pathname + location.search;
       navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
 
-    if (user && !profile?.profile_completed && requireCompleteProfile && window.location.pathname !== "/complete-profile") {
-      navigate("/complete-profile");
+    // If user exists but trying to access login/signup pages
+    if (user && ['/login', '/signup'].includes(location.pathname)) {
+      navigate('/dashboard');
       return;
     }
   }, [user, profile, loading, navigate, location, requireAuth, requireCompleteProfile]);
