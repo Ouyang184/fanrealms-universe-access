@@ -1,10 +1,10 @@
-
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/lib/utils"
 import { PanelLeft } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -32,6 +32,32 @@ function useSidebar() {
   }
   return context
 }
+
+const SidebarTrigger = React.forwardRef<
+  HTMLButtonElement,
+  Omit<React.ComponentProps<typeof Button>, "onClick"> & {
+    asChild?: boolean
+  }
+>(({ asChild = false, className, ...props }, ref) => {
+  const { toggleSidebar } = useSidebar()
+  const Comp = asChild ? Slot : Button
+
+  return (
+    <Comp
+      ref={ref}
+      onClick={toggleSidebar}
+      variant="ghost"
+      size="icon"
+      data-sidebar="trigger"
+      className={cn("size-9", className)}
+      {...props}
+    >
+      <PanelLeft className="size-4" />
+      <span className="sr-only">Toggle sidebar</span>
+    </Comp>
+  )
+})
+SidebarTrigger.displayName = "SidebarTrigger"
 
 const SidebarProvider = React.forwardRef<
   HTMLDivElement,
@@ -230,4 +256,4 @@ const Sidebar = React.forwardRef<
 )
 Sidebar.displayName = "Sidebar"
 
-export { Sidebar, SidebarProvider, useSidebar }
+export { Sidebar, SidebarProvider, useSidebar, SidebarTrigger }

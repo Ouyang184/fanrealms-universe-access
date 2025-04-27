@@ -70,9 +70,26 @@ const SidebarInput = React.forwardRef<
 })
 SidebarInput.displayName = "SidebarInput"
 
+// Add SidebarSeparator component
+const SidebarSeparator = React.forwardRef<
+  HTMLHRElement,
+  React.ComponentProps<"hr">
+>(({ className, ...props }, ref) => {
+  return (
+    <hr
+      ref={ref}
+      data-sidebar="separator"
+      className={cn("h-px w-full bg-border", className)}
+      {...props}
+    />
+  )
+})
+SidebarSeparator.displayName = "SidebarSeparator"
+
 export { 
   SidebarHeader, 
   SidebarFooter, 
   SidebarContent,
-  SidebarInput 
+  SidebarInput,
+  SidebarSeparator 
 }
