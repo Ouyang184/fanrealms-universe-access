@@ -50,8 +50,9 @@ export default function CreatorMessages() {
             description: "Failed to load messages",
             variant: "destructive",
           });
+          console.error("Error loading messages:", error);
+          return [];
         }
-        return [];
       }
 
       return data || [];
@@ -98,9 +99,17 @@ export default function CreatorMessages() {
       <div className="space-y-6">
         <div className="space-y-4">
           {messages.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No messages yet
-            </p>
+            <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+              <div className="mb-4 text-muted-foreground">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <p className="text-lg font-medium">No messages yet</p>
+              <p className="text-muted-foreground text-sm mt-1">
+                Messages from your fans will appear here
+              </p>
+            </div>
           ) : (
             messages.map((message: MessageData) => (
               <Message
