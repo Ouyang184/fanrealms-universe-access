@@ -18,7 +18,8 @@ export function TopBar() {
   const userInitial = profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U';
   
   return (
-    <header className="border-b h-14 flex items-center justify-end px-4 bg-background/60 backdrop-blur-md sticky top-0 z-10">
+    <header className="border-b h-14 flex items-center px-4 bg-background/60 backdrop-blur-md sticky top-0 z-10">
+      <div className="flex-1" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full" size="icon">
