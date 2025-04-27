@@ -1,9 +1,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Retrieve environment variables from the window.env object
-const supabaseUrl = window.env?.VITE_SUPABASE_URL;
-const supabaseKey = window.env?.VITE_SUPABASE_ANON_KEY;
+// Safely access window.env with optional chaining and fallback to empty strings
+const supabaseUrl = window?.env?.VITE_SUPABASE_URL || '';
+const supabaseKey = window?.env?.VITE_SUPABASE_ANON_KEY || '';
 
 // Validate environment variables are set
 if (!supabaseUrl || !supabaseKey) {
@@ -12,8 +12,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 // Create a single instance of the Supabase client
 export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseKey || ''
+  supabaseUrl,
+  supabaseKey
 );
 
 export type Profile = {
