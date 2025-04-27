@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Explore,
+  GalleryHorizontal,
   Users2,
   Bell,
   ShoppingCart,
@@ -13,7 +13,7 @@ export function NavigationMenu() {
   const location = useLocation();
   
   const navigationItems = [
-    { icon: Explore, label: 'Explore', path: '/explore' },
+    { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: Users2, label: 'Community', path: '/community' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
