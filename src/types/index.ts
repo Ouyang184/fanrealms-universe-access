@@ -41,7 +41,7 @@ export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_u
   tiers?: Tier[];
 }
 
-export interface AuthUser = User;
+export interface AuthUser extends User {}
 
 export interface Subscription {
   id: string;
