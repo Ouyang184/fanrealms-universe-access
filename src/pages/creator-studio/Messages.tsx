@@ -101,7 +101,7 @@ export default function CreatorMessages() {
               No messages yet
             </p>
           ) : (
-            messages.map((message) => (
+            messages.map((message: MessageData) => (
               <Message
                 key={message.id}
                 senderName={message.sender.username}
