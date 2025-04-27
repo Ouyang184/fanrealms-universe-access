@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
@@ -40,15 +41,8 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, '/dashboard');
   const { signUp } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
+  
+  // Initialize form outside of conditional rendering
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -69,6 +63,14 @@ const Signup = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout>
