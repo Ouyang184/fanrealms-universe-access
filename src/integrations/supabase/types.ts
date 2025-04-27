@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       creators: {
         Row: {
+          banner_url: string | null
           bio: string | null
           created_at: string
           id: string
@@ -18,6 +19,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string
@@ -25,6 +27,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          banner_url?: string | null
           bio?: string | null
           created_at?: string
           id?: string

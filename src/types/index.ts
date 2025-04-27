@@ -43,7 +43,7 @@ export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_u
   avatar_url?: string | null;
   profile_image_url?: string | null;
   website?: string | null;
-  banner_url?: string | null; // Add banner_url field for creator profiles
+  banner_url?: string | null;
   tiers?: Tier[];
 }
 

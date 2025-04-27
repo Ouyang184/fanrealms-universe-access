@@ -32,7 +32,7 @@ export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
   website: string | null;
   bannerImageUrl?: string | null;
-  banner_url?: string | null; // Add banner_url property
+  banner_url?: string | null;
   created_at: string;
   user_id: string;
 }
