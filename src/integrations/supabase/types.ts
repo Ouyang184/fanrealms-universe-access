@@ -82,6 +82,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          tier_id: string | null
           title: string
         }
         Insert: {
@@ -89,6 +90,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          tier_id?: string | null
           title: string
         }
         Update: {
@@ -96,6 +98,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          tier_id?: string | null
           title?: string
         }
         Relationships: [
@@ -104,6 +107,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
         ]

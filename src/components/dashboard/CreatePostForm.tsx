@@ -17,12 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader } from "lucide-react";
+import { TierSelect } from "./TierSelect";
 
 export function CreatePostForm() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,9 +39,10 @@ export function CreatePostForm() {
         .from('posts')
         .insert([
           { 
-            title, 
+            title,
             content,
-            author_id: user.id 
+            author_id: user.id,
+            tier_id: selectedTierId
           }
         ]);
 
@@ -53,6 +56,7 @@ export function CreatePostForm() {
       // Reset form and close dialog
       setTitle("");
       setContent("");
+      setSelectedTierId(null);
       setIsOpen(false);
       
       // Refresh posts list
@@ -106,6 +110,14 @@ export function CreatePostForm() {
               className="min-h-[150px]"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="tier">Visibility</Label>
+            <TierSelect
+              onSelect={setSelectedTierId}
+              value={selectedTierId}
+              disabled={isLoading}
+            />
+          </div>
           <div className="flex justify-end gap-3">
             <Button 
               type="button" 
@@ -119,10 +131,10 @@ export function CreatePostForm() {
               {isLoading ? (
                 <>
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  Publishing...
                 </>
               ) : (
-                "Create Post"
+                "Publish Post"
               )}
             </Button>
           </div>
