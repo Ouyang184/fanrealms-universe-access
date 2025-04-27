@@ -17,8 +17,10 @@ export function SidebarFooterContent({ isCollapsed = false }: SidebarFooterConte
   }
   
   return (
-    <p className="px-2 py-2 text-center text-xs text-muted-foreground">
-      © {currentYear} FanRealms
-    </p>
+    <div className="px-4 py-3 border-t border-border/40">
+      <p className="text-center text-xs text-muted-foreground">
+        © {currentYear} FanRealms
+      </p>
+    </div>
   );
 }
