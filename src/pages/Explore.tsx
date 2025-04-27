@@ -15,11 +15,12 @@ import type { Post, CreatorProfile } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Explore() {
-  const { isChecking } = useAuthCheck();
+  const { isChecking } = useAuthCheck(false); // Allow public access
   const [activeTab, setActiveTab] = useState("posts");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
+  // Fetch posts with author info
   const { data: posts = [], isLoading: isLoadingPosts, refetch: refetchPosts } = useQuery({
     queryKey: ['explorePosts'],
     queryFn: async () => {
@@ -39,7 +40,7 @@ export default function Explore() {
         console.error('Error fetching posts:', error);
         toast({
           title: "Error fetching posts",
-          description: error.message,
+          description: "Failed to load posts. Please try again.",
           variant: "destructive"
         });
         return [];
@@ -49,16 +50,16 @@ export default function Explore() {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at),
-        description: post.content // Add description for PostCard component
+        date: formatRelativeDate(post.created_at)
       })) as Post[];
     }
   });
 
+  // Fetch creators with their tier information
   const { data: creators = [], isLoading: isLoadingCreators, refetch: refetchCreators } = useQuery({
     queryKey: ['creators'],
     queryFn: async () => {
-      const { data: creatorProfiles, error } = await supabase
+      const { data: creatorData, error } = await supabase
         .from('creators')
         .select(`
           *,
@@ -73,28 +74,29 @@ export default function Explore() {
             description,
             price
           )
-        `);
+        `)
+        .limit(8);
 
       if (error) {
         console.error('Error fetching creators:', error);
         toast({
           title: "Error fetching creators",
-          description: error.message,
+          description: "Failed to load creators. Please try again.",
           variant: "destructive"
         });
         return [];
       }
 
-      return creatorProfiles.map((creator: any) => ({
+      return creatorData.map((creator: any) => ({
         ...creator,
         username: creator.users?.username,
         email: creator.users?.email,
         avatar_url: creator.users?.profile_picture,
-        fullName: creator.users?.username, // Using username as fullName for now
+        fullName: creator.users?.username,
         tiers: creator.membership_tiers?.map((tier: any) => ({
           ...tier,
           name: tier.title,
-          features: [tier.description],
+          features: [tier.description]
         }))
       })) as CreatorProfile[];
     }
@@ -192,15 +194,8 @@ export default function Explore() {
                 {filteredPosts.map((post) => (
                   <PostCard
                     key={post.id}
-                    id={post.id}
-                    title={post.title}
-                    content={post.content}
-                    description={post.content}
-                    image={`https://picsum.photos/seed/${post.id}/800/450`} // Placeholder for now
-                    authorName={post.authorName}
-                    authorAvatar={post.authorAvatar || ''}
-                    date={post.date}
-                    created_at={post.created_at}
+                    {...post}
+                    image={`https://picsum.photos/seed/${post.id}/800/450`}
                   />
                 ))}
               </div>

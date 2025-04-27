@@ -38,8 +38,8 @@ const CreatorPage: React.FC = () => {
       if (userError || !userData) {
         console.error('Error fetching user:', userError);
         toast({
-          title: "Error fetching creator",
-          description: userError?.message || "Creator not found",
+          title: "Error",
+          description: "Creator not found",
           variant: "destructive"
         });
         return null;
@@ -64,8 +64,8 @@ const CreatorPage: React.FC = () => {
       if (creatorError && creatorError.code !== 'PGRST116') {
         console.error('Error fetching creator:', creatorError);
         toast({
-          title: "Error fetching creator profile",
-          description: creatorError.message,
+          title: "Error",
+          description: "Failed to load creator profile",
           variant: "destructive"
         });
         return null;
@@ -77,7 +77,7 @@ const CreatorPage: React.FC = () => {
           id: "",
           user_id: userData.id,
           username: userData.username,
-          fullName: userData.username, // Use username as fullName for now
+          fullName: userData.username,
           email: userData.email,
           avatar_url: userData.profile_picture,
           bio: null,
@@ -90,7 +90,7 @@ const CreatorPage: React.FC = () => {
       return {
         ...creatorData,
         username: userData.username,
-        fullName: userData.username, // Use username as fullName for now
+        fullName: userData.username,
         email: userData.email,
         avatar_url: userData.profile_picture,
         tiers: creatorData.membership_tiers?.map((tier: any) => ({
@@ -137,8 +137,8 @@ const CreatorPage: React.FC = () => {
       if (error) {
         console.error('Error fetching posts:', error);
         toast({
-          title: "Error fetching posts",
-          description: error.message,
+          title: "Error",
+          description: "Failed to load posts",
           variant: "destructive"
         });
         return [];
@@ -148,8 +148,7 @@ const CreatorPage: React.FC = () => {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at),
-        description: post.content
+        date: formatRelativeDate(post.created_at)
       })) as Post[];
     },
     enabled: !!id
@@ -217,7 +216,7 @@ const CreatorPage: React.FC = () => {
     };
   }, [id, creator?.user_id, creator?.id, refetchCreator, refetchPosts]);
   
-  if (isLoadingCreator) {
+  if (isLoadingCreator || isLoadingPosts) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center h-[60vh]">
@@ -283,26 +282,21 @@ const CreatorPage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="posts" className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {isLoadingPosts ? (
-                <>
-                  <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
-                  <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
-                </>
-              ) : posts.length > 0 ? (
-                posts.map((post) => (
+            {posts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {posts.map((post) => (
                   <PostCard 
                     key={post.id}
                     {...post}
                     image={`https://picsum.photos/seed/${post.id}/800/450`}
                   />
-                ))
-              ) : (
-                <div className="col-span-2 text-center py-12">
-                  <p className="text-muted-foreground">No posts yet from this creator.</p>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">No posts yet from this creator.</p>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="membership" className="pt-6">

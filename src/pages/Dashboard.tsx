@@ -44,7 +44,7 @@ export default function Dashboard() {
         console.error('Error fetching posts:', error);
         toast({
           title: "Error fetching posts",
-          description: error.message,
+          description: "Failed to load your posts. Please try again.",
           variant: "destructive"
         });
         return [];
@@ -54,8 +54,7 @@ export default function Dashboard() {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at),
-        description: post.content // Add description for PostCard component
+        date: formatRelativeDate(post.created_at)
       })) as Post[];
     },
     enabled: !!user?.id
@@ -72,12 +71,25 @@ export default function Dashboard() {
       
       const { data, error } = await supabase
         .from('creators')
-        .select('*')
+        .select(`
+          *,
+          membership_tiers (
+            id,
+            title,
+            description,
+            price
+          )
+        `)
         .eq('user_id', user.id)
         .single();
         
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking creator status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load creator profile. Please try again.",
+          variant: "destructive"
+        });
         return null;
       }
       
@@ -125,6 +137,16 @@ export default function Dashboard() {
     );
   }
   
+  if (isLoadingPosts || isLoadingCreator) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
+    );
+  }
+  
   return (
     <MainLayout showTabs={true}>
       <div className="space-y-8">
@@ -148,36 +170,24 @@ export default function Dashboard() {
           </TabsList>
           
           <TabsContent value="posts" className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {isLoadingPosts ? (
-                <>
-                  <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
-                  <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
-                </>
-              ) : posts.length > 0 ? (
-                posts.map((post) => (
+            {posts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {posts.map((post) => (
                   <PostCard 
                     key={post.id}
-                    id={post.id}
-                    title={post.title}
-                    content={post.content}
-                    description={post.content}
-                    image={`https://picsum.photos/seed/${post.id}/800/450`} // Placeholder for now
-                    authorName={post.authorName}
-                    authorAvatar={post.authorAvatar || ''}
-                    date={post.date}
-                    created_at={post.created_at}
+                    {...post}
+                    image={`https://picsum.photos/seed/${post.id}/800/450`}
                   />
-                ))
-              ) : (
-                <div className="col-span-2 text-center py-12">
-                  <p className="text-muted-foreground mb-4">No posts yet. Create your first post!</p>
-                  <Button asChild>
-                    <Link to="/create-post">Create Post</Link>
-                  </Button>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">No posts yet. Create your first post!</p>
+                <Button asChild>
+                  <Link to="/create-post">Create Post</Link>
+                </Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="purchases" className="pt-6">
@@ -211,14 +221,14 @@ export default function Dashboard() {
                   
                   <Card>
                     <CardContent className="pt-6">
-                      <h3 className="font-medium mb-2">Subscribers</h3>
+                      <h3 className="font-medium mb-2">Total Subscribers</h3>
                       <p className="text-3xl font-bold">0</p>
                     </CardContent>
                   </Card>
                   
                   <Card>
                     <CardContent className="pt-6">
-                      <h3 className="font-medium mb-2">Revenue</h3>
+                      <h3 className="font-medium mb-2">Total Revenue</h3>
                       <p className="text-3xl font-bold">$0</p>
                     </CardContent>
                   </Card>
@@ -226,9 +236,25 @@ export default function Dashboard() {
                 
                 <Card>
                   <CardContent className="py-6">
-                    <h3 className="font-medium mb-4">Membership Tiers</h3>
-                    <p className="text-muted-foreground mb-4">You haven't set up any membership tiers yet.</p>
-                    <Button>Create Tier</Button>
+                    <h3 className="font-medium mb-4">Your Membership Tiers</h3>
+                    {creatorProfile.membership_tiers && creatorProfile.membership_tiers.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {creatorProfile.membership_tiers.map((tier) => (
+                          <Card key={tier.id}>
+                            <CardContent className="pt-6">
+                              <h4 className="font-medium">{tier.title}</h4>
+                              <p className="text-2xl font-bold mt-2">${tier.price}/mo</p>
+                              <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-4">You haven't set up any membership tiers yet.</p>
+                        <Button>Create Tier</Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
