@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CreatorSettings } from "@/types/creator-studio";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Upload } from "lucide-react";
+import { BannerUpload } from "@/components/creator-studio/BannerUpload";
+import { supabase } from "@/lib/supabase";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -24,8 +25,8 @@ export default function CreatorStudioSettings() {
     website: 'https://example.com',
     avatar_url: 'https://i.pravatar.cc/150?u=creator',
     banner_url: null,
-    created_at: new Date().toISOString(), // Adding the missing property
-    user_id: user?.id || '' // Adding the missing property
+    created_at: new Date().toISOString(),
+    user_id: user?.id || ''
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -55,6 +56,33 @@ export default function CreatorStudioSettings() {
       title: "Coming Soon",
       description: `${type.charAt(0).toUpperCase() + type.slice(1)} upload functionality is under development.`
     });
+  };
+
+  const handleBannerUpdate = async (bannerUrl: string) => {
+    if (!user?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('creators')
+        .update({ banner_url: bannerUrl })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setSettings(prev => ({
+        ...prev,
+        banner_url: bannerUrl
+      }));
+      
+    } catch (error: any) {
+      console.error('Failed to update banner URL:', error);
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update banner URL",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -149,30 +177,16 @@ export default function CreatorStudioSettings() {
           <Card>
             <CardHeader>
               <CardTitle>Profile Banner</CardTitle>
-              <CardDescription>Upload a banner image for your creator page</CardDescription>
+              <CardDescription>
+                Upload a banner image for your creator page
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center space-y-3">
-                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
-                  {settings.banner_url ? (
-                    <img 
-                      src={settings.banner_url} 
-                      alt="Profile banner" 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <p className="text-muted-foreground">No banner image uploaded</p>
-                  )}
-                </div>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => handleImageUpload('banner')}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Banner Image
-                </Button>
-              </div>
+              <BannerUpload
+                userId={user?.id || ''}
+                currentBannerUrl={settings?.banner_url}
+                onBannerUpdate={handleBannerUpdate}
+              />
             </CardContent>
           </Card>
           
