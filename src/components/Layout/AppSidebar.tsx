@@ -1,5 +1,5 @@
 
-import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut, Palette } from 'lucide-react';
+import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -68,20 +68,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              
-              {/* New Creator Studio Link */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={location.pathname.startsWith('/creator-studio')}
-                  tooltip="Creator Studio"
-                >
-                  <Link to="/creator-studio" className="flex items-center gap-3">
-                    <Palette className="h-5 w-5" />
-                    <span>Creator Studio</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
