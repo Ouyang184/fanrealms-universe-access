@@ -12,9 +12,13 @@ export type DbMembershipTier = Tables['membership_tiers']['Row'];
 
 // Frontend types with computed/joined fields
 export interface Post extends Omit<DbPost, 'author_id'> {
+  id: string;  // Explicitly define as string to match DB UUID
   authorName: string;
   authorAvatar: string | null;
   date: string;
+  // Add these for compatibility with existing components
+  description?: string;
+  image?: string;
 }
 
 export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
@@ -24,9 +28,14 @@ export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
 }
 
 export interface CreatorProfile extends DbCreator {
+  id: string;  // Explicitly define as string to match DB UUID
   username?: string;
   fullName?: string;
   email?: string;
+  bio?: string | null;
+  avatar_url?: string | null;
+  profile_image_url?: string | null;
+  website?: string | null;
   tiers?: Tier[];
 }
 

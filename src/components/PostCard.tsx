@@ -9,6 +9,8 @@ import { Post } from "@/types";
 
 interface PostCardProps extends Post {
   isLoading?: boolean;
+  description?: string;  // Make explicit for backwards compatibility
+  image?: string;        // Make explicit for backwards compatibility
 }
 
 const PostCard: React.FC<PostCardProps> = ({ 
@@ -19,6 +21,7 @@ const PostCard: React.FC<PostCardProps> = ({
   authorName, 
   authorAvatar, 
   date,
+  content,
   isLoading = false
 }) => {
   if (isLoading) {
@@ -44,13 +47,16 @@ const PostCard: React.FC<PostCardProps> = ({
     );
   }
 
+  // Use description if provided, otherwise fall back to content
+  const displayDescription = description || content;
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <Link to={`/post/${id}`}>
         <div className="relative">
           <AspectRatio ratio={16/9}>
             <img 
-              src={image} 
+              src={image || `https://picsum.photos/seed/${id}/800/450`} 
               alt={title}
               className="object-cover w-full h-full rounded-t-md"
             />
@@ -60,7 +66,7 @@ const PostCard: React.FC<PostCardProps> = ({
       <CardContent className="p-4">
         <Link to={`/post/${id}`}>
           <h3 className="text-lg font-semibold line-clamp-1">{title}</h3>
-          <p className="text-muted-foreground line-clamp-2 mt-1 text-sm">{description}</p>
+          <p className="text-muted-foreground line-clamp-2 mt-1 text-sm">{displayDescription}</p>
         </Link>
         <div className="flex items-center space-x-3 mt-4">
           <Avatar className="h-8 w-8">

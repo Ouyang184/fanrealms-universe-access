@@ -42,7 +42,8 @@ export default function Explore() {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at)
+        date: formatRelativeDate(post.created_at),
+        description: post.content // Add description for PostCard component
       })) as Post[];
     }
   });
@@ -77,6 +78,7 @@ export default function Explore() {
         username: creator.users?.username,
         email: creator.users?.email,
         avatar_url: creator.users?.profile_picture,
+        fullName: creator.users?.username, // Using username as fullName for now
         tiers: creator.membership_tiers?.map((tier: any) => ({
           ...tier,
           name: tier.title,
@@ -140,7 +142,7 @@ export default function Explore() {
             {isLoadingPosts ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map(i => (
-                  <PostCard key={i} isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
+                  <PostCard key={i} isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
                 ))}
               </div>
             ) : filteredPosts.length > 0 ? (
@@ -148,13 +150,15 @@ export default function Explore() {
                 {filteredPosts.map((post) => (
                   <PostCard
                     key={post.id}
-                    id={Number(post.id)}
+                    id={post.id}
                     title={post.title}
+                    content={post.content}
                     description={post.content}
-                    image="https://picsum.photos/seed/post1/800/450" // Placeholder for now
+                    image={`https://picsum.photos/seed/${post.id}/800/450`} // Placeholder for now
                     authorName={post.authorName}
                     authorAvatar={post.authorAvatar || ''}
                     date={post.date}
+                    created_at={post.created_at}
                   />
                 ))}
               </div>

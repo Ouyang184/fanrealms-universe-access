@@ -32,13 +32,18 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
 
   const {
     username,
-    full_name,
+    fullName,
     avatar_url,
+    profile_image_url,
     website,
     bio
   } = creator;
 
-  const displayName = full_name || username || "Creator";
+  // Use fullName or username or fallback to "Creator" for display
+  const displayName = fullName || username || "Creator";
+  // Use avatar_url or profile_image_url for avatar
+  const avatarUrl = avatar_url || profile_image_url;
+  // Build creator URL from username
   const creatorUrl = username ? `/creator/${username}` : "#";
 
   return (
@@ -47,7 +52,7 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
       <CardContent className="pt-0 pb-5 px-5">
         <div className="flex flex-col items-center -mt-12 mb-4">
           <Avatar className="h-24 w-24 border-4 border-background">
-            <AvatarImage src={avatar_url || undefined} alt={displayName} />
+            <AvatarImage src={avatarUrl || undefined} alt={displayName} />
             <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
           </Avatar>
           <Link to={creatorUrl} className="mt-3 text-lg font-semibold hover:underline">

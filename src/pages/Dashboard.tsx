@@ -37,7 +37,8 @@ export default function Dashboard() {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at)
+        date: formatRelativeDate(post.created_at),
+        description: post.content // Add description for PostCard component
       })) as Post[];
     },
     enabled: !!user?.id
@@ -54,20 +55,22 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {isLoading ? (
             <>
-              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
-              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
+              <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
+              <PostCard isLoading={true} id="" title="" content="" created_at="" authorName="" authorAvatar="" date="" />
             </>
           ) : posts.length > 0 ? (
             posts.map((post) => (
               <PostCard 
                 key={post.id}
-                id={Number(post.id)}
+                id={post.id}
                 title={post.title}
+                content={post.content}
                 description={post.content}
-                image="https://picsum.photos/seed/post1/800/450" // Placeholder for now
+                image={`https://picsum.photos/seed/${post.id}/800/450`} // Placeholder for now
                 authorName={post.authorName}
                 authorAvatar={post.authorAvatar || ''}
                 date={post.date}
+                created_at={post.created_at}
               />
             ))
           ) : (
