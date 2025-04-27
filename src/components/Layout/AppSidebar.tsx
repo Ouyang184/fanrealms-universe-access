@@ -24,7 +24,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r w-[240px]">
+    <Sidebar collapsible="icon" className="border-r w-[280px]">
       <SidebarHeader>
         <div className="flex items-center justify-center p-4">
           <Link to="/" className="flex items-center gap-2 font-semibold">
@@ -35,18 +35,18 @@ export function AppSidebar() {
       
       <SidebarContent className="flex-1">
         <ScrollArea className="h-full sidebar-scrollbar">
-          <div className="pb-6 px-2">
+          <div className="pb-6 px-3">
             <NavigationMenu />
             
-            <SidebarSeparator className="my-2" />
+            <SidebarSeparator className="my-3" />
             
             <CreatorStudioMenu />
 
-            <SidebarSeparator className="my-2" />
+            <SidebarSeparator className="my-3" />
 
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={signOut} className="w-full justify-start px-3 py-2">
+                <SidebarMenuButton onClick={signOut} className="w-full justify-start px-4 py-2.5">
                   Logout
                 </SidebarMenuButton>
               </SidebarMenuItem>

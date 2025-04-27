@@ -36,25 +36,25 @@ export function CreatorStudioMenu() {
           onOpenChange={setIsOpen}
           className="w-full"
         >
-          <CollapsibleTrigger className="flex h-9 w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent">
+          <CollapsibleTrigger className="flex h-10 w-full items-center justify-between rounded-md px-4 py-2.5 text-base transition-colors hover:bg-accent">
             <span className="flex items-center gap-3">Creator Studio</span>
             <ChevronDown 
               className={cn(
-                "h-4 w-4 transition-transform duration-200",
+                "h-5 w-5 transition-transform duration-200",
                 isOpen && "rotate-180"
               )} 
             />
           </CollapsibleTrigger>
-          <CollapsibleContent className="animate-accordion-down space-y-1 px-1 py-2">
+          <CollapsibleContent className="animate-accordion-down space-y-1 py-2">
             {creatorStudioItems.map((item) => (
               <SidebarMenuButton
                 key={item.path}
                 asChild
                 isActive={location.pathname === item.path}
-                className="w-full pl-8"
+                className="w-full pl-9 py-2"
               >
-                <Link to={item.path} className="flex items-center gap-3 px-3 py-2">
-                  {item.label}
+                <Link to={item.path} className="flex items-center gap-3 px-4 py-2">
+                  <span className="text-base">{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             ))}

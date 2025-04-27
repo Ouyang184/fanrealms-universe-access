@@ -30,10 +30,10 @@ export function NavigationMenu() {
           >
             <Link 
               to={item.path}
-              className="w-full flex items-center gap-3 px-3 py-2"
+              className="w-full flex items-center gap-3 px-4 py-2.5"
             >
-              <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
+              <item.icon className="h-5 w-5" />
+              <span className="text-base">{item.label}</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>

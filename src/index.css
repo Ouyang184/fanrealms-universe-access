@@ -75,38 +75,18 @@
   }
 
   .sidebar-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   
   .sidebar-scrollbar::-webkit-scrollbar {
     width: 4px;
-  }
-  
-  .sidebar-scrollbar::-webkit-scrollbar-track {
     background: transparent;
+    display: none;
   }
   
-  .sidebar-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-  }
-  
-  .sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .text-gradient {
-    @apply bg-gradient-to-br from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent;
-  }
-
-  .sidebar-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-  }
-  
-  .sidebar-scrollbar::-webkit-scrollbar {
-    width: 4px;
+  .sidebar-scrollbar:hover::-webkit-scrollbar {
+    display: block;
   }
   
   .sidebar-scrollbar::-webkit-scrollbar-track {
@@ -151,4 +131,12 @@
 .collapsible-content {
   overflow: hidden;
   transition: height 0.3s ease;
+}
+
+/* Fix sidebar display on mobile */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    max-width: 280px;
+  }
 }
