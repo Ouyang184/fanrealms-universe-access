@@ -4,10 +4,14 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/lib/utils"
 
-// Create a provider that explicitly uses React.createElement instead of JSX
-const TooltipProvider = ({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) => {
-  return React.createElement(TooltipPrimitive.Provider, props, children);
-};
+// Updated TooltipProvider implementation to correctly handle children prop
+const TooltipProvider = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Provider>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Provider>
+>((props, ref) => {
+  return <TooltipPrimitive.Provider {...props} ref={ref} />
+});
+TooltipProvider.displayName = "TooltipProvider";
 
 const Tooltip = TooltipPrimitive.Root
 
