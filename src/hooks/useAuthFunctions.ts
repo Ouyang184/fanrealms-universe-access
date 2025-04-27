@@ -100,7 +100,7 @@ export const useAuthFunctions = () => {
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/login');
+      navigate('/', { replace: true }); // Update redirect to home page
     } catch (error: any) {
       toast({
         title: "Sign out failed",
