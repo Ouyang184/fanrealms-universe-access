@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
@@ -17,6 +18,7 @@ export interface Post extends Omit<DbPost, 'author_id'> {
   date: string;
   description?: string; // Add for compatibility with existing components
   image?: string;       // Add for compatibility with existing components
+  tier_id?: string | null; // Make tier_id optional to accommodate loading states
 }
 
 export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {

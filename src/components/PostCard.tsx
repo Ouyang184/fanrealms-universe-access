@@ -22,7 +22,8 @@ const PostCard: React.FC<PostCardProps> = ({
   authorAvatar, 
   date,
   content,
-  isLoading = false
+  isLoading = false,
+  tier_id
 }) => {
   if (isLoading) {
     return (

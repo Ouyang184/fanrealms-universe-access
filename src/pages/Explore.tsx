@@ -93,6 +93,7 @@ export default function Explore() {
                   created_at="" 
                   authorAvatar={null} 
                   date=""
+                  tier_id={null}
                 />
               ))}
             </div>
