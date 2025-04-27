@@ -7,6 +7,7 @@ export type Tables = Database['public']['Tables'];
 // Extend core types to match our database schema
 export type DbUser = Tables['users']['Row'] & {
   website?: string | null; // Add website field to match our database schema
+  updated_at?: string; // Add updated_at field from the database
 };
 export type DbPost = Tables['posts']['Row'];
 export type DbCreator = Tables['creators']['Row'];
