@@ -1,7 +1,9 @@
+
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
+import Footer from "@/components/Layout/Footer";
 
 const Home = () => {
   const { user, loading } = useAuth();
@@ -15,7 +17,7 @@ const Home = () => {
   }, [user, loading, navigate]);
   
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="container mx-auto px-4">
         <header className="flex justify-between items-center h-16">
           <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
@@ -86,6 +88,7 @@ const Home = () => {
           </div>
         </main>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -4,11 +4,12 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Footer from './Footer';
 
 interface MainLayoutProps {
   children: ReactNode;
   showTabs?: boolean;
-  hideTopBar?: boolean; // Add this prop to control TopBar visibility
+  hideTopBar?: boolean;
 }
 
 export function MainLayout({ children, showTabs = false, hideTopBar = false }: MainLayoutProps) {
@@ -47,6 +48,7 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
               </div>
             )}
           </main>
+          <Footer />
         </div>
       </div>
     </SidebarProvider>
