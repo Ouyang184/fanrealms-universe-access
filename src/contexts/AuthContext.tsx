@@ -1,8 +1,9 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, Profile } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { useAuthFunctions } from '@/hooks/useAuthFunctions';
+import { useProfile } from '@/hooks/useProfile';
 
 type AuthContextType = {
   session: Session | null;
@@ -23,9 +24,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
+  
+  const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
+  const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // If we have a user, fetch their profile in a separate tick
         if (currentSession?.user) {
           setTimeout(() => {
-            fetchUserProfile(currentSession.user.id);
+            fetchUserProfile(currentSession.user.id).then(setProfile);
           }, 0);
         } else {
           setProfile(null);
@@ -58,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (initialSession) {
           setSession(initialSession);
           setUser(initialSession.user);
-          return fetchUserProfile(initialSession.user.id);
+          return fetchUserProfile(initialSession.user.id).then(setProfile);
         }
       })
       .catch(console.error)
@@ -71,178 +72,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
       clearTimeout(sessionTimeout);
     };
-  }, []);
+  }, [fetchUserProfile]);
 
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setProfile(data as Profile);
-      } else {
-        setProfile(null);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      setProfile(null);
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-      
-      // Session will be handled by the auth state change listener
-    } catch (error: any) {
-      toast({
-        title: "Login failed",
-        description: error.message || "An error occurred during login. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signInWithMagicLink = async (email: string) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-      
-      toast({
-        title: "Magic link sent!",
-        description: "Check your email for the login link.",
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Failed to send magic link",
-        description: error.message || "An error occurred. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signUp = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-
-      if (error) throw error;
-
-      // Create an empty user record
-      if (data.user) {
-        const { error: userError } = await supabase
-          .from('users')
-          .insert([
-            { 
-              id: data.user.id, 
-              email: data.user.email || '',
-              username: email.split('@')[0], // Default username from email
-            }
-          ]);
-
-        if (userError) {
-          console.error('Error creating user:', userError);
-        }
-      }
-      
-      toast({
-        title: "Registration successful!",
-        description: "Please check your email to confirm your account.",
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "An error occurred during registration. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      await supabase.auth.signOut();
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: "Sign out failed",
-        description: error.message || "An error occurred during sign out. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async (data: Partial<Profile>) => {
-    try {
-      setLoading(true);
-      if (!user) throw new Error("No user logged in");
-
-      const updates = {
-        ...data,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Refetch the profile to update the state
-      await fetchUserProfile(user.id);
-      
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
-      });
-      
-    } catch (error: any) {
-      toast({
-        title: "Failed to update profile",
-        description: error.message || "An error occurred. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    } finally {
-      setLoading(false);
+  const handleUpdateProfile = async (data: Partial<Profile>) => {
+    if (!user) throw new Error("No user logged in");
+    const updatedProfile = await updateUserProfile(user.id, data);
+    if (updatedProfile) {
+      setProfile(updatedProfile);
     }
   };
 
@@ -255,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signInWithMagicLink,
     signUp,
     signOut,
-    updateProfile
+    updateProfile: handleUpdateProfile
   };
 
   return (
