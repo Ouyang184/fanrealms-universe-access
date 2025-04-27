@@ -1,19 +1,16 @@
 
 import React from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import PostCard from "@/components/PostCard";
 import CreatorProfileCard from "@/components/CreatorProfileCard";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useToast } from "@/components/ui/use-toast";
-import { ContentCardSkeleton } from "@/components/ContentCardSkeleton";
+import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader } from "lucide-react";
 import { usePosts } from "@/hooks/usePosts";
 import { useCreators } from "@/hooks/useCreators";
 
 export default function Explore() {
-  const { isChecking } = useAuthCheck(false); // Allow public access
   const { toast } = useToast();
 
   // Fetch creators and posts
@@ -29,14 +26,8 @@ export default function Explore() {
     error: postsError 
   } = usePosts();
 
-  if (isChecking) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <ContentCardSkeleton />
-    </div>;
-  }
-
-  const hasErrors = creatorsError || postsError;
-  if (hasErrors) {
+  // Error handling
+  if (creatorsError || postsError) {
     toast({
       variant: "destructive",
       title: "Error loading content",
@@ -46,19 +37,18 @@ export default function Explore() {
 
   return (
     <MainLayout>
-      <div className="space-y-10">
+      <div className="space-y-10 px-4 py-6 md:px-6">
         {/* Popular Creators Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Popular Creators</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-primary">Popular Creators</h2>
+          
           {isLoadingCreators ? (
-            <div className="grid grid-flow-col auto-cols-[280px] gap-4 pb-4 overflow-x-auto">
-              {[1, 2, 3, 4].map(i => (
-                <CreatorProfileCard key={i} creator={{}} isLoading={true} />
-              ))}
+            <div className="flex items-center justify-center py-12">
+              <Loader className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : creators.length > 0 ? (
-            <ScrollArea className="w-full whitespace-nowrap rounded-lg">
-              <div className="flex space-x-4 pb-4">
+            <ScrollArea className="w-full whitespace-nowrap rounded-lg pb-4">
+              <div className="flex space-x-4">
                 {creators.map((creator) => (
                   <div key={creator.id} className="w-[280px] flex-none">
                     <CreatorProfileCard creator={creator} />
@@ -68,10 +58,10 @@ export default function Explore() {
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
           ) : (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                No creators available yet.
+            <Alert className="bg-background border-2">
+              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+              <AlertDescription className="text-center text-lg">
+                No creators found yet! 🚀
               </AlertDescription>
             </Alert>
           )}
@@ -79,10 +69,10 @@ export default function Explore() {
 
         {/* Latest Posts Section */}
         <section>
-          <h2 className="text-2xl font-semibold mb-6">Latest Posts</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-primary">Latest Posts</h2>
           {isLoadingPosts ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map(i => (
+              {[1, 2, 3].map(i => (
                 <PostCard 
                   key={i} 
                   isLoading={true} 
@@ -108,10 +98,10 @@ export default function Explore() {
               ))}
             </div>
           ) : (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                No posts available yet.
+            <Alert className="bg-background border-2">
+              <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+              <AlertDescription className="text-center text-lg">
+                No posts available yet!
               </AlertDescription>
             </Alert>
           )}
