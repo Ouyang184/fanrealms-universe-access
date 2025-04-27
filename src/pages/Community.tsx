@@ -5,6 +5,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton"; // Add missing import
 import { useState, useEffect } from "react";
 
 type Community = {

@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/Layout/MainLayout";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentCardSkeleton } from "@/components/ContentCardSkeleton";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
+import LoadingSpinner from "@/components/LoadingSpinner"; // Add missing import
 
 // Placeholder data for the explore page
 const explorePosts = [

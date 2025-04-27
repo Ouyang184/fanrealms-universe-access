@@ -1,9 +1,13 @@
+
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
 import { cn } from "@/lib/utils"
 
-const TooltipProvider = TooltipPrimitive.Provider
+// Create a provider that explicitly uses React.createElement instead of JSX
+const TooltipProvider = ({ children, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) => {
+  return React.createElement(TooltipPrimitive.Provider, props, children);
+};
 
 const Tooltip = TooltipPrimitive.Root
 

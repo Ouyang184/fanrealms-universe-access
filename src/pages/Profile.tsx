@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -10,6 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Settings } from "lucide-react";
+
+declare module '@/lib/supabase' {
+  interface Profile {
+    bio?: string;
+  }
+}
 
 export default function Profile() {
   const { isChecking } = useAuthCheck();
@@ -23,7 +28,6 @@ export default function Profile() {
     );
   }
   
-  // Sample posts for the profile
   const userPosts = [
     {
       id: 1,
@@ -48,7 +52,6 @@ export default function Profile() {
   return (
     <MainLayout>
       <div className="space-y-8">
-        {/* Profile Header */}
         <Card className="overflow-hidden">
           <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/40"></div>
           <CardContent className="relative pt-0">
@@ -102,7 +105,6 @@ export default function Profile() {
           </CardContent>
         </Card>
         
-        {/* Profile Content */}
         <Tabs defaultValue="posts" className="w-full">
           <TabsList>
             <TabsTrigger value="posts">Posts</TabsTrigger>

@@ -24,40 +24,45 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
+// Create React component with explicit React import to ensure React is available
+import React from 'react';
 
-            {/* Protected routes */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/community" element={<Community />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/purchases" element={<Purchases />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/complete-profile" element={<CompleteProfile />} />
-            
-            {/* Fallback routes */}
-            <Route path="/home" element={<Navigate to="/" replace />} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+const App: React.FC = () => (
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+
+              {/* Protected routes */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/purchases" element={<Purchases />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+              
+              {/* Fallback routes */}
+              <Route path="/home" element={<Navigate to="/" replace />} />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 export default App;
