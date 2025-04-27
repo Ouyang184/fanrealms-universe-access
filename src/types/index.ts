@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
@@ -35,7 +34,9 @@ export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
   popular?: boolean;
 }
 
-export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_url'> {
+export interface CreatorProfile {
+  id: string;
+  user_id: string;
   username?: string;
   fullName?: string;
   email?: string;
@@ -43,7 +44,7 @@ export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_u
   avatar_url?: string | null;
   profile_image_url?: string | null;
   website?: string | null;
-  banner_url?: string | null;
+  banner_url: string | null; // Changed from optional to required to match DbCreator
   tiers?: Tier[];
 }
 

@@ -32,7 +32,7 @@ export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
   website: string | null;
   bannerImageUrl?: string | null;
-  banner_url?: string | null;
+  banner_url: string | null; // Changed from optional to required
   created_at: string;
   user_id: string;
 }
