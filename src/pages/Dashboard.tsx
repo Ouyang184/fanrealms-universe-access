@@ -1,24 +1,34 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import PostCard from "@/components/PostCard";
+import CreatorProfileCard from "@/components/CreatorProfileCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { usePosts } from "@/hooks/usePosts";
+import { usePopularCreators } from "@/hooks/usePopularCreators";
 import type { Post } from "@/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("posts");
+  const [activeTab, setActiveTab] = useState("feed");
   
+  // Fetch popular creators
+  const { 
+    data: popularCreators = [], 
+    isLoading: loadingCreators 
+  } = usePopularCreators();
+
+  // Fetch user's posts
   const { 
     data: posts = [], 
     isLoading: isLoadingPosts,
@@ -98,31 +108,6 @@ export default function Dashboard() {
     enabled: !!user?.id
   });
 
-  // Set up real-time listener for user's posts
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const postsChannel = supabase
-      .channel(`user-posts-${user.id}`)
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'posts',
-          filter: `author_id=eq.${user.id}` 
-        }, 
-        () => {
-          console.log('User posts changed, refreshing data');
-          refetchPosts();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(postsChannel);
-    };
-  }, [user?.id, refetchPosts]);
-
   if (!user) {
     return (
       <MainLayout>
@@ -137,7 +122,7 @@ export default function Dashboard() {
     );
   }
   
-  if (isLoadingPosts || isLoadingCreator) {
+  if (isLoadingPosts || isLoadingCreator || loadingCreators) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -146,121 +131,92 @@ export default function Dashboard() {
       </MainLayout>
     );
   }
-  
+
   return (
-    <MainLayout showTabs={true}>
+    <MainLayout>
       <div className="space-y-8">
-        <div className="flex justify-between items-center">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold">Your Dashboard</h1>
-            <p className="text-muted-foreground">Manage your content and track your performance</p>
-          </div>
-          <Button asChild>
-            <Link to="/create-post">Create Post</Link>
-          </Button>
-        </div>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="posts">Your Posts</TabsTrigger>
-            <TabsTrigger value="purchases">Your Purchases</TabsTrigger>
-            {creatorProfile && (
-              <TabsTrigger value="creator">Creator Dashboard</TabsTrigger>
-            )}
-          </TabsList>
-          
-          <TabsContent value="posts" className="pt-6">
-            {posts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {posts.map((post) => (
-                  <PostCard 
-                    key={post.id}
-                    {...post}
-                    image={`https://picsum.photos/seed/${post.id}/800/450`}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No posts yet. Create your first post!</p>
-                <Button asChild>
-                  <Link to="/create-post">Create Post</Link>
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="purchases" className="pt-6">
+        {/* Popular Creators Section */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Popular Creators</h2>
+          {popularCreators.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {popularCreators.map((creator) => (
+                <CreatorProfileCard key={creator.id} creator={creator} />
+              ))}
+            </div>
+          ) : (
             <Card>
               <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground mb-4">You haven't made any purchases yet.</p>
-                <Button asChild>
-                  <Link to="/explore">Explore Creators</Link>
-                </Button>
+                <p className="text-muted-foreground">No creators found.</p>
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
+        </section>
+
+        {/* Recent Posts Section */}
+        <section>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">Recent Posts</h2>
+            {creatorProfile && (
+              <Button asChild>
+                <Link to="/create-post">Create Post</Link>
+              </Button>
+            )}
+          </div>
           
-          {creatorProfile && (
-            <TabsContent value="creator" className="pt-6">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Creator Dashboard</h2>
-                  <Button variant="outline" asChild>
-                    <Link to="/settings">Edit Profile</Link>
-                  </Button>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="feed">Your Feed</TabsTrigger>
+              <TabsTrigger value="your-posts">Your Posts</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="feed" className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {posts.length > 0 ? (
+                  posts.map((post) => (
+                    <PostCard key={post.id} {...post} />
+                  ))
+                ) : (
+                  <div className="col-span-2">
+                    <Card>
+                      <CardContent className="py-8 text-center">
+                        <p className="text-muted-foreground mb-4">No posts in your feed yet.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Follow some creators to see their posts here!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="your-posts" className="pt-6">
+              {posts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {posts.map((post) => (
+                    <PostCard key={post.id} {...post} />
+                  ))}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card>
-                    <CardContent className="pt-6">
-                      <h3 className="font-medium mb-2">Total Posts</h3>
-                      <p className="text-3xl font-bold">{posts.length}</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <h3 className="font-medium mb-2">Total Subscribers</h3>
-                      <p className="text-3xl font-bold">0</p>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardContent className="pt-6">
-                      <h3 className="font-medium mb-2">Total Revenue</h3>
-                      <p className="text-3xl font-bold">$0</p>
-                    </CardContent>
-                  </Card>
-                </div>
-                
+              ) : (
                 <Card>
-                  <CardContent className="py-6">
-                    <h3 className="font-medium mb-4">Your Membership Tiers</h3>
-                    {creatorProfile.membership_tiers && creatorProfile.membership_tiers.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {creatorProfile.membership_tiers.map((tier) => (
-                          <Card key={tier.id}>
-                            <CardContent className="pt-6">
-                              <h4 className="font-medium">{tier.title}</h4>
-                              <p className="text-2xl font-bold mt-2">${tier.price}/mo</p>
-                              <p className="text-sm text-muted-foreground mt-2">{tier.description}</p>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <p className="text-muted-foreground mb-4">You haven't set up any membership tiers yet.</p>
-                        <Button>Create Tier</Button>
-                      </div>
+                  <CardContent className="py-8 text-center">
+                    <p className="text-muted-foreground mb-4">
+                      {creatorProfile 
+                        ? "You haven't created any posts yet." 
+                        : "You need to be a creator to create posts."}
+                    </p>
+                    {creatorProfile && (
+                      <Button asChild>
+                        <Link to="/create-post">Create Your First Post</Link>
+                      </Button>
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              )}
             </TabsContent>
-          )}
-        </Tabs>
+          </Tabs>
+        </section>
       </div>
     </MainLayout>
   );
