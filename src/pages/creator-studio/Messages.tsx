@@ -30,8 +30,7 @@ export default function CreatorMessages() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      // Use direct API call with custom types
-      const { data, error } = await supabase.rest.from<MessageData>('messages')
+      const { data, error } = await supabase.from('messages')
         .select(`
           *,
           sender:sender_id (
@@ -40,7 +39,7 @@ export default function CreatorMessages() {
           )
         `)
         .eq('receiver_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as { data: MessageData[] | null, error: any };
 
       if (error) {
         toast({
@@ -101,7 +100,7 @@ export default function CreatorMessages() {
               No messages yet
             </p>
           ) : (
-            messages.map((message: MessageData) => (
+            messages.map((message) => (
               <Message
                 key={message.id}
                 senderName={message.sender.username}

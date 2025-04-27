@@ -38,12 +38,12 @@ export function SendMessageDialog({ isOpen, onClose, receiverId, receiverName }:
     setIsSending(true);
     
     // Use direct API call instead of typed client
-    const { error } = await supabase.rest.from('messages').insert({
+    const { error } = await supabase.from('messages').insert({
       sender_id: user.id,
       receiver_id: receiverId,
       message_text: values.message,
       is_read: false
-    });
+    } as any);
 
     setIsSending(false);
     
