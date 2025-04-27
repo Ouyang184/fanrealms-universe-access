@@ -96,8 +96,6 @@ export default function CreatorMessages() {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Messages</h1>
-        
         <div className="space-y-4">
           {messages.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">

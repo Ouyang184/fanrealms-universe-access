@@ -19,11 +19,7 @@ export function TopBar() {
   const userInitial = profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U';
   
   return (
-    <header className="border-b h-14 px-4 flex items-center justify-between bg-background/60 backdrop-blur-md sticky top-0 z-10">
-      <div className="flex items-center gap-2">
-        {/* Empty div to maintain spacing */}
-      </div>
-      
+    <header className="border-b h-14 px-4 flex items-center justify-end bg-background/60 backdrop-blur-md sticky top-0 z-10">
       <div className="flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
