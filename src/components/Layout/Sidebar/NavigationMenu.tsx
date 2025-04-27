@@ -8,8 +8,13 @@ import {
   Settings
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 
-export function NavigationMenu() {
+interface NavigationMenuProps {
+  isCollapsed?: boolean;
+}
+
+export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   const location = useLocation();
   
   const navigationItems = [
@@ -27,13 +32,17 @@ export function NavigationMenu() {
           <SidebarMenuButton
             asChild
             isActive={location.pathname === item.path}
+            tooltip={isCollapsed ? item.label : undefined}
           >
             <Link 
               to={item.path}
-              className="w-full flex items-center gap-3 px-4 py-2.5"
+              className={cn(
+                "w-full flex items-center py-2.5",
+                isCollapsed ? "px-2 justify-center" : "px-4 gap-3"
+              )}
             >
               <item.icon className="h-5 w-5" />
-              <span className="text-base">{item.label}</span>
+              {!isCollapsed && <span className="text-base">{item.label}</span>}
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
