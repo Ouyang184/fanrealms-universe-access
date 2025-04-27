@@ -15,10 +15,8 @@ interface MessageData {
   message_text: string;
   created_at: string;
   is_read: boolean;
-  sender: {
-    username: string;
-    profile_picture: string | null;
-  };
+  sender_username?: string;
+  sender_profile_picture?: string;
 }
 
 export default function CreatorMessages() {
@@ -30,15 +28,10 @@ export default function CreatorMessages() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await (supabase as any)
+      // Fetch messages where the creator is the receiver
+      const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:sender_id (
-            username,
-            profile_picture
-          )
-        `)
+        .select('*')
         .eq('receiver_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -55,7 +48,37 @@ export default function CreatorMessages() {
         }
       }
 
-      return data || [];
+      // Now fetch user data for senders
+      const senderIds = new Set<string>();
+      messagesData?.forEach(message => {
+        senderIds.add(message.sender_id);
+      });
+
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, profile_picture')
+        .in('id', Array.from(senderIds));
+
+      if (usersError) {
+        console.error("Error loading users:", usersError);
+        return [];
+      }
+
+      // Map user data to messages
+      const userMap = new Map();
+      usersData?.forEach(user => {
+        userMap.set(user.id, user);
+      });
+
+      // Combine message data with sender info
+      return messagesData?.map(message => {
+        const senderData = userMap.get(message.sender_id);
+        return {
+          ...message,
+          sender_username: senderData?.username || "Unknown User",
+          sender_profile_picture: senderData?.profile_picture
+        };
+      }) || [];
     },
     enabled: !!user?.id,
   });
@@ -114,7 +137,7 @@ export default function CreatorMessages() {
             messages.map((message: MessageData) => (
               <Message
                 key={message.id}
-                senderName={message.sender.username}
+                senderName={message.sender_username || "Unknown User"}
                 messageText={message.message_text}
                 createdAt={message.created_at}
                 isRead={message.is_read}
