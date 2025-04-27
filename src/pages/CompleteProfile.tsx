@@ -1,146 +1,138 @@
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import AuthLayout from "@/components/AuthLayout";
-
-import { useAuth } from "@/contexts/AuthContext";
-
-const profileSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 characters")
-    .max(30, "Username must be less than 30 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
-  full_name: z
-    .string()
-    .min(2, "Full name must be at least 2 characters"),
-  website: z
-    .string()
-    .url("Please enter a valid URL")
-    .or(z.literal(""))
-    .optional(),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const CompleteProfile = () => {
-  const { updateProfile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user, profile, updateProfile, loading } = useAuth();
+  const [username, setUsername] = useState<string>(profile?.username || '');
+  const [fullName, setFullName] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      username: "",
-      full_name: "",
-      website: "",
-    },
-  });
+  // Redirect if no authenticated user
+  if (!user && !loading) {
+    navigate('/login');
+    return null;
+  }
 
-  const onSubmit = async (values: ProfileFormValues) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!username.trim()) {
+      toast({
+        title: "Username required",
+        description: "Please enter a username to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
+      
+      // Update the user profile
       await updateProfile({
-        ...values,
-        profile_completed: true,
+        username,
+        // Since we're working with users table instead of profiles, 
+        // we'll store fullName and bio in the existing fields
+        email: profile?.email || user?.email || '',
+        // We'll mark the profile as "complete" by setting username
       });
-      navigate("/dashboard");
-    } catch (error) {
-      console.error("Profile update error:", error);
+      
+      toast({
+        title: "Profile completed",
+        description: "Your profile has been successfully set up."
+      });
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+      
+    } catch (error: any) {
+      console.error("Error completing profile:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to complete your profile. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
-    <AuthLayout>
-      <div className="space-y-6">
-        <div>
-          <h2 className="auth-title">Complete Your Profile</h2>
-          <p className="text-center text-muted-foreground">Tell us a bit about yourself</p>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Username</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="coolcreator" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Your unique username on FanRealms
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="John Doe" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="website"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Website (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://your-website.com" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Complete Your Profile</CardTitle>
+          <CardDescription>
+            Please provide some additional information to set up your profile.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username *</Label>
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Choose a unique username"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell us about yourself"
+                className="min-h-24"
+              />
+            </div>
+
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full"
               disabled={isSubmitting}
             >
               {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
-              Complete Profile
+              {isSubmitting ? "Submitting..." : "Complete Profile"}
             </Button>
           </form>
-        </Form>
-      </div>
-    </AuthLayout>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

@@ -88,17 +88,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const publicRoutes = ['/', '/login', '/signup'];
       const isPublicRoute = publicRoutes.includes(location.pathname);
       
+      // For this demo, we'll consider all profiles as completed
+      // Since we're using the 'users' table which doesn't have a profile_completed field
+      const hasCompletedProfile = profile !== null;
+      
       if (!user && !isPublicRoute) {
         // Redirect to login if not authenticated and trying to access protected route
         navigate('/login');
       } else if (user && isPublicRoute) {
         // If logged in and on a public route (like login/signup), redirect appropriately
-        if (profile?.profile_completed) {
+        if (hasCompletedProfile) {
           navigate('/dashboard');
         } else {
           navigate('/complete-profile');
         }
-      } else if (user && !profile?.profile_completed && location.pathname !== '/complete-profile') {
+      } else if (user && !hasCompletedProfile && location.pathname !== '/complete-profile') {
         // If logged in but profile not completed, and not already on the complete profile page
         navigate('/complete-profile');
       }
@@ -110,7 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single();
@@ -256,7 +260,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       };
 
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update(updates)
         .eq('id', user.id);
 
