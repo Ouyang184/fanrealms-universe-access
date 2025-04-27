@@ -1,62 +1,47 @@
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import PostCard from "@/components/PostCard";
-import { Post } from "@/types";
-
-// Placeholder data for the feed
-const placeholderPosts = [
-  {
-    id: 1,
-    title: "Getting Started with Digital Art: Essential Tools and Techniques",
-    description: "In this comprehensive guide, I'll walk you through everything you need to know about getting started with digital art, from choosing the right tablet to mastering essential techniques used by professionals.",
-    image: "https://picsum.photos/seed/post1/800/450",
-    authorName: "Creative Studio",
-    authorAvatar: "https://picsum.photos/seed/avatar1/100/100",
-    date: "2 days ago"
-  },
-  {
-    id: 2,
-    title: "Building a Sustainable Content Creation Strategy for 2025",
-    description: "Learn how to create content that resonates with your audience while maintaining a sustainable creation schedule. This post covers planning, production techniques, and audience engagement strategies.",
-    image: "https://picsum.photos/seed/post2/800/450",
-    authorName: "Content Masters",
-    authorAvatar: "https://picsum.photos/seed/avatar2/100/100",
-    date: "4 days ago"
-  },
-  {
-    id: 3,
-    title: "Behind the Scenes: Creating My Latest Animation Series",
-    description: "Take a look at my creative process, from initial concept sketches to final rendering. I share tips, challenges faced, and solutions that helped me complete this project on time.",
-    image: "https://picsum.photos/seed/post3/800/450",
-    authorName: "Animation Pro",
-    authorAvatar: "https://picsum.photos/seed/avatar3/100/100",
-    date: "1 week ago"
-  },
-  {
-    id: 4,
-    title: "Monthly Q&A: Your Questions About Game Development Answered",
-    description: "In this month's Q&A session, I address the most common questions from my community about game development, programming challenges, and career advice for aspiring developers.",
-    image: "https://picsum.photos/seed/post4/800/450",
-    authorName: "Game Dev",
-    authorAvatar: "https://picsum.photos/seed/avatar4/100/100",
-    date: "2 weeks ago"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatRelativeDate } from "@/utils/auth-helpers";
+import type { DbPost, Post } from "@/types";
 
 export default function Dashboard() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
-  // Simulate a data fetch
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPosts(placeholderPosts);
-      setLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['userPosts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data: userPosts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users:author_id (
+            username,
+            profile_picture
+          )
+        `)
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching posts:', error);
+        return [];
+      }
+
+      return userPosts.map((post: any) => ({
+        ...post,
+        authorName: post.users.username,
+        authorAvatar: post.users.profile_picture,
+        date: formatRelativeDate(post.created_at)
+      })) as Post[];
+    },
+    enabled: !!user?.id
+  });
   
   return (
     <MainLayout showTabs={true}>
@@ -67,26 +52,28 @@ export default function Dashboard() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {loading ? (
+          {isLoading ? (
             <>
               <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
               <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
-              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
-              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
             </>
-          ) : (
+          ) : posts.length > 0 ? (
             posts.map((post) => (
               <PostCard 
                 key={post.id}
-                id={post.id}
+                id={Number(post.id)}
                 title={post.title}
-                description={post.description}
-                image={post.image}
+                description={post.content}
+                image="https://picsum.photos/seed/post1/800/450" // Placeholder for now
                 authorName={post.authorName}
-                authorAvatar={post.authorAvatar}
+                authorAvatar={post.authorAvatar || ''}
                 date={post.date}
               />
             ))
+          ) : (
+            <div className="col-span-2 text-center py-12">
+              <p className="text-muted-foreground">No posts yet. Create your first post!</p>
+            </div>
           )}
         </div>
       </div>

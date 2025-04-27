@@ -1,36 +1,32 @@
 
 import { User } from "@supabase/supabase-js";
-import { Profile } from "@/lib/supabase";
+import { Database } from "@/integrations/supabase/types";
 
-// Define core types for the application
-export interface Post {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
+export type Tables = Database['public']['Tables'];
+
+// Extend core types to match our database schema
+export type DbUser = Tables['users']['Row'];
+export type DbPost = Tables['posts']['Row'];
+export type DbCreator = Tables['creators']['Row'];
+export type DbMembershipTier = Tables['membership_tiers']['Row'];
+
+// Frontend types with computed/joined fields
+export interface Post extends Omit<DbPost, 'author_id'> {
   authorName: string;
-  authorAvatar: string;
+  authorAvatar: string | null;
   date: string;
 }
 
-export interface Tier {
-  id: string;
+export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
   name: string;
-  price: number;
-  description: string;
   features: string[];
   popular?: boolean;
 }
 
-export interface CreatorProfile extends Profile {
-  bio?: string;
-  coverImage?: string;
-  socialLinks?: {
-    twitter?: string;
-    instagram?: string;
-    youtube?: string;
-    website?: string;
-  };
+export interface CreatorProfile extends DbCreator {
+  username?: string;
+  fullName?: string;
+  email?: string;
   tiers?: Tier[];
 }
 
