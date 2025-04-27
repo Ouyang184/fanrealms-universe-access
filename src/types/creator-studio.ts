@@ -1,5 +1,4 @@
 
-
 import { DbPost, Tier, DbUser, CreatorProfile } from '@/types';
 
 // Stats for the dashboard
@@ -33,7 +32,7 @@ export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
   website: string | null;
   bannerImageUrl?: string | null;
+  banner_url?: string | null; // Add banner_url property
   created_at: string;
   user_id: string;
 }
-

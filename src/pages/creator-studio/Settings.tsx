@@ -76,6 +76,10 @@ export default function CreatorStudioSettings() {
         banner_url: bannerUrl
       }));
       
+      toast({
+        title: "Banner updated",
+        description: "Your banner has been successfully updated."
+      });
     } catch (error: any) {
       console.error('Failed to update banner URL:', error);
       toast({
