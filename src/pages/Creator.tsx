@@ -6,19 +6,24 @@ import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PostCard from "@/components/PostCard";
 import { supabase } from "@/integrations/supabase/client";
 import { formatRelativeDate } from "@/utils/auth-helpers";
-import { CreatorProfile, Post } from "@/types";
+import { useToast } from "@/components/ui/use-toast";
+import type { CreatorProfile, Post } from "@/types";
 
 const CreatorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("posts");
+  const { toast } = useToast();
   
   // Fetch creator profile by username
-  const { data: creator, isLoading: isLoadingCreator } = useQuery({
+  const { 
+    data: creator, 
+    isLoading: isLoadingCreator,
+    refetch: refetchCreator
+  } = useQuery({
     queryKey: ['creatorProfile', id],
     queryFn: async () => {
       if (!id) return null;
@@ -32,6 +37,11 @@ const CreatorPage: React.FC = () => {
       
       if (userError || !userData) {
         console.error('Error fetching user:', userError);
+        toast({
+          title: "Error fetching creator",
+          description: userError?.message || "Creator not found",
+          variant: "destructive"
+        });
         return null;
       }
       
@@ -51,9 +61,29 @@ const CreatorPage: React.FC = () => {
         .eq('user_id', userData.id)
         .single();
       
-      if (creatorError) {
+      if (creatorError && creatorError.code !== 'PGRST116') {
         console.error('Error fetching creator:', creatorError);
+        toast({
+          title: "Error fetching creator profile",
+          description: creatorError.message,
+          variant: "destructive"
+        });
         return null;
+      }
+      
+      if (!creatorData) {
+        // User exists but is not a creator
+        return {
+          id: "",
+          user_id: userData.id,
+          username: userData.username,
+          fullName: userData.username, // Use username as fullName for now
+          email: userData.email,
+          avatar_url: userData.profile_picture,
+          bio: null,
+          created_at: userData.created_at,
+          tiers: []
+        } as CreatorProfile;
       }
       
       // Combine the data
@@ -63,7 +93,6 @@ const CreatorPage: React.FC = () => {
         fullName: userData.username, // Use username as fullName for now
         email: userData.email,
         avatar_url: userData.profile_picture,
-        website: null, // Not in our schema yet, but included for compatibility
         tiers: creatorData.membership_tiers?.map((tier: any) => ({
           ...tier,
           name: tier.title,
@@ -74,7 +103,11 @@ const CreatorPage: React.FC = () => {
   });
   
   // Fetch posts by this creator
-  const { data: posts = [], isLoading: isLoadingPosts } = useQuery({
+  const {
+    data: posts = [], 
+    isLoading: isLoadingPosts,
+    refetch: refetchPosts
+  } = useQuery({
     queryKey: ['creatorPosts', id],
     queryFn: async () => {
       if (!id) return [];
@@ -103,6 +136,11 @@ const CreatorPage: React.FC = () => {
       
       if (error) {
         console.error('Error fetching posts:', error);
+        toast({
+          title: "Error fetching posts",
+          description: error.message,
+          variant: "destructive"
+        });
         return [];
       }
       
@@ -116,6 +154,68 @@ const CreatorPage: React.FC = () => {
     },
     enabled: !!id
   });
+
+  // Set up real-time listeners
+  useEffect(() => {
+    if (!id || !creator?.user_id) return;
+
+    // Listen for changes to creator profile
+    const creatorChannel = supabase
+      .channel(`creator-${creator.user_id}`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'creators',
+          filter: `user_id=eq.${creator.user_id}` 
+        }, 
+        () => {
+          console.log('Creator profile changed, refreshing data');
+          refetchCreator();
+        }
+      )
+      .subscribe();
+
+    // Listen for changes to creator posts
+    const postsChannel = supabase
+      .channel(`creator-posts-${creator.user_id}`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'posts',
+          filter: `author_id=eq.${creator.user_id}` 
+        }, 
+        () => {
+          console.log('Creator posts changed, refreshing data');
+          refetchPosts();
+        }
+      )
+      .subscribe();
+
+    // Listen for changes to membership tiers
+    const tiersChannel = supabase
+      .channel(`creator-tiers-${creator.id}`)
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'membership_tiers',
+          filter: creator.id ? `creator_id=eq.${creator.id}` : undefined
+        }, 
+        () => {
+          console.log('Membership tiers changed, refreshing data');
+          refetchCreator();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(creatorChannel);
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(tiersChannel);
+    };
+  }, [id, creator?.user_id, creator?.id, refetchCreator, refetchPosts]);
   
   if (isLoadingCreator) {
     return (
@@ -171,17 +271,7 @@ const CreatorPage: React.FC = () => {
         
         {/* Creator Bio */}
         <div className="px-4">
-          <p>{creator.bio}</p>
-          {creator.website && (
-            <a 
-              href={creator.website} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-primary hover:underline mt-2 inline-block"
-            >
-              {creator.website}
-            </a>
-          )}
+          <p>{creator.bio || "This creator hasn't added a bio yet."}</p>
         </div>
         
         {/* Tabs */}

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
@@ -12,13 +12,15 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import type { Post, CreatorProfile } from "@/types";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function Explore() {
   const { isChecking } = useAuthCheck();
   const [activeTab, setActiveTab] = useState("posts");
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
-  const { data: posts = [], isLoading: isLoadingPosts } = useQuery({
+  const { data: posts = [], isLoading: isLoadingPosts, refetch: refetchPosts } = useQuery({
     queryKey: ['explorePosts'],
     queryFn: async () => {
       const { data: explorePosts, error } = await supabase
@@ -35,6 +37,11 @@ export default function Explore() {
 
       if (error) {
         console.error('Error fetching posts:', error);
+        toast({
+          title: "Error fetching posts",
+          description: error.message,
+          variant: "destructive"
+        });
         return [];
       }
 
@@ -48,7 +55,7 @@ export default function Explore() {
     }
   });
 
-  const { data: creators = [], isLoading: isLoadingCreators } = useQuery({
+  const { data: creators = [], isLoading: isLoadingCreators, refetch: refetchCreators } = useQuery({
     queryKey: ['creators'],
     queryFn: async () => {
       const { data: creatorProfiles, error } = await supabase
@@ -70,6 +77,11 @@ export default function Explore() {
 
       if (error) {
         console.error('Error fetching creators:', error);
+        toast({
+          title: "Error fetching creators",
+          description: error.message,
+          variant: "destructive"
+        });
         return [];
       }
 
@@ -87,6 +99,36 @@ export default function Explore() {
       })) as CreatorProfile[];
     }
   });
+
+  // Set up real-time listeners for posts and creators
+  useEffect(() => {
+    const postsChannel = supabase
+      .channel('public:posts')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'posts' }, 
+        () => {
+          console.log('Posts changed, refreshing data');
+          refetchPosts();
+        }
+      )
+      .subscribe();
+
+    const creatorsChannel = supabase
+      .channel('public:creators')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'creators' },
+        () => {
+          console.log('Creators changed, refreshing data');
+          refetchCreators();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(postsChannel);
+      supabase.removeChannel(creatorsChannel);
+    };
+  }, [refetchPosts, refetchCreators]);
 
   // Filter content based on search query
   const filteredPosts = searchQuery 

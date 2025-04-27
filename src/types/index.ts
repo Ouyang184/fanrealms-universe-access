@@ -16,9 +16,8 @@ export interface Post extends Omit<DbPost, 'author_id'> {
   authorName: string;
   authorAvatar: string | null;
   date: string;
-  // Add these for compatibility with existing components
-  description?: string;
-  image?: string;
+  description?: string; // Add for compatibility with existing components
+  image?: string;       // Add for compatibility with existing components
 }
 
 export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
