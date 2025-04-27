@@ -20,10 +20,19 @@ import Community from "./pages/Community";
 import Purchases from "./pages/Purchases";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-import Creator from "./pages/Creator"; // New creator page
+import Creator from "./pages/Creator";
 import CompleteProfile from "./pages/CompleteProfile";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+
+// Creator Studio Pages
+import { CreatorStudioLayout } from "./components/creator-studio/CreatorStudioLayout";
+import CreatorStudioDashboard from "./pages/creator-studio/Dashboard";
+import CreatorStudioPosts from "./pages/creator-studio/Posts";
+import CreatorStudioMembershipTiers from "./pages/creator-studio/MembershipTiers";
+import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
+import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
+import CreatorStudioSettings from "./pages/creator-studio/Settings";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +88,20 @@ const App: React.FC = () => (
                   <CompleteProfile />
                 </AuthGuard>
               } />
+              
+              {/* Creator Studio routes */}
+              <Route path="/creator-studio" element={
+                <AuthGuard>
+                  <CreatorStudioLayout />
+                </AuthGuard>
+              }>
+                <Route index element={<CreatorStudioDashboard />} />
+                <Route path="posts" element={<CreatorStudioPosts />} />
+                <Route path="tiers" element={<CreatorStudioMembershipTiers />} />
+                <Route path="subscribers" element={<CreatorStudioSubscribers />} />
+                <Route path="payouts" element={<CreatorStudioPayouts />} />
+                <Route path="settings" element={<CreatorStudioSettings />} />
+              </Route>
               
               {/* Fallback routes */}
               <Route path="/home" element={<Navigate to="/" replace />} />

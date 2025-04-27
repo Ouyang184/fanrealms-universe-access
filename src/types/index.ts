@@ -10,7 +10,9 @@ export type DbUser = Tables['users']['Row'] & {
   updated_at?: string; // Add updated_at field from the database
 };
 export type DbPost = Tables['posts']['Row'];
-export type DbCreator = Tables['creators']['Row'];
+export type DbCreator = Tables['creators']['Row'] & {
+  banner_url?: string | null; // Add banner_url field for creator profiles
+};
 export type DbMembershipTier = Tables['membership_tiers']['Row'];
 
 // Frontend types with computed/joined fields
@@ -41,6 +43,7 @@ export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_u
   avatar_url?: string | null;
   profile_image_url?: string | null;
   website?: string | null;
+  banner_url?: string | null; // Add banner_url field for creator profiles
   tiers?: Tier[];
 }
 
