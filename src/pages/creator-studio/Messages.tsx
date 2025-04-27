@@ -8,6 +8,19 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+interface MessageData {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  message_text: string;
+  created_at: string;
+  is_read: boolean;
+  sender: {
+    username: string;
+    profile_picture: string | null;
+  };
+}
+
 export default function CreatorMessages() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -17,8 +30,8 @@ export default function CreatorMessages() {
     queryFn: async () => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from('messages')
+      // Use direct API call with custom types
+      const { data, error } = await supabase.rest.from<MessageData>('messages')
         .select(`
           *,
           sender:sender_id (
@@ -38,7 +51,7 @@ export default function CreatorMessages() {
         return [];
       }
 
-      return data;
+      return data || [];
     },
     enabled: !!user?.id,
   });
@@ -88,7 +101,7 @@ export default function CreatorMessages() {
               No messages yet
             </p>
           ) : (
-            messages.map((message: any) => (
+            messages.map((message: MessageData) => (
               <Message
                 key={message.id}
                 senderName={message.sender.username}
