@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Visa, Mastercard } from "lucide-react";
+import { CreditCard } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -57,8 +57,10 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-white/60">© 2025 FanRealms. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <Visa className="w-8 h-8 text-white/60" />
-              <Mastercard className="w-8 h-8 text-white/60" />
+              <div className="flex items-center gap-2 text-white/60">
+                <CreditCard className="w-6 h-6" />
+                <span className="text-xs">Credit / Debit Cards Accepted</span>
+              </div>
             </div>
           </div>
         </div>
