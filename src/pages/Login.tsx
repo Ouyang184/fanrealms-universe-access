@@ -1,10 +1,20 @@
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AuthLayout from "@/components/AuthLayout";
 import LoginForm from "@/components/LoginForm";
+import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { isChecking } = useAuthCheck(false, '/dashboard');
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <AuthLayout>

@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function useAuthCheck(
@@ -10,19 +10,21 @@ export function useAuthCheck(
   const [isChecking, setIsChecking] = useState(true);
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading) {
       if (requireAuth && !user) {
-        // Redirect to login if authentication is required but user is not logged in
-        navigate(redirect, { replace: true });
+        // Save the current location to redirect back after login
+        const returnTo = location.pathname + location.search;
+        navigate(`${redirect}?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
       } else if (!requireAuth && user) {
         // Redirect to dashboard if user is already logged in and trying to access public routes
         navigate('/dashboard', { replace: true });
       }
       setIsChecking(false);
     }
-  }, [user, loading, requireAuth, redirect, navigate]);
+  }, [user, loading, requireAuth, redirect, navigate, location]);
 
   return { isChecking: loading || isChecking, user };
 }

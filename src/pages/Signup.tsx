@@ -1,9 +1,10 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import AuthLayout from "@/components/AuthLayout";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,8 +37,17 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
+  const { isChecking } = useAuthCheck(false, '/dashboard');
   const { signUp } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),

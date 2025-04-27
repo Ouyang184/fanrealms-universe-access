@@ -1,9 +1,8 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +31,7 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -45,7 +45,11 @@ const LoginForm = () => {
     try {
       setIsSubmitting(true);
       await signIn(values.email, values.password);
-      // Navigate handled by AuthContext
+      
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo');
+      
+      navigate(returnTo || '/dashboard', { replace: true });
     } catch (error) {
       console.error("Login error:", error);
     } finally {

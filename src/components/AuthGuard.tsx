@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
 
@@ -17,12 +17,14 @@ const AuthGuard = ({
 }: AuthGuardProps) => {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (loading) return;
 
     if (!user && requireAuth) {
-      navigate("/login");
+      const returnTo = location.pathname + location.search;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
 
@@ -30,7 +32,7 @@ const AuthGuard = ({
       navigate("/complete-profile");
       return;
     }
-  }, [user, profile, loading, navigate, requireAuth, requireCompleteProfile]);
+  }, [user, profile, loading, navigate, location, requireAuth, requireCompleteProfile]);
 
   if (loading) {
     return (
