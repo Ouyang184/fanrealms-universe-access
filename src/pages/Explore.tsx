@@ -1,4 +1,5 @@
 
+import React from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import PostCard from "@/components/PostCard";
@@ -82,7 +83,17 @@ export default function Explore() {
           {isLoadingPosts ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <PostCard key={i} isLoading={true} id="" title="" content="" authorName="" created_at="" />
+                <PostCard 
+                  key={i} 
+                  isLoading={true} 
+                  id="" 
+                  title="" 
+                  content="" 
+                  authorName="" 
+                  created_at="" 
+                  authorAvatar={null} 
+                  date=""
+                />
               ))}
             </div>
           ) : posts.length > 0 ? (
