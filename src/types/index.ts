@@ -1,4 +1,3 @@
-
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
@@ -38,3 +37,14 @@ export interface CreatorProfile extends Omit<DbCreator, 'bio' | 'profile_image_u
 }
 
 export type AuthUser = User;
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  creator_id: string;
+  tier_id: string | null;
+  created_at: string;
+  is_paid: boolean;
+  creator?: CreatorProfile;
+  tier?: Tier;
+}
