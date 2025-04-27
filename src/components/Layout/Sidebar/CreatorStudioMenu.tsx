@@ -22,6 +22,7 @@ interface CreatorStudioMenuProps {
 const creatorStudioItems = [
   { label: 'Dashboard', path: '/creator-studio' },
   { label: 'Posts', path: '/creator-studio/posts' },
+  { label: 'Messages', path: '/creator-studio/messages' },
   { label: 'Membership Tiers', path: '/creator-studio/tiers' },
   { label: 'Subscribers', path: '/creator-studio/subscribers' },
   { label: 'Payouts', path: '/creator-studio/payouts' },

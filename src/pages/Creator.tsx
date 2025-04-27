@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -12,13 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { useToast } from "@/components/ui/use-toast";
 import type { CreatorProfile, Post } from "@/types";
+import { SendMessageDialog } from "@/components/messaging/SendMessageDialog";
 
 const CreatorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("posts");
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = React.useState(false);
   const { toast } = useToast();
   
-  // Fetch creator profile by username
   const { 
     data: creator, 
     isLoading: isLoadingCreator,
@@ -28,7 +28,6 @@ const CreatorPage: React.FC = () => {
     queryFn: async () => {
       if (!id) return null;
       
-      // First, find the user with the matching username
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -45,7 +44,6 @@ const CreatorPage: React.FC = () => {
         return null;
       }
       
-      // Then get the creator profile for that user
       const { data: creatorData, error: creatorError } = await supabase
         .from('creators')
         .select(`
@@ -72,7 +70,6 @@ const CreatorPage: React.FC = () => {
       }
       
       if (!creatorData) {
-        // User exists but is not a creator
         return {
           id: "",
           user_id: userData.id,
@@ -86,7 +83,6 @@ const CreatorPage: React.FC = () => {
         } as CreatorProfile;
       }
       
-      // Combine the data
       return {
         ...creatorData,
         username: userData.username,
@@ -102,7 +98,6 @@ const CreatorPage: React.FC = () => {
     }
   });
   
-  // Fetch posts by this creator
   const {
     data: posts = [], 
     isLoading: isLoadingPosts,
@@ -112,7 +107,6 @@ const CreatorPage: React.FC = () => {
     queryFn: async () => {
       if (!id) return [];
       
-      // First, find the user with the matching username
       const { data: userData } = await supabase
         .from('users')
         .select('id')
@@ -121,7 +115,6 @@ const CreatorPage: React.FC = () => {
       
       if (!userData) return [];
       
-      // Then get posts authored by this user
       const { data: postsData, error } = await supabase
         .from('posts')
         .select(`
@@ -154,11 +147,9 @@ const CreatorPage: React.FC = () => {
     enabled: !!id
   });
 
-  // Set up real-time listeners
   useEffect(() => {
     if (!id || !creator?.user_id) return;
 
-    // Listen for changes to creator profile
     const creatorChannel = supabase
       .channel(`creator-${creator.user_id}`)
       .on('postgres_changes', 
@@ -175,7 +166,6 @@ const CreatorPage: React.FC = () => {
       )
       .subscribe();
 
-    // Listen for changes to creator posts
     const postsChannel = supabase
       .channel(`creator-posts-${creator.user_id}`)
       .on('postgres_changes', 
@@ -192,7 +182,6 @@ const CreatorPage: React.FC = () => {
       )
       .subscribe();
 
-    // Listen for changes to membership tiers
     const tiersChannel = supabase
       .channel(`creator-tiers-${creator.id}`)
       .on('postgres_changes', 
@@ -246,10 +235,8 @@ const CreatorPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="space-y-8 max-w-5xl mx-auto">
-        {/* Creator Header */}
         <div className="relative">
           <div className="h-48 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg overflow-hidden">
-            {/* Creator Cover Image (if available) */}
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-end p-4 -mt-16 md:-mt-12">
             <Avatar className="h-32 w-32 border-4 border-background">
@@ -262,18 +249,19 @@ const CreatorPage: React.FC = () => {
               <h1 className="text-3xl font-bold">{displayName}</h1>
               <p className="text-muted-foreground">@{creator.username}</p>
             </div>
-            <div className="mt-4 md:mt-0">
+            <div className="mt-4 md:mt-0 space-x-2">
+              <Button onClick={() => setIsMessageDialogOpen(true)}>
+                Message
+              </Button>
               <Button>Subscribe</Button>
             </div>
           </div>
         </div>
         
-        {/* Creator Bio */}
         <div className="px-4">
           <p>{creator.bio || "This creator hasn't added a bio yet."}</p>
         </div>
         
-        {/* Tabs */}
         <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 max-w-md mx-auto">
             <TabsTrigger value="posts">Posts</TabsTrigger>
@@ -332,6 +320,12 @@ const CreatorPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <SendMessageDialog
+        isOpen={isMessageDialogOpen}
+        onClose={() => setIsMessageDialogOpen(false)}
+        receiverId={creator.user_id}
+        receiverName={displayName}
+      />
     </MainLayout>
   );
 };

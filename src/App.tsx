@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -32,6 +31,7 @@ import CreatorStudioMembershipTiers from "./pages/creator-studio/MembershipTiers
 import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
 import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
+import CreatorMessages from "./pages/creator-studio/Messages";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +93,13 @@ const App: React.FC = () => (
                 <AuthGuard>
                   <MainLayout>
                     <CreatorStudioDashboard />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/messages" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorMessages />
                   </MainLayout>
                 </AuthGuard>
               } />
