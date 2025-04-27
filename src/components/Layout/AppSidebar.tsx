@@ -1,130 +1,211 @@
 
-import { Home, Compass, Users, Bell, ShoppingBag, Settings, Star, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  Sidebar,
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+import { 
+  Sidebar, 
+  SidebarHeader, 
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
+  SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator
+  SidebarMenuButton,
+  SidebarSeparator,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton
 } from '@/components/ui/sidebar';
 
-// Main navigation items
-const mainNavItems = [
-  { name: 'Home', path: '/dashboard', icon: Home },
-  { name: 'Explore', path: '/explore', icon: Compass },
-  { name: 'Community', path: '/community', icon: Users },
-  { name: 'Notifications', path: '/notifications', icon: Bell },
-  { name: 'Purchases', path: '/purchases', icon: ShoppingBag },
-  { name: 'Settings', path: '/settings', icon: Settings },
-];
-
-// Example memberships - in a real app, these would come from an API
-const membershipItems = [
-  { id: 1, name: 'Creator Studio', path: '/creators/studio', image: '/placeholder.svg' },
-  { id: 2, name: 'Art Community', path: '/creators/art', image: '/placeholder.svg' },
-  { id: 3, name: 'Game Dev', path: '/creators/gamedev', image: '/placeholder.svg' },
-];
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function AppSidebar() {
+  const { user, profile, loading, signOut } = useAuth();
   const location = useLocation();
-  const { signOut } = useAuth();
-  const isActive = (path: string) => location.pathname === path;
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+  const [isCreatorStudioExpanded, setIsCreatorStudioExpanded] = useState(false);
+
+  useEffect(() => {
+    // Check if the current route is under Creator Studio to expand the section
+    const isCreatorStudioRoute = location.pathname.startsWith('/creator-studio');
+    setIsCreatorStudioExpanded(isCreatorStudioRoute);
+  }, [location.pathname]);
+
+  const toggleProfileExpansion = () => {
+    setIsProfileExpanded(!isProfileExpanded);
+  };
+
+  const toggleCreatorStudioExpansion = () => {
+    setIsCreatorStudioExpanded(!isCreatorStudioExpanded);
+  };
+
+  if (loading) {
+    return <div>Loading sidebar...</div>;
+  }
 
   return (
-    <Sidebar className="border-r border-border">
-      <SidebarHeader className="p-4">
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <span className="font-bold text-xl gradient-text">FanRealms</span>
-        </Link>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="space-y-2">
+        <div className="flex items-center justify-center p-4">
+          <Link to="/dashboard" className="flex items-center gap-2 font-semibold">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile?.profile_picture || undefined} alt={profile?.username || "User"} />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <span className="hidden md:inline">FanRealms</span>
+          </Link>
+        </div>
       </SidebarHeader>
-
+      
       <SidebarContent>
-        {/* Main Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => (
-                <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.path)}
-                    tooltip={item.name}
-                  >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        {/* Memberships Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            <span>My Memberships</span>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {membershipItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.path)}
-                    tooltip={item.name}
-                  >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <Avatar className="h-5 w-5">
-                        <AvatarImage src={item.image} alt={item.name} />
-                        <AvatarFallback className="text-xs">
-                          {item.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate">{item.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-
-      <SidebarFooter className="p-4 mt-auto">
-        <SidebarSeparator className="mb-4" />
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={signOut}
-              size="sm"
-              variant="outline"
-              className="w-full text-muted-foreground hover:text-destructive"
-              tooltip="Sign Out"
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/dashboard'}
+              tooltip="Dashboard"
             >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+              <Link to="/dashboard">Dashboard</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/explore'}
+              tooltip="Explore"
+            >
+              <Link to="/explore">Explore</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/notifications'}
+              tooltip="Notifications"
+            >
+              <Link to="/notifications">Notifications</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/purchases'}
+              tooltip="Purchases"
+            >
+              <Link to="/purchases">Purchases</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+
+          <SidebarSeparator />
+
+          <SidebarMenuItem>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="creator-studio">
+                <AccordionTrigger 
+                  className="group-data-[collapsible=icon]:hidden"
+                  onClick={toggleCreatorStudioExpansion}
+                >
+                  Creator Studio
+                  <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform duration-200 peer-data-[state=open]:rotate-180")}/>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio'}
+                        tooltip="Dashboard"
+                      >
+                        <Link to="/creator-studio">Dashboard</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio/posts'}
+                        tooltip="Posts"
+                      >
+                        <Link to="/creator-studio/posts">Posts</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio/tiers'}
+                        tooltip="Membership Tiers"
+                      >
+                        <Link to="/creator-studio/tiers">Membership Tiers</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio/subscribers'}
+                        tooltip="Subscribers"
+                      >
+                        <Link to="/creator-studio/subscribers">Subscribers</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio/payouts'}
+                        tooltip="Payouts"
+                      >
+                        <Link to="/creator-studio/payouts">Payouts</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={location.pathname === '/creator-studio/settings'}
+                        tooltip="Settings"
+                      >
+                        <Link to="/creator-studio/settings">Settings</Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </SidebarMenuItem>
+
+          <SidebarSeparator />
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              asChild
+              isActive={location.pathname === '/settings'}
+              tooltip="Settings"
+            >
+              <Link to="/settings">Settings</Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => signOut()} tooltip="Logout">
+              Logout
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="text-xs text-muted-foreground mt-4">
-          FanRealms © {new Date().getFullYear()}
-        </div>
+      </SidebarContent>
+      
+      <SidebarFooter>
+        <p className="px-2 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} FanRealms
+        </p>
       </SidebarFooter>
     </Sidebar>
   );

@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { MainLayout } from "@/components/Layout/MainLayout";
 
 // Pages
 import Home from "./pages/Home";
@@ -20,10 +20,18 @@ import Community from "./pages/Community";
 import Purchases from "./pages/Purchases";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
-import Creator from "./pages/Creator"; // New creator page
+import Creator from "./pages/Creator";
 import CompleteProfile from "./pages/CompleteProfile";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
+
+// Creator Studio Pages
+import CreatorStudioDashboard from "./pages/creator-studio/Dashboard";
+import CreatorStudioPosts from "./pages/creator-studio/Posts";
+import CreatorStudioMembershipTiers from "./pages/creator-studio/MembershipTiers";
+import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
+import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
+import CreatorStudioSettings from "./pages/creator-studio/Settings";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +85,50 @@ const App: React.FC = () => (
               <Route path="/complete-profile" element={
                 <AuthGuard requireCompleteProfile={false}>
                   <CompleteProfile />
+                </AuthGuard>
+              } />
+              
+              {/* Creator Studio routes */}
+              <Route path="/creator-studio" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioDashboard />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/posts" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioPosts />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/tiers" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioMembershipTiers />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/subscribers" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioSubscribers />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/payouts" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioPayouts />
+                  </MainLayout>
+                </AuthGuard>
+              } />
+              <Route path="/creator-studio/settings" element={
+                <AuthGuard>
+                  <MainLayout>
+                    <CreatorStudioSettings />
+                  </MainLayout>
                 </AuthGuard>
               } />
               
