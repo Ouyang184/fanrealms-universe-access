@@ -15,7 +15,7 @@ export const isAuthenticated = async () => {
  */
 export const getUserProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
-    .from("profiles")
+    .from("users")
     .select("*")
     .eq("id", userId)
     .single();

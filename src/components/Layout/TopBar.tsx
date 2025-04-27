@@ -27,7 +27,7 @@ export function TopBar() {
     }
   };
   
-  const userInitial = profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U';
+  const userInitial = profile?.username?.charAt(0) || user?.email?.charAt(0) || 'U';
   
   return (
     <header className="border-b h-14 px-4 flex items-center justify-between bg-background/60 backdrop-blur-md sticky top-0 z-10">
@@ -40,7 +40,7 @@ export function TopBar() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full" size="icon">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                <AvatarImage src={profile?.profile_picture || undefined} alt={profile?.username || "User"} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {userInitial}
                 </AvatarFallback>
@@ -50,8 +50,8 @@ export function TopBar() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <div className="flex items-center justify-start gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
-                {profile?.full_name && (
-                  <p className="font-medium">{profile.full_name}</p>
+                {profile?.username && (
+                  <p className="font-medium">{profile.username}</p>
                 )}
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>

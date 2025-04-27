@@ -17,9 +17,8 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
-    full_name: '',
-    website: '',
-    // Note: If you need to add bio, ensure it's in the Profile type
+    email: '',
+    profile_picture: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -28,8 +27,8 @@ const ProfilePage: React.FC = () => {
     if (profile) {
       setFormData({
         username: profile.username || '',
-        full_name: profile.full_name || '',
-        website: profile.website || '',
+        email: profile.email || '',
+        profile_picture: profile.profile_picture || '',
       });
     }
   }, [profile]);
@@ -99,27 +98,28 @@ const ProfilePage: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="full_name" className="block text-sm font-medium">
-                      Full Name
+                    <label htmlFor="email" className="block text-sm font-medium">
+                      Email
                     </label>
                     <Input 
-                      id="full_name"
-                      name="full_name"
-                      value={formData.full_name}
+                      id="email"
+                      name="email"
+                      value={formData.email}
                       onChange={handleChange}
-                      placeholder="Enter your full name"
+                      placeholder="Enter your email"
+                      disabled
                     />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="website" className="block text-sm font-medium">
-                      Website
+                    <label htmlFor="profile_picture" className="block text-sm font-medium">
+                      Profile Picture URL
                     </label>
                     <Input 
-                      id="website"
-                      name="website"
-                      value={formData.website}
+                      id="profile_picture"
+                      name="profile_picture"
+                      value={formData.profile_picture}
                       onChange={handleChange}
-                      placeholder="Enter your website URL"
+                      placeholder="Enter your profile picture URL"
                     />
                   </div>
                   <div className="flex justify-end space-x-2 pt-4">
@@ -144,13 +144,13 @@ const ProfilePage: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                      <AvatarImage src={profile?.profile_picture || undefined} alt={profile?.username || "User"} />
                       <AvatarFallback className="text-lg">
-                        {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                        {profile?.username?.charAt(0) || user?.email?.charAt(0) || "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{profile?.full_name}</h3>
+                      <h3 className="text-lg font-semibold">{profile?.username}</h3>
                       <p className="text-muted-foreground">@{profile?.username}</p>
                     </div>
                   </div>
@@ -159,19 +159,6 @@ const ProfilePage: React.FC = () => {
                       <h4 className="text-sm font-medium">Email</h4>
                       <p className="text-muted-foreground">{user?.email}</p>
                     </div>
-                    {profile?.website && (
-                      <div>
-                        <h4 className="text-sm font-medium">Website</h4>
-                        <a 
-                          href={profile.website} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-primary hover:underline"
-                        >
-                          {profile.website}
-                        </a>
-                      </div>
-                    )}
                   </div>
                   <Button 
                     onClick={() => setIsEditing(true)}

@@ -13,8 +13,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const CompleteProfile = () => {
   const { user, profile, updateProfile, loading } = useAuth();
   const [username, setUsername] = useState<string>(profile?.username || '');
-  const [fullName, setFullName] = useState<string>('');
-  const [bio, setBio] = useState<string>('');
+  const [profilePicture, setProfilePicture] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   const navigate = useNavigate();
@@ -44,10 +43,8 @@ const CompleteProfile = () => {
       // Update the user profile
       await updateProfile({
         username,
-        // Since we're working with users table instead of profiles, 
-        // we'll store fullName and bio in the existing fields
         email: profile?.email || user?.email || '',
-        // We'll mark the profile as "complete" by setting username
+        profile_picture: profilePicture || null,
       });
       
       toast({
@@ -101,23 +98,12 @@ const CompleteProfile = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="profilePicture">Profile Picture URL</Label>
               <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself"
-                className="min-h-24"
+                id="profilePicture"
+                value={profilePicture}
+                onChange={(e) => setProfilePicture(e.target.value)}
+                placeholder="Enter a URL for your profile picture"
               />
             </div>
 

@@ -198,21 +198,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // Create an empty profile record
+      // Create an empty user record
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
+        const { error: userError } = await supabase
+          .from('users')
           .insert([
             { 
               id: data.user.id, 
-              username: '', 
-              full_name: '', 
-              profile_completed: false 
+              email: data.user.email || '',
+              username: email.split('@')[0], // Default username from email
             }
           ]);
 
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
+        if (userError) {
+          console.error('Error creating user:', userError);
         }
       }
       
