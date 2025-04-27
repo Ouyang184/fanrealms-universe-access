@@ -32,4 +32,6 @@ export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
   website: string | null;
   bannerImageUrl?: string | null;
+  created_at: string;
+  user_id: string;
 }
