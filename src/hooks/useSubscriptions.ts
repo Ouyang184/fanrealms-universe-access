@@ -2,10 +2,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { Subscription } from '@/types';
 
 export const useSubscriptions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Get user's subscriptions
   const { data: subscriptions, isLoading: loadingSubscriptions } = useQuery({
@@ -45,15 +48,16 @@ export const useSubscriptions = () => {
   // Subscribe/Follow a creator
   const { mutate: subscribe } = useMutation({
     mutationFn: async ({ creatorId, tierId }: { creatorId: string, tierId?: string }) => {
+      if (!user) throw new Error("User must be logged in to subscribe");
+      
       const { data, error } = await supabase
         .from('subscriptions')
-        .insert([
-          {
-            creator_id: creatorId,
-            tier_id: tierId,
-            is_paid: !!tierId,
-          },
-        ])
+        .insert({
+          creator_id: creatorId,
+          user_id: user.id,
+          tier_id: tierId,
+          is_paid: !!tierId,
+        })
         .select()
         .single();
 
