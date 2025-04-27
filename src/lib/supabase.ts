@@ -7,7 +7,7 @@ const supabaseKey = window.env?.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables are set
 if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+  console.error('Missing Supabase environment variables. Please check window.env settings in index.html.');
 }
 
 // Create a single instance of the Supabase client
