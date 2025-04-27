@@ -11,6 +11,7 @@ import {
   SidebarMenuButton,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { NavigationMenu } from './Sidebar/NavigationMenu';
 import { CreatorStudioMenu } from './Sidebar/CreatorStudioMenu';
@@ -33,22 +34,26 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="pb-6">
-        <NavigationMenu />
-        
-        <SidebarSeparator />
-        
-        <CreatorStudioMenu />
+      <SidebarContent className="flex-1">
+        <ScrollArea className="h-full scrollbar-none">
+          <div className="pb-6">
+            <NavigationMenu />
+            
+            <SidebarSeparator />
+            
+            <CreatorStudioMenu />
 
-        <SidebarSeparator />
+            <SidebarSeparator />
 
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={signOut} tooltip="Logout">
-              Logout
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={signOut} tooltip="Logout">
+                  Logout
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
+        </ScrollArea>
       </SidebarContent>
       
       <SidebarFooter>
