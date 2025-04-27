@@ -1,153 +1,193 @@
-import { MainLayout } from "@/components/Layout/MainLayout";
-import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { ContentCard } from "@/components/ContentCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
-import { Settings } from "lucide-react";
 
-declare module '@/lib/supabase' {
-  interface Profile {
-    bio?: string;
-  }
-}
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { MainLayout } from '@/components/Layout/MainLayout';
+import { useToast } from '@/hooks/use-toast';
+import { AuthGuard } from '@/components/AuthGuard';
 
-export default function Profile() {
-  const { isChecking } = useAuthCheck();
-  const { user, profile } = useAuth();
-  
-  if (isChecking) {
+// Be careful not to use Profile as the component name since it conflicts with the Profile type
+const ProfilePage: React.FC = () => {
+  const { user, profile, updateProfile, loading } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    full_name: '',
+    website: '',
+    // Note: If you need to add bio, ensure it's in the Profile type
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        username: profile.username || '',
+        full_name: profile.full_name || '',
+        website: profile.website || '',
+      });
+    }
+  }, [profile]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setIsSubmitting(true);
+      await updateProfile(formData);
+      setIsEditing(false);
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been successfully updated.",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update failed",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <MainLayout>
+        <div className="flex justify-center items-center h-[60vh]">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
     );
   }
-  
-  const userPosts = [
-    {
-      id: 1,
-      title: "My Experience with Digital Art",
-      description: "Here's a quick overview of my journey with digital art, including the tools I use and techniques I've learned along the way.",
-      image: "https://picsum.photos/seed/user1/800/450",
-      authorName: profile?.full_name || user?.email?.split('@')[0] || "User",
-      authorAvatar: profile?.avatar_url || undefined,
-      date: "1 week ago"
-    },
-    {
-      id: 2,
-      title: "Productivity Tips for Content Creators",
-      description: "After years of creating content, I've learned some valuable lessons about staying productive. Here are my top tips for fellow creators.",
-      image: "https://picsum.photos/seed/user2/800/450",
-      authorName: profile?.full_name || user?.email?.split('@')[0] || "User",
-      authorAvatar: profile?.avatar_url || undefined,
-      date: "2 weeks ago"
-    }
-  ];
-  
+
   return (
-    <MainLayout>
-      <div className="space-y-8">
-        <Card className="overflow-hidden">
-          <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/40"></div>
-          <CardContent className="relative pt-0">
-            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-end -mt-16 mb-6">
-              <Avatar className="h-32 w-32 border-4 border-background">
-                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
-                <AvatarFallback className="text-4xl bg-primary/20 text-primary">
-                  {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col sm:flex-row w-full justify-between items-center gap-4">
-                <div className="text-center sm:text-left">
-                  <h1 className="text-2xl font-bold">
-                    {profile?.full_name || user?.email?.split('@')[0] || "User"}
-                  </h1>
-                  <p className="text-muted-foreground">
-                    @{profile?.username || user?.email?.split('@')[0] || "username"}
-                  </p>
-                </div>
-                <Button variant="outline" asChild size="sm">
-                  <Link to="/settings" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
+    <AuthGuard>
+      <MainLayout>
+        <div className="max-w-3xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>{isEditing ? 'Edit Profile' : 'Profile'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isEditing ? (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="username" className="block text-sm font-medium">
+                      Username
+                    </label>
+                    <Input 
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="Enter your username"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="full_name" className="block text-sm font-medium">
+                      Full Name
+                    </label>
+                    <Input 
+                      id="full_name"
+                      name="full_name"
+                      value={formData.full_name}
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="website" className="block text-sm font-medium">
+                      Website
+                    </label>
+                    <Input 
+                      id="website"
+                      name="website"
+                      value={formData.website}
+                      onChange={handleChange}
+                      placeholder="Enter your website URL"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
+                      Save Changes
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                      <AvatarFallback className="text-lg">
+                        {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="text-lg font-semibold">{profile?.full_name}</h3>
+                      <p className="text-muted-foreground">@{profile?.username}</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-3">
+                    <div>
+                      <h4 className="text-sm font-medium">Email</h4>
+                      <p className="text-muted-foreground">{user?.email}</p>
+                    </div>
+                    {profile?.website && (
+                      <div>
+                        <h4 className="text-sm font-medium">Website</h4>
+                        <a 
+                          href={profile.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-primary hover:underline"
+                        >
+                          {profile.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => setIsEditing(true)}
+                    variant="outline"
+                    className="mt-4"
+                  >
                     Edit Profile
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            
-            {profile?.website && (
-              <div className="mb-4 text-center sm:text-left">
-                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  {profile.website}
-                </a>
-              </div>
-            )}
-            
-            <div className="flex justify-center sm:justify-start gap-8 pb-2">
-              <div className="text-center">
-                <p className="font-semibold">2</p>
-                <p className="text-sm text-muted-foreground">Posts</p>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">142</p>
-                <p className="text-sm text-muted-foreground">Followers</p>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">24</p>
-                <p className="text-sm text-muted-foreground">Following</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList>
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="collections">Collections</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
-          </TabsList>
-          <div className="mt-6">
-            <TabsContent value="posts" className="m-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {userPosts.map((post) => (
-                  <ContentCard 
-                    key={post.id}
-                    title={post.title}
-                    description={post.description}
-                    image={post.image}
-                    authorName={post.authorName}
-                    authorAvatar={post.authorAvatar}
-                    date={post.date}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="collections" className="m-0">
-              <Card>
-                <CardContent className="py-10 text-center">
-                  <p className="text-muted-foreground">You haven't created any collections yet.</p>
-                  <Button className="mt-4">Create Collection</Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="about" className="m-0">
-              <Card>
-                <CardContent className="py-6">
-                  <h3 className="font-semibold mb-2">About Me</h3>
-                  <p className="text-muted-foreground">
-                    {profile?.bio || "No bio provided yet. Edit your profile to add more information about yourself."}
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
-    </MainLayout>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    </AuthGuard>
   );
-}
+};
+
+export default ProfilePage;
