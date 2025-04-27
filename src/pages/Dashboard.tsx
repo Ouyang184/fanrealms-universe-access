@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { ContentCard } from "@/components/ContentCard";
-import { ContentCardSkeleton } from "@/components/ContentCardSkeleton";
+import PostCard from "@/components/PostCard";
+import { Post } from "@/types";
 
 // Placeholder data for the feed
 const placeholderPosts = [
@@ -45,7 +45,7 @@ const placeholderPosts = [
 ];
 
 export default function Dashboard() {
-  const [posts, setPosts] = useState<typeof placeholderPosts>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Simulate a data fetch
@@ -69,15 +69,16 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {loading ? (
             <>
-              <ContentCardSkeleton />
-              <ContentCardSkeleton />
-              <ContentCardSkeleton />
-              <ContentCardSkeleton />
+              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
+              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
+              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
+              <PostCard isLoading={true} id={0} title="" description="" image="" authorName="" authorAvatar="" date="" />
             </>
           ) : (
             posts.map((post) => (
-              <ContentCard 
+              <PostCard 
                 key={post.id}
+                id={post.id}
                 title={post.title}
                 description={post.description}
                 image={post.image}

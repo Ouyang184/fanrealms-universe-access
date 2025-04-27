@@ -18,6 +18,7 @@ import Community from "./pages/Community";
 import Purchases from "./pages/Purchases";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
+import Creator from "./pages/Creator"; // New creator page
 import CompleteProfile from "./pages/CompleteProfile";
 import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
@@ -50,6 +51,7 @@ const App: React.FC = () => (
               <Route path="/purchases" element={<Purchases />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/creator/:id" element={<Creator />} /> {/* New creator page route */}
               <Route path="/complete-profile" element={<CompleteProfile />} />
               
               {/* Fallback routes */}
