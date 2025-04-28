@@ -12,7 +12,7 @@ export type Profile = {
 };
 
 export type AuthResult = 
-  | { success: true; user: User; session: Session }
+  | { success: true; user: User; session: Session | null }
   | { success: false; error: string };
 
 export type AuthContextType = {
