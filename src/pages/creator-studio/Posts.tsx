@@ -1,4 +1,8 @@
+
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pencil, Trash } from "lucide-react";
@@ -22,28 +26,53 @@ interface Post {
 }
 
 export default function CreatorStudioPosts() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([
-    { id: '1', title: 'Getting Started with FanRealms', tier: null, created_at: '2025-04-15T12:00:00Z' },
-    { id: '2', title: 'Exclusive Content for Supporters', tier: 'Premium', created_at: '2025-04-18T15:30:00Z' },
-    { id: '3', title: 'Behind the Scenes', tier: 'VIP', created_at: '2025-04-20T09:45:00Z' },
-    { id: '4', title: 'Weekly Update', tier: null, created_at: '2025-04-22T14:20:00Z' },
-    { id: '5', title: 'Q&A Session Announcement', tier: null, created_at: '2025-04-25T11:10:00Z' },
-  ]);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  // Fetch posts from Supabase
+  const { 
+    data: posts = [], 
+    isLoading,
+    refetch: refetchPosts
+  } = useQuery({
+    queryKey: ["userPosts"],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select(`
+          id, 
+          title, 
+          created_at,
+          tier_id,
+          membership_tiers(title)
+        `)
+        .eq("author_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching posts:", error);
+        return [];
+      }
+
+      return data.map(post => ({
+        id: post.id,
+        title: post.title,
+        tier: post.membership_tiers?.title || null,
+        created_at: post.created_at
+      }));
+    },
+    enabled: !!user
+  });
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
-    });
-  }
-
-  function handleCreatePost() {
-    toast({
-      title: "Coming Soon",
-      description: "The post creation feature is currently being developed."
     });
   }
 
@@ -54,13 +83,29 @@ export default function CreatorStudioPosts() {
     });
   }
 
-  function handleDeletePost(id: string) {
-    toast({
-      description: `Post with ID: ${id} has been removed.`,
-      variant: "destructive"
-    });
-    
-    setPosts(posts.filter(post => post.id !== id));
+  async function handleDeletePost(id: string) {
+    try {
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", id);
+      
+      if (error) throw error;
+      
+      toast({
+        description: "Post has been removed."
+      });
+      
+      // Refresh posts list
+      refetchPosts();
+      
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete post",
+        variant: "destructive"
+      });
+    }
   }
 
   return (
@@ -82,7 +127,13 @@ export default function CreatorStudioPosts() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {posts.length > 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                  Loading posts...
+                </TableCell>
+              </TableRow>
+            ) : posts.length > 0 ? (
               posts.map((post) => (
                 <TableRow key={post.id}>
                   <TableCell className="font-medium">{post.title}</TableCell>
@@ -105,7 +156,7 @@ export default function CreatorStudioPosts() {
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                  {isLoading ? 'Loading posts...' : 'No posts found. Create your first post!'}
+                  No posts found. Create your first post!
                 </TableCell>
               </TableRow>
             )}

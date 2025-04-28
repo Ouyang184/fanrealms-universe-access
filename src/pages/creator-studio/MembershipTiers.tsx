@@ -1,5 +1,8 @@
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus, Pencil, Trash } from "lucide-react";
@@ -14,64 +17,93 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-
-interface Tier {
-  id: string;
-  name: string;
-  price: number;
-  subscriberCount: number;
-  features: string[];
-}
+import { CreateTierForm, Tier } from "@/components/creator-studio/CreateTierForm";
+import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
 
 export default function CreatorStudioTiers() {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [tiers, setTiers] = useState<Tier[]>([
-    { 
-      id: '1', 
-      name: 'Basic Supporter', 
-      price: 5, 
-      subscriberCount: 89,
-      features: ['Exclusive posts', 'Community access']
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingTier, setEditingTier] = useState<Tier | null>(null);
+  const [deletingTier, setDeletingTier] = useState<{id: string, name: string} | null>(null);
+
+  // Fetch tiers from Supabase
+  const { 
+    data: tiers = [], 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ["tiers"],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // First, get the creator ID
+      const { data: creatorData, error: creatorError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (creatorError) {
+        console.error("Error fetching creator:", creatorError);
+        return [];
+      }
+
+      // Then get the tiers for this creator
+      const { data: tiersData, error: tiersError } = await supabase
+        .from("membership_tiers")
+        .select(`
+          id,
+          title,
+          price,
+          description,
+          created_at,
+          subscriptions:subscriptions(count)
+        `)
+        .eq("creator_id", creatorData.id)
+        .order("price", { ascending: true });
+      
+      if (tiersError) {
+        console.error("Error fetching tiers:", tiersError);
+        return [];
+      }
+      
+      // Transform the data for our component
+      return tiersData.map(tier => ({
+        id: tier.id,
+        name: tier.title,
+        price: tier.price,
+        // Parse features from the pipe-separated description
+        features: tier.description ? tier.description.split("|") : [],
+        subscriberCount: tier.subscriptions[0]?.count || 0
+      }));
     },
-    { 
-      id: '2', 
-      name: 'Premium', 
-      price: 15, 
-      subscriberCount: 42,
-      features: ['Exclusive posts', 'Community access', 'Monthly Q&A', 'Early access']
-    },
-    { 
-      id: '3', 
-      name: 'VIP', 
-      price: 30, 
-      subscriberCount: 15,
-      features: ['All premium features', 'One-on-one calls', 'Custom content requests']
-    },
-  ]);
+    enabled: !!user,
+  });
+
+  // Show error if query fails
+  if (error) {
+    toast({
+      title: "Failed to load tiers",
+      description: "There was an error loading your membership tiers.",
+      variant: "destructive",
+    });
+  }
 
   function handleCreateTier() {
-    toast({
-      title: "Coming Soon",
-      description: "The tier creation feature is currently being developed."
-    });
+    setEditingTier(null);
+    setIsCreateModalOpen(true);
   }
 
-  function handleEditTier(id: string) {
-    toast({
-      title: "Edit Tier",
-      description: `Editing tier with ID: ${id}`
-    });
+  function handleEditTier(tier: Tier) {
+    setEditingTier(tier);
+    setIsCreateModalOpen(true);
   }
 
-  function handleDeleteTier(id: string) {
-    toast({
-      description: `Tier with ID: ${id} has been removed.`,
-      variant: "destructive"
-    });
-    
-    // Simulate deletion
-    setTiers(tiers.filter(tier => tier.id !== id));
+  function handleDeleteTier(tier: Tier) {
+    setDeletingTier({id: tier.id, name: tier.name});
+    setIsDeleteDialogOpen(true);
   }
 
   return (
@@ -97,7 +129,13 @@ export default function CreatorStudioTiers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tiers.length > 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  Loading tiers...
+                </TableCell>
+              </TableRow>
+            ) : tiers.length > 0 ? (
               tiers.map((tier) => (
                 <TableRow key={tier.id}>
                   <TableCell className="font-medium">{tier.name}</TableCell>
@@ -115,11 +153,11 @@ export default function CreatorStudioTiers() {
                   <TableCell>{tier.subscriberCount}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button size="icon" variant="ghost" onClick={() => handleEditTier(tier.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => handleEditTier(tier)}>
                         <Pencil className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handleDeleteTier(tier.id)}>
+                      <Button size="icon" variant="ghost" onClick={() => handleDeleteTier(tier)}>
                         <Trash className="h-4 w-4" />
                         <span className="sr-only">Delete</span>
                       </Button>
@@ -130,13 +168,30 @@ export default function CreatorStudioTiers() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                  {isLoading ? 'Loading tiers...' : 'No membership tiers found. Create your first tier!'}
+                  No membership tiers found. Create your first tier!
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </Card>
+      
+      {/* Create/Edit Tier Modal */}
+      <CreateTierForm 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        editingTier={editingTier}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      {deletingTier && (
+        <DeleteTierDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => setIsDeleteDialogOpen(false)}
+          tierId={deletingTier.id}
+          tierName={deletingTier.name}
+        />
+      )}
     </div>
   );
 }
