@@ -67,7 +67,7 @@ const Signup = () => {
         }
         // If no session, user needs to confirm email
       } else {
-        // Now TypeScript knows result has an error property in this branch
+        // Access error property only when success is false
         setSignupError(result.error);
       }
     } catch (error: any) {
