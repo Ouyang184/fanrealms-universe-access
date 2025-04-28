@@ -11,7 +11,7 @@ export function SidebarFooterContent({ isCollapsed = false }: SidebarFooterConte
   if (isCollapsed) {
     return (
       <div className="px-2 py-4 text-center border-t border-border/40">
-        <p className="text-xs text-muted-foreground">©{currentYear}</p>
+        <p className="text-xs text-muted-foreground">{currentYear}</p>
       </div>
     );
   }

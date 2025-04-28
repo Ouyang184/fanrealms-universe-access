@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +8,6 @@ const Home = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   
-  // Redirect authenticated users to dashboard
   useEffect(() => {
     if (!loading && user) {
       navigate('/dashboard');
@@ -88,8 +86,7 @@ const Home = () => {
           </div>
         </main>
       </div>
-      {/* Only show footer when user is not authenticated */}
-      {!user && <Footer />}
+      {!user && !loading && <Footer />}
     </div>
   );
 };
