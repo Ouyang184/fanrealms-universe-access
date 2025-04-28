@@ -1,29 +1,10 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/lib/supabase';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
-
-type AuthContextType = {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{
-    user: User | null;
-    session: Session | null;
-    weakPassword?: any;
-  }>;
-  signInWithMagicLink: (email: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<{
-    user: User | null;
-    session: Session | null;
-  } | undefined>;
-  signOut: () => Promise<void>;
-  updateProfile: (data: Partial<Profile>) => Promise<void>;
-};
+import type { AuthContextType } from '@/lib/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -37,16 +18,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        // Update session and user state synchronously
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // If we have a user, fetch their profile in a separate tick
         if (currentSession?.user) {
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(setProfile);
@@ -57,7 +35,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
         console.log('Got initial session:', initialSession ? 'exists' : 'none');
@@ -87,7 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     session,
     user,
     profile,

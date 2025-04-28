@@ -45,7 +45,6 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
   
-  // Initialize form outside of conditional rendering
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -59,11 +58,17 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       setSignupError(null);
+      
       const result = await signUp(values.email, values.password);
       
-      // If email confirmation is disabled, we'll have a session and can redirect immediately
-      if (result?.session) {
-        navigate('/dashboard', { replace: true });
+      if (result.success) {
+        if (result.session) {
+          // Immediate login (email confirmation disabled)
+          navigate('/dashboard', { replace: true });
+        }
+        // If no session, user needs to confirm email
+      } else {
+        setSignupError(result.error);
       }
     } catch (error: any) {
       console.error("Signup error:", error);

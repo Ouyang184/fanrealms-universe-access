@@ -1,15 +1,14 @@
-
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import type { Profile } from '@/lib/supabase';
+import type { AuthResult } from '@/lib/types/auth';
 
 export const useAuthFunctions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -23,22 +22,99 @@ export const useAuthFunctions = () => {
         description: "You are now logged in.",
       });
       
-      return data;
+      return {
+        success: true,
+        user: data.user,
+        session: data.session
+      };
     } catch (error: any) {
       console.error("Login error:", error);
       
-      // Provide more helpful error messages
-      let errorMessage = error.message || "An error occurred during login. Please try again.";
-      if (error.message?.includes("Invalid login")) {
-        errorMessage = "Invalid email or password. Please check your credentials or sign up if you don't have an account.";
-      }
+      const errorMessage = error.message?.includes("Invalid login") 
+        ? "Invalid email or password. Please check your credentials."
+        : error.message || "An error occurred during login";
       
       toast({
         title: "Login failed",
         description: errorMessage,
         variant: "destructive"
       });
-      throw error;
+
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }, [toast]);
+
+  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data.session) {
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully.",
+        });
+        
+        if (data.user) {
+          const { error: userError } = await supabase
+            .from('users')
+            .insert([{ 
+              id: data.user.id, 
+              email: data.user.email || '',
+              username: email.split('@')[0],
+            }])
+            .single();
+
+          if (userError) {
+            console.error('Error creating user profile:', userError);
+            throw userError;
+          }
+        }
+
+        return {
+          success: true,
+          user: data.user,
+          session: data.session
+        };
+      } else {
+        toast({
+          title: "Verification required",
+          description: "Please check your email to confirm your account.",
+        });
+        
+        return {
+          success: true,
+          user: data.user,
+          session: null
+        };
+      }
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      
+      const errorMessage = error.message?.includes("already registered")
+        ? "This email is already registered. Please try logging in instead."
+        : error.message || "An error occurred during registration";
+      
+      toast({
+        title: "Registration failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+
+      return {
+        success: false,
+        error: errorMessage
+      };
     }
   }, [toast]);
 
@@ -62,69 +138,6 @@ export const useAuthFunctions = () => {
       toast({
         title: "Failed to send magic link",
         description: error.message || "An error occurred. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  }, [toast]);
-
-  const signUp = useCallback(async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data.session) {
-        // User is immediately logged in (email confirmation is disabled)
-        toast({
-          title: "Account created!",
-          description: "Your account has been created successfully.",
-        });
-        
-        // Create the user profile if it doesn't exist
-        if (data.user) {
-          const { error: userError } = await supabase
-            .from('users')
-            .insert([
-              { 
-                id: data.user.id, 
-                email: data.user.email || '',
-                username: email.split('@')[0],
-              }
-            ])
-            .single();
-
-          if (userError) {
-            console.error('Error creating user profile:', userError);
-          }
-        }
-      } else {
-        // Email confirmation is required
-        toast({
-          title: "Registration successful!",
-          description: "Please check your email to confirm your account.",
-        });
-      }
-      
-      return data;
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      
-      // Provide more helpful error messages
-      let errorMessage = error.message || "An error occurred during registration. Please try again.";
-      if (error.message?.includes("already registered")) {
-        errorMessage = "This email is already registered. Please try logging in instead.";
-      }
-      
-      toast({
-        title: "Registration failed",
-        description: errorMessage,
         variant: "destructive"
       });
       throw error;
