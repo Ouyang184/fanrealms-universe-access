@@ -70,8 +70,10 @@ export default function CreatorStudioTiers() {
       
       return tiersData.map(tier => ({
         id: tier.id,
-        name: tier.title,
+        title: tier.title, // Map directly from title instead of name
         price: tier.price,
+        description: tier.description || "", // Provide empty string as fallback
+        created_at: tier.created_at || new Date().toISOString(), // Provide current timestamp as fallback
         features: tier.description ? tier.description.split("|") : [],
         subscriberCount: tier.subscriptions[0]?.count || 0
       }));
@@ -135,7 +137,7 @@ export default function CreatorStudioTiers() {
               ) : tiers.length > 0 ? (
                 tiers.map((tier) => (
                   <TableRow key={tier.id}>
-                    <TableCell className="font-medium">{tier.name}</TableCell>
+                    <TableCell className="font-medium">{tier.title}</TableCell>
                     <TableCell>${tier.price}/month</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
