@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -68,7 +67,7 @@ const Signup = () => {
         }
         // If no session, user needs to confirm email
       } else {
-        // Fixed: Only access error property when success is false
+        // Now TypeScript knows result has an error property in this branch
         setSignupError(result.error);
       }
     } catch (error: any) {
