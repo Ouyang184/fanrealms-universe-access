@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -30,6 +32,7 @@ const LoginForm = () => {
   const { signIn, signInWithMagicLink } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -44,14 +47,16 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setIsSubmitting(true);
+      setLoginError(null);
       await signIn(values.email, values.password);
       
       const params = new URLSearchParams(location.search);
       const returnTo = params.get('returnTo');
       
       navigate(returnTo || '/dashboard', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      setLoginError(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,9 +71,11 @@ const LoginForm = () => {
 
     try {
       setIsMagicLinkSubmitting(true);
+      setLoginError(null);
       await signInWithMagicLink(email);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Magic link error:", error);
+      setLoginError(error.message);
     } finally {
       setIsMagicLinkSubmitting(false);
     }
@@ -77,6 +84,12 @@ const LoginForm = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {loginError && (
+          <Alert variant="destructive">
+            <AlertDescription>{loginError}</AlertDescription>
+          </Alert>
+        )}
+        
         <FormField
           control={form.control}
           name="email"

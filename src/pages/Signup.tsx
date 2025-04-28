@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import AuthLayout from "@/components/AuthLayout";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -40,7 +41,9 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 const Signup = () => {
   const { isChecking } = useAuthCheck(false, '/dashboard');
   const { signUp } = useAuth();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
   
   // Initialize form outside of conditional rendering
   const form = useForm<SignupFormValues>({
@@ -55,10 +58,16 @@ const Signup = () => {
   const onSubmit = async (values: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      await signUp(values.email, values.password);
-      // Navigate handled by AuthContext
-    } catch (error) {
+      setSignupError(null);
+      const result = await signUp(values.email, values.password);
+      
+      // If email confirmation is disabled, we'll have a session and can redirect immediately
+      if (result?.session) {
+        navigate('/dashboard', { replace: true });
+      }
+    } catch (error: any) {
       console.error("Signup error:", error);
+      setSignupError(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -81,6 +90,12 @@ const Signup = () => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {signupError && (
+              <Alert variant="destructive">
+                <AlertDescription>{signupError}</AlertDescription>
+              </Alert>
+            )}
+            
             <FormField
               control={form.control}
               name="email"

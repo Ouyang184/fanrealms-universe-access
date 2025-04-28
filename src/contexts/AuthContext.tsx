@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, Profile } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
+import type { Profile } from '@/lib/supabase';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -49,28 +50,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // THEN check for existing session with a timeout
-    const sessionTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
-
+    // THEN check for existing session
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
+        console.log('Got initial session:', initialSession ? 'exists' : 'none');
         if (initialSession) {
           setSession(initialSession);
           setUser(initialSession.user);
           return fetchUserProfile(initialSession.user.id).then(setProfile);
         }
       })
-      .catch(console.error)
+      .catch(error => {
+        console.error("Error getting session:", error);
+      })
       .finally(() => {
-        clearTimeout(sessionTimeout);
         setLoading(false);
       });
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(sessionTimeout);
     };
   }, [fetchUserProfile]);
 

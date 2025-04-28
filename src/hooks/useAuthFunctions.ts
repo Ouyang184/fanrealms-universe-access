@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Profile } from '@/lib/supabase';
 
@@ -18,10 +18,24 @@ export const useAuthFunctions = () => {
 
       if (error) throw error;
       
+      toast({
+        title: "Login successful",
+        description: "You are now logged in.",
+      });
+      
+      return data;
     } catch (error: any) {
+      console.error("Login error:", error);
+      
+      // Provide more helpful error messages
+      let errorMessage = error.message || "An error occurred during login. Please try again.";
+      if (error.message?.includes("Invalid login")) {
+        errorMessage = "Invalid email or password. Please check your credentials or sign up if you don't have an account.";
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message || "An error occurred during login. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
@@ -65,32 +79,52 @@ export const useAuthFunctions = () => {
       });
 
       if (error) throw error;
+      
+      if (data.session) {
+        // User is immediately logged in (email confirmation is disabled)
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully.",
+        });
+        
+        // Create the user profile if it doesn't exist
+        if (data.user) {
+          const { error: userError } = await supabase
+            .from('users')
+            .insert([
+              { 
+                id: data.user.id, 
+                email: data.user.email || '',
+                username: email.split('@')[0],
+              }
+            ])
+            .single();
 
-      if (data.user) {
-        const { error: userError } = await supabase
-          .from('users')
-          .insert([
-            { 
-              id: data.user.id, 
-              email: data.user.email || '',
-              username: email.split('@')[0],
-            }
-          ]);
-
-        if (userError) {
-          console.error('Error creating user:', userError);
+          if (userError) {
+            console.error('Error creating user profile:', userError);
+          }
         }
+      } else {
+        // Email confirmation is required
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        });
+      }
+      
+      return data;
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      
+      // Provide more helpful error messages
+      let errorMessage = error.message || "An error occurred during registration. Please try again.";
+      if (error.message?.includes("already registered")) {
+        errorMessage = "This email is already registered. Please try logging in instead.";
       }
       
       toast({
-        title: "Registration successful!",
-        description: "Please check your email to confirm your account.",
-      });
-      
-    } catch (error: any) {
-      toast({
         title: "Registration failed",
-        description: error.message || "An error occurred during registration. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       throw error;
@@ -100,7 +134,11 @@ export const useAuthFunctions = () => {
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/', { replace: true }); // Update redirect to home page
+      toast({
+        title: "Signed out successfully",
+        description: "You have been signed out.",
+      });
+      navigate('/', { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign out failed",

@@ -6,24 +6,27 @@ import type { Database } from './types';
 const getEnvVar = (key: keyof Window['env']) => {
   const value = window?.env?.[key];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
+    console.error(`Missing required environment variable: ${key}`);
+    return ''; // Return empty string instead of throwing
   }
   return value;
 };
 
-let supabase: ReturnType<typeof createClient<Database>>;
+// Get environment variables
+const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
-try {
-  // Get and validate environment variables
-  const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
-  const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// Create the Supabase client with proper auth configuration
+export const supabase = createClient<Database>(
+  SUPABASE_URL, 
+  SUPABASE_ANON_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'supabase-auth'
+    }
+  }
+);
 
-  // Create the Supabase client
-  supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
-} catch (error) {
-  console.error('Supabase client initialization failed:', error);
-  // Re-throw to prevent app from running with invalid configuration
-  throw error;
-}
-
-export { supabase };
+console.log('Supabase client initialized');
