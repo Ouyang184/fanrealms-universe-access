@@ -1,11 +1,26 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow
+} from "@/components/ui/table";
 import { Plus, Pencil, Trash } from "lucide-react";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
+import { CreateTierForm } from "@/components/creator-studio/CreateTierForm";
+import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
+import { Tier } from "@/types";
 
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
