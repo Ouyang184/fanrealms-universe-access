@@ -68,6 +68,7 @@ const Signup = () => {
         }
         // If no session, user needs to confirm email
       } else {
+        // Fixed: Access error only when success is false
         setSignupError(result.error);
       }
     } catch (error: any) {

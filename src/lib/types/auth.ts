@@ -1,6 +1,16 @@
 
 import { User, Session } from '@supabase/supabase-js';
 
+// Define the Profile type that was missing
+export type Profile = {
+  id: string;
+  username: string;
+  email: string;
+  profile_picture: string | null;
+  created_at: string;
+  website?: string | null;
+};
+
 export type AuthResult = 
   | { success: true; user: User; session: Session }
   | { success: false; error: string };
