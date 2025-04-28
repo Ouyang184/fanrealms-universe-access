@@ -1,8 +1,7 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Pencil, Trash } from "lucide-react";
+import { Pencil, Trash } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -13,6 +12,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
 
 interface Post {
   id: string;
@@ -60,7 +60,6 @@ export default function CreatorStudioPosts() {
       variant: "destructive"
     });
     
-    // Simulate deletion
     setPosts(posts.filter(post => post.id !== id));
   }
 
@@ -68,10 +67,7 @@ export default function CreatorStudioPosts() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold tracking-tight">Posts</h1>
-        <Button onClick={handleCreatePost}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Post
-        </Button>
+        <CreatePostForm />
       </div>
       
       <Card>
