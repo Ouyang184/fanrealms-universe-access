@@ -88,7 +88,8 @@ const Home = () => {
           </div>
         </main>
       </div>
-      <Footer />
+      {/* Only show footer when user is not authenticated */}
+      {!user && <Footer />}
     </div>
   );
 };
