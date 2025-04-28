@@ -69,7 +69,7 @@ const Signup = () => {
         // If no session, user needs to confirm email
       } else {
         // Only access error property when success is false
-        setSignupError(result.error);
+        setSignupError(typeof result.error === 'string' ? result.error : result.error.message);
       }
     } catch (error: any) {
       console.error("Signup error:", error);
