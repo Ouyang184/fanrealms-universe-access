@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -77,6 +78,7 @@ const CreatorPage: React.FC = () => {
           fullName: userData.username,
           email: userData.email,
           avatar_url: userData.profile_picture,
+          banner_url: null, // Add the required banner_url property with null value
           bio: null,
           created_at: userData.created_at,
           tiers: []
@@ -89,6 +91,7 @@ const CreatorPage: React.FC = () => {
         fullName: userData.username,
         email: userData.email,
         avatar_url: userData.profile_picture,
+        banner_url: creatorData.banner_url || null, // Ensure banner_url is always defined
         tiers: creatorData.membership_tiers?.map((tier: any) => ({
           ...tier,
           name: tier.title,
@@ -231,12 +234,20 @@ const CreatorPage: React.FC = () => {
 
   const displayName = creator.fullName || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
+  const bannerImage = creator.banner_url || "/default-banner.jpg"; // Add default banner if none exists
 
   return (
     <MainLayout>
       <div className="space-y-8 max-w-5xl mx-auto">
         <div className="relative">
           <div className="h-48 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg overflow-hidden">
+            {creator.banner_url && (
+              <img 
+                src={bannerImage} 
+                alt="Creator Banner" 
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-end p-4 -mt-16 md:-mt-12">
             <Avatar className="h-32 w-32 border-4 border-background">

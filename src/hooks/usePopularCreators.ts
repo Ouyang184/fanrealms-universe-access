@@ -33,6 +33,7 @@ export const usePopularCreators = () => {
         ...creator,
         username: creator.users?.username,
         avatar_url: creator.users?.profile_picture,
+        banner_url: creator.banner_url || null, // Ensure banner_url is always defined
         tiers: creator.membership_tiers?.map((tier): Tier => ({
           ...tier,
           name: tier.title, // Map title to name
