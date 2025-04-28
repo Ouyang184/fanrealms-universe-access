@@ -13,7 +13,12 @@ export type Profile = {
 
 export type AuthResult = 
   | { success: true; user: User; session: Session | null }
-  | { success: false; error: string };
+  | { success: false; error: string | AuthError };
+
+export interface AuthError {
+  message: string;
+  [key: string]: any;
+}
 
 export type AuthContextType = {
   session: Session | null;

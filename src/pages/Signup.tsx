@@ -21,6 +21,7 @@ import AuthLayout from "@/components/AuthLayout";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 const signupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -61,16 +62,19 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      if (result.success) {
-        if (result.session) {
-          // Immediate login (email confirmation disabled)
-          navigate('/dashboard', { replace: true });
-        }
-        // If no session, user needs to confirm email
-      } else {
-        // Only access error property when success is false
+      if (!result.success) {
+        // Type guard ensures we can safely access error property
         setSignupError(typeof result.error === 'string' ? result.error : result.error.message);
+        return;
       }
+      
+      // At this point result.success is true
+      if (result.session) {
+        // Immediate login (email confirmation disabled)
+        navigate('/dashboard', { replace: true });
+      }
+      // If no session, user needs to confirm email
+      
     } catch (error: any) {
       console.error("Signup error:", error);
       setSignupError(error.message);
