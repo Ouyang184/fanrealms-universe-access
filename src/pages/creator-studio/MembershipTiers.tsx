@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -70,10 +69,11 @@ export default function CreatorStudioTiers() {
       
       return tiersData.map(tier => ({
         id: tier.id,
-        title: tier.title, // Map directly from title instead of name
+        title: tier.title,
+        name: tier.title,
         price: tier.price,
-        description: tier.description || "", // Provide empty string as fallback
-        created_at: tier.created_at || new Date().toISOString(), // Provide current timestamp as fallback
+        description: tier.description || "",
+        created_at: tier.created_at || new Date().toISOString(),
         features: tier.description ? tier.description.split("|") : [],
         subscriberCount: tier.subscriptions[0]?.count || 0
       }));
