@@ -5,6 +5,7 @@ import { AppSidebar } from './AppSidebar';
 import { TopBar } from './TopBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Footer from './Footer';
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,6 +15,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, showTabs = false, hideTopBar = false }: MainLayoutProps) {
   const [activeTab, setActiveTab] = useState<string>("feed");
+  const { user } = useAuth();
   
   return (
     <SidebarProvider>
@@ -48,7 +50,8 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
               </div>
             )}
           </main>
-          <Footer />
+          {/* Only render footer if user is not authenticated */}
+          {!user && <Footer />}
         </div>
       </div>
     </SidebarProvider>

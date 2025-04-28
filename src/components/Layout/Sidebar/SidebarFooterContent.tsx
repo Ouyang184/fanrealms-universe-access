@@ -9,10 +9,9 @@ export function SidebarFooterContent({ isCollapsed = false }: SidebarFooterConte
   const currentYear = new Date().getFullYear();
   
   if (isCollapsed) {
+    // Return empty div with just the border when collapsed
     return (
-      <div className="px-2 py-4 text-center border-t border-border/40">
-        <p className="text-xs text-muted-foreground">{currentYear}</p>
-      </div>
+      <div className="px-2 py-4 border-t border-border/40"></div>
     );
   }
   
