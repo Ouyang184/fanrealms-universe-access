@@ -61,11 +61,12 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      if (!result.success) {
-        if (typeof result.error === 'string') {
-          setSignupError(result.error);
+      if (result.success === false) {
+        const error = result.error;
+        if (typeof error === 'string') {
+          setSignupError(error);
         } else {
-          setSignupError(result.error.message || "An error occurred");
+          setSignupError(error.message || "An error occurred");
         }
         return;
       }
