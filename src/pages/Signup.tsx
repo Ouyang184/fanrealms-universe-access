@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -61,16 +62,18 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      if (result.success === false) {
-        const error = result.error;
-        if (typeof error === 'string') {
-          setSignupError(error);
+      // Properly check if the result is an error using type guard
+      if (!result.success) {
+        // Now TypeScript knows we're in the error case
+        if (typeof result.error === 'string') {
+          setSignupError(result.error);
         } else {
-          setSignupError(error.message || "An error occurred");
+          setSignupError(result.error.message || "An error occurred");
         }
         return;
       }
       
+      // TypeScript knows we're in the success case
       if (result.session) {
         navigate('/dashboard', { replace: true });
       } else {

@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      creator_links: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          id: string
+          label: string | null
+          position: number | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          label?: string | null
+          position?: number | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          label?: string | null
+          position?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_links_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           banner_url: string | null
