@@ -61,10 +61,10 @@ const Signup = () => {
       setIsSubmitting(true);
       setSignupError(null);
       
-      const result = await signUp(values.email, values.password);
+      const result: AuthResult = await signUp(values.email, values.password);
       
       if (!result.success) {
-        // Only access error property when success is false
+        // TypeScript now knows that result has the error property in this branch
         setSignupError(result.error.message);
         return;
       }
