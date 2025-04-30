@@ -1,6 +1,6 @@
-import { User, Session } from '@supabase/supabase-js';
 
-// Define the Profile type that was missing
+import { Session, User } from '@supabase/supabase-js';
+
 export type Profile = {
   id: string;
   username: string;
