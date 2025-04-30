@@ -52,6 +52,7 @@ const Login = () => {
       const result = await signIn(values.email, values.password);
       
       if (!result.success) {
+        // Properly access the error property only when success is false
         setLoginError(result.error.message);
         return;
       }
