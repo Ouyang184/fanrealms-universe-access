@@ -62,7 +62,6 @@ const Signup = () => {
       const result = await signUp(values.email, values.password);
       
       if (!result.success) {
-        // In the error case, we can safely access the error message
         setSignupError(result.error.message);
         return;
       }

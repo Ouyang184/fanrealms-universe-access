@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,8 +95,8 @@ export const useAuthFunctions = () => {
         
         return {
           success: true,
-          user: data.user,
-          session: data.session
+          user: data.user!,
+          session: data.session!
         };
       }
     } catch (error: any) {
