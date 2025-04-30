@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -64,7 +63,6 @@ const Signup = () => {
       const result: AuthResult = await signUp(values.email, values.password);
       
       if (!result.success) {
-        // TypeScript now knows that result has the error property in this branch
         setSignupError(result.error.message);
         return;
       }
