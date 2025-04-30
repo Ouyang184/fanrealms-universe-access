@@ -63,6 +63,7 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
+      // Properly handle the discriminated union
       if (!result.success) {
         setSignupError(result.error.message);
         return;

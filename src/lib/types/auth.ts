@@ -10,7 +10,8 @@ export type Profile = {
   website?: string | null;
 };
 
-export type AuthResult =
+// Properly defined discriminated union with success property as the discriminant
+export type AuthResult = 
   | { success: true; user: User; session: Session }
   | { success: false; error: { message: string } };
 
