@@ -50,14 +50,17 @@ const Login = () => {
     try {
       setLoginError(null);
       
-      const result: AuthResult = await signIn(values.email, values.password);
+      const result = await signIn(values.email, values.password);
       
       if (!result.success) {
+        // Type guard ensures we only access error when success is false
+        // In TypeScript, this properly narrows the type to the failure case of the discriminated union
         setLoginError(result.error.message);
         return;
       }
       
-      // In the success case - redirect to dashboard
+      // At this point TypeScript knows result is the success case
+      // result.user and result.session are available
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
