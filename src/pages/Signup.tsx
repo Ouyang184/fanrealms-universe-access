@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -60,7 +61,7 @@ const Signup = () => {
       setIsSubmitting(true);
       setSignupError(null);
       
-      const result: AuthResult = await signUp(values.email, values.password);
+      const result = await signUp(values.email, values.password);
       
       if (!result.success) {
         setSignupError(result.error.message);
