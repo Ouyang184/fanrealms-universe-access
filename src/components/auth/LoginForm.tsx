@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -48,9 +47,10 @@ const LoginForm = () => {
     try {
       setLoginError(null);
       
-      const result = await signIn(values.email, values.password);
+      const result: AuthResult = await signIn(values.email, values.password);
       
-      if (!result.success) {
+      // Fixed: Correctly handle discriminated union type
+      if (result.success === false) {
         setLoginError(result.error.message);
         return;
       }
