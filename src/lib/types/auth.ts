@@ -10,9 +10,14 @@ export type Profile = {
   website?: string | null;
 };
 
-export type AuthResult = 
-  | { success: true; user: User; session: Session | null }
+export type AuthResult =
+  | { success: true; user: User; session: Session }
   | { success: false; error: { message: string } };
+
+export interface AuthError {
+  message: string;
+  [key: string]: any;
+}
 
 export type AuthContextType = {
   session: Session | null;

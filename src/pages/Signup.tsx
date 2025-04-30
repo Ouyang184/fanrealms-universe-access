@@ -62,11 +62,12 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      if (result.success === false) {
+      if (!result.success) {
         setSignupError(result.error.message);
         return;
       }
       
+      // In the success case
       if (result.session) {
         navigate('/dashboard', { replace: true });
       } else {
