@@ -62,9 +62,9 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      // Properly check if the result is an error using type guard
+      // Using the proper type guard for the discriminated union
       if (!result.success) {
-        // Now TypeScript knows we're in the error case
+        // In the error case, we know result.error exists
         if (typeof result.error === 'string') {
           setSignupError(result.error);
         } else {
@@ -73,7 +73,7 @@ const Signup = () => {
         return;
       }
       
-      // TypeScript knows we're in the success case
+      // In the success case, we know we have user and session properties
       if (result.session) {
         navigate('/dashboard', { replace: true });
       } else {
