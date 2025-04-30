@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -63,6 +64,7 @@ const Signup = () => {
       const result = await signUp(values.email, values.password);
       
       if (!result.success) {
+        // Only access error property when success is false
         setSignupError(result.error.message);
         return;
       }
