@@ -84,8 +84,8 @@ export const useAuthFunctions = () => {
 
         return {
           success: true,
-          user: data.user,
-          session: data.session
+          user: data.user!,
+          session: data.session!
         };
       } else {
         toast({
