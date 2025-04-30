@@ -1,4 +1,3 @@
-
 import { User, Session } from '@supabase/supabase-js';
 
 // Define the Profile type that was missing
@@ -13,12 +12,7 @@ export type Profile = {
 
 export type AuthResult = 
   | { success: true; user: User; session: Session | null }
-  | { success: false; error: string | AuthError };
-
-export interface AuthError {
-  message: string;
-  [key: string]: any;
-}
+  | { success: false; error: { message: string } };
 
 export type AuthContextType = {
   session: Session | null;

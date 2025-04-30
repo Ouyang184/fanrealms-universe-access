@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import type { AuthResult } from "@/lib/types/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,12 +63,7 @@ const Signup = () => {
       const result = await signUp(values.email, values.password);
       
       if (result.success === false) {
-        const error = result.error;
-        if (typeof error === 'string') {
-          setSignupError(error);
-        } else {
-          setSignupError(error.message || "An error occurred");
-        }
+        setSignupError(result.error.message);
         return;
       }
       
