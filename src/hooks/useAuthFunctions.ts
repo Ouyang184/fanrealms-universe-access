@@ -42,7 +42,7 @@ export const useAuthFunctions = () => {
 
       return {
         success: false,
-        error: errorMessage
+        error: { message: errorMessage }
       };
     }
   }, [toast]);
@@ -95,7 +95,7 @@ export const useAuthFunctions = () => {
         return {
           success: true,
           user: data.user,
-          session: null
+          session: data.session
         };
       }
     } catch (error: any) {
@@ -113,7 +113,7 @@ export const useAuthFunctions = () => {
 
       return {
         success: false,
-        error: errorMessage
+        error: { message: errorMessage }
       };
     }
   }, [toast]);

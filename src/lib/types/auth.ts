@@ -11,9 +11,9 @@ export type Profile = {
   website?: string | null;
 };
 
-export type AuthResult = 
-  | { success: true; user: User; session: Session | null }
-  | { success: false; error: string | AuthError };
+export type AuthResult =
+  | { success: true; user: User; session: Session }
+  | { success: false; error: { message: string } };
 
 export interface AuthError {
   message: string;

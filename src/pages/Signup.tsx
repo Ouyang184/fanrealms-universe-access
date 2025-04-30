@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -62,18 +61,13 @@ const Signup = () => {
       
       const result = await signUp(values.email, values.password);
       
-      // Using the proper type guard for the discriminated union
       if (!result.success) {
-        // In the error case, we know result.error exists
-        if (typeof result.error === 'string') {
-          setSignupError(result.error);
-        } else {
-          setSignupError(result.error.message || "An error occurred");
-        }
+        // In the error case, we can safely access the error message
+        setSignupError(result.error.message);
         return;
       }
       
-      // In the success case, we know we have user and session properties
+      // In the success case
       if (result.session) {
         navigate('/dashboard', { replace: true });
       } else {
