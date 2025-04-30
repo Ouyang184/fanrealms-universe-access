@@ -52,15 +52,15 @@ const Login = () => {
       
       const result = await signIn(values.email, values.password);
       
+      // Using proper type narrowing with the discriminated union
       if (!result.success) {
-        // Type guard ensures we only access error when success is false
-        // In TypeScript, this properly narrows the type to the failure case of the discriminated union
+        // Now TypeScript knows this is the failure case with the error property
         setLoginError(result.error.message);
         return;
       }
       
       // At this point TypeScript knows result is the success case
-      // result.user and result.session are available
+      // and result.user and result.session are safely accessible
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
