@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { Tables } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -35,16 +35,16 @@ export function CreatePostForm() {
     
     setIsLoading(true);
     try {
+      const newPost: Tables['posts']['Insert'] = {
+        title,
+        content,
+        author_id: user.id,
+        tier_id: selectedTierId
+      };
+
       const { error } = await supabase
         .from('posts')
-        .insert([
-          { 
-            title,
-            content,
-            author_id: user.id,
-            tier_id: selectedTierId
-          }
-        ]);
+        .insert([newPost]);
 
       if (error) throw error;
 
