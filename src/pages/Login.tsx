@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { AuthResult } from "@/lib/types/auth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -49,10 +50,9 @@ const Login = () => {
     try {
       setLoginError(null);
       
-      const result = await signIn(values.email, values.password);
+      const result: AuthResult = await signIn(values.email, values.password);
       
       if (!result.success) {
-        // Properly access the error property only when success is false
         setLoginError(result.error.message);
         return;
       }
