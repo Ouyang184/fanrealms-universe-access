@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
 import Loading from "./components/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import HomePage from "./pages/Home";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/home" element={<HomePage />} />
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
