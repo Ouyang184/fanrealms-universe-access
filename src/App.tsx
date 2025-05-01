@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner"
 import OnboardingPage from "./pages/Onboarding";
 import { AuthProvider } from "@/contexts/AuthContext";
+import Dashboard from "./pages/Dashboard";
+import Loading from "./components/Loading";
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/loading" element={<Loading />} />
         </Routes>
         <Toaster />
       </AuthProvider>
