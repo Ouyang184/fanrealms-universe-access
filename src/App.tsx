@@ -10,8 +10,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           {/* Auth routes */}
@@ -21,7 +21,7 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes>
         <Toaster />
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
