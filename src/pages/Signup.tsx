@@ -30,8 +30,8 @@ const signupSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    terms: z.literal(true, {
-      errorMap: () => ({ message: "You must accept the terms and conditions" }),
+    terms: z.boolean().refine(val => val === true, {
+      message: "You must accept the terms and conditions",
     }),
   });
 
