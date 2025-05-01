@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +22,14 @@ export const useAuthFunctions = () => {
         description: "You are now logged in.",
       });
       
+      // Added navigation to the onboarding page for new users
+      // In a real app, you would check if the user has completed onboarding
+      const isNewUser = false; // This would be determined by your user profile data
+      
+      if (isNewUser) {
+        navigate('/onboarding');
+      }
+      
       return {
         success: true,
         user: data.user,
@@ -46,7 +53,7 @@ export const useAuthFunctions = () => {
         error: { message: errorMessage }
       };
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
@@ -80,6 +87,9 @@ export const useAuthFunctions = () => {
             console.error('Error creating user profile:', userError);
             throw userError;
           }
+          
+          // Navigate to onboarding after successful signup
+          navigate('/onboarding');
         }
 
         return {
@@ -117,7 +127,7 @@ export const useAuthFunctions = () => {
         error: { message: errorMessage }
       };
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     try {
