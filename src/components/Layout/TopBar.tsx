@@ -1,7 +1,6 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ButtonProps } from "@/components/ui/button";
 import { ReactNode } from "react";
 
 interface TopBarProps {
@@ -18,7 +17,7 @@ export function TopBar({ children }: TopBarProps) {
           {children}
           {user && (
             <Avatar>
-              <AvatarImage src={user.avatar_url || ""} alt={user.full_name || "User"} />
+              <AvatarImage src={user?.avatar_url || ""} alt={user?.full_name || "User"} />
               <AvatarFallback>{getUserInitials(user)}</AvatarFallback>
             </Avatar>
           )}

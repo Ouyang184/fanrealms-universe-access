@@ -30,9 +30,9 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
               </div>
             </TopBar>
           )}
-          <main className="flex-1 px-4 md:px-6 pb-8 overflow-y-auto">
+          <main className="flex-1 px-4 md:px-6 py-6 overflow-y-auto">
             {showTabs ? (
-              <div className="max-w-5xl mx-auto w-full">
+              <div className="max-w-6xl mx-auto w-full">
                 <Tabs defaultValue="feed" value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <div className="border-b mb-6">
                     <TabsList className="justify-start">
@@ -40,8 +40,8 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
                       <TabsTrigger value="notifications">Notifications</TabsTrigger>
                     </TabsList>
                   </div>
-                  <TabsContent value="feed">{children}</TabsContent>
-                  <TabsContent value="notifications">
+                  <TabsContent value="feed" className="pt-4">{children}</TabsContent>
+                  <TabsContent value="notifications" className="pt-4">
                     <div className="space-y-4">
                       <h2 className="text-2xl font-semibold">Notifications</h2>
                       <div className="text-muted-foreground">
@@ -52,7 +52,7 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
                 </Tabs>
               </div>
             ) : (
-              <div className="max-w-5xl mx-auto w-full">
+              <div className="max-w-6xl mx-auto w-full">
                 {children}
               </div>
             )}

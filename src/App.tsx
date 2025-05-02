@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 import OnboardingPage from "./pages/Onboarding";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/Dashboard";
-import Loading from "./pages/Loading";
+import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomePage from "./pages/Home";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,7 +35,7 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/loading" element={<Loading />} />
+                <Route path="/loading" element={<LoadingPage />} />
               </Routes>
               <Toaster />
             </TooltipProvider>
