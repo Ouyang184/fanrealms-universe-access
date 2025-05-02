@@ -6,6 +6,7 @@ import { TopBar } from './TopBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Footer from './Footer';
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -22,7 +23,13 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 min-h-screen">
-          {!hideTopBar && <TopBar />}
+          {!hideTopBar && (
+            <TopBar>
+              <div className="ml-auto flex items-center gap-2">
+                <ThemeToggle />
+              </div>
+            </TopBar>
+          )}
           <main className="flex-1 px-4 md:px-6 pb-8 overflow-y-auto">
             {showTabs ? (
               <div className="max-w-5xl mx-auto w-full">
