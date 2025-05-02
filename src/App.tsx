@@ -12,6 +12,7 @@ import Loading from "./components/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomePage from "./pages/Home";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import SubscriptionsPage from "./pages/Subscriptions";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ export default function App() {
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/loading" element={<Loading />} />
             </Routes>
             <Toaster />
