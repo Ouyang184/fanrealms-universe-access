@@ -13,15 +13,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomePage from "./pages/Home";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SubscriptionsPage from "./pages/Subscriptions";
-import { ThemeProvider } from "@/components/theme-provider";
+import RootLayout from "@/components/RootLayout";
 
 // Create a client
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="dark">
+    <RootLayout>
+      <BrowserRouter>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TooltipProvider>
@@ -41,7 +41,7 @@ export default function App() {
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </RootLayout>
   );
 }

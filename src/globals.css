@@ -1,0 +1,7 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* This file contains global styles */
+/* Your existing styles from index.css will still apply */
