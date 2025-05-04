@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -24,53 +23,55 @@ export default function CreatorStudioDashboard() {
   }, []);
 
   return (
-    <CreatorCheck>
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Creator Dashboard</h1>
-        
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatCard 
-            title="Total Posts" 
-            value={stats.totalPosts.toString()} 
-            icon={FileText} 
-          />
-          <StatCard 
-            title="Subscribers" 
-            value={stats.totalSubscribers.toString()} 
-            icon={Users} 
-          />
-          <StatCard 
-            title="Total Earnings" 
-            value={`$${stats.totalEarnings.toFixed(2)}`} 
-            icon={CreditCard} 
-          />
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
-              <div className="text-muted-foreground">
-                <p>Coming soon - Activity feed for your creator profile</p>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="container mx-auto px-4 py-8">
+      <CreatorCheck>
+        <div className="space-y-6">
+          <h1 className="text-2xl font-bold tracking-tight">Creator Dashboard</h1>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Growth Insights</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm">
-              <div className="text-muted-foreground">
-                <p>Coming soon - Subscriber growth and content engagement metrics</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatCard 
+              title="Total Posts" 
+              value={stats.totalPosts.toString()} 
+              icon={FileText} 
+            />
+            <StatCard 
+              title="Subscribers" 
+              value={stats.totalSubscribers.toString()} 
+              icon={Users} 
+            />
+            <StatCard 
+              title="Total Earnings" 
+              value={`$${stats.totalEarnings.toFixed(2)}`} 
+              icon={CreditCard} 
+            />
+          </div>
+          
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <div className="text-muted-foreground">
+                  <p>Coming soon - Activity feed for your creator profile</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Growth Insights</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <div className="text-muted-foreground">
+                  <p>Coming soon - Subscriber growth and content engagement metrics</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    </CreatorCheck>
+      </CreatorCheck>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MainLayout } from "@/components/Layout/MainLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatRelativeDate } from "@/utils/auth-helpers";
@@ -97,7 +97,7 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <MainLayout>
+      <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center py-20">
           <h2 className="text-2xl font-semibold mb-4">Please sign in</h2>
           <p className="text-muted-foreground mb-6">You need to be signed in to view your dashboard.</p>
@@ -105,22 +105,22 @@ export default function Dashboard() {
             <Link to="/login">Sign In</Link>
           </Button>
         </div>
-      </MainLayout>
+      </div>
     );
   }
   
   if (isLoadingPosts || isLoadingCreator) {
     return (
-      <MainLayout>
+      <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center min-h-[60vh]">
           <LoadingSpinner />
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
         <CreatorsSection />
         <PostsSection 
@@ -131,6 +131,6 @@ export default function Dashboard() {
           setActiveTab={setActiveTab}
         />
       </div>
-    </MainLayout>
+    </div>
   );
 }
