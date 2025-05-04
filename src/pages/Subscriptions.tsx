@@ -1,5 +1,3 @@
-
-import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -170,7 +168,7 @@ const recommendedCreators = [
 
 export default function SubscriptionsPage() {
   return (
-    <MainLayout>
+    <div className="flex-1 px-4 md:px-6 py-6 overflow-y-auto">
       <div className="max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
@@ -490,6 +488,6 @@ export default function SubscriptionsPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   )
 }
