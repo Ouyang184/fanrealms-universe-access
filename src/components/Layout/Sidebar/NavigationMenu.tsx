@@ -1,10 +1,12 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { 
   GalleryHorizontal,
   MessageSquare,
   Bell,
   ShoppingCart,
-  Settings
+  Settings,
+  Home
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -18,6 +20,7 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   const location = useLocation();
   
   const navigationItems = [
+    { icon: Home, label: 'Home', path: '/home' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
