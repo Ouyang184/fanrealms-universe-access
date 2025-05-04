@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Fan } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -10,24 +11,23 @@ interface LogoProps {
 
 export function Logo({ collapsed = false, onClick, className }: LogoProps) {
   return (
-    <div 
+    <div
+      className={cn("flex items-center gap-2 cursor-pointer transition-all duration-300 hover:opacity-80", className)}
       onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 cursor-pointer",
-        className
-      )}
+      role="button"
+      tabIndex={0}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
     >
-      {/* Icon placeholder - would be replaced with actual image when available */}
-      <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-primary-foreground font-bold">
-        FR
+      <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 shadow-md">
+        <Fan className="h-5 w-5 text-white" />
+        <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-pink-500 to-red-500 shadow-sm" />
       </div>
       {!collapsed && (
-        <div className="leading-tight">
-          <h1 className="text-sm font-semibold">
-            <span className="text-foreground">Fan</span>
-            <span className="text-primary">Realms</span>
-          </h1>
-          <p className="text-[10px] text-muted-foreground">CREATOR PLATFORM</p>
+        <div className="flex flex-col">
+          <span className="text-lg font-bold leading-none tracking-tight">
+            Fan<span className="text-primary">Realms</span>
+          </span>
+          <span className="text-[10px] font-medium text-muted-foreground">CREATOR PLATFORM</span>
         </div>
       )}
     </div>
