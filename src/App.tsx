@@ -20,11 +20,11 @@ const queryClient = new QueryClient();
 
 export default function App() {
   return (
-    <RootLayout>
-      <BrowserRouter>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <TooltipProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <RootLayout>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/home" element={<HomePage />} />
@@ -56,10 +56,10 @@ export default function App() {
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>
               <Toaster />
-            </TooltipProvider>
-          </AuthProvider>
-        </QueryClientProvider>
-      </BrowserRouter>
-    </RootLayout>
+            </RootLayout>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   );
 }
