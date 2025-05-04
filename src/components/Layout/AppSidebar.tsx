@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
@@ -22,6 +21,7 @@ import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Logo } from '@/components/Logo';
 
 export function AppSidebar() {
   const { loading, signOut } = useAuth();
@@ -59,20 +59,7 @@ export function AppSidebar() {
           "flex items-center p-4 transition-all duration-300",
           isCollapsed ? "justify-center w-full" : "justify-between w-full"
         )}>
-          {!isCollapsed && (
-            <Link to="/" className="flex items-center gap-2 font-semibold">
-              <span className="text-primary text-xl">FanRealms</span>
-            </Link>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={toggleSidebar} 
-            className="h-8 w-8 rounded-md"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle sidebar</span>
-          </Button>
+          <Logo collapsed={isCollapsed} onClick={toggleSidebar} />
         </div>
       </SidebarHeader>
       

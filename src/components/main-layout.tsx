@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface MainLayoutProps {
