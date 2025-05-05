@@ -365,7 +365,7 @@ export default function Feed() {
                         {post.content.duration && ` • ${post.content.duration}`}
                         {post.content.fileSize && ` • ${post.content.fileSize}`}
                         {post.content.lessons && ` • ${post.content.lessons} lessons`}
-                        {post.content.date && ` • ${post.content.date}`}
+                        {post.content.type === "event" && post.content.date && ` • ${post.content.date}`}
                       </div>
                       {/* Preview Badge */}
                       {!post.content.preview && (
@@ -515,7 +515,7 @@ export default function Feed() {
                           {post.content.duration && ` • ${post.content.duration}`}
                           {post.content.fileSize && ` • ${post.content.fileSize}`}
                           {post.content.lessons && ` • ${post.content.lessons} lessons`}
-                          {post.content.date && ` • ${post.content.date}`}
+                          {post.content.type === "event" && post.content.date && ` • ${post.content.date}`}
                         </div>
                         {/* Preview Badge */}
                         {!post.content.preview && (
