@@ -6,7 +6,9 @@ import {
   Bell,
   ShoppingCart,
   Settings,
-  Home
+  Home,
+  Rss,
+  Users
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -21,6 +23,8 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   
   const navigationItems = [
     { icon: Home, label: 'Home', path: '/home' },
+    { icon: Rss, label: 'Feed', path: '/feed' },
+    { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
     { icon: Bell, label: 'Notifications', path: '/notifications' },
