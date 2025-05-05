@@ -35,26 +35,31 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   return (
     <>
       <SidebarMenu>
-        {navigationItems.map((item) => (
-          <SidebarMenuItem key={item.path}>
-            <SidebarMenuButton
-              asChild
-              isActive={location.pathname === item.path}
-              tooltip={isCollapsed ? item.label : undefined}
-            >
-              <Link 
-                to={item.path}
-                className={cn(
-                  "w-full flex items-center py-2.5",
-                  isCollapsed ? "px-2 justify-center" : "px-4 gap-3"
-                )}
+        {navigationItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          
+          return (
+            <SidebarMenuItem key={item.path}>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive}
+                tooltip={isCollapsed ? item.label : undefined}
               >
-                <item.icon className="h-5 w-5" />
-                {!isCollapsed && <span className="text-base">{item.label}</span>}
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+                <Link 
+                  to={item.path}
+                  className={cn(
+                    "w-full flex items-center py-2.5",
+                    isCollapsed ? "px-2 justify-center" : "px-4 gap-3",
+                    isActive && "bg-primary/30 font-medium"
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {!isCollapsed && <span className="text-base">{item.label}</span>}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
       </SidebarMenu>
       
       <FollowedCreators isCollapsed={isCollapsed} />
