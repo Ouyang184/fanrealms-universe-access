@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -34,8 +33,82 @@ import {
   Users,
 } from "lucide-react";
 
+// Add TypeScript interfaces for our feed data
+interface Creator {
+  id: number;
+  name: string;
+  username: string;
+  avatar: string;
+  tier: {
+    name: string;
+    color: string;
+  };
+}
+
+// Define base content and specific content types
+interface BaseContent {
+  title: string;
+  description: string;
+  thumbnail?: string;
+  type: string;
+  preview: boolean;
+}
+
+interface VideoContent extends BaseContent {
+  type: "video";
+  duration: string;
+}
+
+interface TutorialContent extends BaseContent {
+  type: "tutorial";
+  duration: string;
+}
+
+interface DownloadContent extends BaseContent {
+  type: "download";
+  fileSize: string;
+}
+
+interface PostContent extends BaseContent {
+  type: "post";
+  images?: string[];
+}
+
+interface CourseContent extends BaseContent {
+  type: "course";
+  lessons: number;
+  duration: string;
+}
+
+interface EventContent extends BaseContent {
+  type: "event";
+  date: string;
+}
+
+interface WorkshopContent extends BaseContent {
+  type: "workshop";
+  duration: string;
+}
+
+type ContentType = VideoContent | TutorialContent | DownloadContent | PostContent | CourseContent | EventContent | WorkshopContent;
+
+interface FeedPost {
+  id: number;
+  creator: Creator;
+  content: ContentType;
+  metadata: {
+    posted: string;
+    views?: number;
+    downloads?: number;
+    likes: number;
+    comments: number;
+    isNew?: boolean;
+    interested?: number;
+  };
+}
+
 // Sample data for feed posts
-const feedPosts = [
+const feedPosts: FeedPost[] = [
   {
     id: 1,
     creator: {
@@ -185,6 +258,11 @@ const feedPosts = [
     },
   },
 ];
+
+// Type guard to check if content has a date property
+function isEventContent(content: ContentType): content is EventContent {
+  return content.type === "event";
+}
 
 // Get tier badge color
 const getTierColor = (color: string) => {
@@ -346,7 +424,7 @@ export default function Feed() {
                           className="w-full object-cover max-h-[400px]"
                         />
                       )}
-                      {post.content.images && (
+                      {'images' in post.content && post.content.images && (
                         <div className="grid grid-cols-2 gap-2 p-4">
                           {post.content.images.map((image, index) => (
                             <img
@@ -362,10 +440,10 @@ export default function Feed() {
                       <div className="absolute top-2 left-2 bg-background/70 px-2 py-1 rounded text-xs flex items-center gap-1">
                         {getContentTypeIcon(post.content.type)}
                         {post.content.type.charAt(0).toUpperCase() + post.content.type.slice(1)}
-                        {post.content.duration && ` • ${post.content.duration}`}
-                        {post.content.fileSize && ` • ${post.content.fileSize}`}
-                        {post.content.lessons && ` • ${post.content.lessons} lessons`}
-                        {post.content.type === "event" && post.content.date && ` • ${post.content.date}`}
+                        {'duration' in post.content && post.content.duration && ` • ${post.content.duration}`}
+                        {'fileSize' in post.content && post.content.fileSize && ` • ${post.content.fileSize}`}
+                        {'lessons' in post.content && post.content.lessons && ` • ${post.content.lessons} lessons`}
+                        {isEventContent(post.content) && post.content.date && ` • ${post.content.date}`}
                       </div>
                       {/* Preview Badge */}
                       {!post.content.preview && (
@@ -496,7 +574,7 @@ export default function Feed() {
                             className="w-full object-cover max-h-[400px]"
                           />
                         )}
-                        {post.content.images && (
+                        {'images' in post.content && post.content.images && (
                           <div className="grid grid-cols-2 gap-2 p-4">
                             {post.content.images.map((image, index) => (
                               <img
@@ -512,10 +590,10 @@ export default function Feed() {
                         <div className="absolute top-2 left-2 bg-background/70 px-2 py-1 rounded text-xs flex items-center gap-1">
                           {getContentTypeIcon(post.content.type)}
                           {post.content.type.charAt(0).toUpperCase() + post.content.type.slice(1)}
-                          {post.content.duration && ` • ${post.content.duration}`}
-                          {post.content.fileSize && ` • ${post.content.fileSize}`}
-                          {post.content.lessons && ` • ${post.content.lessons} lessons`}
-                          {post.content.type === "event" && post.content.date && ` • ${post.content.date}`}
+                          {'duration' in post.content && post.content.duration && ` • ${post.content.duration}`}
+                          {'fileSize' in post.content && post.content.fileSize && ` • ${post.content.fileSize}`}
+                          {'lessons' in post.content && post.content.lessons && ` • ${post.content.lessons} lessons`}
+                          {isEventContent(post.content) && post.content.date && ` • ${post.content.date}`}
                         </div>
                         {/* Preview Badge */}
                         {!post.content.preview && (
