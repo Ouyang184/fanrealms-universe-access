@@ -16,10 +16,10 @@ import {
   ChevronDown,
   Home,
   Compass,
-  Heart,
   User,
   HelpCircle,
   Rss,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -99,6 +99,19 @@ export function MainLayout({ children }: MainLayoutProps) {
                 {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
+            <Link to="/following" className="block">
+              <Button
+                variant={isActive("/following") ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full font-medium",
+                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
+                  isActive("/following") && "bg-primary/30",
+                )}
+              >
+                <Users className="h-5 w-5" />
+                {!sidebarCollapsed && <span>Following</span>}
+              </Button>
+            </Link>
             <Link to="/explore" className="block">
               <Button
                 variant={isActive("/explore") ? "secondary" : "ghost"}
@@ -149,19 +162,6 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <ShoppingBag className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Subscriptions</span>}
-              </Button>
-            </Link>
-            <Link to="/favorites" className="block">
-              <Button
-                variant={isActive("/favorites") ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full font-medium",
-                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
-                  isActive("/favorites") && "bg-primary/30",
-                )}
-              >
-                <Heart className="h-5 w-5" />
-                {!sidebarCollapsed && <span>Favorites</span>}
               </Button>
             </Link>
             <Link to="/settings" className="block">

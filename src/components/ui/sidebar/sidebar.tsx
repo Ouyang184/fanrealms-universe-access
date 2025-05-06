@@ -7,7 +7,6 @@ import {
   MessageSquare,
   Bell,
   ShoppingBag,
-  Heart,
   Settings,
   LogOut,
   Grid,
@@ -18,6 +17,7 @@ import {
   DollarSign,
   ChevronDown,
   Rss,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,26 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   asChild
+                  isActive={isActive("/following")}
+                  tooltip={isCollapsed ? "Following" : undefined}
+                >
+                  <Link 
+                    to="/following" 
+                    className={cn(
+                      "w-full font-medium py-2.5",
+                      isCollapsed ? "px-2 justify-center" : "px-4 gap-3",
+                      isActive("/following") && "bg-primary/30",
+                    )}
+                  >
+                    <Users className="h-5 w-5" />
+                    {!isCollapsed && <span>Following</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild
                   isActive={isActive("/explore")}
                   tooltip={isCollapsed ? "Explore" : undefined}
                 >
@@ -186,26 +206,6 @@ export function AppSidebar() {
                   >
                     <ShoppingBag className="h-5 w-5" />
                     {!isCollapsed && <span>Subscriptions</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild
-                  isActive={isActive("/favorites")}
-                  tooltip={isCollapsed ? "Favorites" : undefined}
-                >
-                  <Link 
-                    to="/favorites" 
-                    className={cn(
-                      "w-full font-medium py-2.5",
-                      isCollapsed ? "px-2 justify-center" : "px-4 gap-3",
-                      isActive("/favorites") && "bg-primary/30",
-                    )}
-                  >
-                    <Heart className="h-5 w-5" />
-                    {!isCollapsed && <span>Favorites</span>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
