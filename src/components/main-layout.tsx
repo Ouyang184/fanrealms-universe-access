@@ -19,6 +19,7 @@ import {
   Heart,
   User,
   HelpCircle,
+  Rss,
 } from "lucide-react";
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,19 @@ export function MainLayout({ children }: MainLayoutProps) {
               >
                 <Home className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Home</span>}
+              </Button>
+            </Link>
+            <Link to="/feed" className="block">
+              <Button
+                variant={isActive("/feed") ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full font-medium",
+                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
+                  isActive("/feed") && "bg-primary/30",
+                )}
+              >
+                <Rss className="h-5 w-5" />
+                {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
             <Link to="/explore" className="block">

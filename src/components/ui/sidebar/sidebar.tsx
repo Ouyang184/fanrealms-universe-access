@@ -17,6 +17,7 @@ import {
   UserCheck,
   DollarSign,
   ChevronDown,
+  Rss,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,26 @@ export function AppSidebar() {
                   >
                     <Home className="h-5 w-5" />
                     {!isCollapsed && <span>Home</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild
+                  isActive={isActive("/feed")}
+                  tooltip={isCollapsed ? "Feed" : undefined}
+                >
+                  <Link 
+                    to="/feed" 
+                    className={cn(
+                      "w-full font-medium py-2.5",
+                      isCollapsed ? "px-2 justify-center" : "px-4 gap-3",
+                      isActive("/feed") && "bg-primary/30",
+                    )}
+                  >
+                    <Rss className="h-5 w-5" />
+                    {!isCollapsed && <span>Feed</span>}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
