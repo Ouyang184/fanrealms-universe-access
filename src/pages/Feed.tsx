@@ -322,11 +322,11 @@ export default function Feed() {
 
   return (
     <MainLayout showTabs={true}>
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-4xl mx-auto p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold">Your Feed</h1>
-            <p className="text-muted-foreground">Recent posts from creators you follow</p>
+            <p className="text-gray-400">Recent posts from creators you follow</p>
           </div>
           <div className="flex items-center gap-3">
             <DropdownMenu>
@@ -336,15 +336,15 @@ export default function Feed() {
                   Filter
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="bg-gray-900 border-gray-800 text-white">
                 <DropdownMenuItem>All Content</DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-gray-800" />
                 <DropdownMenuItem>Videos</DropdownMenuItem>
                 <DropdownMenuItem>Tutorials</DropdownMenuItem>
                 <DropdownMenuItem>Downloads</DropdownMenuItem>
                 <DropdownMenuItem>Posts</DropdownMenuItem>
                 <DropdownMenuItem>Events</DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-gray-800" />
                 <DropdownMenuItem>Free Content Only</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -353,15 +353,15 @@ export default function Feed() {
 
         {/* Feed Tabs */}
         <Tabs defaultValue="all" className="mb-8">
-          <TabsList>
-            <TabsTrigger value="all">
+          <TabsList className="bg-gray-900 border-gray-800">
+            <TabsTrigger value="all" className="data-[state=active]:bg-purple-900/30">
               All Posts
             </TabsTrigger>
-            <TabsTrigger value="unread">
+            <TabsTrigger value="unread" className="data-[state=active]:bg-purple-900/30">
               Unread
               <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">3</Badge>
             </TabsTrigger>
-            <TabsTrigger value="saved">
+            <TabsTrigger value="saved" className="data-[state=active]:bg-purple-900/30">
               Saved
             </TabsTrigger>
           </TabsList>
@@ -369,21 +369,21 @@ export default function Feed() {
           {/* All Posts Tab */}
           <TabsContent value="all" className="mt-6 space-y-6">
             {feedPosts.map((post) => (
-              <Card key={post.id}>
+              <Card key={post.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                 <CardContent className="p-0">
                   {/* Post Header */}
-                  <div className="p-4 flex items-center justify-between border-b">
+                  <div className="p-4 flex items-center justify-between border-b border-gray-800">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={post.creator.avatar || "/placeholder.svg"} alt={post.creator.name} />
-                        <AvatarFallback>{post.creator.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-gray-800">{post.creator.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{post.creator.name}</h3>
-                          <Badge variant="outline" className={`${getTierColor(post.creator.tier.color)} border-0 text-white`}>{post.creator.tier.name}</Badge>
+                          <Badge className={`${getTierColor(post.creator.tier.color)}`}>{post.creator.tier.name}</Badge>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1 text-xs text-gray-400">
                           <Clock className="h-3 w-3" />
                           <span>{post.metadata.posted}</span>
                         </div>
@@ -397,11 +397,11 @@ export default function Feed() {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent className="bg-gray-900 border-gray-800 text-white" align="end">
                           <DropdownMenuItem>Save Post</DropdownMenuItem>
                           <DropdownMenuItem>Hide Post</DropdownMenuItem>
                           <DropdownMenuItem>Turn Off Notifications</DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          <DropdownMenuSeparator className="bg-gray-800" />
                           <DropdownMenuItem>Report Content</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -412,7 +412,7 @@ export default function Feed() {
                   <div>
                     <div className="p-4">
                       <h2 className="text-xl font-bold mb-2">{post.content.title}</h2>
-                      <p className="text-muted-foreground">{post.content.description}</p>
+                      <p className="text-gray-300">{post.content.description}</p>
                     </div>
 
                     {/* Post Media */}
@@ -437,7 +437,7 @@ export default function Feed() {
                         </div>
                       )}
                       {/* Content Type Badge */}
-                      <div className="absolute top-2 left-2 bg-background/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+                      <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
                         {getContentTypeIcon(post.content.type)}
                         {post.content.type.charAt(0).toUpperCase() + post.content.type.slice(1)}
                         {'duration' in post.content && post.content.duration && ` • ${post.content.duration}`}
@@ -448,34 +448,40 @@ export default function Feed() {
                       {/* Preview Badge */}
                       {!post.content.preview && (
                         <div className="absolute top-2 right-2">
-                          <Badge className="bg-primary">Subscribers Only</Badge>
+                          <Badge className="bg-purple-600">Subscribers Only</Badge>
                         </div>
                       )}
                     </div>
 
                     {/* Post Stats and Actions */}
-                    <div className="p-4 flex flex-wrap items-center justify-between border-t">
+                    <div className="p-4 flex flex-wrap items-center justify-between border-t border-gray-800">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-sm">
                           {post.metadata.views && (
                             <>
-                              <Eye className="h-4 w-4 text-muted-foreground" />
+                              <Eye className="h-4 w-4 text-gray-400" />
                               <span>{post.metadata.views.toLocaleString()}</span>
                             </>
                           )}
                           {post.metadata.downloads && (
                             <>
-                              <Download className="h-4 w-4 text-muted-foreground" />
+                              <Download className="h-4 w-4 text-gray-400" />
                               <span>{post.metadata.downloads.toLocaleString()}</span>
+                            </>
+                          )}
+                          {post.metadata.interested && (
+                            <>
+                              <Bell className="h-4 w-4 text-gray-400" />
+                              <span>{post.metadata.interested.toLocaleString()}</span>
                             </>
                           )}
                         </div>
                         <div className="flex items-center gap-1 text-sm">
-                          <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+                          <ThumbsUp className="h-4 w-4 text-gray-400" />
                           <span>{post.metadata.likes.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm">
-                          <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                          <MessageSquare className="h-4 w-4 text-gray-400" />
                           <span>{post.metadata.comments.toLocaleString()}</span>
                         </div>
                       </div>
@@ -500,11 +506,11 @@ export default function Feed() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="bg-muted/50 p-4 flex justify-between">
-                  <Button variant="ghost" size="sm" className="text-primary">
+                <CardFooter className="bg-gray-800/50 p-4 flex justify-between">
+                  <Button variant="ghost" size="sm" className="text-purple-400">
                     View All Comments
                   </Button>
-                  <Button variant="default" size="sm">
+                  <Button variant="default" size="sm" className="bg-purple-600 hover:bg-purple-700">
                     {post.content.preview ? "View Full Post" : "Subscribe to View"}
                   </Button>
                 </CardFooter>
@@ -517,23 +523,23 @@ export default function Feed() {
             {feedPosts
               .filter((post) => post.metadata.isNew)
               .map((post) => (
-                <Card key={post.id}>
+                <Card key={post.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                   <CardContent className="p-0">
                     {/* Post Header */}
-                    <div className="p-4 flex items-center justify-between border-b">
+                    <div className="p-4 flex items-center justify-between border-b border-gray-800">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={post.creator.avatar || "/placeholder.svg"} alt={post.creator.name} />
-                          <AvatarFallback>{post.creator.name.charAt(0)}</AvatarFallback>
+                          <AvatarFallback className="bg-gray-800">{post.creator.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-medium">{post.creator.name}</h3>
-                            <Badge variant="outline" className={`${getTierColor(post.creator.tier.color)} border-0 text-white`}>
+                            <Badge className={`${getTierColor(post.creator.tier.color)}`}>
                               {post.creator.tier.name}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
                             <Clock className="h-3 w-3" />
                             <span>{post.metadata.posted}</span>
                           </div>
@@ -547,11 +553,11 @@ export default function Feed() {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent className="bg-gray-900 border-gray-800 text-white" align="end">
                             <DropdownMenuItem>Mark as Read</DropdownMenuItem>
                             <DropdownMenuItem>Save Post</DropdownMenuItem>
                             <DropdownMenuItem>Hide Post</DropdownMenuItem>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="bg-gray-800" />
                             <DropdownMenuItem>Report Content</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -562,7 +568,7 @@ export default function Feed() {
                     <div>
                       <div className="p-4">
                         <h2 className="text-xl font-bold mb-2">{post.content.title}</h2>
-                        <p className="text-muted-foreground">{post.content.description}</p>
+                        <p className="text-gray-300">{post.content.description}</p>
                       </div>
 
                       {/* Post Media */}
@@ -587,7 +593,7 @@ export default function Feed() {
                           </div>
                         )}
                         {/* Content Type Badge */}
-                        <div className="absolute top-2 left-2 bg-background/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+                        <div className="absolute top-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
                           {getContentTypeIcon(post.content.type)}
                           {post.content.type.charAt(0).toUpperCase() + post.content.type.slice(1)}
                           {'duration' in post.content && post.content.duration && ` • ${post.content.duration}`}
@@ -598,34 +604,40 @@ export default function Feed() {
                         {/* Preview Badge */}
                         {!post.content.preview && (
                           <div className="absolute top-2 right-2">
-                            <Badge className="bg-primary">Subscribers Only</Badge>
+                            <Badge className="bg-purple-600">Subscribers Only</Badge>
                           </div>
                         )}
                       </div>
 
                       {/* Post Stats and Actions */}
-                      <div className="p-4 flex flex-wrap items-center justify-between border-t">
+                      <div className="p-4 flex flex-wrap items-center justify-between border-t border-gray-800">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1 text-sm">
                             {post.metadata.views && (
                               <>
-                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                <Eye className="h-4 w-4 text-gray-400" />
                                 <span>{post.metadata.views.toLocaleString()}</span>
                               </>
                             )}
                             {post.metadata.downloads && (
                               <>
-                                <Download className="h-4 w-4 text-muted-foreground" />
+                                <Download className="h-4 w-4 text-gray-400" />
                                 <span>{post.metadata.downloads.toLocaleString()}</span>
+                              </>
+                            )}
+                            {post.metadata.interested && (
+                              <>
+                                <Bell className="h-4 w-4 text-gray-400" />
+                                <span>{post.metadata.interested.toLocaleString()}</span>
                               </>
                             )}
                           </div>
                           <div className="flex items-center gap-1 text-sm">
-                            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+                            <ThumbsUp className="h-4 w-4 text-gray-400" />
                             <span>{post.metadata.likes.toLocaleString()}</span>
                           </div>
                           <div className="flex items-center gap-1 text-sm">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                            <MessageSquare className="h-4 w-4 text-gray-400" />
                             <span>{post.metadata.comments.toLocaleString()}</span>
                           </div>
                         </div>
@@ -650,11 +662,11 @@ export default function Feed() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="bg-muted/50 p-4 flex justify-between">
-                    <Button variant="ghost" size="sm" className="text-primary">
+                  <CardFooter className="bg-gray-800/50 p-4 flex justify-between">
+                    <Button variant="ghost" size="sm" className="text-purple-400">
                       View All Comments
                     </Button>
-                    <Button variant="default" size="sm">
+                    <Button variant="default" size="sm" className="bg-purple-600 hover:bg-purple-700">
                       {post.content.preview ? "View Full Post" : "Subscribe to View"}
                     </Button>
                   </CardFooter>
@@ -665,12 +677,12 @@ export default function Feed() {
           {/* Saved Tab */}
           <TabsContent value="saved" className="mt-6">
             <div className="text-center py-12">
-              <Bookmark className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <Bookmark className="h-16 w-16 mx-auto mb-4 text-gray-500" />
               <h3 className="text-xl font-medium mb-2">No saved posts yet</h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-gray-400 mb-6">
                 When you save posts from your feed, they'll appear here for easy access later.
               </p>
-              <Button>Browse Your Feed</Button>
+              <Button className="bg-purple-600 hover:bg-purple-700">Browse Your Feed</Button>
             </div>
           </TabsContent>
         </Tabs>
@@ -680,7 +692,7 @@ export default function Feed() {
 }
 
 // BookIcon component
-function BookIcon(props: any) {
+function BookIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
