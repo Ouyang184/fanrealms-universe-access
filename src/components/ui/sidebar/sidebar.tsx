@@ -9,13 +9,6 @@ import {
   ShoppingBag,
   Settings,
   LogOut,
-  Grid,
-  FileText,
-  Mail,
-  Award,
-  UserCheck,
-  DollarSign,
-  ChevronDown,
   Rss,
   Users,
 } from "lucide-react";
@@ -23,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -234,182 +226,31 @@ export function AppSidebar() {
 
           <SidebarSeparator className="my-3" />
 
-          {isCollapsed ? (
-            <div className="p-2">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Dashboard">
-                    <Grid className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Posts">
-                    <FileText className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Creator Messages">
-                    <Mail className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Membership Tiers">
-                    <Award className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Subscribers">
-                    <UserCheck className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Payouts">
-                    <DollarSign className="h-5 w-5" />
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </div>
-          ) : (
-            <div className="px-2">
-              <Collapsible defaultOpen>
-                <CollapsibleTrigger className="flex w-full items-center justify-between p-2 font-semibold text-lg">
-                  <div className="flex items-center gap-2">
-                    <span>Creator Studio</span>
-                  </div>
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-2 space-y-1">
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/dashboard")}
-                      >
-                        <Link 
-                          to="/creator-studio/dashboard" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/dashboard") && "bg-primary/30",
-                          )}
-                        >
-                          <Grid className="h-5 w-5" />
-                          Dashboard
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/posts")}
-                      >
-                        <Link 
-                          to="/creator-studio/posts" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/posts") && "bg-primary/30",
-                          )}
-                        >
-                          <FileText className="h-5 w-5" />
-                          Posts
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/messages")}
-                      >
-                        <Link 
-                          to="/creator-studio/messages" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/messages") && "bg-primary/30",
-                          )}
-                        >
-                          <Mail className="h-5 w-5" />
-                          Messages
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/membership-tiers")}
-                      >
-                        <Link 
-                          to="/creator-studio/membership-tiers" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/membership-tiers") && "bg-primary/30",
-                          )}
-                        >
-                          <Award className="h-5 w-5" />
-                          Membership Tiers
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/subscribers")}
-                      >
-                        <Link 
-                          to="/creator-studio/subscribers" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/subscribers") && "bg-primary/30",
-                          )}
-                        >
-                          <UserCheck className="h-5 w-5" />
-                          Subscribers
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/payouts")}
-                      >
-                        <Link 
-                          to="/creator-studio/payouts" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/payouts") && "bg-primary/30",
-                          )}
-                        >
-                          <DollarSign className="h-5 w-5" />
-                          Payouts
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    
-                    <SidebarMenuItem>
-                      <SidebarMenuButton 
-                        asChild
-                        isActive={isActive("/creator-studio/settings")}
-                      >
-                        <Link 
-                          to="/creator-studio/settings" 
-                          className={cn(
-                            "w-full justify-start gap-3 font-medium",
-                            isActive("/creator-studio/settings") && "bg-primary/30",
-                          )}
-                        >
-                          <Settings className="h-5 w-5" />
-                          Creator Settings
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          )}
+          {/* Add a link to Creator Studio */}
+          <div className="p-2">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild
+                  tooltip={isCollapsed ? "Creator Studio" : undefined}
+                >
+                  <Link 
+                    to="/creator-studio/dashboard" 
+                    className={cn(
+                      "w-full font-medium py-2.5",
+                      isCollapsed ? "px-2 justify-center" : "px-4 gap-3"
+                    )}
+                  >
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    {!isCollapsed && <span>Creator Studio</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
         </ScrollArea>
       </SidebarContent>
 
