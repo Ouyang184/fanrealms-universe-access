@@ -15,6 +15,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import SubscriptionsPage from "./pages/Subscriptions";
 import RootLayout from "@/components/RootLayout";
 import FeedPage from "./pages/Feed";
+import FollowingPage from "./pages/Following";
 
 // Create a client
 const queryClient = new QueryClient();
@@ -40,7 +41,7 @@ export default function App() {
                 {/* Main app routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/following" element={<Dashboard />} /> {/* Placeholder */}
+                <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/messages" element={<Dashboard />} /> {/* Placeholder */}
                 <Route path="/notifications" element={<Dashboard />} /> {/* Placeholder */}
