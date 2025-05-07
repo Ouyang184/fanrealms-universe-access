@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MainLayout } from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,7 +32,7 @@ import {
   Dumbbell,
 } from "lucide-react";
 
-// Sample creators you follow
+// Sample data for followed creators
 const followedCreators = [
   {
     id: 1,
@@ -223,23 +223,23 @@ const categories = [
 const getTierColor = (color: string) => {
   switch (color) {
     case "purple":
-      return "bg-purple-600"
+      return "bg-purple-600";
     case "green":
-      return "bg-green-600"
+      return "bg-green-600";
     case "blue":
-      return "bg-blue-600"
+      return "bg-blue-600";
     case "amber":
-      return "bg-amber-600"
+      return "bg-amber-600";
     case "cyan":
-      return "bg-cyan-600"
+      return "bg-cyan-600";
     case "orange":
-      return "bg-orange-600"
+      return "bg-orange-600";
     case "red":
-      return "bg-red-600"
+      return "bg-red-600";
     default:
-      return "bg-purple-600"
+      return "bg-purple-600";
   }
-}
+};
 
 export default function Following() {
   // Set document title when component mounts
@@ -391,9 +391,9 @@ export default function Following() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-2 bg-purple-900/30 text-purple-300 border-purple-700"
+                                className="gap-2 bg-primary/30 text-primary border-primary/70"
                               >
-                                <Heart className="h-4 w-4 fill-purple-400" />
+                                <Heart className="h-4 w-4 fill-primary" />
                                 Favorited
                               </Button>
                             ) : (
@@ -440,7 +440,9 @@ export default function Following() {
                           <div className="flex items-start">
                             <Avatar className="h-16 w-16 mr-4">
                               <AvatarImage src={creator.avatar || "/placeholder.svg"} alt={creator.name} />
-                              <AvatarFallback className="text-xl">{creator.name.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="text-xl">
+                                {creator.name.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -504,9 +506,9 @@ export default function Following() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="gap-2 bg-purple-900/30 text-purple-300 border-purple-700"
+                                className="gap-2 bg-primary/30 text-primary border-primary/70"
                               >
-                                <Heart className="h-4 w-4 fill-purple-400" />
+                                <Heart className="h-4 w-4 fill-primary" />
                                 Favorited
                               </Button>
                               <Button variant="outline" size="sm" className="gap-2">
@@ -613,9 +615,9 @@ export default function Following() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="gap-2 bg-purple-900/30 text-purple-300 border-purple-700"
+                                    className="gap-2 bg-primary/30 text-primary border-primary/70"
                                   >
-                                    <Heart className="h-4 w-4 fill-purple-400" />
+                                    <Heart className="h-4 w-4 fill-primary" />
                                     Favorited
                                   </Button>
                                 ) : (
