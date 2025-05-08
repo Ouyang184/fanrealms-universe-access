@@ -48,7 +48,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
-
+  
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
@@ -62,7 +62,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
       {/* Sidebar */}
       <div
         className={cn(
-          "border-r border-border flex flex-col transition-all duration-300 ease-in-out",
+          "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-black",
           sidebarCollapsed ? "w-16" : "w-72",
         )}
       >
@@ -84,19 +84,6 @@ export function NewMainLayout({ children }: MainLayoutProps) {
               >
                 <Home className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Home</span>}
-              </Button>
-            </Link>
-            <Link to="/feed" className="block">
-              <Button
-                variant={isActive("/feed") ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full font-medium",
-                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
-                  isActive("/feed") && "bg-primary/30",
-                )}
-              >
-                <Rss className="h-5 w-5" />
-                {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
             <Link to="/following" className="block">
@@ -183,27 +170,41 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
           {sidebarCollapsed ? (
             <div className="p-2">
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <Grid className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <FileText className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <Mail className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <Award className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <UserCheck className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <DollarSign className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" className="w-full justify-center px-2">
-                <Settings className="h-5 w-5" />
-              </Button>
+              <Link to="/creator-studio/dashboard" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <Grid className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/posts" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <FileText className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/messages" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <Mail className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/membership-tiers" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <Award className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/subscribers" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <UserCheck className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/payouts" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <DollarSign className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link to="/creator-studio/settings" className="block">
+                <Button variant="ghost" className="w-full justify-center px-2">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           ) : (
             <Collapsible defaultOpen className="px-2">
