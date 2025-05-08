@@ -1,14 +1,35 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useFollow } from "../hooks/useFollow";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreators } from "../hooks/useCreators";
-import { CreatorProfileCard } from "@/components/CreatorProfileCard";
+import CreatorProfileCard from "@/components/CreatorProfileCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSubscriptions } from "../hooks/useSubscriptions";
+import { CreatorProfile } from "@/types";
 
 export default function FollowingPage() {
-  const { followedCreators, isLoading } = useFollow();
-  const { popularCreators } = useCreators();
+  const { isLoading } = useFollow();
+  const { data: creators = [] } = useCreators();
+  const { subscriptions } = useSubscriptions();
+  const [followedCreators, setFollowedCreators] = useState<CreatorProfile[]>([]);
+  
+  // Get list of followed creators using subscription data and creators list
+  useEffect(() => {
+    if (!subscriptions || !creators.length) return;
+    
+    const followedCreatorIds = subscriptions.map(sub => sub.creator_id);
+    const followedCreatorsList = creators.filter(creator => 
+      followedCreatorIds.includes(creator.id)
+    );
+    
+    setFollowedCreators(followedCreatorsList);
+  }, [subscriptions, creators]);
+  
+  // Get popular creators (not followed)
+  const popularCreators = creators
+    .filter(creator => !followedCreators.some(fc => fc.id === creator.id))
+    .slice(0, 6);
 
   return (
     <div className="container max-w-6xl mx-auto py-8 px-4">
@@ -55,7 +76,12 @@ export default function FollowingPage() {
         <TabsContent value="recent" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {followedCreators
-              ?.sort((a, b) => new Date(b.followedAt).getTime() - new Date(a.followedAt).getTime())
+              ?.sort((a, b) => {
+                const subA = subscriptions?.find(sub => sub.creator_id === a.id);
+                const subB = subscriptions?.find(sub => sub.creator_id === b.id);
+                return new Date(subB?.created_at || 0).getTime() - 
+                       new Date(subA?.created_at || 0).getTime();
+              })
               .slice(0, 6)
               .map((creator) => (
                 <CreatorProfileCard key={creator.id} creator={creator} />
@@ -66,7 +92,10 @@ export default function FollowingPage() {
         <TabsContent value="favorites" className="mt-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {followedCreators
-              ?.filter((creator) => creator.isFavorite)
+              ?.filter((creator) => {
+                const sub = subscriptions?.find(sub => sub.creator_id === creator.id);
+                return sub?.is_paid;
+              })
               .map((creator) => (
                 <CreatorProfileCard key={creator.id} creator={creator} />
               ))}
