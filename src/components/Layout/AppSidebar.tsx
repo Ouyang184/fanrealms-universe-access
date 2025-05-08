@@ -1,7 +1,8 @@
+
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { 
   Sidebar, 
   SidebarHeader, 
@@ -11,14 +12,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarSeparator,
-  SidebarTrigger,
   useSidebar
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NavigationMenu } from './Sidebar/NavigationMenu';
 import { CreatorStudioMenu } from './Sidebar/CreatorStudioMenu';
 import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Logo } from '@/components/Logo';
@@ -91,18 +90,10 @@ export function AppSidebar() {
                   tooltip={isCollapsed ? "Logout" : undefined}
                 >
                   {isCollapsed ? (
-                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                      <polyline points="16 17 21 12 16 7" />
-                      <line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
+                    <LogOut className="h-5 w-5" />
                   ) : (
                     <>
-                      <svg className="h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
+                      <LogOut className="h-5 w-5 mr-2" />
                       <span className="text-base">Logout</span>
                     </>
                   )}
