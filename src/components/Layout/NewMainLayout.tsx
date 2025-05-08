@@ -21,6 +21,11 @@ import {
   HelpCircle,
   Users,
   Rss,
+  LayoutDashboard,
+  Store,
+  LayoutList,
+  Banknote,
+  MonitorSmartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,17 +78,30 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
-            <Link to="/" className="block">
+            <Link to="/home" className="block">
               <Button
-                variant={isActive("/") ? "secondary" : "ghost"}
+                variant={isActive("/home") ? "secondary" : "ghost"}
                 className={cn(
                   "w-full font-medium",
                   sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
-                  isActive("/") && "bg-primary/30",
+                  isActive("/home") && "bg-primary/30",
                 )}
               >
                 <Home className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Home</span>}
+              </Button>
+            </Link>
+            <Link to="/feed" className="block">
+              <Button
+                variant={isActive("/feed") ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full font-medium",
+                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
+                  isActive("/feed") && "bg-primary/30",
+                )}
+              >
+                <Rss className="h-5 w-5" />
+                {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
             <Link to="/following" className="block">
@@ -147,7 +165,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                   isActive("/subscriptions") && "bg-primary/30",
                 )}
               >
-                <ShoppingBag className="h-5 w-5" />
+                <Store className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Subscriptions</span>}
               </Button>
             </Link>
@@ -171,38 +189,80 @@ export function NewMainLayout({ children }: MainLayoutProps) {
           {sidebarCollapsed ? (
             <div className="p-2">
               <Link to="/creator-studio/dashboard" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
-                  <Grid className="h-5 w-5" />
+                <Button 
+                  variant={isActive("/creator-studio/dashboard") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/dashboard") && "bg-primary/30"
+                  )}
+                >
+                  <LayoutDashboard className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/posts" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
-                  <FileText className="h-5 w-5" />
+                <Button 
+                  variant={isActive("/creator-studio/posts") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/posts") && "bg-primary/30"
+                  )}
+                >
+                  <LayoutList className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/messages" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
+                <Button 
+                  variant={isActive("/creator-studio/messages") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/messages") && "bg-primary/30"
+                  )}
+                >
                   <Mail className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/membership-tiers" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
+                <Button 
+                  variant={isActive("/creator-studio/membership-tiers") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/membership-tiers") && "bg-primary/30"
+                  )}
+                >
                   <Award className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/subscribers" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
+                <Button 
+                  variant={isActive("/creator-studio/subscribers") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/subscribers") && "bg-primary/30"
+                  )}
+                >
                   <UserCheck className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/payouts" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
-                  <DollarSign className="h-5 w-5" />
+                <Button 
+                  variant={isActive("/creator-studio/payouts") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/payouts") && "bg-primary/30"
+                  )}
+                >
+                  <Banknote className="h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/creator-studio/settings" className="block">
-                <Button variant="ghost" className="w-full justify-center px-2">
-                  <Settings className="h-5 w-5" />
+                <Button 
+                  variant={isActive("/creator-studio/settings") ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full justify-center px-2",
+                    isActive("/creator-studio/settings") && "bg-primary/30"
+                  )}
+                >
+                  <MonitorSmartphone className="h-5 w-5" />
                 </Button>
               </Link>
             </div>
@@ -223,7 +283,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                       isActive("/creator-studio/dashboard") && "bg-primary/30",
                     )}
                   >
-                    <Grid className="h-5 w-5" />
+                    <LayoutDashboard className="h-5 w-5" />
                     Dashboard
                   </Button>
                 </Link>
@@ -235,7 +295,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                       isActive("/creator-studio/posts") && "bg-primary/30",
                     )}
                   >
-                    <FileText className="h-5 w-5" />
+                    <LayoutList className="h-5 w-5" />
                     Posts
                   </Button>
                 </Link>
@@ -283,7 +343,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                       isActive("/creator-studio/payouts") && "bg-primary/30",
                     )}
                   >
-                    <DollarSign className="h-5 w-5" />
+                    <Banknote className="h-5 w-5" />
                     Payouts
                   </Button>
                 </Link>
@@ -295,7 +355,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                       isActive("/creator-studio/settings") && "bg-primary/30",
                     )}
                   >
-                    <Settings className="h-5 w-5" />
+                    <MonitorSmartphone className="h-5 w-5" />
                     Creator Settings
                   </Button>
                 </Link>
@@ -317,19 +377,19 @@ export function NewMainLayout({ children }: MainLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-black text-white">
         {/* Header with Search Bar and User Actions */}
-        <header className="border-b border-border bg-background z-10">
+        <header className="border-b border-border/30 bg-transparent z-10">
           <div className="flex items-center justify-between p-4">
             <div className="relative flex-1 max-w-xl">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search for creators, posts, or content..."
-                className="pl-10"
+                className="pl-10 bg-zinc-900 border-zinc-700"
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
+                <kbd className="px-1.5 py-0.5 text-xs bg-zinc-800 rounded-md">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 text-xs bg-zinc-800 rounded-md">K</kbd>
               </div>
             </div>
 
@@ -337,7 +397,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
             <div className="flex items-center gap-4 ml-4">
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   3
                 </span>
                 <span className="sr-only">Notifications</span>
@@ -346,7 +406,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                 <MessageSquare className="h-5 w-5" />
                 <span className="sr-only">Messages</span>
               </Button>
-              <Button variant="default" className="bg-primary hover:bg-primary/90">
+              <Button variant="default" className="bg-purple-600 hover:bg-purple-700">
                 Create
               </Button>
 
@@ -354,30 +414,30 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-8 w-8 cursor-pointer">
                     <AvatarImage src={profile?.profile_picture || ""} />
-                    <AvatarFallback className="bg-primary/80 text-primary-foreground">
+                    <AvatarFallback className="bg-purple-600 text-white">
                       {profile?.username ? profile.username.substring(0, 2).toUpperCase() : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 mt-1" align="end">
+                <DropdownMenuContent className="w-56 mt-1 bg-zinc-900 border-zinc-700" align="end">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium">{profile?.username || "User"}</p>
                       <p className="text-xs text-muted-foreground">{profile?.email || ""}</p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuSeparator className="bg-zinc-700" />
+                  <DropdownMenuItem className="flex items-center gap-2 hover:bg-zinc-800">
                     <User className="h-4 w-4" /> Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2 hover:bg-zinc-800">
                     <Settings className="h-4 w-4" /> Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="flex items-center gap-2">
+                  <DropdownMenuItem className="flex items-center gap-2 hover:bg-zinc-800">
                     <HelpCircle className="h-4 w-4" /> Help & Support
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-2 text-destructive" onClick={signOut}>
+                  <DropdownMenuSeparator className="bg-zinc-700" />
+                  <DropdownMenuItem className="flex items-center gap-2 text-red-400 hover:bg-zinc-800" onClick={signOut}>
                     <LogOut className="h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>

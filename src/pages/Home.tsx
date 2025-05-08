@@ -17,7 +17,7 @@ export default function HomePage() {
   
   return (
     <NewMainLayout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto">
         <PostsSection 
           posts={posts || []} 
           isLoading={isLoading} 
