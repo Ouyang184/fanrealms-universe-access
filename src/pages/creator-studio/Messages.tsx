@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MainLayout } from "@/components/main-layout";
 import { Message } from "@/components/messaging/Message";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
