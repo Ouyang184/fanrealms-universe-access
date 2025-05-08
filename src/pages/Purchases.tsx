@@ -1,11 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuthCheck } from '@/lib/hooks/useAuthCheck';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton'; // Add missing import
 
 // Sample data for purchases
 const purchaseSampleData = {

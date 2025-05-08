@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { MainLayout } from "@/components/layout/MainLayout";
+import { MainLayout } from "@/components/Layout/MainLayout";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import { 
   Card, 

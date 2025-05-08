@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/AuthGuard';
 import { useProfile } from '@/hooks/useProfile';
