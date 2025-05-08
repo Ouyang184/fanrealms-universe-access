@@ -14,7 +14,7 @@ export default function Messages() {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout hideTopBar={true}>
         <div className="flex justify-center items-center min-h-[60vh]">
           <LoadingSpinner />
         </div>
@@ -23,7 +23,7 @@ export default function Messages() {
   }
 
   return (
-    <MainLayout>
+    <MainLayout hideTopBar={true}>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Direct Messages</h1>
