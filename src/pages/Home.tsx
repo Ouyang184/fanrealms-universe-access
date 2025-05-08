@@ -12,9 +12,8 @@ export default function HomePage() {
   
   const isLoading = postsLoading;
   
-  // Check if the user is a creator based on the creator_id field that exists in the database
-  // This is a safe check that won't cause TypeScript errors
-  const isCreator = !!profile?.id; // We'll assume any logged in user with a profile can be a creator
+  // Check if the user is a creator based on the ID field
+  const isCreator = !!profile?.id;
   
   return (
     <NewMainLayout>
