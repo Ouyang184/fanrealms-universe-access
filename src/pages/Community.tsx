@@ -1,5 +1,5 @@
 
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

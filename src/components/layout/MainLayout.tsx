@@ -1,9 +1,9 @@
 
 import { ReactNode, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { TopBar } from './TopBar';
+import { TopBar } from '@/components/Layout/TopBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Footer from './Footer';
+import Footer from '@/components/Layout/Footer';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface MainLayoutProps {
