@@ -38,10 +38,6 @@ export function CreatorStudioMenu({ isCollapsed = false }: CreatorStudioMenuProp
     setIsOpen(isCreatorStudioRoute);
   }, [location.pathname]);
   
-  const creatorStudioIcon = (
-    <PanelLeftClose className="h-5 w-5" />
-  );
-
   if (isCollapsed) {
     return (
       <SidebarMenu>
@@ -54,7 +50,7 @@ export function CreatorStudioMenu({ isCollapsed = false }: CreatorStudioMenuProp
                   isActive={location.pathname.startsWith('/creator-studio')}
                 >
                   <Link to="/creator-studio" className="flex w-full justify-center px-2 py-2.5">
-                    {creatorStudioIcon}
+                    <PanelLeftClose className="h-5 w-5" />
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

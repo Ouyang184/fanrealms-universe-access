@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <div className="min-h-screen">
+      <div className="min-h-screen w-full">
         {children}
       </div>
     </ThemeProvider>
