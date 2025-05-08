@@ -49,14 +49,14 @@ export function PostsSection({
   );
 
   return (
-    <section>
+    <section className="max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold">Recent Posts</h2>
         {isCreator && <CreatePostForm />}
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full justify-start mb-6">
           <TabsTrigger value="feed">Your Feed</TabsTrigger>
           <TabsTrigger value="your-posts">Your Posts</TabsTrigger>
         </TabsList>
