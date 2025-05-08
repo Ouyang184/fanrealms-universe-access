@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { NewMainLayout } from "@/components/Layout/NewMainLayout";
 import { PostsSection } from "@/components/dashboard/PostsSection";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuth } from "@/contexts/AuthContext";
+import { SingleSidebarLayout } from "@/components/Layout/SingleSidebarLayout";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState("feed");
@@ -16,7 +16,7 @@ export default function HomePage() {
   const isCreator = !!profile?.id;
   
   return (
-    <NewMainLayout>
+    <SingleSidebarLayout>
       <div className="container mx-auto">
         <PostsSection 
           posts={posts || []} 
@@ -26,6 +26,6 @@ export default function HomePage() {
           setActiveTab={setActiveTab}
         />
       </div>
-    </NewMainLayout>
+    </SingleSidebarLayout>
   );
 }
