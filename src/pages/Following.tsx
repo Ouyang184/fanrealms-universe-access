@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -239,7 +240,7 @@ export default function FollowingPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {creator.tiers && creator.tiers[0] && (
-                                    <Badge className={getTierColor(creator.tiers[0].color)}>
+                                    <Badge className={getTierColor(creator.tiers[0].name)}>
                                       {creator.tiers[0].name}
                                     </Badge>
                                   )}
