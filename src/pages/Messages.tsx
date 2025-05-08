@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MainLayout } from "@/components/layout/MainLayout";
 import { MessagesList } from "@/components/messaging/MessagesList";
 import { SendMessageDialog } from "@/components/messaging/SendMessageDialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
