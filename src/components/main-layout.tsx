@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/Layout/Header";
 import { Sidebar } from "@/components/Layout/Sidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -18,23 +17,21 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
   const { signOut, profile } = useAuth();
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-background text-foreground">
-        {/* Sidebar */}
-        <Sidebar 
-          sidebarCollapsed={sidebarCollapsed} 
-          setSidebarCollapsed={setSidebarCollapsed} 
-        />
+    <div className="flex h-screen bg-background text-foreground">
+      {/* Sidebar */}
+      <Sidebar 
+        sidebarCollapsed={sidebarCollapsed} 
+        setSidebarCollapsed={setSidebarCollapsed} 
+      />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header - Only show if hideTopBar is false */}
-          {!hideTopBar && <Header />}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header - Only show if hideTopBar is false */}
+        {!hideTopBar && <Header />}
 
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-auto p-6">{children}</main>
-        </div>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
