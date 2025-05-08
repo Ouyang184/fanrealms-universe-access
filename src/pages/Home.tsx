@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MainLayout } from "@/components/layout";
+import { NewMainLayout } from "@/components/Layout/NewMainLayout";
 import { PostsSection } from "@/components/dashboard/PostsSection";
 import { usePosts } from "@/hooks/usePosts";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +17,7 @@ export default function HomePage() {
   const isCreator = !!profile?.id; // We'll assume any logged in user with a profile can be a creator
   
   return (
-    <MainLayout>
+    <NewMainLayout>
       <div className="container mx-auto py-6">
         <PostsSection 
           posts={posts || []} 
@@ -27,6 +27,6 @@ export default function HomePage() {
           setActiveTab={setActiveTab}
         />
       </div>
-    </MainLayout>
+    </NewMainLayout>
   );
 }
