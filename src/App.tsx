@@ -20,7 +20,13 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 
 // Create a client
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      suspense: true, // Enable React Suspense mode for queries
+    },
+  },
+});
 
 export default function App() {
   return (

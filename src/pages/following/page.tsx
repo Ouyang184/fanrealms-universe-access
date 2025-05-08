@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,6 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useCreators } from "@/hooks/useCreators";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorProfile } from "@/types";
-import Loading from "@/components/Loading";
 
 // Categories with icons
 const categories = [
