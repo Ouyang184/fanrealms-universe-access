@@ -38,13 +38,13 @@ export function Sidebar({ sidebarCollapsed, setSidebarCollapsed }: SidebarProps)
         <Separator className="my-4" />
 
         {sidebarCollapsed ? (
-          <CreatorStudioMenu collapsed={true} />
+          <CreatorStudioMenu isCollapsed={true} />
         ) : (
-          <CreatorStudioMenu collapsed={false} />
+          <CreatorStudioMenu isCollapsed={false} />
         )}
       </ScrollArea>
 
-      <SidebarFooterContent collapsed={sidebarCollapsed} />
+      <SidebarFooterContent isCollapsed={sidebarCollapsed} />
     </div>
   );
 }
