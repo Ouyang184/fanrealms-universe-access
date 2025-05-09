@@ -26,7 +26,6 @@ const queryClient = new QueryClient({
       // Use the correct syntax for enabling suspense mode in React Query v5+
       networkMode: 'online',
       refetchOnWindowFocus: false,
-      suspense: true, // Explicitly enable suspense mode alongside other options
     },
   },
 });
