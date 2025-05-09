@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
@@ -309,21 +310,22 @@ function FollowingPageContent() {
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )) : (
-                <div className="text-center py-12">
-                  <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-medium mb-2">No creators found</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {activeTab === "All"
-                      ? "You haven't followed any creators yet. Explore to find creators to follow!"
-                      : `You don't have any creators in the ${activeTab} category.`}
-                  </p>
-                  <Button>Explore Creators</Button>
-                </div>
-              )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-medium mb-2">No creators found</h3>
+                <p className="text-muted-foreground mb-6">
+                  {activeTab === "All"
+                    ? "You haven't followed any creators yet. Explore to find creators to follow!"
+                    : `You don't have any creators in the ${activeTab} category.`}
+                </p>
+                <Button>Explore Creators</Button>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
