@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MainLayout } from "@/components/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FeedFilters } from "@/components/feed/FeedFilters";
