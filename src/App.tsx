@@ -38,7 +38,8 @@ export default function App() {
           <TooltipProvider>
             <RootLayout>
               <Routes>
-                <Route path="/" element={<Index />} />
+                <Route path="/" element={<HomePage />} />
+                <Route path="/index" element={<Index />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/feed" element={<FeedPage />} />
                 

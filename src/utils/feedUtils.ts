@@ -3,7 +3,6 @@ import { ContentType, EventContent } from "@/types/FeedPostTypes";
 import {
   Video,
   FileText,
-  Download,
   Music,
   FileAudio,
   ImageIcon,
@@ -39,6 +38,37 @@ export const getTierColor = (color: string) => {
   }
 };
 
+// Download icon component
+export function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
+  return React.createElement(
+    "svg",
+    {
+      ...props,
+      xmlns: "http://www.w3.org/2000/svg",
+      width: "24",
+      height: "24",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+    },
+    React.createElement("path", {
+      d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",
+    }),
+    React.createElement("polyline", {
+      points: "7 10 12 15 17 10",
+    }),
+    React.createElement("line", {
+      x1: "12",
+      x2: "12",
+      y1: "15",
+      y2: "3",
+    })
+  );
+}
+
 // Get content type icon
 export const getContentTypeIcon = (type: string) => {
   switch (type) {
@@ -47,7 +77,7 @@ export const getContentTypeIcon = (type: string) => {
     case "tutorial":
       return React.createElement(FileText, { className: "h-4 w-4" });
     case "download":
-      return React.createElement(Download, { className: "h-4 w-4" });
+      return React.createElement(DownloadIcon, { className: "h-4 w-4" });
     case "post":
       return React.createElement(FileText, { className: "h-4 w-4" });
     case "course":
