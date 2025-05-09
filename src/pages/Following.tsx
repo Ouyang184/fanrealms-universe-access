@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,7 +35,7 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useCreators } from "@/hooks/useCreators";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorProfile } from "@/types";
-import Loading from "@/components/Loading";
+import { LoadingView } from "@/components/ui/loading-view";
 
 // Categories with icons
 const categories = [
@@ -83,7 +82,7 @@ interface EnrichedCreatorProfile extends CreatorProfile {
   lastPost?: string;
 }
 
-export default function FollowingPage() {
+function FollowingPageContent() {
   const { data: creators = [] } = useCreators();
   const { subscriptions } = useSubscriptions();
   const { followCreator, unfollowCreator } = useFollow();
@@ -366,5 +365,13 @@ export default function FollowingPage() {
         </div>
       </div>
     </MainLayout>
+  );
+}
+
+export default function FollowingPage() {
+  return (
+    <Suspense fallback={<LoadingView message="Loading following..." />}>
+      <FollowingPageContent />
+    </Suspense>
   );
 }

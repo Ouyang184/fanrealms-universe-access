@@ -35,6 +35,7 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useCreators } from "@/hooks/useCreators";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorProfile } from "@/types";
+import { LoadingView } from "@/components/ui/loading-view";
 
 // Categories with icons
 const categories = [

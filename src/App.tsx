@@ -23,7 +23,9 @@ import Messages from "./pages/Messages";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      suspense: true, // Enable React Suspense mode for queries
+      // Use the correct syntax for enabling suspense mode in React Query v5+
+      networkMode: 'online',
+      refetchOnWindowFocus: false,
     },
   },
 });
