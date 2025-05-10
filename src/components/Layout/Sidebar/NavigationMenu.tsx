@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavigationMenuProps {
   isCollapsed?: boolean;
@@ -19,9 +20,10 @@ interface NavigationMenuProps {
 
 export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   const location = useLocation();
+  const { user } = useAuth();
   
   const navigationItems = [
-    { icon: Home, label: 'Home', path: '/home' },
+    { icon: Home, label: 'Home', path: user ? '/home' : '/' },
     { icon: Rss, label: 'Feed', path: '/feed' },
     { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },

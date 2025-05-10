@@ -46,7 +46,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const { signOut, profile } = useAuth();
+  const { signOut, profile, user } = useAuth();
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -55,6 +55,9 @@ export function MainLayout({ children }: MainLayoutProps) {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+
+  // Determine Home route based on auth state
+  const homeRoute = user ? "/home" : "/";
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -72,13 +75,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
-            <Link to="/" className="block">
+            <Link to={homeRoute} className="block">
               <Button
-                variant={isActive("/") ? "secondary" : "ghost"}
+                variant={isActive(homeRoute) ? "secondary" : "ghost"}
                 className={cn(
                   "w-full font-medium",
                   sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
-                  isActive("/") && "bg-primary/30",
+                  isActive(homeRoute) && "bg-primary/30",
                 )}
               >
                 <Home className="h-5 w-5" />
