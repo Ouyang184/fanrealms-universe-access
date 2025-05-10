@@ -22,6 +22,7 @@ import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
 import Logout from "./pages/Logout";
 import LogoutLoading from "./pages/LogoutLoading";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,43 +41,45 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <TooltipProvider>
-            <RootLayout>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/index" element={<Index />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/explore" element={<ExplorePage />} />
-                
-                {/* Auth routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/logout" element={<Logout />} />
-                <Route path="/logout/loading" element={<LogoutLoading />} />
-                
-                {/* Main app routes */}
-                <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/following" element={<FollowingPage />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/settings" element={<Dashboard />} />
-                
-                {/* Creator studio routes */}
-                <Route path="/creator-studio/dashboard" element={<Dashboard />} />
-                <Route path="/creator-studio/posts" element={<Dashboard />} />
-                <Route path="/creator-studio/messages" element={<Dashboard />} />
-                <Route path="/creator-studio/membership-tiers" element={<Dashboard />} />
-                <Route path="/creator-studio/subscribers" element={<Dashboard />} />
-                <Route path="/creator-studio/payouts" element={<Dashboard />} />
-                <Route path="/creator-studio/settings" element={<Dashboard />} />
-                
-                <Route path="/loading" element={<LoadingPage />} />
-              </Routes>
-              <Toaster />
-            </RootLayout>
+            <SidebarProvider>
+              <RootLayout>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/index" element={<Index />} />
+                  <Route path="/home" element={<HomePage />} />
+                  <Route path="/feed" element={<FeedPage />} />
+                  <Route path="/explore" element={<ExplorePage />} />
+                  
+                  {/* Auth routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/logout" element={<Logout />} />
+                  <Route path="/logout/loading" element={<LogoutLoading />} />
+                  
+                  {/* Main app routes */}
+                  <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+                  <Route path="/subscriptions" element={<SubscriptionsPage />} />
+                  <Route path="/following" element={<FollowingPage />} />
+                  <Route path="/messages" element={<Messages />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings" element={<Dashboard />} />
+                  
+                  {/* Creator studio routes */}
+                  <Route path="/creator-studio/dashboard" element={<Dashboard />} />
+                  <Route path="/creator-studio/posts" element={<Dashboard />} />
+                  <Route path="/creator-studio/messages" element={<Dashboard />} />
+                  <Route path="/creator-studio/membership-tiers" element={<Dashboard />} />
+                  <Route path="/creator-studio/subscribers" element={<Dashboard />} />
+                  <Route path="/creator-studio/payouts" element={<Dashboard />} />
+                  <Route path="/creator-studio/settings" element={<Dashboard />} />
+                  
+                  <Route path="/loading" element={<LoadingPage />} />
+                </Routes>
+                <Toaster />
+              </RootLayout>
+            </SidebarProvider>
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
