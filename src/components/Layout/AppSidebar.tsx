@@ -21,14 +21,12 @@ import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Logo } from '@/components/Logo';
-import { useNavigate } from 'react-router-dom';
 
 export function AppSidebar() {
   const { loading, signOut } = useAuth();
   const { state, toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const [initialRender, setInitialRender] = useState(true);
-  const navigate = useNavigate();
 
   // Initialize sidebar state - collapsed on mobile, expanded on desktop
   useEffect(() => {
@@ -40,11 +38,6 @@ export function AppSidebar() {
       setInitialRender(false);
     }
   }, [isMobile, initialRender, toggleSidebar]);
-
-  const handleLogout = async () => {
-    // Use navigate directly to logout page which will handle the signout process
-    navigate('/logout');
-  };
 
   if (loading) {
     return <div>Loading sidebar...</div>;
@@ -89,7 +82,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  onClick={handleLogout} 
+                  onClick={signOut} 
                   className={cn(
                     "w-full justify-start py-2.5",
                     isCollapsed ? "px-2" : "px-4"

@@ -19,8 +19,6 @@ import FollowingPage from "./pages/Following";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
-import LogoutPage from "./pages/Logout";
-import LogoutLoading from "./pages/LogoutLoading";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -52,8 +50,6 @@ export default function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/logout" element={<LogoutPage />} />
-                <Route path="/logout/loading" element={<LogoutLoading />} />
                 
                 {/* Main app routes */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
