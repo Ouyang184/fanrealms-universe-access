@@ -18,6 +18,7 @@ import FeedPage from "./pages/Feed";
 import FollowingPage from "./pages/Following";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
+import ExplorePage from "./pages/Explore";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/index" element={<Index />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/explore" element={<ExplorePage />} />
                 
                 {/* Auth routes */}
                 <Route path="/login" element={<Login />} />
@@ -53,7 +55,6 @@ export default function App() {
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/following" element={<FollowingPage />} />
-                <Route path="/explore" element={<Dashboard />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/settings" element={<Dashboard />} />
