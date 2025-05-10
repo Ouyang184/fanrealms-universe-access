@@ -20,7 +20,7 @@ import {
   Rss,
   Users,
 } from "lucide-react";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,6 +46,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, profile } = useAuth();
 
   const toggleSidebar = () => {
@@ -54,6 +55,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    // Navigate to logout page which will handle the signout process
+    navigate('/logout');
   };
 
   return (
@@ -306,7 +312,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           <Button
             variant="ghost"
             className={cn("w-full text-muted-foreground", sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3")}
-            onClick={signOut}
+            onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
             {!sidebarCollapsed && <span>Logout</span>}
@@ -375,7 +381,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     <HelpCircle className="h-4 w-4" /> Help & Support
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="flex items-center gap-2 text-destructive" onClick={signOut}>
+                  <DropdownMenuItem className="flex items-center gap-2 text-destructive" onClick={handleLogout}>
                     <LogOut className="h-4 w-4" /> Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
