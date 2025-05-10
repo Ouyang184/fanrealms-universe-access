@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -162,7 +163,7 @@ export const useAuthFunctions = () => {
         title: "Signed out successfully",
         description: "You have been signed out.",
       });
-      navigate('/', { replace: true });
+      navigate('/logout', { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign out failed",

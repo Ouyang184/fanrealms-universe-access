@@ -1,4 +1,5 @@
 
+import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -19,6 +20,8 @@ import FollowingPage from "./pages/Following";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
+import Logout from "./pages/Logout";
+import LogoutLoading from "./pages/LogoutLoading";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -39,7 +42,7 @@ export default function App() {
           <TooltipProvider>
             <RootLayout>
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/index" element={<Index />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/feed" element={<FeedPage />} />
@@ -50,6 +53,8 @@ export default function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/logout" element={<Logout />} />
+                <Route path="/logout/loading" element={<LogoutLoading />} />
                 
                 {/* Main app routes */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
