@@ -10,7 +10,7 @@ import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Awa
 export default function HomePage() {
   return (
     <MainLayout>
-      <div className="w-full p-6">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Hero Section */}
         <section className="mb-12">
           <div className="relative rounded-xl overflow-hidden">
