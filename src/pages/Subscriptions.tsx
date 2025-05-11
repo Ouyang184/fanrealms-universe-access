@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight } from "lucide-react"
-import { MainLayout } from "@/components/Layout/MainLayout"
+import { main_layout as MainLayout } from "@/components/main-layout"
 
 // Sample data for subscriptions
 const subscriptions = [
@@ -493,4 +492,3 @@ export default function SubscriptionsPage() {
     </MainLayout>
   )
 }
-
