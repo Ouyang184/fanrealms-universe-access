@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { ChevronDown, PanelLeftClose } from 'lucide-react';
@@ -23,7 +22,7 @@ const creatorStudioItems = [
   { label: 'Dashboard', path: '/creator-studio' },
   { label: 'Posts', path: '/creator-studio/posts' },
   { label: 'Messages', path: '/creator-studio/messages' },
-  { label: 'Membership Tiers', path: '/creator-studio/tiers' },
+  { label: 'Membership Tiers', path: '/creator-studio/membership-tiers' },
   { label: 'Subscribers', path: '/creator-studio/subscribers' },
   { label: 'Payouts', path: '/creator-studio/payouts' },
   { label: 'Settings', path: '/creator-studio/settings' },

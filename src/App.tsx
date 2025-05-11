@@ -23,6 +23,7 @@ import ExplorePage from "./pages/Explore";
 import Logout from "./pages/Logout";
 import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
+import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -70,7 +71,7 @@ export default function App() {
                 <Route path="/creator-studio/dashboard" element={<Dashboard />} />
                 <Route path="/creator-studio/posts" element={<Dashboard />} />
                 <Route path="/creator-studio/messages" element={<Dashboard />} />
-                <Route path="/creator-studio/membership-tiers" element={<Dashboard />} />
+                <Route path="/creator-studio/membership-tiers" element={<CreatorStudioTiers />} />
                 <Route path="/creator-studio/subscribers" element={<Dashboard />} />
                 <Route path="/creator-studio/payouts" element={<Dashboard />} />
                 <Route path="/creator-studio/settings" element={<Dashboard />} />
