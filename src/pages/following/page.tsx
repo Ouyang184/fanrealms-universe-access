@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { MainLayout } from "@/components/main-layout";
+import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -150,7 +149,7 @@ export default function FollowingPage() {
 
   return (
     <MainLayout>
-      <div className="w-full">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold">Following & Favorites</h1>

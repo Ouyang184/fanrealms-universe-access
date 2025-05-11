@@ -8,7 +8,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <SidebarProvider>
-        <div className="min-h-screen w-full flex justify-center">
+        <div className="min-h-screen w-full">
           {children}
         </div>
       </SidebarProvider>
