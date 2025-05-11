@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight } from "lucide-react"
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 
 // Sample data for subscriptions
 const subscriptions = [
@@ -170,7 +171,7 @@ const recommendedCreators = [
 export default function SubscriptionsPage() {
   return (
     <MainLayout>
-      <div className="w-full">
+      <div className="max-w-5xl mx-auto w-full">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
@@ -448,9 +449,9 @@ export default function SubscriptionsPage() {
         </Tabs>
 
         {/* Recommended Creators */}
-        <div className="mt-10">
+        <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold mb-6">Recommended Creators</h2>
+            <h2 className="text-xl font-semibold">Recommended Creators</h2>
             <Button variant="link" className="text-primary">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
@@ -492,3 +493,4 @@ export default function SubscriptionsPage() {
     </MainLayout>
   )
 }
+

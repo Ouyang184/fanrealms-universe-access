@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { 
   Search,
@@ -388,12 +387,8 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </header>
 
-        {/* Main Content Area - Updated to center content regardless of sidebar state */}
-        <main className="flex-1 overflow-auto p-6 flex justify-center">
-          <div className="max-w-7xl w-full">
-            {children}
-          </div>
-        </main>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </div>
   );
