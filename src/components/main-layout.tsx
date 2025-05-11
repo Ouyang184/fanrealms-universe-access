@@ -387,8 +387,12 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        {/* Main Content Area - Updated to center content */}
+        <main className="flex-1 overflow-auto p-6 flex justify-center">
+          <div className="max-w-7xl w-full">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
