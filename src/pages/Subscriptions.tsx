@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight } from "lucide-react"
-import { useSubscriptions } from "@/hooks/useSubscriptions"
 
 // Sample data for subscriptions
 const subscriptions = [
