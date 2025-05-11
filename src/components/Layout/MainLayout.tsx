@@ -27,7 +27,7 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
       )}
       <div className="flex-1 px-4 md:px-6 py-6 overflow-y-auto">
         {showTabs ? (
-          <div className="w-full">
+          <div className="max-w-6xl mx-auto w-full">
             <Tabs defaultValue="feed" value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="border-b mb-6">
                 <TabsList className="justify-start">
@@ -47,7 +47,7 @@ export function MainLayout({ children, showTabs = false, hideTopBar = false }: M
             </Tabs>
           </div>
         ) : (
-          <div className="w-full">
+          <div className="max-w-6xl mx-auto w-full">
             {children}
           </div>
         )}
