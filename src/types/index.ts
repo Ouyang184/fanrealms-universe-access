@@ -1,3 +1,4 @@
+
 import { User } from "@supabase/supabase-js";
 import { Database } from "@/integrations/supabase/types";
 
@@ -32,6 +33,9 @@ export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
   name: string;
   features: string[];
   popular?: boolean;
+  color?: string;
+  subscriberCount?: number;
+  icon?: React.ComponentType<any>;
 }
 
 export interface CreatorProfile {

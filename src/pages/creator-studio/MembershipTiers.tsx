@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -462,7 +461,6 @@ export default function CreatorStudioTiers() {
                               description: tier.features.join("|"),
                               features: tier.features,
                               created_at: new Date().toISOString(),
-                              subscriberCount: 0,
                               color: tier.color,
                               icon: tier.icon,
                             });
@@ -550,7 +548,6 @@ export default function CreatorStudioTiers() {
                                     description: featureText,
                                     features: benefits,
                                     created_at: new Date().toISOString(),
-                                    subscriberCount: 0,
                                     color: tierId === "premium" ? "purple" : tierId === "vip" ? "amber" : "blue",
                                     icon: tierId === "premium" ? Star : tierId === "vip" ? Crown : Users,
                                   });
