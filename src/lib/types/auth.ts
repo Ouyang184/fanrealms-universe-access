@@ -1,26 +1,30 @@
+export type DbUser = {
+  id: string
+  email: string
+  username?: string
+  full_name?: string
+  avatar_url?: string
+  profile_picture?: string
+  bio?: string
+  website?: string
+  created_at?: string
+  updated_at?: string
+}
 
 import { Session, User } from '@supabase/supabase-js';
 
-export type Profile = {
+export interface Profile {
   id: string;
   username: string;
   email: string;
-  profile_picture: string | null;
-  created_at: string;
-  website?: string | null;
-};
-
-// Properly defined discriminated union with success property as the discriminant
-export type AuthResult = 
-  | { success: true; user: User; session: Session }
-  | { success: false; error: { message: string } };
-
-export interface AuthError {
-  message: string;
-  [key: string]: any;
+  full_name?: string;
+  bio?: string;
+  profile_picture?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export type AuthContextType = {
+export interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
@@ -30,4 +34,11 @@ export type AuthContextType = {
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<void>;
-};
+}
+
+export interface AuthResult {
+  success: boolean;
+  user?: User;
+  session?: Session;
+  error?: { message: string };
+}
