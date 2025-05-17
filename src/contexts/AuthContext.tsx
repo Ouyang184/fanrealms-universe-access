@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Clear user data when signed out
         if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing all auth data');
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -46,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    // On initial load, check if there's an existing session
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
         console.log('Got initial session:', initialSession ? 'exists' : 'none');

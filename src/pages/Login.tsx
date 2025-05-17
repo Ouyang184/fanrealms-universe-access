@@ -1,6 +1,7 @@
 
 import { Link } from "react-router-dom";
-import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -9,9 +10,17 @@ import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 
 const Login = () => {
-  const { isChecking } = useAuthCheck(false, '/dashboard');
+  const { user, loading } = useAuth();
+  const [isReady, setIsReady] = useState(false);
 
-  if (isChecking) {
+  useEffect(() => {
+    // Only mark as ready once we've confirmed loading is complete
+    if (!loading) {
+      setIsReady(true);
+    }
+  }, [loading]);
+
+  if (loading || !isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />

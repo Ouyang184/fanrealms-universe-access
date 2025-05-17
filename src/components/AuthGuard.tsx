@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
@@ -18,6 +18,7 @@ const AuthGuard = ({
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -35,9 +36,11 @@ const AuthGuard = ({
       navigate('/home');
       return;
     }
+
+    setHasCheckedAuth(true);
   }, [user, profile, loading, navigate, location, requireAuth, requireCompleteProfile]);
 
-  if (loading) {
+  if (loading || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />

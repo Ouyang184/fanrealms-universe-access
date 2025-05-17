@@ -162,6 +162,7 @@ export const useAuthFunctions = () => {
       await supabase.auth.signOut({ scope: 'global' });
       
       // Remove any locally stored auth data
+      localStorage.removeItem('supabase.auth.token');
       localStorage.removeItem('supabase-auth');
       sessionStorage.removeItem('supabase-auth');
       
