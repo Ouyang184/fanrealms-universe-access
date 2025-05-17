@@ -22,8 +22,11 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
   const location = useLocation();
   const { user } = useAuth();
   
+  // Define the home route based on authentication status
+  const homeRoute = user ? "/home" : "/";
+  
   const navigationItems = [
-    { icon: Home, label: 'Home', path: user ? '/home' : '/' },
+    { icon: Home, label: 'Home', path: homeRoute },
     { icon: Rss, label: 'Feed', path: '/feed' },
     { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
