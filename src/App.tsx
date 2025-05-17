@@ -25,6 +25,7 @@ import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
 import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
+import { MainLayout } from "./components/main-layout"; // Import MainLayout to apply navbar
 
 // Create a client
 const queryClient = new QueryClient({
@@ -47,11 +48,13 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/index" element={<Index />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/explore" element={<ExplorePage />} />
                 
-                {/* Auth routes */}
+                {/* Apply MainLayout to app routes to include the navbar */}
+                <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
+                <Route path="/feed" element={<MainLayout><FeedPage /></MainLayout>} />
+                <Route path="/explore" element={<MainLayout><ExplorePage /></MainLayout>} />
+                
+                {/* Auth routes - no MainLayout needed */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
@@ -59,23 +62,23 @@ export default function App() {
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/logout/loading" element={<LogoutLoading />} />
                 
-                {/* Main app routes */}
+                {/* Main app routes - apply MainLayout for navbar */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/following" element={<FollowingPage />} />
-                <Route path="/messages" element={<Messages />} />
-                <Route path="/notifications" element={<Notifications />} />
-                <Route path="/settings" element={<AccountSettings />} />
-                <Route path="/membership-tiers" element={<MembershipTiersPage />} />
+                <Route path="/subscriptions" element={<MainLayout><SubscriptionsPage /></MainLayout>} />
+                <Route path="/following" element={<MainLayout><FollowingPage /></MainLayout>} />
+                <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
+                <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
+                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
+                <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
-                {/* Creator studio routes */}
-                <Route path="/creator-studio/dashboard" element={<Dashboard />} />
-                <Route path="/creator-studio/posts" element={<Dashboard />} />
-                <Route path="/creator-studio/messages" element={<Dashboard />} />
-                <Route path="/creator-studio/membership-tiers" element={<CreatorStudioTiers />} />
-                <Route path="/creator-studio/subscribers" element={<Dashboard />} />
-                <Route path="/creator-studio/payouts" element={<Dashboard />} />
-                <Route path="/creator-studio/settings" element={<Dashboard />} />
+                {/* Creator studio routes - apply MainLayout for navbar */}
+                <Route path="/creator-studio/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/posts" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/messages" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/membership-tiers" element={<MainLayout><CreatorStudioTiers /></MainLayout>} />
+                <Route path="/creator-studio/subscribers" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/payouts" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/settings" element={<MainLayout><Dashboard /></MainLayout>} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>
