@@ -46,23 +46,21 @@ export default function App() {
           <TooltipProvider>
             <RootLayout>
               <Routes>
+                {/* Public routes - no MainLayout needed */}
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/index" element={<Index />} />
-                
-                {/* Apply MainLayout to app routes to include the navbar */}
-                <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
-                <Route path="/feed" element={<MainLayout><FeedPage /></MainLayout>} />
-                <Route path="/explore" element={<MainLayout><ExplorePage /></MainLayout>} />
-                
-                {/* Auth routes - no MainLayout needed */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/logout/loading" element={<LogoutLoading />} />
+                <Route path="/loading" element={<LoadingPage />} />
                 
-                {/* Main app routes - apply MainLayout for navbar */}
+                {/* All authenticated app routes - wrapped once with MainLayout */}
+                <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
+                <Route path="/feed" element={<MainLayout><FeedPage /></MainLayout>} />
+                <Route path="/explore" element={<MainLayout><ExplorePage /></MainLayout>} />
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<MainLayout><SubscriptionsPage /></MainLayout>} />
                 <Route path="/following" element={<MainLayout><FollowingPage /></MainLayout>} />
@@ -71,7 +69,7 @@ export default function App() {
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
-                {/* Creator studio routes - apply MainLayout for navbar */}
+                {/* Creator studio routes - also wrapped once with MainLayout */}
                 <Route path="/creator-studio/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/posts" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/messages" element={<MainLayout><Dashboard /></MainLayout>} />
@@ -79,8 +77,6 @@ export default function App() {
                 <Route path="/creator-studio/subscribers" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/payouts" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/settings" element={<MainLayout><Dashboard /></MainLayout>} />
-                
-                <Route path="/loading" element={<LoadingPage />} />
               </Routes>
               <Toaster />
             </RootLayout>
