@@ -25,13 +25,13 @@ import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
 import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
-import { MainLayout } from "./components/main-layout"; // Import MainLayout to apply navbar
+import { MainLayout } from "./components/main-layout";
+import Settings from "./pages/Settings"; // Import Settings component
 
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Use the correct syntax for enabling suspense mode in React Query v5+
       networkMode: 'online',
       refetchOnWindowFocus: false,
     },
@@ -66,7 +66,7 @@ export default function App() {
                 <Route path="/following" element={<MainLayout><FollowingPage /></MainLayout>} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
                 <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
-                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
+                <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
                 {/* Creator studio routes - also wrapped with MainLayout */}
