@@ -67,8 +67,8 @@ export default function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/notifications" element={<Notifications />} />
                 
-                {/* Wrap settings page with MainLayout */}
-                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
+                {/* Wrap settings page with MainLayout but hide the top bar */}
+                <Route path="/settings" element={<MainLayout hideTopBar={true}><AccountSettings /></MainLayout>} />
                 
                 <Route path="/membership-tiers" element={<MembershipTiersPage />} />
                 
