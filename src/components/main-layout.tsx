@@ -184,7 +184,6 @@ export function MainLayout({ children, hideTopBar = false }: MainLayoutProps) {
 
           <Separator className="my-4" />
 
-          {/* Creator Studio section - condensed or expanded based on sidebar state */}
           {sidebarCollapsed ? (
             <div className="p-2">
               <Button variant="ghost" className="w-full justify-center px-2">
@@ -321,7 +320,7 @@ export function MainLayout({ children, hideTopBar = false }: MainLayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header with Search Bar and User Actions - conditionally render based on hideTopBar prop */}
+        {/* Header with Search Bar and User Actions - only show if hideTopBar is false */}
         {!hideTopBar && (
           <header className="border-b border-border bg-background z-10">
             <div className="flex items-center justify-between p-4">
