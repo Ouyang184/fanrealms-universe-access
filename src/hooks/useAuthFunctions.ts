@@ -158,12 +158,20 @@ export const useAuthFunctions = () => {
 
   const signOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      // Clear all authentication data
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Remove any locally stored auth data
+      localStorage.removeItem('supabase-auth');
+      sessionStorage.removeItem('supabase-auth');
+      
       toast({
         title: "Signed out successfully",
         description: "You have been signed out.",
       });
-      navigate('/logout', { replace: true });
+      
+      // Navigate to the root page
+      navigate('/', { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign out failed",

@@ -19,9 +19,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
+    console.log('Auth state change setup');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state change:', event);
+        
+        // Clear user data when signed out
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          return;
+        }
         
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
