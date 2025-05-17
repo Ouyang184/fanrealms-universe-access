@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -66,8 +67,12 @@ export default function App() {
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/notifications" element={<Notifications />} />
                 
-                {/* Wrap settings page with MainLayout but hide the top bar */}
-                <Route path="/settings" element={<MainLayout hideTopBar={true}><AccountSettings /></MainLayout>} />
+                {/* Settings page */}
+                <Route path="/settings" element={
+                  <MainLayout>
+                    <AccountSettings />
+                  </MainLayout>
+                } />
                 
                 <Route path="/membership-tiers" element={<MembershipTiersPage />} />
                 
