@@ -163,7 +163,7 @@ export const useAuthFunctions = () => {
         title: "Signed out successfully",
         description: "You have been signed out.",
       });
-      navigate('/logout', { replace: true });
+      navigate('/', { replace: true }); // Changed from '/logout' to '/'
     } catch (error: any) {
       toast({
         title: "Sign out failed",
