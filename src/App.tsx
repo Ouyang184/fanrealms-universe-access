@@ -57,7 +57,7 @@ export default function App() {
                 <Route path="/logout/loading" element={<LogoutLoading />} />
                 <Route path="/loading" element={<LoadingPage />} />
                 
-                {/* All authenticated app routes - wrapped once with MainLayout */}
+                {/* All authenticated app routes - wrapped with MainLayout */}
                 <Route path="/home" element={<MainLayout><HomePage /></MainLayout>} />
                 <Route path="/feed" element={<MainLayout><FeedPage /></MainLayout>} />
                 <Route path="/explore" element={<MainLayout><ExplorePage /></MainLayout>} />
@@ -69,7 +69,7 @@ export default function App() {
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
-                {/* Creator studio routes - also wrapped once with MainLayout */}
+                {/* Creator studio routes - also wrapped with MainLayout */}
                 <Route path="/creator-studio/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/posts" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/messages" element={<MainLayout><Dashboard /></MainLayout>} />
