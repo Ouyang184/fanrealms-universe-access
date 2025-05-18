@@ -74,13 +74,21 @@ export default function App() {
                   </MainLayout>
                 } />
                 
-                <Route path="/membership-tiers" element={<MembershipTiersPage />} />
+                <Route path="/membership-tiers" element={
+                  <MainLayout>
+                    <MembershipTiersPage />
+                  </MainLayout>
+                } />
                 
                 {/* Creator studio routes */}
                 <Route path="/creator-studio/dashboard" element={<Dashboard />} />
                 <Route path="/creator-studio/posts" element={<Dashboard />} />
                 <Route path="/creator-studio/messages" element={<Dashboard />} />
-                <Route path="/creator-studio/membership-tiers" element={<CreatorStudioTiers />} />
+                <Route path="/creator-studio/membership-tiers" element={
+                  <MainLayout>
+                    <CreatorStudioTiers />
+                  </MainLayout>
+                } />
                 <Route path="/creator-studio/subscribers" element={<Dashboard />} />
                 <Route path="/creator-studio/payouts" element={<Dashboard />} />
                 <Route path="/creator-studio/settings" element={<Dashboard />} />
