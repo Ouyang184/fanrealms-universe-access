@@ -8,7 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import OnboardingPage from "./pages/Onboarding";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/creator-studio/Dashboard";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HomePage from "./pages/Home";
@@ -86,7 +86,11 @@ export default function App() {
                 } />
                 
                 {/* Creator studio routes */}
-                <Route path="/creator-studio/dashboard" element={<Dashboard />} />
+                <Route path="/creator-studio/dashboard" element={
+                  <MainLayout>
+                    <Dashboard />
+                  </MainLayout>
+                } />
                 <Route path="/creator-studio/posts" element={<Dashboard />} />
                 <Route path="/creator-studio/messages" element={
                   <MainLayout>
