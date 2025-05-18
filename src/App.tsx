@@ -25,6 +25,7 @@ import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
 import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
+import CreatorMessages from "./pages/creator-studio/Messages";
 import { MainLayout } from "@/components/main-layout";
 
 // Create a client
@@ -64,7 +65,11 @@ export default function App() {
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/following" element={<FollowingPage />} />
-                <Route path="/messages" element={<Messages />} />
+                <Route path="/messages" element={
+                  <MainLayout>
+                    <Messages />
+                  </MainLayout>
+                } />
                 <Route path="/notifications" element={<Notifications />} />
                 
                 {/* Settings page */}
@@ -83,7 +88,11 @@ export default function App() {
                 {/* Creator studio routes */}
                 <Route path="/creator-studio/dashboard" element={<Dashboard />} />
                 <Route path="/creator-studio/posts" element={<Dashboard />} />
-                <Route path="/creator-studio/messages" element={<Dashboard />} />
+                <Route path="/creator-studio/messages" element={
+                  <MainLayout>
+                    <CreatorMessages />
+                  </MainLayout>
+                } />
                 <Route path="/creator-studio/membership-tiers" element={
                   <MainLayout>
                     <CreatorStudioTiers />
