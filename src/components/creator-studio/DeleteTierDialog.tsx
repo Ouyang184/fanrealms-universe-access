@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader } from "lucide-react";
 
-interface DeleteTierDialogProps {
+export interface DeleteTierDialogProps {
   isOpen: boolean;
   onClose: () => void;
   tierId: string;

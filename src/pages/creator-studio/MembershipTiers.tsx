@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -37,7 +38,7 @@ export default function CreatorStudioTiers() {
       // Then get the tiers for this creator
       const { data, error } = await supabase
         .from("membership_tiers")
-        .select("id, title, price, description, subscribers:subscriber_count")
+        .select("*")  // Select all columns instead of trying to access subscriber_count
         .eq("creator_id", creatorData.id)
         .order("price", { ascending: true });
       
@@ -49,7 +50,7 @@ export default function CreatorStudioTiers() {
         name: tier.title,
         price: tier.price,
         features: tier.description ? tier.description.split("|") : [],
-        subscriberCount: tier.subscribers || 0,
+        subscriberCount: 0, // Default to 0 since we don't have a subscriber_count column
       }));
     },
     enabled: !!user,
@@ -171,7 +172,8 @@ export default function CreatorStudioTiers() {
       <DeleteTierDialog
         isOpen={isDeleteDialogOpen}
         onClose={closeDeleteDialog}
-        tier={deletingTier}
+        tierId={deletingTier?.id || ""}
+        tierName={deletingTier?.name || ""}
       />
     </div>
   );
