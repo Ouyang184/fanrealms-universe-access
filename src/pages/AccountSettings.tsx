@@ -18,7 +18,6 @@ export default function AccountSettings() {
   
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
-    name: "",
     username: "",
     saving: false
   });
@@ -36,7 +35,6 @@ export default function AccountSettings() {
   useEffect(() => {
     if (profile) {
       setAccountSettings({
-        name: profile.full_name || "",
         username: profile.username || "",
         saving: false
       });
@@ -56,8 +54,7 @@ export default function AccountSettings() {
     setAccountSettings(prev => ({ ...prev, saving: true }));
     try {
       await updateProfile({
-        username: accountSettings.username,
-        full_name: accountSettings.name
+        username: accountSettings.username
       });
       
       toast({
@@ -119,27 +116,15 @@ export default function AccountSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      name="name" 
-                      value={accountSettings.name}
-                      onChange={handleAccountChange}
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input 
-                      id="username" 
-                      name="username" 
-                      value={accountSettings.username}
-                      onChange={handleAccountChange}
-                      placeholder="Enter your username"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input 
+                    id="username" 
+                    name="username" 
+                    value={accountSettings.username}
+                    onChange={handleAccountChange}
+                    placeholder="Enter your username"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
