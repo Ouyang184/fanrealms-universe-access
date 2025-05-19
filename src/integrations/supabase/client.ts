@@ -30,3 +30,6 @@ export const supabase = createClient<Database>(
 );
 
 console.log('Supabase client initialized');
+
+// Export supabase for use in other files
+export { supabase as default };

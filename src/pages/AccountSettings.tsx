@@ -19,6 +19,7 @@ export default function AccountSettings() {
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
     username: "",
+    email: "",
     saving: false
   });
   
@@ -36,10 +37,11 @@ export default function AccountSettings() {
     if (profile) {
       setAccountSettings({
         username: profile.username || "",
+        email: user?.email || "",
         saving: false
       });
     }
-  }, [profile]);
+  }, [profile, user]);
   
   const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,6 +55,19 @@ export default function AccountSettings() {
   const saveAccountSettings = async () => {
     setAccountSettings(prev => ({ ...prev, saving: true }));
     try {
+      // For email updates, we would need to call the appropriate Supabase auth method
+      // This example assumes you have a method to update email in your auth context
+      if (user?.email !== accountSettings.email) {
+        // This is where you would update the email
+        // For Supabase, you would typically use:
+        const { error } = await supabase.auth.updateUser({
+          email: accountSettings.email,
+        });
+        
+        if (error) throw error;
+      }
+      
+      // Update the profile (username)
       await updateProfile({
         username: accountSettings.username
       });
@@ -130,12 +145,14 @@ export default function AccountSettings() {
                   <Label htmlFor="email">Email Address</Label>
                   <Input 
                     id="email" 
+                    name="email"
                     type="email" 
-                    value={user?.email || ""}
-                    disabled
+                    value={accountSettings.email}
+                    onChange={handleAccountChange}
+                    placeholder="Enter your email address"
                   />
                   <p className="text-xs text-muted-foreground">
-                    To change your email, please contact support
+                    Changing your email will require verification
                   </p>
                 </div>
                 <div className="space-y-2 pt-4">
