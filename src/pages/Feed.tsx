@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { MainLayout } from "@/components/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +9,7 @@ import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
 import { feedPosts } from "@/data/feedData";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -17,10 +19,23 @@ export default function FeedPage() {
 
   // Get user's subscriptions
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  
+  // If still loading subscriptions, show loading state
+  if (loadingSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  // Check if user has subscriptions
   const hasSubscriptions = subscriptions && subscriptions.length > 0;
 
   // If user has no subscriptions, show the empty feed state
-  if (!loadingSubscriptions && !hasSubscriptions) {
+  if (!hasSubscriptions) {
     return (
       <MainLayout>
         <div className="flex-1">

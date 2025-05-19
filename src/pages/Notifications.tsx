@@ -27,8 +27,10 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { EmptyNotifications } from "@/components/notifications/EmptyNotifications"
+import { EmptyFeed } from "@/components/feed/EmptyFeed"
 import { useSubscriptions } from "@/hooks/useSubscriptions"
 import { useAuth } from "@/contexts/AuthContext"
+import LoadingSpinner from "@/components/LoadingSpinner"
 
 // Sample notification data
 const notifications = [
