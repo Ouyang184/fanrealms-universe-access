@@ -4,12 +4,12 @@ import { MainLayout } from "@/components/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FeedFilters } from "@/components/feed/FeedFilters";
+import { FeedPostComponent } from "@/components/feed/FeedPost";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
+import { feedPosts } from "@/data/feedData";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
-import { usePosts } from "@/hooks/usePosts";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import PostCard from "@/components/PostCard";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -20,11 +20,8 @@ export default function FeedPage() {
   // Get user's subscriptions
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
   
-  // Get all posts
-  const { data: allPosts, isLoading: loadingPosts } = usePosts();
-  
-  // If still loading subscriptions or posts, show loading state
-  if (loadingSubscriptions || loadingPosts) {
+  // If still loading subscriptions, show loading state
+  if (loadingSubscriptions) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -56,24 +53,7 @@ export default function FeedPage() {
     );
   }
 
-  // Filter posts to only include ones from creators the user follows
-  const followedCreatorIds = subscriptions.map(sub => sub.creator_id);
-  const feedPosts = allPosts?.filter(post => 
-    post.users && followedCreatorIds.includes(post.author_id)
-  ) || [];
-  
-  // Get unread posts (for demonstration, we're marking newer posts as unread)
-  const unreadPosts = feedPosts.filter((post) => {
-    // Example: Posts created in the last day are considered "unread"
-    const postDate = new Date(post.created_at);
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-    return postDate > oneDayAgo;
-  });
-  
-  // Track saved posts (this would normally come from database)
-  const savedPosts: string[] = []; // In a real app, this would be loaded from the database
-
+  // Otherwise, show the regular feed with posts
   return (
     <MainLayout>
       <div className="flex-1">
@@ -94,7 +74,7 @@ export default function FeedPage() {
               </TabsTrigger>
               <TabsTrigger value="unread">
                 Unread
-                <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadPosts.length}</Badge>
+                <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">3</Badge>
               </TabsTrigger>
               <TabsTrigger value="saved">
                 Saved
@@ -102,72 +82,24 @@ export default function FeedPage() {
             </TabsList>
 
             {/* All Posts Tab */}
-            <TabsContent value="all" className="mt-6">
-              {feedPosts.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6">
-                  {feedPosts.map((post) => (
-                    <PostCard 
-                      key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      content={post.content}
-                      authorName={post.authorName || 'Unknown Creator'}
-                      authorAvatar={post.authorAvatar || undefined}
-                      date={post.date}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p>No posts from your followed creators yet.</p>
-                </div>
-              )}
+            <TabsContent value="all" className="mt-6 space-y-6">
+              {feedPosts.map((post) => (
+                <FeedPostComponent key={post.id} post={post} />
+              ))}
             </TabsContent>
 
             {/* Unread Tab */}
-            <TabsContent value="unread" className="mt-6">
-              {unreadPosts.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6">
-                  {unreadPosts.map((post) => (
-                    <PostCard 
-                      key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      content={post.content}
-                      authorName={post.authorName || 'Unknown Creator'}
-                      authorAvatar={post.authorAvatar || undefined}
-                      date={post.date}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p>No new unread posts.</p>
-                </div>
-              )}
+            <TabsContent value="unread" className="mt-6 space-y-6">
+              {feedPosts
+                .filter((post) => post.metadata.isNew)
+                .map((post) => (
+                  <FeedPostComponent key={post.id} post={post} />
+                ))}
             </TabsContent>
 
             {/* Saved Tab */}
             <TabsContent value="saved" className="mt-6">
-              {savedPosts.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6">
-                  {feedPosts
-                    .filter(post => savedPosts.includes(post.id))
-                    .map((post) => (
-                      <PostCard 
-                        key={post.id}
-                        id={post.id}
-                        title={post.title}
-                        content={post.content}
-                        authorName={post.authorName || 'Unknown Creator'}
-                        authorAvatar={post.authorAvatar || undefined}
-                        date={post.date}
-                      />
-                    ))}
-                </div>
-              ) : (
-                <FeedEmpty />
-              )}
+              <FeedEmpty />
             </TabsContent>
           </Tabs>
         </div>
