@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { MainLayout } from "@/components/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -6,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { FeedFilters } from "@/components/feed/FeedFilters";
 import { FeedPostComponent } from "@/components/feed/FeedPost";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
+import { EmptyFeed } from "@/components/feed/EmptyFeed";
 import { feedPosts } from "@/data/feedData";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -14,6 +15,30 @@ export default function FeedPage() {
     document.title = "Feed | Creator Platform";
   }, []);
 
+  // Get user's subscriptions
+  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const hasSubscriptions = subscriptions && subscriptions.length > 0;
+
+  // If user has no subscriptions, show the empty feed state
+  if (!loadingSubscriptions && !hasSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="flex-1">
+          <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+              <div>
+                <h1 className="text-3xl font-bold">Your Feed</h1>
+                <p className="text-muted-foreground">Follow creators to see their posts here</p>
+              </div>
+            </div>
+            <EmptyFeed />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Otherwise, show the regular feed with posts
   return (
     <MainLayout>
       <div className="flex-1">
