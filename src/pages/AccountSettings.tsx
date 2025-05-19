@@ -1,3 +1,4 @@
+
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,12 +14,10 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 export default function AccountSettings() {
   const { isChecking, user } = useAuthCheck();
   
-  // Profile settings state
-  const [profileSettings, setProfileSettings] = useState({
+  // Account settings state
+  const [accountSettings, setAccountSettings] = useState({
     name: "",
     username: "",
-    bio: "",
-    website: "",
     saving: false
   });
   
@@ -35,30 +34,28 @@ export default function AccountSettings() {
   useEffect(() => {
     if (!isChecking && user) {
       // In a real app, would fetch from API/context
-      setProfileSettings({
+      setAccountSettings({
         name: "John Doe",
         username: "johndoe",
-        bio: "Digital creator and tech enthusiast",
-        website: "https://example.com",
         saving: false
       });
     }
   }, [isChecking, user]);
   
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfileSettings(prev => ({ ...prev, [name]: value }));
+    setAccountSettings(prev => ({ ...prev, [name]: value }));
   };
   
   const handleNotificationChange = (key: string, value: boolean) => {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const saveProfileSettings = () => {
-    setProfileSettings(prev => ({ ...prev, saving: true }));
+  const saveAccountSettings = () => {
+    setAccountSettings(prev => ({ ...prev, saving: true }));
     // Simulate API call
     setTimeout(() => {
-      setProfileSettings(prev => ({ ...prev, saving: false }));
+      setAccountSettings(prev => ({ ...prev, saving: false }));
     }, 1000);
   };
   
@@ -85,74 +82,13 @@ export default function AccountSettings() {
         <p className="text-muted-foreground">Manage your account preferences</p>
       </div>
       
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="account" className="w-full">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
         </TabsList>
         <div className="mt-6 space-y-6">
-          <TabsContent value="profile" className="m-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>
-                  Update your public profile information
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      name="name" 
-                      value={profileSettings.name}
-                      onChange={handleProfileChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input 
-                      id="username" 
-                      name="username" 
-                      value={profileSettings.username}
-                      onChange={handleProfileChange}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Input 
-                    id="bio" 
-                    name="bio" 
-                    value={profileSettings.bio}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input 
-                    id="website" 
-                    name="website" 
-                    type="url"
-                    value={profileSettings.website}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={saveProfileSettings} 
-                  disabled={profileSettings.saving}
-                >
-                  {profileSettings.saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
           <TabsContent value="account" className="m-0">
             <Card>
               <CardHeader>
@@ -162,6 +98,26 @@ export default function AccountSettings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      value={accountSettings.name}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input 
+                      id="username" 
+                      name="username" 
+                      value={accountSettings.username}
+                      onChange={handleAccountChange}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input 
@@ -178,6 +134,14 @@ export default function AccountSettings() {
                   <Button variant="outline">Change Password</Button>
                 </div>
               </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={saveAccountSettings} 
+                  disabled={accountSettings.saving}
+                >
+                  {accountSettings.saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
           
