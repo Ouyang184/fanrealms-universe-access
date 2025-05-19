@@ -27,6 +27,7 @@ import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
 import CreatorMessages from "./pages/creator-studio/Messages";
 import { MainLayout } from "@/components/main-layout";
+import CreatorPostsPage from "./pages/creator-studio/Posts";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -91,7 +92,7 @@ export default function App() {
                     <Dashboard />
                   </MainLayout>
                 } />
-                <Route path="/creator-studio/posts" element={<Dashboard />} />
+                <Route path="/creator-studio/posts" element={<CreatorPostsPage />} />
                 <Route path="/creator-studio/messages" element={
                   <MainLayout>
                     <CreatorMessages />
