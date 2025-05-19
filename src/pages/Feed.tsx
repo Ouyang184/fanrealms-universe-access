@@ -1,15 +1,14 @@
-
 import { useEffect } from "react";
 import { MainLayout } from "@/components/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FeedFilters } from "@/components/feed/FeedFilters";
-import { FeedPostComponent } from "@/components/feed/FeedPost";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
-import { feedPosts } from "@/data/feedData";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { usePosts } from "@/hooks/usePosts";
+import PostCard from "@/components/PostCard";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -20,8 +19,11 @@ export default function FeedPage() {
   // Get user's subscriptions
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
   
-  // If still loading subscriptions, show loading state
-  if (loadingSubscriptions) {
+  // Fetch posts
+  const { data: posts, isLoading: loadingPosts } = usePosts();
+  
+  // If still loading subscriptions or posts, show loading state
+  if (loadingSubscriptions || loadingPosts) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -53,6 +55,20 @@ export default function FeedPage() {
     );
   }
 
+  // Filter posts to only show those from creators the user is subscribed to
+  const followedCreatorIds = subscriptions.map(sub => sub.creator_id);
+  
+  // Filter posts by creators the user follows
+  const followedPosts = posts?.filter(post => 
+    followedCreatorIds.includes(post.author_id)
+  ) || [];
+  
+  // Count unread posts (for demo purposes, assume 3 are unread)
+  const unreadCount = 3;
+
+  // Check if there are any posts
+  const hasPosts = followedPosts.length > 0;
+
   // Otherwise, show the regular feed with posts
   return (
     <MainLayout>
@@ -74,7 +90,7 @@ export default function FeedPage() {
               </TabsTrigger>
               <TabsTrigger value="unread">
                 Unread
-                <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">3</Badge>
+                <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCount}</Badge>
               </TabsTrigger>
               <TabsTrigger value="saved">
                 Saved
@@ -83,18 +99,46 @@ export default function FeedPage() {
 
             {/* All Posts Tab */}
             <TabsContent value="all" className="mt-6 space-y-6">
-              {feedPosts.map((post) => (
-                <FeedPostComponent key={post.id} post={post} />
-              ))}
+              {!hasPosts ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No posts from creators you follow yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {followedPosts.map((post) => (
+                    <PostCard 
+                      key={post.id}
+                      id={post.id}
+                      title={post.title}
+                      content={post.content}
+                      authorName={post.authorName}
+                      authorAvatar={post.authorAvatar}
+                      date={post.date}
+                      created_at={post.created_at}
+                      tier_id={post.tier_id}
+                    />
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Unread Tab */}
             <TabsContent value="unread" className="mt-6 space-y-6">
-              {feedPosts
-                .filter((post) => post.metadata.isNew)
-                .map((post) => (
-                  <FeedPostComponent key={post.id} post={post} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {followedPosts.slice(0, unreadCount).map((post) => (
+                  <PostCard 
+                    key={post.id}
+                    id={post.id}
+                    title={post.title}
+                    content={post.content}
+                    authorName={post.authorName}
+                    authorAvatar={post.authorAvatar}
+                    date={post.date}
+                    created_at={post.created_at}
+                    tier_id={post.tier_id}
+                  />
                 ))}
+              </div>
             </TabsContent>
 
             {/* Saved Tab */}
