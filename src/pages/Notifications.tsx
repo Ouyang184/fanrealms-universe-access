@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,6 +25,8 @@ import {
   Gift,
   DollarSign,
 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { EmptyNotifications } from "@/components/notifications/EmptyNotifications"
 
 // Sample notification data
 const notifications = [
@@ -174,6 +175,15 @@ const notifications = [
 ]
 
 export default function Notifications() {
+  const [hasNotifications, setHasNotifications] = useState(true)
+  
+  // Simulate checking for notifications
+  useEffect(() => {
+    // For now we're simulating an empty state by setting hasNotifications to false
+    // In a real app, you would check if the user has any notifications
+    setHasNotifications(false)
+  }, [])
+  
   // Count unread notifications by type
   const unreadCounts = {
     all: notifications.filter((n) => !n.read).length,
@@ -208,6 +218,20 @@ export default function Notifications() {
       default:
         return <Bell className="h-4 w-4 text-gray-400" />
     }
+  }
+
+  // If user has no notifications, show the empty state
+  if (!hasNotifications) {
+    return (
+      <MainLayout>
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Notifications</h1>
+          </div>
+          <EmptyNotifications />
+        </div>
+      </MainLayout>
+    );
   }
 
   return (
