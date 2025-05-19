@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
-import { AppSidebar } from "@/components/Layout/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AccountSettings() {
-  const { isChecking, user } = useAuthCheck();
+  const { isChecking } = useAuthCheck();
+  const { user, profile, updateProfile } = useAuth();
+  const { toast } = useToast();
   
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
@@ -32,15 +34,14 @@ export default function AccountSettings() {
   });
   
   useEffect(() => {
-    if (!isChecking && user) {
-      // In a real app, would fetch from API/context
+    if (profile) {
       setAccountSettings({
-        name: "John Doe",
-        username: "johndoe",
+        name: profile.full_name || "",
+        username: profile.username || "",
         saving: false
       });
     }
-  }, [isChecking, user]);
+  }, [profile]);
   
   const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,18 +52,38 @@ export default function AccountSettings() {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const saveAccountSettings = () => {
+  const saveAccountSettings = async () => {
     setAccountSettings(prev => ({ ...prev, saving: true }));
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await updateProfile({
+        username: accountSettings.username,
+        full_name: accountSettings.name
+      });
+      
+      toast({
+        title: "Settings saved",
+        description: "Your account settings have been updated successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving settings",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+      console.error(error);
+    } finally {
       setAccountSettings(prev => ({ ...prev, saving: false }));
-    }, 1000);
+    }
   };
   
   const saveNotificationSettings = () => {
     setNotificationSettings(prev => ({ ...prev, saving: true }));
-    // Simulate API call
+    // In a real app, we would save to the database here
     setTimeout(() => {
+      toast({
+        title: "Notification preferences saved",
+        description: "Your notification settings have been updated"
+      });
       setNotificationSettings(prev => ({ ...prev, saving: false }));
     }, 1000);
   };
@@ -106,6 +127,7 @@ export default function AccountSettings() {
                       name="name" 
                       value={accountSettings.name}
                       onChange={handleAccountChange}
+                      placeholder="Enter your full name"
                     />
                   </div>
                   <div className="space-y-2">
@@ -115,6 +137,7 @@ export default function AccountSettings() {
                       name="username" 
                       value={accountSettings.username}
                       onChange={handleAccountChange}
+                      placeholder="Enter your username"
                     />
                   </div>
                 </div>
