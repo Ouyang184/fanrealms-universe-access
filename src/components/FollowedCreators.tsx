@@ -1,21 +1,40 @@
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarSeparator } from "@/components/ui/sidebar";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FollowedCreatorsProps {
   isCollapsed?: boolean;
 }
 
 export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps) {
-  const creators = [
-    { id: 1, name: "Jessica Smith", username: "jesssmith", avatar: "/placeholder.svg" },
-    { id: 2, name: "Michael Lee", username: "mikelee", avatar: "/placeholder.svg" },
-    { id: 3, name: "Sarah Johnson", username: "sarahj", avatar: "/placeholder.svg" },
-  ];
+  const { user } = useAuth();
+  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const [followedCreators, setFollowedCreators] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (!loadingSubscriptions && subscriptions) {
+      // Extract creator info from subscriptions
+      const creators = subscriptions.map(sub => ({
+        id: sub.creator_id,
+        name: sub.creator?.users?.username || 'Creator',
+        username: sub.creator?.users?.username || 'creator',
+        avatar: sub.creator?.profile_image_url || sub.creator?.users?.profile_picture || "/placeholder.svg"
+      }));
+      
+      setFollowedCreators(creators);
+    }
+  }, [subscriptions, loadingSubscriptions]);
 
-  if (creators.length === 0) return null;
+  if (loadingSubscriptions) {
+    return null;
+  }
+
+  if (followedCreators.length === 0) return null;
 
   return (
     <div className="mt-6">
@@ -25,7 +44,7 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
         </h3>
       )}
       <div className="space-y-1">
-        {creators.map((creator) => (
+        {followedCreators.map((creator) => (
           <Link
             key={creator.id}
             to={`/creator/${creator.username}`}
@@ -39,7 +58,7 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
               <AvatarFallback>
                 {creator.name
                   .split(" ")
-                  .map((n) => n[0])
+                  .map((n: string) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>

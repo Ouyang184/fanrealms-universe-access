@@ -27,6 +27,8 @@ import {
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { EmptyNotifications } from "@/components/notifications/EmptyNotifications"
+import { useSubscriptions } from "@/hooks/useSubscriptions"
+import { useAuth } from "@/contexts/AuthContext"
 
 // Sample notification data
 const notifications = [
@@ -175,14 +177,16 @@ const notifications = [
 ]
 
 export default function Notifications() {
-  const [hasNotifications, setHasNotifications] = useState(true)
+  const { user } = useAuth();
+  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const [hasNotifications, setHasNotifications] = useState(true);
   
-  // Simulate checking for notifications
+  // Check if user is following anyone and if there are notifications
   useEffect(() => {
-    // For now we're simulating an empty state by setting hasNotifications to false
-    // In a real app, you would check if the user has any notifications
-    setHasNotifications(false)
-  }, [])
+    // For now we're simulating empty notifications
+    // In a real app, you would check actual notifications from a backend
+    setHasNotifications(false);
+  }, []);
   
   // Count unread notifications by type
   const unreadCounts = {
@@ -194,7 +198,7 @@ export default function Notifications() {
     system: notifications.filter(
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.read,
     ).length,
-  }
+  };
 
   // Get notification icon based on type
   const getNotificationIcon = (type: string) => {
@@ -218,7 +222,7 @@ export default function Notifications() {
       default:
         return <Bell className="h-4 w-4 text-gray-400" />
     }
-  }
+  };
 
   // If user has no notifications, show the empty state
   if (!hasNotifications) {
