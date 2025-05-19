@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,69 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight } from "lucide-react"
+import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight, Users } from "lucide-react"
 import { MainLayout } from "@/components/main-layout"
-
-// Sample data for subscriptions
-const subscriptions = [
-  {
-    id: 1,
-    creator: {
-      name: "ArtistAlley",
-      username: "artistalley",
-      avatar: "/placeholder.svg",
-      coverImage: "/placeholder.svg",
-      description: "Digital art and illustration tutorials",
-    },
-    tier: {
-      name: "Pro Artist",
-      price: 15,
-      color: "purple",
-      benefits: ["Exclusive tutorials", "Source files", "Monthly live sessions", "Discord access"],
-    },
-    nextBillingDate: "May 15, 2025",
-    memberSince: "January 2025",
-    recentPosts: 3,
-  },
-  {
-    id: 2,
-    creator: {
-      name: "GameDev Masters",
-      username: "gamedevmasters",
-      avatar: "/placeholder.svg",
-      coverImage: "/placeholder.svg",
-      description: "Game development tutorials and assets",
-    },
-    tier: {
-      name: "Indie Developer",
-      price: 25,
-      color: "green",
-      benefits: ["Game assets", "Source code", "Weekly workshops", "1-on-1 mentoring"],
-    },
-    nextBillingDate: "May 22, 2025",
-    memberSince: "February 2025",
-    recentPosts: 5,
-  },
-  {
-    id: 3,
-    creator: {
-      name: "Music Production Hub",
-      username: "musicprodhub",
-      avatar: "/placeholder.svg",
-      coverImage: "/placeholder.svg",
-      description: "Music production tutorials and sample packs",
-    },
-    tier: {
-      name: "Producer Plus",
-      price: 10,
-      color: "blue",
-      benefits: ["Sample packs", "Project files", "Mixing tutorials", "Plugin discounts"],
-    },
-    nextBillingDate: "May 10, 2025",
-    memberSince: "March 2025",
-    recentPosts: 2,
-  },
-]
+import { useSubscriptions } from "@/hooks/useSubscriptions"
+import { useEffect, useState } from "react"
+import { EmptyFeed } from "@/components/feed/EmptyFeed"
+import LoadingSpinner from "@/components/LoadingSpinner"
+import { Link } from "react-router-dom"
 
 // Sample data for recent content
 const recentContent = [
@@ -167,10 +112,84 @@ const recommendedCreators = [
   },
 ]
 
+// Get tier badge color
+const getTierColor = (name: string | undefined) => {
+  switch (name?.toLowerCase()) {
+    case "pro artist":
+      return "bg-primary";
+    case "indie developer":
+      return "bg-green-600";
+    case "producer plus":
+      return "bg-blue-600";
+    case "author's circle":
+      return "bg-amber-600";
+    case "pro photographer":
+      return "bg-cyan-600";
+    default:
+      return "bg-primary";
+  }
+};
+
 export default function SubscriptionsPage() {
+  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const [hasSubscriptions, setHasSubscriptions] = useState<boolean>(true);
+  
+  useEffect(() => {
+    if (!loadingSubscriptions) {
+      setHasSubscriptions(subscriptions && subscriptions.length > 0);
+    }
+  }, [subscriptions, loadingSubscriptions]);
+
+  // Calculate monthly spending
+  const monthlySpending = subscriptions?.reduce((total, sub) => {
+    return total + (sub.tier?.price || 0);
+  }, 0) || 0;
+
+  // Find next payment date
+  const today = new Date();
+  let nextPaymentDate = new Date(today);
+  nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+  const nextPayment = {
+    date: nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    amount: subscriptions?.find(s => s.tier)?.tier?.price || 0
+  };
+
+  if (loadingSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!hasSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="max-w-5xl mx-auto w-full p-6">
+          <h1 className="text-2xl font-semibold mb-6">Your Subscriptions</h1>
+          <Card className="w-full p-6">
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Users className="h-16 w-16 mb-4 text-muted-foreground" />
+              <h3 className="text-xl font-medium mb-2">No Subscriptions Found</h3>
+              <p className="text-muted-foreground mb-6">
+                You haven't subscribed to any creators yet.
+                Start following creators to see their content here!
+              </p>
+              <Button asChild>
+                <Link to="/explore">Explore Creators</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto w-full">
+      <div className="max-w-5xl mx-auto w-full p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
@@ -192,15 +211,15 @@ export default function SubscriptionsPage() {
               <div className="flex flex-col">
                 <span className="text-muted-foreground text-sm">Active Subscriptions</span>
                 <div className="flex items-baseline mt-1">
-                  <span className="text-3xl font-semibold">{subscriptions.length}</span>
-                  <span className="text-green-500 text-sm ml-2">+1 this month</span>
+                  <span className="text-3xl font-semibold">{subscriptions?.length || 0}</span>
+                  <span className="text-green-500 text-sm ml-2">Active</span>
                 </div>
               </div>
               <div className="flex flex-col">
                 <span className="text-muted-foreground text-sm">Monthly Spending</span>
                 <div className="flex items-baseline mt-1">
                   <span className="text-3xl font-semibold">
-                    ${subscriptions.reduce((total, sub) => total + sub.tier.price, 0).toFixed(2)}
+                    ${monthlySpending.toFixed(2)}
                   </span>
                   <span className="text-muted-foreground text-sm ml-2">per month</span>
                 </div>
@@ -208,9 +227,9 @@ export default function SubscriptionsPage() {
               <div className="flex flex-col">
                 <span className="text-muted-foreground text-sm">Next Payment</span>
                 <div className="flex items-baseline mt-1">
-                  <span className="text-3xl font-semibold">May 10</span>
+                  <span className="text-3xl font-semibold">{nextPayment.date}</span>
                   <span className="text-muted-foreground text-sm ml-2">
-                    ${subscriptions.find((sub) => sub.nextBillingDate.includes("May 10"))?.tier.price.toFixed(2)}
+                    ${nextPayment.amount.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -235,101 +254,113 @@ export default function SubscriptionsPage() {
           {/* Subscriptions Tab */}
           <TabsContent value="subscriptions" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {subscriptions.map((subscription) => (
-                <Card key={subscription.id} className="overflow-hidden">
-                  <div
-                    className="h-32 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${subscription.creator.coverImage})` }}
-                  />
-                  <CardContent className="pt-0 -mt-12 p-6">
-                    <div className="flex justify-between items-start">
-                      <Avatar className="h-20 w-20 border-4 border-background">
-                        <AvatarImage
-                          src={subscription.creator.avatar}
-                          alt={subscription.creator.name}
-                        />
-                        <AvatarFallback>
-                          {subscription.creator.name.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <Badge
-                        className={`${
-                          subscription.tier.color === "purple"
-                            ? "bg-primary"
-                            : subscription.tier.color === "green"
-                              ? "bg-green-600"
-                              : "bg-blue-600"
-                        }`}
-                      >
-                        {subscription.tier.name}
-                      </Badge>
-                    </div>
-                    <h3 className="text-xl font-semibold mt-4">{subscription.creator.name}</h3>
-                    <p className="text-muted-foreground text-sm mt-1">{subscription.creator.description}</p>
+              {subscriptions?.map((subscription) => {
+                const creator = subscription.creator;
+                const tier = subscription.tier;
+                
+                // Format subscription date
+                const createdDate = new Date(subscription.created_at);
+                const memberSince = createdDate.toLocaleDateString('en-US', { 
+                  month: 'long', 
+                  year: 'numeric' 
+                });
+                
+                // Calculate next billing date (1 month from creation)
+                const nextBillingDate = new Date(createdDate);
+                nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                const nextBilling = nextBillingDate.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                });
+                
+                return (
+                  <Card key={subscription.id} className="overflow-hidden">
+                    <div
+                      className="h-32 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${creator?.banner_url || "/placeholder.svg"})` }}
+                    />
+                    <CardContent className="pt-0 -mt-12 p-6">
+                      <div className="flex justify-between items-start">
+                        <Avatar className="h-20 w-20 border-4 border-background">
+                          <AvatarImage
+                            src={creator?.profile_image_url || creator?.avatar_url || "/placeholder.svg"}
+                            alt={creator?.username || "Creator"}
+                          />
+                          <AvatarFallback>
+                            {(creator?.username || "C").charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        {tier && (
+                          <Badge className={getTierColor(tier.name)}>
+                            {tier.name || "Free"}
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="text-xl font-semibold mt-4">{creator?.username || "Creator"}</h3>
+                      <p className="text-muted-foreground text-sm mt-1">{creator?.bio || "No bio available"}</p>
 
-                    <div className="mt-4 space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Membership Level</span>
-                        <span className="font-medium">{subscription.tier.name}</span>
+                      <div className="mt-4 space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Membership Level</span>
+                          <span className="font-medium">{tier?.name || "Free"}</span>
+                        </div>
+                        {tier && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Monthly Payment</span>
+                            <span className="font-medium">${tier.price?.toFixed(2) || "0.00"}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Next Billing Date</span>
+                          <span className="font-medium">{nextBilling}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Member Since</span>
+                          <span className="font-medium">{memberSince}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Monthly Payment</span>
-                        <span className="font-medium">${subscription.tier.price.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Next Billing Date</span>
-                        <span className="font-medium">{subscription.nextBillingDate}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Member Since</span>
-                        <span className="font-medium">{subscription.memberSince}</span>
-                      </div>
-                    </div>
 
-                    <div className="mt-4">
-                      <h4 className="font-medium mb-2">Tier Benefits</h4>
-                      <ul className="space-y-1">
-                        {subscription.tier.benefits.map((benefit, index) => (
-                          <li key={index} className="text-sm flex items-center gap-2">
-                            <Star className="h-3 w-3 text-primary" />
-                            {benefit}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                      {tier && tier.description && (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-2">Tier Benefits</h4>
+                          <p className="text-sm text-muted-foreground">{tier.description}</p>
+                        </div>
+                      )}
 
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          {subscription.recentPosts} new posts since last visit
-                        </span>
+                      <div className="mt-6 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Recently updated
+                          </span>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent>
+                            <DropdownMenuItem>Change Tier</DropdownMenuItem>
+                            <DropdownMenuItem>Message Creator</DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive">Cancel Subscription</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem>Change Tier</DropdownMenuItem>
-                          <DropdownMenuItem>Message Creator</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">Cancel Subscription</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="bg-muted/50 p-4 flex justify-between">
-                    <Button variant="ghost" size="sm" className="text-primary">
-                      View Creator Page
-                    </Button>
-                    <Button size="sm">
-                      View Content
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                    </CardContent>
+                    <CardFooter className="bg-muted/50 p-4 flex justify-between">
+                      <Button variant="ghost" size="sm" className="text-primary">
+                        View Creator Page
+                      </Button>
+                      <Button size="sm">
+                        View Content
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
             </div>
           </TabsContent>
 
@@ -417,30 +448,45 @@ export default function SubscriptionsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {subscriptions.map((subscription) => (
-                    <div
-                      key={subscription.id}
-                      className="flex items-center justify-between p-4 border rounded-md"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage
-                            src={subscription.creator.avatar}
-                            alt={subscription.creator.name}
-                          />
-                          <AvatarFallback>{subscription.creator.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{subscription.creator.name}</div>
-                          <div className="text-sm text-muted-foreground">{subscription.tier.name}</div>
+                  {subscriptions?.map((subscription) => {
+                    const creator = subscription.creator;
+                    const tier = subscription.tier;
+                    
+                    // Calculate next billing date (1 month from creation)
+                    const createdDate = new Date(subscription.created_at);
+                    const nextBillingDate = new Date(createdDate);
+                    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                    const nextBilling = nextBillingDate.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+                    
+                    return (
+                      <div
+                        key={subscription.id}
+                        className="flex items-center justify-between p-4 border rounded-md"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={creator?.profile_image_url || creator?.avatar_url || "/placeholder.svg"}
+                              alt={creator?.username || "Creator"}
+                            />
+                            <AvatarFallback>{(creator?.username || "C").charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{creator?.username || "Creator"}</div>
+                            <div className="text-sm text-muted-foreground">{tier?.name || "Free"}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">${tier?.price?.toFixed(2) || "0.00"}</div>
+                          <div className="text-sm text-muted-foreground">{nextBilling}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">${subscription.tier.price.toFixed(2)}</div>
-                        <div className="text-sm text-muted-foreground">{subscription.nextBillingDate}</div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
