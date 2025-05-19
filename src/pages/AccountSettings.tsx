@@ -1,4 +1,3 @@
-
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase"; // Import supabase client
 
 export default function AccountSettings() {
   const { isChecking } = useAuthCheck();
@@ -56,10 +56,8 @@ export default function AccountSettings() {
     setAccountSettings(prev => ({ ...prev, saving: true }));
     try {
       // For email updates, we would need to call the appropriate Supabase auth method
-      // This example assumes you have a method to update email in your auth context
       if (user?.email !== accountSettings.email) {
         // This is where you would update the email
-        // For Supabase, you would typically use:
         const { error } = await supabase.auth.updateUser({
           email: accountSettings.email,
         });
