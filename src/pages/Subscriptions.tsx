@@ -278,32 +278,32 @@ export default function SubscriptionsPage() {
                   <Card key={subscription.id} className="overflow-hidden">
                     <div
                       className="h-32 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${creator?.banner_url || "/placeholder.svg"})` }}
+                      style={{ backgroundImage: `url(${creator?.profile_image_url || "/placeholder.svg"})` }}
                     />
                     <CardContent className="pt-0 -mt-12 p-6">
                       <div className="flex justify-between items-start">
                         <Avatar className="h-20 w-20 border-4 border-background">
                           <AvatarImage
-                            src={creator?.profile_image_url || creator?.avatar_url || "/placeholder.svg"}
-                            alt={creator?.username || "Creator"}
+                            src={creator?.profile_image_url || creator?.users?.profile_picture || "/placeholder.svg"}
+                            alt={creator?.users?.username || "Creator"}
                           />
                           <AvatarFallback>
-                            {(creator?.username || "C").charAt(0)}
+                            {(creator?.users?.username || "C").charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                         {tier && (
-                          <Badge className={getTierColor(tier.name)}>
-                            {tier.name || "Free"}
+                          <Badge className={getTierColor(tier.title)}>
+                            {tier.title || "Free"}
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-xl font-semibold mt-4">{creator?.username || "Creator"}</h3>
+                      <h3 className="text-xl font-semibold mt-4">{creator?.users?.username || "Creator"}</h3>
                       <p className="text-muted-foreground text-sm mt-1">{creator?.bio || "No bio available"}</p>
 
                       <div className="mt-4 space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Membership Level</span>
-                          <span className="font-medium">{tier?.name || "Free"}</span>
+                          <span className="font-medium">{tier?.title || "Free"}</span>
                         </div>
                         {tier && (
                           <div className="flex justify-between text-sm">
@@ -470,14 +470,14 @@ export default function SubscriptionsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={creator?.profile_image_url || creator?.avatar_url || "/placeholder.svg"}
-                              alt={creator?.username || "Creator"}
+                              src={creator?.profile_image_url || creator?.users?.profile_picture || "/placeholder.svg"}
+                              alt={creator?.users?.username || "Creator"}
                             />
-                            <AvatarFallback>{(creator?.username || "C").charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{(creator?.users?.username || "C").charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{creator?.username || "Creator"}</div>
-                            <div className="text-sm text-muted-foreground">{tier?.name || "Free"}</div>
+                            <div className="font-medium">{creator?.users?.username || "Creator"}</div>
+                            <div className="text-sm text-muted-foreground">{tier?.title || "Free"}</div>
                           </div>
                         </div>
                         <div className="text-right">
