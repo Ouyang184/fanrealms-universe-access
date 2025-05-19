@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -181,7 +182,7 @@ const notifications = [
 export default function Notifications() {
   const { user } = useAuth();
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
-  const [hasNotifications, setHasNotifications] = useState(true);
+  const [hasNotifications, setHasNotifications] = useState(false);
   
   // Check if user is following anyone and if there are notifications
   useEffect(() => {
@@ -189,6 +190,34 @@ export default function Notifications() {
     // In a real app, you would check actual notifications from a backend
     setHasNotifications(false);
   }, []);
+  
+  // If still loading subscriptions, show loading state
+  if (loadingSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  // Check if user has subscriptions
+  const hasSubscriptions = subscriptions && subscriptions.length > 0;
+
+  // If user has no subscriptions, show the empty feed state instead of notifications
+  if (!hasSubscriptions) {
+    return (
+      <MainLayout>
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Notifications</h1>
+          </div>
+          <EmptyFeed />
+        </div>
+      </MainLayout>
+    );
+  }
   
   // Count unread notifications by type
   const unreadCounts = {
@@ -226,7 +255,7 @@ export default function Notifications() {
     }
   };
 
-  // If user has no notifications, show the empty state
+  // If user has subscriptions but no notifications, show the empty notifications state
   if (!hasNotifications) {
     return (
       <MainLayout>
