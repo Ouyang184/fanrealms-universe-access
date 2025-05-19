@@ -25,10 +25,14 @@ export const usePosts = () => {
       }
 
       return posts.map((post): Post => ({
-        ...post,
+        id: post.id,
+        title: post.title,
+        content: post.content,
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
-        date: formatRelativeDate(post.created_at)
+        created_at: post.created_at,
+        date: formatRelativeDate(post.created_at),
+        tier_id: post.tier_id
       }));
     }
   });

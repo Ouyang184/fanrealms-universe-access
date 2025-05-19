@@ -59,9 +59,9 @@ export default function FeedPage() {
   // Filter posts to only show those from creators the user is subscribed to
   const followedCreatorIds = subscriptions.map(sub => sub.creator_id);
   
-  // Filter posts by creators the user follows - ensure we only include posts with appropriate properties
+  // Filter posts by creators the user follows using authorName
   const followedPosts = posts?.filter(post => 
-    post && followedCreatorIds.includes(post.users?.username || "")
+    post && followedCreatorIds.includes(post.authorName)
   ) || [];
   
   // Count unread posts (for demo purposes, assume 3 are unread)
