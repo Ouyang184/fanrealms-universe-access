@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Search,
@@ -38,6 +39,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -45,6 +48,7 @@ interface MainLayoutProps {
 
 export function NewMainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
   
@@ -55,6 +59,45 @@ export function NewMainLayout({ children }: MainLayoutProps) {
   const isActive = (path: string) => {
     return location.pathname === path;
   };
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchNotificationsCount = async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadNotifications(count);
+      }
+    };
+    
+    fetchNotificationsCount();
+    
+    // Set up real-time subscription for new notifications
+    const channel = supabase
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          fetchNotificationsCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -334,8 +377,13 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
             {/* Top Right Icons */}
             <div className="flex items-center gap-4 ml-4">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
                 <Bell className="h-5 w-5" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
                 <span className="sr-only">Notifications</span>
               </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
