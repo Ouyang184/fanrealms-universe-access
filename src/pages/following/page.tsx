@@ -36,8 +36,6 @@ import { useCreators } from "@/hooks/useCreators";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorProfile } from "@/types";
 import { LoadingView } from "@/components/ui/loading-view";
-import { TopBar } from "@/components/Layout/TopBar";
-import { SearchBar } from "@/components/Layout/Header/SearchBar";
 
 // Categories with icons
 const categories = [
@@ -84,8 +82,8 @@ interface EnrichedCreatorProfile extends CreatorProfile {
   lastPost?: string;
 }
 
-function FollowingPageContent() {
-  const { data: creators = [] } = useCreators();
+export default function FollowingPage() {
+  const { data: creators = [], isLoading } = useCreators();
   const { subscriptions } = useSubscriptions();
   const { followCreator, unfollowCreator } = useFollow();
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,7 +146,11 @@ function FollowingPageContent() {
     : activeTab === "Favorites"
     ? followedCreators.filter(creator => creator.isFavorite)
     : followedCreators.filter(creator => creator.category === activeTab);
-
+  
+  if (isLoading) {
+    return <LoadingView message="Loading creators you follow..." />;
+  }
+  
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
@@ -366,30 +368,6 @@ function FollowingPageContent() {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function FollowingPage() {
-  const { isLoading } = useCreators();
-  
-  if (isLoading) {
-    return (
-      <div className="flex-1 overflow-auto">
-        <TopBar>
-          <SearchBar />
-        </TopBar>
-        <LoadingView message="Loading creators you follow..." />
-      </div>
-    );
-  }
-  
-  return (
-    <div className="flex-1 overflow-auto">
-      <TopBar>
-        <SearchBar />
-      </TopBar>
-      <FollowingPageContent />
     </div>
   );
 }
