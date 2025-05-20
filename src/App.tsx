@@ -26,7 +26,7 @@ import MembershipTiersPage from "./pages/MembershipTiers";
 import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
 import CreatorMessages from "./pages/creator-studio/Messages";
-import { MainLayout } from "@/components/main-layout";
+import { MainLayout } from "@/components/Layout/MainLayout";
 import CreatorPostsPage from "./pages/creator-studio/Posts";
 
 // Create a client
@@ -71,7 +71,11 @@ export default function App() {
                     <Messages />
                   </MainLayout>
                 } />
-                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/notifications" element={
+                  <MainLayout>
+                    <Notifications />
+                  </MainLayout>
+                } />
                 
                 {/* Settings page */}
                 <Route path="/settings" element={
