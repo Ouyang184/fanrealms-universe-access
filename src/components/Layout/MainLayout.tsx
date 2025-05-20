@@ -1,59 +1,132 @@
 
-import { ReactNode, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { TopBar } from './TopBar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Footer from './Footer';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Sidebar } from "./Sidebar/Sidebar";
+import { Header } from "./Header/Header";
 
 interface MainLayoutProps {
-  children: ReactNode;
-  showTabs?: boolean;
-  hideTopBar?: boolean;
+  children: React.ReactNode;
 }
 
-export function MainLayout({ children, showTabs = false, hideTopBar = false }: MainLayoutProps) {
-  const [activeTab, setActiveTab] = useState<string>("feed");
-  const { user } = useAuth();
+export function MainLayout({ children }: MainLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState<number>(0);
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
+  const { user, profile, signOut } = useAuth();
   
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+  // Fetch unread messages count
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchUnreadMessagesCount = async () => {
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadMessages(count);
+      }
+    };
+    
+    fetchUnreadMessagesCount();
+    
+    // Set up real-time subscription for new messages
+    const messagesChannel = supabase
+      .channel(`messages-${user.id}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}` 
+        }, 
+        () => {
+          fetchUnreadMessagesCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [user?.id]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchUnreadNotificationsCount = async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadNotifications(count);
+      }
+    };
+    
+    fetchUnreadNotificationsCount();
+    
+    // Set up real-time subscription for new notifications
+    const notificationsChannel = supabase
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          fetchUnreadNotificationsCount();
+        }
+      )
+      .on('postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadNotificationsCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(notificationsChannel);
+    };
+  }, [user?.id]);
+
   return (
-    <div className="flex flex-col min-h-screen">
-      {!hideTopBar && (
-        <TopBar>
-          <div className="ml-auto flex items-center gap-2">
-            <ThemeToggle />
-          </div>
-        </TopBar>
-      )}
-      <div className="flex-1 px-4 md:px-6 py-6 overflow-y-auto">
-        {showTabs ? (
-          <div className="max-w-6xl mx-auto w-full">
-            <Tabs defaultValue="feed" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="border-b mb-6">
-                <TabsList className="justify-start">
-                  <TabsTrigger value="feed">Feed</TabsTrigger>
-                  <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                </TabsList>
-              </div>
-              <TabsContent value="feed" className="pt-4">{children}</TabsContent>
-              <TabsContent value="notifications" className="pt-4">
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-semibold">Notifications</h2>
-                  <div className="text-muted-foreground">
-                    You don't have any notifications yet.
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        ) : (
-          <div className="max-w-6xl mx-auto w-full">
-            {children}
-          </div>
-        )}
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        toggleSidebar={toggleSidebar} 
+        onSignOut={signOut} 
+      />
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header 
+          unreadNotifications={unreadNotifications} 
+          unreadMessages={unreadMessages} 
+          profile={profile} 
+          onSignOut={signOut} 
+        />
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
-      {/* Only render footer if user is not authenticated */}
-      {!user && <Footer />}
     </div>
   );
 }
