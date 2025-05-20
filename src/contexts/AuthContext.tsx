@@ -39,7 +39,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (currentSession?.user) {
           setTimeout(() => {
-            fetchUserProfile(currentSession.user.id).then(setProfile);
+            fetchUserProfile(currentSession.user.id).then(userProfile => {
+              if (userProfile) {
+                setProfile(userProfile);
+              }
+            });
           }, 0);
         } else {
           setProfile(null);
@@ -54,7 +58,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (initialSession) {
           setSession(initialSession);
           setUser(initialSession.user);
-          return fetchUserProfile(initialSession.user.id).then(setProfile);
+          return fetchUserProfile(initialSession.user.id).then(userProfile => {
+            if (userProfile) {
+              setProfile(userProfile);
+            }
+          });
         }
       })
       .catch(error => {
@@ -75,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (updatedProfile) {
       setProfile(updatedProfile);
     }
+    return updatedProfile;
   };
 
   const value: AuthContextType = {

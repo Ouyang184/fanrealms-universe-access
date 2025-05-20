@@ -26,9 +26,10 @@ export const useProfile = () => {
 
   const updateProfile = useCallback(async (userId: string, data: Partial<DbUser>) => {
     try {
+      // Remove the updated_at field since it doesn't exist in the users table
       const updates = {
-        ...data,
-        updated_at: new Date().toISOString(),
+        ...data
+        // Removed the updated_at field that was causing the error
       };
 
       const { error } = await supabase

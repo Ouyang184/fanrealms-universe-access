@@ -1,3 +1,4 @@
+
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -66,9 +67,11 @@ export default function AccountSettings() {
       }
       
       // Update the profile (username)
-      await updateProfile({
-        username: accountSettings.username
-      });
+      if (profile?.username !== accountSettings.username) {
+        await updateProfile({
+          username: accountSettings.username
+        });
+      }
       
       toast({
         title: "Settings saved",
