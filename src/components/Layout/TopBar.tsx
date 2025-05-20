@@ -1,6 +1,5 @@
 
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactNode } from "react";
 import { HeaderNotifications } from "./Header/HeaderNotifications";
 import { UserDropdownMenu } from "./Header/UserDropdownMenu";
@@ -38,5 +37,3 @@ export function TopBar({ children }: TopBarProps) {
     </div>
   );
 }
-
-// Helper function is no longer needed since we're using the UserDropdownMenu component

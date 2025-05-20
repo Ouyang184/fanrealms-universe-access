@@ -1,6 +1,6 @@
 
 import { Settings, User, HelpCircle, LogOut } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Popover,
@@ -10,9 +10,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   if (!user) return null;
   
@@ -22,6 +25,23 @@ export function UserDropdownMenu() {
   
   const email = profile?.email || user.email || "";
   const username = profile?.username || email.split('@')[0];
+  
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Failed to log out",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Popover>
@@ -67,7 +87,7 @@ export function UserDropdownMenu() {
         <Separator />
         <div className="p-1">
           <button 
-            onClick={signOut}
+            onClick={handleSignOut}
             className={cn(
               "w-full flex items-center gap-2 p-2 rounded-md text-sm",
               "hover:bg-accent text-destructive transition-colors duration-200"

@@ -25,10 +25,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header 
-          profile={profile} 
-          onSignOut={signOut} 
-        />
+        <Header />
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-auto p-6">{children}</main>
