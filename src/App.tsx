@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -28,7 +27,6 @@ import AccountSettings from "./pages/AccountSettings";
 import CreatorMessages from "./pages/creator-studio/Messages";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import CreatorPostsPage from "./pages/creator-studio/Posts";
-import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -75,14 +73,14 @@ export default function App() {
                 
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
-                {/* Creator studio routes - now wrapped with CreatorCheck */}
-                <Route path="/creator-studio/dashboard" element={<MainLayout><CreatorCheck><Dashboard /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/posts" element={<MainLayout><CreatorCheck><CreatorPostsPage /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/messages" element={<MainLayout><CreatorCheck><CreatorMessages /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/membership-tiers" element={<MainLayout><CreatorCheck><CreatorStudioTiers /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/subscribers" element={<MainLayout><CreatorCheck><Dashboard /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/payouts" element={<MainLayout><CreatorCheck><Dashboard /></CreatorCheck></MainLayout>} />
-                <Route path="/creator-studio/settings" element={<MainLayout><CreatorCheck><Dashboard /></CreatorCheck></MainLayout>} />
+                {/* Creator studio routes */}
+                <Route path="/creator-studio/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
+                <Route path="/creator-studio/posts" element={<CreatorPostsPage />} />
+                <Route path="/creator-studio/messages" element={<MainLayout><CreatorMessages /></MainLayout>} />
+                <Route path="/creator-studio/membership-tiers" element={<MainLayout><CreatorStudioTiers /></MainLayout>} />
+                <Route path="/creator-studio/subscribers" element={<Dashboard />} />
+                <Route path="/creator-studio/payouts" element={<Dashboard />} />
+                <Route path="/creator-studio/settings" element={<Dashboard />} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>
