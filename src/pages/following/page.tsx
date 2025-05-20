@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,7 @@ interface EnrichedCreatorProfile extends CreatorProfile {
 }
 
 export default function FollowingPage() {
-  const { data: creators = [] } = useCreators();
+  const { data: creators = [], isLoading } = useCreators();
   const { subscriptions } = useSubscriptions();
   const { followCreator, unfollowCreator } = useFollow();
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,6 +147,16 @@ export default function FollowingPage() {
     : activeTab === "Favorites"
     ? followedCreators.filter(creator => creator.isFavorite)
     : followedCreators.filter(creator => creator.category === activeTab);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingView message="Loading creators you follow..." />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
