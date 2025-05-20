@@ -71,11 +71,11 @@ export function AppSidebar() {
             "pb-6",
             isCollapsed ? "px-2" : "px-3"
           )}>
-            <NavigationMenu isCollapsed={isCollapsed} />
+            <NavigationMenu collapsed={isCollapsed} />
             
             <SidebarSeparator className="my-3" />
             
-            <CreatorStudioMenu isCollapsed={isCollapsed} />
+            <CreatorStudioMenu collapsed={isCollapsed} />
 
             <SidebarSeparator className="my-3" />
 
@@ -105,7 +105,7 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter>
-        <SidebarFooterContent isCollapsed={isCollapsed} />
+        <SidebarFooterContent collapsed={isCollapsed} />
       </SidebarFooter>
     </Sidebar>
   );
