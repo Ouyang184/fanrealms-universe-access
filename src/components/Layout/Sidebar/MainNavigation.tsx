@@ -25,9 +25,9 @@ export function MainNavigation({ collapsed }: MainNavigationProps) {
   };
 
   const navigationItems = [
-    { path: "/", icon: Home, label: "Home" },
-    { path: "/following", icon: Users, label: "Following" },
+    { path: "/home", icon: Home, label: "Home" },
     { path: "/feed", icon: Rss, label: "Feed" },
+    { path: "/following", icon: Users, label: "Following" },
     { path: "/explore", icon: Compass, label: "Explore" },
     { path: "/messages", icon: MessageSquare, label: "Messages" },
     { path: "/notifications", icon: Bell, label: "Notifications" },

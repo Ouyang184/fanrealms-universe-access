@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -52,6 +51,7 @@ export default function App() {
                 <Route path="/index" element={<Index />} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
                 
                 {/* Auth routes */}
@@ -65,7 +65,6 @@ export default function App() {
                 {/* Main app routes */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/following" element={<FollowingPage />} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
                 <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
                 
