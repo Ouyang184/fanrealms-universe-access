@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search, Download } from "lucide-react"
+import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search } from "lucide-react"
+import { Download as DownloadIcon } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -74,7 +75,7 @@ export default function HomePage() {
                       ) : i % 3 === 1 ? (
                         <FileIcon className="h-3 w-3" />
                       ) : (
-                        <Download className="h-3 w-3" />
+                        <DownloadIcon className="h-3 w-3" />
                       )}
                       {i % 3 === 0 ? "Video" : i % 3 === 1 ? "Article" : "Download"}
                     </div>
