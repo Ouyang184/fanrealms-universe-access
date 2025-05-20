@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Filter, CreditCard, Star, Clock, Video, FileIcon, Download, Heart, MoreHorizontal, ChevronRight, Users } from "lucide-react"
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 import { useSubscriptions } from "@/hooks/useSubscriptions"
 import { useEffect, useState } from "react"
 import { EmptyFeed } from "@/components/feed/EmptyFeed"
