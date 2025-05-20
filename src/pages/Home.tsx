@@ -1,11 +1,10 @@
-
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search } from "lucide-react"
+import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search, Download } from "lucide-react"
 
 export default function HomePage() {
   return (
