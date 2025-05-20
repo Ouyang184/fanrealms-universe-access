@@ -12,7 +12,7 @@ export function HeaderNotifications() {
   const [unreadMessages, setUnreadMessages] = useState(0);
   
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     
     // Fetch unread notifications count
     const fetchNotificationsCount = async () => {
@@ -24,6 +24,9 @@ export function HeaderNotifications() {
         
       if (!error && count !== null) {
         setUnreadNotifications(count);
+      } else {
+        // Reset to 0 if there's an error or no data
+        setUnreadNotifications(0);
       }
     };
     
@@ -37,6 +40,9 @@ export function HeaderNotifications() {
         
       if (!error && count !== null) {
         setUnreadMessages(count);
+      } else {
+        // Reset to 0 if there's an error or no data
+        setUnreadMessages(0);
       }
     };
     
@@ -45,8 +51,8 @@ export function HeaderNotifications() {
     fetchMessagesCount();
     
     // Set up subscription for real-time updates
-    const notificationsSubscription = supabase
-      .channel('notifications-changes')
+    const notificationsChannel = supabase
+      .channel(`notifications-${user.id}`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
         () => {
@@ -55,8 +61,8 @@ export function HeaderNotifications() {
       )
       .subscribe();
       
-    const messagesSubscription = supabase
-      .channel('messages-changes')
+    const messagesChannel = supabase
+      .channel(`messages-${user.id}`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, 
         () => {
@@ -67,10 +73,10 @@ export function HeaderNotifications() {
     
     // Cleanup subscriptions
     return () => {
-      supabase.removeChannel(notificationsSubscription);
-      supabase.removeChannel(messagesSubscription);
+      supabase.removeChannel(notificationsChannel);
+      supabase.removeChannel(messagesChannel);
     };
-  }, [user]);
+  }, [user?.id]);
 
   return (
     <>
