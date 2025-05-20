@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import {
   BookOpen,
   Coffee,
   Dumbbell,
+  Check,
 } from "lucide-react";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useCreators } from "@/hooks/useCreators";
@@ -149,10 +151,20 @@ export default function FollowingPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Following & Favorites</h1>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Check className="h-4 w-4" />
+              Mark All as Read
+            </Button>
+          </div>
+        </div>
+
+        {/* Rest of your content */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Following & Favorites</h1>
             <p className="text-muted-foreground">Manage your followed creators and favorites in one place</p>
           </div>
           <div className="flex items-center gap-3">
