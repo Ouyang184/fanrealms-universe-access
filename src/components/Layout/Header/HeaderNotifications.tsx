@@ -78,15 +78,10 @@ export function HeaderNotifications() {
     };
   }, [user?.id]);
 
-  // Debug click handler to verify button is receiving clicks
-  const handleDebugClick = (destination: string) => {
-    console.log(`Attempting to navigate to: ${destination}`);
-  };
-
   return (
     <div className="flex items-center gap-2">
       {/* Notifications button */}
-      <Link to="/notifications" className="block" onClick={() => handleDebugClick('/notifications')}>
+      <Link to="/notifications">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -103,7 +98,7 @@ export function HeaderNotifications() {
       </Link>
       
       {/* Messages button */}
-      <Link to="/messages" className="block" onClick={() => handleDebugClick('/messages')}>
+      <Link to="/messages">
         <Button 
           variant="ghost" 
           size="icon"  

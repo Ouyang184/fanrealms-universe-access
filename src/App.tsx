@@ -66,16 +66,8 @@ export default function App() {
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/following" element={<FollowingPage />} />
-                <Route path="/messages" element={
-                  <MainLayout>
-                    <Messages />
-                  </MainLayout>
-                } />
-                <Route path="/notifications" element={
-                  <MainLayout>
-                    <Notifications />
-                  </MainLayout>
-                } />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/notifications" element={<Notifications />} />
                 
                 {/* Settings page */}
                 <Route path="/settings" element={
