@@ -1,6 +1,5 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "./Sidebar/Sidebar";
 import { Header } from "./Header/Header";

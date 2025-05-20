@@ -80,7 +80,12 @@ export function HeaderNotifications() {
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground relative">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        asChild 
+        className="text-muted-foreground hover:text-foreground relative"
+      >
         <Link to="/notifications">
           <Bell className="h-5 w-5" />
           {unreadNotifications > 0 && (
@@ -92,7 +97,12 @@ export function HeaderNotifications() {
         </Link>
       </Button>
       
-      <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground relative">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        asChild 
+        className="text-muted-foreground hover:text-foreground relative"
+      >
         <Link to="/messages">
           <MessageSquare className="h-5 w-5" />
           {unreadMessages > 0 && (
