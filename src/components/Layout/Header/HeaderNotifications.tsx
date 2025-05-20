@@ -81,7 +81,7 @@ export function HeaderNotifications() {
   return (
     <div className="flex items-center gap-2">
       {/* Notifications button */}
-      <Link to="/notifications" className="block">
+      <Link to="/notifications">
         <Button 
           variant="ghost" 
           size="icon" 
@@ -98,7 +98,7 @@ export function HeaderNotifications() {
       </Link>
       
       {/* Messages button */}
-      <Link to="/messages" className="block">
+      <Link to="/messages">
         <Button 
           variant="ghost" 
           size="icon"  

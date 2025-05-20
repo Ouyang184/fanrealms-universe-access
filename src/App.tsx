@@ -66,47 +66,19 @@ export default function App() {
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/following" element={<FollowingPage />} />
-                <Route path="/messages" element={
-                  <MainLayout>
-                    <Messages />
-                  </MainLayout>
-                } />
-                <Route path="/notifications" element={
-                  <MainLayout>
-                    <Notifications />
-                  </MainLayout>
-                } />
+                <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
+                <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
                 
                 {/* Settings page */}
-                <Route path="/settings" element={
-                  <MainLayout>
-                    <AccountSettings />
-                  </MainLayout>
-                } />
+                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 
-                <Route path="/membership-tiers" element={
-                  <MainLayout>
-                    <MembershipTiersPage />
-                  </MainLayout>
-                } />
+                <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
                 {/* Creator studio routes */}
-                <Route path="/creator-studio/dashboard" element={
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                } />
+                <Route path="/creator-studio/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
                 <Route path="/creator-studio/posts" element={<CreatorPostsPage />} />
-                <Route path="/creator-studio/messages" element={
-                  <MainLayout>
-                    <CreatorMessages />
-                  </MainLayout>
-                } />
-                <Route path="/creator-studio/membership-tiers" element={
-                  <MainLayout>
-                    <CreatorStudioTiers />
-                  </MainLayout>
-                } />
+                <Route path="/creator-studio/messages" element={<MainLayout><CreatorMessages /></MainLayout>} />
+                <Route path="/creator-studio/membership-tiers" element={<MainLayout><CreatorStudioTiers /></MainLayout>} />
                 <Route path="/creator-studio/subscribers" element={<Dashboard />} />
                 <Route path="/creator-studio/payouts" element={<Dashboard />} />
                 <Route path="/creator-studio/settings" element={<Dashboard />} />
