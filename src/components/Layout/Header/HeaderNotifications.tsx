@@ -1,10 +1,10 @@
 
-import { Link } from "react-router-dom";
 import { Bell, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 export function HeaderNotifications() {
   const { user } = useAuth();
@@ -80,17 +80,15 @@ export function HeaderNotifications() {
 
   return (
     <>
-      <Link to="/notifications">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
-          <Bell className="h-5 w-5" />
-          {unreadNotifications > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              {unreadNotifications > 9 ? '9+' : unreadNotifications}
-            </span>
-          )}
-          <span className="sr-only">Notifications</span>
-        </Button>
-      </Link>
+      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+        <Bell className="h-5 w-5" />
+        {unreadNotifications > 0 && (
+          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+            {unreadNotifications > 9 ? '9+' : unreadNotifications}
+          </span>
+        )}
+        <span className="sr-only">Notifications</span>
+      </Button>
       <Link to="/messages">
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
           <MessageSquare className="h-5 w-5" />
