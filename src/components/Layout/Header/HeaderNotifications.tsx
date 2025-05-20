@@ -80,8 +80,8 @@ export function HeaderNotifications() {
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="icon" asChild className="relative text-muted-foreground hover:text-foreground">
-        <Link to="/notifications">
+      <Link to="/notifications" className="inline-block">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
           <Bell className="h-5 w-5" />
           {unreadNotifications > 0 && (
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
@@ -89,11 +89,11 @@ export function HeaderNotifications() {
             </span>
           )}
           <span className="sr-only">Notifications</span>
-        </Link>
-      </Button>
+        </Button>
+      </Link>
       
-      <Button variant="ghost" size="icon" asChild className="relative text-muted-foreground hover:text-foreground">
-        <Link to="/messages">
+      <Link to="/messages" className="inline-block">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
           <MessageSquare className="h-5 w-5" />
           {unreadMessages > 0 && (
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
@@ -101,8 +101,8 @@ export function HeaderNotifications() {
             </span>
           )}
           <span className="sr-only">Messages</span>
-        </Link>
-      </Button>
+        </Button>
+      </Link>
     </div>
   );
 }
