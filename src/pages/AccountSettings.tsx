@@ -10,7 +10,30 @@ import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase"; // Import supabase client
+import { supabase } from "@/lib/supabase"; 
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
+// Password change form schema
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(6, {
+    message: "Current password must be at least 6 characters.",
+  }),
+  newPassword: z.string().min(6, {
+    message: "New password must be at least 6 characters.",
+  }),
+  confirmNewPassword: z.string().min(6, {
+    message: "Confirm password must be at least 6 characters.",
+  }),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+  message: "New passwords don't match",
+  path: ["confirmNewPassword"],
+});
+
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function AccountSettings() {
   const { isChecking } = useAuthCheck();
@@ -24,6 +47,10 @@ export default function AccountSettings() {
     saving: false
   });
   
+  // Change password dialog state
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
@@ -32,6 +59,16 @@ export default function AccountSettings() {
     mentions: true,
     creatorUpdates: true,
     saving: false
+  });
+  
+  // Form for password change
+  const form = useForm<PasswordFormValues>({
+    resolver: zodResolver(passwordFormSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    },
   });
   
   useEffect(() => {
@@ -86,6 +123,35 @@ export default function AccountSettings() {
       console.error(error);
     } finally {
       setAccountSettings(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  const handleChangePassword = async (values: PasswordFormValues) => {
+    setIsChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: values.newPassword,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Password updated",
+        description: "Your password has been changed successfully."
+      });
+      
+      // Reset form and close dialog
+      form.reset();
+      setChangePasswordOpen(false);
+      
+    } catch (error: any) {
+      toast({
+        title: "Failed to update password",
+        description: error.message || "There was a problem updating your password. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsChangingPassword(false);
     }
   };
   
@@ -157,7 +223,12 @@ export default function AccountSettings() {
                   </p>
                 </div>
                 <div className="space-y-2 pt-4">
-                  <Button variant="outline">Change Password</Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setChangePasswordOpen(true)}
+                  >
+                    Change Password
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>
@@ -287,6 +358,88 @@ export default function AccountSettings() {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Password Change Dialog */}
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and a new password below.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleChangePassword)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Enter current password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Enter new password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmNewPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Confirm new password" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setChangePasswordOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? "Changing..." : "Change Password"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
