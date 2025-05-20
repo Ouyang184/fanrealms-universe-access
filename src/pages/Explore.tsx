@@ -1,5 +1,4 @@
-
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
