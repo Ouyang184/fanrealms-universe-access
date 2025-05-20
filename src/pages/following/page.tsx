@@ -36,6 +36,8 @@ import { useCreators } from "@/hooks/useCreators";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorProfile } from "@/types";
 import { LoadingView } from "@/components/ui/loading-view";
+import { TopBar } from "@/components/Layout/TopBar";
+import { SearchBar } from "@/components/Layout/Header/SearchBar";
 
 // Categories with icons
 const categories = [
@@ -373,15 +375,21 @@ export default function FollowingPage() {
   
   if (isLoading) {
     return (
-      <MainLayout>
+      <div className="flex-1 overflow-auto">
+        <TopBar>
+          <SearchBar />
+        </TopBar>
         <LoadingView message="Loading creators you follow..." />
-      </MainLayout>
+      </div>
     );
   }
   
   return (
-    <MainLayout>
+    <div className="flex-1 overflow-auto">
+      <TopBar>
+        <SearchBar />
+      </TopBar>
       <FollowingPageContent />
-    </MainLayout>
+    </div>
   );
 }
