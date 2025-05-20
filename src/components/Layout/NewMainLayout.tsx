@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -48,7 +47,7 @@ interface MainLayoutProps {
 
 export function NewMainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
+  const [unreadMessages, setUnreadMessages] = useState<number>(0);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
   
@@ -60,36 +59,36 @@ export function NewMainLayout({ children }: MainLayoutProps) {
     return location.pathname === path;
   };
 
-  // Fetch unread notifications count
+  // Fetch unread messages count
   useEffect(() => {
     if (!user?.id) return;
     
-    const fetchNotificationsCount = async () => {
+    const fetchUnreadMessagesCount = async () => {
       const { count, error } = await supabase
-        .from('notifications')
+        .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
+        .eq('receiver_id', user.id)
         .eq('is_read', false);
         
       if (!error && count !== null) {
-        setUnreadNotifications(count);
+        setUnreadMessages(count);
       }
     };
     
-    fetchNotificationsCount();
+    fetchUnreadMessagesCount();
     
-    // Set up real-time subscription for new notifications
+    // Set up real-time subscription for new messages
     const channel = supabase
-      .channel(`notifications-${user.id}`)
+      .channel(`messages-${user.id}`)
       .on('postgres_changes', 
         { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}` 
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}` 
         }, 
         () => {
-          fetchNotificationsCount();
+          fetchUnreadMessagesCount();
         }
       )
       .subscribe();
@@ -377,19 +376,23 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
             {/* Top Right Icons */}
             <div className="flex items-center gap-4 ml-4">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
-                <Bell className="h-5 w-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                  </span>
-                )}
-                <span className="sr-only">Notifications</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                <MessageSquare className="h-5 w-5" />
-                <span className="sr-only">Messages</span>
-              </Button>
+              <Link to="/notifications">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+                  <Bell className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
+                  <span className="sr-only">Notifications</span>
+                </Button>
+              </Link>
+              <Link to="/messages">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <MessageSquare className="h-5 w-5" />
+                  <span className="sr-only">Messages</span>
+                </Button>
+              </Link>
               <Button variant="default" className="bg-primary hover:bg-primary/90">
                 Create
               </Button>
