@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -335,11 +334,8 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
             {/* Top Right Icons */}
             <div className="flex items-center gap-4 ml-4">
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  3
-                </span>
                 <span className="sr-only">Notifications</span>
               </Button>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
