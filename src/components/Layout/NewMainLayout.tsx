@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -379,17 +380,17 @@ export function NewMainLayout({ children }: MainLayoutProps) {
               <Link to="/notifications">
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
                   <Bell className="h-5 w-5" />
+                  <span className="sr-only">Notifications</span>
+                </Button>
+              </Link>
+              <Link to="/messages">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+                  <MessageSquare className="h-5 w-5" />
                   {unreadMessages > 0 && (
                     <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {unreadMessages > 9 ? '9+' : unreadMessages}
                     </span>
                   )}
-                  <span className="sr-only">Notifications</span>
-                </Button>
-              </Link>
-              <Link to="/messages">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                  <MessageSquare className="h-5 w-5" />
                   <span className="sr-only">Messages</span>
                 </Button>
               </Link>
