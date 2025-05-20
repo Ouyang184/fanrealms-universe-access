@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -48,6 +49,7 @@ interface MainLayoutProps {
 export function NewMainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
   
@@ -78,7 +80,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
     fetchUnreadMessagesCount();
     
     // Set up real-time subscription for new messages
-    const channel = supabase
+    const messagesChannel = supabase
       .channel(`messages-${user.id}`)
       .on('postgres_changes', 
         { 
@@ -94,7 +96,57 @@ export function NewMainLayout({ children }: MainLayoutProps) {
       .subscribe();
       
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [user?.id]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const fetchUnreadNotificationsCount = async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadNotifications(count);
+      }
+    };
+    
+    fetchUnreadNotificationsCount();
+    
+    // Set up real-time subscription for new notifications
+    const notificationsChannel = supabase
+      .channel(`notifications-${user.id}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          fetchUnreadNotificationsCount();
+        }
+      )
+      .on('postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchUnreadNotificationsCount();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(notificationsChannel);
     };
   }, [user?.id]);
 
@@ -138,6 +190,19 @@ export function NewMainLayout({ children }: MainLayoutProps) {
               >
                 <Users className="h-5 w-5" />
                 {!sidebarCollapsed && <span>Following</span>}
+              </Button>
+            </Link>
+            <Link to="/feed" className="block">
+              <Button
+                variant={isActive("/feed") ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full font-medium",
+                  sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
+                  isActive("/feed") && "bg-primary/30",
+                )}
+              >
+                <Rss className="h-5 w-5" />
+                {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
             <Link to="/explore" className="block">
@@ -209,6 +274,7 @@ export function NewMainLayout({ children }: MainLayoutProps) {
 
           <Separator className="my-4" />
 
+          {/* Creator Studio Menu */}
           {sidebarCollapsed ? (
             <div className="p-2">
               <Link to="/creator-studio/dashboard" className="block">
@@ -379,17 +445,22 @@ export function NewMainLayout({ children }: MainLayoutProps) {
               <Link to="/notifications">
                 <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
                   <Bell className="h-5 w-5" />
-                  {unreadMessages > 0 && (
+                  {unreadNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </span>
                   )}
                   <span className="sr-only">Notifications</span>
                 </Button>
               </Link>
               <Link to="/messages">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
                   <MessageSquare className="h-5 w-5" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {unreadMessages > 9 ? '9+' : unreadMessages}
+                    </span>
+                  )}
                   <span className="sr-only">Messages</span>
                 </Button>
               </Link>
