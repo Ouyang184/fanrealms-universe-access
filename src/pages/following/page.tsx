@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { MainLayout } from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -149,12 +148,9 @@ function FollowingPageContent() {
     : followedCreators.filter(creator => creator.category === activeTab);
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Following & Favorites</h1>
-          <p className="text-muted-foreground">Manage your followed creators and favorites in one place</p>
-        </div>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Following & Favorites</h1>
         <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -186,12 +182,17 @@ function FollowingPageContent() {
 
       {/* Categories Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="overflow-auto flex w-full justify-start">
-          {categoryCounts.map((category) => (
+        <TabsList className="bg-gray-900 border-gray-800">
+          <TabsTrigger value="All" className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            All
+            <Badge variant="outline" className="ml-1">{followedCreators.length}</Badge>
+          </TabsTrigger>
+          {categoryCounts.slice(1).map((category) => (
             <TabsTrigger
               key={category.name}
               value={category.name}
-              className="flex items-center gap-2"
+              className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2"
             >
               {category.icon}
               {category.name}
@@ -200,7 +201,7 @@ function FollowingPageContent() {
               </Badge>
             </TabsTrigger>
           ))}
-          <TabsTrigger value="Favorites" className="flex items-center gap-2">
+          <TabsTrigger value="Favorites" className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2">
             <Heart className="h-4 w-4" />
             Favorites
             <Badge variant="outline" className="ml-1">
