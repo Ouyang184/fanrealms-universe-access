@@ -2,13 +2,76 @@
 import { Link } from "react-router-dom";
 import { Bell, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface HeaderNotificationsProps {
-  unreadNotifications: number;
-  unreadMessages: number;
-}
+export function HeaderNotifications() {
+  const { user } = useAuth();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  
+  useEffect(() => {
+    if (!user) return;
+    
+    // Fetch unread notifications count
+    const fetchNotificationsCount = async () => {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadNotifications(count);
+      }
+    };
+    
+    // Fetch unread messages count
+    const fetchMessagesCount = async () => {
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+        
+      if (!error && count !== null) {
+        setUnreadMessages(count);
+      }
+    };
+    
+    // Initial fetch
+    fetchNotificationsCount();
+    fetchMessagesCount();
+    
+    // Set up subscription for real-time updates
+    const notificationsSubscription = supabase
+      .channel('notifications-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
+        () => {
+          fetchNotificationsCount();
+        }
+      )
+      .subscribe();
+      
+    const messagesSubscription = supabase
+      .channel('messages-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, 
+        () => {
+          fetchMessagesCount();
+        }
+      )
+      .subscribe();
+    
+    // Cleanup subscriptions
+    return () => {
+      supabase.removeChannel(notificationsSubscription);
+      supabase.removeChannel(messagesSubscription);
+    };
+  }, [user]);
 
-export function HeaderNotifications({ unreadNotifications, unreadMessages }: HeaderNotificationsProps) {
   return (
     <>
       <Link to="/notifications">

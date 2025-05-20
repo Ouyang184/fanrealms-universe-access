@@ -2,6 +2,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ReactNode } from "react";
+import { HeaderNotifications } from "./Header/HeaderNotifications";
 
 interface TopBarProps {
   children?: ReactNode;
@@ -15,6 +16,7 @@ export function TopBar({ children }: TopBarProps) {
       <div className="flex h-16 items-center gap-4 px-4">
         <div className="ml-auto flex items-center gap-4">
           {children}
+          <HeaderNotifications />
           {user && (
             <Avatar>
               <AvatarImage src={profile?.profile_picture || ""} alt={profile?.username || "User"} />
