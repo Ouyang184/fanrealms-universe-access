@@ -2,13 +2,13 @@
 import { cn } from '@/lib/utils';
 
 interface SidebarFooterContentProps {
-  isCollapsed?: boolean;
+  collapsed?: boolean;
 }
 
-export function SidebarFooterContent({ isCollapsed = false }: SidebarFooterContentProps) {
+export function SidebarFooterContent({ collapsed = false }: SidebarFooterContentProps) {
   const currentYear = new Date().getFullYear();
   
-  if (isCollapsed) {
+  if (collapsed) {
     // Return empty div with just the border when collapsed
     return (
       <div className="px-2 py-4 border-t border-border/40"></div>

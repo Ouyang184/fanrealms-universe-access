@@ -15,10 +15,10 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface NavigationMenuProps {
-  isCollapsed?: boolean;
+  collapsed?: boolean;
 }
 
-export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
+export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const location = useLocation();
   const { user } = useAuth();
   
@@ -43,18 +43,18 @@ export function NavigationMenu({ isCollapsed = false }: NavigationMenuProps) {
             <SidebarMenuButton
               asChild
               isActive={isActive}
-              tooltip={isCollapsed ? item.label : undefined}
+              tooltip={collapsed ? item.label : undefined}
             >
               <Link 
                 to={item.path}
                 className={cn(
                   "w-full flex items-center py-2.5",
-                  isCollapsed ? "px-2 justify-center" : "px-4 gap-3",
+                  collapsed ? "px-2 justify-center" : "px-4 gap-3",
                   isActive && "bg-primary/30 font-medium"
                 )}
               >
                 <item.icon className="h-5 w-5" />
-                {!isCollapsed && <span className="text-base">{item.label}</span>}
+                {!collapsed && <span className="text-base">{item.label}</span>}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
