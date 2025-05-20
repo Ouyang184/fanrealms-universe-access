@@ -3,11 +3,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export function useCreatorProfile() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -52,10 +51,10 @@ export function useCreatorProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
       toast({
-        title: "Profile created",
-        description: "Your creator profile has been created successfully!",
+        title: "Creator Profile Created",
+        description: "Welcome to the Creator Studio! You can now start creating content.",
       });
-      navigate('/creator-studio');
+      navigate('/creator-studio/dashboard');
     },
     onError: (error) => {
       console.error('Error creating creator profile:', error);
