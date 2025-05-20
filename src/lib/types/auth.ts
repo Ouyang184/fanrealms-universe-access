@@ -1,3 +1,4 @@
+
 export type DbUser = {
   id: string
   email: string
@@ -33,7 +34,7 @@ export interface AuthContextType {
   signInWithMagicLink: (email: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
-  updateProfile: (data: Partial<Profile>) => Promise<void>;
+  updateProfile: (data: Partial<Profile>) => Promise<Profile | null>;
 }
 
 export interface AuthResult {
