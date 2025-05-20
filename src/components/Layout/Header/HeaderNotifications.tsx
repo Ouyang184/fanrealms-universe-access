@@ -1,3 +1,4 @@
+
 import { Bell, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -78,8 +79,8 @@ export function HeaderNotifications() {
   }, [user?.id]);
 
   return (
-    <>
-      <Link to="/notifications">
+    <div className="flex items-center gap-2">
+      <Link to="/notifications" className="inline-block">
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
           <Bell className="h-5 w-5" />
           {unreadNotifications > 0 && (
@@ -90,7 +91,8 @@ export function HeaderNotifications() {
           <span className="sr-only">Notifications</span>
         </Button>
       </Link>
-      <Link to="/messages">
+      
+      <Link to="/messages" className="inline-block">
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
           <MessageSquare className="h-5 w-5" />
           {unreadMessages > 0 && (
@@ -101,6 +103,6 @@ export function HeaderNotifications() {
           <span className="sr-only">Messages</span>
         </Button>
       </Link>
-    </>
+    </div>
   );
 }
