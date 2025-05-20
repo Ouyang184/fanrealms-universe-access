@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 
 export default function CreatorPostsPage() {
   return (
