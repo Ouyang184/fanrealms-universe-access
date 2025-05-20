@@ -135,9 +135,6 @@ export const useAuthFunctions = () => {
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          // Set the OTP expiry time to 30 minutes (1800 seconds)
-          // This is less than the default of 1 hour (3600 seconds)
-          otpTimeoutSeconds: 1800
         },
       });
 

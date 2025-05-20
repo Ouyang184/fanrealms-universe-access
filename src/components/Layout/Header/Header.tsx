@@ -2,14 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { HeaderNotifications } from "./HeaderNotifications";
-import { UserMenu } from "./UserMenu";
+import { UserDropdownMenu } from "./UserDropdownMenu";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface HeaderProps {
-  profile: any;
-  onSignOut: () => void;
-}
-
-export function Header({ profile, onSignOut }: HeaderProps) {
+export function Header() {
+  const { user } = useAuth();
+  
   return (
     <header className="border-b border-border bg-background z-10">
       <div className="flex items-center justify-between p-4">
@@ -18,10 +17,19 @@ export function Header({ profile, onSignOut }: HeaderProps) {
         {/* Top Right Icons */}
         <div className="flex items-center gap-4 ml-4">
           <HeaderNotifications />
-          <Button variant="default" className="bg-primary hover:bg-primary/90">
-            Create
-          </Button>
-          <UserMenu profile={profile} onSignOut={onSignOut} />
+          
+          {user ? (
+            <>
+              <Button asChild variant="default" className="bg-primary hover:bg-primary/90">
+                <Link to="/create">Create</Link>
+              </Button>
+              <UserDropdownMenu />
+            </>
+          ) : (
+            <Button asChild variant="default">
+              <Link to="/login">Login</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
