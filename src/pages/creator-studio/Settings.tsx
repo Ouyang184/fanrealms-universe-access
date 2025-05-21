@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,11 +22,11 @@ export default function CreatorStudioSettings() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Update formData when settings are loaded
-  useState(() => {
+  useEffect(() => {
     if (settings && !isLoading) {
       setFormData({ ...settings });
     }
-  });
+  }, [settings, isLoading]);
 
   const handleChange = (name: string, value: string) => {
     setFormData((prev) => ({
@@ -35,12 +35,15 @@ export default function CreatorStudioSettings() {
     }));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     
-    updateSettings(formData);
-    setIsSaving(false);
+    try {
+      await updateSettings(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImageUpload = async (type: 'avatar') => {

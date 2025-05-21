@@ -49,7 +49,7 @@ export const useCreatorSettings = () => {
     enabled: !!user?.id,
   });
 
-  const updateSettings = useMutation({
+  const updateSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
@@ -58,6 +58,7 @@ export const useCreatorSettings = () => {
         bio: updatedSettings.bio,
         website: updatedSettings.website,
         display_name: updatedSettings.display_name,
+        banner_url: updatedSettings.banner_url,
       };
       
       const { error } = await supabase
@@ -72,7 +73,8 @@ export const useCreatorSettings = () => {
         const { error: userError } = await supabase
           .from('users')
           .update({
-            username: updatedSettings.username
+            username: updatedSettings.username,
+            website: updatedSettings.website
           })
           .eq('id', user.id);
         
@@ -83,6 +85,10 @@ export const useCreatorSettings = () => {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['creator-settings', user?.id], data);
+      // Also invalidate creator-profile query to refresh the profile
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
+      
       toast({
         title: "Settings updated",
         description: "Your creator profile has been updated successfully.",
@@ -126,6 +132,8 @@ export const useCreatorSettings = () => {
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
       
       toast({
         title: "Profile image updated",
@@ -150,7 +158,7 @@ export const useCreatorSettings = () => {
     settings,
     isLoading,
     isUploading,
-    updateSettings: updateSettings.mutate,
+    updateSettings: updateSettingsMutation.mutate,
     uploadProfileImage
   };
 };
