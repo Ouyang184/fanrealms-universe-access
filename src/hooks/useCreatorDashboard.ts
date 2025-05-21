@@ -66,9 +66,10 @@ export function useCreatorDashboard() {
         id: post.id,
         title: post.title,
         content: post.content,
+        authorId: post.author_id,
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
-        created_at: post.created_at,
+        createdAt: post.created_at,
         date: formatRelativeDate(post.created_at),
         tier_id: post.tier_id
       }));

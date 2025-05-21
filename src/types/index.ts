@@ -12,6 +12,7 @@ export interface User {
   username: string;
   email: string;
   avatar_url: string | null;
+  website?: string | null;
 }
 
 export interface Post {

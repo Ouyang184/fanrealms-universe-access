@@ -28,7 +28,7 @@ export const useCreatorSettings = () => {
       }
       
       // Format the data to match CreatorSettings interface
-      return {
+      const formattedData = {
         id: data.id,
         user_id: data.user_id,
         username: data.users?.username || '',
@@ -43,6 +43,8 @@ export const useCreatorSettings = () => {
         banner_url: data.banner_url,
         created_at: data.created_at
       } as CreatorSettings;
+      
+      return formattedData;
     },
     enabled: !!user?.id,
   });

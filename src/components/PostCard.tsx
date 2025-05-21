@@ -7,11 +7,10 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types";
 
-interface PostCardProps extends Post {
+interface PostCardProps extends Omit<Post, 'authorId'> {
   isLoading?: boolean;
   description?: string;  // Make explicit for backwards compatibility
   image?: string;        // Make explicit for backwards compatibility
-  tier_id?: string | null;
 }
 
 const PostCard: React.FC<PostCardProps> = ({ 
@@ -73,10 +72,10 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="flex items-center space-x-3 mt-4">
           <Avatar className="h-8 w-8">
             <AvatarImage src={authorAvatar} alt={authorName} />
-            <AvatarFallback>{authorName.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{authorName?.charAt(0) || 'U'}</AvatarFallback>
           </Avatar>
           <div>
-            <Link to={`/creator/${authorName.toLowerCase().replace(/\s+/g, '-')}`} className="text-sm font-medium hover:underline">
+            <Link to={`/creator/${authorName?.toLowerCase().replace(/\s+/g, '-')}`} className="text-sm font-medium hover:underline">
               {authorName}
             </Link>
             <p className="text-xs text-muted-foreground">{date}</p>

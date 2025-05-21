@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import {
   Search,
@@ -31,7 +30,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { useCreatorPosts, PostFilter, CreatorPost } from "@/hooks/useCreatorPosts";
+import { useCreatorPosts, PostFilter } from "@/hooks/useCreatorPosts";
+import { CreatorPost } from "@/types/creator-studio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
