@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,67 +24,27 @@ import {
   Share2,
   MoreHorizontal,
   Plus,
+  Loader2,
 } from "lucide-react"
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck"
+import { useCreatorDashboard } from "@/hooks/useCreatorDashboard"
+import { Link } from "react-router-dom"
+import LoadingSpinner from "@/components/LoadingSpinner"
+import { formatRelativeDate } from "@/utils/auth-helpers"
 
-// Sample data for the dashboard
-const dashboardData = {
-  stats: {
-    subscribers: {
-      total: 1248,
-      change: 34,
-      percentage: 5.2,
-      trend: "up",
-    },
-    revenue: {
-      total: 4385.72,
-      change: 512.25,
-      percentage: 8.7,
-      trend: "up",
-    },
-  },
-  recentContent: [
-    {
-      id: 1,
-      title: "Character Design Masterclass Part 3",
-      type: "video",
-      thumbnail: "/placeholder.svg?height=120&width=200",
-      date: "2 days ago",
-      stats: {
-        views: 1245,
-        likes: 87,
-        comments: 32,
-      },
-      tier: "Pro Artist",
-    },
-    {
-      id: 2,
-      title: "Digital Painting Techniques: Lighting",
-      type: "tutorial",
-      thumbnail: "/placeholder.svg?height=120&width=200",
-      date: "5 days ago",
-      stats: {
-        views: 876,
-        likes: 54,
-        comments: 18,
-      },
-      tier: "Premium",
-    },
-    {
-      id: 3,
-      title: "May Brushes Pack",
-      type: "download",
-      thumbnail: "/placeholder.svg?height=120&width=200",
-      date: "1 week ago",
-      stats: {
-        views: 2134,
-        likes: 145,
-        comments: 27,
-      },
-      tier: "Basic",
-    },
-  ],
-  contentCalendar: [
+export default function Dashboard() {
+  const { creatorProfile, posts, stats, tierPerformance, isLoading } = useCreatorDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Default content calendar (we'll keep this static for now)
+  const contentCalendar = [
     {
       id: 1,
       title: "Character Design Masterclass Part 4",
@@ -110,33 +69,8 @@ const dashboardData = {
       type: "Download",
       status: "draft",
     },
-  ],
-  tierPerformance: [
-    {
-      name: "Basic",
-      price: 5.0,
-      subscribers: 523,
-      percentage: 42,
-      revenue: 2615.0,
-    },
-    {
-      name: "Premium",
-      price: 15.0,
-      subscribers: 412,
-      percentage: 33,
-      revenue: 6180.0,
-    },
-    {
-      name: "Pro Artist",
-      price: 25.0,
-      subscribers: 313,
-      percentage: 25,
-      revenue: 7825.0,
-    },
-  ],
-}
+  ];
 
-export default function Dashboard() {
   return (
     <CreatorCheck>
       <div className="max-w-7xl mx-auto">
@@ -146,9 +80,11 @@ export default function Dashboard() {
             <p className="text-muted-foreground">Welcome back! Here's an overview of your creator account.</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create New Post
+            <Button asChild className="gap-2">
+              <Link to="/creator-studio/posts">
+                <Plus className="h-4 w-4" />
+                Create New Post
+              </Link>
             </Button>
           </div>
         </div>
@@ -164,26 +100,26 @@ export default function Dashboard() {
                 <Badge
                   variant="outline"
                   className={`${
-                    dashboardData.stats.subscribers.trend === "up"
+                    stats.subscribers.trend === "up"
                       ? "bg-green-500/10 text-green-500 border-green-500/20"
                       : "bg-destructive/10 text-destructive border-destructive/20"
                   } flex items-center gap-1`}
                 >
-                  {dashboardData.stats.subscribers.trend === "up" ? (
+                  {stats.subscribers.trend === "up" ? (
                     <ArrowUpRight className="h-3 w-3" />
                   ) : (
                     <ArrowDownRight className="h-3 w-3" />
                   )}
-                  {dashboardData.stats.subscribers.percentage}%
+                  {stats.subscribers.percentage}%
                 </Badge>
               </div>
               <div className="mt-4">
                 <h3 className="text-muted-foreground text-sm">Total Subscribers</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">{dashboardData.stats.subscribers.total.toLocaleString()}</span>
+                  <span className="text-3xl font-bold">{stats.subscribers.total.toLocaleString()}</span>
                   <span className="text-sm text-muted-foreground">
-                    {dashboardData.stats.subscribers.trend === "up" ? "+" : "-"}
-                    {Math.abs(dashboardData.stats.subscribers.change)} this month
+                    {stats.subscribers.trend === "up" ? "+" : "-"}
+                    {Math.abs(stats.subscribers.change)} this month
                   </span>
                 </div>
               </div>
@@ -199,26 +135,26 @@ export default function Dashboard() {
                 <Badge
                   variant="outline"
                   className={`${
-                    dashboardData.stats.revenue.trend === "up"
+                    stats.revenue.trend === "up"
                       ? "bg-green-500/10 text-green-500 border-green-500/20"
                       : "bg-destructive/10 text-destructive border-destructive/20"
                   } flex items-center gap-1`}
                 >
-                  {dashboardData.stats.revenue.trend === "up" ? (
+                  {stats.revenue.trend === "up" ? (
                     <ArrowUpRight className="h-3 w-3" />
                   ) : (
                     <ArrowDownRight className="h-3 w-3" />
                   )}
-                  {dashboardData.stats.revenue.percentage}%
+                  {stats.revenue.percentage}%
                 </Badge>
               </div>
               <div className="mt-4">
                 <h3 className="text-muted-foreground text-sm">Monthly Revenue</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">${dashboardData.stats.revenue.total.toLocaleString()}</span>
+                  <span className="text-3xl font-bold">${stats.revenue.total.toLocaleString()}</span>
                   <span className="text-sm text-muted-foreground">
-                    {dashboardData.stats.revenue.trend === "up" ? "+" : "-"}$
-                    {Math.abs(dashboardData.stats.revenue.change)} this month
+                    {stats.revenue.trend === "up" ? "+" : "-"}$
+                    {Math.abs(stats.revenue.change)} this month
                   </span>
                 </div>
               </div>
@@ -235,78 +171,91 @@ export default function Dashboard() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">Recent Content Performance</CardTitle>
-                  <Button variant="link" className="text-primary p-0">
-                    View All <ChevronRight className="h-4 w-4 ml-1" />
+                  <Button variant="link" asChild className="text-primary p-0">
+                    <Link to="/creator-studio/posts">
+                      View All <ChevronRight className="h-4 w-4 ml-1" />
+                    </Link>
                   </Button>
                 </div>
                 <CardDescription>How your recent content is performing</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {dashboardData.recentContent.map((content) => (
-                    <div key={content.id} className="flex gap-4 p-3 rounded-lg border bg-muted/20">
-                      <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden">
-                        <img
-                          src={content.thumbnail || "/placeholder.svg"}
-                          alt={content.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute bottom-1 right-1 bg-background/70 px-1.5 py-0.5 rounded text-xs">
-                          {content.type === "video" && "Video"}
-                          {content.type === "tutorial" && "Tutorial"}
-                          {content.type === "download" && "Download"}
+                  {posts.length > 0 ? (
+                    posts.map((post) => (
+                      <div key={post.id} className="flex gap-4 p-3 rounded-lg border bg-muted/20">
+                        <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+                          <img
+                            src={post.image || `/placeholder.svg?seed=${post.id}`}
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-1 right-1 bg-background/70 px-1.5 py-0.5 rounded text-xs">
+                            Post
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="font-medium line-clamp-1">{content.title}</h3>
-                            <div className="flex items-center text-xs text-muted-foreground mt-1">
-                              <Badge className="bg-primary text-xs mr-2">{content.tier}</Badge>
-                              <Clock className="h-3 w-3 mr-1" />
-                              {content.date}
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-medium line-clamp-1">{post.title}</h3>
+                              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                {post.tier_id && (
+                                  <Badge className="bg-primary text-xs mr-2">Premium</Badge>
+                                )}
+                                <Clock className="h-3 w-3 mr-1" />
+                                {post.date}
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>View Post</DropdownMenuItem>
+                                <DropdownMenuItem>Edit Post</DropdownMenuItem>
+                                <DropdownMenuItem>View Analytics</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive">Delete Post</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <div className="flex items-center gap-4 mt-2">
+                            <div className="flex items-center gap-1 text-xs">
+                              <Eye className="h-3 w-3 text-muted-foreground" />
+                              <span>--</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs">
+                              <Heart className="h-3 w-3 text-red-500" />
+                              <span>--</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs">
+                              <MessageSquare className="h-3 w-3 text-green-500" />
+                              <span>--</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs">
+                              <Share2 className="h-3 w-3 text-blue-500" />
+                              <span>Share</span>
                             </div>
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>View Content</DropdownMenuItem>
-                              <DropdownMenuItem>Edit Content</DropdownMenuItem>
-                              <DropdownMenuItem>View Analytics</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive">Delete Content</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2">
-                          <div className="flex items-center gap-1 text-xs">
-                            <Eye className="h-3 w-3 text-muted-foreground" />
-                            <span>{content.stats.views.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <Heart className="h-3 w-3 text-red-500" />
-                            <span>{content.stats.likes.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <MessageSquare className="h-3 w-3 text-green-500" />
-                            <span>{content.stats.comments.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            <Share2 className="h-3 w-3 text-blue-500" />
-                            <span>Share</span>
-                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center">
+                      <p className="text-muted-foreground mb-4">You haven't created any posts yet.</p>
+                      <Button asChild>
+                        <Link to="/creator-studio/posts">Create Your First Post</Link>
+                      </Button>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
               <CardFooter className="border-t pt-4">
-                <Button className="w-full">Create New Content</Button>
+                <Button asChild className="w-full">
+                  <Link to="/creator-studio/posts">Create New Content</Link>
+                </Button>
               </CardFooter>
             </Card>
 
@@ -323,7 +272,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {dashboardData.contentCalendar.map((item) => (
+                  {contentCalendar.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center gap-4 p-3 rounded-lg border bg-muted/20"
@@ -372,46 +321,59 @@ export default function Dashboard() {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">Membership Tiers</CardTitle>
-                  <Button variant="link" className="text-primary p-0">
-                    Manage Tiers <ChevronRight className="h-4 w-4 ml-1" />
+                  <Button variant="link" asChild className="text-primary p-0">
+                    <Link to="/creator-studio/membership-tiers">
+                      Manage Tiers <ChevronRight className="h-4 w-4 ml-1" />
+                    </Link>
                   </Button>
                 </div>
                 <CardDescription>Performance of your membership tiers</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {dashboardData.tierPerformance.map((tier) => (
-                    <div key={tier.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            className={
-                              tier.name === "Basic"
-                                ? "bg-blue-500"
-                                : tier.name === "Premium"
-                                  ? "bg-primary"
-                                  : "bg-green-500"
-                            }
-                          >
-                            {tier.name}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">${tier.price.toFixed(2)}/month</span>
+                {tierPerformance.length > 0 ? (
+                  <div className="space-y-4">
+                    {tierPerformance.map((tier) => (
+                      <div key={tier.name} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={
+                                tier.price <= 5
+                                  ? "bg-blue-500"
+                                  : tier.price <= 15
+                                    ? "bg-primary"
+                                    : "bg-green-500"
+                              }
+                            >
+                              {tier.name}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">${tier.price.toFixed(2)}/month</span>
+                          </div>
+                          <div className="text-sm font-medium">{tier.subscribers} subscribers</div>
                         </div>
-                        <div className="text-sm font-medium">{tier.subscribers} subscribers</div>
+                        <Progress value={tier.percentage} className="h-2" />
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{tier.percentage}% of subscribers</span>
+                          <span>${tier.revenue.toLocaleString()} monthly revenue</span>
+                        </div>
                       </div>
-                      <Progress value={tier.percentage} className="h-2" />
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{tier.percentage}% of subscribers</span>
-                        <span>${tier.revenue.toLocaleString()} monthly revenue</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-muted-foreground mb-4">You haven't created any membership tiers yet.</p>
+                    <Button asChild>
+                      <Link to="/creator-studio/membership-tiers">Create Your First Tier</Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="border-t pt-4">
-                <Button variant="outline" className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Tier
+                <Button variant="outline" asChild className="w-full">
+                  <Link to="/creator-studio/membership-tiers">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Tier
+                  </Link>
                 </Button>
               </CardFooter>
             </Card>
