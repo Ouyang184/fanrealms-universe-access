@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,6 +32,7 @@ import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
 import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
 import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
+import CreatorPage from "./pages/Creator";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -65,6 +67,9 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/logout/loading" element={<LogoutLoading />} />
+                
+                {/* Creator profile page */}
+                <Route path="/creator/:id" element={<CreatorPage />} />
                 
                 {/* Main app routes */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />

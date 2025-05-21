@@ -8,17 +8,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PostCard from "@/components/PostCard";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { formatRelativeDate } from "@/utils/auth-helpers";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import type { CreatorProfile, Post } from "@/types";
-import { SendMessageDialog } from "@/components/messaging/SendMessageDialog";
+import { useFollow } from "@/hooks/useFollow";
 
 const CreatorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("posts");
-  const [isMessageDialogOpen, setIsMessageDialogOpen] = React.useState(false);
   const { toast } = useToast();
+  const { 
+    followCreator, 
+    unfollowCreator, 
+    isFollowing, 
+    setIsFollowing, 
+    isLoading: followLoading, 
+    checkFollowStatus 
+  } = useFollow();
   
   const { 
     data: creator, 
@@ -78,7 +85,7 @@ const CreatorPage: React.FC = () => {
           fullName: userData.username,
           email: userData.email,
           avatar_url: userData.profile_picture,
-          banner_url: null, // Add the required banner_url property with null value
+          banner_url: null,
           bio: null,
           created_at: userData.created_at,
           tiers: []
@@ -91,7 +98,7 @@ const CreatorPage: React.FC = () => {
         fullName: userData.username,
         email: userData.email,
         avatar_url: userData.profile_picture,
-        banner_url: creatorData.banner_url || null, // Ensure banner_url is always defined
+        banner_url: creatorData.banner_url || null,
         tiers: creatorData.membership_tiers?.map((tier: any) => ({
           ...tier,
           name: tier.title,
@@ -149,6 +156,12 @@ const CreatorPage: React.FC = () => {
     },
     enabled: !!id
   });
+
+  useEffect(() => {
+    if (creator?.user_id) {
+      checkFollowStatus(creator.user_id).then(setIsFollowing);
+    }
+  }, [creator?.user_id, checkFollowStatus, setIsFollowing]);
 
   useEffect(() => {
     if (!id || !creator?.user_id) return;
@@ -236,6 +249,14 @@ const CreatorPage: React.FC = () => {
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg"; // Add default banner if none exists
 
+  const handleFollowToggle = async () => {
+    if (isFollowing) {
+      await unfollowCreator(creator.user_id);
+    } else {
+      await followCreator(creator.user_id);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-8 max-w-5xl mx-auto">
@@ -261,10 +282,16 @@ const CreatorPage: React.FC = () => {
               <p className="text-muted-foreground">@{creator.username}</p>
             </div>
             <div className="mt-4 md:mt-0 space-x-2">
-              <Button onClick={() => setIsMessageDialogOpen(true)}>
+              <Button>
                 Message
               </Button>
-              <Button>Subscribe</Button>
+              <Button
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+                variant={isFollowing ? "outline" : "default"}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
             </div>
           </div>
         </div>
@@ -331,12 +358,6 @@ const CreatorPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-      <SendMessageDialog
-        isOpen={isMessageDialogOpen}
-        onClose={() => setIsMessageDialogOpen(false)}
-        receiverId={creator.user_id}
-        receiverName={displayName}
-      />
     </MainLayout>
   );
 };
