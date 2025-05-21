@@ -35,7 +35,7 @@ export const useCreatorSettings = () => {
         fullName: data.users?.username || '',
         email: data.users?.email || '',
         bio: data.bio || '',
-        website: data.website || '',
+        website: data.website || '',  // Accessing website directly from data
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,

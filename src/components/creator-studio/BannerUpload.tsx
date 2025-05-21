@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -8,7 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 interface BannerUploadProps {
   userId: string;
   currentBannerUrl?: string | null;
-  onBannerUpdate: (url: string) => Promise<void>;
+  onBannerUpdate: (url: string) => void;  // Changed from Promise<void> to void
 }
 
 export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: BannerUploadProps) {
@@ -62,7 +63,7 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
         .getPublicUrl(filePath);
       
       // Update creator profile
-      await onBannerUpdate(publicUrl);
+      onBannerUpdate(publicUrl);
       
       toast({
         title: "Success",

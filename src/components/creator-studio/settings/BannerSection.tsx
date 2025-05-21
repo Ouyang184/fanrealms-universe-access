@@ -5,7 +5,7 @@ import { BannerUpload } from "@/components/creator-studio/BannerUpload";
 interface BannerSectionProps {
   userId: string;
   currentBannerUrl: string | null;
-  onBannerUpdate: (bannerUrl: string) => void;
+  onBannerUpdate: (bannerUrl: string) => void;  // Changed from Promise<void> to void
 }
 
 export function BannerSection({ userId, currentBannerUrl, onBannerUpdate }: BannerSectionProps) {
