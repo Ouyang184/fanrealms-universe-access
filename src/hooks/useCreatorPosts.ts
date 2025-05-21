@@ -106,8 +106,8 @@ export function useCreatorPosts() {
         const availableTiers = post.membership_tiers ? [{
           id: post.membership_tiers.id,
           name: post.membership_tiers.title,
-          // Assign color based on price for visual distinction
-          color: determineColorByPrice(parseFloat(post.membership_tiers.price))
+          // Assign color based on price for visual distinction - Convert price to string before parsing
+          color: determineColorByPrice(parseFloat(String(post.membership_tiers.price)))
         }] : [];
 
         // Determine post status (in a real app would be from a status column)
