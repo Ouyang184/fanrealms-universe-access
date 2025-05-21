@@ -1,9 +1,10 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { UserCheck } from "lucide-react";
+import { UserCheck, DollarSign } from "lucide-react";
 import { SubscriberWithDetails } from "@/types/creator-studio";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Link } from "react-router-dom";
 
 interface SubscriberStatsCardsProps {
   subscribers: SubscriberWithDetails[];
@@ -48,6 +49,11 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
     );
   }
 
+  // Calculate estimated monthly revenue
+  const estimatedRevenue = subscribers.reduce((total, sub) => {
+    return total + (sub.tierPrice || 0);
+  }, 0);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Total Subscribers Card */}
@@ -63,10 +69,25 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
         </div>
       </Card>
       
-      {/* Dynamic Tier Cards - Show top 2 tiers or fewer if not enough tiers */}
+      {/* Monthly Revenue Card - Links to Payouts Page */}
+      <Link to="/creator-studio/payouts">
+        <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
+              <DollarSign className="h-6 w-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+              <h3 className="text-2xl font-bold">${estimatedRevenue.toFixed(2)}</h3>
+            </div>
+          </div>
+        </Card>
+      </Link>
+      
+      {/* Dynamic Tier Card - Show top tier or fewer if not enough tiers */}
       {tiers && tiers.length > 0 ? (
-        // If we have actual tiers from the database
-        tiers.slice(0, 2).map((tier, index) => (
+        // If we have actual tiers from the database, show the top tier
+        tiers.slice(0, 1).map((tier, index) => (
           <Card key={tier.id} className="p-6">
             <div className="flex items-center gap-4">
               <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index)}`}>
@@ -80,10 +101,10 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
           </Card>
         ))
       ) : (
-        // Fallback to show the most populated tiers from sample data
+        // Fallback to show the most populated tier from sample data
         Object.entries(tierCounts)
           .sort((a, b) => b[1] - a[1])
-          .slice(0, 2)
+          .slice(0, 1)
           .map(([tierName, count], index) => (
             <Card key={tierName} className="p-6">
               <div className="flex items-center gap-4">
