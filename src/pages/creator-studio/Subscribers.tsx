@@ -1,39 +1,15 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { SubscriberWithDetails } from "@/types/creator-studio";
-import { UserCheck, Search, UserPlus, Download } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { SubscriberHeader } from "@/components/creator-studio/subscribers/SubscriberHeader";
+import { SubscriberStatsCards } from "@/components/creator-studio/subscribers/SubscriberStatsCards";
+import { SubscriberSearch } from "@/components/creator-studio/subscribers/SubscriberSearch";
+import { SubscribersTable } from "@/components/creator-studio/subscribers/SubscribersTable";
 
 export default function CreatorStudioSubscribers() {
   const { user } = useAuth();
@@ -158,196 +134,32 @@ export default function CreatorStudioSubscribers() {
     return acc;
   }, {} as Record<string, number>);
 
-  // Helper function to get tier color classes
-  const getTierColorClasses = (index: number) => {
-    const colorClasses = [
-      "bg-primary/10 text-primary",
-      "bg-secondary/20 text-secondary-foreground",
-      "bg-purple-500/10 text-purple-500",
-      "bg-blue-500/10 text-blue-500",
-      "bg-amber-500/10 text-amber-500"
-    ];
-    return colorClasses[index % colorClasses.length];
-  };
-
   return (
     <CreatorCheck>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Subscribers</h1>
-            <p className="text-muted-foreground">Manage and view insights about your subscribers</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-            <Button className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              Invite Subscribers
-            </Button>
-          </div>
-        </div>
+        <SubscriberHeader />
         
-        {/* Subscriber stats cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Total Subscribers Card */}
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <UserCheck className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Subscribers</p>
-                <h3 className="text-2xl font-bold">{subscribers.length}</h3>
-              </div>
-            </div>
-          </Card>
-          
-          {/* Dynamic Tier Cards - Show top 2 tiers or fewer if not enough tiers */}
-          {tiers && tiers.length > 0 ? (
-            // If we have actual tiers from the database
-            tiers.slice(0, 2).map((tier, index) => (
-              <Card key={tier.id} className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index)}`}>
-                    <UserCheck className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{tier.name} Subscribers</p>
-                    <h3 className="text-2xl font-bold">{tierCounts[tier.name] || 0}</h3>
-                  </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            // Fallback to show the most populated tiers from sample data
-            Object.entries(tierCounts)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 2)
-              .map(([tierName, count], index) => (
-                <Card key={tierName} className="p-6">
-                  <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index + 1)}`}>
-                      <UserCheck className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">{tierName} Subscribers</p>
-                      <h3 className="text-2xl font-bold">{count}</h3>
-                    </div>
-                  </div>
-                </Card>
-              ))
-          )}
-        </div>
+        <SubscriberStatsCards 
+          subscribers={subscribers} 
+          tiers={tiers} 
+          tierCounts={tierCounts} 
+        />
         
-        {/* Search and Filters */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input 
-              placeholder="Search subscribers..." 
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={filterTier} onValueChange={setFilterTier}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="Filter by tier" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Tiers</SelectItem>
-              {tiers && tiers.length > 0 ? (
-                tiers.map(tier => (
-                  <SelectItem key={tier.id} value={tier.name}>{tier.name}</SelectItem>
-                ))
-              ) : (
-                // Fallback to unique tiers from the sample data
-                [...new Set(subscribers.map(s => s.tier))].map(tier => (
-                  <SelectItem key={tier} value={tier}>{tier}</SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        <SubscriberSearch 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filterTier={filterTier}
+          setFilterTier={setFilterTier}
+          tiers={tiers}
+          subscribers={subscribers}
+        />
         
-        {/* Subscribers Table */}
         <Card>
-          <Table>
-            <TableCaption>A list of your subscribers</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Subscriber</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Tier</TableHead>
-                <TableHead>Subscription Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSubscribers.length > 0 ? (
-                filteredSubscribers.map((subscriber) => (
-                  <TableRow key={subscriber.id}>
-                    <TableCell className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={subscriber.avatarUrl} />
-                        <AvatarFallback>{subscriber.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">{subscriber.name}</span>
-                    </TableCell>
-                    <TableCell>{subscriber.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getTierBadgeVariant(subscriber.tier)}>
-                        {subscriber.tier} (${subscriber.tierPrice})
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDate(subscriber.subscriptionDate)}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              width="16" 
-                              height="16" 
-                              viewBox="0 0 24 24" 
-                              fill="none" 
-                              stroke="currentColor" 
-                              strokeWidth="2" 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              className="lucide lucide-more-horizontal"
-                            >
-                              <circle cx="12" cy="12" r="1"></circle>
-                              <circle cx="19" cy="12" r="1"></circle>
-                              <circle cx="5" cy="12" r="1"></circle>
-                            </svg>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Send Message</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            Remove Subscription
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                    No subscribers found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          <SubscribersTable 
+            filteredSubscribers={filteredSubscribers}
+            formatDate={formatDate}
+            getTierBadgeVariant={getTierBadgeVariant}
+          />
         </Card>
       </div>
     </CreatorCheck>
