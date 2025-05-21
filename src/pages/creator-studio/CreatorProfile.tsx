@@ -125,11 +125,22 @@ export default function CreatorProfile() {
         return [];
       }
       
-      return tiersData.map(tier => ({
-        ...tier,
-        name: tier.title,
-        features: [tier.description]
+      // Count subscribers for each tier
+      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
+        const { count, error: countError } = await supabase
+          .from('subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('tier_id', tier.id);
+          
+        return {
+          ...tier,
+          name: tier.title,
+          features: [tier.description],
+          subscriberCount: count || 0
+        };
       }));
+      
+      return tiersWithSubscribers;
     },
     enabled: !!creatorProfile?.id
   });
@@ -256,7 +267,7 @@ export default function CreatorProfile() {
                     <div key={tier.id} className="border rounded-lg p-4">
                       <h4 className="font-medium">{tier.name}</h4>
                       <p className="text-xl font-bold mt-1">${Number(tier.price).toFixed(2)}/mo</p>
-                      <Badge className="mt-2">{tier.subscribers || 0} subscribers</Badge>
+                      <Badge className="mt-2">{tier.subscriberCount || 0} subscribers</Badge>
                       <ul className="mt-3">
                         {tier.features.map((feature, i) => (
                           <li key={i} className="text-sm text-muted-foreground">{feature}</li>
