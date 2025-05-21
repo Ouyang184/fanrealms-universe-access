@@ -3,11 +3,13 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { UserCheck } from "lucide-react";
 import { SubscriberWithDetails } from "@/types/creator-studio";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SubscriberStatsCardsProps {
   subscribers: SubscriberWithDetails[];
   tiers: Array<{id: string; name: string; price: number}>;
   tierCounts: Record<string, number>;
+  isLoading?: boolean;
 }
 
 // Helper function to get tier color classes
@@ -22,7 +24,30 @@ const getTierColorClasses = (index: number) => {
   return colorClasses[index % colorClasses.length];
 };
 
-export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({ subscribers, tiers, tierCounts }) => {
+export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({ 
+  subscribers, 
+  tiers, 
+  tierCounts,
+  isLoading = false 
+}) => {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="p-6">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <div className="flex-1">
+                <Skeleton className="h-4 w-24 mb-2" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Total Subscribers Card */}

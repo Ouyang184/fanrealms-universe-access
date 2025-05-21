@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
@@ -10,78 +10,48 @@ import { SubscriberHeader } from "@/components/creator-studio/subscribers/Subscr
 import { SubscriberStatsCards } from "@/components/creator-studio/subscribers/SubscriberStatsCards";
 import { SubscriberSearch } from "@/components/creator-studio/subscribers/SubscriberSearch";
 import { SubscribersTable } from "@/components/creator-studio/subscribers/SubscribersTable";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreatorStudioSubscribers() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTier, setFilterTier] = useState<string>("all");
-  const [subscribers, setSubscribers] = useState<SubscriberWithDetails[]>([
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      email: 'alex.j@example.com',
-      tier: 'Supporter Tier',
-      tierPrice: 15,
-      subscriptionDate: '2025-03-15T10:30:00Z',
-      avatarUrl: 'https://i.pravatar.cc/150?u=1'
-    },
-    {
-      id: '2',
-      name: 'Jamie Smith',
-      email: 'jamie.smith@example.com',
-      tier: 'Exclusive Tier',
-      tierPrice: 30,
-      subscriptionDate: '2025-03-20T14:15:00Z',
-      avatarUrl: 'https://i.pravatar.cc/150?u=2'
-    },
-    {
-      id: '3',
-      name: 'Taylor Wilson',
-      email: 'taylor.w@example.com',
-      tier: 'Basic Tier',
-      tierPrice: 5,
-      subscriptionDate: '2025-03-22T09:45:00Z',
-      avatarUrl: 'https://i.pravatar.cc/150?u=3'
-    },
-    {
-      id: '4',
-      name: 'Jordan Lee',
-      email: 'j.lee@example.com',
-      tier: 'Supporter Tier',
-      tierPrice: 15,
-      subscriptionDate: '2025-03-25T16:20:00Z',
-      avatarUrl: 'https://i.pravatar.cc/150?u=4'
-    },
-    {
-      id: '5',
-      name: 'Casey Rivera',
-      email: 'c.rivera@example.com',
-      tier: 'Basic Tier',
-      tierPrice: 5,
-      subscriptionDate: '2025-04-01T11:10:00Z',
-      avatarUrl: 'https://i.pravatar.cc/150?u=5'
-    },
-  ]);
+  const [subscribers, setSubscribers] = useState<SubscriberWithDetails[]>([]);
 
-  // Fetch creator tiers
-  const { data: tiers = [] } = useQuery({
-    queryKey: ["subscriber-tiers"],
+  // Fetch creator ID
+  const { data: creatorData, isLoading: creatorLoading } = useQuery({
+    queryKey: ["creator-profile", user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) return null;
       
-      // First get the creator ID
-      const { data: creatorData, error: creatorError } = await supabase
+      const { data, error } = await supabase
         .from("creators")
         .select("id")
         .eq("user_id", user.id)
         .single();
-      
-      if (creatorError) {
-        console.error("Could not find creator profile:", creatorError);
-        return [];
+        
+      if (error) {
+        console.error("Error fetching creator profile:", error);
+        toast({
+          title: "Error",
+          description: "Could not fetch creator profile",
+          variant: "destructive"
+        });
+        return null;
       }
       
-      // Then get the tiers for this creator
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Fetch creator's tiers
+  const { data: tiers = [] } = useQuery({
+    queryKey: ["subscriber-tiers", creatorData?.id],
+    queryFn: async () => {
+      if (!creatorData?.id) return [];
+      
       const { data, error } = await supabase
         .from("membership_tiers")
         .select("*")
@@ -90,6 +60,11 @@ export default function CreatorStudioSubscribers() {
       
       if (error) {
         console.error("Error fetching tiers:", error);
+        toast({
+          title: "Error",
+          description: "Could not fetch membership tiers",
+          variant: "destructive"
+        });
         return [];
       }
       
@@ -99,7 +74,61 @@ export default function CreatorStudioSubscribers() {
         price: tier.price
       }));
     },
-    enabled: !!user
+    enabled: !!creatorData?.id
+  });
+
+  // Fetch subscribers
+  const { isLoading: loadingSubscribers } = useQuery({
+    queryKey: ["subscribers", creatorData?.id],
+    queryFn: async () => {
+      if (!creatorData?.id) return [];
+      
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select(`
+          id,
+          created_at,
+          tier_id,
+          is_paid,
+          users!subscriptions_user_id_fkey(
+            id,
+            email,
+            username,
+            profile_picture
+          ),
+          membership_tiers(
+            id,
+            title,
+            price
+          )
+        `)
+        .eq("creator_id", creatorData.id);
+      
+      if (error) {
+        console.error("Error fetching subscribers:", error);
+        toast({
+          title: "Error",
+          description: "Could not fetch subscribers",
+          variant: "destructive"
+        });
+        return [];
+      }
+      
+      // Transform the data to match SubscriberWithDetails format
+      const formattedSubscribers: SubscriberWithDetails[] = data.map((sub: any) => ({
+        id: sub.id,
+        name: sub.users?.username || "Unknown User",
+        email: sub.users?.email || "No email",
+        tier: sub.membership_tiers?.title || (sub.is_paid ? "Paid Tier" : "Free Tier"),
+        tierPrice: sub.membership_tiers?.price || 0,
+        subscriptionDate: sub.created_at,
+        avatarUrl: sub.users?.profile_picture || undefined
+      }));
+      
+      setSubscribers(formattedSubscribers);
+      return formattedSubscribers;
+    },
+    enabled: !!creatorData?.id
   });
 
   function formatDate(dateString: string) {
@@ -142,7 +171,8 @@ export default function CreatorStudioSubscribers() {
         <SubscriberStatsCards 
           subscribers={subscribers} 
           tiers={tiers} 
-          tierCounts={tierCounts} 
+          tierCounts={tierCounts}
+          isLoading={loadingSubscribers}
         />
         
         <SubscriberSearch 
@@ -159,6 +189,7 @@ export default function CreatorStudioSubscribers() {
             filteredSubscribers={filteredSubscribers}
             formatDate={formatDate}
             getTierBadgeVariant={getTierBadgeVariant}
+            isLoading={loadingSubscribers}
           />
         </Card>
       </div>
