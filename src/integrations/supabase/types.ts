@@ -49,25 +49,31 @@ export type Database = {
           banner_url: string | null
           bio: string | null
           created_at: string
+          display_name: string | null
           id: string
           profile_image_url: string | null
           user_id: string
+          website: string | null
         }
         Insert: {
           banner_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
           id?: string
           profile_image_url?: string | null
           user_id: string
+          website?: string | null
         }
         Update: {
           banner_url?: string | null
           bio?: string | null
           created_at?: string
+          display_name?: string | null
           id?: string
           profile_image_url?: string | null
           user_id?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -316,6 +322,7 @@ export type Database = {
           id: string
           profile_picture: string | null
           username: string
+          website: string | null
         }
         Insert: {
           created_at?: string
@@ -323,6 +330,7 @@ export type Database = {
           id?: string
           profile_picture?: string | null
           username: string
+          website?: string | null
         }
         Update: {
           created_at?: string
@@ -330,6 +338,7 @@ export type Database = {
           id?: string
           profile_picture?: string | null
           username?: string
+          website?: string | null
         }
         Relationships: []
       }

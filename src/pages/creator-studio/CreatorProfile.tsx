@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -55,6 +54,7 @@ export default function CreatorProfile() {
         avatar_url: userData.profile_picture,
         banner_url: creatorProfile.banner_url || null,
         bio: creatorProfile.bio || "No bio provided yet.",
+        display_name: creatorProfile.display_name || null
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile
