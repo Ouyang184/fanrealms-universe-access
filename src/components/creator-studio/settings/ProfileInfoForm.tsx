@@ -21,6 +21,9 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
     onSettingsChange(name, value);
   };
 
+  // Calculate display name - either from settings or default to username
+  const displayName = settings.display_name || settings.fullName || settings.username || '';
+
   return (
     <Card>
       <CardHeader>
@@ -31,8 +34,8 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={settings.avatar_url || undefined} alt={settings.fullName} />
-              <AvatarFallback>{settings.fullName?.charAt(0) || 'C'}</AvatarFallback>
+              <AvatarImage src={settings.avatar_url || undefined} alt={displayName} />
+              <AvatarFallback>{displayName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <Button 
               type="button" 
@@ -47,13 +50,17 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
           
           <div className="flex-1 space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="fullName">Display Name</Label>
+              <Label htmlFor="display_name">Display Name</Label>
               <Input
-                id="fullName"
-                name="fullName"
-                value={settings.fullName || ''}
+                id="display_name"
+                name="display_name"
+                value={settings.display_name || ''}
                 onChange={handleChange}
+                placeholder="How you want to be known publicly"
               />
+              <p className="text-xs text-muted-foreground">
+                This will be shown instead of your username if provided
+              </p>
             </div>
             
             <div className="grid gap-2">
@@ -64,6 +71,9 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
                 value={settings.username || ''}
                 onChange={handleChange}
               />
+              <p className="text-xs text-muted-foreground">
+                Used for your profile URL and @mentions
+              </p>
             </div>
             
             <div className="grid gap-2">
@@ -101,6 +111,9 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
             onChange={handleChange}
             placeholder="https://yourwebsite.com"
           />
+          <p className="text-xs text-muted-foreground">
+            Include https:// for valid URLs (e.g., https://www.linkedin.com/in/your-profile)
+          </p>
         </div>
       </CardContent>
     </Card>

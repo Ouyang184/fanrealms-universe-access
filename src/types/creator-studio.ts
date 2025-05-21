@@ -31,8 +31,9 @@ export interface PayoutData {
 export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
   website: string | null;
+  display_name?: string | null; // Added display_name field
   bannerImageUrl?: string | null;
-  banner_url: string | null; // Changed from optional to required
+  banner_url: string | null;
   created_at: string;
   user_id: string;
 }

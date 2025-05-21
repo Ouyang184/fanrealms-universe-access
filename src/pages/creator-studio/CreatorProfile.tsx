@@ -49,7 +49,8 @@ export default function CreatorProfile() {
       return {
         ...creatorProfile,
         username: userData.username,
-        fullName: userData.username,
+        fullName: userData.username, // This will be replaced by displayName in Settings.tsx
+        displayName: creatorProfile.display_name || userData.username, // Use display_name if available
         email: userData.email,
         avatar_url: userData.profile_picture,
         banner_url: creatorProfile.banner_url || null,
@@ -153,7 +154,8 @@ export default function CreatorProfile() {
     );
   }
 
-  const displayName = creator.fullName || creator.username || "Creator";
+  // Use display name if available, otherwise fallback to username
+  const displayName = creator.displayName || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
 
