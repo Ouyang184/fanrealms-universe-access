@@ -35,8 +35,8 @@ export const useCreatorSettings = () => {
         fullName: data.users?.username || '',
         email: data.users?.email || '',
         bio: data.bio || '',
-        website: data.website || '', // Updated to use website field
-        display_name: data.display_name || '', // Add display_name field
+        website: data.website || '',
+        display_name: data.display_name || '',
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,
@@ -54,7 +54,7 @@ export const useCreatorSettings = () => {
       const creatorFields = {
         bio: updatedSettings.bio,
         website: updatedSettings.website,
-        display_name: updatedSettings.display_name, // Add display_name field
+        display_name: updatedSettings.display_name,
       };
       
       const { error } = await supabase

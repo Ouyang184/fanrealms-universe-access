@@ -1,66 +1,61 @@
+import { Database } from '@/integrations/supabase/types';
 
-import { User } from "@supabase/supabase-js";
-import { Database } from "@/integrations/supabase/types";
+export type DbUser = Database['public']['Tables']['users']['Row'];
+export type DbPost = Database['public']['Tables']['posts']['Row'];
+export type DbCreator = Database['public']['Tables']['creators']['Row'];
+export type DbSubscription = Database['public']['Tables']['subscriptions']['Row'];
+export type DbTier = Database['public']['Tables']['membership_tiers']['Row'];
 
-export type Tables = Database['public']['Tables'];
-
-// Extend core types to match our database schema
-export type DbUser = Tables['users']['Row'] & {
-  website?: string | null; // Add website field to match our database schema
-  updated_at?: string; // Add updated_at field from the database
-};
-export type DbPost = Tables['posts']['Row'];
-export type DbCreator = Tables['creators']['Row'] & {
-  banner_url?: string | null; // Add banner_url field for creator profiles
-};
-export type DbMembershipTier = Tables['membership_tiers']['Row'];
-
-// Frontend types with computed/joined fields
-export interface Post {
-  id: string;  // Explicitly define as string to match DB UUID
-  title: string;
-  content: string;
-  authorName: string;
-  authorAvatar: string | null;
-  created_at: string;
-  date: string;
-  description?: string; // Add for compatibility with existing components
-  image?: string;       // Add for compatibility with existing components
-  tier_id: string | null; // Make tier_id nullable but required
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  avatar_url: string | null;
 }
 
-export interface Tier extends Omit<DbMembershipTier, 'creator_id'> {
-  name: string;
-  features: string[];
-  popular?: boolean;
-  color?: string;
-  subscriberCount?: number;
-  icon?: React.ComponentType<any>;
+export interface Post {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  createdAt: string;
+  authorName?: string;
+  authorAvatar?: string | null;
+  date?: string;
 }
 
 export interface CreatorProfile {
   id: string;
   user_id: string;
-  username?: string;
+  username: string;
   fullName?: string;
-  email?: string;
+  email: string;
   bio?: string | null;
-  avatar_url?: string | null;
-  profile_image_url?: string | null;
   website?: string | null;
-  banner_url: string | null; // Changed from optional to required to match DbCreator
+  display_name?: string | null;
+  displayName?: string; // Add this field for compatibility
+  avatar_url?: string;
+  profile_image_url?: string;
+  banner_url?: string | null;
   tiers?: Tier[];
 }
 
-export interface AuthUser extends User {}
+export interface Tier {
+  id: string;
+  creator_id: string;
+  name: string;
+  description: string;
+  price: number;
+  features: string[];
+  subscriberCount?: number;
+}
 
 export interface Subscription {
   id: string;
-  user_id: string;
-  creator_id: string;
-  tier_id: string | null;
-  created_at: string;
-  is_paid: boolean;
-  creator?: CreatorProfile;
+  userId: string;
+  creatorId: string;
+  tierId: string | null;
+  startDate: string;
+  endDate: string | null;
   tier?: Tier;
 }

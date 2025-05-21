@@ -49,13 +49,13 @@ export default function CreatorProfile() {
       return {
         ...creatorProfile,
         username: userData.username,
-        fullName: userData.username, // This will be replaced by displayName in Settings.tsx
-        displayName: creatorProfile.display_name || userData.username, // Use display_name if available
+        fullName: userData.username,
+        displayName: creatorProfile.display_name || userData.username,
         email: userData.email,
         avatar_url: userData.profile_picture,
         banner_url: creatorProfile.banner_url || null,
         bio: creatorProfile.bio || "No bio provided yet.",
-      } as CreatorProfile;
+      } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile
   });
