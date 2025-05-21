@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { 
   Table, 
@@ -31,14 +31,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreatorStudioSubscribers() {
+  const { user } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTier, setFilterTier] = useState<string>("all");
   const [subscribers, setSubscribers] = useState<SubscriberWithDetails[]>([
     {
       id: '1',
       name: 'Alex Johnson',
       email: 'alex.j@example.com',
-      tier: 'Premium',
+      tier: 'Supporter Tier',
       tierPrice: 15,
       subscriptionDate: '2025-03-15T10:30:00Z',
       avatarUrl: 'https://i.pravatar.cc/150?u=1'
@@ -47,7 +53,7 @@ export default function CreatorStudioSubscribers() {
       id: '2',
       name: 'Jamie Smith',
       email: 'jamie.smith@example.com',
-      tier: 'VIP',
+      tier: 'Exclusive Tier',
       tierPrice: 30,
       subscriptionDate: '2025-03-20T14:15:00Z',
       avatarUrl: 'https://i.pravatar.cc/150?u=2'
@@ -56,7 +62,7 @@ export default function CreatorStudioSubscribers() {
       id: '3',
       name: 'Taylor Wilson',
       email: 'taylor.w@example.com',
-      tier: 'Basic Supporter',
+      tier: 'Basic Tier',
       tierPrice: 5,
       subscriptionDate: '2025-03-22T09:45:00Z',
       avatarUrl: 'https://i.pravatar.cc/150?u=3'
@@ -65,7 +71,7 @@ export default function CreatorStudioSubscribers() {
       id: '4',
       name: 'Jordan Lee',
       email: 'j.lee@example.com',
-      tier: 'Premium',
+      tier: 'Supporter Tier',
       tierPrice: 15,
       subscriptionDate: '2025-03-25T16:20:00Z',
       avatarUrl: 'https://i.pravatar.cc/150?u=4'
@@ -74,15 +80,51 @@ export default function CreatorStudioSubscribers() {
       id: '5',
       name: 'Casey Rivera',
       email: 'c.rivera@example.com',
-      tier: 'Basic Supporter',
+      tier: 'Basic Tier',
       tierPrice: 5,
       subscriptionDate: '2025-04-01T11:10:00Z',
       avatarUrl: 'https://i.pravatar.cc/150?u=5'
     },
   ]);
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterTier, setFilterTier] = useState<string>("all");
+  // Fetch creator tiers
+  const { data: tiers = [] } = useQuery({
+    queryKey: ["subscriber-tiers"],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      // First get the creator ID
+      const { data: creatorData, error: creatorError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (creatorError) {
+        console.error("Could not find creator profile:", creatorError);
+        return [];
+      }
+      
+      // Then get the tiers for this creator
+      const { data, error } = await supabase
+        .from("membership_tiers")
+        .select("*")
+        .eq("creator_id", creatorData.id)
+        .order("price", { ascending: true });
+      
+      if (error) {
+        console.error("Error fetching tiers:", error);
+        return [];
+      }
+      
+      return data.map(tier => ({
+        id: tier.id,
+        name: tier.title,
+        price: tier.price
+      }));
+    },
+    enabled: !!user
+  });
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -93,11 +135,10 @@ export default function CreatorStudioSubscribers() {
   }
 
   function getTierBadgeVariant(tier: string) {
-    switch(tier) {
-      case 'VIP': return 'default';
-      case 'Premium': return 'secondary';
-      default: return 'outline';
-    }
+    const tierLower = tier.toLowerCase();
+    if (tierLower.includes('exclusive')) return 'default';
+    if (tierLower.includes('supporter')) return 'secondary';
+    return 'outline';
   }
 
   // Filter subscribers based on search term and tier filter
@@ -116,6 +157,18 @@ export default function CreatorStudioSubscribers() {
     acc[subscriber.tier] = (acc[subscriber.tier] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
+
+  // Helper function to get tier color classes
+  const getTierColorClasses = (index: number) => {
+    const colorClasses = [
+      "bg-primary/10 text-primary",
+      "bg-secondary/20 text-secondary-foreground",
+      "bg-purple-500/10 text-purple-500",
+      "bg-blue-500/10 text-blue-500",
+      "bg-amber-500/10 text-amber-500"
+    ];
+    return colorClasses[index % colorClasses.length];
+  };
 
   return (
     <CreatorCheck>
@@ -139,6 +192,7 @@ export default function CreatorStudioSubscribers() {
         
         {/* Subscriber stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Total Subscribers Card */}
           <Card className="p-6">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -151,29 +205,41 @@ export default function CreatorStudioSubscribers() {
             </div>
           </Card>
           
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-secondary/20 flex items-center justify-center">
-                <UserCheck className="h-6 w-6 text-secondary-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Premium Subscribers</p>
-                <h3 className="text-2xl font-bold">{tierCounts['Premium'] || 0}</h3>
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-                <UserCheck className="h-6 w-6 text-purple-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">VIP Subscribers</p>
-                <h3 className="text-2xl font-bold">{tierCounts['VIP'] || 0}</h3>
-              </div>
-            </div>
-          </Card>
+          {/* Dynamic Tier Cards - Show top 2 tiers or fewer if not enough tiers */}
+          {tiers && tiers.length > 0 ? (
+            // If we have actual tiers from the database
+            tiers.slice(0, 2).map((tier, index) => (
+              <Card key={tier.id} className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index)}`}>
+                    <UserCheck className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{tier.name} Subscribers</p>
+                    <h3 className="text-2xl font-bold">{tierCounts[tier.name] || 0}</h3>
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            // Fallback to show the most populated tiers from sample data
+            Object.entries(tierCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 2)
+              .map(([tierName, count], index) => (
+                <Card key={tierName} className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index + 1)}`}>
+                      <UserCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{tierName} Subscribers</p>
+                      <h3 className="text-2xl font-bold">{count}</h3>
+                    </div>
+                  </div>
+                </Card>
+              ))
+          )}
         </div>
         
         {/* Search and Filters */}
@@ -193,9 +259,16 @@ export default function CreatorStudioSubscribers() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tiers</SelectItem>
-              <SelectItem value="VIP">VIP</SelectItem>
-              <SelectItem value="Premium">Premium</SelectItem>
-              <SelectItem value="Basic Supporter">Basic Supporter</SelectItem>
+              {tiers && tiers.length > 0 ? (
+                tiers.map(tier => (
+                  <SelectItem key={tier.id} value={tier.name}>{tier.name}</SelectItem>
+                ))
+              ) : (
+                // Fallback to unique tiers from the sample data
+                [...new Set(subscribers.map(s => s.tier))].map(tier => (
+                  <SelectItem key={tier} value={tier}>{tier}</SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
