@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/main-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,9 +32,11 @@ import { useCreatorDashboard } from "@/hooks/useCreatorDashboard"
 import { Link } from "react-router-dom"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { formatRelativeDate } from "@/utils/auth-helpers"
+import { useCreatorPosts } from "@/hooks/useCreatorPosts"
 
 export default function Dashboard() {
   const { creatorProfile, posts, stats, tierPerformance, isLoading } = useCreatorDashboard();
+  const { posts: creatorPosts, isLoading: isLoadingPosts } = useCreatorPosts();
 
   if (isLoading) {
     return (
@@ -43,33 +46,28 @@ export default function Dashboard() {
     );
   }
 
-  // Default content calendar (we'll keep this static for now)
-  const contentCalendar = [
-    {
-      id: 1,
-      title: "Character Design Masterclass Part 4",
-      date: "May 20, 2025",
-      time: "3:00 PM",
-      type: "Scheduled Post",
-      status: "scheduled",
-    },
-    {
-      id: 2,
-      title: "Live Q&A Session",
-      date: "May 22, 2025",
-      time: "6:00 PM",
-      type: "Live Stream",
-      status: "scheduled",
-    },
-    {
-      id: 3,
-      title: "June Brushes Pack",
-      date: "June 1, 2025",
-      time: "10:00 AM",
-      type: "Download",
-      status: "draft",
-    },
-  ];
+  // Find scheduled and draft posts from the creator posts
+  const scheduledPosts = creatorPosts
+    .filter(post => post.status === "scheduled")
+    .slice(0, 3); // Limit to 3 scheduled posts
+    
+  const draftPosts = creatorPosts
+    .filter(post => post.status === "draft")
+    .slice(0, 3); // Limit to 3 draft posts
+    
+  // Combine scheduled and draft posts for the content calendar
+  const contentCalendar = [...scheduledPosts, ...draftPosts]
+    .sort((a, b) => {
+      // Sort by scheduled date for scheduled posts
+      if (a.scheduleDate && b.scheduleDate) {
+        return new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime();
+      }
+      // Put scheduled posts before drafts
+      if (a.scheduleDate && !b.scheduleDate) return -1;
+      if (!a.scheduleDate && b.scheduleDate) return 1;
+      return 0;
+    })
+    .slice(0, 3); // Limit to 3 items total
 
   return (
     <CreatorCheck>
@@ -271,39 +269,61 @@ export default function Dashboard() {
                 <CardDescription>Upcoming scheduled content</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {contentCalendar.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border bg-muted/20"
-                    >
-                      <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center text-center">
-                        <span className="text-xs text-muted-foreground">{item.date.split(" ")[0]}</span>
-                        <span className="font-bold">{item.date.split(" ")[1].replace(",", "")}</span>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.title}</h3>
-                        <div className="flex items-center text-xs text-muted-foreground mt-1">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {item.time} • {item.type}
+                {contentCalendar.length > 0 ? (
+                  <div className="space-y-4">
+                    {contentCalendar.map((item) => {
+                      // Get date components from scheduleDate or current date for drafts
+                      const date = item.scheduleDate ? new Date(item.scheduleDate) : new Date();
+                      const month = date.toLocaleString('default', { month: 'short' });
+                      const day = date.getDate();
+                      const time = item.scheduleDate 
+                        ? new Date(item.scheduleDate).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                        : "No Time";
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-4 p-3 rounded-lg border bg-muted/20"
+                        >
+                          <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center text-center">
+                            <span className="text-xs text-muted-foreground">{month}</span>
+                            <span className="font-bold">{day}</span>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium">{item.title}</h3>
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {time} • {item.type || "Post"}
+                            </div>
+                          </div>
+                          <Badge
+                            variant={item.status === "scheduled" ? "default" : "outline"}
+                            className={
+                              item.status === "scheduled"
+                                ? "bg-green-500 text-white"
+                                : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+                            }
+                          >
+                            {item.status === "scheduled" ? "Scheduled" : "Draft"}
+                          </Badge>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <Badge
-                        variant={item.status === "scheduled" ? "default" : "outline"}
-                        className={
-                          item.status === "scheduled"
-                            ? "bg-green-500 text-white"
-                            : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                        }
-                      >
-                        {item.status === "scheduled" ? "Scheduled" : "Draft"}
-                      </Badge>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center">
+                    <p className="text-muted-foreground mb-4">You don't have any scheduled content.</p>
+                    <Button variant="outline" asChild>
+                      <Link to="/creator-studio/posts">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Schedule Your First Post
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="border-t pt-4">
                 <Button variant="outline" className="w-full">
