@@ -33,6 +33,7 @@ import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
 import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
+import CreatorProfile from "./pages/creator-studio/CreatorProfile";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -127,6 +128,13 @@ export default function App() {
                   <MainLayout>
                     <CreatorCheck>
                       <CreatorStudioSettings />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/creator-profile" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorProfile />
                     </CreatorCheck>
                   </MainLayout>
                 } />
