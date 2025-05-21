@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,7 @@ export const useCreatorSettings = () => {
         fullName: data.users?.username || '',
         email: data.users?.email || '',
         bio: data.bio || '',
-        website: null,
+        website: data.website || '',
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,
