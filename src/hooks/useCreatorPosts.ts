@@ -1,32 +1,14 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Post } from "@/types";
+import { CreatorPost } from "@/types/creator-studio";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 
 export type PostFilter = "all" | "articles" | "images" | "videos" | "audio";
 export type PostStatus = "published" | "scheduled" | "draft";
-
-export type CreatorPost = Post & {
-  status: PostStatus;
-  tags?: string[];
-  engagement?: {
-    views: number;
-    likes: number;
-    comments: number;
-  };
-  availableTiers?: {
-    id: string;
-    name: string;
-    color: string;
-  }[];
-  scheduleDate?: string;
-  lastEdited?: string;
-  type: "article" | "image" | "video" | "audio";
-};
 
 export function useCreatorPosts() {
   const { user } = useAuth();
@@ -131,7 +113,7 @@ export function useCreatorPosts() {
           content: post.content,
           authorName: post.users?.username || 'Unknown',
           authorAvatar: post.users?.profile_picture || null,
-          created_at: post.created_at,
+          createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
           status,

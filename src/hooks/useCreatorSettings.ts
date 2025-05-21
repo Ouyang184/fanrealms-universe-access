@@ -37,6 +37,7 @@ export const useCreatorSettings = () => {
         bio: data.bio || '',
         website: data.website || '',
         display_name: data.display_name || '',
+        displayName: data.display_name || '',
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,

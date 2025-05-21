@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -22,6 +23,8 @@ export interface Post {
   authorName?: string;
   authorAvatar?: string | null;
   date?: string;
+  image?: string;
+  tier_id?: string | null;
 }
 
 export interface CreatorProfile {
@@ -58,4 +61,14 @@ export interface Subscription {
   startDate: string;
   endDate: string | null;
   tier?: Tier;
+}
+
+// Add Tables namespace for Supabase compatibility
+export namespace Tables {
+  export interface Post {
+    title: string;
+    content: string;
+    author_id: string;
+    tier_id?: string | null;
+  }
 }

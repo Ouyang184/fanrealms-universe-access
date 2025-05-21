@@ -37,3 +37,30 @@ export interface CreatorSettings extends CreatorProfile {
   created_at: string;
   user_id: string;
 }
+
+// Extend Post for CreatorPost to include tier_id and other fields
+export interface CreatorPost {
+  id: string;
+  title: string;
+  content: string;
+  authorName: string;
+  authorAvatar?: string | null;
+  createdAt: string;
+  date: string;
+  tier_id?: string | null;
+  status?: 'published' | 'scheduled' | 'draft';
+  tags?: string[];
+  engagement?: {
+    views: number;
+    likes: number;
+    comments: number;
+  };
+  availableTiers?: {
+    id: string;
+    name: string;
+    color: string;
+  }[];
+  scheduleDate?: string;
+  lastEdited?: string;
+  type: "article" | "image" | "video" | "audio";
+}

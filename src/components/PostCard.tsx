@@ -11,6 +11,7 @@ interface PostCardProps extends Post {
   isLoading?: boolean;
   description?: string;  // Make explicit for backwards compatibility
   image?: string;        // Make explicit for backwards compatibility
+  tier_id?: string | null;
 }
 
 const PostCard: React.FC<PostCardProps> = ({ 

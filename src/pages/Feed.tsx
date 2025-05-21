@@ -74,6 +74,7 @@ export default function FeedPage() {
     <MainLayout>
       <div className="flex-1">
         <div className="max-w-4xl mx-auto px-4 py-6">
+          {/* Header and filters */}
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
             <div>
               <h1 className="text-3xl font-bold">Your Feed</h1>
@@ -114,7 +115,7 @@ export default function FeedPage() {
                       authorName={post.authorName}
                       authorAvatar={post.authorAvatar}
                       date={post.date}
-                      created_at={post.created_at}
+                      createdAt={post.createdAt}
                       tier_id={post.tier_id}
                     />
                   ))}
@@ -134,7 +135,7 @@ export default function FeedPage() {
                     authorName={post.authorName}
                     authorAvatar={post.authorAvatar}
                     date={post.date}
-                    created_at={post.created_at}
+                    createdAt={post.createdAt}
                     tier_id={post.tier_id}
                   />
                 ))}

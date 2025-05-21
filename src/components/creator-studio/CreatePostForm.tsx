@@ -35,7 +35,7 @@ export function CreatePostForm() {
     
     setIsLoading(true);
     try {
-      const newPost: Tables['posts']['Insert'] = {
+      const newPost: Tables.Post = {
         title,
         content,
         author_id: user.id,

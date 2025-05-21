@@ -13,7 +13,8 @@ export const usePopularCreators = () => {
           *,
           users!creators_user_id_fkey (
             username,
-            profile_picture
+            profile_picture,
+            email
           ),
           membership_tiers (
             id,
@@ -30,15 +31,25 @@ export const usePopularCreators = () => {
       }
 
       return data.map((creator): CreatorProfile => ({
-        ...creator,
-        username: creator.users?.username,
+        id: creator.id,
+        user_id: creator.user_id,
+        username: creator.users?.username || '',
+        email: creator.users?.email || '',
+        bio: creator.bio,
+        website: creator.website,
+        display_name: creator.display_name,
+        displayName: creator.display_name,
         avatar_url: creator.users?.profile_picture,
-        banner_url: creator.banner_url || null, // Ensure banner_url is always defined
+        profile_image_url: creator.profile_image_url,
+        banner_url: creator.banner_url || null,
         tiers: creator.membership_tiers?.map((tier): Tier => ({
-          ...tier,
-          name: tier.title, // Map title to name
-          features: tier.description.split(',').map(item => item.trim()), // Convert description to features array
-          popular: false // Default value for popular
+          id: tier.id,
+          creator_id: creator.id,
+          name: tier.title,
+          price: tier.price,
+          description: tier.description,
+          features: tier.description.split(',').map(item => item.trim()),
+          subscriberCount: 0 // Default value for subscriber count
         }))
       }));
     }
