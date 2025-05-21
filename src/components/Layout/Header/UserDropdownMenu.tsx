@@ -1,5 +1,5 @@
 
-import { Settings, User, HelpCircle, LogOut } from "lucide-react";
+import { Settings, User, HelpCircle, LogOut, Palette } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -11,11 +11,37 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Check if the user is a creator
+  const { data: creatorProfile } = useQuery({
+    queryKey: ['userCreator', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking creator status:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
+  
+  const isCreator = !!creatorProfile;
   
   if (!user) return null;
   
@@ -69,6 +95,17 @@ export function UserDropdownMenu() {
             <User className="h-4 w-4" />
             <span>Profile</span>
           </Link>
+          
+          {isCreator && (
+            <Link to="/creator-studio/settings" className={cn(
+              "flex items-center gap-2 p-2 rounded-md text-sm",
+              "hover:bg-accent transition-colors duration-200"
+            )}>
+              <Palette className="h-4 w-4" />
+              <span>Creator Profile</span>
+            </Link>
+          )}
+          
           <Link to="/settings" className={cn(
             "flex items-center gap-2 p-2 rounded-md text-sm",
             "hover:bg-accent transition-colors duration-200"
