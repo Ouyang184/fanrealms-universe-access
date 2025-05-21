@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -31,6 +30,7 @@ import CreatorPostsPage from "./pages/creator-studio/Posts";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
 import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
 import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
+import CreatorStudioSettings from "./pages/creator-studio/Settings";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -121,7 +121,7 @@ export default function App() {
                 <Route path="/creator-studio/settings" element={
                   <MainLayout>
                     <CreatorCheck>
-                      <Dashboard />
+                      <CreatorStudioSettings />
                     </CreatorCheck>
                   </MainLayout>
                 } />
