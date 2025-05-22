@@ -35,7 +35,6 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
     display_name,
     avatar_url,
     profile_image_url,
-    website,
     bio
   } = creator;
 
@@ -58,16 +57,6 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
           <Link to={creatorUrl} className="mt-3 text-lg font-semibold hover:underline">
             {displayName}
           </Link>
-          {website && (
-            <a 
-              href={website} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="text-sm text-muted-foreground hover:text-primary truncate max-w-full"
-            >
-              {website.replace(/^https?:\/\/(www\.)?/, '')}
-            </a>
-          )}
           {bio && <p className="text-sm text-center mt-2 line-clamp-2">{bio}</p>}
         </div>
         <div className="flex justify-center">

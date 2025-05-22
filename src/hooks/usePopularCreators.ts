@@ -36,7 +36,6 @@ export const usePopularCreators = () => {
         username: creator.users?.username || '',
         email: creator.users?.email || '',
         bio: creator.bio,
-        website: creator.website || null,
         display_name: creator.display_name || null,
         displayName: creator.display_name || null,
         avatar_url: creator.users?.profile_picture,
