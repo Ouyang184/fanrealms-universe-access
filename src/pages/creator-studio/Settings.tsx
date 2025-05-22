@@ -7,6 +7,7 @@ import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -101,8 +102,18 @@ export default function CreatorStudioSettings() {
           )}
           
           <div className="flex justify-end">
-            <Button type="submit" disabled={isFormDisabled}>
-              {isSaving ? 'Saving...' : 'Save Changes'}
+            <Button 
+              type="submit" 
+              disabled={isFormDisabled}
+              className={isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}
+            >
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" /> Saving...
+                </span>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </div>
         </div>
