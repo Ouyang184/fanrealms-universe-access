@@ -275,8 +275,9 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
               src="/lovable-uploads/leaves-image.jpeg"
-              alt="Welcome banner"
+              alt="Banner"
               className="w-full h-64 object-cover"
+              aria-hidden="true"
             />
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">Welcome to FanRealms</h1>
