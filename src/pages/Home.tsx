@@ -275,7 +275,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
               src="/lovable-uploads/leaves-image.jpeg"
-              alt="Banner"
+              alt=""
               className="w-full h-64 object-cover"
               aria-hidden="true"
             />
