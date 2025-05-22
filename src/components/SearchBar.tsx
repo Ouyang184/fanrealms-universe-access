@@ -58,7 +58,7 @@ export function SearchBar() {
               <CommandItem
                 key={creator.id}
                 onSelect={() => handleCreatorSelect(creator.username || '')}
-                className="flex items-center gap-2 p-2"
+                className="flex items-center gap-2 p-2 cursor-pointer"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={creator.avatar_url || undefined} />
