@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CreatorProfile } from "@/types";
 
-export const useCreators = () => {
+export const useCreators = (searchTerm?: string) => {
   return useQuery({
-    queryKey: ["creators"],
+    queryKey: ["creators", searchTerm],
     queryFn: async () => {
-      const { data: creatorData, error } = await supabase
+      let query = supabase
         .from('creators')
         .select(`
           *,
@@ -18,6 +18,15 @@ export const useCreators = () => {
           )
         `)
         .order('created_at', { ascending: false });
+
+      // If search term is provided, filter by username or display_name
+      if (searchTerm && searchTerm.trim() !== '') {
+        const term = `%${searchTerm.toLowerCase()}%`;
+        query = query
+          .or(`display_name.ilike.${term},users.username.ilike.${term}`);
+      }
+      
+      const { data: creatorData, error } = await query;
 
       if (error) {
         throw error;

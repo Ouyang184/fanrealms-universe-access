@@ -16,8 +16,9 @@ import { Button } from '@/components/ui/button';
 
 export function SearchBar() {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const { data: creators = [], isLoading } = useCreators();
+  const { data: creators = [], isLoading } = useCreators(searchTerm);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -35,6 +36,10 @@ export function SearchBar() {
     navigate(`/creator/${username}`);
   };
 
+  const handleSearchInput = (value: string) => {
+    setSearchTerm(value);
+  };
+
   return (
     <div className="relative w-full max-w-sm">
       <Button
@@ -50,7 +55,10 @@ export function SearchBar() {
       </Button>
       
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search for a Creator..." />
+        <CommandInput 
+          placeholder="Search by username or display name..." 
+          onValueChange={handleSearchInput}
+        />
         <CommandList>
           <CommandEmpty>No creators found.</CommandEmpty>
           <CommandGroup heading="Creators">

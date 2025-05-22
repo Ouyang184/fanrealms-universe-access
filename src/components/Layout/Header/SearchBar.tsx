@@ -16,8 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function SearchBar() {
   const [open, setOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const { data: creators = [] } = useCreators();
+  const { data: creators = [] } = useCreators(searchTerm);
 
   const handleOpenSearch = () => {
     setOpen(true);
@@ -26,6 +27,10 @@ export function SearchBar() {
   const handleCreatorSelect = (username: string) => {
     setOpen(false);
     navigate(`/creator/${username}`);
+  };
+
+  const handleSearchInput = (value: string) => {
+    setSearchTerm(value);
   };
 
   return (
@@ -43,7 +48,10 @@ export function SearchBar() {
       </div>
       
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search for creators..." />
+        <CommandInput 
+          placeholder="Search by username or display name..."
+          onValueChange={handleSearchInput}
+        />
         <CommandList>
           <CommandEmpty>No creators found.</CommandEmpty>
           <CommandGroup heading="Creators">
