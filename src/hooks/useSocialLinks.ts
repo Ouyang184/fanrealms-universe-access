@@ -23,8 +23,7 @@ export function useSocialLinks(creatorId: string | undefined) {
   const { 
     data: links = [], 
     isLoading,
-    refetch,
-    isFetching
+    refetch
   } = useQuery({
     queryKey: ['creatorLinks', creatorId],
     queryFn: async () => {
@@ -47,11 +46,6 @@ export function useSocialLinks(creatorId: string | undefined) {
         if (error) {
           console.error('Error fetching social links:', error);
           setIsError(true);
-          toast({
-            title: "Error",
-            description: "Failed to load social links",
-            variant: "destructive"
-          });
           return [];
         }
         
@@ -60,22 +54,15 @@ export function useSocialLinks(creatorId: string | undefined) {
       } catch (error) {
         console.error('Error in useSocialLinks:', error);
         setIsError(true);
-        toast({
-          title: "Error",
-          description: "Something went wrong while loading social links",
-          variant: "destructive"
-        });
         return [];
       }
     },
-    enabled: !!creatorId,
-    staleTime: 30000, // Cache for 30 seconds
-    refetchOnWindowFocus: false
+    enabled: !!creatorId
   });
 
   return {
     links,
-    isLoading: isLoading || isFetching,
+    isLoading,
     isError,
     refetch
   };
