@@ -6,7 +6,7 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { CreatorProfile } from "@/types";
 
 interface CreatorHeaderProps {
-  creator: CreatorProfile;
+  creator: CreatorProfile & { displayName?: string };
   isFollowing: boolean;
   followLoading: boolean;
   onFollowToggle: () => Promise<void>;
@@ -18,7 +18,8 @@ export function CreatorHeader({
   followLoading, 
   onFollowToggle 
 }: CreatorHeaderProps) {
-  const displayName = creator.fullName || creator.username || "Creator";
+  // Prioritize displayName passed from parent, then display_name, then username
+  const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
 
