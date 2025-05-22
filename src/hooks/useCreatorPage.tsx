@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -6,12 +7,14 @@ import { useFollow } from "@/hooks/useFollow";
 import { toast } from "@/hooks/use-toast";
 import { CreatorProfile } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { useNavigate } from "react-router-dom";
 
-export function useCreatorPage(username?: string) {
+export function useCreatorPage(identifier?: string) {
   const [activeTab, setActiveTab] = useState("posts");
   const { user } = useAuth();
+  const navigate = useNavigate();
   
-  console.log("useCreatorPage called with username/id:", username);
+  console.log("useCreatorPage called with identifier:", identifier);
   
   // Fetch creator profile by username or id
   const {
@@ -20,93 +23,125 @@ export function useCreatorPage(username?: string) {
     error: creatorError,
     refetch: refetchCreator
   } = useQuery({
-    queryKey: ['creatorProfile', username],
+    queryKey: ['creatorProfile', identifier],
     queryFn: async () => {
-      if (!username) {
-        console.log("No username provided to useCreatorPage");
+      if (!identifier) {
+        console.log("No identifier provided to useCreatorPage");
         return null;
       }
       
-      console.log(`Fetching creator profile for identifier: "${username}"`);
+      console.log(`Fetching creator profile for identifier: "${identifier}"`);
       
-      // First try to find by username
-      const { data: userData, error: userError } = await supabase
+      // Strategy 1: Try to find by username
+      const { data: userByUsername, error: usernameError } = await supabase
         .from('users')
         .select('*')
-        .eq('username', username)
+        .eq('username', identifier)
         .maybeSingle();
       
-      let userId;
-      
-      if (!userData) {
-        console.log(`User not found by username "${username}", trying direct creator query...`);
+      if (userByUsername) {
+        console.log("Found user by username:", userByUsername);
+        const userId = userByUsername.id;
         
-        // Try to find a creator with display_name matching the username
-        const { data: creatorByDisplayName, error: displayNameError } = await supabase
+        // Get creator info for this user
+        const { data: creatorData, error: creatorError } = await supabase
           .from('creators')
           .select('*')
-          .ilike('display_name', username)
+          .eq('user_id', userId)
           .maybeSingle();
           
-        if (creatorByDisplayName) {
-          console.log("Found creator by display_name:", creatorByDisplayName);
-          userId = creatorByDisplayName.user_id;
-        } else {
-          // As a last resort, try to find the creator directly by user_id
-          const { data: creatorDirectById, error: directIdError } = await supabase
-            .from('creators')
-            .select('*')
-            .eq('user_id', username)
-            .maybeSingle();
-            
-          if (creatorDirectById) {
-            console.log("Found creator directly by user_id:", creatorDirectById);
-            userId = creatorDirectById.user_id;
-          } else {
-            console.error('Creator not found by any method:', username);
-            throw new Error(`Creator "${username}" not found`);
-          }
+        if (creatorData) {
+          console.log("Found creator info for username:", creatorData);
+          
+          // Build and return the combined profile
+          return {
+            ...creatorData,
+            ...userByUsername,
+            id: userId,
+            fullName: creatorData.display_name || userByUsername.username,
+            display_name: creatorData.display_name || userByUsername.username,
+            username: userByUsername.username,
+            avatar_url: userByUsername.profile_picture || null,
+          } as CreatorProfile;
         }
-      } else {
-        console.log("Found user by username:", userData);
-        userId = userData.id;
       }
       
-      // Now fetch the creator's details from creators table using the user ID
-      const { data: creatorInfoData, error: creatorInfoError } = await supabase
+      // Strategy 2: Try to find creator directly by user_id
+      const { data: creatorByUserId, error: userIdError } = await supabase
         .from('creators')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (creatorInfoError) {
-        console.error('Error fetching creator info:', creatorInfoError);
-        throw new Error(`Creator info for user ID "${userId}" not found`);
-      }
-      
-      // Get user information for this creator
-      const { data: userInfo, error: userInfoError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
+        .select(`
+          *,
+          users!creators_user_id_fkey (
+            id,
+            username,
+            email,
+            profile_picture
+          )
+        `)
+        .eq('user_id', identifier)
         .maybeSingle();
         
-      // Merge the data
-      const creatorProfile = {
-        ...creatorInfoData,
-        ...userInfo,
-        fullName: creatorInfoData?.display_name || userInfo?.username,
-        display_name: creatorInfoData?.display_name || userInfo?.username,
-        username: userInfo?.username || `user-${userId.substring(0, 8)}`,
-        avatar_url: userInfo?.profile_picture || null,
-      } as CreatorProfile;
+      if (creatorByUserId && creatorByUserId.users) {
+        console.log("Found creator by user_id:", creatorByUserId);
+        
+        return {
+          ...creatorByUserId,
+          id: creatorByUserId.user_id,
+          username: creatorByUserId.users.username || `user-${creatorByUserId.user_id.substring(0, 8)}`,
+          email: creatorByUserId.users.email || "",
+          fullName: creatorByUserId.display_name || creatorByUserId.users.username,
+          display_name: creatorByUserId.display_name || creatorByUserId.users.username,
+          avatar_url: creatorByUserId.users.profile_picture || null,
+        } as CreatorProfile;
+      }
       
-      console.log("Constructed creator profile:", creatorProfile);
-      return creatorProfile;
+      // Strategy 3: Try to find by display_name
+      const { data: creatorsWithDisplayName, error: displayNameError } = await supabase
+        .from('creators')
+        .select(`
+          *,
+          users!creators_user_id_fkey (
+            id,
+            username,
+            email,
+            profile_picture
+          )
+        `)
+        .ilike('display_name', identifier)
+        .limit(1);
+        
+      if (creatorsWithDisplayName && creatorsWithDisplayName.length > 0) {
+        const creatorByDisplayName = creatorsWithDisplayName[0];
+        console.log("Found creator by display_name:", creatorByDisplayName);
+        
+        return {
+          ...creatorByDisplayName,
+          id: creatorByDisplayName.user_id,
+          username: creatorByDisplayName.users?.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
+          email: creatorByDisplayName.users?.email || "",
+          fullName: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
+          display_name: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
+          avatar_url: creatorByDisplayName.users?.profile_picture || null,
+        } as CreatorProfile;
+      }
+      
+      // If we've exhausted all lookup methods and still can't find the creator
+      console.error('Creator not found by any lookup method:', identifier);
+      
+      // Instead of throwing an error, inform the user through toast and redirect
+      toast({
+        title: "Creator not found",
+        description: `We couldn't find a creator with the identifier: ${identifier}`,
+        variant: "destructive"
+      });
+      
+      // Return null instead of throwing to prevent error loops
+      return null;
     },
-    enabled: !!username,
-    retry: 2,
-    staleTime: 30000 // Cache results for 30 seconds
+    enabled: !!identifier,
+    retry: 1,
+    staleTime: 30000, // Cache results for 30 seconds
+    refetchOnWindowFocus: false
   });
   
   // Fetch creator's posts
@@ -148,8 +183,8 @@ export function useCreatorPage(username?: string) {
       
       return postsData.map((post: any) => ({
         ...post,
-        authorName: creator.display_name || post.users.username, // Use display_name if available
-        authorAvatar: post.users.profile_picture,
+        authorName: creator.display_name || post.users?.username || 'Unknown', 
+        authorAvatar: post.users?.profile_picture,
         date: formatRelativeDate(post.created_at)
       }));
     },
@@ -169,13 +204,13 @@ export function useCreatorPage(username?: string) {
   
   // Function to refresh creator data
   const refreshCreatorData = useCallback(() => {
-    if (username) {
+    if (identifier) {
       refetchCreator();
       if (creator?.id) {
         refetchPosts();
       }
     }
-  }, [username, creator?.id, refetchCreator, refetchPosts]);
+  }, [identifier, creator?.id, refetchCreator, refetchPosts]);
 
   // Initialize follow status 
   useEffect(() => {

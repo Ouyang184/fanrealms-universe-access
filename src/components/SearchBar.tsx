@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
@@ -13,6 +14,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { LoadingView } from '@/components/ui/loading-view';
 
 export function SearchBar() {
   const [open, setOpen] = useState(false);
@@ -43,13 +45,13 @@ export function SearchBar() {
       return;
     }
     
-    // Use username if available, otherwise use user_id
-    const identifier = creator.username || creator.user_id;
-    console.log(`Standalone SearchBar: Navigating to creator profile for: "${identifier}" (${creator.display_name || 'No Display Name'})`);
+    // Prioritize navigation by username if available
+    const routeIdentifier = creator.username || creator.user_id;
+    console.log(`Navigating to creator profile for: "${routeIdentifier}" (${creator.display_name || 'No Display Name'})`);
     
     setOpen(false);
     setSearchTerm(""); // Clear search term
-    navigate(`/creator/${identifier}`);
+    navigate(`/creator/${routeIdentifier}`);
   };
 
   const handleSearchInput = (value: string) => {
@@ -77,7 +79,12 @@ export function SearchBar() {
         />
         <CommandList>
           <CommandEmpty>
-            {isLoading ? "Searching..." : "No creators found."}
+            {isLoading ? 
+              <div className="py-6 flex items-center justify-center">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+                <span>Searching...</span>
+              </div>
+            : "No creators found."}
           </CommandEmpty>
           <CommandGroup heading="Creators">
             {creators.map((creator) => (
@@ -89,11 +96,11 @@ export function SearchBar() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={creator.avatar_url || undefined} />
                   <AvatarFallback>
-                    {(creator.display_name || 'C')[0]?.toUpperCase()}
+                    {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="font-medium">{creator.display_name || 'Unknown Creator'}</span>
+                  <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
                   {creator.username && (
                     <span className="text-xs text-muted-foreground">@{creator.username}</span>
                   )}
