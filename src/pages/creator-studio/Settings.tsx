@@ -7,7 +7,6 @@ import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
-import { Spinner } from "@/components/ui/spinner";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -43,16 +42,6 @@ export default function CreatorStudioSettings() {
     
     try {
       await updateSettings(formData);
-      toast({
-        title: "Settings updated",
-        description: "Your creator profile has been updated successfully."
-      });
-    } catch (error: any) {
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update settings. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsSaving(false);
     }
@@ -112,19 +101,8 @@ export default function CreatorStudioSettings() {
           )}
           
           <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={isFormDisabled}
-              className={isSaving ? "opacity-80 pointer-events-none" : ""}
-            >
-              {isSaving ? (
-                <>
-                  <Spinner className="h-4 w-4 mr-2" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
+            <Button type="submit" disabled={isFormDisabled}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>
