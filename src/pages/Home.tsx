@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -275,7 +276,7 @@ export default function HomePage() {
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
               src="/lovable-uploads/leaves-image.jpeg"
-              alt="Featured creators"
+              alt="Hero banner"
               className="w-full h-64 object-cover"
             />
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
@@ -284,7 +285,9 @@ export default function HomePage() {
                 Support your favorite creators and get exclusive content, direct interaction, and special perks.
               </p>
               <div className="flex gap-4">
-                <Button className="bg-purple-600 hover:bg-purple-700">Discover Creators</Button>
+                <Link to="/explore">
+                  <Button className="bg-purple-600 hover:bg-purple-700">Discover Creators</Button>
+                </Link>
                 <Button variant="outline" className="border-white/30 hover:bg-white/10">
                   How It Works
                 </Button>
