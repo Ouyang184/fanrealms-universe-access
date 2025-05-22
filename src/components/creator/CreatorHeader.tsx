@@ -55,7 +55,7 @@ export function CreatorHeader({
           
           {creatorId && (
             <div className="mt-2">
-              <SocialLinks creatorId={creatorId} />
+              <SocialLinks creatorId={creatorId} showText={true} size="default" />
             </div>
           )}
         </div>

@@ -19,6 +19,7 @@ interface SocialLinksProps {
   className?: string;
   variant?: "default" | "ghost" | "outline";
   size?: "default" | "sm" | "icon";
+  showText?: boolean;
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -36,7 +37,8 @@ export function SocialLinks({
   creatorId, 
   className = "", 
   variant = "outline",
-  size = "icon"
+  size = "icon",
+  showText = true // Default to showing text
 }: SocialLinksProps) {
   const { links, isLoading } = useSocialLinks(creatorId);
   
@@ -82,22 +84,39 @@ export function SocialLinks({
     
     return <Globe className="h-4 w-4" />;
   };
+
+  // Function to format URL for display
+  const formatUrlForDisplay = (url: string) => {
+    let displayUrl = url;
+    try {
+      const urlObj = new URL(url);
+      displayUrl = urlObj.hostname + (urlObj.pathname !== '/' ? urlObj.pathname : '');
+      // Remove www. prefix if present
+      displayUrl = displayUrl.replace(/^www\./, '');
+    } catch (e) {
+      // If URL parsing fails, just show the raw URL
+      console.log("Invalid URL format:", url);
+    }
+    return displayUrl;
+  };
   
   return (
-    <div className={`flex gap-2 ${className}`}>
+    <div className={`flex flex-wrap gap-2 ${className}`}>
       {links.map((link) => (
         <Button
           key={link.id}
           variant={variant}
-          size={size}
+          size={showText ? "default" : size}
           asChild
           title={link.label || link.url}
-          className="rounded-full"
+          className={showText ? "rounded-md" : "rounded-full"}
         >
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
+          <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center">
             {getIconForLink(link)}
-            {size !== 'icon' && link.label && (
-              <span className="ml-2">{link.label}</span>
+            {showText && (
+              <span className="ml-2 text-sm">
+                {link.label || formatUrlForDisplay(link.url)}
+              </span>
             )}
           </a>
         </Button>
