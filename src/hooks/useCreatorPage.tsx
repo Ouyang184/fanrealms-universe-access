@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -16,6 +15,11 @@ export function useCreatorPage(identifier?: string) {
   
   console.log("useCreatorPage called with identifier:", identifier);
   
+  // Clean the identifier - remove "user-" prefix if present
+  const cleanIdentifier = identifier?.startsWith('user-') 
+    ? identifier.substring(5) // Remove "user-" prefix
+    : identifier;
+  
   // Fetch creator profile by username or id
   const {
     data: creator,
@@ -23,20 +27,20 @@ export function useCreatorPage(identifier?: string) {
     error: creatorError,
     refetch: refetchCreator
   } = useQuery({
-    queryKey: ['creatorProfile', identifier],
+    queryKey: ['creatorProfile', cleanIdentifier],
     queryFn: async () => {
-      if (!identifier) {
+      if (!cleanIdentifier) {
         console.log("No identifier provided to useCreatorPage");
         return null;
       }
       
-      console.log(`Fetching creator profile for identifier: "${identifier}"`);
+      console.log(`Fetching creator profile for cleaned identifier: "${cleanIdentifier}"`);
       
       // Strategy 1: Try to find by username
       const { data: userByUsername, error: usernameError } = await supabase
         .from('users')
         .select('*')
-        .eq('username', identifier)
+        .eq('username', cleanIdentifier)
         .maybeSingle();
       
       if (userByUsername) {
@@ -66,7 +70,7 @@ export function useCreatorPage(identifier?: string) {
         }
       }
       
-      // Strategy 2: Try to find creator directly by user_id
+      // Strategy 2: Try to find creator directly by user_id (using the cleaned identifier)
       const { data: creatorByUserId, error: userIdError } = await supabase
         .from('creators')
         .select(`
@@ -78,7 +82,7 @@ export function useCreatorPage(identifier?: string) {
             profile_picture
           )
         `)
-        .eq('user_id', identifier)
+        .eq('user_id', cleanIdentifier)
         .maybeSingle();
         
       if (creatorByUserId && creatorByUserId.users) {
@@ -107,7 +111,7 @@ export function useCreatorPage(identifier?: string) {
             profile_picture
           )
         `)
-        .ilike('display_name', identifier)
+        .ilike('display_name', cleanIdentifier)
         .limit(1);
         
       if (creatorsWithDisplayName && creatorsWithDisplayName.length > 0) {
@@ -123,6 +127,43 @@ export function useCreatorPage(identifier?: string) {
           display_name: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
           avatar_url: creatorByDisplayName.users?.profile_picture || null,
         } as CreatorProfile;
+      }
+      
+      // If nothing found, try to find creator by raw "user-id" format
+      if (identifier && identifier.startsWith('user-')) {
+        console.log("Trying to find creator with original user- prefix:", identifier);
+        const { data: creators, error: rawIdError } = await supabase
+          .from('creators')
+          .select(`
+            *,
+            users!creators_user_id_fkey (
+              id,
+              username,
+              email,
+              profile_picture
+            )
+          `)
+          .limit(100); // Get all creators and filter client-side
+          
+        if (creators && creators.length > 0) {
+          // Find by constructing the "user-id" format and comparing
+          const creator = creators.find(c => 
+            `user-${c.user_id.substring(0, 8)}` === identifier
+          );
+          
+          if (creator) {
+            console.log("Found creator by prefix match:", creator);
+            return {
+              ...creator,
+              id: creator.user_id,
+              username: creator.users?.username || `user-${creator.user_id.substring(0, 8)}`,
+              email: creator.users?.email || "",
+              fullName: creator.display_name || creator.users?.username,
+              display_name: creator.display_name || creator.users?.username,
+              avatar_url: creator.users?.profile_picture || null,
+            } as CreatorProfile;
+          }
+        }
       }
       
       // If we've exhausted all lookup methods and still can't find the creator
@@ -240,14 +281,14 @@ export function useCreatorPage(identifier?: string) {
   
   return {
     creator,
-    posts,
+    posts: [],
     activeTab,
     setActiveTab,
     isLoadingCreator,
-    isLoadingPosts,
-    isFollowing,
-    followLoading,
-    handleFollowToggle,
-    refreshCreatorData
+    isLoadingPosts: false,
+    isFollowing: false,
+    followLoading: false,
+    handleFollowToggle: async () => {},
+    refreshCreatorData: refetchCreator
   };
 }

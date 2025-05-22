@@ -40,15 +40,25 @@ export const useCreators = (searchTerm?: string) => {
 
       // Transform the data to match our CreatorProfile type
       // Include all creators, even if they don't have an associated user
-      const transformedCreators: CreatorProfile[] = creatorData.map((creator) => ({
-        ...creator,
-        id: creator.user_id, // Use user_id as the primary id
-        username: creator.users?.username || `user-${creator.user_id.substring(0, 8)}`, // Fallback username if not found
-        email: creator.users?.email || "",
-        avatar_url: creator.users?.profile_picture || null,
-        display_name: creator.display_name || creator.users?.username || `Creator ${creator.id.substring(0, 6)}`,
-        banner_url: creator.banner_url || null,
-      }));
+      const transformedCreators: CreatorProfile[] = creatorData.map((creator) => {
+        const userId = creator.user_id;
+        
+        // Ensure we don't generate invalid UUIDs in the app by removing any "user-" prefix
+        const cleanUserId = userId?.startsWith('user-') 
+          ? userId.substring(5) 
+          : userId;
+        
+        return {
+          ...creator,
+          user_id: cleanUserId, // Use clean ID without prefix 
+          id: cleanUserId,
+          username: creator.users?.username || `user-${cleanUserId.substring(0, 8)}`,
+          email: creator.users?.email || "",
+          avatar_url: creator.users?.profile_picture || null,
+          display_name: creator.display_name || creator.users?.username || `Creator ${cleanUserId.substring(0, 6)}`,
+          banner_url: creator.banner_url || null,
+        };
+      });
 
       console.log('Transformed creators for search:', transformedCreators);
       return transformedCreators;

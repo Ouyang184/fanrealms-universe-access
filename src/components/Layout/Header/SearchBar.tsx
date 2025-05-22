@@ -50,7 +50,9 @@ export function SearchBar() {
     }
     
     // Prioritize navigation by username if available
-    const routeIdentifier = creator.username || creator.user_id;
+    let routeIdentifier = creator.username || creator.user_id;
+    
+    // If using user_id, do NOT prefix with "user-" - the creator page component will handle this
     console.log(`Header SearchBar: Navigating to creator profile for: "${routeIdentifier}" (${creator.display_name || 'No Display Name'})`);
     
     setOpen(false);

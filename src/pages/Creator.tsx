@@ -13,21 +13,21 @@ import { CreatorAbout } from "@/components/creator/CreatorAbout";
 import { toast } from "@/hooks/use-toast";
 
 const CreatorPage: React.FC = () => {
-  // Get the username from the URL parameter
-  const { id: username } = useParams<{ id: string }>();
+  // Get the identifier from the URL parameter
+  const { id: identifier } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
   useEffect(() => {
-    console.log(`Creator page mounted with username param: "${username}"`);
-    if (!username) {
+    console.log(`Creator page mounted with identifier param: "${identifier}"`);
+    if (!identifier) {
       toast({
         title: "Error",
-        description: "Creator username is missing",
+        description: "Creator identifier is missing",
         variant: "destructive"
       });
       navigate("/explore");
     }
-  }, [username, navigate]);
+  }, [identifier, navigate]);
   
   const {
     creator,
@@ -40,17 +40,17 @@ const CreatorPage: React.FC = () => {
     followLoading,
     handleFollowToggle,
     refreshCreatorData
-  } = useCreatorPage(username);
+  } = useCreatorPage(identifier);
   
   // Add effect to refresh data if needed
   useEffect(() => {
-    if (username && !creator && !isLoadingCreator) {
+    if (identifier && !creator && !isLoadingCreator) {
       console.log("Creator not found, refreshing data");
       refreshCreatorData();
     }
-  }, [username, creator, isLoadingCreator, refreshCreatorData]);
+  }, [identifier, creator, isLoadingCreator, refreshCreatorData]);
   
-  console.log('Creator Page:', { username, creator, isLoading: isLoadingCreator });
+  console.log('Creator Page:', { identifier, creator, isLoading: isLoadingCreator });
   
   if (isLoadingCreator) {
     return (
@@ -69,7 +69,7 @@ const CreatorPage: React.FC = () => {
         <div className="max-w-3xl mx-auto text-center py-20">
           <h2 className="text-2xl font-bold mb-4">Creator Not Found</h2>
           <p className="text-muted-foreground mb-6">
-            We couldn't find a creator with this username: {username}
+            We couldn't find a creator with this identifier: {identifier}
           </p>
           <Button asChild>
             <a href="/explore">Explore Creators</a>
