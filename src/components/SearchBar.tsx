@@ -32,8 +32,11 @@ export function SearchBar() {
   }, []);
 
   const handleCreatorSelect = (username: string) => {
+    if (!username) return; // Safety check to prevent navigation to invalid URLs
     setOpen(false);
+    // Ensure we redirect to the correct URL
     navigate(`/creator/${username}`);
+    console.log('Navigating to creator profile:', username);
   };
 
   const handleSearchInput = (value: string) => {

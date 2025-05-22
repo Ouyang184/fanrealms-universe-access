@@ -12,7 +12,8 @@ import { CreatorMembership } from "@/components/creator/CreatorMembership";
 import { CreatorAbout } from "@/components/creator/CreatorAbout";
 
 const CreatorPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  // Get the username from the URL parameter
+  const { id: username } = useParams<{ id: string }>();
   const {
     creator,
     posts,
@@ -23,7 +24,9 @@ const CreatorPage: React.FC = () => {
     isFollowing,
     followLoading,
     handleFollowToggle
-  } = useCreatorPage(id);
+  } = useCreatorPage(username);
+  
+  console.log('Creator Page:', { username, creator });
   
   if (isLoadingCreator || isLoadingPosts) {
     return (
@@ -40,7 +43,7 @@ const CreatorPage: React.FC = () => {
       <MainLayout>
         <div className="max-w-3xl mx-auto text-center py-20">
           <h2 className="text-2xl font-bold mb-4">Creator Not Found</h2>
-          <p className="text-muted-foreground mb-6">We couldn't find a creator with this username.</p>
+          <p className="text-muted-foreground mb-6">We couldn't find a creator with this username: {username}</p>
           <Button asChild>
             <a href="/explore">Explore Creators</a>
           </Button>
