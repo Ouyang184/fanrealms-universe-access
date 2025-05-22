@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +19,7 @@ export function useCreatorPage(username?: string) {
     data: creator,
     isLoading: isLoadingCreator,
     error: creatorError,
+    refetch: refetchCreator
   } = useQuery({
     queryKey: ['creatorProfile', username],
     queryFn: async () => {
@@ -29,24 +30,24 @@ export function useCreatorPage(username?: string) {
       
       console.log(`Fetching creator profile for username: "${username}"`);
       
-      const { data: creatorData, error: creatorError } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('username', username)
         .single();
       
-      if (creatorError || !creatorData) {
-        console.error('Error fetching creator by username:', creatorError);
-        return null;
+      if (userError || !userData) {
+        console.error('Error fetching user by username:', userError);
+        throw new Error(`User with username "${username}" not found`);
       }
       
-      console.log("Found user by username:", creatorData);
+      console.log("Found user by username:", userData);
       
       // Fetch creator's additional details from creators table
       const { data: creatorInfoData, error: creatorInfoError } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', creatorData.id)
+        .eq('user_id', userData.id)
         .single();
       
       if (creatorInfoError) {
@@ -55,16 +56,18 @@ export function useCreatorPage(username?: string) {
       }
       
       // Merge the data and prioritize display_name
-      return {
-        ...creatorData,
+      const creatorProfile = {
+        ...userData,
         ...creatorInfoData,
-        fullName: creatorInfoData?.display_name || creatorData.username,
-        // Ensure display_name is explicitly available
-        display_name: creatorInfoData?.display_name || null
+        fullName: creatorInfoData?.display_name || userData.username,
+        display_name: creatorInfoData?.display_name || null,
       } as CreatorProfile;
+      
+      console.log("Constructed creator profile:", creatorProfile);
+      return creatorProfile;
     },
     enabled: !!username,
-    retry: 1,
+    retry: 2,
     staleTime: 60000 // Cache results for 1 minute
   });
   
@@ -72,6 +75,7 @@ export function useCreatorPage(username?: string) {
   const {
     data: posts = [],
     isLoading: isLoadingPosts,
+    refetch: refetchPosts
   } = useQuery({
     queryKey: ['creatorPosts', creator?.id],
     queryFn: async () => {
@@ -124,6 +128,16 @@ export function useCreatorPage(username?: string) {
     followCreator,
     unfollowCreator
   } = useFollow();
+  
+  // Function to refresh creator data
+  const refreshCreatorData = useCallback(() => {
+    if (username) {
+      refetchCreator();
+      if (creator?.id) {
+        refetchPosts();
+      }
+    }
+  }, [username, creator?.id, refetchCreator, refetchPosts]);
 
   // Initialize follow status 
   useEffect(() => {
@@ -160,6 +174,7 @@ export function useCreatorPage(username?: string) {
     isLoadingPosts,
     isFollowing,
     followLoading,
-    handleFollowToggle
+    handleFollowToggle,
+    refreshCreatorData
   };
 }

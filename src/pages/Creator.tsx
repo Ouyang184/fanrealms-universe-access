@@ -38,12 +38,21 @@ const CreatorPage: React.FC = () => {
     isLoadingPosts,
     isFollowing,
     followLoading,
-    handleFollowToggle
+    handleFollowToggle,
+    refreshCreatorData
   } = useCreatorPage(username);
+  
+  // Add effect to refresh data if needed
+  useEffect(() => {
+    if (username && !creator && !isLoadingCreator) {
+      console.log("Creator not found, refreshing data");
+      refreshCreatorData();
+    }
+  }, [username, creator, isLoadingCreator, refreshCreatorData]);
   
   console.log('Creator Page:', { username, creator, isLoading: isLoadingCreator });
   
-  if (isLoadingCreator || isLoadingPosts) {
+  if (isLoadingCreator) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center h-[60vh]">

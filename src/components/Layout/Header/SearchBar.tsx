@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  DialogTitle,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
@@ -48,12 +49,11 @@ export function SearchBar() {
       return;
     }
     
-    console.log(`Search bar: Navigating to creator profile for: "${username}"`);
+    console.log(`Header SearchBar: Navigating to creator profile for: "${username}"`);
     setOpen(false);
     
-    // Ensure we redirect to the correct URL with a clean username
-    const cleanUsername = username.trim();
-    navigate(`/creator/${cleanUsername}`);
+    // Navigate to the creator profile page
+    navigate(`/creator/${username}`);
   };
 
   const handleSearchInput = (value: string) => {
@@ -75,6 +75,7 @@ export function SearchBar() {
       </div>
       
       <CommandDialog open={open} onOpenChange={setOpen}>
+        <DialogTitle className="sr-only">Search creators</DialogTitle>
         <CommandInput 
           placeholder="Search by username or display name..."
           onValueChange={handleSearchInput}

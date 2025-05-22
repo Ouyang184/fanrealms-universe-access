@@ -41,7 +41,7 @@ export const useCreators = (searchTerm?: string) => {
         .filter(creator => creator.users) // Filter out any creators without associated users
         .map((creator) => ({
           ...creator,
-          id: creator.user_id, // Ensure we use the user_id as the primary id
+          id: creator.user_id, // Use user_id as the primary id
           username: creator.users?.username,
           email: creator.users?.email,
           avatar_url: creator.users?.profile_picture,
