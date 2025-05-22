@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -12,9 +11,9 @@ export function useCreatorPage(username?: string) {
   const [activeTab, setActiveTab] = useState("posts");
   const { user } = useAuth();
   
-  console.log("useCreatorPage called with username:", username);
+  console.log("useCreatorPage called with username/id:", username);
   
-  // Fetch creator profile by username
+  // Fetch creator profile by username or id
   const {
     data: creator,
     isLoading: isLoadingCreator,
@@ -28,39 +27,78 @@ export function useCreatorPage(username?: string) {
         return null;
       }
       
-      console.log(`Fetching creator profile for username: "${username}"`);
+      console.log(`Fetching creator profile for identifier: "${username}"`);
       
+      // First try to find by username
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('username', username)
-        .single();
+        .maybeSingle();
       
-      if (userError || !userData) {
-        console.error('Error fetching user by username:', userError);
-        throw new Error(`User with username "${username}" not found`);
+      let userId;
+      
+      if (!userData) {
+        console.log(`User not found by username "${username}", trying direct creator query...`);
+        
+        // Try to find a creator with display_name matching the username
+        const { data: creatorByDisplayName, error: displayNameError } = await supabase
+          .from('creators')
+          .select('*')
+          .ilike('display_name', username)
+          .maybeSingle();
+          
+        if (creatorByDisplayName) {
+          console.log("Found creator by display_name:", creatorByDisplayName);
+          userId = creatorByDisplayName.user_id;
+        } else {
+          // As a last resort, try to find the creator directly by user_id
+          const { data: creatorDirectById, error: directIdError } = await supabase
+            .from('creators')
+            .select('*')
+            .eq('user_id', username)
+            .maybeSingle();
+            
+          if (creatorDirectById) {
+            console.log("Found creator directly by user_id:", creatorDirectById);
+            userId = creatorDirectById.user_id;
+          } else {
+            console.error('Creator not found by any method:', username);
+            throw new Error(`Creator "${username}" not found`);
+          }
+        }
+      } else {
+        console.log("Found user by username:", userData);
+        userId = userData.id;
       }
       
-      console.log("Found user by username:", userData);
-      
-      // Fetch creator's additional details from creators table
+      // Now fetch the creator's details from creators table using the user ID
       const { data: creatorInfoData, error: creatorInfoError } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', userData.id)
+        .eq('user_id', userId)
         .single();
       
       if (creatorInfoError) {
         console.error('Error fetching creator info:', creatorInfoError);
-        // Continue anyway as we may still have basic user data
+        throw new Error(`Creator info for user ID "${userId}" not found`);
       }
       
-      // Merge the data and prioritize display_name
+      // Get user information for this creator
+      const { data: userInfo, error: userInfoError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      // Merge the data
       const creatorProfile = {
-        ...userData,
         ...creatorInfoData,
-        fullName: creatorInfoData?.display_name || userData.username,
-        display_name: creatorInfoData?.display_name || null,
+        ...userInfo,
+        fullName: creatorInfoData?.display_name || userInfo?.username,
+        display_name: creatorInfoData?.display_name || userInfo?.username,
+        username: userInfo?.username || `user-${userId.substring(0, 8)}`,
+        avatar_url: userInfo?.profile_picture || null,
       } as CreatorProfile;
       
       console.log("Constructed creator profile:", creatorProfile);
@@ -68,7 +106,7 @@ export function useCreatorPage(username?: string) {
     },
     enabled: !!username,
     retry: 2,
-    staleTime: 60000 // Cache results for 1 minute
+    staleTime: 30000 // Cache results for 30 seconds
   });
   
   // Fetch creator's posts

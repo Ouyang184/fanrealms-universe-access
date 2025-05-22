@@ -37,9 +37,10 @@ export function SearchBar() {
     setOpen(true);
   };
 
-  const handleCreatorSelect = (username: string) => {
-    if (!username) {
-      console.error("Invalid username selected:", username);
+  const handleCreatorSelect = (userId: string) => {
+    const creator = creators.find(c => c.user_id === userId);
+    if (!creator) {
+      console.error("Creator not found with ID:", userId);
       toast({
         title: "Error",
         description: "Couldn't find that creator profile",
@@ -48,11 +49,13 @@ export function SearchBar() {
       return;
     }
     
-    console.log(`Header SearchBar: Navigating to creator profile for: "${username}"`);
-    setOpen(false);
+    // Use username if available, otherwise use user_id
+    const identifier = creator.username || creator.user_id;
+    console.log(`Header SearchBar: Navigating to creator profile for: "${identifier}" (${creator.display_name || 'No Display Name'})`);
     
-    // Navigate to the creator profile page
-    navigate(`/creator/${username}`);
+    setOpen(false);
+    setSearchTerm(""); // Clear search term
+    navigate(`/creator/${identifier}`);
   };
 
   const handleSearchInput = (value: string) => {
@@ -85,19 +88,19 @@ export function SearchBar() {
           <CommandGroup heading="Creators">
             {creators.map((creator) => (
               <CommandItem
-                key={creator.id}
-                onSelect={() => handleCreatorSelect(creator.username || '')}
+                key={creator.user_id}
+                onSelect={() => handleCreatorSelect(creator.user_id)}
                 className="flex items-center gap-2 p-2 cursor-pointer"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={creator.avatar_url || undefined} />
                   <AvatarFallback>
-                    {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
+                    {(creator.display_name || 'C')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
-                  {creator.username && creator.display_name && creator.display_name !== creator.username && (
+                  <span className="font-medium">{creator.display_name || 'Unknown Creator'}</span>
+                  {creator.username && (
                     <span className="text-xs text-muted-foreground">@{creator.username}</span>
                   )}
                 </div>
@@ -108,4 +111,4 @@ export function SearchBar() {
       </CommandDialog>
     </div>
   );
-}
+};
