@@ -41,7 +41,13 @@ export function SocialLinks({
 }: SocialLinksProps) {
   const { links, isLoading } = useSocialLinks(creatorId);
   
-  if (isLoading || links.length === 0) {
+  console.log("SocialLinks component rendering with creatorId:", creatorId, "links:", links);
+  
+  if (isLoading) {
+    return <div className="text-muted-foreground text-sm">Loading links...</div>;
+  }
+  
+  if (!links || links.length === 0) {
     return null;
   }
   

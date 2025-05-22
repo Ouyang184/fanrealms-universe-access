@@ -104,7 +104,7 @@ const CreatorPage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="posts" className="pt-6">
-            <CreatorPosts posts={posts} />
+            <CreatorPosts posts={posts || []} />
           </TabsContent>
           
           <TabsContent value="membership" className="pt-6">

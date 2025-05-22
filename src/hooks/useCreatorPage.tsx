@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -129,10 +130,13 @@ export function useCreatorPage(identifier?: string) {
         } as CreatorProfile;
       }
       
-      // If nothing found, try to find creator by raw "user-id" format
+      // Strategy 4: If nothing found, try to check if the original identifier with "user-" prefix
+      // matches any abbreviated user IDs in the database
       if (identifier && identifier.startsWith('user-')) {
         console.log("Trying to find creator with original user- prefix:", identifier);
-        const { data: creators, error: rawIdError } = await supabase
+        
+        // Get all creators and check if any match the formatted ID pattern
+        const { data: allCreators, error: allCreatorsError } = await supabase
           .from('creators')
           .select(`
             *,
@@ -143,24 +147,26 @@ export function useCreatorPage(identifier?: string) {
               profile_picture
             )
           `)
-          .limit(100); // Get all creators and filter client-side
+          .limit(100);
           
-        if (creators && creators.length > 0) {
-          // Find by constructing the "user-id" format and comparing
-          const creator = creators.find(c => 
-            `user-${c.user_id.substring(0, 8)}` === identifier
-          );
+        if (allCreators && allCreators.length > 0) {
+          // Find by comparing the abbreviated user ID format
+          const matchingCreator = allCreators.find(c => {
+            const shortId = c.user_id ? `user-${c.user_id.substring(0, 8)}` : null;
+            return shortId === identifier;
+          });
           
-          if (creator) {
-            console.log("Found creator by prefix match:", creator);
+          if (matchingCreator) {
+            console.log("Found creator by abbreviated ID:", matchingCreator);
+            
             return {
-              ...creator,
-              id: creator.user_id,
-              username: creator.users?.username || `user-${creator.user_id.substring(0, 8)}`,
-              email: creator.users?.email || "",
-              fullName: creator.display_name || creator.users?.username,
-              display_name: creator.display_name || creator.users?.username,
-              avatar_url: creator.users?.profile_picture || null,
+              ...matchingCreator,
+              id: matchingCreator.user_id,
+              username: matchingCreator.users?.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
+              email: matchingCreator.users?.email || "",
+              fullName: matchingCreator.display_name || matchingCreator.users?.username,
+              display_name: matchingCreator.display_name || matchingCreator.users?.username,
+              avatar_url: matchingCreator.users?.profile_picture || null,
             } as CreatorProfile;
           }
         }
@@ -169,14 +175,6 @@ export function useCreatorPage(identifier?: string) {
       // If we've exhausted all lookup methods and still can't find the creator
       console.error('Creator not found by any lookup method:', identifier);
       
-      // Instead of throwing an error, inform the user through toast and redirect
-      toast({
-        title: "Creator not found",
-        description: `We couldn't find a creator with the identifier: ${identifier}`,
-        variant: "destructive"
-      });
-      
-      // Return null instead of throwing to prevent error loops
       return null;
     },
     enabled: !!identifier,
@@ -281,14 +279,14 @@ export function useCreatorPage(identifier?: string) {
   
   return {
     creator,
-    posts: [],
+    posts,
     activeTab,
     setActiveTab,
     isLoadingCreator,
-    isLoadingPosts: false,
-    isFollowing: false,
-    followLoading: false,
-    handleFollowToggle: async () => {},
-    refreshCreatorData: refetchCreator
+    isLoadingPosts,
+    isFollowing,
+    followLoading,
+    handleFollowToggle,
+    refreshCreatorData
   };
 }

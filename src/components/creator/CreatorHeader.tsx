@@ -22,6 +22,9 @@ export function CreatorHeader({
   const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
+  
+  // Make sure we use the correct user_id as the creator ID for fetching social links
+  const creatorId = creator.user_id || creator.id;
 
   return (
     <div className="relative">
@@ -44,9 +47,9 @@ export function CreatorHeader({
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
           <h1 className="text-3xl font-bold">{displayName}</h1>
           
-          {creator.id && (
+          {creatorId && (
             <div className="mt-2">
-              <SocialLinks creatorId={creator.id} />
+              <SocialLinks creatorId={creatorId} />
             </div>
           )}
         </div>
