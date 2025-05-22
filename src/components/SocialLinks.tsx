@@ -1,6 +1,5 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
 import { 
   Twitter, 
   Instagram, 
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useSocialLinks, SocialLink } from "@/hooks/useSocialLinks";
 
 interface SocialLinksProps {
-  creatorId: string;
+  creatorId?: string;
   className?: string;
   variant?: "default" | "ghost" | "outline";
   size?: "default" | "sm" | "icon";
@@ -41,28 +40,43 @@ export function SocialLinks({
 }: SocialLinksProps) {
   const { links, isLoading } = useSocialLinks(creatorId);
   
-  console.log("SocialLinks component rendering with creatorId:", creatorId, "links:", links);
+  useEffect(() => {
+    console.log("SocialLinks component rendering with creatorId:", creatorId);
+    console.log("Links available:", links);
+  }, [creatorId, links]);
+  
+  if (!creatorId) {
+    console.warn("SocialLinks: No creatorId provided");
+    return null;
+  }
   
   if (isLoading) {
     return <div className="text-muted-foreground text-sm">Loading links...</div>;
   }
   
   if (!links || links.length === 0) {
+    console.log(`No links found for creator ID: ${creatorId}`);
     return null;
   }
   
   const getIconForLink = (link: SocialLink) => {
-    if (!link.label) return <Globe className="h-4 w-4" />;
+    if (!link.label && !link.url) return <Globe className="h-4 w-4" />;
     
-    const label = link.label.toLowerCase();
+    const label = link.label?.toLowerCase() || '';
+    const url = link.url.toLowerCase();
+    
+    // Check for LinkedIn specifically
+    if (label.includes('linkedin') || url.includes('linkedin')) {
+      return <Linkedin className="h-4 w-4" />;
+    }
     
     for (const [key, icon] of Object.entries(ICON_MAP)) {
-      if (label.includes(key) || link.url.includes(key)) {
+      if (label.includes(key) || url.includes(key)) {
         return icon;
       }
     }
     
-    if (link.url.includes("mailto:")) {
+    if (url.includes("mailto:")) {
       return <AtSign className="h-4 w-4" />;
     }
     

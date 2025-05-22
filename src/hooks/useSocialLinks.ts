@@ -1,7 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { toast } from "@/hooks/use-toast";
 
 export interface SocialLink {
   id: string;
@@ -11,8 +12,13 @@ export interface SocialLink {
   position: number | null;
 }
 
-export function useSocialLinks(creatorId: string) {
+export function useSocialLinks(creatorId: string | undefined) {
   const [isError, setIsError] = useState(false);
+
+  // Add logging for better debugging
+  useEffect(() => {
+    console.log(`useSocialLinks initialized with creatorId: ${creatorId}`);
+  }, [creatorId]);
 
   const { 
     data: links = [], 
@@ -23,7 +29,12 @@ export function useSocialLinks(creatorId: string) {
     queryFn: async () => {
       setIsError(false);
       
-      if (!creatorId) return [];
+      if (!creatorId) {
+        console.log("No creator ID provided to useSocialLinks");
+        return [];
+      }
+      
+      console.log(`Fetching social links for creator ID: ${creatorId}`);
       
       try {
         const { data, error } = await supabase
@@ -38,6 +49,7 @@ export function useSocialLinks(creatorId: string) {
           return [];
         }
         
+        console.log(`Found ${data?.length || 0} social links for creator ${creatorId}:`, data);
         return data as SocialLink[];
       } catch (error) {
         console.error('Error in useSocialLinks:', error);

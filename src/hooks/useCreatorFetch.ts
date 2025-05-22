@@ -34,19 +34,39 @@ export function useCreatorFetch(identifier?: string) {
       
       // Strategy 1: Try to find by username
       let creatorProfile = await findByUsername(cleaned);
-      if (creatorProfile) return creatorProfile;
+      if (creatorProfile) {
+        console.log("Found creator by username:", creatorProfile);
+        // Make sure id is set (needed for social links)
+        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
+        return creatorProfile;
+      }
       
       // Strategy 2: Try to find creator directly by user_id
       creatorProfile = await findByUserId(cleaned);
-      if (creatorProfile) return creatorProfile;
+      if (creatorProfile) {
+        console.log("Found creator by user_id:", creatorProfile);
+        // Make sure id is set (needed for social links)
+        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
+        return creatorProfile;
+      }
       
       // Strategy 3: Try to find by display_name
       creatorProfile = await findByDisplayName(cleaned);
-      if (creatorProfile) return creatorProfile;
+      if (creatorProfile) {
+        console.log("Found creator by display_name:", creatorProfile);
+        // Make sure id is set (needed for social links)
+        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
+        return creatorProfile;
+      }
       
       // Strategy 4: Try to find by abbreviated user ID
       creatorProfile = await findByAbbreviatedUserId(identifier);
-      if (creatorProfile) return creatorProfile;
+      if (creatorProfile) {
+        console.log("Found creator by abbreviated user ID:", creatorProfile);
+        // Make sure id is set (needed for social links)
+        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
+        return creatorProfile;
+      }
       
       // If we've exhausted all lookup methods and still can't find the creator
       console.error('Creator not found by any lookup method:', identifier);
@@ -64,14 +84,15 @@ export function useCreatorFetch(identifier?: string) {
     isLoading: isLoadingPosts,
     refetch: refetchPosts
   } = useQuery({
-    queryKey: ['creatorPosts', creator?.id],
+    queryKey: ['creatorPosts', creator?.id || creator?.user_id],
     queryFn: async () => {
-      if (!creator?.id) {
+      const creatorId = creator?.id || creator?.user_id;
+      if (!creatorId) {
         console.log("No creator ID available for fetching posts");
         return [];
       }
       
-      console.log(`Fetching posts for creator ID: ${creator.id}`);
+      console.log(`Fetching posts for creator ID: ${creatorId}`);
       
       const { data: postsData, error } = await supabase
         .from('posts')
@@ -82,7 +103,7 @@ export function useCreatorFetch(identifier?: string) {
             profile_picture
           )
         `)
-        .eq('author_id', creator.id)
+        .eq('author_id', creatorId)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -102,7 +123,7 @@ export function useCreatorFetch(identifier?: string) {
         date: formatRelativeDate(post.created_at)
       }));
     },
-    enabled: !!creator?.id,
+    enabled: !!(creator?.id || creator?.user_id),
     staleTime: 60000 // Cache results for 1 minute
   });
 

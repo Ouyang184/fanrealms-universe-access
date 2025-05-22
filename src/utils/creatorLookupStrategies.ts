@@ -39,7 +39,8 @@ export const findByUsername = async (cleanedIdentifier?: string) => {
       return {
         ...creatorData,
         ...userByUsername,
-        id: userId,
+        id: creatorData.id, // Use creator table ID (needed for social links)
+        user_id: userId,    // Store user_id separately
         fullName: creatorData.display_name || userByUsername.username,
         display_name: creatorData.display_name || userByUsername.username,
         username: userByUsername.username,
@@ -76,7 +77,8 @@ export const findByUserId = async (cleanedIdentifier?: string) => {
     
     return {
       ...creatorByUserId,
-      id: creatorByUserId.user_id,
+      id: creatorByUserId.id,      // Primary key from creators table
+      user_id: creatorByUserId.user_id, // Keep user_id from auth
       username: creatorByUserId.users.username || `user-${creatorByUserId.user_id.substring(0, 8)}`,
       email: creatorByUserId.users.email || "",
       fullName: creatorByUserId.display_name || creatorByUserId.users.username,
@@ -114,7 +116,8 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
     
     return {
       ...creatorByDisplayName,
-      id: creatorByDisplayName.user_id,
+      id: creatorByDisplayName.id,         // Primary key from creators table
+      user_id: creatorByDisplayName.user_id,   // Keep user_id from auth
       username: creatorByDisplayName.users?.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
       email: creatorByDisplayName.users?.email || "",
       fullName: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
@@ -158,7 +161,8 @@ export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
       
       return {
         ...matchingCreator,
-        id: matchingCreator.user_id,
+        id: matchingCreator.id,          // Primary key from creators table
+        user_id: matchingCreator.user_id,    // Keep user_id from auth
         username: matchingCreator.users?.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
         email: matchingCreator.users?.email || "",
         fullName: matchingCreator.display_name || matchingCreator.users?.username,
