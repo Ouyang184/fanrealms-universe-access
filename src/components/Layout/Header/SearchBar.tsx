@@ -1,7 +1,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import {
@@ -13,23 +13,47 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/hooks/use-toast";
 
 export function SearchBar() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const { data: creators = [] } = useCreators(searchTerm);
+  const { data: creators = [], isLoading } = useCreators(searchTerm);
+
+  // Add keyboard shortcut to open search
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const handleOpenSearch = () => {
     setOpen(true);
   };
 
   const handleCreatorSelect = (username: string) => {
-    if (!username) return; // Safety check to prevent navigation to invalid URLs
+    if (!username) {
+      console.error("Invalid username selected:", username);
+      toast({
+        title: "Error",
+        description: "Couldn't find that creator profile",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log(`Search bar: Navigating to creator profile for: "${username}"`);
     setOpen(false);
-    // Ensure we redirect to the correct URL
-    navigate(`/creator/${username}`);
-    console.log('Navigating to creator profile:', username);
+    
+    // Ensure we redirect to the correct URL with a clean username
+    const cleanUsername = username.trim();
+    navigate(`/creator/${cleanUsername}`);
   };
 
   const handleSearchInput = (value: string) => {
@@ -56,7 +80,9 @@ export function SearchBar() {
           onValueChange={handleSearchInput}
         />
         <CommandList>
-          <CommandEmpty>No creators found.</CommandEmpty>
+          <CommandEmpty>
+            {isLoading ? "Searching..." : "No creators found."}
+          </CommandEmpty>
           <CommandGroup heading="Creators">
             {creators.map((creator) => (
               <CommandItem
@@ -70,7 +96,12 @@ export function SearchBar() {
                     {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                  {creator.username && creator.display_name && creator.display_name !== creator.username && (
+                    <span className="text-xs text-muted-foreground">@{creator.username}</span>
+                  )}
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

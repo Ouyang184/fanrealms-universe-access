@@ -12,14 +12,22 @@ export function useCreatorPage(username?: string) {
   const [activeTab, setActiveTab] = useState("posts");
   const { user } = useAuth();
   
+  console.log("useCreatorPage called with username:", username);
+  
   // Fetch creator profile by username
   const {
     data: creator,
     isLoading: isLoadingCreator,
+    error: creatorError,
   } = useQuery({
     queryKey: ['creatorProfile', username],
     queryFn: async () => {
-      if (!username) return null;
+      if (!username) {
+        console.log("No username provided to useCreatorPage");
+        return null;
+      }
+      
+      console.log(`Fetching creator profile for username: "${username}"`);
       
       const { data: creatorData, error: creatorError } = await supabase
         .from('users')
@@ -28,14 +36,11 @@ export function useCreatorPage(username?: string) {
         .single();
       
       if (creatorError || !creatorData) {
-        console.error('Error fetching creator:', creatorError);
-        toast({
-          title: "Error",
-          description: "Failed to load creator profile",
-          variant: "destructive"
-        });
+        console.error('Error fetching creator by username:', creatorError);
         return null;
       }
+      
+      console.log("Found user by username:", creatorData);
       
       // Fetch creator's additional details from creators table
       const { data: creatorInfoData, error: creatorInfoError } = await supabase
@@ -46,6 +51,7 @@ export function useCreatorPage(username?: string) {
       
       if (creatorInfoError) {
         console.error('Error fetching creator info:', creatorInfoError);
+        // Continue anyway as we may still have basic user data
       }
       
       // Merge the data and prioritize display_name
@@ -57,7 +63,9 @@ export function useCreatorPage(username?: string) {
         display_name: creatorInfoData?.display_name || null
       } as CreatorProfile;
     },
-    enabled: !!username
+    enabled: !!username,
+    retry: 1,
+    staleTime: 60000 // Cache results for 1 minute
   });
   
   // Fetch creator's posts
@@ -67,7 +75,12 @@ export function useCreatorPage(username?: string) {
   } = useQuery({
     queryKey: ['creatorPosts', creator?.id],
     queryFn: async () => {
-      if (!creator?.id) return [];
+      if (!creator?.id) {
+        console.log("No creator ID available for fetching posts");
+        return [];
+      }
+      
+      console.log(`Fetching posts for creator ID: ${creator.id}`);
       
       const { data: postsData, error } = await supabase
         .from('posts')
@@ -98,13 +111,14 @@ export function useCreatorPage(username?: string) {
         date: formatRelativeDate(post.created_at)
       }));
     },
-    enabled: !!creator?.id
+    enabled: !!creator?.id,
+    staleTime: 60000 // Cache results for 1 minute
   });
   
   // Handle following/unfollowing functionality
   const { 
     isFollowing, 
-    isLoading, 
+    isLoading: followStateLoading, 
     setIsFollowing,
     checkFollowStatus,
     followCreator,
@@ -131,6 +145,12 @@ export function useCreatorPage(username?: string) {
     }
   };
   
+  const followLoading = followStateLoading;
+  
+  if (creatorError) {
+    console.error("Error in useCreatorPage:", creatorError);
+  }
+  
   return {
     creator,
     posts,
@@ -139,7 +159,7 @@ export function useCreatorPage(username?: string) {
     isLoadingCreator,
     isLoadingPosts,
     isFollowing,
-    followLoading: isLoading, // Renamed from isLoading to followLoading for clarity
+    followLoading,
     handleFollowToggle
   };
 }

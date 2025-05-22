@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useCreators } from '@/hooks/useCreators';
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 export function SearchBar() {
   const [open, setOpen] = useState(false);
@@ -32,11 +33,22 @@ export function SearchBar() {
   }, []);
 
   const handleCreatorSelect = (username: string) => {
-    if (!username) return; // Safety check to prevent navigation to invalid URLs
+    if (!username) {
+      console.error("Invalid username selected:", username);
+      toast({
+        title: "Error",
+        description: "Couldn't find that creator profile",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log(`Search component: Navigating to creator profile for: "${username}"`);
     setOpen(false);
-    // Ensure we redirect to the correct URL
-    navigate(`/creator/${username}`);
-    console.log('Navigating to creator profile:', username);
+    
+    // Ensure we redirect to the correct URL with a clean username
+    const cleanUsername = username.trim();
+    navigate(`/creator/${cleanUsername}`);
   };
 
   const handleSearchInput = (value: string) => {
@@ -63,7 +75,9 @@ export function SearchBar() {
           onValueChange={handleSearchInput}
         />
         <CommandList>
-          <CommandEmpty>No creators found.</CommandEmpty>
+          <CommandEmpty>
+            {isLoading ? "Searching..." : "No creators found."}
+          </CommandEmpty>
           <CommandGroup heading="Creators">
             {creators.map((creator) => (
               <CommandItem
@@ -77,7 +91,12 @@ export function SearchBar() {
                     {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                <div className="flex flex-col">
+                  <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                  {creator.username && creator.display_name && creator.display_name !== creator.username && (
+                    <span className="text-xs text-muted-foreground">@{creator.username}</span>
+                  )}
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>

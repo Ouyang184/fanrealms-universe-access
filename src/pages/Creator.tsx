@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,10 +10,25 @@ import { CreatorHeader } from "@/components/creator/CreatorHeader";
 import { CreatorPosts } from "@/components/creator/CreatorPosts";
 import { CreatorMembership } from "@/components/creator/CreatorMembership";
 import { CreatorAbout } from "@/components/creator/CreatorAbout";
+import { toast } from "@/hooks/use-toast";
 
 const CreatorPage: React.FC = () => {
   // Get the username from the URL parameter
   const { id: username } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    console.log(`Creator page mounted with username param: "${username}"`);
+    if (!username) {
+      toast({
+        title: "Error",
+        description: "Creator username is missing",
+        variant: "destructive"
+      });
+      navigate("/explore");
+    }
+  }, [username, navigate]);
+  
   const {
     creator,
     posts,
@@ -26,13 +41,14 @@ const CreatorPage: React.FC = () => {
     handleFollowToggle
   } = useCreatorPage(username);
   
-  console.log('Creator Page:', { username, creator });
+  console.log('Creator Page:', { username, creator, isLoading: isLoadingCreator });
   
   if (isLoadingCreator || isLoadingPosts) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center h-[60vh]">
           <LoadingSpinner />
+          <span className="ml-2">Loading creator profile...</span>
         </div>
       </MainLayout>
     );
@@ -43,7 +59,9 @@ const CreatorPage: React.FC = () => {
       <MainLayout>
         <div className="max-w-3xl mx-auto text-center py-20">
           <h2 className="text-2xl font-bold mb-4">Creator Not Found</h2>
-          <p className="text-muted-foreground mb-6">We couldn't find a creator with this username: {username}</p>
+          <p className="text-muted-foreground mb-6">
+            We couldn't find a creator with this username: {username}
+          </p>
           <Button asChild>
             <a href="/explore">Explore Creators</a>
           </Button>
