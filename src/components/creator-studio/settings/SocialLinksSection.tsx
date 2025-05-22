@@ -108,6 +108,14 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
 
     setIsSaving(true);
     try {
+      // Fix for GitHub issue: First, remove the isNew property from all links
+      // and ensure all links have creator_id set correctly
+      const linksToSave = links.map(({ isNew, ...link }) => ({
+        ...link,
+        creator_id: creatorId,
+        // Important: Don't include id for new links, let the database generate it
+      }));
+
       // Handle deletions (links that were in DB but removed from state)
       const { data: existingLinks, error: fetchError } = await supabase
         .from("creator_links")
@@ -131,17 +139,25 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
         if (deleteError) throw deleteError;
       }
 
-      // Upsert all current links
-      const { error: upsertError } = await supabase
-        .from("creator_links")
-        .upsert(
-          links.map(({ isNew, ...link }) => ({
-            ...link,
-            creator_id: creatorId,
-          }))
-        );
-
-      if (upsertError) throw upsertError;
+      // First, insert new links (without IDs)
+      const newLinks = linksToSave.filter(link => !link.id);
+      if (newLinks.length > 0) {
+        const { error: insertError } = await supabase
+          .from("creator_links")
+          .insert(newLinks);
+          
+        if (insertError) throw insertError;
+      }
+      
+      // Then, update existing links
+      const existingLinksToUpdate = linksToSave.filter(link => link.id);
+      if (existingLinksToUpdate.length > 0) {
+        const { error: updateError } = await supabase
+          .from("creator_links")
+          .upsert(existingLinksToUpdate);
+          
+        if (updateError) throw updateError;
+      }
 
       toast({
         title: "Success",
@@ -154,7 +170,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       console.error("Error saving social links:", error);
       toast({
         title: "Error",
-        description: "Failed to save social links",
+        description: error.message || "Failed to save social links",
         variant: "destructive",
       });
     } finally {
@@ -163,8 +179,10 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
   };
 
   const isValidUrl = (url: string) => {
+    // Add default http:// prefix if no protocol is specified
+    const urlToCheck = url.match(/^https?:\/\//) ? url : `https://${url}`;
     try {
-      new URL(url);
+      new URL(urlToCheck);
       return true;
     } catch {
       return false;
@@ -232,6 +250,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
                   size="sm"
                   onClick={saveLinks}
                   disabled={isSaving}
+                  className={isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}
                 >
                   {isSaving ? "Saving..." : "Save Links"}
                 </Button>

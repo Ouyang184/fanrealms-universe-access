@@ -67,9 +67,13 @@ export function SocialLinks({
     const label = link.label?.toLowerCase() || '';
     const url = link.url.toLowerCase();
     
-    // Check for LinkedIn specifically
+    // Check for specific platforms
     if (label.includes('linkedin') || url.includes('linkedin')) {
       return <Linkedin className="h-4 w-4" />;
+    }
+    
+    if (label.includes('github') || url.includes('github')) {
+      return <Github className="h-4 w-4" />;
     }
     
     for (const [key, icon] of Object.entries(ICON_MAP)) {
