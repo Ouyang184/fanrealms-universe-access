@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -102,7 +102,34 @@ export function useCreatorPage(username?: string) {
   });
   
   // Handle following/unfollowing functionality
-  const { isFollowing, followLoading, handleFollowToggle } = useFollow(creator?.id, user?.id);
+  const { 
+    isFollowing, 
+    isLoading, 
+    setIsFollowing,
+    checkFollowStatus,
+    followCreator,
+    unfollowCreator
+  } = useFollow();
+
+  // Initialize follow status 
+  useEffect(() => {
+    if (creator?.id && user?.id) {
+      checkFollowStatus(creator.id).then(status => {
+        setIsFollowing(status);
+      });
+    }
+  }, [creator?.id, user?.id, checkFollowStatus, setIsFollowing]);
+
+  // Handle follow toggle function
+  const handleFollowToggle = async () => {
+    if (!creator?.id) return;
+    
+    if (isFollowing) {
+      await unfollowCreator(creator.id);
+    } else {
+      await followCreator(creator.id);
+    }
+  };
   
   return {
     creator,
@@ -112,7 +139,7 @@ export function useCreatorPage(username?: string) {
     isLoadingCreator,
     isLoadingPosts,
     isFollowing,
-    followLoading,
+    followLoading: isLoading, // Renamed from isLoading to followLoading for clarity
     handleFollowToggle
   };
 }
