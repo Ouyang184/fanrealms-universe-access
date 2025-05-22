@@ -1,235 +1,25 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFollow } from "@/hooks/useFollow";
-import { toast } from "@/hooks/use-toast";
-import { CreatorProfile } from "@/types";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { useNavigate } from "react-router-dom";
+import { useCreatorFetch } from "@/hooks/useCreatorFetch";
 
 export function useCreatorPage(identifier?: string) {
   const [activeTab, setActiveTab] = useState("posts");
   const { user } = useAuth();
-  const navigate = useNavigate();
   
   console.log("useCreatorPage called with identifier:", identifier);
   
-  // Clean the identifier - remove "user-" prefix if present
-  const cleanIdentifier = identifier?.startsWith('user-') 
-    ? identifier.substring(5) // Remove "user-" prefix
-    : identifier;
-  
-  // Fetch creator profile by username or id
+  // Use the refactored creator fetching hook
   const {
-    data: creator,
-    isLoading: isLoadingCreator,
-    error: creatorError,
-    refetch: refetchCreator
-  } = useQuery({
-    queryKey: ['creatorProfile', cleanIdentifier],
-    queryFn: async () => {
-      if (!cleanIdentifier) {
-        console.log("No identifier provided to useCreatorPage");
-        return null;
-      }
-      
-      console.log(`Fetching creator profile for cleaned identifier: "${cleanIdentifier}"`);
-      
-      // Strategy 1: Try to find by username
-      const { data: userByUsername, error: usernameError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', cleanIdentifier)
-        .maybeSingle();
-      
-      if (userByUsername) {
-        console.log("Found user by username:", userByUsername);
-        const userId = userByUsername.id;
-        
-        // Get creator info for this user
-        const { data: creatorData, error: creatorError } = await supabase
-          .from('creators')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
-          
-        if (creatorData) {
-          console.log("Found creator info for username:", creatorData);
-          
-          // Build and return the combined profile
-          return {
-            ...creatorData,
-            ...userByUsername,
-            id: userId,
-            fullName: creatorData.display_name || userByUsername.username,
-            display_name: creatorData.display_name || userByUsername.username,
-            username: userByUsername.username,
-            avatar_url: userByUsername.profile_picture || null,
-          } as CreatorProfile;
-        }
-      }
-      
-      // Strategy 2: Try to find creator directly by user_id (using the cleaned identifier)
-      const { data: creatorByUserId, error: userIdError } = await supabase
-        .from('creators')
-        .select(`
-          *,
-          users!creators_user_id_fkey (
-            id,
-            username,
-            email,
-            profile_picture
-          )
-        `)
-        .eq('user_id', cleanIdentifier)
-        .maybeSingle();
-        
-      if (creatorByUserId && creatorByUserId.users) {
-        console.log("Found creator by user_id:", creatorByUserId);
-        
-        return {
-          ...creatorByUserId,
-          id: creatorByUserId.user_id,
-          username: creatorByUserId.users.username || `user-${creatorByUserId.user_id.substring(0, 8)}`,
-          email: creatorByUserId.users.email || "",
-          fullName: creatorByUserId.display_name || creatorByUserId.users.username,
-          display_name: creatorByUserId.display_name || creatorByUserId.users.username,
-          avatar_url: creatorByUserId.users.profile_picture || null,
-        } as CreatorProfile;
-      }
-      
-      // Strategy 3: Try to find by display_name
-      const { data: creatorsWithDisplayName, error: displayNameError } = await supabase
-        .from('creators')
-        .select(`
-          *,
-          users!creators_user_id_fkey (
-            id,
-            username,
-            email,
-            profile_picture
-          )
-        `)
-        .ilike('display_name', cleanIdentifier)
-        .limit(1);
-        
-      if (creatorsWithDisplayName && creatorsWithDisplayName.length > 0) {
-        const creatorByDisplayName = creatorsWithDisplayName[0];
-        console.log("Found creator by display_name:", creatorByDisplayName);
-        
-        return {
-          ...creatorByDisplayName,
-          id: creatorByDisplayName.user_id,
-          username: creatorByDisplayName.users?.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
-          email: creatorByDisplayName.users?.email || "",
-          fullName: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
-          display_name: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
-          avatar_url: creatorByDisplayName.users?.profile_picture || null,
-        } as CreatorProfile;
-      }
-      
-      // Strategy 4: If nothing found, try to check if the original identifier with "user-" prefix
-      // matches any abbreviated user IDs in the database
-      if (identifier && identifier.startsWith('user-')) {
-        console.log("Trying to find creator with original user- prefix:", identifier);
-        
-        // Get all creators and check if any match the formatted ID pattern
-        const { data: allCreators, error: allCreatorsError } = await supabase
-          .from('creators')
-          .select(`
-            *,
-            users!creators_user_id_fkey (
-              id,
-              username,
-              email,
-              profile_picture
-            )
-          `)
-          .limit(100);
-          
-        if (allCreators && allCreators.length > 0) {
-          // Find by comparing the abbreviated user ID format
-          const matchingCreator = allCreators.find(c => {
-            const shortId = c.user_id ? `user-${c.user_id.substring(0, 8)}` : null;
-            return shortId === identifier;
-          });
-          
-          if (matchingCreator) {
-            console.log("Found creator by abbreviated ID:", matchingCreator);
-            
-            return {
-              ...matchingCreator,
-              id: matchingCreator.user_id,
-              username: matchingCreator.users?.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
-              email: matchingCreator.users?.email || "",
-              fullName: matchingCreator.display_name || matchingCreator.users?.username,
-              display_name: matchingCreator.display_name || matchingCreator.users?.username,
-              avatar_url: matchingCreator.users?.profile_picture || null,
-            } as CreatorProfile;
-          }
-        }
-      }
-      
-      // If we've exhausted all lookup methods and still can't find the creator
-      console.error('Creator not found by any lookup method:', identifier);
-      
-      return null;
-    },
-    enabled: !!identifier,
-    retry: 1,
-    staleTime: 30000, // Cache results for 30 seconds
-    refetchOnWindowFocus: false
-  });
-  
-  // Fetch creator's posts
-  const {
-    data: posts = [],
-    isLoading: isLoadingPosts,
-    refetch: refetchPosts
-  } = useQuery({
-    queryKey: ['creatorPosts', creator?.id],
-    queryFn: async () => {
-      if (!creator?.id) {
-        console.log("No creator ID available for fetching posts");
-        return [];
-      }
-      
-      console.log(`Fetching posts for creator ID: ${creator.id}`);
-      
-      const { data: postsData, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          users:author_id (
-            username,
-            profile_picture
-          )
-        `)
-        .eq('author_id', creator.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching posts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load posts",
-          variant: "destructive"
-        });
-        return [];
-      }
-      
-      return postsData.map((post: any) => ({
-        ...post,
-        authorName: creator.display_name || post.users?.username || 'Unknown', 
-        authorAvatar: post.users?.profile_picture,
-        date: formatRelativeDate(post.created_at)
-      }));
-    },
-    enabled: !!creator?.id,
-    staleTime: 60000 // Cache results for 1 minute
-  });
+    creator,
+    posts,
+    isLoadingCreator,
+    isLoadingPosts,
+    creatorError,
+    refetchCreator,
+    refetchPosts
+  } = useCreatorFetch(identifier);
   
   // Handle following/unfollowing functionality
   const { 
