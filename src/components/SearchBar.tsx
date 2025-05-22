@@ -63,10 +63,10 @@ export function SearchBar() {
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={creator.avatar_url || undefined} />
                   <AvatarFallback>
-                    {creator.username?.[0]?.toUpperCase() || 'C'}
+                    {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span>{creator.username || 'Unknown Creator'}</span>
+                <span>{creator.display_name || creator.username || 'Unknown Creator'}</span>
               </CommandItem>
             ))}
           </CommandGroup>

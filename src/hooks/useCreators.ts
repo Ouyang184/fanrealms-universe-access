@@ -30,6 +30,7 @@ export const useCreators = () => {
           username: creator.users?.username,
           email: creator.users?.email,
           avatar_url: creator.users?.profile_picture,
+          display_name: creator.display_name || creator.users?.username,
           banner_url: creator.banner_url || null, // Ensure banner_url is always defined
         }));
 
