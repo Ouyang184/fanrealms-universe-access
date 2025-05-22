@@ -1,13 +1,321 @@
-import { MainLayout } from "@/components/Layout/MainLayout"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search } from "lucide-react"
-import { Download as DownloadIcon } from "lucide-react"
+
+import { useState } from "react";
+import { MainLayout } from "@/components/Layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search, Lock } from "lucide-react";
+import { Download as DownloadIcon } from "lucide-react";
+import { ContentPreviewModal } from "@/components/content/ContentPreviewModal";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
+  const [selectedContent, setSelectedContent] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  // Sample content items for the "For You" tab
+  const forYouContent = [
+    {
+      id: 1,
+      title: "Character Design Masterclass",
+      description: "Learn advanced character design techniques with professional illustrations and step-by-step guides.",
+      thumbnail: "/lovable-uploads/leaves-image.jpeg",
+      creator: {
+        id: 1,
+        name: "ArtistAlley",
+        avatar: "/placeholder.svg?height=50&width=50&text=AA",
+      },
+      type: "video",
+      date: "2 days ago",
+      preview: true,
+    },
+    {
+      id: 2,
+      title: "Advanced AI Behavior Trees",
+      description: "Create complex enemy AI behaviors using behavior trees in Unity. This tutorial covers decision making and state management.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Game+AI",
+      creator: {
+        id: 2,
+        name: "GameDev Masters",
+        avatar: "/placeholder.svg?height=50&width=50&text=GM",
+      },
+      type: "article",
+      date: "Yesterday",
+      preview: false,
+    },
+    {
+      id: 3,
+      title: "June Sample Pack: Ambient Textures",
+      description: "This month's sample pack includes 50+ ambient textures, drones, and atmospheric sounds for immersive soundscapes.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Sample+Pack",
+      creator: {
+        id: 3,
+        name: "Music Production Hub",
+        avatar: "/placeholder.svg?height=50&width=50&text=MP",
+      },
+      type: "download",
+      date: "3 days ago",
+      preview: true,
+    },
+    {
+      id: 4,
+      title: "Weekly Art Challenge: Cyberpunk Environments",
+      description: "Create your own futuristic cityscape with neon lights and dystopian elements. Submit by Friday for feedback!",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Art+Challenge",
+      creator: {
+        id: 1,
+        name: "ArtistAlley",
+        avatar: "/placeholder.svg?height=50&width=50&text=AA",
+      },
+      type: "article",
+      date: "4 days ago",
+      preview: true,
+    },
+    {
+      id: 5,
+      title: "Portrait Photography Essentials",
+      description: "Learn professional portrait photography techniques, from lighting setup to post-processing workflows.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Photography",
+      creator: {
+        id: 5,
+        name: "Photo Masters",
+        avatar: "/placeholder.svg?height=50&width=50&text=PM",
+      },
+      type: "video",
+      date: "5 days ago",
+      preview: false,
+    },
+    {
+      id: 6,
+      title: "CSS Grid Advanced Layout Techniques",
+      description: "Master CSS Grid to create complex, responsive layouts with minimal code and maximum flexibility.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Web+Dev",
+      creator: {
+        id: 6,
+        name: "Web Wizard",
+        avatar: "/placeholder.svg?height=50&width=50&text=WW",
+      },
+      type: "video",
+      date: "1 week ago",
+      preview: true,
+    },
+    {
+      id: 7,
+      title: "Digital Painting Brushes Collection",
+      description: "A curated set of 50+ custom brushes for digital painting in Procreate and Photoshop.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Brushes",
+      creator: {
+        id: 1,
+        name: "ArtistAlley",
+        avatar: "/placeholder.svg?height=50&width=50&text=AA",
+      },
+      type: "download",
+      date: "2 weeks ago",
+      preview: false,
+    },
+    {
+      id: 8,
+      title: "Creative Writing Workshop: Building Characters",
+      description: "Learn techniques to develop memorable, complex characters for your stories, novels, and screenplays.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Writing",
+      creator: {
+        id: 8,
+        name: "Writing Workshop",
+        avatar: "/placeholder.svg?height=50&width=50&text=WW",
+      },
+      type: "article",
+      date: "3 weeks ago",
+      preview: true,
+    },
+  ];
+
+  // Content for the "Trending" tab
+  const trendingContent = [
+    {
+      id: 10,
+      title: "Latest Tech Review: AI Hardware Accelerators",
+      description: "An in-depth review of the newest AI hardware accelerators and their impact on machine learning performance.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Tech+Review",
+      creator: {
+        id: 10,
+        name: "Tech Channel",
+        avatar: "/placeholder.svg?height=50&width=50&text=TC",
+      },
+      type: "video",
+      date: "12 hours ago",
+      preview: true,
+    },
+    {
+      id: 11,
+      title: "Video Editing Masterclass",
+      description: "Professional video editing techniques using industry-standard tools and workflows.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Video+Editing",
+      creator: {
+        id: 11,
+        name: "Video Guru",
+        avatar: "/placeholder.svg?height=50&width=50&text=VG",
+      },
+      type: "video",
+      date: "2 days ago",
+      preview: false,
+    },
+    {
+      id: 12,
+      title: "UI/UX Design Trends 2025",
+      description: "Explore the upcoming UI/UX design trends that will shape digital experiences in the coming year.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Design+Trends",
+      creator: {
+        id: 12,
+        name: "Design Studio",
+        avatar: "/placeholder.svg?height=50&width=50&text=DS",
+      },
+      type: "article",
+      date: "3 days ago",
+      preview: true,
+    },
+    {
+      id: 13,
+      title: "Music Production Tips: Spatial Audio",
+      description: "Create immersive spatial audio mixes for modern streaming platforms and VR applications.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Spatial+Audio",
+      creator: {
+        id: 3,
+        name: "Music Production Hub",
+        avatar: "/placeholder.svg?height=50&width=50&text=MP",
+      },
+      type: "download",
+      date: "5 days ago",
+      preview: true,
+    },
+  ];
+
+  // Content for the "Recent" tab
+  const recentContent = [
+    {
+      id: 20,
+      title: "Gourmet Recipes: Summer Edition",
+      description: "Fresh, seasonal recipes perfect for summer gatherings and outdoor dining experiences.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Cooking",
+      creator: {
+        id: 20,
+        name: "Cooking King",
+        avatar: "/placeholder.svg?height=50&width=50&text=CK",
+      },
+      type: "article",
+      date: "2 hours ago",
+      preview: true,
+    },
+    {
+      id: 21,
+      title: "Portrait Photography: Natural Light Techniques",
+      description: "Master the art of portrait photography using only natural light and simple reflectors.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Portrait",
+      creator: {
+        id: 21,
+        name: "Photography Tips",
+        avatar: "/placeholder.svg?height=50&width=50&text=PT",
+      },
+      type: "video",
+      date: "5 hours ago",
+      preview: false,
+    },
+    {
+      id: 22,
+      title: "Digital Art Tutorial: Environment Design",
+      description: "Create stunning environmental concept art for games, films, and personal projects.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Digital+Art",
+      creator: {
+        id: 22,
+        name: "Art Room",
+        avatar: "/placeholder.svg?height=50&width=50&text=AR",
+      },
+      type: "video",
+      date: "1 day ago",
+      preview: true,
+    },
+    {
+      id: 23,
+      title: "Science Experiments for Home Learning",
+      description: "Educational science experiments that can be conducted safely at home with common materials.",
+      thumbnail: "/placeholder.svg?height=400&width=800&text=Science",
+      creator: {
+        id: 23,
+        name: "Science Channel",
+        avatar: "/placeholder.svg?height=50&width=50&text=SC",
+      },
+      type: "download",
+      date: "2 days ago",
+      preview: true,
+    },
+  ];
+
+  const handleCardClick = (content: any) => {
+    setSelectedContent(content);
+    setModalOpen(true);
+  };
+
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-3 w-3" />;
+      case 'article':
+        return <FileIcon className="h-3 w-3" />;
+      case 'download':
+        return <DownloadIcon className="h-3 w-3" />;
+      default:
+        return null;
+    }
+  };
+
+  const renderContent = (content: any[]) => {
+    return content.map((item) => (
+      <Card 
+        key={item.id} 
+        className="bg-gray-900 border-gray-800 overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]" 
+        onClick={() => handleCardClick(item)}
+      >
+        <div className="relative">
+          <img
+            src={item.thumbnail}
+            alt={item.title}
+            className="w-full h-40 object-cover"
+          />
+          <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+            {getContentTypeIcon(item.type)}
+            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+          </div>
+          
+          {/* Locked overlay for non-preview content */}
+          {!item.preview && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-white/70" />
+            </div>
+          )}
+        </div>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={item.creator.avatar} />
+              <AvatarFallback className="text-xs">{item.creator.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm text-gray-400">{item.creator.name}</span>
+          </div>
+          <h3 className="font-semibold line-clamp-2">{item.title}</h3>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-gray-400">
+              {item.date}
+            </span>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Heart className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    ));
+  };
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
@@ -16,7 +324,7 @@ export default function HomePage() {
           <div className="relative rounded-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
-              src="/placeholder.svg?height=400&width=1200"
+              src="/lovable-uploads/leaves-image.jpeg"
               alt="Featured creators"
               className="w-full h-64 object-cover"
             />
@@ -56,159 +364,19 @@ export default function HomePage() {
 
           <TabsContent value="for-you" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="bg-gray-900 border-gray-800 overflow-hidden">
-                  <div className="relative">
-                    <img
-                      src={`/placeholder.svg?height=200&width=300&text=Content+${i + 1}`}
-                      alt={`Content ${i + 1}`}
-                      className="w-full h-40 object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className={i % 3 === 0 ? "bg-purple-600" : i % 3 === 1 ? "bg-blue-600" : "bg-green-600"}>
-                        {i % 3 === 0 ? "Pro" : i % 3 === 1 ? "Plus" : "Basic"}
-                      </Badge>
-                    </div>
-                    <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
-                      {i % 3 === 0 ? (
-                        <Video className="h-3 w-3" />
-                      ) : i % 3 === 1 ? (
-                        <FileIcon className="h-3 w-3" />
-                      ) : (
-                        <DownloadIcon className="h-3 w-3" />
-                      )}
-                      {i % 3 === 0 ? "Video" : i % 3 === 1 ? "Article" : "Download"}
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{["AA", "GM", "MP", "WW", "PM"][i % 5]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-400">
-                        {
-                          [
-                            "ArtistAlley",
-                            "GameDev Masters",
-                            "Music Production Hub",
-                            "Writing Workshop",
-                            "Photo Masters",
-                          ][i % 5]
-                        }
-                      </span>
-                    </div>
-                    <h3 className="font-semibold line-clamp-2">
-                      {
-                        [
-                          "Character Design Masterclass",
-                          "Advanced AI Behavior Trees",
-                          "May Sample Pack",
-                          "Creative Writing Tips",
-                          "Lighting Techniques",
-                        ][i % 5]
-                      }{" "}
-                      {i + 1}
-                    </h3>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-400">
-                        {["2 days ago", "Yesterday", "4 hours ago", "1 week ago", "Just now"][i % 5]}
-                      </span>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {renderContent(forYouContent)}
             </div>
           </TabsContent>
 
           <TabsContent value="trending" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="bg-gray-900 border-gray-800 overflow-hidden">
-                  <div className="relative">
-                    <img
-                      src={`/placeholder.svg?height=200&width=300&text=Trending+${i + 1}`}
-                      alt={`Trending ${i + 1}`}
-                      className="w-full h-40 object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-orange-600 flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" /> Trending
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{["TC", "VG", "DS", "MC"][i % 4]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-400">
-                        {["Tech Channel", "Video Guru", "Design Studio", "Music Creator"][i % 4]}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold line-clamp-2">
-                      {
-                        [
-                          "Latest Tech Review",
-                          "Video Editing Masterclass",
-                          "UI/UX Design Trends",
-                          "Music Production Tips",
-                        ][i % 4]
-                      }
-                    </h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Zap className="h-4 w-4 text-orange-500" />
-                      <span className="text-xs text-orange-400">Gaining popularity fast</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {renderContent(trendingContent)}
             </div>
           </TabsContent>
 
           <TabsContent value="recent" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="bg-gray-900 border-gray-800 overflow-hidden">
-                  <div className="relative">
-                    <img
-                      src={`/placeholder.svg?height=200&width=300&text=Recent+${i + 1}`}
-                      alt={`Recent ${i + 1}`}
-                      className="w-full h-40 object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge className="bg-blue-600 flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> New
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">{["CK", "PT", "AR", "SC"][i % 4]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm text-gray-400">
-                        {["Cooking King", "Photography Tips", "Art Room", "Science Channel"][i % 4]}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold line-clamp-2">
-                      {
-                        ["Gourmet Recipes", "Portrait Photography", "Digital Art Tutorial", "Science Experiments"][
-                          i % 4
-                        ]
-                      }
-                    </h3>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Clock className="h-4 w-4 text-blue-500" />
-                      <span className="text-xs text-blue-400">
-                        Posted {i + 1} hour{i !== 0 ? "s" : ""} ago
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {renderContent(recentContent)}
             </div>
           </TabsContent>
         </Tabs>
@@ -223,31 +391,46 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 3 }).map((_, i) => (
+            {[
+              {
+                id: 1,
+                name: "Digital Art Master",
+                username: "artmaster",
+                description: "Digital art and illustration tutorials for all skill levels",
+                subscribers: 1000,
+                rating: 4.7
+              },
+              {
+                id: 2,
+                name: "Game Development Pro",
+                username: "gamedevpro",
+                description: "Game development tutorials, assets, and behind-the-scenes content",
+                subscribers: 2000,
+                rating: 4.8
+              },
+              {
+                id: 3,
+                name: "Music Production Studio",
+                username: "musicstudio",
+                description: "Music production tutorials, sample packs, and exclusive tracks",
+                subscribers: 3000,
+                rating: 4.9
+              }
+            ].map((creator, i) => (
               <Card key={i} className="bg-gray-900 border-gray-800 overflow-hidden">
                 <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900" />
                 <CardContent className="pt-0 -mt-12 p-6">
                   <div className="flex justify-between items-start">
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
                       <AvatarImage src={`/placeholder.svg?height=80&width=80&text=${i + 1}`} />
-                      <AvatarFallback className="bg-gray-800 text-xl">{["AA", "GM", "MP"][i]}</AvatarFallback>
+                      <AvatarFallback className="bg-gray-800 text-xl">{creator.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Badge className="mt-2 bg-purple-600 flex items-center gap-1">
                       <Award className="h-3 w-3" /> Featured
                     </Badge>
                   </div>
-                  <h3 className="text-xl font-bold mt-4">
-                    {["Digital Art Master", "Game Development Pro", "Music Production Studio"][i]}
-                  </h3>
-                  <p className="text-gray-400 text-sm mt-1">
-                    {
-                      [
-                        "Digital art and illustration tutorials for all skill levels",
-                        "Game development tutorials, assets, and behind-the-scenes content",
-                        "Music production tutorials, sample packs, and exclusive tracks",
-                      ][i]
-                    }
-                  </p>
+                  <h3 className="text-xl font-bold mt-4">{creator.name}</h3>
+                  <p className="text-gray-400 text-sm mt-1">{creator.description}</p>
 
                   <div className="flex items-center gap-2 mt-4">
                     <Avatar className="h-6 w-6 border-2 border-gray-900">
@@ -259,15 +442,17 @@ export default function HomePage() {
                     <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
                       <AvatarFallback className="bg-green-900 text-xs">U3</AvatarFallback>
                     </Avatar>
-                    <span className="text-sm text-gray-400">+{(i + 1) * 1000} subscribers</span>
+                    <span className="text-sm text-gray-400">+{creator.subscribers} subscribers</span>
                   </div>
 
                   <div className="mt-6 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-yellow-500" />
-                      <span className="text-sm">{4.7 + (i * 0.1).toFixed(1)}/5.0</span>
+                      <span className="text-sm">{creator.rating}/5.0</span>
                     </div>
-                    <Button className="bg-purple-600 hover:bg-purple-700">Subscribe</Button>
+                    <Link to={`/creator/${creator.id}`}>
+                      <Button className="bg-purple-600 hover:bg-purple-700">Visit Page</Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -487,9 +672,18 @@ export default function HomePage() {
             </div>
           </div>
         </footer>
+
+        {/* Content Preview Modal */}
+        {selectedContent && (
+          <ContentPreviewModal
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            content={selectedContent}
+          />
+        )}
       </div>
     </MainLayout>
-  )
+  );
 }
 
 function Download(props) {
@@ -510,5 +704,5 @@ function Download(props) {
       <polyline points="7 10 12 15 17 10" />
       <line x1="12" x2="12" y1="15" y2="3" />
     </svg>
-  )
+  );
 }
