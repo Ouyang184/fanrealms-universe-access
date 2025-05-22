@@ -9,7 +9,8 @@ import {
   Linkedin, 
   Github, 
   Globe, 
-  AtSign 
+  AtSign,
+  MessageSquare 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSocialLinks, SocialLink } from "@/hooks/useSocialLinks";
@@ -30,6 +31,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   twitch: <Twitch className="h-4 w-4" />,
   linkedin: <Linkedin className="h-4 w-4" />,
   github: <Github className="h-4 w-4" />,
+  discord: <MessageSquare className="h-4 w-4" />,
 };
 
 export function SocialLinks({ 
@@ -38,12 +40,17 @@ export function SocialLinks({
   variant = "outline",
   size = "icon"
 }: SocialLinksProps) {
-  const { links, isLoading } = useSocialLinks(creatorId);
+  const { links, isLoading, refetch } = useSocialLinks(creatorId);
   
   useEffect(() => {
     console.log("SocialLinks component rendering with creatorId:", creatorId);
     console.log("Links available:", links);
-  }, [creatorId, links]);
+    
+    // Re-fetch links when creatorId changes
+    if (creatorId) {
+      refetch();
+    }
+  }, [creatorId, refetch]);
   
   if (!creatorId) {
     console.warn("SocialLinks: No creatorId provided");
@@ -65,11 +72,40 @@ export function SocialLinks({
     const label = link.label?.toLowerCase() || '';
     const url = link.url.toLowerCase();
     
-    // Check for LinkedIn specifically
-    if (label.includes('linkedin') || url.includes('linkedin')) {
+    // First check for common patterns in URLs
+    if (url.includes('linkedin.com') || label === 'linkedin') {
       return <Linkedin className="h-4 w-4" />;
     }
     
+    if (url.includes('github.com') || label === 'github') {
+      return <Github className="h-4 w-4" />;
+    }
+    
+    if (url.includes('twitter.com') || label === 'twitter' || url.includes('x.com') || label === 'x') {
+      return <Twitter className="h-4 w-4" />;
+    }
+    
+    if (url.includes('instagram.com') || label === 'instagram') {
+      return <Instagram className="h-4 w-4" />;
+    }
+    
+    if (url.includes('facebook.com') || label === 'facebook') {
+      return <Facebook className="h-4 w-4" />;
+    }
+    
+    if (url.includes('youtube.com') || label === 'youtube') {
+      return <Youtube className="h-4 w-4" />;
+    }
+    
+    if (url.includes('twitch.tv') || label === 'twitch') {
+      return <Twitch className="h-4 w-4" />;
+    }
+    
+    if (url.includes('discord.com') || url.includes('discord.gg') || label === 'discord') {
+      return <MessageSquare className="h-4 w-4" />;
+    }
+    
+    // Then try with the label and pre-defined icons
     for (const [key, icon] of Object.entries(ICON_MAP)) {
       if (label.includes(key) || url.includes(key)) {
         return icon;
