@@ -13,6 +13,7 @@ import { formatRelativeDate } from "@/utils/auth-helpers";
 import { useToast } from "@/hooks/use-toast";
 import type { CreatorProfile, Post } from "@/types";
 import { useFollow } from "@/hooks/useFollow";
+import { SocialLinks } from "@/components/SocialLinks";
 
 const CreatorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -280,6 +281,12 @@ const CreatorPage: React.FC = () => {
             <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
               <h1 className="text-3xl font-bold">{displayName}</h1>
               <p className="text-muted-foreground">@{creator.username}</p>
+              
+              {creator.id && (
+                <div className="mt-2">
+                  <SocialLinks creatorId={creator.id} />
+                </div>
+              )}
             </div>
             <div className="mt-4 md:mt-0 space-x-2">
               <Button>

@@ -13,6 +13,7 @@ import PostCard from "@/components/PostCard";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import type { CreatorProfile, Post } from "@/types";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { SocialLinks } from "@/components/SocialLinks";
 import { toast } from "@/hooks/use-toast";
 
 export default function CreatorProfile() {
@@ -191,6 +192,12 @@ export default function CreatorProfile() {
             <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
               <h1 className="text-3xl font-bold">{displayName}</h1>
               <p className="text-muted-foreground">@{creator.username}</p>
+              
+              {creator.id && (
+                <div className="mt-2">
+                  <SocialLinks creatorId={creator.id} />
+                </div>
+              )}
             </div>
             <div className="mt-4 md:mt-0">
               <Button asChild>

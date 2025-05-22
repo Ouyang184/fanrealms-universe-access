@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
+import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -94,6 +95,10 @@ export default function CreatorStudioSettings() {
             currentBannerUrl={formData?.banner_url} 
             onBannerUpdate={handleBannerUpdate}
           />
+          
+          {settings?.id && (
+            <SocialLinksSection creatorId={settings.id} />
+          )}
           
           <div className="flex justify-end">
             <Button type="submit" disabled={isFormDisabled}>
