@@ -43,6 +43,17 @@ export default function CreatorStudioSettings() {
     
     try {
       await updateSettings(formData);
+      toast({
+        title: "Success",
+        description: "Your settings have been updated successfully",
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -105,7 +116,7 @@ export default function CreatorStudioSettings() {
             <Button 
               type="submit" 
               disabled={isFormDisabled}
-              className={isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}
+              className={`${isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}`}
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
