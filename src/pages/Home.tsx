@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight, Star, Clock, Video, FileIcon, Heart, TrendingUp, Zap, Award, Search, Lock } from "lucide-react";
-import { DownloadIcon } from "lucide-react";
+import { Download as DownloadIcon } from "lucide-react";
 import { ContentCard } from "@/components/content/ContentCard";
 import { ContentPreviewModal } from "@/components/content/ContentPreviewModal";
 import { Link } from "react-router-dom";
@@ -274,8 +274,8 @@ export default function HomePage() {
           <div className="relative rounded-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
-              src="/lovable-uploads/8e8ddc90-5610-45fd-bb04-0b3a296d8acc.png"
-              alt="Hero banner"
+              src="/lovable-uploads/leaves-image.jpeg"
+              alt="Featured creators"
               className="w-full h-64 object-cover"
             />
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
