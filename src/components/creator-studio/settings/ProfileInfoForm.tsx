@@ -59,20 +59,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
                 placeholder="How you want to be known publicly"
               />
               <p className="text-xs text-muted-foreground">
-                This will be shown instead of your username if provided
-              </p>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                name="username"
-                value={settings.username || ''}
-                onChange={handleChange}
-              />
-              <p className="text-xs text-muted-foreground">
-                Used for your profile URL and @mentions
+                This is how you'll appear to your audience
               </p>
             </div>
             
