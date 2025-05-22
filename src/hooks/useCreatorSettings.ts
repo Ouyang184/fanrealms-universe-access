@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +34,6 @@ export const useCreatorSettings = () => {
         fullName: data.users?.username || '',
         email: data.users?.email || '',
         bio: data.bio || '',
-        website: data.website || '',
         display_name: data.display_name || '',
         displayName: data.display_name || '',
         avatar_url: data.profile_image_url,
@@ -56,7 +54,6 @@ export const useCreatorSettings = () => {
       // Update creator-specific fields
       const creatorFields = {
         bio: updatedSettings.bio,
-        website: updatedSettings.website,
         display_name: updatedSettings.display_name,
         banner_url: updatedSettings.banner_url,
       };
@@ -73,8 +70,7 @@ export const useCreatorSettings = () => {
         const { error: userError } = await supabase
           .from('users')
           .update({
-            username: updatedSettings.username,
-            website: updatedSettings.website
+            username: updatedSettings.username
           })
           .eq('id', user.id);
         

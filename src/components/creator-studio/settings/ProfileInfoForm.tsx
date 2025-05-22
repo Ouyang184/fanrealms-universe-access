@@ -87,21 +87,6 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
             placeholder="Tell your audience about yourself..."
           />
         </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="website">Website</Label>
-          <Input
-            id="website"
-            name="website"
-            type="url"
-            value={settings.website || ''}
-            onChange={handleChange}
-            placeholder="https://yourwebsite.com"
-          />
-          <p className="text-xs text-muted-foreground">
-            Include https:// for valid URLs (e.g., https://www.linkedin.com/in/your-profile)
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

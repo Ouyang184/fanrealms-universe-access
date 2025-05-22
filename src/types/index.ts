@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -12,7 +11,6 @@ export interface User {
   username: string;
   email: string;
   avatar_url: string | null;
-  website?: string | null;
 }
 
 export interface Post {
@@ -35,7 +33,6 @@ export interface CreatorProfile {
   fullName?: string;
   email: string;
   bio?: string | null;
-  website?: string | null;
   display_name?: string | null;
   displayName?: string; // Add this field for compatibility
   avatar_url?: string;

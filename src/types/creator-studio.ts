@@ -30,7 +30,6 @@ export interface PayoutData {
 // Creator Studio settings
 export interface CreatorSettings extends CreatorProfile {
   bio: string | null;
-  website: string | null;
   display_name: string | null; // Updated to non-optional
   bannerImageUrl?: string | null;
   banner_url: string | null;
