@@ -49,11 +49,14 @@ const CreatorPage: React.FC = () => {
     );
   }
 
+  // Ensure we use display_name if available, otherwise fall back to username
+  const displayName = creator.display_name || creator.username;
+
   return (
     <MainLayout>
       <div className="space-y-8 max-w-5xl mx-auto">
         <CreatorHeader 
-          creator={creator}
+          creator={{...creator, displayName}}
           isFollowing={isFollowing}
           followLoading={followLoading}
           onFollowToggle={handleFollowToggle}

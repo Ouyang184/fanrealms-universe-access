@@ -32,15 +32,15 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
 
   const {
     username,
-    fullName,
+    display_name,
     avatar_url,
     profile_image_url,
     website,
     bio
   } = creator;
 
-  // Use fullName or username or fallback to "Creator" for display
-  const displayName = fullName || username || "Creator";
+  // Use display_name or username or fallback to "Creator" for display
+  const displayName = display_name || username || "Creator";
   // Use avatar_url or profile_image_url for avatar
   const avatarUrl = avatar_url || profile_image_url;
   // Build creator URL from username
