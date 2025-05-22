@@ -35,7 +35,6 @@ export function ProfileHeader({ creator }: ProfileHeaderProps) {
         </Avatar>
         <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
           <h1 className="text-3xl font-bold">{displayName}</h1>
-          <p className="text-muted-foreground">@{creator.username}</p>
           
           {creator.id && (
             <div className="mt-2">

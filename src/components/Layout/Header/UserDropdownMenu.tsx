@@ -50,7 +50,7 @@ export function UserDropdownMenu() {
     : user.email?.substring(0, 2).toUpperCase() || "U";
   
   const email = profile?.email || user.email || "";
-  const username = profile?.username || email.split('@')[0];
+  const displayName = profile?.username || email.split('@')[0];
   
   const handleSignOut = async () => {
     try {
@@ -74,7 +74,7 @@ export function UserDropdownMenu() {
       <PopoverTrigger asChild>
         <button className="focus:outline-none">
           <Avatar className="h-9 w-9 cursor-pointer">
-            <AvatarImage src={profile?.profile_picture || ""} alt={username} />
+            <AvatarImage src={profile?.profile_picture || ""} alt={displayName} />
             <AvatarFallback className="bg-primary/80 text-primary-foreground">
               {initials}
             </AvatarFallback>
@@ -83,7 +83,7 @@ export function UserDropdownMenu() {
       </PopoverTrigger>
       <PopoverContent className="w-72 p-0" align="end">
         <div className="p-3">
-          <div className="text-base font-medium">{username}</div>
+          <div className="text-base font-medium">{displayName}</div>
           <div className="text-sm text-muted-foreground">{email}</div>
         </div>
         <Separator />
