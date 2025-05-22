@@ -1,5 +1,6 @@
 
 import { Check } from "lucide-react";
+import { Link } from "react-router-dom";
 
 // Sample categories for onboarding
 const categories = [
@@ -20,35 +21,63 @@ const categories = [
 interface CategoryGridProps {
   selectedCategories: number[];
   onToggle: (id: number) => void;
+  linkToCategory?: boolean;
 }
 
-export function CategoryGrid({ selectedCategories, onToggle }: CategoryGridProps) {
+export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = false }: CategoryGridProps) {
+  const renderCategory = (category: { id: number; name: string; icon: string }) => {
+    const isSelected = selectedCategories.includes(category.id);
+    
+    const categoryContent = (
+      <>
+        {isSelected && (
+          <div className="absolute top-2 right-2 bg-purple-500 rounded-full p-0.5">
+            <Check className="h-3 w-3" />
+          </div>
+        )}
+        <div className="flex flex-col items-center text-center gap-2">
+          <span className="text-2xl">{category.icon}</span>
+          <span className="text-sm font-medium">{category.name}</span>
+        </div>
+      </>
+    );
+
+    const categoryClasses = `
+      relative p-4 rounded-lg border cursor-pointer transition-all
+      ${
+        isSelected
+          ? "bg-purple-900/30 border-purple-500"
+          : "bg-gray-800 border-gray-700 hover:border-gray-600"
+      }
+    `;
+
+    // If linkToCategory is true, render as Link, otherwise as a div with onClick
+    if (linkToCategory) {
+      return (
+        <Link
+          key={category.id}
+          to={`/explore?category=${encodeURIComponent(category.name)}`}
+          className={categoryClasses}
+        >
+          {categoryContent}
+        </Link>
+      );
+    }
+
+    return (
+      <div
+        key={category.id}
+        className={categoryClasses}
+        onClick={() => onToggle(category.id)}
+      >
+        {categoryContent}
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      {categories.map((category) => (
-        <div
-          key={category.id}
-          className={`
-            relative p-4 rounded-lg border cursor-pointer transition-all
-            ${
-              selectedCategories.includes(category.id)
-                ? "bg-purple-900/30 border-purple-500"
-                : "bg-gray-800 border-gray-700 hover:border-gray-600"
-            }
-          `}
-          onClick={() => onToggle(category.id)}
-        >
-          {selectedCategories.includes(category.id) && (
-            <div className="absolute top-2 right-2 bg-purple-500 rounded-full p-0.5">
-              <Check className="h-3 w-3" />
-            </div>
-          )}
-          <div className="flex flex-col items-center text-center gap-2">
-            <span className="text-2xl">{category.icon}</span>
-            <span className="text-sm font-medium">{category.name}</span>
-          </div>
-        </div>
-      ))}
+      {categories.map(renderCategory)}
     </div>
   );
 }

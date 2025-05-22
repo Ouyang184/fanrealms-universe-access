@@ -37,7 +37,9 @@ import {
   Eye,
   Bell,
 } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
+import { CategoryGrid } from "@/components/onboarding/CategoryGrid"
 
 // Sample data for featured creators
 const featuredCreators = [
@@ -269,10 +271,57 @@ const newReleases = [
 ]
 
 export default function ExplorePage() {
+  // Get search parameters to check if we're filtering by category
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get("category");
+  
   // Set document title when component mounts
   useEffect(() => {
-    document.title = "Explore | Creator Platform";
-  }, []);
+    document.title = categoryFilter 
+      ? `${categoryFilter} | FanRealms` 
+      : "Explore | Creator Platform";
+  }, [categoryFilter]);
+  
+  // State for filtered content based on category
+  const [filteredCreators, setFilteredCreators] = useState(featuredCreators);
+  const [filteredTrending, setFilteredTrending] = useState(trendingContent);
+  const [filteredNewReleases, setFilteredNewReleases] = useState(newReleases);
+  const [filteredRecommended, setFilteredRecommended] = useState(recommendedCreators);
+
+  // Filter content when category changes
+  useEffect(() => {
+    if (categoryFilter) {
+      // Filter creators based on tags matching the category
+      const creators = featuredCreators.filter(creator => 
+        creator.tags.some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
+      );
+      setFilteredCreators(creators.length ? creators : featuredCreators);
+
+      // Filter trending content based on creator (simplified approach)
+      const trending = trendingContent.filter(content => 
+        creators.some(creator => creator.name === content.creator)
+      );
+      setFilteredTrending(trending.length ? trending : trendingContent);
+
+      // Filter new releases based on creator (simplified approach)
+      const releases = newReleases.filter(content => 
+        creators.some(creator => creator.name === content.creator)
+      );
+      setFilteredNewReleases(releases.length ? releases : newReleases);
+
+      // Filter recommended creators based on tags matching the category
+      const recommended = recommendedCreators.filter(creator => 
+        creator.tags.some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
+      );
+      setFilteredRecommended(recommended.length ? recommended : recommendedCreators);
+    } else {
+      // If no category filter, show all content
+      setFilteredCreators(featuredCreators);
+      setFilteredTrending(trendingContent);
+      setFilteredNewReleases(newReleases);
+      setFilteredRecommended(recommendedCreators);
+    }
+  }, [categoryFilter]);
   
   return (
     <MainLayout>
@@ -287,9 +336,14 @@ export default function ExplorePage() {
               className="w-full h-64 object-cover"
             />
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
-              <h1 className="text-4xl font-bold mb-2">Explore FanRealms</h1>
+              <h1 className="text-4xl font-bold mb-2">
+                {categoryFilter ? `Explore ${categoryFilter}` : 'Explore FanRealms'}
+              </h1>
               <p className="text-xl text-gray-200 max-w-2xl mb-6">
-                Discover amazing creators and exclusive content across various categories
+                {categoryFilter 
+                  ? `Discover amazing ${categoryFilter} creators and their exclusive content`
+                  : 'Discover amazing creators and exclusive content across various categories'
+                }
               </p>
               <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
                 <div className="relative flex-1">
@@ -318,35 +372,27 @@ export default function ExplorePage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {categories.map((category) => (
-              <Card
-                key={category.id}
-                className="bg-gray-900 border-gray-800 overflow-hidden group cursor-pointer hover:border-gray-700 transition-all"
-              >
-                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                  <div className="h-12 w-12 rounded-full bg-purple-900/30 flex items-center justify-center mb-3">
-                    {category.icon}
-                  </div>
-                  <h3 className="font-medium group-hover:text-purple-400 transition-colors">{category.name}</h3>
-                  <p className="text-xs text-gray-400 mt-1">{category.count} creators</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {/* Use the CategoryGrid component instead of the previous grid */}
+          <CategoryGrid 
+            selectedCategories={[]} 
+            onToggle={() => {}} 
+            linkToCategory={true} 
+          />
         </section>
 
         {/* Featured Creators */}
         <section className="mb-10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Featured Creators</h2>
+            <h2 className="text-2xl font-bold">
+              {categoryFilter ? `${categoryFilter} Creators` : 'Featured Creators'}
+            </h2>
             <Button variant="link" className="text-purple-400">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredCreators.map((creator) => (
+            {filteredCreators.map((creator) => (
               <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                 <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
                   <img
@@ -443,7 +489,7 @@ export default function ExplorePage() {
 
             <TabsContent value="trending" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {trendingContent.map((content) => (
+                {filteredTrending.map((content) => (
                   <Card key={content.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                     <div className="relative">
                       <img
@@ -502,7 +548,7 @@ export default function ExplorePage() {
 
             <TabsContent value="new" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {newReleases.map((content) => (
+                {filteredNewReleases.map((content) => (
                   <Card key={content.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                     <div className="relative">
                       <img
@@ -558,7 +604,7 @@ export default function ExplorePage() {
 
             <TabsContent value="recommended" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {recommendedCreators.map((creator) => (
+                {filteredRecommended.map((creator) => (
                   <Card key={creator.id} className="bg-gray-900 border-gray-800 flex overflow-hidden">
                     <div className="p-4 flex-shrink-0">
                       <Avatar className="h-16 w-16">
