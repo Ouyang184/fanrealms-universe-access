@@ -10,7 +10,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  DialogTitle,
 } from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -70,7 +69,6 @@ export function SearchBar() {
       </Button>
       
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <DialogTitle className="sr-only">Search creators</DialogTitle>
         <CommandInput 
           placeholder="Search by username or display name..." 
           onValueChange={handleSearchInput}
