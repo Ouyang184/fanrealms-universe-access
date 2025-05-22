@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,9 +16,9 @@ export default function HomePage() {
           <div className="relative rounded-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
             <img
-              src="/lovable-uploads/e88a8820-dd7f-494b-a648-8d84c9a50978.png"
-              alt="Fan enjoying creator content"
-              className="w-full h-64 object-cover object-center"
+              src="/placeholder.svg?height=400&width=1200"
+              alt="Featured creators"
+              className="w-full h-64 object-cover"
             />
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">Welcome to FanRealms</h1>
