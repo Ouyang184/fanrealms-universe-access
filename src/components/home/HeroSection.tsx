@@ -9,7 +9,8 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
         <img
           src="/lovable-uploads/leaves-image.jpeg"
-          alt="Hero background"
+          alt=""
+          role="presentation"
           className="w-full h-64 object-cover"
         />
         <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
