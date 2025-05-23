@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -110,17 +111,8 @@ export default function CreatorStudioSettings() {
         description: "Your settings have been updated successfully",
       });
 
-      // Invalidate ALL creator-related queries to ensure consistency across the app
-      console.log('CreatorStudioSettings: Invalidating all creator queries...');
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['creator-settings'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfile'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails'] }),
-        queryClient.invalidateQueries({ queryKey: ['popular-creators'] }),
-        queryClient.invalidateQueries({ queryKey: ['creators'] }),
-      ]);
-
-      // Clear all query cache and force fresh data
+      // Clear ALL query cache to ensure fresh data everywhere
+      console.log('CreatorStudioSettings: Clearing entire query cache...');
       await queryClient.clear();
       
       // Force refetch to get fresh data

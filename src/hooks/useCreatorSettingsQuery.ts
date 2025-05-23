@@ -58,6 +58,7 @@ export const useCreatorSettingsQuery = () => {
     enabled: !!user?.id,
     staleTime: 0, // Always fetch fresh data
     refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchInterval: 0, // Don't automatically refetch
   });
 
   return {

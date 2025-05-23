@@ -62,12 +62,16 @@ export const useProfileImageUpload = () => {
         throw error;
       }
       
+      // Clear ALL query cache to ensure consistency
+      await queryClient.clear();
+      
       // Invalidate ALL creator-related queries to ensure consistency
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creator-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails'] }),
         queryClient.invalidateQueries({ queryKey: ['popular-creators'] }),
+        queryClient.invalidateQueries({ queryKey: ['creators'] }),
       ]);
       
       return publicUrl;
