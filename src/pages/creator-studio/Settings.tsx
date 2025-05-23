@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,10 +10,12 @@ import { BannerSection } from "@/components/creator-studio/settings/BannerSectio
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabase";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { 
     settings, 
     isLoading, 
@@ -93,6 +96,17 @@ export default function CreatorStudioSettings() {
         title: "Success",
         description: "Your settings have been updated successfully",
       });
+
+      // Invalidate ALL creator-related queries to ensure consistency across the app
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['creator-settings', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['popular-creators'] }),
+        // Also invalidate by creator ID and username for pages that might use those
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', settings?.username] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', settings?.id] }),
+      ]);
 
       // Force refetch to get fresh data
       await refetch();

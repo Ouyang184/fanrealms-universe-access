@@ -62,10 +62,13 @@ export const useProfileImageUpload = () => {
         throw error;
       }
       
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
+      // Invalidate ALL creator-related queries to ensure consistency
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['popular-creators'] }),
+      ]);
       
       return publicUrl;
     } catch (error: any) {
