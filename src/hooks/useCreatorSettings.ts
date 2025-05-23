@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -122,21 +121,31 @@ export const useCreatorSettings = () => {
       // Also invalidate related queries to refresh the profile
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      
-      toast({
-        title: "Success",
-        description: "Your settings have been updated successfully",
-      });
     },
     onError: (error: any) => {
       console.error('updateSettingsMutation: Error in mutation:', error);
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update settings. Please try again.",
-        variant: "destructive",
-      });
     }
   });
+
+  // Custom update function that accepts callbacks
+  const updateSettings = (
+    updatedSettings: Partial<CreatorSettings>, 
+    callbacks?: { 
+      onSuccess?: () => void; 
+      onError?: (error: any) => void; 
+    }
+  ) => {
+    updateSettingsMutation.mutate(updatedSettings, {
+      onSuccess: (data) => {
+        updateSettingsMutation.options.onSuccess?.(data);
+        callbacks?.onSuccess?.();
+      },
+      onError: (error) => {
+        updateSettingsMutation.options.onError?.(error);
+        callbacks?.onError?.(error);
+      }
+    });
+  };
 
   const uploadProfileImage = async (file: File): Promise<string | null> => {
     if (!user?.id) {
@@ -208,7 +217,7 @@ export const useCreatorSettings = () => {
     settings,
     isLoading,
     isUploading,
-    updateSettings: updateSettingsMutation.mutate,
+    updateSettings,
     uploadProfileImage
   };
 };

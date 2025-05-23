@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -72,16 +71,32 @@ export default function CreatorStudioSettings() {
 
       console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
-      await updateSettings(dataToSave);
-      
-      console.log('CreatorStudioSettings: Save completed successfully');
-    } catch (error) {
-      console.error("CreatorStudioSettings: Error saving settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
+      // Use a Promise wrapper to handle the mutation properly
+      await new Promise<void>((resolve, reject) => {
+        updateSettings(dataToSave, {
+          onSuccess: () => {
+            console.log('CreatorStudioSettings: Save completed successfully');
+            toast({
+              title: "Success",
+              description: "Your settings have been updated successfully",
+            });
+            resolve();
+          },
+          onError: (error: any) => {
+            console.error("CreatorStudioSettings: Error saving settings:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save settings. Please try again.",
+              variant: "destructive",
+            });
+            reject(error);
+          }
+        });
       });
+      
+    } catch (error) {
+      console.error("CreatorStudioSettings: Error in handleSave:", error);
+      // Error handling is already done in the Promise wrapper above
     } finally {
       setIsSaving(false);
     }
@@ -193,11 +208,12 @@ export default function CreatorStudioSettings() {
             <Button 
               type="submit" 
               disabled={isFormDisabled}
-              className={`${isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}`}
+              className={isSaving ? "opacity-70 pointer-events-none" : ""}
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
-                  <Spinner className="h-4 w-4" /> Saving...
+                  <Spinner className="h-4 w-4" />
+                  Saving...
                 </span>
               ) : (
                 'Save Changes'
