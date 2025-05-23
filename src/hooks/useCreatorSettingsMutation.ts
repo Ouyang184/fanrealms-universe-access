@@ -47,19 +47,31 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       // Only update creators table if there are changes
       if (Object.keys(creatorUpdates).length > 0) {
-        console.log('Executing creator update using creator id:', settings.id);
+        console.log('Executing creator update using user_id:', user.id);
         
-        // Update using creator id (primary key) instead of user_id for guaranteed uniqueness
-        const { data: updatedData, error: updateError } = await supabase
+        // 1. Update the creators table
+        const { error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('id', settings.id)
-          .select('*, users:user_id(username, email)')
-          .maybeSingle();
+          .eq('user_id', user.id);
         
         if (updateError) {
           console.error('Error updating creator:', updateError);
           throw updateError;
+        }
+        
+        console.log('Update completed successfully');
+        
+        // 2. Fetch the updated data separately
+        const { data: updatedData, error: fetchError } = await supabase
+          .from('creators')
+          .select('*, users:user_id(username, email)')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (fetchError) {
+          console.error('Error fetching updated creator:', fetchError);
+          throw fetchError;
         }
         
         if (!updatedData) {
@@ -67,7 +79,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
           throw new Error('Failed to get updated creator data');
         }
         
-        console.log('Update completed successfully, returned data:', updatedData);
+        console.log('Fetch completed successfully, returned data:', updatedData);
         
         // Format and return the updated data
         const formattedData = formatCreatorData(updatedData);
