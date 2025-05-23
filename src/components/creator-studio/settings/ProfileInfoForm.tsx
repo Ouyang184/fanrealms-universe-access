@@ -55,8 +55,8 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange(name, value);
   };
 
-  // Calculate display name - prioritize display_name, then fallback to other fields
-  const displayName = settings.display_name || settings.displayName || settings.fullName || settings.username || '';
+  // Use display_name directly from settings
+  const displayName = settings.display_name || '';
   const avatarUrl = settings.profile_image_url || settings.avatar_url;
 
   console.log('ProfileInfoForm: Current settings:', settings);
@@ -93,7 +93,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
               <Input
                 id="display_name"
                 name="display_name"
-                value={settings.display_name || ''}
+                value={displayName}
                 onChange={handleChange}
                 placeholder="How you want to be known publicly"
               />

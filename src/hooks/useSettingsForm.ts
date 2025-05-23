@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -85,62 +84,32 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      // Step 1: Invalidate ALL related queries to ensure fresh data
-      console.log('useSettingsForm: Invalidating all creator-related queries...');
-      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
-      await queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
-      await queryClient.invalidateQueries({ queryKey: ['creators'] });
-      
-      // Step 2: Wait a moment for invalidation to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Step 3: Force a refetch to get the absolute latest data
-      console.log('useSettingsForm: Forcing refetch of creator settings...');
-      const { data: freshData } = await refetch();
-      
-      if (freshData) {
-        console.log('useSettingsForm: Fresh data received:', freshData);
-        console.log('useSettingsForm: Fresh display_name:', freshData.display_name);
+      if (updatedData && updatedData.length > 0) {
+        const savedData = updatedData[0];
+        console.log('useSettingsForm: Saved data from DB:', savedData);
         
-        // Step 4: COMPLETELY replace form data with fresh database data
-        setFormData({ ...freshData });
+        // IMMEDIATELY update form data with the exact values from the database
+        const updatedFormData = {
+          ...formData,
+          display_name: savedData.display_name,
+          bio: savedData.bio,
+          tags: savedData.tags,
+          profile_image_url: savedData.profile_image_url,
+          banner_url: savedData.banner_url,
+        };
+        
+        console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
+        setFormData(updatedFormData);
+        
+        // Invalidate queries to ensure other components refresh
+        await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
         
         toast({
           title: "Success",
-          description: `Settings updated successfully! Display name is now: "${freshData.display_name || 'Not set'}"`,
+          description: `Settings saved successfully! Display name is now: "${savedData.display_name || 'Not set'}"`,
         });
       } else {
-        console.warn('useSettingsForm: No fresh data returned from refetch');
-        
-        // Fallback: use the returned data from the update
-        if (Array.isArray(updatedData) && updatedData.length > 0) {
-          const firstUpdatedItem = updatedData[0];
-          console.log('useSettingsForm: Using fallback data:', firstUpdatedItem);
-          
-          // Create new form data object with updated values
-          const updatedFormData = {
-            ...formData,
-            display_name: firstUpdatedItem.display_name,
-            bio: firstUpdatedItem.bio,
-            tags: firstUpdatedItem.tags,
-            profile_image_url: firstUpdatedItem.profile_image_url,
-            banner_url: firstUpdatedItem.banner_url,
-          };
-          
-          setFormData(updatedFormData);
-          console.log('useSettingsForm: Form data updated with fallback:', updatedFormData);
-          
-          toast({
-            title: "Success", 
-            description: `Settings updated successfully! Display name is now: "${firstUpdatedItem.display_name || 'Not set'}"`,
-          });
-        } else {
-          toast({
-            title: "Warning",
-            description: "Settings saved but couldn't refresh data. Please reload the page.",
-            variant: "default",
-          });
-        }
+        throw new Error('No data returned from save operation');
       }
       
     } catch (error: any) {
