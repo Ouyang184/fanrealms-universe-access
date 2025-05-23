@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -22,13 +23,13 @@ export default function CreatorStudioSettings() {
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
   
-  // Update formData when settings are loaded, but preserve any unsaved changes
+  // Update formData when settings are loaded
   useEffect(() => {
-    if (settings && !isLoading && !isSaving) {
+    if (settings && !isSaving) {
       console.log('Settings loaded, updating formData:', settings);
       setFormData({ ...settings });
     }
-  }, [settings, isLoading, isSaving]);
+  }, [settings, isSaving]);
 
   const handleChange = (name: string, value: string | string[]) => {
     console.log(`Updating form field ${name} to:`, value);
@@ -45,10 +46,20 @@ export default function CreatorStudioSettings() {
     try {
       console.log('Saving settings with formData:', formData);
       
-      await updateSettings(formData);
-      
-      // Keep the formData as is (don't reset to settings) so the UI shows the saved values
-      console.log('Save successful, keeping formData as:', formData);
+      // Wait for the update to complete and get the updated data
+      await new Promise<void>((resolve, reject) => {
+        updateSettings(formData, {
+          onSuccess: (updatedData) => {
+            console.log('Update completed, received updated data:', updatedData);
+            // Update formData with the fresh data from database
+            setFormData(updatedData);
+            resolve();
+          },
+          onError: (error) => {
+            reject(error);
+          }
+        });
+      });
       
       toast({
         title: "Success",
