@@ -44,20 +44,32 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
 
       console.log('Creator update data to send to DB:', creatorUpdateData);
       
-      // Try the update with explicit WHERE clause and return the updated data
-      const { data: updateResult, error: updateError } = await supabase
+      // Simple update without trying to return data - this should work reliably
+      const { error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
-        .eq('user_id', user.id)
-        .select('*')
-        .single();
+        .eq('user_id', user.id);
       
       if (updateError) {
         console.error('Error updating creator:', updateError);
         throw updateError;
       }
       
-      console.log('Update result returned from database:', updateResult);
+      console.log('Update completed successfully');
+      
+      // Now verify the update worked by fetching the data again
+      const { data: verifiedCreator, error: verifyError } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (verifyError || !verifiedCreator) {
+        console.error('Error verifying update:', verifyError);
+        throw new Error('Update verification failed');
+      }
+      
+      console.log('Verified creator data after update:', verifiedCreator);
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
