@@ -34,21 +34,23 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange(name, value);
   };
 
+  // Ensure tags is always an array to prevent iteration errors
+  const currentTags = Array.isArray(settings.tags) ? settings.tags : [];
+
   const handleTagSelect = (tag: string) => {
     // Check if tag already exists in the array
-    if (settings.tags?.includes(tag)) {
+    if (currentTags.includes(tag)) {
       // Remove the tag
-      const updatedTags = settings.tags.filter(t => t !== tag);
+      const updatedTags = currentTags.filter(t => t !== tag);
       onSettingsChange('tags', updatedTags);
     } else {
       // Add the tag
-      const currentTags = settings.tags || [];
       onSettingsChange('tags', [...currentTags, tag]);
     }
   };
 
   const removeTag = (tag: string) => {
-    const updatedTags = (settings.tags || []).filter(t => t !== tag);
+    const updatedTags = currentTags.filter(t => t !== tag);
     onSettingsChange('tags', updatedTags);
   };
 
@@ -135,8 +137,8 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                   variant="outline" 
                   className="w-full justify-start text-left font-normal"
                 >
-                  {settings.tags?.length 
-                    ? `${settings.tags.length} tag${settings.tags.length > 1 ? 's' : ''} selected` 
+                  {currentTags.length 
+                    ? `${currentTags.length} tag${currentTags.length > 1 ? 's' : ''} selected` 
                     : "Select content tags..."}
                 </Button>
               </PopoverTrigger>
@@ -153,7 +155,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                           handleTagSelect(tag);
                         }}
                       >
-                        <span className={settings.tags?.includes(tag) ? "font-medium text-primary" : ""}>
+                        <span className={currentTags.includes(tag) ? "font-medium text-primary" : ""}>
                           {tag}
                         </span>
                       </CommandItem>
@@ -165,7 +167,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
             
             {/* Display selected tags */}
             <div className="flex flex-wrap gap-1 mt-2">
-              {settings.tags?.map((tag) => (
+              {currentTags.map((tag) => (
                 <Badge key={tag} className="px-2 py-1 flex items-center gap-1">
                   {tag}
                   <button 
