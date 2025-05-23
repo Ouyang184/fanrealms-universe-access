@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,17 +20,19 @@ export const useSettingsForm = () => {
   
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  // Update formData when settings are loaded or changed
+  // Update formData when settings are loaded or changed, but only if no unsaved changes
   useEffect(() => {
-    if (settings && !isLoading) {
+    if (settings && !isLoading && !hasUnsavedChanges) {
       console.log('useSettingsForm: Settings loaded, updating form data:', settings);
       setFormData({ ...settings });
     }
-  }, [settings, isLoading]);
+  }, [settings, isLoading, hasUnsavedChanges]);
 
   const handleChange = (name: string, value: string | string[]) => {
     console.log('useSettingsForm: Form field changed:', { name, value });
+    setHasUnsavedChanges(true);
     setFormData((prev) => {
       const updated = {
         ...prev,
@@ -88,7 +91,7 @@ export const useSettingsForm = () => {
         const savedData = updatedData[0];
         console.log('useSettingsForm: Saved data from DB:', savedData);
         
-        // IMMEDIATELY update form data with the exact values from the database
+        // Update form data with the exact values from the database
         const updatedFormData = {
           ...formData,
           display_name: savedData.display_name,
@@ -100,6 +103,9 @@ export const useSettingsForm = () => {
         
         console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
         setFormData(updatedFormData);
+        
+        // Mark as saved (no unsaved changes)
+        setHasUnsavedChanges(false);
         
         // Invalidate queries to ensure other components refresh
         await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
@@ -145,6 +151,7 @@ export const useSettingsForm = () => {
       try {
         const imageUrl = await uploadProfileImage(file);
         if (imageUrl) {
+          setHasUnsavedChanges(true);
           setFormData(prev => ({
             ...prev,
             avatar_url: imageUrl,
@@ -177,6 +184,7 @@ export const useSettingsForm = () => {
   const handleBannerUpdate = async (bannerUrl: string) => {
     if (!user?.id) return;
     
+    setHasUnsavedChanges(true);
     setFormData(prev => ({
       ...prev,
       banner_url: bannerUrl
@@ -189,6 +197,7 @@ export const useSettingsForm = () => {
     isLoading,
     isSaving,
     isUploading,
+    hasUnsavedChanges,
     handleChange,
     handleSave,
     handleImageUpload,
