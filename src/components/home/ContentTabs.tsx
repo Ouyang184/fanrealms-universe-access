@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
 import { ContentCard } from "@/components/content/ContentCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ContentItem {
-  id: number;
+  id: number | string;
   title: string;
   description: string;
   thumbnail: string;
   creator: {
-    id: number;
+    id: number | string;
     name: string;
     avatar: string;
   };
@@ -25,17 +26,43 @@ interface ContentTabsProps {
   trendingContent: ContentItem[];
   recentContent: ContentItem[];
   onCardClick: (content: ContentItem) => void;
+  isLoading?: boolean;
 }
 
-export function ContentTabs({ forYouContent, trendingContent, recentContent, onCardClick }: ContentTabsProps) {
+export function ContentTabs({ forYouContent, trendingContent, recentContent, onCardClick, isLoading = false }: ContentTabsProps) {
   const renderContent = (content: ContentItem[]) => {
-    return content.map((item) => (
-      <ContentCard 
-        key={item.id} 
-        content={item}
-        onClick={onCardClick}
-      />
-    ));
+    if (isLoading) {
+      return Array.from({ length: 8 }).map((_, index) => (
+        <div key={`skeleton-${index}`} className="bg-gray-900 border-gray-800 rounded-lg overflow-hidden">
+          <Skeleton className="h-40 w-full" />
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <Skeleton className="h-6 w-6 rounded" />
+            </div>
+          </div>
+        </div>
+      ));
+    }
+
+    return content.length > 0 ? (
+      content.map((item) => (
+        <ContentCard 
+          key={item.id} 
+          content={item}
+          onClick={onCardClick}
+        />
+      ))
+    ) : (
+      <div className="col-span-full text-center py-8 text-muted-foreground">
+        No content available
+      </div>
+    );
   };
 
   return (
