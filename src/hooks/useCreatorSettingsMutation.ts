@@ -47,27 +47,13 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       // Only update creators table if there are changes
       if (Object.keys(creatorUpdates).length > 0) {
-        console.log('Executing creator update using creator ID:', settings.id);
+        console.log('Executing creator update using user_id:', user.id);
         
-        // First, let's verify the creator exists
-        const { data: existingCreator, error: fetchError } = await supabase
-          .from('creators')
-          .select('id, user_id')
-          .eq('id', settings.id)
-          .single();
-        
-        if (fetchError) {
-          console.error('Error fetching creator for verification:', fetchError);
-          throw new Error(`Creator not found: ${fetchError.message}`);
-        }
-        
-        console.log('Found existing creator:', existingCreator);
-        
-        // Perform the update using creator ID and return the updated row
+        // Update using user_id instead of creator id for better reliability
         const { data: updatedData, error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('id', settings.id)
+          .eq('user_id', user.id)
           .select('*, users:user_id(username, email)')
           .single();
         
