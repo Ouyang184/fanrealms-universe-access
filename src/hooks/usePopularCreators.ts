@@ -30,27 +30,34 @@ export const usePopularCreators = () => {
         throw error;
       }
 
-      return data.map((creator): CreatorProfile => ({
-        id: creator.id,
-        user_id: creator.user_id,
-        username: creator.users?.username || '',
-        email: creator.users?.email || '',
-        bio: creator.bio,
-        display_name: creator.display_name || null,
-        displayName: creator.display_name || null,
-        avatar_url: creator.users?.profile_picture,
-        profile_image_url: creator.profile_image_url,
-        banner_url: creator.banner_url || null,
-        tiers: creator.membership_tiers?.map((tier): Tier => ({
-          id: tier.id,
-          creator_id: creator.id,
-          name: tier.title,
-          price: tier.price,
-          description: tier.description,
-          features: tier.description.split(',').map(item => item.trim()),
-          subscriberCount: 0 // Default value for subscriber count
-        }))
-      }));
+      return data.map((creator): CreatorProfile => {
+        const displayName = creator.display_name || creator.users?.username || '';
+        
+        return {
+          id: creator.id,
+          user_id: creator.user_id,
+          username: creator.users?.username || '',
+          email: creator.users?.email || '',
+          fullName: creator.users?.username || '',
+          bio: creator.bio || '',
+          display_name: displayName,
+          displayName: displayName,
+          avatar_url: creator.users?.profile_picture || '',
+          profile_image_url: creator.profile_image_url || creator.users?.profile_picture || '',
+          banner_url: creator.banner_url || '',
+          created_at: creator.created_at,
+          tags: creator.tags || [],
+          tiers: creator.membership_tiers?.map((tier): Tier => ({
+            id: tier.id,
+            creator_id: creator.id,
+            name: tier.title,
+            price: tier.price,
+            description: tier.description,
+            features: tier.description.split(',').map(item => item.trim()),
+            subscriberCount: 0 // Default value for subscriber count
+          }))
+        };
+      });
     }
   });
 };

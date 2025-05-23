@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -43,6 +44,7 @@ export interface CreatorProfile {
   following_count?: number;
   tags?: string[];
   created_at: string;
+  tiers?: Tier[];
 }
 
 export interface Tier {
