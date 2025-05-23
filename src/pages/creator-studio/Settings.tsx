@@ -16,11 +16,12 @@ export default function CreatorStudioSettings() {
     settings, 
     isLoading, 
     isUploading,
-    updateSettings, 
-    uploadProfileImage 
+    updateSettings,
+    uploadProfileImage,
+    refetch
   } = useCreatorSettings();
   
-  const [formData, setFormData] = useState({ ...settings });
+  const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   
   // Update formData when settings are loaded
@@ -77,9 +78,9 @@ export default function CreatorStudioSettings() {
       updateSettings(dataToSave, {
         onSuccess: () => {
           console.log('CreatorStudioSettings: Save completed successfully');
-          toast({
-            title: "Success",
-            description: "Your settings have been updated successfully",
+          // Refetch the latest data to ensure UI is updated
+          refetch().then(() => {
+            console.log('CreatorStudioSettings: Refetched settings after save');
           });
           setIsSaving(false);
         },

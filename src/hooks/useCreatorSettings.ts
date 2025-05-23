@@ -11,7 +11,7 @@ export const useCreatorSettings = () => {
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, refetch } = useQuery({
     queryKey: ['creator-settings', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -26,6 +26,11 @@ export const useCreatorSettings = () => {
         
       if (error) {
         console.error('Error fetching creator settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load creator settings. Please refresh the page.",
+          variant: "destructive",
+        });
         return null;
       }
       
@@ -64,12 +69,19 @@ export const useCreatorSettings = () => {
       
       // Update creator-specific fields
       const creatorFields = {
-        bio: updatedSettings.bio || '',
-        display_name: updatedSettings.display_name || '',
-        banner_url: updatedSettings.banner_url || '',
-        profile_image_url: updatedSettings.profile_image_url || '',
-        tags: updatedSettings.tags || [],
+        bio: updatedSettings.bio,
+        display_name: updatedSettings.display_name,
+        banner_url: updatedSettings.banner_url,
+        profile_image_url: updatedSettings.profile_image_url,
+        tags: updatedSettings.tags,
       };
+      
+      // Filter out undefined values
+      Object.keys(creatorFields).forEach(key => {
+        if (creatorFields[key] === undefined) {
+          delete creatorFields[key];
+        }
+      });
       
       console.log('updateSettingsMutation: Creator fields to update:', creatorFields);
       console.log('updateSettingsMutation: Updating creators table where user_id =', user.id);
@@ -129,9 +141,15 @@ export const useCreatorSettings = () => {
       // Also invalidate related queries to refresh the profile
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
+      refetch(); // Explicitly refetch to ensure we have the latest data
     },
     onError: (error: any) => {
       console.error('updateSettingsMutation: Error in mutation:', error);
+      toast({
+        title: "Error",
+        description: `Failed to update settings: ${error.message || "Unknown error"}`,
+        variant: "destructive",
+      });
     }
   });
 
@@ -147,6 +165,10 @@ export const useCreatorSettings = () => {
     updateSettingsMutation.mutate(updatedSettings, {
       onSuccess: () => {
         console.log('updateSettings: Mutation success, calling callback');
+        toast({
+          title: "Success",
+          description: "Your settings have been updated successfully",
+        });
         callbacks?.onSuccess?.();
       },
       onError: (error) => {
@@ -227,6 +249,7 @@ export const useCreatorSettings = () => {
     isLoading,
     isUploading,
     updateSettings,
-    uploadProfileImage
+    uploadProfileImage,
+    refetch
   };
 };
