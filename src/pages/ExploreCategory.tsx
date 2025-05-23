@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
@@ -265,6 +266,16 @@ export default function ExploreCategoryPage() {
                 </Button>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Back to All Categories Button */}
+        <section className="mb-8">
+          <div className="flex items-center justify-end">
+            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
+              <ChevronLeft className="h-4 w-4" />
+              Back to All
+            </Button>
           </div>
         </section>
 
