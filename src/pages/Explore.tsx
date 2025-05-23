@@ -140,7 +140,7 @@ export default function ExplorePage() {
     setFilteredCreators(creatorFilter.slice(0, 3)); // Featured creators (limited to 3)
     setFilteredTrending(postsFilter.slice(0, 4)); // Trending posts
     setFilteredNewReleases(postsFilter.sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
     
@@ -260,7 +260,7 @@ export default function ExplorePage() {
                     <div className="flex justify-between items-start">
                       <Avatar className="h-20 w-20 border-4 border-gray-900">
                         <AvatarImage 
-                          src={creator.profile_image_url || creator.users?.profile_picture || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} 
+                          src={creator.profile_image_url || creator.avatar_url || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} 
                           alt={creator.display_name || "Creator"} 
                         />
                         <AvatarFallback className="bg-gray-800 text-xl">
@@ -272,7 +272,7 @@ export default function ExplorePage() {
                         <span className="text-sm">{(4 + Math.random()).toFixed(1)}</span>
                       </div>
                     </div>
-                    <h3 className="text-xl font-bold mt-4">{creator.display_name || creator.users?.username || "Creator"}</h3>
+                    <h3 className="text-xl font-bold mt-4">{creator.display_name || "Creator"}</h3>
                     <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
                     <div className="flex flex-wrap gap-2 mt-3">
@@ -403,10 +403,10 @@ export default function ExplorePage() {
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={post.users?.profile_picture || `/placeholder.svg?text=${(post.authorName || "C").substring(0, 1)}`} alt={post.authorName || "Creator"} />
+                            <AvatarImage src={post.authorAvatar || `/placeholder.svg?text=${(post.authorName || "C").substring(0, 1)}`} alt={post.authorName || "Creator"} />
                             <AvatarFallback className="text-xs">{(post.authorName || "C").substring(0, 1)}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-gray-400">{post.authorName || post.users?.username || "Creator"}</span>
+                          <span className="text-sm text-gray-400">{post.authorName || "Creator"}</span>
                         </div>
                         <h3 className="font-semibold line-clamp-2">{post.title}</h3>
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
@@ -490,16 +490,16 @@ export default function ExplorePage() {
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={post.users?.profile_picture || `/placeholder.svg?text=${(post.authorName || "C").substring(0, 1)}`} alt={post.authorName || "Creator"} />
+                            <AvatarImage src={post.authorAvatar || `/placeholder.svg?text=${(post.authorName || "C").substring(0, 1)}`} alt={post.authorName || "Creator"} />
                             <AvatarFallback className="text-xs">{(post.authorName || "C").substring(0, 1)}</AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-gray-400">{post.authorName || post.users?.username || "Creator"}</span>
+                          <span className="text-sm text-gray-400">{post.authorName || "Creator"}</span>
                         </div>
                         <h3 className="font-semibold line-clamp-2">{post.title}</h3>
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {formatRelativeDate(post.created_at)}
+                            {formatRelativeDate(post.createdAt)}
                           </div>
                           <Badge className="ml-auto bg-purple-600">{post.tier_id ? "Premium" : "Free"}</Badge>
                         </div>
@@ -553,13 +553,13 @@ export default function ExplorePage() {
                     <Card key={creator.id} className="bg-gray-900 border-gray-800 flex overflow-hidden">
                       <div className="p-4 flex-shrink-0">
                         <Avatar className="h-16 w-16">
-                          <AvatarImage src={creator.profile_image_url || creator.users?.profile_picture || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} alt={creator.display_name || "Creator"} />
+                          <AvatarImage src={creator.profile_image_url || creator.avatar_url || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} alt={creator.display_name || "Creator"} />
                           <AvatarFallback className="bg-gray-800 text-xl">{(creator.display_name || "C").substring(0, 1)}</AvatarFallback>
                         </Avatar>
                       </div>
                       <div className="flex-1 p-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-bold">{creator.display_name || creator.users?.username || "Creator"}</h3>
+                          <h3 className="font-bold">{creator.display_name || creator.username || "Creator"}</h3>
                           <Badge variant="outline" className="bg-gray-800 border-gray-700">
                             {Math.floor(Math.random() * 10000) + 100} subscribers
                           </Badge>
