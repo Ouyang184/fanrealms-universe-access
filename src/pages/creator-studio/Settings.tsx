@@ -106,8 +106,15 @@ export default function CreatorStudioSettings() {
           onSuccess: async (updatedData: any) => {
             console.log('Update completed successfully:', updatedData);
             
-            // Wait a moment then refetch to get the absolute latest data
-            await new Promise((res) => setTimeout(res, 300));
+            // First invalidate to clear stale cache
+            await queryClient.invalidateQueries({ 
+              queryKey: ['creator-settings', user?.id] 
+            });
+            
+            // Add delay to avoid fetching stale data from Supabase
+            await new Promise((res) => setTimeout(res, 500));
+            
+            // Refetch the latest data
             await queryClient.refetchQueries({ 
               queryKey: ['creator-settings', user?.id] 
             });
@@ -120,6 +127,7 @@ export default function CreatorStudioSettings() {
               console.log('Updating form with fresh settings:', freshSettings);
               setFormData({ ...freshSettings });
             } else if (updatedData) {
+              console.log('Using updated data from mutation:', updatedData);
               setFormData({ ...updatedData });
             }
             

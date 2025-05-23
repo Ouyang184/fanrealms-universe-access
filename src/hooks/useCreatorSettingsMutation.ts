@@ -90,16 +90,6 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       queryClient.setQueryData(['creatorProfileDetails', user?.id], updatedData);
       queryClient.setQueryData(['creator-profile', user?.id], updatedData);
       
-      // Invalidate to ensure fresh data on next fetch
-      await queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
-      
-      // Small delay to let Supabase finish syncing
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      
-      // Then refetch the latest values to ensure we have the most up-to-date data
-      console.log('Refetching latest data after delay...');
-      await queryClient.refetchQueries({ queryKey: ['creator-settings', user?.id] });
-      
       toast({
         title: "Success",
         description: "Your settings have been updated successfully",
