@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { ProfileHeader } from "@/components/creator-studio/profile/ProfileHeader";
@@ -42,6 +44,20 @@ export default function CreatorProfile() {
 
       <div className="space-y-8">
         <ProfileHeader creator={creator} />
+        
+        {/* Content Tags Section */}
+        {creator.tags && creator.tags.length > 0 && (
+          <div className="px-4">
+            <h3 className="text-lg font-semibold mb-3">Content Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {creator.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="px-3 py-1">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
         
         <div className="px-4">
           <p>{creator.bio || "You haven't added a bio yet. Add one in your creator settings."}</p>
