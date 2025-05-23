@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,10 @@ import { LoadingView } from "@/components/ui/loading-view";
 
 export function ProfileHeader() {
   const { settings: creator, isLoading } = useCreatorSettingsQuery();
+
+  useEffect(() => {
+    console.log('ProfileHeader: Creator data loaded:', creator);
+  }, [creator]);
 
   if (isLoading) {
     return <LoadingView size="sm" fullHeight={false} message="Loading profile..." />;

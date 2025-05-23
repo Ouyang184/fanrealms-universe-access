@@ -71,13 +71,13 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // Direct Supabase update with .select().single() to get the updated data
+      // Important: Remove .single() from the update call to avoid errors
+      // when no rows are returned
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
         .eq("user_id", user.id)
-        .select()
-        .single();
+        .select();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
@@ -112,24 +112,34 @@ export const useSettingsForm = () => {
           description: `Settings updated successfully! Display name: "${freshData.display_name || 'Not set'}"`,
         });
       } else {
-        // Fallback to updated data from the mutation
-        const updatedFormData = {
-          ...formData,
-          display_name: updatedData.display_name,
-          displayName: updatedData.display_name, // Keep both in sync
-          bio: updatedData.bio,
-          tags: updatedData.tags,
-          profile_image_url: updatedData.profile_image_url,
-          banner_url: updatedData.banner_url,
-        };
+        // Fallback to updated data from the mutation - this needs to handle array data correctly
+        const firstUpdatedItem = Array.isArray(updatedData) && updatedData.length > 0 ? updatedData[0] : null;
         
-        setFormData(updatedFormData);
-        console.log('useSettingsForm: Form data updated with mutation data:', updatedFormData);
-        
-        toast({
-          title: "Success", 
-          description: `Settings updated successfully! Display name: "${updatedData.display_name || 'Not set'}"`,
-        });
+        if (firstUpdatedItem) {
+          const updatedFormData = {
+            ...formData,
+            display_name: firstUpdatedItem.display_name,
+            displayName: firstUpdatedItem.display_name, // Keep both in sync
+            bio: firstUpdatedItem.bio,
+            tags: firstUpdatedItem.tags,
+            profile_image_url: firstUpdatedItem.profile_image_url,
+            banner_url: firstUpdatedItem.banner_url,
+          };
+          
+          setFormData(updatedFormData);
+          console.log('useSettingsForm: Form data updated with mutation data:', updatedFormData);
+          
+          toast({
+            title: "Success", 
+            description: `Settings updated successfully! Display name: "${firstUpdatedItem.display_name || 'Not set'}"`,
+          });
+        } else {
+          toast({
+            title: "Warning",
+            description: "Settings saved but couldn't refresh data. Please reload the page.",
+            variant: "default",
+          });
+        }
       }
       
     } catch (error: any) {

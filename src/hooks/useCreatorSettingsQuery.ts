@@ -19,7 +19,7 @@ export const useCreatorSettingsQuery = () => {
         .from('creators')
         .select('*, users:user_id(username, email)')
         .eq('user_id', user.id)
-        .single();
+        .limit(1);
         
       if (error) {
         console.error('Error fetching creator settings:', error);
@@ -31,24 +31,30 @@ export const useCreatorSettingsQuery = () => {
         return null;
       }
       
-      console.log('Fetched creator data:', data);
+      if (!data || data.length === 0) {
+        console.log('No creator data found for user:', user.id);
+        return null;
+      }
+      
+      const creatorData = data[0];
+      console.log('Fetched creator data:', creatorData);
       
       // Format the data to match CreatorSettings interface
       // Use display_name as the single source of truth
       const formattedData = {
-        id: data.id,
-        user_id: data.user_id,
-        username: data.users?.username || '',
-        fullName: data.users?.username || '',
-        email: data.users?.email || '',
-        bio: data.bio || '',
-        display_name: data.display_name || '', // Primary field
-        displayName: data.display_name || '', // Keep in sync with display_name
-        avatar_url: data.profile_image_url,
-        profile_image_url: data.profile_image_url,
-        banner_url: data.banner_url,
-        tags: data.tags || [],
-        created_at: data.created_at
+        id: creatorData.id,
+        user_id: creatorData.user_id,
+        username: creatorData.users?.username || '',
+        fullName: creatorData.users?.username || '',
+        email: creatorData.users?.email || '',
+        bio: creatorData.bio || '',
+        display_name: creatorData.display_name || '', // Primary field
+        displayName: creatorData.display_name || '', // Keep in sync with display_name
+        avatar_url: creatorData.profile_image_url,
+        profile_image_url: creatorData.profile_image_url,
+        banner_url: creatorData.banner_url,
+        tags: creatorData.tags || [],
+        created_at: creatorData.created_at
       } as CreatorSettings;
       
       console.log('Formatted creator settings:', formattedData);
