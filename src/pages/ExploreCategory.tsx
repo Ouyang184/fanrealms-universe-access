@@ -289,29 +289,35 @@ export default function ExploreCategoryPage() {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem 
-                    onClick={() => handleCategoryChange("all")} 
-                    className="flex items-center gap-2"
-                  >
-                    {contentType === "all" && <Check className="h-4 w-4" />}
-                    <span className={contentType === "all" ? "font-medium" : ""}>All Categories</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  
-                  {categories.map((cat) => (
+                <DropdownMenuContent 
+                  className="max-h-[350px] overflow-y-auto"
+                  align="start"
+                  sideOffset={8}
+                >
+                  <ScrollArea className="h-full max-h-[300px]">
                     <DropdownMenuItem 
-                      key={cat.id}
-                      onClick={() => handleCategoryChange(cat.route)} 
+                      onClick={() => handleCategoryChange("all")} 
                       className="flex items-center gap-2"
                     >
-                      {cat.route === contentType && <Check className="h-4 w-4" />}
-                      <span className="flex items-center gap-2">
-                        <span>{cat.icon}</span>
-                        <span className={cat.route === contentType ? "font-medium" : ""}>{cat.name}</span>
-                      </span>
+                      {contentType === "all" && <Check className="h-4 w-4" />}
+                      <span className={contentType === "all" ? "font-medium" : ""}>All Categories</span>
                     </DropdownMenuItem>
-                  ))}
+                    <DropdownMenuSeparator />
+                    
+                    {categories.map((cat) => (
+                      <DropdownMenuItem 
+                        key={cat.id}
+                        onClick={() => handleCategoryChange(cat.route)} 
+                        className="flex items-center gap-2"
+                      >
+                        {cat.route === contentType && <Check className="h-4 w-4" />}
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span className={cat.route === contentType ? "font-medium" : ""}>{cat.name}</span>
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                  </ScrollArea>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
