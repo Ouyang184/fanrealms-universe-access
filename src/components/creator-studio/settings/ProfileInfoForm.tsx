@@ -55,7 +55,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange(name, value);
   };
 
-  // Use display_name directly from settings
+  // Use display_name directly from formData (settings prop)
   const displayName = settings.display_name || '';
   const avatarUrl = settings.profile_image_url || settings.avatar_url;
 
@@ -93,6 +93,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
               <Input
                 id="display_name"
                 name="display_name"
+                type="text"
                 value={displayName}
                 onChange={handleChange}
                 placeholder="How you want to be known publicly"
