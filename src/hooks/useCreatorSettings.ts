@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -137,11 +138,11 @@ export const useCreatorSettings = () => {
   ) => {
     updateSettingsMutation.mutate(updatedSettings, {
       onSuccess: (data) => {
-        updateSettingsMutation.options.onSuccess?.(data);
+        // Direct callback without using .options which doesn't exist
         callbacks?.onSuccess?.();
       },
       onError: (error) => {
-        updateSettingsMutation.options.onError?.(error);
+        // Direct callback without using .options which doesn't exist
         callbacks?.onError?.(error);
       }
     });
