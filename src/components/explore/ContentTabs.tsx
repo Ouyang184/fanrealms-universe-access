@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ContentItem } from "./ContentItem";
 import { RecommendedCreator } from "./RecommendedCreator";
 import { Post, CreatorProfile } from "@/types";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 interface ContentTabsProps {
   trendingPosts: Post[];
