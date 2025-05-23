@@ -3,28 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export function PopularTagsSection() {
-  // Updated to match the tags from ProfileInfoForm
   const popularTags = [
-    "Art",
-    "Music", 
-    "Gaming",
-    "Education",
-    "Writing",
+    "Digital Art",
+    "Game Development",
+    "Music Production",
     "Photography",
-    "Fitness",
+    "Creative Writing",
     "Cooking",
-    "Technology",
-    "Travel",
-    "Fashion",
-    "Design",
+    "Fitness",
+    "Web Development",
+    "Animation",
     "Podcasting",
-    "Comedy",
-    "Film",
-    "Dance",
-    "Science",
-    "Finance",
-    "Business",
-    "Crafts"
+    "Graphic Design",
+    "3D Modeling",
+    "Video Editing",
+    "Illustration",
+    "UI/UX Design",
   ];
 
   return (

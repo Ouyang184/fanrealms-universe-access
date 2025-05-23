@@ -1,40 +1,19 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SocialLinks } from "@/components/SocialLinks";
-import { useCreatorSettingsQuery } from "@/hooks/useCreatorSettingsQuery";
-import { LoadingView } from "@/components/ui/loading-view";
+import { CreatorProfile } from "@/types";
 
-export function ProfileHeader() {
-  const { settings: creator, isLoading } = useCreatorSettingsQuery();
+interface ProfileHeaderProps {
+  creator: CreatorProfile & { displayName: string };
+}
 
-  useEffect(() => {
-    console.log('ProfileHeader: Creator data loaded:', creator);
-    if (creator) {
-      console.log('ProfileHeader: display_name value:', creator.display_name);
-    }
-  }, [creator]);
-
-  if (isLoading) {
-    return <LoadingView size="sm" fullHeight={false} message="Loading profile..." />;
-  }
-
-  if (!creator) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Unable to load profile information.</p>
-      </div>
-    );
-  }
-
-  // Use display_name as the primary source, with fallbacks
-  const displayName = creator.display_name || creator.username || "Creator";
+export function ProfileHeader({ creator }: ProfileHeaderProps) {
+  const displayName = creator.displayName || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
-
-  console.log('ProfileHeader: Using display name:', displayName, 'from creator.display_name:', creator.display_name);
 
   return (
     <div className="relative">

@@ -8,14 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CreatorSettings } from "@/types/creator-studio";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const AVAILABLE_TAGS = [
   "Art", "Music", "Gaming", "Education", "Writing", 
@@ -32,35 +27,33 @@ interface ProfileInfoFormProps {
 }
 
 export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isUploading = false }: ProfileInfoFormProps) {
-  // Ensure tags is always an array to prevent iteration errors
-  const currentTags = Array.isArray(settings.tags) ? settings.tags : [];
+  const [tagsOpen, setTagsOpen] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    onSettingsChange(name, value);
+  };
 
   const handleTagSelect = (tag: string) => {
-    // If tag is already selected, don't add it again
-    if (!currentTags.includes(tag)) {
-      // Add the tag
-      const updatedTags = [...currentTags, tag];
+    // Check if tag already exists in the array
+    if (settings.tags?.includes(tag)) {
+      // Remove the tag
+      const updatedTags = settings.tags.filter(t => t !== tag);
       onSettingsChange('tags', updatedTags);
+    } else {
+      // Add the tag
+      const currentTags = settings.tags || [];
+      onSettingsChange('tags', [...currentTags, tag]);
     }
   };
 
   const removeTag = (tag: string) => {
-    const updatedTags = currentTags.filter(t => t !== tag);
+    const updatedTags = (settings.tags || []).filter(t => t !== tag);
     onSettingsChange('tags', updatedTags);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    console.log('ProfileInfoForm: Field changed:', { name, value });
-    onSettingsChange(name, value);
-  };
-
-  // Use display_name directly from settings prop
-  const displayName = settings.display_name || '';
-  const avatarUrl = settings.profile_image_url || settings.avatar_url;
-
-  console.log('ProfileInfoForm: Current settings:', settings);
-  console.log('ProfileInfoForm: Display name value:', displayName);
+  // Calculate display name - either from settings or default to username
+  const displayName = settings.display_name || settings.fullName || settings.username || '';
 
   return (
     <Card>
@@ -72,7 +65,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+              <AvatarImage src={settings.avatar_url || undefined} alt={displayName} />
               <AvatarFallback>{displayName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <Button 
@@ -93,8 +86,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
               <Input
                 id="display_name"
                 name="display_name"
-                type="text"
-                value={displayName}
+                value={settings.display_name || ''}
                 onChange={handleChange}
                 placeholder="How you want to be known publicly"
               />
@@ -111,12 +103,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 type="email"
                 value={settings.email || ''}
                 onChange={handleChange}
-                disabled
-                className="bg-muted"
               />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed here
-              </p>
             </div>
           </div>
         </div>
@@ -136,22 +123,43 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="grid gap-2">
           <Label htmlFor="tags">Content Tags</Label>
           <div className="space-y-2">
-            <Select onValueChange={handleTagSelect}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a content tag to add" />
-              </SelectTrigger>
-              <SelectContent>
-                {AVAILABLE_TAGS.map((tag) => (
-                  <SelectItem key={tag} value={tag} disabled={currentTags.includes(tag)}>
-                    {tag}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-left font-normal"
+                >
+                  {settings.tags?.length 
+                    ? `${settings.tags.length} tag${settings.tags.length > 1 ? 's' : ''} selected` 
+                    : "Select content tags..."}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search for tags..." />
+                  <CommandEmpty>No tags found.</CommandEmpty>
+                  <CommandGroup className="max-h-64 overflow-y-auto">
+                    {AVAILABLE_TAGS.map((tag) => (
+                      <CommandItem
+                        key={tag}
+                        value={tag}
+                        onSelect={() => {
+                          handleTagSelect(tag);
+                        }}
+                      >
+                        <span className={settings.tags?.includes(tag) ? "font-medium text-primary" : ""}>
+                          {tag}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
             
             {/* Display selected tags */}
             <div className="flex flex-wrap gap-1 mt-2">
-              {currentTags.map((tag) => (
+              {settings.tags?.map((tag) => (
                 <Badge key={tag} className="px-2 py-1 flex items-center gap-1">
                   {tag}
                   <button 

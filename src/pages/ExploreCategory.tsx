@@ -32,28 +32,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { CreatorProfile } from "@/types";
 
-// Updated categories to match the tags from ProfileInfoForm
+// Categories data
 const categories = [
-  { id: 1, name: "Art", icon: "🎨", route: "art" },
-  { id: 2, name: "Music", icon: "🎵", route: "music" },
-  { id: 3, name: "Gaming", icon: "🎮", route: "gaming" },
-  { id: 4, name: "Education", icon: "📚", route: "education" },
-  { id: 5, name: "Writing", icon: "✍️", route: "writing" },
-  { id: 6, name: "Photography", icon: "📷", route: "photography" },
-  { id: 7, name: "Fitness", icon: "💪", route: "fitness" },
+  { id: 1, name: "Art & Illustration", icon: "🎨", route: "art-illustration" },
+  { id: 2, name: "Gaming", icon: "🎮", route: "gaming" },
+  { id: 3, name: "Music", icon: "🎵", route: "music" },
+  { id: 4, name: "Writing", icon: "✍️", route: "writing" },
+  { id: 5, name: "Photography", icon: "📷", route: "photography" },
+  { id: 6, name: "Education", icon: "📚", route: "education" },
+  { id: 7, name: "Podcasts", icon: "🎙️", route: "podcasts" },
   { id: 8, name: "Cooking", icon: "🍳", route: "cooking" },
-  { id: 9, name: "Technology", icon: "💻", route: "technology" },
-  { id: 10, name: "Travel", icon: "✈️", route: "travel" },
+  { id: 9, name: "Fitness", icon: "💪", route: "fitness" },
+  { id: 10, name: "Technology", icon: "💻", route: "technology" },
   { id: 11, name: "Fashion", icon: "👗", route: "fashion" },
-  { id: 12, name: "Design", icon: "🎨", route: "design" },
-  { id: 13, name: "Podcasting", icon: "🎙️", route: "podcasting" },
-  { id: 14, name: "Comedy", icon: "😂", route: "comedy" },
-  { id: 15, name: "Film", icon: "🎬", route: "film" },
-  { id: 16, name: "Dance", icon: "💃", route: "dance" },
-  { id: 17, name: "Science", icon: "🔬", route: "science" },
-  { id: 18, name: "Finance", icon: "💰", route: "finance" },
-  { id: 19, name: "Business", icon: "💼", route: "business" },
-  { id: 20, name: "Crafts", icon: "🎨", route: "crafts" },
+  { id: 12, name: "Film & Video", icon: "🎬", route: "film-video" },
 ];
 
 export default function ExploreCategoryPage() {

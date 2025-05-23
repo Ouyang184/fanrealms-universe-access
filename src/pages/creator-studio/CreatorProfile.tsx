@@ -9,19 +9,18 @@ import { ProfileStatistics } from "@/components/creator-studio/profile/ProfileSt
 import { ProfilePostsTab } from "@/components/creator-studio/profile/ProfilePostsTab";
 import { ProfileMembershipTab } from "@/components/creator-studio/profile/ProfileMembershipTab";
 import { useCreatorProfileData } from "@/hooks/useCreatorProfileData";
-import { useCreatorSettingsQuery } from "@/hooks/useCreatorSettingsQuery";
 
 export default function CreatorProfile() {
   const [activeTab, setActiveTab] = useState("posts");
   
   const {
+    creator,
     posts,
     tiers,
+    isLoadingCreator,
     isLoadingPosts,
     isLoadingTiers
   } = useCreatorProfileData();
-
-  const { settings: creator, isLoading: isLoadingCreator } = useCreatorSettingsQuery();
 
   if (isLoadingCreator || !creator) {
     return (
@@ -30,6 +29,9 @@ export default function CreatorProfile() {
       </div>
     );
   }
+
+  // Ensure display_name is prioritized
+  const displayName = creator.display_name || creator.username;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -43,7 +45,7 @@ export default function CreatorProfile() {
       </div>
 
       <div className="space-y-8">
-        <ProfileHeader />
+        <ProfileHeader creator={{...creator, displayName}} />
         
         <div className="px-4">
           <p>{creator.bio || "You haven't added a bio yet. Add one in your creator settings."}</p>

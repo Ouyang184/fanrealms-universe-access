@@ -1,25 +1,161 @@
 
-import { useCreatorSettingsQuery } from "@/hooks/useCreatorSettingsQuery";
-import { SettingsHeader } from "@/components/creator-studio/settings/SettingsHeader";
-import { SettingsForm } from "@/components/creator-studio/settings/SettingsForm";
-import { SettingsLoadingView } from "@/components/creator-studio/settings/SettingsLoadingView";
-import { SettingsErrorView } from "@/components/creator-studio/settings/SettingsErrorView";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCreatorSettings } from "@/hooks/useCreatorSettings";
+import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
+import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
+import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function CreatorStudioSettings() {
-  const { settings, isLoading } = useCreatorSettingsQuery();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const { 
+    settings, 
+    isLoading, 
+    isUploading,
+    updateSettings, 
+    uploadProfileImage 
+  } = useCreatorSettings();
+  
+  const [formData, setFormData] = useState({ ...settings });
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Update formData when settings are loaded
+  useEffect(() => {
+    if (settings && !isLoading) {
+      setFormData({ ...settings });
+    }
+  }, [settings, isLoading]);
 
-  if (isLoading) {
-    return <SettingsLoadingView />;
-  }
+  const handleChange = (name: string, value: string | string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  if (!settings) {
-    return <SettingsErrorView />;
-  }
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    
+    try {
+      await updateSettings(formData);
+      toast({
+        title: "Success",
+        description: "Your settings have been updated successfully",
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (type: 'avatar') => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      try {
+        const imageUrl = await uploadProfileImage(file);
+        if (imageUrl) {
+          setFormData(prev => ({
+            ...prev,
+            avatar_url: imageUrl,
+            profile_image_url: imageUrl
+          }));
+          
+          toast({
+            title: "Success",
+            description: "Profile image updated successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    // Trigger file dialog
+    input.click();
+  };
+
+  const handleBannerUpdate = async (bannerUrl: string) => {
+    if (!user?.id) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      banner_url: bannerUrl
+    }));
+  };
+
+  const isFormDisabled = isLoading || isUploading || isSaving;
 
   return (
     <div className="space-y-6">
-      <SettingsHeader />
-      <SettingsForm />
+      <h1 className="text-2xl font-bold tracking-tight">Creator Settings</h1>
+      
+      <form onSubmit={handleSave}>
+        <div className="space-y-6">
+          <ProfileInfoForm 
+            settings={formData} 
+            onSettingsChange={handleChange} 
+            onImageUpload={handleImageUpload}
+            isUploading={isUploading}
+          />
+          
+          <BannerSection 
+            userId={user?.id || ''} 
+            currentBannerUrl={formData?.banner_url} 
+            onBannerUpdate={handleBannerUpdate}
+          />
+          
+          {settings?.id && (
+            <SocialLinksSection creatorId={settings.id} />
+          )}
+          
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              disabled={isFormDisabled}
+              className={`${isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}`}
+            >
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <Spinner className="h-4 w-4" /> Saving...
+                </span>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }
