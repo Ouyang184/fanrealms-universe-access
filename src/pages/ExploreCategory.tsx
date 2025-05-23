@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
@@ -236,12 +235,7 @@ export default function ExploreCategoryPage() {
         <section className="mb-8">
           <div className="relative rounded-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <img
-              src="/placeholder.svg?height=400&width=1200&text=Discover+Creators"
-              alt=""
-              role="presentation"
-              className="w-full h-48 object-cover"
-            />
+            <div className="w-full h-48 bg-gradient-to-r from-purple-900 to-blue-900"></div>
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">
                 {currentCategory ? currentCategory.name : 'Explore Categories'}
