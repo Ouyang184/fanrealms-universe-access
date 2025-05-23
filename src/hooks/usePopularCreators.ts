@@ -24,6 +24,7 @@ export const usePopularCreators = () => {
             created_at
           )
         `)
+        .eq('is_ai', false) // Only fetch non-AI creators
         .limit(3);
 
       if (error) {
