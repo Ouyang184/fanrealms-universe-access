@@ -28,7 +28,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (updatedSettings.avatar_url !== undefined) creatorUpdateData.profile_image_url = updatedSettings.avatar_url;
       if (updatedSettings.tags !== undefined) creatorUpdateData.tags = updatedSettings.tags;
 
-      console.log('Creator update data:', creatorUpdateData);
+      console.log('Creator update data to send to DB:', creatorUpdateData);
       
       // Simple update without complex joins - just like Account Settings
       const { error: updateError } = await supabase
@@ -42,6 +42,19 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       }
       
       console.log('Creator updated successfully');
+      
+      // Let's verify the update actually worked by checking what's in the database immediately after
+      const { data: verifyUpdate, error: verifyError } = await supabase
+        .from('creators')
+        .select('display_name, user_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      console.log('VERIFICATION - What is actually in the database after update:', verifyUpdate);
+      
+      if (verifyError) {
+        console.error('Error verifying update:', verifyError);
+      }
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -70,7 +83,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         throw new Error('Failed to fetch updated creator data');
       }
       
-      console.log('Successfully fetched updated creator:', updatedCreator);
+      console.log('Successfully fetched updated creator from DB:', updatedCreator);
       
       // Format and return the updated data
       const formattedData = formatCreatorData(updatedCreator);
