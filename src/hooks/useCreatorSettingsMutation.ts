@@ -47,13 +47,13 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       // Only update creators table if there are changes
       if (Object.keys(creatorUpdates).length > 0) {
-        console.log('Executing creator update using user_id:', user.id);
+        console.log('Executing creator update using creator id:', settings.id);
         
-        // Update using user_id instead of creator id for better reliability
+        // Update using creator id (primary key) instead of user_id for guaranteed uniqueness
         const { data: updatedData, error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('user_id', user.id)
+          .eq('id', settings.id)
           .select('*, users:user_id(username, email)')
           .maybeSingle();
         
