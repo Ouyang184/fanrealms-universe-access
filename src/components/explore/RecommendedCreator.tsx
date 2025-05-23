@@ -59,6 +59,9 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
       <div className="flex-1 p-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold">{displayName}</h3>
+          <Badge variant="outline" className="bg-gray-800 border-gray-700">
+            {Math.floor(Math.random() * 10000) + 100} subscribers
+          </Badge>
         </div>
         <p className="text-sm text-gray-400 mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
         <div className="flex flex-wrap gap-2 mt-2">
