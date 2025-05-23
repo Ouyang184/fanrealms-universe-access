@@ -9,6 +9,7 @@ import { BannerSection } from "@/components/creator-studio/settings/BannerSectio
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { Spinner } from "@/components/ui/spinner";
 import { useQueryClient } from '@tanstack/react-query';
+import { CreatorSettingsData } from "@/types/creator-settings";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -112,10 +113,10 @@ export default function CreatorStudioSettings() {
             });
             
             // Get the fresh data from the query cache
-            const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]);
+            const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]) as CreatorSettingsData | undefined;
             
             // Update local form data with the fresh data from the server
-            if (freshSettings && typeof freshSettings === 'object') {
+            if (freshSettings && freshSettings.id) {
               console.log('Updating form with fresh settings:', freshSettings);
               setFormData({ ...freshSettings });
             } else if (updatedData) {
