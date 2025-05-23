@@ -21,10 +21,10 @@ export const useSettingsForm = () => {
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   
-  // Update formData when settings are loaded
+  // Update formData when settings are loaded or changed
   useEffect(() => {
     if (settings && !isLoading) {
-      console.log('Settings loaded, updating form data:', settings);
+      console.log('useSettingsForm: Settings loaded, updating form data:', settings);
       setFormData({ ...settings });
     }
   }, [settings, isLoading]);
@@ -71,8 +71,7 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // Important: Remove .single() from the update call to avoid errors
-      // when no rows are returned
+      // Update the database
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
@@ -86,40 +85,42 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      // 1. INVALIDATE ALL CREATOR-RELATED QUERIES FIRST
+      // Step 1: Invalidate ALL related queries to ensure fresh data
       console.log('useSettingsForm: Invalidating all creator-related queries...');
-      await queryClient.invalidateQueries({ 
-        queryKey: ['creator-settings'] 
-      });
-      await queryClient.invalidateQueries({ 
-        queryKey: ['creator-profile'] 
-      });
-      await queryClient.invalidateQueries({ 
-        queryKey: ['creators'] 
-      });
+      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
+      await queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['creators'] });
       
-      // 2. FORCE REFETCH TO GET FRESH DATA
+      // Step 2: Wait a moment for invalidation to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Step 3: Force a refetch to get the absolute latest data
       console.log('useSettingsForm: Forcing refetch of creator settings...');
       const { data: freshData } = await refetch();
       
-      // 3. UPDATE FORM DATA WITH FRESH DATA FROM REFETCH
       if (freshData) {
-        console.log('useSettingsForm: Updating form data with fresh data:', freshData);
+        console.log('useSettingsForm: Fresh data received:', freshData);
+        console.log('useSettingsForm: Fresh display_name:', freshData.display_name);
+        
+        // Step 4: COMPLETELY replace form data with fresh database data
         setFormData({ ...freshData });
         
         toast({
           title: "Success",
-          description: `Settings updated successfully! Display name: "${freshData.display_name || 'Not set'}"`,
+          description: `Settings updated successfully! Display name is now: "${freshData.display_name || 'Not set'}"`,
         });
       } else {
-        // Fallback to updated data from the mutation - this needs to handle array data correctly
-        const firstUpdatedItem = Array.isArray(updatedData) && updatedData.length > 0 ? updatedData[0] : null;
+        console.warn('useSettingsForm: No fresh data returned from refetch');
         
-        if (firstUpdatedItem) {
+        // Fallback: use the returned data from the update
+        if (Array.isArray(updatedData) && updatedData.length > 0) {
+          const firstUpdatedItem = updatedData[0];
+          console.log('useSettingsForm: Using fallback data:', firstUpdatedItem);
+          
+          // Create new form data object with updated values
           const updatedFormData = {
             ...formData,
             display_name: firstUpdatedItem.display_name,
-            displayName: firstUpdatedItem.display_name, // Keep both in sync
             bio: firstUpdatedItem.bio,
             tags: firstUpdatedItem.tags,
             profile_image_url: firstUpdatedItem.profile_image_url,
@@ -127,11 +128,11 @@ export const useSettingsForm = () => {
           };
           
           setFormData(updatedFormData);
-          console.log('useSettingsForm: Form data updated with mutation data:', updatedFormData);
+          console.log('useSettingsForm: Form data updated with fallback:', updatedFormData);
           
           toast({
             title: "Success", 
-            description: `Settings updated successfully! Display name: "${firstUpdatedItem.display_name || 'Not set'}"`,
+            description: `Settings updated successfully! Display name is now: "${firstUpdatedItem.display_name || 'Not set'}"`,
           });
         } else {
           toast({

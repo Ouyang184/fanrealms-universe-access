@@ -40,7 +40,6 @@ export const useCreatorSettingsQuery = () => {
       console.log('Fetched creator data:', creatorData);
       
       // Format the data to match CreatorSettings interface
-      // Use display_name as the single source of truth
       const formattedData = {
         id: creatorData.id,
         user_id: creatorData.user_id,
@@ -48,7 +47,7 @@ export const useCreatorSettingsQuery = () => {
         fullName: creatorData.users?.username || '',
         email: creatorData.users?.email || '',
         bio: creatorData.bio || '',
-        display_name: creatorData.display_name || '', // Primary field
+        display_name: creatorData.display_name || '',
         displayName: creatorData.display_name || '', // Keep in sync with display_name
         avatar_url: creatorData.profile_image_url,
         profile_image_url: creatorData.profile_image_url,
@@ -62,7 +61,7 @@ export const useCreatorSettingsQuery = () => {
       return formattedData;
     },
     enabled: !!user?.id,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0, // Always consider data stale
     gcTime: 0, // Don't cache data in memory
     refetchOnWindowFocus: true, // Refetch when window gains focus
     refetchOnMount: true, // Always refetch on component mount

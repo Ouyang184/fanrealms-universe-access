@@ -12,6 +12,9 @@ export function ProfileHeader() {
 
   useEffect(() => {
     console.log('ProfileHeader: Creator data loaded:', creator);
+    if (creator) {
+      console.log('ProfileHeader: display_name value:', creator.display_name);
+    }
   }, [creator]);
 
   if (isLoading) {
@@ -31,7 +34,7 @@ export function ProfileHeader() {
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
 
-  console.log('ProfileHeader: Using display name:', displayName, 'from creator:', creator);
+  console.log('ProfileHeader: Using display name:', displayName, 'from creator.display_name:', creator.display_name);
 
   return (
     <div className="relative">
