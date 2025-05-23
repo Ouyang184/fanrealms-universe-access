@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -94,8 +93,14 @@ export default function CreatorStudioSettings() {
       });
 
       // Refetch the latest data to ensure UI is updated
-      await refetch();
+      const refetchedData = await refetch();
       console.log('CreatorStudioSettings: Refetched settings after save');
+      
+      // Update formData with the fresh data from the database
+      if (refetchedData.data) {
+        console.log('CreatorStudioSettings: Updating formData with fresh database data:', refetchedData.data);
+        setFormData({ ...refetchedData.data });
+      }
       
     } catch (error: any) {
       console.error("CreatorStudioSettings: Error in handleSave:", error);
