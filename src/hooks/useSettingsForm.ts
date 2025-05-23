@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -97,7 +98,8 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      // Update form data with the exact values from the database
+      // IMPORTANT: Update form data with the exact values from the database
+      // and mark as saved BEFORE invalidating queries to prevent race conditions
       const updatedFormData = {
         ...formData,
         display_name: updatedData.display_name,
@@ -110,19 +112,17 @@ export const useSettingsForm = () => {
       console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
       setFormData(updatedFormData);
       
-      // Mark as saved (no unsaved changes)
+      // Mark as saved (no unsaved changes) BEFORE invalidating queries
       setHasUnsavedChanges(false);
       
-      // Invalidate queries to ensure other components refresh
-      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
-      
-      // Force a refetch to ensure fresh data
-      await refetch();
-      
+      // Show success message
       toast({
         title: "Success",
         description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
       });
+      
+      // Invalidate queries to ensure other components refresh - do this AFTER updating form state
+      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
       
     } catch (error: any) {
       console.error("useSettingsForm: Error in handleSave:", error);
