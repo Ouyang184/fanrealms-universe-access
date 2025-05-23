@@ -18,32 +18,6 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       console.log('User ID:', user.id);
       console.log('Full updatedSettings received:', updatedSettings);
       
-      // First, let's check for any triggers on the creators table
-      console.log('🔍 Checking for triggers on creators table...');
-      const { data: triggers, error: triggerError } = await supabase
-        .rpc('sql', { 
-          query: "SELECT tgname, tgtype, tgenabled FROM pg_trigger WHERE tgrelid = 'public.creators'::regclass;" 
-        });
-      
-      if (triggerError) {
-        console.log('❌ Error checking triggers:', triggerError);
-      } else {
-        console.log('🔧 Triggers on creators table:', triggers);
-      }
-      
-      // Check transaction isolation level
-      console.log('🔍 Checking transaction isolation level...');
-      const { data: isolation, error: isolationError } = await supabase
-        .rpc('sql', { 
-          query: "SHOW transaction_isolation;" 
-        });
-      
-      if (isolationError) {
-        console.log('❌ Error checking isolation:', isolationError);
-      } else {
-        console.log('⚙️ Transaction isolation level:', isolation);
-      }
-      
       // Extract only the fields that should be updated in the creators table
       const creatorUpdates: Partial<CreatorUpdateData> = {};
       
@@ -72,21 +46,19 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (Object.keys(creatorUpdates).length > 0) {
         console.log('📝 Starting database update...');
         
-        // Check current value before update
+        // First, let's check the current value in the database
         console.log('🔍 Checking current database value...');
         const { data: beforeUpdate, error: beforeError } = await supabase
           .from('creators')
-          .select('display_name, id, updated_at')
+          .select('display_name, id')
           .eq('user_id', user.id)
           .single();
         
         console.log('📊 Current database value:', beforeUpdate);
         if (beforeError) console.log('❌ Error checking current value:', beforeError);
         
-        // Perform update with explicit transaction
+        // Now perform the update
         console.log('💾 Performing update with payload:', creatorUpdates);
-        console.log('🔄 Starting explicit transaction...');
-        
         const updateResult = await supabase
           .from('creators')
           .update(creatorUpdates)
@@ -103,27 +75,19 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         console.log('✅ Update executed successfully');
         console.log('📋 Updated rows:', updateResult.data);
         
-        // Immediately verify the update in the same connection
-        console.log('🔍 Immediate verification (same connection)...');
-        const { data: immediateCheck, error: immediateError } = await supabase
+        // Wait a moment and check the value again
+        console.log('⏱️ Waiting 100ms before verification...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('🔍 Verifying update by checking database again...');
+        const { data: afterUpdate, error: afterError } = await supabase
           .from('creators')
           .select('display_name, id, updated_at')
           .eq('user_id', user.id)
           .single();
         
-        console.log('📊 Immediate check result:', immediateCheck);
-        if (immediateError) console.log('❌ Error in immediate check:', immediateError);
-        
-        // Check if the update actually persisted by comparing timestamps
-        if (beforeUpdate && immediateCheck) {
-          const beforeTime = new Date(beforeUpdate.updated_at || '').getTime();
-          const afterTime = new Date(immediateCheck.updated_at || '').getTime();
-          console.log('⏰ Update timestamp comparison:', {
-            before: beforeUpdate.updated_at,
-            after: immediateCheck.updated_at,
-            changed: afterTime > beforeTime
-          });
-        }
+        console.log('📊 Database value after update:', afterUpdate);
+        if (afterError) console.log('❌ Error checking after update:', afterError);
       }
       
       // Update user fields if needed
@@ -142,12 +106,13 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         
         if (userError) {
           console.error('❌ User update error:', userError);
+          // Don't throw here, just log the error
         }
       }
       
-      // Final fetch with a longer wait
-      console.log('⏱️ Waiting 500ms before final fetch...');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Fetch the updated data with additional wait
+      console.log('⏱️ Waiting 200ms before final fetch...');
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       console.log('📡 Fetching final updated creator data...');
       const { data: finalCreator, error: finalError } = await supabase
