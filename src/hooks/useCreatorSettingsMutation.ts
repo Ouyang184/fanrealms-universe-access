@@ -96,19 +96,11 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       console.log('=== MUTATION SUCCESS ===');
       console.log('Final updated data:', updatedData);
       
-      // 1. Invalidate the Cache
-      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
-      
       // Update all related query caches with the fresh data
       queryClient.setQueryData(['creator-settings', user?.id], updatedData);
       queryClient.setQueryData(['creatorProfile', user?.id], updatedData);
       queryClient.setQueryData(['creatorProfileDetails', user?.id], updatedData);
       queryClient.setQueryData(['creator-profile', user?.id], updatedData);
-      
-      // 2. Refetch Settings Immediately
-      await queryClient.refetchQueries({ 
-        queryKey: ['creator-settings', user?.id] 
-      });
       
       toast({
         title: "Success",
