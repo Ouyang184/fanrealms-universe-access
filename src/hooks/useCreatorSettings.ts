@@ -78,15 +78,20 @@ export const useCreatorSettings = () => {
         .from('creators')
         .update(creatorFields)
         .eq('user_id', user.id)
-        .select()
-        .single();
+        .select();
       
       if (error) {
         console.error('updateSettingsMutation: Supabase error:', error);
         throw error;
       }
       
-      console.log('updateSettingsMutation: Update successful:', data);
+      if (!data || data.length === 0) {
+        console.error('updateSettingsMutation: No data returned after update');
+        throw new Error('Failed to update creator settings: No data returned');
+      }
+      
+      const updatedData = data[0];
+      console.log('updateSettingsMutation: Update successful:', updatedData);
       
       // Update user fields if needed (username)
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -105,18 +110,18 @@ export const useCreatorSettings = () => {
       }
       
       // Return the updated data with proper field mapping
-      const updatedData = {
+      const resultData = {
         ...settings,
-        ...data,
-        display_name: data.display_name,
-        displayName: data.display_name,
-        profile_image_url: data.profile_image_url,
-        avatar_url: data.profile_image_url,
+        ...updatedData,
+        display_name: updatedData.display_name,
+        displayName: updatedData.display_name,
+        profile_image_url: updatedData.profile_image_url,
+        avatar_url: updatedData.profile_image_url,
       };
       
-      console.log('updateSettingsMutation: Returning updated data:', updatedData);
+      console.log('updateSettingsMutation: Returning updated data:', resultData);
       
-      return updatedData;
+      return resultData;
     },
     onSuccess: (data) => {
       console.log('updateSettingsMutation: Success callback, updating cache with:', data);
@@ -140,7 +145,7 @@ export const useCreatorSettings = () => {
   ) => {
     console.log('updateSettings called with:', { updatedSettings, callbacks: !!callbacks });
     updateSettingsMutation.mutate(updatedSettings, {
-      onSuccess: (data) => {
+      onSuccess: () => {
         console.log('updateSettings: Mutation success, calling callback');
         callbacks?.onSuccess?.();
       },
