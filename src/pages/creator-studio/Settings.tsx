@@ -62,7 +62,7 @@ export default function CreatorStudioSettings() {
       console.log('CreatorStudioSettings: Starting save with form data:', formData);
       console.log('CreatorStudioSettings: Current user ID:', user.id);
       
-      // Prepare the data for saving
+      // Prepare the data for saving - ensure display_name is correctly mapped
       const dataToSave = {
         display_name: formData.display_name || '',
         bio: formData.bio || '',
@@ -74,17 +74,19 @@ export default function CreatorStudioSettings() {
       console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
       // Direct Supabase update
-      const { error: updateError } = await supabase
+      const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select()
+        .single();
         
       if (updateError) {
         console.error('CreatorStudioSettings: Supabase update error:', updateError);
         throw updateError;
       }
 
-      console.log('CreatorStudioSettings: Save completed successfully');
+      console.log('CreatorStudioSettings: Save completed successfully, updated data:', updatedData);
       
       // Show success toast
       toast({
@@ -92,15 +94,8 @@ export default function CreatorStudioSettings() {
         description: "Your settings have been updated successfully",
       });
 
-      // Refetch the latest data to ensure UI is updated
-      const refetchedData = await refetch();
-      console.log('CreatorStudioSettings: Refetched settings after save');
-      
-      // Update formData with the fresh data from the database
-      if (refetchedData.data) {
-        console.log('CreatorStudioSettings: Updating formData with fresh database data:', refetchedData.data);
-        setFormData({ ...refetchedData.data });
-      }
+      // Force refetch to get fresh data
+      await refetch();
       
     } catch (error: any) {
       console.error("CreatorStudioSettings: Error in handleSave:", error);

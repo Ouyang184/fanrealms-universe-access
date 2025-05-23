@@ -34,6 +34,7 @@ export const useCreatorSettingsQuery = () => {
       console.log('Fetched creator data:', data);
       
       // Format the data to match CreatorSettings interface
+      // Make sure display_name takes priority and is consistent
       const formattedData = {
         id: data.id,
         user_id: data.user_id,
@@ -41,8 +42,8 @@ export const useCreatorSettingsQuery = () => {
         fullName: data.users?.username || '',
         email: data.users?.email || '',
         bio: data.bio || '',
-        display_name: data.display_name || '',
-        displayName: data.display_name || '',
+        display_name: data.display_name || '', // Use the actual display_name from database
+        displayName: data.display_name || '', // Keep this in sync
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,
