@@ -128,7 +128,11 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
 
                   <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-gray-400">
-                      From <span className="font-medium text-white">${(9.99).toFixed(2)}/mo</span>
+                      {creator.tiers && creator.tiers.length > 0 ? (
+                        <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
+                      ) : (
+                        <span className="font-medium text-white">Free</span>
+                      )}
                     </div>
                     <Link to={creatorLink}>
                       <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>

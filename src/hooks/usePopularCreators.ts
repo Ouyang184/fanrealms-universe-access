@@ -7,6 +7,8 @@ export const usePopularCreators = (excludeAI = true) => {
   return useQuery({
     queryKey: ["creators", "popular", { excludeAI }],
     queryFn: async () => {
+      console.log("Fetching popular creators, excludeAI:", excludeAI);
+
       let query = supabase
         .from('creators')
         .select(`
@@ -36,8 +38,11 @@ export const usePopularCreators = (excludeAI = true) => {
       const { data, error } = await query;
 
       if (error) {
+        console.error("Error fetching popular creators:", error);
         throw error;
       }
+
+      console.log("Fetched popular creators:", data?.length || 0);
 
       return data.map((creator): CreatorProfile => {
         const displayName = creator.display_name || creator.users?.username || '';

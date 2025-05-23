@@ -27,12 +27,23 @@ export function CategoriesSection() {
     { name: "Education", icon: "📚", color: "from-indigo-600 to-violet-600", route: "education" },
   ];
 
-  // Count creators per category based on their tags or bio content
+  // Count real creators per category based on their tags or bio content
   useEffect(() => {
     if (!isLoading && creators.length > 0) {
+      console.log("Counting creators per category, total creators:", creators.length);
+      
       const counts: Record<string, number> = {};
       
-      creators.forEach(creator => {
+      // Filter out any AI creators before counting
+      const realCreators = creators.filter(creator => {
+        const displayName = creator.displayName || creator.display_name || '';
+        const bio = creator.bio || '';
+        return !displayName.includes('AI') && !bio.includes('AI generated');
+      });
+      
+      console.log("Real creators after filtering:", realCreators.length);
+      
+      realCreators.forEach(creator => {
         const bio = (creator.bio || "").toLowerCase();
         const tags = creator.tags || [];
         
@@ -57,6 +68,7 @@ export function CategoriesSection() {
         counts[category.route] = counts[category.route] || 0;
       });
       
+      console.log("Category creator counts:", counts);
       setCategoryCreatorCounts(counts);
     }
   }, [creators, isLoading]);
