@@ -55,7 +55,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange(name, value);
   };
 
-  // Use display_name directly from formData (settings prop)
+  // Use display_name directly from settings prop
   const displayName = settings.display_name || '';
   const avatarUrl = settings.profile_image_url || settings.avatar_url;
 

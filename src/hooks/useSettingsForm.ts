@@ -84,7 +84,7 @@ export const useSettingsForm = () => {
         .update(dataToSave)
         .eq("id", settings.id)
         .select()
-        .single();
+        .maybeSingle();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
@@ -100,17 +100,21 @@ export const useSettingsForm = () => {
       
       // IMPORTANT: Update form data with the exact values from the database
       // and mark as saved BEFORE invalidating queries to prevent race conditions
-      const updatedFormData = {
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         display_name: updatedData.display_name,
         bio: updatedData.bio,
         tags: updatedData.tags,
         profile_image_url: updatedData.profile_image_url,
         banner_url: updatedData.banner_url,
-      };
+        // Ensure displayName is also updated for backward compatibility
+        displayName: updatedData.display_name
+      }));
       
-      console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
-      setFormData(updatedFormData);
+      console.log('useSettingsForm: Updated form data after save:', {
+        displayName: updatedData.display_name,
+        formDisplayName: formData.display_name
+      });
       
       // Mark as saved (no unsaved changes) BEFORE invalidating queries
       setHasUnsavedChanges(false);
@@ -121,7 +125,21 @@ export const useSettingsForm = () => {
         description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
       });
       
-      // Invalidate queries to ensure other components refresh - do this AFTER updating form state
+      // Force a direct update to the cached query data
+      queryClient.setQueryData(['creator-settings'], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          display_name: updatedData.display_name,
+          displayName: updatedData.display_name,
+          bio: updatedData.bio,
+          tags: updatedData.tags,
+          profile_image_url: updatedData.profile_image_url,
+          banner_url: updatedData.banner_url
+        };
+      });
+      
+      // Then invalidate the query to ensure a fresh fetch
       await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
       
     } catch (error: any) {
