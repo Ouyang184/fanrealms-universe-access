@@ -56,6 +56,8 @@ export const useCreatorSettingsQuery = () => {
       return formattedData;
     },
     enabled: !!user?.id,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   return {

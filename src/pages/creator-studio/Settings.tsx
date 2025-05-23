@@ -91,15 +91,18 @@ export default function CreatorStudioSettings() {
       console.log('CreatorStudioSettings: Save completed successfully, updated data:', updatedData);
       
       // Update formData immediately with the saved data to prevent reversion
-      setFormData(prev => ({
-        ...prev,
+      const updatedFormData = {
+        ...formData,
         display_name: updatedData.display_name,
         displayName: updatedData.display_name, // Keep both in sync
         bio: updatedData.bio,
         tags: updatedData.tags,
         profile_image_url: updatedData.profile_image_url,
         banner_url: updatedData.banner_url,
-      }));
+      };
+      
+      setFormData(updatedFormData);
+      console.log('CreatorStudioSettings: Form data updated after save:', updatedFormData);
       
       // Show success toast
       toast({
@@ -108,17 +111,20 @@ export default function CreatorStudioSettings() {
       });
 
       // Invalidate ALL creator-related queries to ensure consistency across the app
+      console.log('CreatorStudioSettings: Invalidating all creator queries...');
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['creator-settings', user.id] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfile', user.id] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creator-settings'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails'] }),
         queryClient.invalidateQueries({ queryKey: ['popular-creators'] }),
-        // Also invalidate by creator ID and username for pages that might use those
-        queryClient.invalidateQueries({ queryKey: ['creatorProfile', settings?.username] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorProfile', settings?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['creators'] }),
       ]);
 
+      // Clear all query cache and force fresh data
+      await queryClient.clear();
+      
       // Force refetch to get fresh data
+      console.log('CreatorStudioSettings: Forcing refetch...');
       await refetch();
       
     } catch (error: any) {
