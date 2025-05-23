@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
@@ -169,8 +168,7 @@ export default function ExploreCategoryPage() {
   const navigate = useNavigate();
   
   const [sortOption, setSortOption] = useState<string>("top-rated");
-  const [creatorType, setCreatorType] = useState<string>("all");
-  const [contentType, setContentType] = useState<string>("all");
+  const [contentType, setContentType] = useState<string>(category || "all");
   
   // Find the current category object based on route parameter
   const currentCategory = categories.find(cat => cat.route === category);
@@ -194,18 +192,16 @@ export default function ExploreCategoryPage() {
     } else {
       setFilteredCreators(sampleCreators);
     }
+    
+    // Update contentType state when category route changes
+    if (category) {
+      setContentType(category);
+    }
   }, [category]);
   
   // Apply sorting and filtering
   const applyFilters = (creators: typeof sampleCreators) => {
     let result = [...creators];
-    
-    // Filter by creator type
-    if (creatorType === "pro") {
-      result = result.filter(creator => creator.isPro);
-    } else if (creatorType === "free") {
-      result = result.filter(creator => !creator.isPro);
-    }
     
     // Apply sorting
     if (sortOption === "top-rated") {
@@ -221,7 +217,8 @@ export default function ExploreCategoryPage() {
   
   const displayCreators = applyFilters(filteredCreators);
   
-  const navigateToCategory = (categoryRoute: string) => {
+  // Navigate to a different category
+  const handleCategoryChange = (categoryRoute: string) => {
     navigate(`/explore/${categoryRoute}`);
   };
 
@@ -280,7 +277,7 @@ export default function ExploreCategoryPage() {
               {categories.map((cat) => (
                 <Button
                   key={cat.id}
-                  onClick={() => navigateToCategory(cat.route)}
+                  onClick={() => handleCategoryChange(cat.route)}
                   variant={cat.route === category ? "default" : "outline"}
                   className={`min-w-fit flex items-center gap-2 ${
                     cat.route === category
@@ -309,46 +306,33 @@ export default function ExploreCategoryPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
-                    Creator Type
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setCreatorType("all")} className="flex items-center gap-2">
-                    {creatorType === "all" && <Check className="h-4 w-4" />}
-                    <span className={creatorType === "all" ? "font-medium" : ""}>All Creators</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCreatorType("pro")} className="flex items-center gap-2">
-                    {creatorType === "pro" && <Check className="h-4 w-4" />}
-                    <span className={creatorType === "pro" ? "font-medium" : ""}>Pro Creators</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCreatorType("free")} className="flex items-center gap-2">
-                    {creatorType === "free" && <Check className="h-4 w-4" />}
-                    <span className={creatorType === "free" ? "font-medium" : ""}>Free Creators</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
                     Content Type
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setContentType("all")} className="flex items-center gap-2">
+                  <DropdownMenuItem 
+                    onClick={() => handleCategoryChange("all")} 
+                    className="flex items-center gap-2"
+                  >
                     {contentType === "all" && <Check className="h-4 w-4" />}
-                    <span className={contentType === "all" ? "font-medium" : ""}>All Content</span>
+                    <span className={contentType === "all" ? "font-medium" : ""}>All Categories</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setContentType("videos")} className="flex items-center gap-2">
-                    {contentType === "videos" && <Check className="h-4 w-4" />}
-                    <span className={contentType === "videos" ? "font-medium" : ""}>Videos</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setContentType("tutorials")} className="flex items-center gap-2">
-                    {contentType === "tutorials" && <Check className="h-4 w-4" />}
-                    <span className={contentType === "tutorials" ? "font-medium" : ""}>Tutorials</span>
-                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  
+                  {categories.map((cat) => (
+                    <DropdownMenuItem 
+                      key={cat.id}
+                      onClick={() => handleCategoryChange(cat.route)} 
+                      className="flex items-center gap-2"
+                    >
+                      {cat.route === contentType && <Check className="h-4 w-4" />}
+                      <span className="flex items-center gap-2">
+                        <span>{cat.icon}</span>
+                        <span className={cat.route === contentType ? "font-medium" : ""}>{cat.name}</span>
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
