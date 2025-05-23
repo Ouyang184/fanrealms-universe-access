@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreatorSettings } from "@/hooks/useCreatorSettings";
+import { useCreatorSettingsQuery } from "@/hooks/useCreatorSettingsQuery";
+import { useProfileImageUpload } from "@/hooks/useProfileImageUpload";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
@@ -16,10 +17,9 @@ export default function CreatorStudioSettings() {
   const { 
     settings, 
     isLoading, 
-    isUploading,
-    uploadProfileImage,
     refetch
-  } = useCreatorSettings();
+  } = useCreatorSettingsQuery();
+  const { uploadProfileImage, isUploading } = useProfileImageUpload();
   
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -63,7 +63,7 @@ export default function CreatorStudioSettings() {
       console.log('CreatorStudioSettings: Starting save with form data:', formData);
       console.log('CreatorStudioSettings: Current user ID:', user.id);
       
-      // Prepare the data for saving - using the same pattern as Save Links
+      // Prepare the data for saving
       const dataToSave = {
         display_name: formData.display_name || '',
         bio: formData.bio || '',
@@ -74,7 +74,7 @@ export default function CreatorStudioSettings() {
 
       console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
-      // Use direct Supabase update like in SocialLinksSection (Save Links logic)
+      // Direct Supabase update
       const { error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
@@ -87,13 +87,13 @@ export default function CreatorStudioSettings() {
 
       console.log('CreatorStudioSettings: Save completed successfully');
       
-      // Show success toast (same as Save Links)
+      // Show success toast
       toast({
         title: "Success",
         description: "Your settings have been updated successfully",
       });
 
-      // Refetch the latest data to ensure UI is updated (same as Save Links)
+      // Refetch the latest data to ensure UI is updated
       await refetch();
       console.log('CreatorStudioSettings: Refetched settings after save');
       
