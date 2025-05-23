@@ -4,18 +4,18 @@ import { Link } from "react-router-dom";
 
 // Sample categories for onboarding
 const categories = [
-  { id: 1, name: "Art & Illustration", icon: "🎨", selected: false },
-  { id: 2, name: "Gaming", icon: "🎮", selected: false },
-  { id: 3, name: "Music", icon: "🎵", selected: false },
-  { id: 4, name: "Writing", icon: "✍️", selected: false },
-  { id: 5, name: "Photography", icon: "📷", selected: false },
-  { id: 6, name: "Education", icon: "📚", selected: false },
-  { id: 7, name: "Podcasts", icon: "🎙️", selected: false },
-  { id: 8, name: "Cooking", icon: "🍳", selected: false },
-  { id: 9, name: "Fitness", icon: "💪", selected: false },
-  { id: 10, name: "Technology", icon: "💻", selected: false },
-  { id: 11, name: "Fashion", icon: "👗", selected: false },
-  { id: 12, name: "Film & Video", icon: "🎬", selected: false },
+  { id: 1, name: "Art & Illustration", icon: "🎨", selected: false, route: "art-illustration" },
+  { id: 2, name: "Gaming", icon: "🎮", selected: false, route: "gaming" },
+  { id: 3, name: "Music", icon: "🎵", selected: false, route: "music" },
+  { id: 4, name: "Writing", icon: "✍️", selected: false, route: "writing" },
+  { id: 5, name: "Photography", icon: "📷", selected: false, route: "photography" },
+  { id: 6, name: "Education", icon: "📚", selected: false, route: "education" },
+  { id: 7, name: "Podcasts", icon: "🎙️", selected: false, route: "podcasts" },
+  { id: 8, name: "Cooking", icon: "🍳", selected: false, route: "cooking" },
+  { id: 9, name: "Fitness", icon: "💪", selected: false, route: "fitness" },
+  { id: 10, name: "Technology", icon: "💻", selected: false, route: "technology" },
+  { id: 11, name: "Fashion", icon: "👗", selected: false, route: "fashion" },
+  { id: 12, name: "Film & Video", icon: "🎬", selected: false, route: "film-video" },
 ];
 
 interface CategoryGridProps {
@@ -25,7 +25,7 @@ interface CategoryGridProps {
 }
 
 export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = false }: CategoryGridProps) {
-  const renderCategory = (category: { id: number; name: string; icon: string }) => {
+  const renderCategory = (category: { id: number; name: string; icon: string; route: string }) => {
     const isSelected = selectedCategories.includes(category.id);
     
     const categoryContent = (
@@ -56,7 +56,7 @@ export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = fa
       return (
         <Link
           key={category.id}
-          to={`/explore?category=${encodeURIComponent(category.name)}`}
+          to={`/explore/${category.route}`}
           className={categoryClasses}
         >
           {categoryContent}
