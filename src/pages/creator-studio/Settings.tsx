@@ -106,13 +106,15 @@ export default function CreatorStudioSettings() {
             
             // Wait a moment then refetch to get the absolute latest data
             await new Promise((res) => setTimeout(res, 300));
-            const { data: newSettings } = await queryClient.refetchQueries({ 
+            await queryClient.refetchQueries({ 
               queryKey: ['creator-settings', user?.id] 
             });
             
+            // Get the fresh data from the query cache
+            const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]);
+            
             // Update local form data with the fresh data from the server
-            if (newSettings && Array.isArray(newSettings) && newSettings[0]) {
-              const freshSettings = newSettings[0];
+            if (freshSettings) {
               console.log('Updating form with fresh settings:', freshSettings);
               setFormData({ ...freshSettings });
             } else if (updatedData) {
