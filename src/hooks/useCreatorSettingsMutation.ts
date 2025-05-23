@@ -14,25 +14,25 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
     mutationFn: async (updatedSettings: Partial<CreatorSettingsData>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log('=== UPDATE DEBUG INFO ===');
+      console.log('=== COMPREHENSIVE UPDATE DEBUG ===');
       console.log('User ID:', user.id);
-      console.log('Updated settings:', updatedSettings);
+      console.log('Input settings to update:', updatedSettings);
       
-      // First, let's check if the creator exists and what the current values are
-      const { data: currentCreator, error: fetchError } = await supabase
+      // First, let's check current database state
+      const { data: beforeUpdate, error: beforeError } = await supabase
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
         .single();
       
-      if (fetchError) {
-        console.error('Error fetching current creator:', fetchError);
+      if (beforeError) {
+        console.error('Error fetching before update:', beforeError);
         throw new Error('Could not find creator record');
       }
       
-      console.log('Current creator data before update:', currentCreator);
+      console.log('DATABASE STATE BEFORE UPDATE:', beforeUpdate);
       
-      // Prepare creator update data with only the fields that are actually changing
+      // Prepare only the fields that are changing
       const creatorUpdateData: Partial<CreatorUpdateData> = {};
       
       if (updatedSettings.bio !== undefined) creatorUpdateData.bio = updatedSettings.bio;
@@ -42,34 +42,46 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (updatedSettings.avatar_url !== undefined) creatorUpdateData.profile_image_url = updatedSettings.avatar_url;
       if (updatedSettings.tags !== undefined) creatorUpdateData.tags = updatedSettings.tags;
 
-      console.log('Creator update data to send to DB:', creatorUpdateData);
+      console.log('EXACT UPDATE PAYLOAD:', creatorUpdateData);
+      console.log('display_name specifically:', creatorUpdateData.display_name);
       
-      // Simple update without trying to return data - this should work reliably
+      // Execute the update
       const { error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
         .eq('user_id', user.id);
       
       if (updateError) {
-        console.error('Error updating creator:', updateError);
+        console.error('UPDATE FAILED:', updateError);
         throw updateError;
       }
       
-      console.log('Update completed successfully');
+      console.log('UPDATE COMMAND EXECUTED WITHOUT ERROR');
       
-      // Now verify the update worked by fetching the data again
-      const { data: verifiedCreator, error: verifyError } = await supabase
+      // Wait a moment and then verify the update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const { data: afterUpdate, error: afterError } = await supabase
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
         .single();
       
-      if (verifyError || !verifiedCreator) {
-        console.error('Error verifying update:', verifyError);
+      if (afterError || !afterUpdate) {
+        console.error('Error fetching after update:', afterError);
         throw new Error('Update verification failed');
       }
       
-      console.log('Verified creator data after update:', verifiedCreator);
+      console.log('DATABASE STATE AFTER UPDATE:', afterUpdate);
+      console.log('display_name after update:', afterUpdate.display_name);
+      
+      // Check if the display_name actually changed
+      if (creatorUpdateData.display_name !== undefined && afterUpdate.display_name !== creatorUpdateData.display_name) {
+        console.error('CRITICAL: Display name did not update!');
+        console.error('Expected:', creatorUpdateData.display_name);
+        console.error('Actual:', afterUpdate.display_name);
+        throw new Error(`Update failed: display_name should be "${creatorUpdateData.display_name}" but is "${afterUpdate.display_name}"`);
+      }
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -82,37 +94,37 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         
         if (userError) {
           console.error('Error updating user:', userError);
-          // Don't throw here, creator update was successful
         }
       }
       
-      // Fetch the updated data with user info
-      const { data: updatedCreator, error: finalFetchError } = await supabase
+      // Fetch the final data with user info
+      const { data: finalCreator, error: finalError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
         .eq('user_id', user.id)
         .single();
       
-      if (finalFetchError || !updatedCreator) {
-        console.error('Error fetching updated creator:', finalFetchError);
+      if (finalError || !finalCreator) {
+        console.error('Error fetching final creator:', finalError);
         throw new Error('Failed to fetch updated creator data');
       }
       
-      console.log('Final fetched creator data:', updatedCreator);
+      console.log('FINAL CREATOR DATA FROM DB:', finalCreator);
       
       // Format and return the updated data
-      const formattedData = formatCreatorData(updatedCreator);
-      console.log('Formatted updated data to return:', formattedData);
+      const formattedData = formatCreatorData(finalCreator);
+      console.log('FORMATTED DATA TO RETURN:', formattedData);
       
       return formattedData;
     },
     onSuccess: (updatedData) => {
-      console.log('Update successful! Setting cache with new data:', updatedData);
+      console.log('MUTATION SUCCESS - FINAL DATA:', updatedData);
       
-      // Immediately update the cache with the new data
+      // Clear and set the cache
+      queryClient.removeQueries({ queryKey: ['creator-settings', user?.id] });
       queryClient.setQueryData(['creator-settings', user?.id], updatedData);
       
-      // Invalidate related queries to ensure consistency
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
@@ -123,7 +135,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       });
     },
     onError: (error: any) => {
-      console.error('Error updating creator settings:', error);
+      console.error('MUTATION ERROR:', error);
       toast({
         title: "Update failed",
         description: error.message || "Failed to update settings. Please try again.",
