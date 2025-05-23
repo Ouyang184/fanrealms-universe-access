@@ -14,115 +14,73 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
     mutationFn: async (updatedSettings: Partial<CreatorSettingsData>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log('=== DEBUGGING DATABASE UPDATE ISSUE ===');
+      console.log('=== MUTATION START ===');
       console.log('User ID:', user.id);
-      console.log('Input settings to update:', updatedSettings);
+      console.log('Full updatedSettings received:', updatedSettings);
       
-      // First, let's check current database state
-      const { data: beforeUpdate, error: beforeError } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      // Extract only the fields that should be updated in the creators table
+      const creatorUpdates: Partial<CreatorUpdateData> = {};
       
-      if (beforeError) {
-        console.error('Error fetching before update:', beforeError);
-        throw new Error('Could not find creator record');
+      if (updatedSettings.display_name !== undefined && updatedSettings.display_name !== settings?.display_name) {
+        creatorUpdates.display_name = updatedSettings.display_name;
       }
-      
-      console.log('DATABASE STATE BEFORE UPDATE:', beforeUpdate);
-      
-      // Let's try a very simple, direct update approach
-      console.log('Attempting to update display_name to:', updatedSettings.display_name);
-      
-      // Try the most basic update possible
-      const { data: updateResult, error: updateError } = await supabase
-        .from('creators')
-        .update({ 
-          display_name: updatedSettings.display_name 
-        })
-        .eq('user_id', user.id)
-        .select('*')
-        .single();
-      
-      console.log('UPDATE RESULT:', updateResult);
-      console.log('UPDATE ERROR:', updateError);
-      
-      if (updateError) {
-        console.error('UPDATE FAILED WITH ERROR:', updateError);
-        throw updateError;
+      if (updatedSettings.bio !== undefined && updatedSettings.bio !== settings?.bio) {
+        creatorUpdates.bio = updatedSettings.bio;
       }
-      
-      // Double check what's actually in the database now
-      const { data: afterUpdate, error: afterError } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      console.log('DATABASE STATE AFTER UPDATE:', afterUpdate);
-      
-      if (afterError) {
-        console.error('Error fetching after update:', afterError);
-        throw new Error('Update verification failed');
+      if (updatedSettings.banner_url !== undefined && updatedSettings.banner_url !== settings?.banner_url) {
+        creatorUpdates.banner_url = updatedSettings.banner_url;
       }
-      
-      // Check if the update actually worked
-      if (updatedSettings.display_name !== undefined && 
-          afterUpdate.display_name !== updatedSettings.display_name) {
-        console.error('CRITICAL: Database update did not persist!');
-        console.error('Expected:', updatedSettings.display_name);
-        console.error('Actual in DB:', afterUpdate.display_name);
-        
-        // Let's try to understand why - check for triggers or constraints
-        console.log('Checking for potential database constraints or triggers...');
-        
-        throw new Error(`Database update failed to persist. Expected "${updatedSettings.display_name}" but got "${afterUpdate.display_name}"`);
+      if (updatedSettings.profile_image_url !== undefined && updatedSettings.profile_image_url !== settings?.profile_image_url) {
+        creatorUpdates.profile_image_url = updatedSettings.profile_image_url;
       }
-      
-      // If we get here, the update worked
-      console.log('✅ Update successful! display_name is now:', afterUpdate.display_name);
-      
-      // Update other fields if provided
-      if (Object.keys(updatedSettings).length > 1 || !updatedSettings.display_name) {
-        const otherUpdates: Partial<CreatorUpdateData> = {};
-        
-        if (updatedSettings.bio !== undefined) otherUpdates.bio = updatedSettings.bio;
-        if (updatedSettings.banner_url !== undefined) otherUpdates.banner_url = updatedSettings.banner_url;
-        if (updatedSettings.profile_image_url !== undefined) otherUpdates.profile_image_url = updatedSettings.profile_image_url;
-        if (updatedSettings.avatar_url !== undefined) otherUpdates.profile_image_url = updatedSettings.avatar_url;
-        if (updatedSettings.tags !== undefined) otherUpdates.tags = updatedSettings.tags;
+      if (updatedSettings.avatar_url !== undefined && updatedSettings.avatar_url !== settings?.avatar_url) {
+        creatorUpdates.profile_image_url = updatedSettings.avatar_url;
+      }
+      if (updatedSettings.tags !== undefined && JSON.stringify(updatedSettings.tags) !== JSON.stringify(settings?.tags)) {
+        creatorUpdates.tags = updatedSettings.tags;
+      }
 
-        if (Object.keys(otherUpdates).length > 0) {
-          console.log('Updating other fields:', otherUpdates);
-          
-          const { error: otherUpdateError } = await supabase
-            .from('creators')
-            .update(otherUpdates)
-            .eq('user_id', user.id);
-          
-          if (otherUpdateError) {
-            console.error('Error updating other fields:', otherUpdateError);
-            throw otherUpdateError;
-          }
+      console.log('Creator updates to apply:', creatorUpdates);
+      
+      // Only update creators table if there are changes
+      if (Object.keys(creatorUpdates).length > 0) {
+        console.log('Updating creators table...');
+        
+        const { error: creatorError } = await supabase
+          .from('creators')
+          .update(creatorUpdates)
+          .eq('user_id', user.id);
+        
+        if (creatorError) {
+          console.error('Creator update error:', creatorError);
+          throw creatorError;
         }
+        
+        console.log('✅ Creator table updated successfully');
       }
       
       // Update user fields if needed
-      if (updatedSettings.fullName || updatedSettings.username) {
+      const userUpdates: any = {};
+      if (updatedSettings.username !== undefined && updatedSettings.username !== settings?.username) {
+        userUpdates.username = updatedSettings.username;
+      }
+      
+      if (Object.keys(userUpdates).length > 0) {
+        console.log('Updating users table with:', userUpdates);
+        
         const { error: userError } = await supabase
           .from('users')
-          .update({
-            username: updatedSettings.username
-          })
+          .update(userUpdates)
           .eq('id', user.id);
         
         if (userError) {
-          console.error('Error updating user:', userError);
+          console.error('User update error:', userError);
+          // Don't throw here, just log the error
         }
       }
       
-      // Fetch the final data with user info
+      // Fetch the updated data
+      console.log('Fetching updated creator data...');
       const { data: finalCreator, error: finalError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
@@ -134,16 +92,17 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         throw new Error('Failed to fetch updated creator data');
       }
       
-      console.log('FINAL CREATOR DATA FROM DB:', finalCreator);
+      console.log('Fresh data from database:', finalCreator);
       
       // Format and return the updated data
       const formattedData = formatCreatorData(finalCreator);
-      console.log('FORMATTED DATA TO RETURN:', formattedData);
+      console.log('Formatted data to return:', formattedData);
       
       return formattedData;
     },
     onSuccess: (updatedData) => {
-      console.log('MUTATION SUCCESS - FINAL DATA:', updatedData);
+      console.log('=== MUTATION SUCCESS ===');
+      console.log('Final updated data:', updatedData);
       
       // Clear and set the cache
       queryClient.removeQueries({ queryKey: ['creator-settings', user?.id] });
@@ -160,7 +119,8 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       });
     },
     onError: (error: any) => {
-      console.error('MUTATION ERROR:', error);
+      console.error('=== MUTATION ERROR ===');
+      console.error('Error details:', error);
       toast({
         title: "Update failed",
         description: error.message || "Failed to update settings. Please try again.",

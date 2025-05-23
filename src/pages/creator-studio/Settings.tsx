@@ -22,7 +22,6 @@ export default function CreatorStudioSettings() {
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [lastSaveTimestamp, setLastSaveTimestamp] = useState<number>(0);
   
   // Update formData when settings are loaded initially
   useEffect(() => {
@@ -54,20 +53,52 @@ export default function CreatorStudioSettings() {
     }
     
     setIsSaving(true);
-    const saveTimestamp = Date.now();
-    setLastSaveTimestamp(saveTimestamp);
     
     try {
-      console.log('Saving settings with formData:', formData);
+      console.log('=== SAVE INITIATED ===');
+      console.log('Current settings:', settings);
+      console.log('Form data to save:', formData);
+      
+      // Create the payload with only the changed fields
+      const changedFields: any = {};
+      
+      // Compare each field and only include if changed
+      if (formData.display_name !== settings?.display_name) {
+        changedFields.display_name = formData.display_name;
+      }
+      if (formData.bio !== settings?.bio) {
+        changedFields.bio = formData.bio;
+      }
+      if (formData.username !== settings?.username) {
+        changedFields.username = formData.username;
+      }
+      if (formData.banner_url !== settings?.banner_url) {
+        changedFields.banner_url = formData.banner_url;
+      }
+      if (formData.profile_image_url !== settings?.profile_image_url) {
+        changedFields.profile_image_url = formData.profile_image_url;
+      }
+      if (formData.avatar_url !== settings?.avatar_url) {
+        changedFields.avatar_url = formData.avatar_url;
+      }
+      if (JSON.stringify(formData.tags) !== JSON.stringify(settings?.tags)) {
+        changedFields.tags = formData.tags;
+      }
+      
+      console.log('Payload (only changed fields):', changedFields);
+      
+      if (Object.keys(changedFields).length === 0) {
+        console.log('No changes detected, skipping update');
+        setHasUnsavedChanges(false);
+        setIsSaving(false);
+        return;
+      }
       
       // Wait for the update to complete
       await new Promise<void>((resolve, reject) => {
-        updateSettings(formData, {
+        updateSettings(changedFields, {
           onSuccess: () => {
-            // Only update state if this is the most recent save attempt
-            if (saveTimestamp >= lastSaveTimestamp) {
-              setHasUnsavedChanges(false);
-            }
+            setHasUnsavedChanges(false);
             resolve();
           },
           onError: (error: any) => {
@@ -76,6 +107,8 @@ export default function CreatorStudioSettings() {
           }
         });
       });
+      
+      console.log('=== SAVE COMPLETED ===');
     } catch (error) {
       console.error("Save failed:", error);
       // Keep form data as is so user doesn't lose changes
