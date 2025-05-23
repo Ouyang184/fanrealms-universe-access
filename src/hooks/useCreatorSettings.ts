@@ -16,44 +16,115 @@ export const useCreatorSettings = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
+      console.log('Fetching creator settings for user:', user.id);
+      
+      // First check if creator exists
+      const { data: creator, error: creatorError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
         
-      if (error) {
-        console.error('Error fetching creator settings:', error);
+      if (creatorError) {
+        console.error('Error fetching creator:', creatorError);
         return null;
       }
       
-      // Format the data to match CreatorSettings interface
-      const formattedData = {
-        id: data.id,
-        user_id: data.user_id,
-        username: data.users?.username || '',
-        fullName: data.users?.username || '',
-        email: data.users?.email || '',
-        bio: data.bio || '',
-        display_name: data.display_name || '',
-        displayName: data.display_name || '',
-        avatar_url: data.profile_image_url,
-        profile_image_url: data.profile_image_url,
-        banner_url: data.banner_url,
-        tags: data.tags || [],
-        created_at: data.created_at
-      } as CreatorSettings;
+      // If no creator exists, create one
+      if (!creator) {
+        console.log('No creator found, creating one for user:', user.id);
+        const { data: newCreator, error: createError } = await supabase
+          .from('creators')
+          .insert({
+            user_id: user.id,
+            bio: '',
+            display_name: '',
+            profile_image_url: null,
+            banner_url: null,
+            tags: []
+          })
+          .select('*, users:user_id(username, email)')
+          .single();
+          
+        if (createError) {
+          console.error('Error creating creator:', createError);
+          return null;
+        }
+        
+        console.log('Created new creator:', newCreator);
+        return formatCreatorData(newCreator);
+      }
       
-      return formattedData;
+      console.log('Found existing creator:', creator);
+      return formatCreatorData(creator);
     },
     enabled: !!user?.id,
   });
+
+  const formatCreatorData = (data: any): CreatorSettings => {
+    return {
+      id: data.id,
+      user_id: data.user_id,
+      username: data.users?.username || '',
+      fullName: data.users?.username || '',
+      email: data.users?.email || '',
+      bio: data.bio || '',
+      display_name: data.display_name || '',
+      displayName: data.display_name || '',
+      avatar_url: data.profile_image_url,
+      profile_image_url: data.profile_image_url,
+      banner_url: data.banner_url,
+      tags: data.tags || [],
+      created_at: data.created_at
+    };
+  };
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      // Update creator-specific fields
+      console.log('Updating creator settings:', updatedSettings);
+      console.log('Current user ID:', user.id);
+      
+      // First verify the creator exists and get their ID
+      const { data: existingCreator, error: fetchError } = await supabase
+        .from('creators')
+        .select('id, user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('Error fetching creator for update:', fetchError);
+        throw new Error('Failed to find creator profile');
+      }
+      
+      if (!existingCreator) {
+        console.log('Creator not found, creating new one');
+        const { data: newCreator, error: createError } = await supabase
+          .from('creators')
+          .insert({
+            user_id: user.id,
+            bio: updatedSettings.bio || '',
+            display_name: updatedSettings.display_name || '',
+            profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url,
+            banner_url: updatedSettings.banner_url,
+            tags: updatedSettings.tags || []
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error('Error creating creator:', createError);
+          throw createError;
+        }
+        
+        console.log('Created new creator:', newCreator);
+        return { ...settings, ...updatedSettings };
+      }
+      
+      console.log('Updating existing creator with ID:', existingCreator.id);
+      
+      // Update creator-specific fields using the creator's ID (not user_id)
       const creatorFields = {
         bio: updatedSettings.bio,
         display_name: updatedSettings.display_name,
@@ -62,12 +133,21 @@ export const useCreatorSettings = () => {
         tags: updatedSettings.tags,
       };
       
-      const { error } = await supabase
+      console.log('Updating creator fields:', creatorFields);
+      
+      const { data: updatedCreator, error: updateError } = await supabase
         .from('creators')
         .update(creatorFields)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      if (error) throw error;
+      if (updateError) {
+        console.error('Error updating creator:', updateError);
+        throw updateError;
+      }
+      
+      console.log('Successfully updated creator:', updatedCreator);
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -78,16 +158,24 @@ export const useCreatorSettings = () => {
           })
           .eq('id', user.id);
         
-        if (userError) throw userError;
+        if (userError) {
+          console.error('Error updating user:', userError);
+          throw userError;
+        }
       }
       
-      return { ...settings, ...updatedSettings };
+      // Return the updated data
+      const updatedData = { ...settings, ...updatedSettings };
+      console.log('Returning updated data:', updatedData);
+      return updatedData;
     },
     onSuccess: (data) => {
+      console.log('Update successful, updating cache with:', data);
       queryClient.setQueryData(['creator-settings', user?.id], data);
-      // Also invalidate creator-profile query to refresh the profile
+      // Also invalidate related queries to refresh all creator data
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
     },
     onError: (error: any) => {
       console.error('Error updating creator settings:', error);

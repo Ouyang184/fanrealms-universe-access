@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -23,14 +22,16 @@ export default function CreatorStudioSettings() {
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
   
-  // Update formData when settings are loaded
+  // Update formData when settings are loaded, but preserve any unsaved changes
   useEffect(() => {
-    if (settings && !isLoading) {
+    if (settings && !isLoading && !isSaving) {
+      console.log('Settings loaded, updating formData:', settings);
       setFormData({ ...settings });
     }
-  }, [settings, isLoading]);
+  }, [settings, isLoading, isSaving]);
 
   const handleChange = (name: string, value: string | string[]) => {
+    console.log(`Updating form field ${name} to:`, value);
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -42,7 +43,13 @@ export default function CreatorStudioSettings() {
     setIsSaving(true);
     
     try {
+      console.log('Saving settings with formData:', formData);
+      
       await updateSettings(formData);
+      
+      // Keep the formData as is (don't reset to settings) so the UI shows the saved values
+      console.log('Save successful, keeping formData as:', formData);
+      
       toast({
         title: "Success",
         description: "Your settings have been updated successfully",
@@ -116,6 +123,16 @@ export default function CreatorStudioSettings() {
 
   const isFormDisabled = isLoading || isUploading || isSaving;
 
+  // Show loading if we don't have settings yet
+  if (isLoading && !settings) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <Spinner className="h-8 w-8" />
+        <span className="ml-2">Loading settings...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight">Creator Settings</h1>
@@ -135,8 +152,8 @@ export default function CreatorStudioSettings() {
             onBannerUpdate={handleBannerUpdate}
           />
           
-          {settings?.id && (
-            <SocialLinksSection creatorId={settings.id} />
+          {formData?.id && (
+            <SocialLinksSection creatorId={formData.id} />
           )}
           
           <div className="flex justify-end">
