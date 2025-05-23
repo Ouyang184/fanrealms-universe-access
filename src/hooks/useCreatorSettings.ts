@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -56,6 +57,7 @@ export const useCreatorSettings = () => {
         bio: updatedSettings.bio,
         display_name: updatedSettings.display_name,
         banner_url: updatedSettings.banner_url,
+        profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url,
       };
       
       const { error } = await supabase
@@ -84,11 +86,6 @@ export const useCreatorSettings = () => {
       // Also invalidate creator-profile query to refresh the profile
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      
-      toast({
-        title: "Settings updated",
-        description: "Your creator profile has been updated successfully.",
-      });
     },
     onError: (error: any) => {
       console.error('Error updating creator settings:', error);
@@ -101,50 +98,67 @@ export const useCreatorSettings = () => {
   });
 
   const uploadProfileImage = async (file: File): Promise<string | null> => {
-    if (!user?.id) return null;
+    if (!user?.id) {
+      console.error("No user ID available for upload");
+      return null;
+    }
     
     try {
       setIsUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
       
+      // Create storage bucket if it doesn't exist (handled server-side)
+      // Check if the file is an actual image
+      if (!file.type.startsWith('image/')) {
+        throw new Error("Please upload an image file");
+      }
+      
+      // Generate unique filename with timestamp and original extension
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+      
+      console.log(`Uploading to avatars/${filePath}`);
+      
+      // Upload the file to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw uploadError;
+      }
       
-      const { data: { publicUrl }} = supabase.storage
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
       
-      // Update the profile with the new image URL
+      console.log("Upload successful, public URL:", publicUrl);
+      
+      // Update the creator profile with the new image URL
       const { error } = await supabase
         .from('creators')
         .update({ profile_image_url: publicUrl })
         .eq('user_id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Database update error:", error);
+        throw error;
+      }
       
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      
-      toast({
-        title: "Profile image updated",
-        description: "Your profile image has been updated successfully."
-      });
       
       return publicUrl;
     } catch (error: any) {
       console.error("Image upload error:", error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image. Please try again.",
-        variant: "destructive"
-      });
-      return null;
+      throw error;
     } finally {
       setIsUploading(false);
     }

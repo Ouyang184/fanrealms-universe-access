@@ -13,9 +13,10 @@ interface ProfileInfoFormProps {
   settings: CreatorSettings;
   onSettingsChange: (name: string, value: string) => void;
   onImageUpload: (type: 'avatar') => void;
+  isUploading?: boolean;
 }
 
-export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: ProfileInfoFormProps) {
+export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isUploading = false }: ProfileInfoFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     onSettingsChange(name, value);
@@ -42,9 +43,10 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload }: P
               variant="outline" 
               size="sm"
               onClick={() => onImageUpload('avatar')}
+              disabled={isUploading}
             >
-              <Upload className="mr-2 h-4 w-4" />
-              Change Avatar
+              <Upload className={`${isUploading ? 'animate-spin' : ''} mr-2 h-4 w-4`} />
+              {isUploading ? "Uploading..." : "Change Avatar"}
             </Button>
           </div>
           

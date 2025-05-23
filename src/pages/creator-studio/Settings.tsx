@@ -60,12 +60,24 @@ export default function CreatorStudioSettings() {
   };
 
   const handleImageUpload = async (type: 'avatar') => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
+      if (!file) return;
+      
+      try {
         const imageUrl = await uploadProfileImage(file);
         if (imageUrl) {
           setFormData(prev => ({
@@ -73,9 +85,23 @@ export default function CreatorStudioSettings() {
             avatar_url: imageUrl,
             profile_image_url: imageUrl
           }));
+          
+          toast({
+            title: "Success",
+            description: "Profile image updated successfully",
+          });
         }
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to upload image. Please try again.",
+          variant: "destructive",
+        });
       }
     };
+    
+    // Trigger file dialog
     input.click();
   };
 
@@ -100,6 +126,7 @@ export default function CreatorStudioSettings() {
             settings={formData} 
             onSettingsChange={handleChange} 
             onImageUpload={handleImageUpload}
+            isUploading={isUploading}
           />
           
           <BannerSection 

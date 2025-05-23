@@ -33,7 +33,7 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
   // Get proper display name from creator data with fallbacks
   const displayName = creator.display_name || creator.username || "Creator";
   
-  // Get avatar URL with fallbacks
+  // Get avatar URL with fallbacks - check both fields since different components might use different naming
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   
   // Create proper creator URL from username or ID
