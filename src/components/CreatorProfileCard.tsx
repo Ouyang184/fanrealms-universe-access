@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"; 
 import { CreatorProfile } from "@/types";
 
 interface CreatorProfileCardProps {
@@ -30,20 +31,19 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
     );
   }
 
-  const {
-    username,
-    display_name,
-    avatar_url,
-    profile_image_url,
-    bio
-  } = creator;
-
-  // Use display_name or username or fallback to "Creator" for display
-  const displayName = display_name || username || "Creator";
-  // Use avatar_url or profile_image_url for avatar
-  const avatarUrl = avatar_url || profile_image_url;
-  // Build creator URL from username
-  const creatorUrl = username ? `/creator/${username}` : "#";
+  // Get proper display name from creator data with fallbacks
+  const displayName = creator.display_name || creator.username || "Creator";
+  
+  // Get avatar URL with fallbacks - check both fields since different components might use different naming
+  const avatarUrl = creator.avatar_url || creator.profile_image_url;
+  
+  // Create proper creator URL from username or ID
+  const creatorUrl = creator.username 
+    ? `/creator/${creator.username}` 
+    : creator.id ? `/creator/${creator.id}` : "#";
+  
+  // Get first letter for avatar fallback
+  const avatarFallback = displayName.charAt(0).toUpperCase();
 
   return (
     <Card className="overflow-hidden">
@@ -52,12 +52,28 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
         <div className="flex flex-col items-center -mt-12 mb-4">
           <Avatar className="h-24 w-24 border-4 border-background">
             <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-            <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="text-2xl">{avatarFallback}</AvatarFallback>
           </Avatar>
           <Link to={creatorUrl} className="mt-3 text-lg font-semibold hover:underline">
             {displayName}
           </Link>
-          {bio && <p className="text-sm text-center mt-2 line-clamp-2">{bio}</p>}
+          {creator.bio && <p className="text-sm text-center mt-2 line-clamp-2">{creator.bio}</p>}
+          
+          {/* Display tags if available */}
+          {creator.tags && creator.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 justify-center mt-2">
+              {creator.tags.slice(0, 3).map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+              {creator.tags.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{creator.tags.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex justify-center">
           <Button asChild>
@@ -67,6 +83,6 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
       </CardContent>
     </Card>
   );
-};
+}
 
 export default CreatorProfileCard;

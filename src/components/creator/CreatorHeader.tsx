@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,13 +17,12 @@ export function CreatorHeader({
   followLoading, 
   onFollowToggle 
 }: CreatorHeaderProps) {
-  // Prioritize displayName passed from parent, then display_name, then username
-  const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
+  // Use display_name consistently
+  const displayName = creator.display_name || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
   
   // Make sure we use the correct ID for the creator
-  // First try id (database PK), then user_id (from auth)
   const creatorId = creator.id || creator.user_id;
   
   useEffect(() => {
