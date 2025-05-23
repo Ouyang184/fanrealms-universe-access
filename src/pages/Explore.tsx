@@ -330,11 +330,8 @@ export default function ExplorePage() {
         <section className="mb-10">
           <div className="relative rounded-xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <img
-              src="/placeholder.svg?height=400&width=1200&text=Discover+New+Creators"
-              alt="Discover creators"
-              className="w-full h-64 object-cover"
-            />
+            {/* Removed the img tag and using only the gradient background */}
+            <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">
                 {categoryFilter ? `Explore ${categoryFilter}` : 'Explore FanRealms'}
