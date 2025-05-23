@@ -21,25 +21,6 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       console.log('Settings user_id:', settings.user_id);
       console.log('New display_name:', updatedSettings.display_name);
       
-      // First, let's verify the creator record exists
-      const { data: existingCreator, error: checkError } = await supabase
-        .from('creators')
-        .select('id, user_id, display_name')
-        .eq('id', settings.id)
-        .single();
-        
-      if (checkError) {
-        console.error('Error checking creator existence:', checkError);
-        throw new Error('Failed to verify creator record');
-      }
-      
-      if (!existingCreator) {
-        console.error('No creator found with ID:', settings.id);
-        throw new Error('Creator record not found');
-      }
-      
-      console.log('Found existing creator for update:', existingCreator);
-      
       // Prepare creator update data
       const creatorUpdateData: CreatorUpdateData = {
         bio: updatedSettings.bio,
@@ -51,17 +32,22 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
 
       console.log('Creator update data:', creatorUpdateData);
       
-      // Update the creator record using the creator ID directly
+      // Update the creator record using the creator ID directly - use maybeSingle to avoid the error
       const { data: updatedCreator, error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
         .eq('id', settings.id)
         .select('*, users:user_id(username, email)')
-        .single();
+        .maybeSingle();
       
       if (updateError) {
         console.error('Error updating creator:', updateError);
         throw updateError;
+      }
+      
+      if (!updatedCreator) {
+        console.error('No creator record was updated');
+        throw new Error('Failed to update creator record');
       }
       
       console.log('Successfully updated creator in database:', updatedCreator);

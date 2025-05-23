@@ -22,14 +22,17 @@ export default function CreatorStudioSettings() {
   
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaveAttempt, setLastSaveAttempt] = useState<number>(0);
   
-  // Update formData when settings are loaded, but preserve form changes when saving
+  // Update formData when settings are loaded, but only if we're not currently saving
+  // and it's been more than 2 seconds since the last save attempt to prevent overriding user changes
   useEffect(() => {
-    if (settings && !isSaving) {
+    const timeSinceLastSave = Date.now() - lastSaveAttempt;
+    if (settings && !isSaving && timeSinceLastSave > 2000) {
       console.log('Settings loaded, updating formData:', settings);
       setFormData({ ...settings });
     }
-  }, [settings, isSaving]);
+  }, [settings, isSaving, lastSaveAttempt]);
 
   const handleChange = (name: string, value: string | string[]) => {
     console.log(`Updating form field ${name} to:`, value);
@@ -52,6 +55,7 @@ export default function CreatorStudioSettings() {
     }
     
     setIsSaving(true);
+    setLastSaveAttempt(Date.now());
     
     try {
       console.log('Saving settings with formData:', formData);
@@ -60,19 +64,10 @@ export default function CreatorStudioSettings() {
       await new Promise<void>((resolve, reject) => {
         updateSettings(formData, {
           onSuccess: () => {
-            toast({
-              title: "Success",
-              description: "Your settings have been updated successfully",
-            });
             resolve();
           },
           onError: (error: any) => {
             console.error("Error saving settings:", error);
-            toast({
-              title: "Error",
-              description: "Failed to save settings. Please try again.",
-              variant: "destructive",
-            });
             reject(error);
           }
         });
