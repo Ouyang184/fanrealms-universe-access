@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,13 +77,32 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // Update the database using the creator ID (more reliable than user_id)
+      // First, let's verify the creator record exists
+      const { data: existingCreator, error: fetchError } = await supabase
+        .from("creators")
+        .select("id, display_name")
+        .eq("id", settings.id)
+        .maybeSingle();
+        
+      if (fetchError) {
+        console.error('useSettingsForm: Error fetching creator:', fetchError);
+        throw new Error('Failed to verify creator record');
+      }
+      
+      if (!existingCreator) {
+        console.error('useSettingsForm: Creator record not found with ID:', settings.id);
+        throw new Error('Creator record not found');
+      }
+      
+      console.log('useSettingsForm: Found existing creator:', existingCreator);
+
+      // Now update the record
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
         .eq("id", settings.id)
-        .select()
-        .maybeSingle();
+        .select("id, display_name, bio, tags, profile_image_url, banner_url")
+        .single();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
@@ -92,54 +110,45 @@ export const useSettingsForm = () => {
       }
 
       if (!updatedData) {
-        console.error('useSettingsForm: No creator record updated');
-        throw new Error('Failed to update creator profile. Please try again.');
+        console.error('useSettingsForm: No data returned from update');
+        throw new Error('Failed to update creator profile. No data returned.');
       }
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      // IMPORTANT: Update form data with the exact values from the database
-      // and mark as saved BEFORE invalidating queries to prevent race conditions
+      // Update form data with the exact values from the database
       setFormData(prev => ({
         ...prev,
-        display_name: updatedData.display_name,
-        bio: updatedData.bio,
-        tags: updatedData.tags,
-        profile_image_url: updatedData.profile_image_url,
-        banner_url: updatedData.banner_url,
-        // Ensure displayName is also updated for backward compatibility
-        displayName: updatedData.display_name
+        ...updatedData,
+        displayName: updatedData.display_name // Keep backward compatibility
       }));
       
       console.log('useSettingsForm: Updated form data after save:', {
-        displayName: updatedData.display_name,
+        newDisplayName: updatedData.display_name,
         formDisplayName: formData.display_name
       });
       
-      // Mark as saved (no unsaved changes) BEFORE invalidating queries
+      // Mark as saved (no unsaved changes)
       setHasUnsavedChanges(false);
       
       // Show success message
       toast({
         title: "Success",
-        description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
+        description: `Settings saved successfully! Display name updated to: "${updatedData.display_name}"`,
       });
       
-      // Force a direct update to the cached query data
-      queryClient.setQueryData(['creator-settings'], (oldData: any) => {
+      // Force update the cached query data to reflect the changes immediately
+      queryClient.setQueryData(['creator-settings', user.id], (oldData: any) => {
         if (!oldData) return oldData;
+        console.log('useSettingsForm: Updating cache with:', updatedData);
         return {
           ...oldData,
-          display_name: updatedData.display_name,
-          displayName: updatedData.display_name,
-          bio: updatedData.bio,
-          tags: updatedData.tags,
-          profile_image_url: updatedData.profile_image_url,
-          banner_url: updatedData.banner_url
+          ...updatedData,
+          displayName: updatedData.display_name
         };
       });
       
-      // Then invalidate the query to ensure a fresh fetch
+      // Invalidate and refetch to ensure consistency
       await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
       
     } catch (error: any) {
