@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +7,6 @@ import { ProfileHeader } from "@/components/creator-studio/profile/ProfileHeader
 import { ProfileStatistics } from "@/components/creator-studio/profile/ProfileStatistics";
 import { ProfilePostsTab } from "@/components/creator-studio/profile/ProfilePostsTab";
 import { ProfileMembershipTab } from "@/components/creator-studio/profile/ProfileMembershipTab";
-import { ProfileAboutSection } from "@/components/creator-studio/profile/ProfileAboutSection";
 import { useCreatorProfileData } from "@/hooks/useCreatorProfileData";
 
 export default function CreatorProfile() {
@@ -45,16 +43,19 @@ export default function CreatorProfile() {
       <div className="space-y-8">
         <ProfileHeader creator={creator} />
         
+        <div className="px-4">
+          <p>{creator.bio || "You haven't added a bio yet. Add one in your creator settings."}</p>
+        </div>
+        
         <ProfileStatistics 
           postCount={posts.length} 
           tierCount={tiers.length} 
         />
         
         <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 max-w-md mx-auto">
+          <TabsList className="grid grid-cols-2 max-w-md mx-auto">
             <TabsTrigger value="posts">Your Posts</TabsTrigger>
             <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
           
           <TabsContent value="posts" className="pt-6">
@@ -63,10 +64,6 @@ export default function CreatorProfile() {
           
           <TabsContent value="membership" className="pt-6">
             <ProfileMembershipTab tiers={tiers} isLoading={isLoadingTiers} />
-          </TabsContent>
-          
-          <TabsContent value="about" className="pt-6">
-            <ProfileAboutSection creator={creator} />
           </TabsContent>
         </Tabs>
       </div>
