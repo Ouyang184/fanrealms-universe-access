@@ -1,76 +1,31 @@
 
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronRight } from "lucide-react";
-import { CreatorProfile } from "@/types";
-import CreatorProfileCard from "@/components/CreatorProfileCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Link, useNavigate } from "react-router-dom";
 
-// Define available categories with their display names and slugs
-const categories = [
-  { name: "Art & Illustration", slug: "art" },
-  { name: "Writing & Literature", slug: "writing" },
-  { name: "Music Production", slug: "music" },
-  { name: "Game Development", slug: "games" },
-  { name: "Photography", slug: "photography" },
-  { name: "Software Development", slug: "software" },
-];
-
-interface CategoriesSectionProps {
-  creators?: CreatorProfile[];
-  isLoading?: boolean;
+interface Category {
+  name: string;
+  icon: string;
+  color: string;
+  route: string;
 }
 
-export function CategoriesSection({ creators = [], isLoading = false }: CategoriesSectionProps) {
-  // Group creators by categories based on their bio content or tags
-  const getCreatorsByCategory = (categorySlug: string) => {
-    if (!creators.length) return [];
+export function CategoriesSection() {
+  const navigate = useNavigate();
+  
+  const categories: Category[] = [
+    { name: "Art & Illustration", icon: "🎨", color: "from-purple-600 to-pink-600", route: "art-illustration" },
+    { name: "Gaming", icon: "🎮", color: "from-blue-600 to-cyan-600", route: "gaming" },
+    { name: "Music", icon: "🎵", color: "from-green-600 to-teal-600", route: "music" },
+    { name: "Writing", icon: "✍️", color: "from-yellow-600 to-amber-600", route: "writing" },
+    { name: "Photography", icon: "📷", color: "from-red-600 to-orange-600", route: "photography" },
+    { name: "Education", icon: "📚", color: "from-indigo-600 to-violet-600", route: "education" },
+  ];
 
-    // First try to match by tags
-    const creatorsByTags = creators.filter(creator => 
-      creator.tags?.some(tag => 
-        tag.toLowerCase().includes(categorySlug.toLowerCase())
-      )
-    );
-    
-    if (creatorsByTags.length) return creatorsByTags.slice(0, 3);
-    
-    // If no matches by tags, try to match by bio content
-    return creators
-      .filter(creator => 
-        creator.bio?.toLowerCase().includes(categorySlug.toLowerCase())
-      )
-      .slice(0, 3);
+  const handleCategoryClick = (route: string) => {
+    navigate(`/explore/${route}`);
   };
-
-  // Render loading skeletons
-  if (isLoading) {
-    return (
-      <section className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Browse Categories</h2>
-          <Button variant="link" className="text-purple-400">
-            View All <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="space-y-4">
-              <Skeleton className="h-8 w-48" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[1, 2, 3].map(j => (
-                  <Skeleton key={j} className="h-48 rounded-lg" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="mb-12">
@@ -83,53 +38,23 @@ export function CategoriesSection({ creators = [], isLoading = false }: Categori
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {categories.map((category) => {
-          const categoryCreators = getCreatorsByCategory(category.slug);
-          
-          return (
-            <div key={category.slug} className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">{category.name}</h3>
-                <Link to={`/explore?category=${category.slug}`}>
-                  <Button variant="ghost" size="sm" className="text-purple-400 h-8">
-                    See more
-                  </Button>
-                </Link>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {categories.map((category, i) => (
+          <Card
+            key={i}
+            className="bg-gray-900 border-gray-800 overflow-hidden group cursor-pointer hover:border-gray-700 transition-all"
+            onClick={() => handleCategoryClick(category.route)}
+          >
+            <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+              <div
+                className={`h-12 w-12 rounded-full bg-gradient-to-br ${category.color} flex items-center justify-center text-2xl mb-3`}
+              >
+                {category.icon}
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {categoryCreators.length > 0 ? (
-                  categoryCreators.map((creator) => (
-                    <CreatorProfileCard key={creator.id} creator={creator} />
-                  ))
-                ) : (
-                  // Fallback for when no creators match this category
-                  [1, 2, 3].map((i) => (
-                    <Card key={i} className="overflow-hidden">
-                      <div className="bg-gradient-to-r from-primary/30 to-secondary/30 h-20" />
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={`/placeholder.svg?height=40&width=40&text=${category.slug[0]}`} />
-                            <AvatarFallback>{category.slug[0].toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">Join as a creator</p>
-                            <p className="text-xs text-muted-foreground">Share your {category.name} content</p>
-                          </div>
-                        </div>
-                        <Link to="/explore">
-                          <Button size="sm" variant="outline" className="w-full">Explore {category.name}</Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
+              <h3 className="font-medium group-hover:text-purple-400 transition-colors">{category.name}</h3>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   );

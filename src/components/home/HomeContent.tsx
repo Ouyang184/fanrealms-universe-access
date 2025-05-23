@@ -8,7 +8,6 @@ import { HowItWorks } from "./HowItWorks";
 import { HomeFooter } from "./HomeFooter";
 import { ContentPreviewModal } from "@/components/content/ContentPreviewModal";
 import { usePosts } from "@/hooks/usePosts";
-import { useCreators } from "@/hooks/useCreators";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { Post } from "@/types";
@@ -17,16 +16,7 @@ export function HomeContent() {
   const [selectedContent, setSelectedContent] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
-  
-  // Use useCreators hook to get all available creators
-  const { data: allCreators = [], isLoading: isLoadingAllCreators } = useCreators();
-  
-  // Also still use the popular creators hook for the featured section
-  const { data: popularCreators = [], isLoading: isLoadingPopularCreators } = usePopularCreators();
-  
-  // Choose which creators to display - use popularCreators if available, otherwise use allCreators
-  const creatorsToDisplay = popularCreators.length > 0 ? popularCreators : allCreators;
-  const isLoadingCreators = isLoadingPopularCreators || isLoadingAllCreators;
+  const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
 
   // Map real posts to the content format expected by ContentTabs
   const mapPostToContent = (post: Post) => ({
@@ -77,8 +67,8 @@ export function HomeContent() {
         isLoading={isLoadingPosts}
       />
       
-      <FeaturedCreators creators={creatorsToDisplay} isLoading={isLoadingCreators} />
-      <CategoriesSection creators={allCreators} isLoading={isLoadingAllCreators} />
+      <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
+      <CategoriesSection />
       <HowItWorks />
       <HomeFooter />
       
