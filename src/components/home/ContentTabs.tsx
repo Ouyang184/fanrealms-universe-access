@@ -7,12 +7,12 @@ import { ContentCard } from "@/components/content/ContentCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ContentItem {
-  id: number | string;
+  id: string | number;
   title: string;
   description: string;
   thumbnail: string;
   creator: {
-    id: number | string;
+    id: string | number;
     name: string;
     avatar: string;
   };
@@ -54,7 +54,18 @@ export function ContentTabs({ forYouContent, trendingContent, recentContent, onC
       content.map((item) => (
         <ContentCard 
           key={item.id} 
-          content={item}
+          content={{
+            id: typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id,
+            title: item.title,
+            thumbnail: item.thumbnail,
+            creator: {
+              name: item.creator.name,
+              avatar: item.creator.avatar
+            },
+            type: item.type,
+            date: item.date,
+            preview: item.preview
+          }}
           onClick={onCardClick}
         />
       ))
