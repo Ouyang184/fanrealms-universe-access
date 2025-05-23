@@ -73,12 +73,29 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // Update the database
+      // First, check if creator record exists
+      const { data: existingCreator, error: checkError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+      if (checkError) {
+        console.error('useSettingsForm: Error checking existing creator:', checkError);
+        throw new Error('Failed to find creator profile');
+      }
+
+      if (!existingCreator) {
+        throw new Error('Creator profile not found');
+      }
+
+      // Update the database using the creator ID
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
         .eq("user_id", user.id)
-        .select();
+        .select()
+        .single();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
@@ -87,18 +104,17 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      if (updatedData && updatedData.length > 0) {
-        const savedData = updatedData[0];
-        console.log('useSettingsForm: Saved data from DB:', savedData);
+      if (updatedData) {
+        console.log('useSettingsForm: Saved data from DB:', updatedData);
         
         // Update form data with the exact values from the database
         const updatedFormData = {
           ...formData,
-          display_name: savedData.display_name,
-          bio: savedData.bio,
-          tags: savedData.tags,
-          profile_image_url: savedData.profile_image_url,
-          banner_url: savedData.banner_url,
+          display_name: updatedData.display_name,
+          bio: updatedData.bio,
+          tags: updatedData.tags,
+          profile_image_url: updatedData.profile_image_url,
+          banner_url: updatedData.banner_url,
         };
         
         console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
@@ -110,9 +126,12 @@ export const useSettingsForm = () => {
         // Invalidate queries to ensure other components refresh
         await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
         
+        // Force a refetch to ensure fresh data
+        await refetch();
+        
         toast({
           title: "Success",
-          description: `Settings saved successfully! Display name is now: "${savedData.display_name || 'Not set'}"`,
+          description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
         });
       } else {
         throw new Error('No data returned from save operation');
