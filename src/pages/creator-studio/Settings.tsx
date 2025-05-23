@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -55,32 +56,29 @@ export default function CreatorStudioSettings() {
     try {
       console.log('Saving settings with formData:', formData);
       
-      // Wait for the update to complete and get the updated data
+      // Wait for the update to complete
       await new Promise<void>((resolve, reject) => {
         updateSettings(formData, {
-          onSuccess: (updatedData) => {
-            console.log('Update completed, received updated data:', updatedData);
-            // Keep the form data as is since the update was successful
-            // The cache will be updated with the new data
+          onSuccess: () => {
+            toast({
+              title: "Success",
+              description: "Your settings have been updated successfully",
+            });
             resolve();
           },
-          onError: (error) => {
+          onError: (error: any) => {
+            console.error("Error saving settings:", error);
+            toast({
+              title: "Error",
+              description: "Failed to save settings. Please try again.",
+              variant: "destructive",
+            });
             reject(error);
           }
         });
       });
-      
-      toast({
-        title: "Success",
-        description: "Your settings have been updated successfully",
-      });
     } catch (error) {
-      console.error("Error saving settings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in the onError callback above
     } finally {
       setIsSaving(false);
     }

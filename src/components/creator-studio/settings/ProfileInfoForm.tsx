@@ -52,8 +52,8 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange('tags', updatedTags);
   };
 
-  // Calculate display name - either from settings or default to username
-  const displayName = settings.display_name || settings.fullName || settings.username || '';
+  // Consistently use display_name field
+  const displayName = settings.display_name || settings.username || '';
 
   return (
     <Card>
@@ -103,6 +103,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 type="email"
                 value={settings.email || ''}
                 onChange={handleChange}
+                readOnly
               />
             </div>
           </div>

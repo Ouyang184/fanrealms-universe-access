@@ -10,7 +10,7 @@ export const formatCreatorData = (data: any): CreatorSettingsData => {
     email: data.users?.email || '',
     bio: data.bio || '',
     display_name: data.display_name || '',
-    displayName: data.display_name || '',
+    displayName: data.display_name || '', // Ensure both properties are set consistently
     avatar_url: data.profile_image_url,
     profile_image_url: data.profile_image_url,
     banner_url: data.banner_url,

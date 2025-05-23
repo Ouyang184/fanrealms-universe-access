@@ -26,7 +26,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         .from('creators')
         .select('id, user_id, display_name')
         .eq('id', settings.id)
-        .maybeSingle();
+        .single();
         
       if (checkError) {
         console.error('Error checking creator existence:', checkError);
@@ -97,6 +97,11 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
+      
+      toast({
+        title: "Success",
+        description: "Your settings have been updated successfully",
+      });
     },
     onError: (error: any) => {
       console.error('Error updating creator settings:', error);
@@ -109,6 +114,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
   });
 
   return {
-    updateSettings: updateSettingsMutation.mutate
+    updateSettings: (updatedSettings: Partial<CreatorSettingsData>, options?: any) => 
+      updateSettingsMutation.mutate(updatedSettings, options)
   };
 };
