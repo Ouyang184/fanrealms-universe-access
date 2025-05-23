@@ -26,16 +26,21 @@ export default function CreatorStudioSettings() {
   // Update formData when settings are loaded
   useEffect(() => {
     if (settings && !isLoading) {
+      console.log('Settings loaded, updating form data:', settings);
       setFormData({ ...settings });
     }
   }, [settings, isLoading]);
 
   const handleChange = (name: string, value: string | string[]) => {
-    console.log('Form field changed:', { name, value });
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    console.log('CreatorStudioSettings: Form field changed:', { name, value });
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: value
+      };
+      console.log('CreatorStudioSettings: Updated form data:', updated);
+      return updated;
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -53,7 +58,7 @@ export default function CreatorStudioSettings() {
     setIsSaving(true);
     
     try {
-      console.log('Saving form data:', formData);
+      console.log('CreatorStudioSettings: Starting save with form data:', formData);
       
       // Prepare the data for saving - ensure display_name is properly mapped
       const dataToSave = {
@@ -65,16 +70,13 @@ export default function CreatorStudioSettings() {
         banner_url: formData.banner_url || '',
       };
 
-      console.log('Data to save:', dataToSave);
+      console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
       await updateSettings(dataToSave);
       
-      toast({
-        title: "Success",
-        description: "Your settings have been updated successfully",
-      });
+      console.log('CreatorStudioSettings: Save completed successfully');
     } catch (error) {
-      console.error("Error saving settings:", error);
+      console.error("CreatorStudioSettings: Error saving settings:", error);
       toast({
         title: "Error",
         description: "Failed to save settings. Please try again.",

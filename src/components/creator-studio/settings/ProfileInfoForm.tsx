@@ -51,12 +51,16 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log('ProfileInfoForm: Field changed:', { name, value });
     onSettingsChange(name, value);
   };
 
   // Calculate display name - prioritize display_name, then fallback to other fields
   const displayName = settings.display_name || settings.displayName || settings.fullName || settings.username || '';
   const avatarUrl = settings.profile_image_url || settings.avatar_url;
+
+  console.log('ProfileInfoForm: Current settings:', settings);
+  console.log('ProfileInfoForm: Display name value:', displayName);
 
   return (
     <Card>

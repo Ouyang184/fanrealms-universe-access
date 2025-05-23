@@ -16,6 +16,8 @@ export const useCreatorSettings = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
+      console.log('Fetching creator settings for user:', user.id);
+      
       const { data, error } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
@@ -26,6 +28,8 @@ export const useCreatorSettings = () => {
         console.error('Error fetching creator settings:', error);
         return null;
       }
+      
+      console.log('Fetched creator data:', data);
       
       // Format the data to match CreatorSettings interface
       const formattedData = {
@@ -44,6 +48,8 @@ export const useCreatorSettings = () => {
         created_at: data.created_at
       } as CreatorSettings;
       
+      console.log('Formatted creator settings:', formattedData);
+      
       return formattedData;
     },
     enabled: !!user?.id,
@@ -53,7 +59,7 @@ export const useCreatorSettings = () => {
     mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log('Updating creator settings:', updatedSettings);
+      console.log('updateSettingsMutation: Starting update with data:', updatedSettings);
       
       // Update creator-specific fields
       const creatorFields = {
@@ -64,7 +70,7 @@ export const useCreatorSettings = () => {
         tags: updatedSettings.tags || [],
       };
       
-      console.log('Creator fields to update:', creatorFields);
+      console.log('updateSettingsMutation: Creator fields to update:', creatorFields);
       
       const { data, error } = await supabase
         .from('creators')
@@ -74,14 +80,15 @@ export const useCreatorSettings = () => {
         .single();
       
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('updateSettingsMutation: Supabase error:', error);
         throw error;
       }
       
-      console.log('Update successful:', data);
+      console.log('updateSettingsMutation: Update successful:', data);
       
       // Update user fields if needed (username)
       if (updatedSettings.fullName || updatedSettings.username) {
+        console.log('updateSettingsMutation: Updating user table');
         const { error: userError } = await supabase
           .from('users')
           .update({
@@ -90,13 +97,13 @@ export const useCreatorSettings = () => {
           .eq('id', user.id);
         
         if (userError) {
-          console.error('User update error:', userError);
+          console.error('updateSettingsMutation: User update error:', userError);
           throw userError;
         }
       }
       
       // Return the updated data with proper field mapping
-      return {
+      const updatedData = {
         ...settings,
         ...data,
         display_name: data.display_name,
@@ -104,16 +111,25 @@ export const useCreatorSettings = () => {
         profile_image_url: data.profile_image_url,
         avatar_url: data.profile_image_url,
       };
+      
+      console.log('updateSettingsMutation: Returning updated data:', updatedData);
+      
+      return updatedData;
     },
     onSuccess: (data) => {
-      console.log('Mutation success, updating cache:', data);
+      console.log('updateSettingsMutation: Success callback, updating cache with:', data);
       queryClient.setQueryData(['creator-settings', user?.id], data);
       // Also invalidate related queries to refresh the profile
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
+      
+      toast({
+        title: "Success",
+        description: "Your settings have been updated successfully",
+      });
     },
     onError: (error: any) => {
-      console.error('Error updating creator settings:', error);
+      console.error('updateSettingsMutation: Error in mutation:', error);
       toast({
         title: "Update failed",
         description: error.message || "Failed to update settings. Please try again.",
