@@ -80,8 +80,8 @@ export default function ExplorePage() {
     setFilteredCreators(creatorFilter.slice(0, 3)); // Featured creators (limited to 3)
     setFilteredTrending(postsFilter.slice(0, 4)); // Trending posts
     setFilteredNewReleases(postsFilter.sort((a, b) => 
-      new Date(b.createdAt || b.created_at || Date.now()).getTime() - 
-      new Date(a.createdAt || a.created_at || Date.now()).getTime()
+      new Date(b.createdAt || Date.now()).getTime() - 
+      new Date(a.createdAt || Date.now()).getTime()
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
     
