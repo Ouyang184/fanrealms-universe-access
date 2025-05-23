@@ -15,7 +15,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (!user?.id) throw new Error('User not authenticated');
       
       console.log('=== MUTATION START ===');
-      console.log('Updating display name for user:', user.id);
+      console.log('Updating settings for user:', user.id);
       console.log('Current settings:', settings);
       console.log('Updates to apply:', updatedSettings);
       
@@ -47,63 +47,49 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (Object.keys(creatorUpdates).length > 0) {
         console.log('Executing creator update...');
         
-        const { error: updateError } = await supabase
+        // Perform the update and return the updated row
+        const { data: updatedData, error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select('*, users:user_id(username, email)')
+          .single();
         
         if (updateError) {
-          console.error('Error updating display name:', updateError);
+          console.error('Error updating creator:', updateError);
           throw updateError;
         }
         
-        console.log('Update completed successfully');
-        
-        // Fetch the updated data to verify the update worked
-        console.log('Fetching updated data for user:', user.id);
-        const { data: updatedCreator, error: fetchError } = await supabase
-          .from('creators')
-          .select('*, users:user_id(username, email)')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (fetchError) {
-          console.error('Error fetching updated data:', fetchError);
-          throw fetchError;
-        }
-        
-        if (!updatedCreator) {
+        if (!updatedData) {
           console.error('No data returned after update');
-          throw new Error('Failed to fetch updated creator data');
+          throw new Error('Failed to get updated creator data');
         }
         
-        console.log('Updated data:', updatedCreator);
+        console.log('Update completed successfully, returned data:', updatedData);
         
         // Format and return the updated data
-        const formattedData = formatCreatorData(updatedCreator);
+        const formattedData = formatCreatorData(updatedData);
         console.log('Formatted updated data:', formattedData);
         
         return formattedData;
       }
       
       // If no creator updates, return current settings
+      console.log('No changes detected, returning current settings');
       return settings;
     },
     onSuccess: (updatedData) => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Final updated data:', updatedData);
       
-      // Immediately update all related query caches with the fresh data
+      // Update all related query caches with the fresh data
       queryClient.setQueryData(['creator-settings', user?.id], updatedData);
       queryClient.setQueryData(['creatorProfile', user?.id], updatedData);
       queryClient.setQueryData(['creatorProfileDetails', user?.id], updatedData);
       queryClient.setQueryData(['creator-profile', user?.id], updatedData);
       
-      // Also invalidate to trigger refetch in case other components need fresh data
+      // Invalidate to ensure fresh data on next fetch
       queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
       
       toast({
         title: "Success",
