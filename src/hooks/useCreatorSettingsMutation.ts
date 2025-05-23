@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -78,7 +77,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       console.log('No changes detected, returning current settings');
       return settings;
     },
-    onSuccess: (updatedData) => {
+    onSuccess: async (updatedData) => {
       console.log('=== MUTATION SUCCESS ===');
       console.log('Final updated data:', updatedData);
       
@@ -89,7 +88,14 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       queryClient.setQueryData(['creator-profile', user?.id], updatedData);
       
       // Invalidate to ensure fresh data on next fetch
-      queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
+      
+      // 🔁 Small delay to let Supabase finish syncing
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      
+      // 🔁 Then refetch the latest values to ensure we have the most up-to-date data
+      console.log('Refetching latest data after delay...');
+      await queryClient.refetchQueries({ queryKey: ['creator-settings', user?.id] });
       
       toast({
         title: "Success",
