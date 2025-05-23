@@ -222,6 +222,12 @@ export default function ExploreCategoryPage() {
     navigate(`/explore/${categoryRoute}`);
   };
 
+  // Reset filters function
+  const resetFilters = () => {
+    setSortOption("top-rated");
+    setContentType("all");
+  };
+
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
@@ -438,11 +444,7 @@ export default function ExploreCategoryPage() {
               </p>
               <Button 
                 variant="outline"
-                onClick={() => {
-                  setCreatorType("all");
-                  setContentType("all");
-                  setSortOption("top-rated");
-                }}
+                onClick={resetFilters}
               >
                 Reset Filters
               </Button>
