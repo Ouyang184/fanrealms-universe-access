@@ -1,20 +1,4 @@
 
-export interface CreatorSettings {
-  id: string;
-  user_id: string;
-  username?: string;
-  fullName?: string;
-  email?: string;
-  bio?: string;
-  display_name?: string;
-  displayName?: string;
-  avatar_url?: string;
-  profile_image_url?: string;
-  banner_url?: string;
-  tags?: string[];
-  created_at?: string;
-}
-
 export interface SubscriberWithDetails {
   id: string;
   name: string;
@@ -51,3 +35,6 @@ export interface CreatorPost {
   lastEdited?: string;
   type: "article" | "image" | "video" | "audio";
 }
+
+// Re-export the CreatorSettings from the new location
+export type { CreatorSettingsData as CreatorSettings } from '@/types/creator-settings';

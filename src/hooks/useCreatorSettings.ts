@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
+
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
-import { CreatorSettings } from '@/types/creator-studio';
+import { formatCreatorData } from '@/utils/creatorDataFormatter';
+import { useCreatorImageUpload } from '@/hooks/useCreatorImageUpload';
+import { useCreatorSettingsMutation } from '@/hooks/useCreatorSettingsMutation';
 
 export const useCreatorSettings = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [isUploading, setIsUploading] = useState(false);
+  const { isUploading, uploadProfileImage } = useCreatorImageUpload();
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['creator-settings', user?.id],
@@ -60,193 +60,13 @@ export const useCreatorSettings = () => {
     enabled: !!user?.id,
   });
 
-  const formatCreatorData = (data: any): CreatorSettings => {
-    return {
-      id: data.id,
-      user_id: data.user_id,
-      username: data.users?.username || '',
-      fullName: data.users?.username || '',
-      email: data.users?.email || '',
-      bio: data.bio || '',
-      display_name: data.display_name || '',
-      displayName: data.display_name || '',
-      avatar_url: data.profile_image_url,
-      profile_image_url: data.profile_image_url,
-      banner_url: data.banner_url,
-      tags: data.tags || [],
-      created_at: data.created_at
-    };
-  };
-
-  const updateSettingsMutation = useMutation({
-    mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      if (!settings?.id) throw new Error('No creator ID found');
-      
-      console.log('=== UPDATE DEBUG INFO ===');
-      console.log('User ID:', user.id);
-      console.log('Settings ID:', settings.id);
-      console.log('Settings user_id:', settings.user_id);
-      console.log('New display_name:', updatedSettings.display_name);
-      
-      // First, let's verify the creator record exists
-      const { data: existingCreator, error: checkError } = await supabase
-        .from('creators')
-        .select('id, user_id, display_name')
-        .eq('id', settings.id)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error('Error checking creator existence:', checkError);
-        throw new Error('Failed to verify creator record');
-      }
-      
-      if (!existingCreator) {
-        console.error('No creator found with ID:', settings.id);
-        throw new Error('Creator record not found');
-      }
-      
-      console.log('Found existing creator for update:', existingCreator);
-      
-      // Prepare creator update data
-      const creatorUpdateData = {
-        bio: updatedSettings.bio,
-        display_name: updatedSettings.display_name,
-        banner_url: updatedSettings.banner_url,
-        profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url,
-        tags: updatedSettings.tags,
-      };
-
-      console.log('Creator update data:', creatorUpdateData);
-      
-      // Update the creator record using the creator ID directly
-      const { data: updatedCreator, error: updateError } = await supabase
-        .from('creators')
-        .update(creatorUpdateData)
-        .eq('id', settings.id)
-        .select('*, users:user_id(username, email)')
-        .single();
-      
-      if (updateError) {
-        console.error('Error updating creator:', updateError);
-        throw updateError;
-      }
-      
-      console.log('Successfully updated creator in database:', updatedCreator);
-      
-      // Update user fields if needed
-      if (updatedSettings.fullName || updatedSettings.username) {
-        const { error: userError } = await supabase
-          .from('users')
-          .update({
-            username: updatedSettings.username
-          })
-          .eq('id', user.id);
-        
-        if (userError) {
-          console.error('Error updating user:', userError);
-          // Don't throw here, creator update was successful
-        }
-      }
-      
-      // Format and return the updated data
-      const formattedData = formatCreatorData(updatedCreator);
-      console.log('Formatted updated data to return:', formattedData);
-      
-      return formattedData;
-    },
-    onSuccess: (updatedData) => {
-      console.log('Update successful! Setting cache with new data:', updatedData);
-      
-      // Immediately update the cache with the new data
-      queryClient.setQueryData(['creator-settings', user?.id], updatedData);
-      
-      // Invalidate related queries to ensure consistency
-      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
-    },
-    onError: (error: any) => {
-      console.error('Error updating creator settings:', error);
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update settings. Please try again.",
-        variant: "destructive",
-      });
-    }
-  });
-
-  const uploadProfileImage = async (file: File): Promise<string | null> => {
-    if (!user?.id) {
-      console.error("No user ID available for upload");
-      return null;
-    }
-    
-    try {
-      setIsUploading(true);
-      
-      // Check if the file is an actual image
-      if (!file.type.startsWith('image/')) {
-        throw new Error("Please upload an image file");
-      }
-      
-      // Generate unique filename with timestamp and original extension
-      const fileExt = file.name.split('.').pop();
-      const fileName = `avatar-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
-      
-      console.log(`Uploading to avatars/${filePath}`);
-      
-      // Upload the file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { 
-          upsert: true,
-          contentType: file.type 
-        });
-      
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw uploadError;
-      }
-      
-      // Get the public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-      
-      console.log("Upload successful, public URL:", publicUrl);
-      
-      // Update the creator profile with the new image URL
-      const { error } = await supabase
-        .from('creators')
-        .update({ profile_image_url: publicUrl })
-        .eq('user_id', user.id);
-      
-      if (error) {
-        console.error("Database update error:", error);
-        throw error;
-      }
-      
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
-      
-      return publicUrl;
-    } catch (error: any) {
-      console.error("Image upload error:", error);
-      throw error;
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  const { updateSettings } = useCreatorSettingsMutation(settings);
 
   return {
     settings,
     isLoading,
     isUploading,
-    updateSettings: updateSettingsMutation.mutate,
+    updateSettings,
     uploadProfileImage
   };
 };
