@@ -39,6 +39,7 @@ export const useCreators = (searchTerm?: string) => {
       console.log('Raw creator data from search:', creatorData);
 
       // Transform the data to match our CreatorProfile type
+      // Include all creators, even if they don't have an associated user
       const transformedCreators: CreatorProfile[] = creatorData.map((creator) => {
         const userId = creator.user_id;
         
@@ -47,24 +48,15 @@ export const useCreators = (searchTerm?: string) => {
           ? userId.substring(5) 
           : userId;
         
-        // Create a display name that is used in both display_name and displayName fields
-        const displayName = creator.display_name || creator.users?.username || `Creator ${cleanUserId.substring(0, 6)}`;
-        
         return {
           ...creator,
           user_id: cleanUserId, // Use clean ID without prefix 
           id: cleanUserId,
           username: creator.users?.username || `user-${cleanUserId.substring(0, 8)}`,
           email: creator.users?.email || "",
-          fullName: creator.users?.username || "", // Add required fullName property
           avatar_url: creator.users?.profile_picture || null,
-          profile_image_url: creator.profile_image_url || creator.users?.profile_picture || null,
-          display_name: displayName,
-          displayName: displayName, // Make sure both properties have the same value
+          display_name: creator.display_name || creator.users?.username || `Creator ${cleanUserId.substring(0, 6)}`,
           banner_url: creator.banner_url || null,
-          created_at: creator.created_at || new Date().toISOString(),
-          bio: creator.bio || "",
-          tags: creator.tags || []
         };
       });
 

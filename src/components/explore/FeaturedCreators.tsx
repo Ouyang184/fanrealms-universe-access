@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, ChevronRight } from "lucide-react";
 import { CreatorProfile } from "@/types";
 
 interface FeaturedCreatorsProps {
@@ -22,12 +22,8 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
     
     if (!creator) return defaultTags;
     
-    if (creator.tags && creator.tags.length > 0) {
-      return creator.tags.slice(0, 3);
-    }
-    
     const bio = creator.bio || "";
-    // Extract hashtags from bio
+    // Extract hashtags or keywords from bio
     const extractedTags = bio.match(/#\w+/g) || [];
     const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
     
@@ -79,7 +75,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
         ) : creators.length > 0 ? (
           creators.map((creator) => {
             // Get display name with fallbacks
-            const displayName = creator.displayName || creator.username || "Creator";
+            const displayName = creator.display_name || creator.username || "Creator";
             
             // Get avatar URL with fallbacks
             const avatarUrl = creator.profile_image_url || creator.avatar_url;
@@ -109,7 +105,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                 <CardContent className="pt-0 -mt-12 p-6">
                   <div className="flex justify-between items-start">
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
-                      <AvatarImage src={avatarUrl || ''} alt={displayName} />
+                      <AvatarImage src={avatarUrl} alt={displayName} />
                       <AvatarFallback className="bg-gray-800 text-xl">
                         {avatarFallback}
                       </AvatarFallback>
@@ -128,11 +124,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
 
                   <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-gray-400">
-                      {creator.tiers && creator.tiers.length > 0 ? (
-                        <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
-                      ) : (
-                        <span className="font-medium text-white">Free</span>
-                      )}
+                      From <span className="font-medium text-white">${(9.99).toFixed(2)}/mo</span>
                     </div>
                     <Link to={creatorLink}>
                       <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>
@@ -144,7 +136,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
           })
         ) : (
           <div className="col-span-3 text-center py-10 text-gray-400">
-            No creators found in this category yet. Check back soon!
+            No creators found. Try adjusting your search or filters.
           </div>
         )}
       </div>

@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { useCreators } from "@/hooks/useCreators";
 
 interface Category {
   name: string;
@@ -15,8 +13,6 @@ interface Category {
 
 export function CategoriesSection() {
   const navigate = useNavigate();
-  const { data: creators = [], isLoading } = useCreators();
-  const [categoryCreatorCounts, setCategoryCreatorCounts] = useState<Record<string, number>>({});
   
   const categories: Category[] = [
     { name: "Art & Illustration", icon: "🎨", color: "from-purple-600 to-pink-600", route: "art-illustration" },
@@ -26,52 +22,6 @@ export function CategoriesSection() {
     { name: "Photography", icon: "📷", color: "from-red-600 to-orange-600", route: "photography" },
     { name: "Education", icon: "📚", color: "from-indigo-600 to-violet-600", route: "education" },
   ];
-
-  // Count real creators per category based on their tags or bio content
-  useEffect(() => {
-    if (!isLoading && creators.length > 0) {
-      console.log("Counting creators per category, total creators:", creators.length);
-      
-      const counts: Record<string, number> = {};
-      
-      // Filter out any AI creators before counting
-      const realCreators = creators.filter(creator => {
-        const displayName = creator.displayName || creator.display_name || '';
-        const bio = creator.bio || '';
-        return !displayName.includes('AI') && !bio.includes('AI generated');
-      });
-      
-      console.log("Real creators after filtering:", realCreators.length);
-      
-      realCreators.forEach(creator => {
-        const bio = (creator.bio || "").toLowerCase();
-        const tags = creator.tags || [];
-        
-        categories.forEach(category => {
-          const categoryName = category.name.toLowerCase();
-          const categoryRoute = category.route.toLowerCase();
-          
-          // Check if creator bio or tags match this category
-          const matchesBio = bio.includes(categoryName) || bio.includes(categoryRoute);
-          const matchesTags = tags.some(tag => 
-            tag.toLowerCase().includes(categoryName) || categoryRoute.includes(tag.toLowerCase())
-          );
-          
-          if (matchesBio || matchesTags) {
-            counts[category.route] = (counts[category.route] || 0) + 1;
-          }
-        });
-      });
-      
-      // Ensure all categories have at least a count
-      categories.forEach(category => {
-        counts[category.route] = counts[category.route] || 0;
-      });
-      
-      console.log("Category creator counts:", counts);
-      setCategoryCreatorCounts(counts);
-    }
-  }, [creators, isLoading]);
 
   const handleCategoryClick = (route: string) => {
     navigate(`/explore/${route}`);
@@ -101,14 +51,7 @@ export function CategoriesSection() {
               >
                 {category.icon}
               </div>
-              <h3 className="font-medium group-hover:text-purple-400 transition-colors">
-                {category.name}
-              </h3>
-              {!isLoading && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {categoryCreatorCounts[category.route]} creators
-                </p>
-              )}
+              <h3 className="font-medium group-hover:text-purple-400 transition-colors">{category.name}</h3>
             </CardContent>
           </Card>
         ))}

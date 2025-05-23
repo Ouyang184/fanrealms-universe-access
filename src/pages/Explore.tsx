@@ -24,7 +24,7 @@ export default function ExplorePage() {
   // Fetch real data from Supabase
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
-  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true); // Explicitly exclude AI creators
+  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators();
   
   // Set document title when component mounts
   useEffect(() => {
@@ -34,25 +34,23 @@ export default function ExplorePage() {
   }, [categoryFilter]);
   
   // State for filtered content based on category
-  const [filteredCreators, setFilteredCreators] = useState([]);
-  const [filteredTrending, setFilteredTrending] = useState([]);
-  const [filteredNewReleases, setFilteredNewReleases] = useState([]);
-  const [filteredRecommended, setFilteredRecommended] = useState([]);
+  const [filteredCreators, setFilteredCreators] = useState(allCreators);
+  const [filteredTrending, setFilteredTrending] = useState(posts);
+  const [filteredNewReleases, setFilteredNewReleases] = useState(posts);
+  const [filteredRecommended, setFilteredRecommended] = useState(allCreators);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter content when category or search changes
   useEffect(() => {
-    if (!popularCreators.length && !posts.length) return;
-    
-    // Start with real creators only, from the popular creators query (which already excludes AI)
-    let creatorFilter = popularCreators;
+    if (!allCreators.length && !posts.length) return;
+
+    let creatorFilter = allCreators;
     let postsFilter = posts;
     
     // Filter by category if present
     if (categoryFilter) {
-      creatorFilter = popularCreators.filter(creator => 
-        (creator.bio || "").toLowerCase().includes(categoryFilter.toLowerCase()) ||
-        (creator.tags || []).some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
+      creatorFilter = allCreators.filter(creator => 
+        (creator.bio || "").toLowerCase().includes(categoryFilter.toLowerCase())
       );
       
       postsFilter = posts.filter(post => 
@@ -66,7 +64,6 @@ export default function ExplorePage() {
       const query = searchQuery.toLowerCase();
       creatorFilter = creatorFilter.filter(creator => 
         (creator.display_name || "").toLowerCase().includes(query) ||
-        (creator.displayName || "").toLowerCase().includes(query) ||
         (creator.bio || "").toLowerCase().includes(query)
       );
       
@@ -80,12 +77,11 @@ export default function ExplorePage() {
     setFilteredCreators(creatorFilter.slice(0, 3)); // Featured creators (limited to 3)
     setFilteredTrending(postsFilter.slice(0, 4)); // Trending posts
     setFilteredNewReleases(postsFilter.sort((a, b) => 
-      new Date(b.createdAt || Date.now()).getTime() - 
-      new Date(a.createdAt || Date.now()).getTime()
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
     
-  }, [categoryFilter, searchQuery, popularCreators, posts]);
+  }, [categoryFilter, searchQuery, allCreators, posts]);
   
   return (
     <MainLayout>
@@ -100,32 +96,32 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
-        {/* Featured Creators - Only display real creators from the database */}
+        {/* Featured Creators */}
         <FeaturedCreators 
           creators={filteredCreators}
-          isLoading={isLoadingCreators || isLoadingPopular}
+          isLoading={isLoadingCreators}
           categoryFilter={categoryFilter}
         />
 
-        {/* Content Tabs - Only display real content from the database */}
+        {/* Content Tabs */}
         <ContentTabs
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
           recommendedCreators={filteredRecommended}
           isLoadingPosts={isLoadingPosts}
-          isLoadingCreators={isLoadingCreators || isLoadingPopular}
+          isLoadingCreators={isLoadingCreators}
         />
 
-        {/* Remove hardcoded data from DiscoverSection */}
+        {/* Discover More */}
         <DiscoverSection />
 
-        {/* Community Section */}
+        {/* Join the Community */}
         <CommunitySection />
 
-        {/* Popular Tags Section */}
+        {/* Popular Tags */}
         <PopularTagsSection />
 
-        {/* Newsletter Section */}
+        {/* Newsletter */}
         <NewsletterSection />
       </div>
     </MainLayout>
