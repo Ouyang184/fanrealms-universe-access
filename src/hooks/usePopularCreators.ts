@@ -26,12 +26,18 @@ export const usePopularCreators = (excludeAI = true) => {
             created_at
           )
         `)
-        .limit(6);
+        .limit(10); // Fetch more to ensure we have enough after filtering
       
-      // If excludeAI is true, add a filter to exclude creators with AI in their display_name or bio
+      // If excludeAI is true, add filters to exclude AI creators
       if (excludeAI) {
         query = query
           .not('display_name', 'ilike', '%AI%')
+          .not('display_name', 'ilike', '%Digital Art Master%')
+          .not('display_name', 'ilike', '%Music Production Studio%')
+          .not('display_name', 'ilike', '%Game Development Pro%')
+          .not('display_name', 'ilike', '%Writing Workshop%')
+          .not('display_name', 'ilike', '%Photography Pro%')
+          .not('display_name', 'ilike', '%Education Insights%')
           .not('bio', 'ilike', '%AI generated%');
       }
 
@@ -44,7 +50,22 @@ export const usePopularCreators = (excludeAI = true) => {
 
       console.log("Fetched popular creators:", data?.length || 0);
 
-      return data.map((creator): CreatorProfile => {
+      // Additional filter to remove any hardcoded placeholders that might have made it through
+      const filtered = data.filter(creator => {
+        // Filter out any creators with placeholder names that might exist in db
+        const name = creator.display_name || '';
+        const placeholderNames = [
+          'Digital Art Master', 
+          'Music Production Studio', 
+          'Game Development Pro',
+          'Writing Workshop',
+          'Photography Pro',
+          'Education Insights'
+        ];
+        return !placeholderNames.some(placeholder => name.includes(placeholder));
+      });
+
+      return filtered.map((creator): CreatorProfile => {
         const displayName = creator.display_name || creator.users?.username || '';
         
         return {

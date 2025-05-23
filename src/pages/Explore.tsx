@@ -100,14 +100,14 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
-        {/* Featured Creators */}
+        {/* Featured Creators - Only display real creators from the database */}
         <FeaturedCreators 
           creators={filteredCreators}
           isLoading={isLoadingCreators || isLoadingPopular}
           categoryFilter={categoryFilter}
         />
 
-        {/* Content Tabs */}
+        {/* Content Tabs - Only display real content from the database */}
         <ContentTabs
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
@@ -116,16 +116,16 @@ export default function ExplorePage() {
           isLoadingCreators={isLoadingCreators || isLoadingPopular}
         />
 
-        {/* Discover More */}
+        {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />
 
-        {/* Join the Community */}
+        {/* Community Section */}
         <CommunitySection />
 
-        {/* Popular Tags */}
+        {/* Popular Tags Section */}
         <PopularTagsSection />
 
-        {/* Newsletter */}
+        {/* Newsletter Section */}
         <NewsletterSection />
       </div>
     </MainLayout>
