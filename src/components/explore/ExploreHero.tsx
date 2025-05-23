@@ -10,6 +10,32 @@ interface ExploreHeroProps {
 }
 
 export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: ExploreHeroProps) {
+  // Map of category routes to display names
+  const categoryDisplayNames = {
+    "art": "Art",
+    "music": "Music", 
+    "gaming": "Gaming",
+    "education": "Education",
+    "writing": "Writing",
+    "photography": "Photography",
+    "fitness": "Fitness",
+    "cooking": "Cooking",
+    "technology": "Technology",
+    "travel": "Travel",
+    "fashion": "Fashion",
+    "design": "Design",
+    "podcasting": "Podcasting",
+    "comedy": "Comedy",
+    "film": "Film",
+    "dance": "Dance",
+    "science": "Science",
+    "finance": "Finance",
+    "business": "Business",
+    "crafts": "Crafts"
+  };
+
+  const categoryDisplayName = categoryFilter ? categoryDisplayNames[categoryFilter as keyof typeof categoryDisplayNames] || categoryFilter : null;
+
   return (
     <section className="mb-10">
       <div className="relative rounded-xl overflow-hidden">
@@ -17,11 +43,11 @@ export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: Exp
         <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
         <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
           <h1 className="text-4xl font-bold mb-2">
-            {categoryFilter ? `Explore ${categoryFilter}` : 'Explore FanRealms'}
+            {categoryDisplayName ? `Explore ${categoryDisplayName}` : 'Explore FanRealms'}
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mb-6">
-            {categoryFilter 
-              ? `Discover amazing ${categoryFilter} creators and their exclusive content`
+            {categoryDisplayName 
+              ? `Discover amazing ${categoryDisplayName} creators and their exclusive content`
               : 'Discover amazing creators and exclusive content across various categories'
             }
           </p>
