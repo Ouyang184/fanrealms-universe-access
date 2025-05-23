@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -106,37 +105,16 @@ export default function CreatorStudioSettings() {
           onSuccess: async (updatedData: any) => {
             console.log('Update completed successfully:', updatedData);
             
-            // Immediately update formData with the new values to reflect changes in UI
+            // 3. Update the Form Data - manually patch the UI state
             if (updatedData) {
-              console.log('Immediately updating form with mutation result:', updatedData);
-              setFormData({ ...updatedData });
-            }
-            
-            // First invalidate to clear stale cache
-            await queryClient.invalidateQueries({ 
-              queryKey: ['creator-settings', user?.id] 
-            });
-            
-            // Add longer delay to ensure Supabase has synced the data
-            await new Promise((res) => setTimeout(res, 800));
-            
-            // Refetch the latest data from server
-            await queryClient.refetchQueries({ 
-              queryKey: ['creator-settings', user?.id] 
-            });
-            
-            // Get the fresh data from the query cache and update form
-            const newSettings = queryClient.getQueryData(['creator-settings', user?.id]) as CreatorSettingsData | undefined;
-            
-            if (newSettings && newSettings.id) {
-              console.log('Syncing form with fresh server data:', newSettings);
+              console.log('Updating form data with mutation result:', updatedData);
               setFormData(prev => ({
                 ...prev,
-                display_name: newSettings?.display_name,
-                bio: newSettings?.bio,
-                tags: newSettings?.tags,
-                profile_image_url: newSettings?.profile_image_url,
-                banner_url: newSettings?.banner_url,
+                display_name: updatedData.display_name,
+                bio: updatedData.bio,
+                tags: updatedData.tags,
+                profile_image_url: updatedData.profile_image_url,
+                banner_url: updatedData.banner_url,
               }));
             }
             
