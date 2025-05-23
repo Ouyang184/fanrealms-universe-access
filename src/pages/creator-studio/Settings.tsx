@@ -22,6 +22,7 @@ export default function CreatorStudioSettings() {
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaveTimestamp, setLastSaveTimestamp] = useState<number>(0);
   
   // Update formData when settings are loaded initially
   useEffect(() => {
@@ -43,16 +44,18 @@ export default function CreatorStudioSettings() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!settings?.id) {
+    if (!user?.id) {
       toast({
         title: "Error",
-        description: "Creator profile not found. Please refresh the page.",
+        description: "You must be logged in to save settings.",
         variant: "destructive",
       });
       return;
     }
     
     setIsSaving(true);
+    const saveTimestamp = Date.now();
+    setLastSaveTimestamp(saveTimestamp);
     
     try {
       console.log('Saving settings with formData:', formData);
@@ -61,7 +64,10 @@ export default function CreatorStudioSettings() {
       await new Promise<void>((resolve, reject) => {
         updateSettings(formData, {
           onSuccess: () => {
-            setHasUnsavedChanges(false);
+            // Only update state if this is the most recent save attempt
+            if (saveTimestamp >= lastSaveTimestamp) {
+              setHasUnsavedChanges(false);
+            }
             resolve();
           },
           onError: (error: any) => {
@@ -71,7 +77,8 @@ export default function CreatorStudioSettings() {
         });
       });
     } catch (error) {
-      // Error handling is done in the onError callback above
+      console.error("Save failed:", error);
+      // Keep form data as is so user doesn't lose changes
     } finally {
       setIsSaving(false);
     }

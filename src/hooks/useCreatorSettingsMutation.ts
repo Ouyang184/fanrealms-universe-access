@@ -13,32 +13,30 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
   const updateSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<CreatorSettingsData>) => {
       if (!user?.id) throw new Error('User not authenticated');
-      if (!settings?.id) throw new Error('No creator ID found');
       
       console.log('=== UPDATE DEBUG INFO ===');
       console.log('User ID:', user.id);
-      console.log('Settings ID:', settings.id);
-      console.log('Settings user_id:', settings.user_id);
-      console.log('New display_name:', updatedSettings.display_name);
+      console.log('Settings:', settings);
+      console.log('Updated settings:', updatedSettings);
       
-      // First verify the record exists
-      const { data: existingRecord, error: checkError } = await supabase
+      // First, let's find the creator record by user_id (most reliable approach)
+      const { data: existingCreator, error: findError } = await supabase
         .from('creators')
         .select('id, user_id, display_name')
-        .eq('id', settings.id)
+        .eq('user_id', user.id)
         .maybeSingle();
       
-      if (checkError) {
-        console.error('Error checking existing record:', checkError);
-        throw checkError;
+      if (findError) {
+        console.error('Error finding creator:', findError);
+        throw findError;
       }
       
-      if (!existingRecord) {
-        console.error('No creator record found with ID:', settings.id);
-        throw new Error('Creator record not found');
+      if (!existingCreator) {
+        console.error('No creator found for user_id:', user.id);
+        throw new Error('Creator profile not found. Please refresh the page.');
       }
       
-      console.log('Found existing record:', existingRecord);
+      console.log('Found creator:', existingCreator);
       
       // Prepare creator update data with only the fields that are actually changing
       const creatorUpdateData: Partial<CreatorUpdateData> = {};
@@ -52,14 +50,13 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
 
       console.log('Creator update data:', creatorUpdateData);
       
-      // Perform the update with a more specific query
+      // Perform the update using the creator ID we found
       const { data: updatedCreator, error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
-        .eq('id', settings.id)
-        .eq('user_id', user.id) // Additional safety check
+        .eq('id', existingCreator.id)
         .select('*, users:user_id(username, email)')
-        .single();
+        .maybeSingle();
       
       if (updateError) {
         console.error('Error updating creator:', updateError);
@@ -67,11 +64,11 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       }
       
       if (!updatedCreator) {
-        console.error('No creator record was updated - this should not happen with .single()');
+        console.error('No creator record was returned after update');
         throw new Error('Failed to update creator record');
       }
       
-      console.log('Successfully updated creator in database:', updatedCreator);
+      console.log('Successfully updated creator:', updatedCreator);
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
