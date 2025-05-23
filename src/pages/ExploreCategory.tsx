@@ -268,38 +268,6 @@ export default function ExploreCategoryPage() {
           </div>
         </section>
 
-        {/* Categories Horizontal Scroll */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold">Browse Categories</h2>
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
-              <ChevronLeft className="h-4 w-4" />
-              Back to All
-            </Button>
-          </div>
-          
-          <ScrollArea className="w-full whitespace-nowrap pb-4">
-            <div className="flex space-x-3">
-              {categories.map((cat) => (
-                <Button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.route)}
-                  variant={cat.route === category ? "default" : "outline"}
-                  className={`min-w-fit flex items-center gap-2 ${
-                    cat.route === category
-                      ? "bg-purple-600 hover:bg-purple-700"
-                      : "hover:bg-gray-800"
-                  }`}
-                >
-                  <span className="text-lg">{cat.icon}</span>
-                  <span>{cat.name}</span>
-                  {cat.route === category && <Check className="h-4 w-4 ml-1" />}
-                </Button>
-              ))}
-            </div>
-          </ScrollArea>
-        </section>
-
         {/* Filtering and Sorting */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
