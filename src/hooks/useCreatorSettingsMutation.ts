@@ -55,7 +55,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
           .update(creatorUpdates)
           .eq('user_id', user.id)
           .select('*, users:user_id(username, email)')
-          .single();
+          .maybeSingle();
         
         if (updateError) {
           console.error('Error updating creator:', updateError);
