@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -81,8 +82,10 @@ export const useCreatorSettings = () => {
   const updateSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
       if (!user?.id) throw new Error('User not authenticated');
+      if (!settings?.id) throw new Error('No creator ID found');
       
-      console.log('Updating creator settings with new display_name:', updatedSettings.display_name);
+      console.log('Updating creator with ID:', settings.id);
+      console.log('New display_name:', updatedSettings.display_name);
       
       // Prepare creator update data
       const creatorUpdateData = {
@@ -95,11 +98,11 @@ export const useCreatorSettings = () => {
 
       console.log('Creator update data:', creatorUpdateData);
       
-      // Update the creator record using user_id
+      // Update the creator record using the creator ID directly
       const { data: updatedCreator, error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
-        .eq('user_id', user.id)
+        .eq('id', settings.id)
         .select('*, users:user_id(username, email)')
         .single();
       
@@ -125,7 +128,7 @@ export const useCreatorSettings = () => {
         }
       }
       
-      // Format and return the updated data with the new display_name
+      // Format and return the updated data
       const formattedData = formatCreatorData(updatedCreator);
       console.log('Formatted updated data to return:', formattedData);
       

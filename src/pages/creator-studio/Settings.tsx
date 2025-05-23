@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +22,7 @@ export default function CreatorStudioSettings() {
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
   
-  // Update formData when settings are loaded
+  // Update formData when settings are loaded, but preserve form changes when saving
   useEffect(() => {
     if (settings && !isSaving) {
       console.log('Settings loaded, updating formData:', settings);
@@ -41,6 +40,16 @@ export default function CreatorStudioSettings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!settings?.id) {
+      toast({
+        title: "Error",
+        description: "Creator profile not found. Please refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSaving(true);
     
     try {
@@ -51,8 +60,8 @@ export default function CreatorStudioSettings() {
         updateSettings(formData, {
           onSuccess: (updatedData) => {
             console.log('Update completed, received updated data:', updatedData);
-            // Update formData with the fresh data from database
-            setFormData(updatedData);
+            // Keep the form data as is since the update was successful
+            // The cache will be updated with the new data
             resolve();
           },
           onError: (error) => {
