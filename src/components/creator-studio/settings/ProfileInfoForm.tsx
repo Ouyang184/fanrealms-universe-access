@@ -8,9 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CreatorSettings } from "@/types/creator-studio";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AVAILABLE_TAGS = [
   "Art", "Music", "Gaming", "Education", "Writing", 
@@ -27,31 +32,26 @@ interface ProfileInfoFormProps {
 }
 
 export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isUploading = false }: ProfileInfoFormProps) {
-  const [tagsOpen, setTagsOpen] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    onSettingsChange(name, value);
-  };
-
   // Ensure tags is always an array to prevent iteration errors
   const currentTags = Array.isArray(settings.tags) ? settings.tags : [];
 
   const handleTagSelect = (tag: string) => {
-    // Check if tag already exists in the array
-    if (currentTags.includes(tag)) {
-      // Remove the tag
-      const updatedTags = currentTags.filter(t => t !== tag);
-      onSettingsChange('tags', updatedTags);
-    } else {
+    // If tag is already selected, don't add it again
+    if (!currentTags.includes(tag)) {
       // Add the tag
-      onSettingsChange('tags', [...currentTags, tag]);
+      const updatedTags = [...currentTags, tag];
+      onSettingsChange('tags', updatedTags);
     }
   };
 
   const removeTag = (tag: string) => {
     const updatedTags = currentTags.filter(t => t !== tag);
     onSettingsChange('tags', updatedTags);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    onSettingsChange(name, value);
   };
 
   // Calculate display name - prioritize display_name, then fallback to other fields
@@ -131,39 +131,18 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="grid gap-2">
           <Label htmlFor="tags">Content Tags</Label>
           <div className="space-y-2">
-            <Popover open={tagsOpen} onOpenChange={setTagsOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start text-left font-normal"
-                >
-                  {currentTags.length 
-                    ? `${currentTags.length} tag${currentTags.length > 1 ? 's' : ''} selected` 
-                    : "Select content tags..."}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search for tags..." />
-                  <CommandEmpty>No tags found.</CommandEmpty>
-                  <CommandGroup className="max-h-64 overflow-y-auto">
-                    {AVAILABLE_TAGS.map((tag) => (
-                      <CommandItem
-                        key={tag}
-                        value={tag}
-                        onSelect={() => {
-                          handleTagSelect(tag);
-                        }}
-                      >
-                        <span className={currentTags.includes(tag) ? "font-medium text-primary" : ""}>
-                          {tag}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <Select onValueChange={handleTagSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a content tag to add" />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_TAGS.map((tag) => (
+                  <SelectItem key={tag} value={tag} disabled={currentTags.includes(tag)}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             {/* Display selected tags */}
             <div className="flex flex-wrap gap-1 mt-2">
