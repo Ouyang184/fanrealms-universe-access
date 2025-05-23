@@ -106,29 +106,31 @@ export default function CreatorStudioSettings() {
           onSuccess: async (updatedData: any) => {
             console.log('Update completed successfully:', updatedData);
             
+            // Immediately update formData with the new values to reflect changes in UI
+            if (updatedData) {
+              console.log('Immediately updating form with mutation result:', updatedData);
+              setFormData({ ...updatedData });
+            }
+            
             // First invalidate to clear stale cache
             await queryClient.invalidateQueries({ 
               queryKey: ['creator-settings', user?.id] 
             });
             
-            // Add delay to avoid fetching stale data from Supabase
-            await new Promise((res) => setTimeout(res, 500));
+            // Add longer delay to ensure Supabase has synced the data
+            await new Promise((res) => setTimeout(res, 800));
             
-            // Refetch the latest data
+            // Refetch the latest data from server
             await queryClient.refetchQueries({ 
               queryKey: ['creator-settings', user?.id] 
             });
             
-            // Get the fresh data from the query cache
+            // Get the fresh data from the query cache and update form if needed
             const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]) as CreatorSettingsData | undefined;
             
-            // Update local form data with the fresh data from the server
             if (freshSettings && freshSettings.id) {
-              console.log('Updating form with fresh settings:', freshSettings);
+              console.log('Syncing form with fresh server data:', freshSettings);
               setFormData({ ...freshSettings });
-            } else if (updatedData) {
-              console.log('Using updated data from mutation:', updatedData);
-              setFormData({ ...updatedData });
             }
             
             setHasUnsavedChanges(false);
