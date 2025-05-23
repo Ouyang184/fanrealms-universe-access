@@ -86,33 +86,51 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      // Update formData immediately with the saved data to prevent reversion
-      const updatedFormData = {
-        ...formData,
-        display_name: updatedData.display_name,
-        displayName: updatedData.display_name, // Keep both in sync
-        bio: updatedData.bio,
-        tags: updatedData.tags,
-        profile_image_url: updatedData.profile_image_url,
-        banner_url: updatedData.banner_url,
-      };
-      
-      setFormData(updatedFormData);
-      console.log('useSettingsForm: Form data updated after save:', updatedFormData);
-      
-      // Show success toast
-      toast({
-        title: "Success",
-        description: "Your settings have been updated successfully",
+      // 1. INVALIDATE ALL CREATOR-RELATED QUERIES FIRST
+      console.log('useSettingsForm: Invalidating all creator-related queries...');
+      await queryClient.invalidateQueries({ 
+        queryKey: ['creator-settings'] 
       });
-
-      // Clear ALL query cache to ensure fresh data everywhere
-      console.log('useSettingsForm: Clearing entire query cache...');
-      await queryClient.clear();
+      await queryClient.invalidateQueries({ 
+        queryKey: ['creator-profile'] 
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ['creators'] 
+      });
       
-      // Force refetch to get fresh data
-      console.log('useSettingsForm: Forcing refetch...');
-      await refetch();
+      // 2. FORCE REFETCH TO GET FRESH DATA
+      console.log('useSettingsForm: Forcing refetch of creator settings...');
+      const { data: freshData } = await refetch();
+      
+      // 3. UPDATE FORM DATA WITH FRESH DATA FROM REFETCH
+      if (freshData) {
+        console.log('useSettingsForm: Updating form data with fresh data:', freshData);
+        setFormData({ ...freshData });
+        
+        toast({
+          title: "Success",
+          description: `Settings updated successfully! Display name: "${freshData.display_name || 'Not set'}"`,
+        });
+      } else {
+        // Fallback to updated data from the mutation
+        const updatedFormData = {
+          ...formData,
+          display_name: updatedData.display_name,
+          displayName: updatedData.display_name, // Keep both in sync
+          bio: updatedData.bio,
+          tags: updatedData.tags,
+          profile_image_url: updatedData.profile_image_url,
+          banner_url: updatedData.banner_url,
+        };
+        
+        setFormData(updatedFormData);
+        console.log('useSettingsForm: Form data updated with mutation data:', updatedFormData);
+        
+        toast({
+          title: "Success", 
+          description: `Settings updated successfully! Display name: "${updatedData.display_name || 'Not set'}"`,
+        });
+      }
       
     } catch (error: any) {
       console.error("useSettingsForm: Error in handleSave:", error);
@@ -152,6 +170,11 @@ export const useSettingsForm = () => {
             avatar_url: imageUrl,
             profile_image_url: imageUrl
           }));
+          
+          // Invalidate queries after image upload
+          await queryClient.invalidateQueries({ 
+            queryKey: ['creator-settings'] 
+          });
           
           toast({
             title: "Success",

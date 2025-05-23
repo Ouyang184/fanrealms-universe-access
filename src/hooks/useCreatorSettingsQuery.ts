@@ -57,8 +57,9 @@ export const useCreatorSettingsQuery = () => {
     },
     enabled: !!user?.id,
     staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache data in memory
     refetchOnWindowFocus: true, // Refetch when window gains focus
-    refetchInterval: 0, // Don't automatically refetch
+    refetchOnMount: true, // Always refetch on component mount
   });
 
   return {
