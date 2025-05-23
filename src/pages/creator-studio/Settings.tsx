@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -22,17 +21,15 @@ export default function CreatorStudioSettings() {
   
   const [formData, setFormData] = useState({ ...settings });
   const [isSaving, setIsSaving] = useState(false);
-  const [lastSaveAttempt, setLastSaveAttempt] = useState<number>(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  // Update formData when settings are loaded, but only if we're not currently saving
-  // and it's been more than 2 seconds since the last save attempt to prevent overriding user changes
+  // Update formData when settings are loaded initially
   useEffect(() => {
-    const timeSinceLastSave = Date.now() - lastSaveAttempt;
-    if (settings && !isSaving && timeSinceLastSave > 2000) {
+    if (settings && !hasUnsavedChanges) {
       console.log('Settings loaded, updating formData:', settings);
       setFormData({ ...settings });
     }
-  }, [settings, isSaving, lastSaveAttempt]);
+  }, [settings, hasUnsavedChanges]);
 
   const handleChange = (name: string, value: string | string[]) => {
     console.log(`Updating form field ${name} to:`, value);
@@ -40,6 +37,7 @@ export default function CreatorStudioSettings() {
       ...prev,
       [name]: value
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -55,7 +53,6 @@ export default function CreatorStudioSettings() {
     }
     
     setIsSaving(true);
-    setLastSaveAttempt(Date.now());
     
     try {
       console.log('Saving settings with formData:', formData);
@@ -64,6 +61,7 @@ export default function CreatorStudioSettings() {
       await new Promise<void>((resolve, reject) => {
         updateSettings(formData, {
           onSuccess: () => {
+            setHasUnsavedChanges(false);
             resolve();
           },
           onError: (error: any) => {
@@ -105,6 +103,7 @@ export default function CreatorStudioSettings() {
             avatar_url: imageUrl,
             profile_image_url: imageUrl
           }));
+          setHasUnsavedChanges(true);
           
           toast({
             title: "Success",
@@ -132,6 +131,7 @@ export default function CreatorStudioSettings() {
       ...prev,
       banner_url: bannerUrl
     }));
+    setHasUnsavedChanges(true);
   };
 
   const isFormDisabled = isLoading || isUploading || isSaving;
@@ -172,7 +172,7 @@ export default function CreatorStudioSettings() {
           <div className="flex justify-end">
             <Button 
               type="submit" 
-              disabled={isFormDisabled}
+              disabled={isFormDisabled || !hasUnsavedChanges}
               className={`${isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}`}
             >
               {isSaving ? (
