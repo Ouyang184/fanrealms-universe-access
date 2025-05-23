@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,19 +30,20 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
     );
   }
 
-  // Get proper display name from creator data with fallbacks
-  const displayName = creator.display_name || creator.username || "Creator";
-  
-  // Get avatar URL with fallbacks
-  const avatarUrl = creator.avatar_url || creator.profile_image_url;
-  
-  // Create proper creator URL from username or ID
-  const creatorUrl = creator.username 
-    ? `/creator/${creator.username}` 
-    : creator.id ? `/creator/${creator.id}` : "#";
-  
-  // Get first letter for avatar fallback
-  const avatarFallback = displayName.charAt(0).toUpperCase();
+  const {
+    username,
+    display_name,
+    avatar_url,
+    profile_image_url,
+    bio
+  } = creator;
+
+  // Use display_name or username or fallback to "Creator" for display
+  const displayName = display_name || username || "Creator";
+  // Use avatar_url or profile_image_url for avatar
+  const avatarUrl = avatar_url || profile_image_url;
+  // Build creator URL from username
+  const creatorUrl = username ? `/creator/${username}` : "#";
 
   return (
     <Card className="overflow-hidden">
@@ -50,12 +52,12 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
         <div className="flex flex-col items-center -mt-12 mb-4">
           <Avatar className="h-24 w-24 border-4 border-background">
             <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-            <AvatarFallback className="text-2xl">{avatarFallback}</AvatarFallback>
+            <AvatarFallback className="text-2xl">{displayName.charAt(0)}</AvatarFallback>
           </Avatar>
           <Link to={creatorUrl} className="mt-3 text-lg font-semibold hover:underline">
             {displayName}
           </Link>
-          {creator.bio && <p className="text-sm text-center mt-2 line-clamp-2">{creator.bio}</p>}
+          {bio && <p className="text-sm text-center mt-2 line-clamp-2">{bio}</p>}
         </div>
         <div className="flex justify-center">
           <Button asChild>
