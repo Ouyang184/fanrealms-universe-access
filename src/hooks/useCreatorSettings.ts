@@ -60,17 +60,19 @@ export const useCreatorSettings = () => {
       if (!user?.id) throw new Error('User not authenticated');
       
       console.log('updateSettingsMutation: Starting update with data:', updatedSettings);
+      console.log('updateSettingsMutation: User ID:', user.id);
       
       // Update creator-specific fields
       const creatorFields = {
         bio: updatedSettings.bio || '',
-        display_name: updatedSettings.display_name || updatedSettings.displayName || '',
+        display_name: updatedSettings.display_name || '',
         banner_url: updatedSettings.banner_url || '',
-        profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url || '',
+        profile_image_url: updatedSettings.profile_image_url || '',
         tags: updatedSettings.tags || [],
       };
       
       console.log('updateSettingsMutation: Creator fields to update:', creatorFields);
+      console.log('updateSettingsMutation: Updating creators table where user_id =', user.id);
       
       const { data, error } = await supabase
         .from('creators')
@@ -136,13 +138,14 @@ export const useCreatorSettings = () => {
       onError?: (error: any) => void; 
     }
   ) => {
+    console.log('updateSettings called with:', { updatedSettings, callbacks: !!callbacks });
     updateSettingsMutation.mutate(updatedSettings, {
       onSuccess: (data) => {
-        // Direct callback without using .options which doesn't exist
+        console.log('updateSettings: Mutation success, calling callback');
         callbacks?.onSuccess?.();
       },
       onError: (error) => {
-        // Direct callback without using .options which doesn't exist
+        console.log('updateSettings: Mutation error, calling callback:', error);
         callbacks?.onError?.(error);
       }
     });
