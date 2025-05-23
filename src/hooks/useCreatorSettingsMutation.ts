@@ -14,7 +14,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
     mutationFn: async (updatedSettings: Partial<CreatorSettingsData>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log('=== COMPREHENSIVE UPDATE DEBUG ===');
+      console.log('=== DEBUGGING DATABASE UPDATE ISSUE ===');
       console.log('User ID:', user.id);
       console.log('Input settings to update:', updatedSettings);
       
@@ -32,55 +32,80 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       console.log('DATABASE STATE BEFORE UPDATE:', beforeUpdate);
       
-      // Prepare only the fields that are changing
-      const creatorUpdateData: Partial<CreatorUpdateData> = {};
+      // Let's try a very simple, direct update approach
+      console.log('Attempting to update display_name to:', updatedSettings.display_name);
       
-      if (updatedSettings.bio !== undefined) creatorUpdateData.bio = updatedSettings.bio;
-      if (updatedSettings.display_name !== undefined) creatorUpdateData.display_name = updatedSettings.display_name;
-      if (updatedSettings.banner_url !== undefined) creatorUpdateData.banner_url = updatedSettings.banner_url;
-      if (updatedSettings.profile_image_url !== undefined) creatorUpdateData.profile_image_url = updatedSettings.profile_image_url;
-      if (updatedSettings.avatar_url !== undefined) creatorUpdateData.profile_image_url = updatedSettings.avatar_url;
-      if (updatedSettings.tags !== undefined) creatorUpdateData.tags = updatedSettings.tags;
-
-      console.log('EXACT UPDATE PAYLOAD:', creatorUpdateData);
-      console.log('display_name specifically:', creatorUpdateData.display_name);
-      
-      // Execute the update
-      const { error: updateError } = await supabase
+      // Try the most basic update possible
+      const { data: updateResult, error: updateError } = await supabase
         .from('creators')
-        .update(creatorUpdateData)
-        .eq('user_id', user.id);
+        .update({ 
+          display_name: updatedSettings.display_name 
+        })
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
+      
+      console.log('UPDATE RESULT:', updateResult);
+      console.log('UPDATE ERROR:', updateError);
       
       if (updateError) {
-        console.error('UPDATE FAILED:', updateError);
+        console.error('UPDATE FAILED WITH ERROR:', updateError);
         throw updateError;
       }
       
-      console.log('UPDATE COMMAND EXECUTED WITHOUT ERROR');
-      
-      // Wait a moment and then verify the update
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      // Double check what's actually in the database now
       const { data: afterUpdate, error: afterError } = await supabase
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
         .single();
       
-      if (afterError || !afterUpdate) {
+      console.log('DATABASE STATE AFTER UPDATE:', afterUpdate);
+      
+      if (afterError) {
         console.error('Error fetching after update:', afterError);
         throw new Error('Update verification failed');
       }
       
-      console.log('DATABASE STATE AFTER UPDATE:', afterUpdate);
-      console.log('display_name after update:', afterUpdate.display_name);
+      // Check if the update actually worked
+      if (updatedSettings.display_name !== undefined && 
+          afterUpdate.display_name !== updatedSettings.display_name) {
+        console.error('CRITICAL: Database update did not persist!');
+        console.error('Expected:', updatedSettings.display_name);
+        console.error('Actual in DB:', afterUpdate.display_name);
+        
+        // Let's try to understand why - check for triggers or constraints
+        console.log('Checking for potential database constraints or triggers...');
+        
+        throw new Error(`Database update failed to persist. Expected "${updatedSettings.display_name}" but got "${afterUpdate.display_name}"`);
+      }
       
-      // Check if the display_name actually changed
-      if (creatorUpdateData.display_name !== undefined && afterUpdate.display_name !== creatorUpdateData.display_name) {
-        console.error('CRITICAL: Display name did not update!');
-        console.error('Expected:', creatorUpdateData.display_name);
-        console.error('Actual:', afterUpdate.display_name);
-        throw new Error(`Update failed: display_name should be "${creatorUpdateData.display_name}" but is "${afterUpdate.display_name}"`);
+      // If we get here, the update worked
+      console.log('✅ Update successful! display_name is now:', afterUpdate.display_name);
+      
+      // Update other fields if provided
+      if (Object.keys(updatedSettings).length > 1 || !updatedSettings.display_name) {
+        const otherUpdates: Partial<CreatorUpdateData> = {};
+        
+        if (updatedSettings.bio !== undefined) otherUpdates.bio = updatedSettings.bio;
+        if (updatedSettings.banner_url !== undefined) otherUpdates.banner_url = updatedSettings.banner_url;
+        if (updatedSettings.profile_image_url !== undefined) otherUpdates.profile_image_url = updatedSettings.profile_image_url;
+        if (updatedSettings.avatar_url !== undefined) otherUpdates.profile_image_url = updatedSettings.avatar_url;
+        if (updatedSettings.tags !== undefined) otherUpdates.tags = updatedSettings.tags;
+
+        if (Object.keys(otherUpdates).length > 0) {
+          console.log('Updating other fields:', otherUpdates);
+          
+          const { error: otherUpdateError } = await supabase
+            .from('creators')
+            .update(otherUpdates)
+            .eq('user_id', user.id);
+          
+          if (otherUpdateError) {
+            console.error('Error updating other fields:', otherUpdateError);
+            throw otherUpdateError;
+          }
+        }
       }
       
       // Update user fields if needed
