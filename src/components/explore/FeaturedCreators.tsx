@@ -27,6 +27,14 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
     const extractedTags = bio.match(/#\w+/g) || [];
     const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
     
+    // If no tags found in bio, extract keywords
+    if (formattedTags.length === 0 && bio) {
+      const keywords = bio.split(' ')
+        .filter(word => word.length > 4)
+        .slice(0, 3);
+      return keywords.length > 0 ? keywords : defaultTags;
+    }
+    
     return formattedTags.length > 0 ? formattedTags : defaultTags;
   };
 
@@ -71,71 +79,84 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
             </Card>
           ))
         ) : creators.length > 0 ? (
-          creators.map((creator) => (
-            <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-              <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
-                {creator.banner_url && (
-                  <img
-                    src={creator.banner_url}
-                    alt={creator.display_name || "Creator"}
-                    className="w-full h-full object-cover mix-blend-overlay"
-                  />
-                )}
-                <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
-                  <Award className="h-3 w-3" /> Featured
-                </Badge>
-              </div>
-              <CardContent className="pt-0 -mt-12 p-6">
-                <div className="flex justify-between items-start">
-                  <Avatar className="h-20 w-20 border-4 border-gray-900">
-                    <AvatarImage 
-                      src={creator.profile_image_url || creator.avatar_url || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} 
-                      alt={creator.display_name || "Creator"} 
+          creators.map((creator) => {
+            // Get display name with fallbacks
+            const displayName = creator.display_name || creator.username || "Creator";
+            
+            // Get avatar URL with fallbacks
+            const avatarUrl = creator.profile_image_url || creator.avatar_url;
+            
+            // Create proper route to creator profile
+            const creatorLink = creator.username 
+              ? `/creator/${creator.username}` 
+              : `/creator/${creator.id}`;
+            
+            // Get first letter for avatar fallback
+            const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
+            
+            return (
+              <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
+                <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
+                  {creator.banner_url && (
+                    <img
+                      src={creator.banner_url}
+                      alt={displayName}
+                      className="w-full h-full object-cover mix-blend-overlay"
                     />
-                    <AvatarFallback className="bg-gray-800 text-xl">
-                      {(creator.display_name || "C").substring(0, 1)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex items-center gap-1 mt-2 bg-gray-800 px-2 py-1 rounded-full">
-                    <Star className="h-3 w-3 text-yellow-500" />
-                    <span className="text-sm">{(4 + Math.random()).toFixed(1)}</span>
+                  )}
+                  <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
+                    <Award className="h-3 w-3" /> Featured
+                  </Badge>
+                </div>
+                <CardContent className="pt-0 -mt-12 p-6">
+                  <div className="flex justify-between items-start">
+                    <Avatar className="h-20 w-20 border-4 border-gray-900">
+                      <AvatarImage src={avatarUrl} alt={displayName} />
+                      <AvatarFallback className="bg-gray-800 text-xl">
+                        {avatarFallback}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex items-center gap-1 mt-2 bg-gray-800 px-2 py-1 rounded-full">
+                      <Star className="h-3 w-3 text-yellow-500" />
+                      <span className="text-sm">{(4 + Math.random()).toFixed(1)}</span>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-xl font-bold mt-4">{creator.display_name || "Creator"}</h3>
-                <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+                  <h3 className="text-xl font-bold mt-4">{displayName}</h3>
+                  <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {getCreatorTags(creator).map((tag, index) => (
-                    <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 mt-4">
-                  <Avatar className="h-6 w-6 border-2 border-gray-900">
-                    <AvatarFallback className="bg-purple-900 text-xs">U1</AvatarFallback>
-                  </Avatar>
-                  <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
-                    <AvatarFallback className="bg-blue-900 text-xs">U2</AvatarFallback>
-                  </Avatar>
-                  <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
-                    <AvatarFallback className="bg-green-900 text-xs">U3</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-gray-400">+{Math.floor(Math.random() * 2000) + 500} subscribers</span>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="text-sm text-gray-400">
-                    From <span className="font-medium text-white">${(9.99).toFixed(2)}/mo</span>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {getCreatorTags(creator).map((tag, index) => (
+                      <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
-                  <Link to={`/creator/${creator.id}`}>
-                    <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+
+                  <div className="flex items-center gap-2 mt-4">
+                    <Avatar className="h-6 w-6 border-2 border-gray-900">
+                      <AvatarFallback className="bg-purple-900 text-xs">U1</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
+                      <AvatarFallback className="bg-blue-900 text-xs">U2</AvatarFallback>
+                    </Avatar>
+                    <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
+                      <AvatarFallback className="bg-green-900 text-xs">U3</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm text-gray-400">+{Math.floor(Math.random() * 2000) + 500} subscribers</span>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between">
+                    <div className="text-sm text-gray-400">
+                      From <span className="font-medium text-white">${(9.99).toFixed(2)}/mo</span>
+                    </div>
+                    <Link to={creatorLink}>
+                      <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
         ) : (
           <div className="col-span-3 text-center py-10 text-gray-400">
             No creators found. Try adjusting your search or filters.

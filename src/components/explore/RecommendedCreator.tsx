@@ -23,20 +23,42 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
     const extractedTags = bio.match(/#\w+/g) || [];
     const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
     
+    // If no tags found in bio, extract keywords
+    if (formattedTags.length === 0 && bio) {
+      const keywords = bio.split(' ')
+        .filter(word => word.length > 4)
+        .slice(0, 3);
+      return keywords.length > 0 ? keywords : defaultTags;
+    }
+    
     return formattedTags.length > 0 ? formattedTags : defaultTags;
   };
+
+  // Create proper route to creator profile
+  const creatorLink = creator.username 
+    ? `/creator/${creator.username}` 
+    : `/creator/${creator.id}`;
+
+  // Get display name with fallbacks
+  const displayName = creator.display_name || creator.username || "Creator";
+
+  // Get avatar URL with fallbacks
+  const avatarUrl = creator.profile_image_url || creator.avatar_url;
+
+  // Get first letter for avatar fallback
+  const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
 
   return (
     <Card className="bg-gray-900 border-gray-800 flex overflow-hidden">
       <div className="p-4 flex-shrink-0">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={creator.profile_image_url || creator.avatar_url || `/placeholder.svg?text=${(creator.display_name || "C").substring(0, 1)}`} alt={creator.display_name || "Creator"} />
-          <AvatarFallback className="bg-gray-800 text-xl">{(creator.display_name || "C").substring(0, 1)}</AvatarFallback>
+          <AvatarImage src={avatarUrl} alt={displayName} />
+          <AvatarFallback className="bg-gray-800 text-xl">{avatarFallback}</AvatarFallback>
         </Avatar>
       </div>
       <div className="flex-1 p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-bold">{creator.display_name || creator.username || "Creator"}</h3>
+          <h3 className="font-bold">{displayName}</h3>
           <Badge variant="outline" className="bg-gray-800 border-gray-700">
             {Math.floor(Math.random() * 10000) + 100} subscribers
           </Badge>
@@ -54,7 +76,7 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
             <span className="text-gray-400">From </span>
             <span className="font-medium">${(9.99).toFixed(2)}/mo</span>
           </div>
-          <Link to={`/creator/${creator.id}`}>
+          <Link to={creatorLink}>
             <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
               View Creator
             </Button>
