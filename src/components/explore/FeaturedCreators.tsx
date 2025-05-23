@@ -22,8 +22,12 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
     
     if (!creator) return defaultTags;
     
+    if (creator.tags && creator.tags.length > 0) {
+      return creator.tags.slice(0, 3);
+    }
+    
     const bio = creator.bio || "";
-    // Extract hashtags or keywords from bio
+    // Extract hashtags from bio
     const extractedTags = bio.match(/#\w+/g) || [];
     const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
     
@@ -75,7 +79,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
         ) : creators.length > 0 ? (
           creators.map((creator) => {
             // Get display name with fallbacks
-            const displayName = creator.display_name || creator.username || "Creator";
+            const displayName = creator.displayName || creator.username || "Creator";
             
             // Get avatar URL with fallbacks
             const avatarUrl = creator.profile_image_url || creator.avatar_url;
@@ -105,7 +109,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                 <CardContent className="pt-0 -mt-12 p-6">
                   <div className="flex justify-between items-start">
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
-                      <AvatarImage src={avatarUrl} alt={displayName} />
+                      <AvatarImage src={avatarUrl || ''} alt={displayName} />
                       <AvatarFallback className="bg-gray-800 text-xl">
                         {avatarFallback}
                       </AvatarFallback>

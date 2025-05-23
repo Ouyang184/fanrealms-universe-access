@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CreatorProfile, Tier } from "@/types";
 
-export const usePopularCreators = () => {
+export const usePopularCreators = (excludeAI = true) => {
   return useQuery({
-    queryKey: ["creators", "popular"],
+    queryKey: ["creators", "popular", { excludeAI }],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('creators')
         .select(`
           *,
@@ -24,7 +24,16 @@ export const usePopularCreators = () => {
             created_at
           )
         `)
-        .limit(3);
+        .limit(6);
+      
+      // If excludeAI is true, add a filter to exclude creators with AI in their display_name or bio
+      if (excludeAI) {
+        query = query
+          .not('display_name', 'ilike', '%AI%')
+          .not('bio', 'ilike', '%AI generated%');
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -55,7 +64,7 @@ export const usePopularCreators = () => {
             description: tier.description,
             features: tier.description.split(',').map(item => item.trim()),
             subscriberCount: 0 // Default value for subscriber count
-          }))
+          })) || []
         };
       });
     }
