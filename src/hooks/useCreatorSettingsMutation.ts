@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,9 +13,11 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
   const updateSettingsMutation = useMutation({
     mutationFn: async (updatedSettings: Partial<CreatorSettingsData>) => {
       if (!user?.id) throw new Error('User not authenticated');
+      if (!settings?.id) throw new Error('Creator settings not loaded');
       
       console.log('=== MUTATION START ===');
       console.log('Updating settings for user:', user.id);
+      console.log('Creator ID:', settings.id);
       console.log('Current settings:', settings);
       console.log('Updates to apply:', updatedSettings);
       
@@ -44,13 +47,13 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       // Only update creators table if there are changes
       if (Object.keys(creatorUpdates).length > 0) {
-        console.log('Executing creator update...');
+        console.log('Executing creator update using creator ID:', settings.id);
         
-        // Perform the update and return the updated row
+        // Perform the update using creator ID instead of user_id and return the updated row
         const { data: updatedData, error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('user_id', user.id)
+          .eq('id', settings.id)  // Use creator ID instead of user_id
           .select('*, users:user_id(username, email)')
           .single();
         
