@@ -44,19 +44,50 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       // Only update creators table if there are changes
       if (Object.keys(creatorUpdates).length > 0) {
-        console.log('Updating creators table...');
+        console.log('📝 Starting database update...');
         
-        const { error: creatorError } = await supabase
+        // First, let's check the current value in the database
+        console.log('🔍 Checking current database value...');
+        const { data: beforeUpdate, error: beforeError } = await supabase
+          .from('creators')
+          .select('display_name, id')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('📊 Current database value:', beforeUpdate);
+        if (beforeError) console.log('❌ Error checking current value:', beforeError);
+        
+        // Now perform the update
+        console.log('💾 Performing update with payload:', creatorUpdates);
+        const updateResult = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select('display_name, id, updated_at');
         
-        if (creatorError) {
-          console.error('Creator update error:', creatorError);
-          throw creatorError;
+        console.log('📄 Raw update result:', updateResult);
+        
+        if (updateResult.error) {
+          console.error('❌ Creator update error:', updateResult.error);
+          throw updateResult.error;
         }
         
-        console.log('✅ Creator table updated successfully');
+        console.log('✅ Update executed successfully');
+        console.log('📋 Updated rows:', updateResult.data);
+        
+        // Wait a moment and check the value again
+        console.log('⏱️ Waiting 100ms before verification...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        console.log('🔍 Verifying update by checking database again...');
+        const { data: afterUpdate, error: afterError } = await supabase
+          .from('creators')
+          .select('display_name, id, updated_at')
+          .eq('user_id', user.id)
+          .single();
+        
+        console.log('📊 Database value after update:', afterUpdate);
+        if (afterError) console.log('❌ Error checking after update:', afterError);
       }
       
       // Update user fields if needed
@@ -66,7 +97,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       }
       
       if (Object.keys(userUpdates).length > 0) {
-        console.log('Updating users table with:', userUpdates);
+        console.log('👤 Updating users table with:', userUpdates);
         
         const { error: userError } = await supabase
           .from('users')
@@ -74,13 +105,16 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
           .eq('id', user.id);
         
         if (userError) {
-          console.error('User update error:', userError);
+          console.error('❌ User update error:', userError);
           // Don't throw here, just log the error
         }
       }
       
-      // Fetch the updated data
-      console.log('Fetching updated creator data...');
+      // Fetch the updated data with additional wait
+      console.log('⏱️ Waiting 200ms before final fetch...');
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log('📡 Fetching final updated creator data...');
       const { data: finalCreator, error: finalError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
@@ -88,21 +122,21 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         .single();
       
       if (finalError || !finalCreator) {
-        console.error('Error fetching final creator:', finalError);
+        console.error('❌ Error fetching final creator:', finalError);
         throw new Error('Failed to fetch updated creator data');
       }
       
-      console.log('Fresh data from database:', finalCreator);
+      console.log('📋 Fresh data from database (final):', finalCreator);
       
       // Format and return the updated data
       const formattedData = formatCreatorData(finalCreator);
-      console.log('Formatted data to return:', formattedData);
+      console.log('🎨 Formatted data to return:', formattedData);
       
       return formattedData;
     },
     onSuccess: (updatedData) => {
       console.log('=== MUTATION SUCCESS ===');
-      console.log('Final updated data:', updatedData);
+      console.log('🎉 Final updated data:', updatedData);
       
       // Clear and set the cache
       queryClient.removeQueries({ queryKey: ['creator-settings', user?.id] });
@@ -120,7 +154,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
     },
     onError: (error: any) => {
       console.error('=== MUTATION ERROR ===');
-      console.error('Error details:', error);
+      console.error('💥 Error details:', error);
       toast({
         title: "Update failed",
         description: error.message || "Failed to update settings. Please try again.",
