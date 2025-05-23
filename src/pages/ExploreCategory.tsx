@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState, useRef } from "react";
@@ -28,124 +29,8 @@ import {
   Clock,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-// Sample data for creators filtered by category
-const sampleCreators = [
-  {
-    id: 1,
-    name: "Digital Art Master",
-    username: "artmaster",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Digital+Art",
-    description: "Digital art and illustration tutorials for all skill levels",
-    subscribers: 12500,
-    rating: 4.8,
-    tier: {
-      name: "Pro Artist",
-      price: 15,
-    },
-    tags: ["Digital Art", "Illustration", "Tutorials"],
-    featured: true,
-    category: "Art & Illustration",
-    isPro: true,
-    joinDate: "2022-05-15",
-  },
-  {
-    id: 2,
-    name: "Game Development Pro",
-    username: "gamedevpro",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Game+Dev",
-    description: "Game development tutorials, assets, and behind-the-scenes content",
-    subscribers: 8700,
-    rating: 4.7,
-    tier: {
-      name: "Indie Developer",
-      price: 25,
-    },
-    tags: ["Game Development", "Unity", "Coding"],
-    featured: true,
-    category: "Gaming",
-    isPro: true,
-    joinDate: "2021-11-03",
-  },
-  {
-    id: 3,
-    name: "Music Production Studio",
-    username: "musicstudio",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Music+Production",
-    description: "Music production tutorials, sample packs, and exclusive tracks",
-    subscribers: 15300,
-    rating: 4.9,
-    tier: {
-      name: "Producer Plus",
-      price: 10,
-    },
-    tags: ["Music Production", "Samples", "Tutorials"],
-    featured: true,
-    category: "Music",
-    isPro: true,
-    joinDate: "2022-01-20",
-  },
-  {
-    id: 4,
-    name: "Writing Workshop",
-    username: "writingworkshop",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Writing+Workshop",
-    description: "Creative writing courses and feedback",
-    subscribers: 6200,
-    rating: 4.6,
-    tier: {
-      name: "Author's Circle",
-      price: 20,
-    },
-    tags: ["Writing", "Fiction", "Publishing"],
-    featured: false,
-    category: "Writing",
-    isPro: true,
-    joinDate: "2023-02-11",
-  },
-  {
-    id: 5,
-    name: "Photography Pro",
-    username: "photopro",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Photography",
-    description: "Photography tutorials and editing tips",
-    subscribers: 9400,
-    rating: 4.5,
-    tier: {
-      name: "Pro Photographer",
-      price: 15,
-    },
-    tags: ["Photography", "Editing", "Lightroom"],
-    featured: false,
-    category: "Photography",
-    isPro: false,
-    joinDate: "2023-06-22",
-  },
-  {
-    id: 6,
-    name: "Education Insights",
-    username: "eduinsights",
-    avatar: "/placeholder.svg?height=100&width=100",
-    coverImage: "/placeholder.svg?height=200&width=400&text=Education",
-    description: "Educational content and teaching resources",
-    subscribers: 7800,
-    rating: 4.4,
-    tier: {
-      name: "Educator Plus",
-      price: 12,
-    },
-    tags: ["Education", "Learning", "Resources"],
-    featured: false,
-    category: "Education",
-    isPro: false,
-    joinDate: "2022-09-15",
-  },
-];
+import { usePopularCreators } from "@/hooks/usePopularCreators";
+import { CreatorProfile } from "@/types";
 
 // Categories data
 const categories = [
@@ -170,12 +55,16 @@ export default function ExploreCategoryPage() {
   const [sortOption, setSortOption] = useState<string>("top-rated");
   const [contentType, setContentType] = useState<string>(category || "all");
   const [isContentTypeOpen, setIsContentTypeOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Find the current category object based on route parameter
   const currentCategory = categories.find(cat => cat.route === category);
   
+  // Fetch real creators from the database
+  const { data: allCreators = [], isLoading: isLoadingCreators } = usePopularCreators(true);
+  
   // Filter creators based on the selected category
-  const [filteredCreators, setFilteredCreators] = useState(sampleCreators);
+  const [filteredCreators, setFilteredCreators] = useState<CreatorProfile[]>([]);
   
   // Add ref to track dropdown state
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -186,15 +75,22 @@ export default function ExploreCategoryPage() {
       ? `${currentCategory.name} Creators | FanRealms` 
       : "Explore Categories | FanRealms";
     
-    // Filter creators when category changes
-    if (category) {
-      const categoryName = categories.find(cat => cat.route === category)?.name;
-      const filtered = sampleCreators.filter(creator => 
-        creator.category === categoryName
-      );
-      setFilteredCreators(filtered.length > 0 ? filtered : sampleCreators);
+    // Filter creators when category or creators data changes
+    if (category && allCreators.length > 0) {
+      const categoryName = categories.find(cat => cat.route === category)?.name || "";
+      
+      // Filter creators by matching category name in bio or tags
+      const filtered = allCreators.filter(creator => {
+        const bio = (creator.bio || "").toLowerCase();
+        const tags = (creator.tags || []).map(tag => tag.toLowerCase());
+        
+        return bio.includes(categoryName.toLowerCase()) || 
+               tags.some(tag => tag.includes(categoryName.toLowerCase()));
+      });
+      
+      setFilteredCreators(filtered);
     } else {
-      setFilteredCreators(sampleCreators);
+      setFilteredCreators(allCreators);
     }
     
     // Update contentType state when category route changes
@@ -215,19 +111,42 @@ export default function ExploreCategoryPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [category, isContentTypeOpen]);
+  }, [category, isContentTypeOpen, allCreators]);
   
-  // Apply sorting and filtering
-  const applyFilters = (creators: typeof sampleCreators) => {
+  // Apply sorting and filtering to the creators list
+  const applyFilters = (creators: CreatorProfile[]) => {
+    if (!creators || creators.length === 0) return [];
+    
     let result = [...creators];
+    
+    // Filter by search query if present
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(creator => 
+        (creator.displayName || "").toLowerCase().includes(query) ||
+        (creator.username || "").toLowerCase().includes(query) ||
+        (creator.bio || "").toLowerCase().includes(query)
+      );
+    }
     
     // Apply sorting
     if (sortOption === "top-rated") {
-      result.sort((a, b) => b.rating - a.rating);
+      // Sort by number of tiers as a proxy for "rating" since we don't have ratings yet
+      result.sort((a, b) => (b.tiers?.length || 0) - (a.tiers?.length || 0));
     } else if (sortOption === "newest") {
-      result.sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime());
+      // Sort by creation date
+      result.sort((a, b) => {
+        const dateA = new Date(a.created_at || Date.now()).getTime();
+        const dateB = new Date(b.created_at || Date.now()).getTime();
+        return dateB - dateA;
+      });
     } else if (sortOption === "most-popular") {
-      result.sort((a, b) => b.subscribers - a.subscribers);
+      // Sort by total subscribers across all tiers
+      result.sort((a, b) => {
+        const subscribersA = (a.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
+        const subscribersB = (b.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
+        return subscribersB - subscribersA;
+      });
     }
     
     return result;
@@ -244,7 +163,34 @@ export default function ExploreCategoryPage() {
   // Reset filters function
   const resetFilters = () => {
     setSortOption("top-rated");
-    setContentType("all");
+    setSearchQuery("");
+  };
+
+  // Helper function to get creator tags
+  const getCreatorTags = (creator: CreatorProfile) => {
+    // Extract tags from bio or default to category tags
+    const defaultTags = ["Content Creator"];
+    
+    if (!creator) return defaultTags;
+    
+    if (creator.tags && creator.tags.length > 0) {
+      return creator.tags.slice(0, 3);
+    }
+    
+    const bio = creator.bio || "";
+    // Extract hashtags from bio
+    const extractedTags = bio.match(/#\w+/g) || [];
+    const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
+    
+    // If no tags found in bio, extract keywords
+    if (formattedTags.length === 0 && bio) {
+      const keywords = bio.split(' ')
+        .filter(word => word.length > 4)
+        .slice(0, 3);
+      return keywords.length > 0 ? keywords : defaultTags;
+    }
+    
+    return formattedTags.length > 0 ? formattedTags : defaultTags;
   };
 
   return (
@@ -257,10 +203,12 @@ export default function ExploreCategoryPage() {
             <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
             <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">
-                Explore FanRealms
+                {currentCategory ? `${currentCategory.name} Creators` : 'Explore FanRealms'}
               </h1>
               <p className="text-xl text-gray-200 max-w-2xl mb-6">
-                Discover amazing creators and exclusive content across various categories
+                {currentCategory
+                  ? `Discover amazing ${currentCategory.name} creators and exclusive content`
+                  : 'Discover amazing creators and exclusive content across various categories'}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
                 <div className="relative flex-1">
@@ -268,6 +216,8 @@ export default function ExploreCategoryPage() {
                   <Input
                     placeholder="Search for creators, content, or topics..."
                     className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Button className="bg-purple-600 hover:bg-purple-700">
@@ -371,79 +321,124 @@ export default function ExploreCategoryPage() {
         <section className="mb-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">
-              {displayCreators.length} {currentCategory ? `${currentCategory.name} ` : ''}Creators
+              {isLoadingCreators 
+                ? "Loading creators..." 
+                : `${displayCreators.length} ${currentCategory ? `${currentCategory.name} ` : ''}Creators`}
             </h2>
             <Button variant="link" className="text-purple-400">
               View All <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
 
-          {displayCreators.length > 0 ? (
+          {isLoadingCreators ? (
+            // Loading state
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {displayCreators.map((creator) => (
-                <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-                  <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
-                    <img
-                      src={creator.coverImage}
-                      alt={creator.name}
-                      className="w-full h-full object-cover mix-blend-overlay"
-                    />
-                    {creator.featured && (
-                      <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
-                        <Award className="h-3 w-3" /> Featured
-                      </Badge>
-                    )}
-                  </div>
+              {Array(6).fill(0).map((_, i) => (
+                <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
+                  <div className="h-32 bg-gray-800" />
                   <CardContent className="pt-0 -mt-12 p-6">
                     <div className="flex justify-between items-start">
-                      <Avatar className="h-20 w-20 border-4 border-gray-900">
-                        <AvatarImage src={creator.avatar} alt={creator.name} />
-                        <AvatarFallback className="bg-gray-800 text-xl">{creator.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex items-center gap-1 mt-2 bg-gray-800 px-2 py-1 rounded-full">
-                        <Star className="h-3 w-3 text-yellow-500" />
-                        <span className="text-sm">{creator.rating}</span>
-                      </div>
+                      <div className="h-20 w-20 rounded-full bg-gray-800" />
                     </div>
-                    <h3 className="text-xl font-bold mt-4">{creator.name}</h3>
-                    <p className="text-gray-400 text-sm mt-1">{creator.description}</p>
-
+                    <div className="h-6 w-3/4 bg-gray-800 mt-4 rounded" />
+                    <div className="h-4 w-full bg-gray-800 mt-2 rounded" />
                     <div className="flex flex-wrap gap-2 mt-3">
-                      {creator.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
-                          {tag}
-                        </Badge>
-                      ))}
+                      <div className="h-5 w-16 bg-gray-800 rounded" />
+                      <div className="h-5 w-20 bg-gray-800 rounded" />
                     </div>
-
-                    <div className="flex items-center gap-2 mt-4">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-400">{creator.subscribers.toLocaleString()} subscribers</span>
-                    </div>
-
                     <div className="mt-6 flex items-center justify-between">
-                      <div className="text-sm text-gray-400">
-                        From <span className="font-medium text-white">${creator.tier.price}/mo</span>
-                      </div>
-                      <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>
+                      <div className="h-5 w-16 bg-gray-800 rounded" />
+                      <div className="h-10 w-24 bg-gray-800 rounded" />
                     </div>
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          ) : displayCreators.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {displayCreators.map((creator) => {
+                // Create proper route to creator profile
+                const creatorLink = creator.username 
+                  ? `/creator/${creator.username}` 
+                  : `/creator/${creator.id}`;
+                
+                // Get display name with fallbacks
+                const displayName = creator.display_name || creator.username || "Creator";
+                
+                // Get avatar URL with fallbacks
+                const avatarUrl = creator.profile_image_url || creator.avatar_url;
+                
+                // Get first letter for avatar fallback
+                const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
+                
+                return (
+                  <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
+                    <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
+                      {creator.banner_url && (
+                        <img
+                          src={creator.banner_url}
+                          alt={displayName}
+                          className="w-full h-full object-cover mix-blend-overlay"
+                        />
+                      )}
+                      <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
+                        <Award className="h-3 w-3" /> Featured
+                      </Badge>
+                    </div>
+                    <CardContent className="pt-0 -mt-12 p-6">
+                      <div className="flex justify-between items-start">
+                        <Avatar className="h-20 w-20 border-4 border-gray-900">
+                          <AvatarImage src={avatarUrl || ''} alt={displayName} />
+                          <AvatarFallback className="bg-gray-800 text-xl">
+                            {avatarFallback}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <h3 className="text-xl font-bold mt-4">{displayName}</h3>
+                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {getCreatorTags(creator).map((tag, index) => (
+                          <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 flex items-center justify-between">
+                        <div className="text-sm text-gray-400">
+                          {creator.tiers && creator.tiers.length > 0 ? (
+                            <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
+                          ) : (
+                            <span className="font-medium text-white">Free</span>
+                          )}
+                        </div>
+                        <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+                          <a href={creatorLink}>View Creator</a>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-800">
               <Users className="h-16 w-16 mx-auto mb-4 text-gray-600" />
               <h3 className="text-xl font-medium mb-2">No creators found</h3>
               <p className="text-gray-400 mb-6 max-w-md mx-auto">
-                We couldn't find any creators matching the current filters. Try adjusting your filter settings.
+                {searchQuery 
+                  ? "We couldn't find any creators matching your search. Try different keywords."
+                  : `We couldn't find any ${currentCategory ? currentCategory.name : ''} creators yet. Check back soon!`}
               </p>
-              <Button 
-                variant="outline"
-                onClick={resetFilters}
-              >
-                Reset Filters
-              </Button>
+              {searchQuery && (
+                <Button 
+                  variant="outline"
+                  onClick={resetFilters}
+                >
+                  Reset Filters
+                </Button>
+              )}
             </div>
           )}
         </section>
