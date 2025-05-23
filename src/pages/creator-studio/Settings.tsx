@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -114,7 +115,7 @@ export default function CreatorStudioSettings() {
             const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]);
             
             // Update local form data with the fresh data from the server
-            if (freshSettings) {
+            if (freshSettings && typeof freshSettings === 'object') {
               console.log('Updating form with fresh settings:', freshSettings);
               setFormData({ ...freshSettings });
             } else if (updatedData) {
