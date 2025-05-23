@@ -46,24 +46,11 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (Object.keys(creatorUpdates).length > 0) {
         console.log('📝 Starting database update...');
         
-        // First, let's check the current value in the database
-        console.log('🔍 Checking current database value...');
-        const { data: beforeUpdate, error: beforeError } = await supabase
-          .from('creators')
-          .select('display_name, id')
-          .eq('user_id', user.id)
-          .single();
-        
-        console.log('📊 Current database value:', beforeUpdate);
-        if (beforeError) console.log('❌ Error checking current value:', beforeError);
-        
-        // Now perform the update
-        console.log('💾 Performing update with payload:', creatorUpdates);
         const updateResult = await supabase
           .from('creators')
           .update(creatorUpdates)
           .eq('user_id', user.id)
-          .select('display_name, id, updated_at');
+          .select('display_name, id');
         
         console.log('📄 Raw update result:', updateResult);
         
@@ -74,20 +61,6 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         
         console.log('✅ Update executed successfully');
         console.log('📋 Updated rows:', updateResult.data);
-        
-        // Wait a moment and check the value again
-        console.log('⏱️ Waiting 100ms before verification...');
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        console.log('🔍 Verifying update by checking database again...');
-        const { data: afterUpdate, error: afterError } = await supabase
-          .from('creators')
-          .select('display_name, id, updated_at')
-          .eq('user_id', user.id)
-          .single();
-        
-        console.log('📊 Database value after update:', afterUpdate);
-        if (afterError) console.log('❌ Error checking after update:', afterError);
       }
       
       // Update user fields if needed
@@ -110,11 +83,8 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         }
       }
       
-      // Fetch the updated data with additional wait
-      console.log('⏱️ Waiting 200ms before final fetch...');
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      console.log('📡 Fetching final updated creator data...');
+      // Fetch the updated data
+      console.log('📡 Fetching updated creator data...');
       const { data: finalCreator, error: finalError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
