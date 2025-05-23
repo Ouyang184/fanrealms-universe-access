@@ -39,10 +39,32 @@ export default function CreatorStudioSettings() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData || !user?.id) {
+      toast({
+        title: "Error",
+        description: "Unable to save settings. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     
     try {
-      await updateSettings(formData);
+      // Prepare the data for saving
+      const dataToSave = {
+        ...formData,
+        // Ensure we have the correct field mappings
+        display_name: formData.display_name || formData.displayName,
+        bio: formData.bio || '',
+        tags: formData.tags || [],
+        profile_image_url: formData.profile_image_url || formData.avatar_url,
+        banner_url: formData.banner_url || '',
+      };
+
+      await updateSettings(dataToSave);
+      
       toast({
         title: "Success",
         description: "Your settings have been updated successfully",
@@ -101,7 +123,6 @@ export default function CreatorStudioSettings() {
       }
     };
     
-    // Trigger file dialog
     input.click();
   };
 
@@ -115,6 +136,29 @@ export default function CreatorStudioSettings() {
   };
 
   const isFormDisabled = isLoading || isUploading || isSaving;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Creator Settings</h1>
+        <div className="flex items-center justify-center py-8">
+          <Spinner className="h-6 w-6 mr-2" />
+          <span>Loading settings...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold tracking-tight">Creator Settings</h1>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Unable to load creator settings. Please try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

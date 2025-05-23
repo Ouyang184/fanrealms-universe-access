@@ -53,39 +53,54 @@ export const useCreatorSettings = () => {
     mutationFn: async (updatedSettings: Partial<CreatorSettings>) => {
       if (!user?.id) throw new Error('User not authenticated');
       
+      console.log('Updating creator settings:', updatedSettings);
+      
       // Update creator-specific fields
       const creatorFields = {
-        bio: updatedSettings.bio,
-        display_name: updatedSettings.display_name,
-        banner_url: updatedSettings.banner_url,
-        profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url,
-        tags: updatedSettings.tags,
+        bio: updatedSettings.bio || '',
+        display_name: updatedSettings.display_name || updatedSettings.displayName || '',
+        banner_url: updatedSettings.banner_url || '',
+        profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url || '',
+        tags: updatedSettings.tags || [],
       };
       
-      const { error } = await supabase
+      console.log('Creator fields to update:', creatorFields);
+      
+      const { data, error } = await supabase
         .from('creators')
         .update(creatorFields)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
-      // Update user fields if needed
+      console.log('Update successful:', data);
+      
+      // Update user fields if needed (username)
       if (updatedSettings.fullName || updatedSettings.username) {
         const { error: userError } = await supabase
           .from('users')
           .update({
-            username: updatedSettings.username
+            username: updatedSettings.username || updatedSettings.fullName
           })
           .eq('id', user.id);
         
-        if (userError) throw userError;
+        if (userError) {
+          console.error('User update error:', userError);
+          throw userError;
+        }
       }
       
       return { ...settings, ...updatedSettings };
     },
     onSuccess: (data) => {
+      console.log('Mutation success, updating cache:', data);
       queryClient.setQueryData(['creator-settings', user?.id], data);
-      // Also invalidate creator-profile query to refresh the profile
+      // Also invalidate related queries to refresh the profile
       queryClient.invalidateQueries({ queryKey: ['creatorProfile', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['creatorProfileDetails', user?.id] });
     },
