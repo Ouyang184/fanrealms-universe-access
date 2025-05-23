@@ -1,5 +1,4 @@
 
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,11 +49,25 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (Object.keys(creatorUpdates).length > 0) {
         console.log('Executing creator update using creator ID:', settings.id);
         
-        // Perform the update using creator ID instead of user_id and return the updated row
+        // First, let's verify the creator exists
+        const { data: existingCreator, error: fetchError } = await supabase
+          .from('creators')
+          .select('id, user_id')
+          .eq('id', settings.id)
+          .single();
+        
+        if (fetchError) {
+          console.error('Error fetching creator for verification:', fetchError);
+          throw new Error(`Creator not found: ${fetchError.message}`);
+        }
+        
+        console.log('Found existing creator:', existingCreator);
+        
+        // Perform the update using creator ID and return the updated row
         const { data: updatedData, error: updateError } = await supabase
           .from('creators')
           .update(creatorUpdates)
-          .eq('id', settings.id)  // Use creator ID instead of user_id
+          .eq('id', settings.id)
           .select('*, users:user_id(username, email)')
           .single();
         
@@ -94,10 +107,10 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       // Invalidate to ensure fresh data on next fetch
       await queryClient.invalidateQueries({ queryKey: ['creator-settings', user?.id] });
       
-      // 🔁 Small delay to let Supabase finish syncing
+      // Small delay to let Supabase finish syncing
       await new Promise((resolve) => setTimeout(resolve, 300));
       
-      // 🔁 Then refetch the latest values to ensure we have the most up-to-date data
+      // Then refetch the latest values to ensure we have the most up-to-date data
       console.log('Refetching latest data after delay...');
       await queryClient.refetchQueries({ queryKey: ['creator-settings', user?.id] });
       
@@ -122,4 +135,3 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       updateSettingsMutation.mutate(updatedSettings, options)
   };
 };
-
