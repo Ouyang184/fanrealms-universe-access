@@ -8,6 +8,7 @@ import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInf
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { Spinner } from "@/components/ui/spinner";
+import { supabase } from "@/lib/supabase";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
@@ -16,7 +17,6 @@ export default function CreatorStudioSettings() {
     settings, 
     isLoading, 
     isUploading,
-    updateSettings,
     uploadProfileImage,
     refetch
   } = useCreatorSettings();
@@ -63,7 +63,7 @@ export default function CreatorStudioSettings() {
       console.log('CreatorStudioSettings: Starting save with form data:', formData);
       console.log('CreatorStudioSettings: Current user ID:', user.id);
       
-      // Prepare the data for saving - ensure display_name is properly mapped
+      // Prepare the data for saving - using the same pattern as Save Links
       const dataToSave = {
         display_name: formData.display_name || '',
         bio: formData.bio || '',
@@ -74,34 +74,37 @@ export default function CreatorStudioSettings() {
 
       console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
-      // Use the updateSettings function with proper callbacks
-      updateSettings(dataToSave, {
-        onSuccess: () => {
-          console.log('CreatorStudioSettings: Save completed successfully');
-          // Refetch the latest data to ensure UI is updated
-          refetch().then(() => {
-            console.log('CreatorStudioSettings: Refetched settings after save');
-          });
-          setIsSaving(false);
-        },
-        onError: (error: any) => {
-          console.error("CreatorStudioSettings: Error saving settings:", error);
-          toast({
-            title: "Error",
-            description: "Failed to save settings. Please try again.",
-            variant: "destructive",
-          });
-          setIsSaving(false);
-        }
-      });
+      // Use direct Supabase update like in SocialLinksSection (Save Links logic)
+      const { error: updateError } = await supabase
+        .from("creators")
+        .update(dataToSave)
+        .eq("user_id", user.id);
+        
+      if (updateError) {
+        console.error('CreatorStudioSettings: Supabase update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('CreatorStudioSettings: Save completed successfully');
       
-    } catch (error) {
+      // Show success toast (same as Save Links)
+      toast({
+        title: "Success",
+        description: "Your settings have been updated successfully",
+      });
+
+      // Refetch the latest data to ensure UI is updated (same as Save Links)
+      await refetch();
+      console.log('CreatorStudioSettings: Refetched settings after save');
+      
+    } catch (error: any) {
       console.error("CreatorStudioSettings: Error in handleSave:", error);
       toast({
         title: "Error",
-        description: "Failed to save settings. Please try again.",
+        description: error.message || "Failed to save settings. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsSaving(false);
     }
   };
