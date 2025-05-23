@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +66,7 @@ export default function CreatorStudioSettings() {
       // Compare each field and only include if changed
       if (formData.display_name !== settings?.display_name) {
         changedFields.display_name = formData.display_name;
+        console.log('Display name changed from', settings?.display_name, 'to', formData.display_name);
       }
       if (formData.bio !== settings?.bio) {
         changedFields.bio = formData.bio;
@@ -99,8 +99,10 @@ export default function CreatorStudioSettings() {
       // Wait for the update to complete
       await new Promise<void>((resolve, reject) => {
         updateSettings(changedFields, {
-          onSuccess: () => {
-            console.log('Update completed successfully');
+          onSuccess: (updatedData: any) => {
+            console.log('Update completed successfully:', updatedData);
+            // Update local form data with the fresh data from the server
+            setFormData({ ...updatedData });
             setHasUnsavedChanges(false);
             resolve();
           },
