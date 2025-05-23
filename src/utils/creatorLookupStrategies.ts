@@ -35,17 +35,24 @@ export const findByUsername = async (cleanedIdentifier?: string) => {
     if (creatorData) {
       console.log("Found creator info for username:", creatorData);
       
+      // Create the display name once and use it for both properties
+      const displayNameValue = creatorData.display_name || userByUsername.username;
+      
       // Build and return the combined profile
-      return {
+      const creatorProfile = {
         ...creatorData,
         ...userByUsername,
         id: creatorData.id, // Use creator table ID (needed for social links)
         user_id: userId,    // Store user_id separately
-        fullName: creatorData.display_name || userByUsername.username,
-        display_name: creatorData.display_name || userByUsername.username,
+        fullName: displayNameValue,
+        display_name: displayNameValue,
+        displayName: displayNameValue, // Add this required property
         username: userByUsername.username,
         avatar_url: userByUsername.profile_picture || null,
-      } as CreatorProfile;
+        tags: creatorData.tags || []
+      };
+      
+      return creatorProfile as CreatorProfile;
     }
   }
   
@@ -75,16 +82,23 @@ export const findByUserId = async (cleanedIdentifier?: string) => {
   if (creatorByUserId && creatorByUserId.users) {
     console.log("Found creator by user_id:", creatorByUserId);
     
-    return {
+    // Create the display name once and use it for both properties
+    const displayNameValue = creatorByUserId.display_name || creatorByUserId.users.username;
+    
+    const creatorProfile = {
       ...creatorByUserId,
       id: creatorByUserId.id,      // Primary key from creators table
       user_id: creatorByUserId.user_id, // Keep user_id from auth
       username: creatorByUserId.users.username || `user-${creatorByUserId.user_id.substring(0, 8)}`,
       email: creatorByUserId.users.email || "",
-      fullName: creatorByUserId.display_name || creatorByUserId.users.username,
-      display_name: creatorByUserId.display_name || creatorByUserId.users.username,
+      fullName: displayNameValue,
+      display_name: displayNameValue,
+      displayName: displayNameValue, // Add this required property
       avatar_url: creatorByUserId.users.profile_picture || null,
-    } as CreatorProfile;
+      tags: creatorByUserId.tags || []
+    };
+    
+    return creatorProfile as CreatorProfile;
   }
   
   return null;
@@ -114,16 +128,23 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
     const creatorByDisplayName = creatorsWithDisplayName[0];
     console.log("Found creator by display_name:", creatorByDisplayName);
     
-    return {
+    // Create the display name once and use it for both properties
+    const displayNameValue = creatorByDisplayName.display_name || creatorByDisplayName.users?.username;
+    
+    const creatorProfile = {
       ...creatorByDisplayName,
       id: creatorByDisplayName.id,         // Primary key from creators table
       user_id: creatorByDisplayName.user_id,   // Keep user_id from auth
       username: creatorByDisplayName.users?.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
       email: creatorByDisplayName.users?.email || "",
-      fullName: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
-      display_name: creatorByDisplayName.display_name || creatorByDisplayName.users?.username,
+      fullName: displayNameValue,
+      display_name: displayNameValue,
+      displayName: displayNameValue, // Add this required property
       avatar_url: creatorByDisplayName.users?.profile_picture || null,
-    } as CreatorProfile;
+      tags: creatorByDisplayName.tags || []
+    };
+    
+    return creatorProfile as CreatorProfile;
   }
   
   return null;
@@ -159,16 +180,23 @@ export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
     if (matchingCreator) {
       console.log("Found creator by abbreviated ID:", matchingCreator);
       
-      return {
+      // Create the display name once and use it for both properties
+      const displayNameValue = matchingCreator.display_name || matchingCreator.users?.username;
+      
+      const creatorProfile = {
         ...matchingCreator,
         id: matchingCreator.id,          // Primary key from creators table
         user_id: matchingCreator.user_id,    // Keep user_id from auth
         username: matchingCreator.users?.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
         email: matchingCreator.users?.email || "",
-        fullName: matchingCreator.display_name || matchingCreator.users?.username,
-        display_name: matchingCreator.display_name || matchingCreator.users?.username,
+        fullName: displayNameValue,
+        display_name: displayNameValue,
+        displayName: displayNameValue, // Add this required property
         avatar_url: matchingCreator.users?.profile_picture || null,
-      } as CreatorProfile;
+        tags: matchingCreator.tags || []
+      };
+      
+      return creatorProfile as CreatorProfile;
     }
   }
   
