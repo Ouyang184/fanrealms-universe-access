@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -121,16 +120,21 @@ export default function CreatorStudioSettings() {
             await new Promise((res) => setTimeout(res, 800));
             
             // Refetch the latest data from server
-            await queryClient.refetchQueries({ 
+            const { data: newSettings } = await queryClient.refetchQueries({ 
               queryKey: ['creator-settings', user?.id] 
             });
             
-            // Get the fresh data from the query cache and update form if needed
-            const freshSettings = queryClient.getQueryData(['creator-settings', user?.id]) as CreatorSettingsData | undefined;
-            
-            if (freshSettings && freshSettings.id) {
-              console.log('Syncing form with fresh server data:', freshSettings);
-              setFormData({ ...freshSettings });
+            // Update formData with the specific fields from the refetched data
+            if (newSettings && newSettings.id) {
+              console.log('Syncing form with fresh server data:', newSettings);
+              setFormData(prev => ({
+                ...prev,
+                display_name: newSettings?.display_name,
+                bio: newSettings?.bio,
+                tags: newSettings?.tags,
+                profile_image_url: newSettings?.profile_image_url,
+                banner_url: newSettings?.banner_url,
+              }));
             }
             
             setHasUnsavedChanges(false);
