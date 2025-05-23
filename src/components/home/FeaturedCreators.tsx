@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Award, ChevronRight, Star } from "lucide-react";
+import { Award, ChevronRight } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -35,12 +35,6 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                 </div>
                 <Skeleton className="h-6 w-3/4 mt-4" />
                 <Skeleton className="h-4 w-full mt-1" />
-                <div className="flex items-center gap-2 mt-4">
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
                 <div className="mt-6 flex items-center justify-between">
                   <Skeleton className="h-5 w-16" />
                   <Skeleton className="h-10 w-24" />
@@ -107,23 +101,9 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
               <h3 className="text-xl font-bold mt-4">{creator.displayName || creator.username}</h3>
               <p className="text-gray-400 text-sm mt-1">{creator.bio || "Creator on FanRealms"}</p>
 
-              <div className="flex items-center gap-2 mt-4">
-                <Avatar className="h-6 w-6 border-2 border-gray-900">
-                  <AvatarFallback className="bg-purple-900 text-xs">U1</AvatarFallback>
-                </Avatar>
-                <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
-                  <AvatarFallback className="bg-blue-900 text-xs">U2</AvatarFallback>
-                </Avatar>
-                <Avatar className="h-6 w-6 border-2 border-gray-900 -ml-2">
-                  <AvatarFallback className="bg-green-900 text-xs">U3</AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-gray-400">+{Math.floor(Math.random() * 2000) + 500} subscribers</span>
-              </div>
-
               <div className="mt-6 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Star className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm">{(4 + Math.random()).toFixed(1)}/5.0</span>
+                <div className="text-sm text-gray-400">
+                  From <span className="font-medium">${(9.99).toFixed(2)}/mo</span>
                 </div>
                 <Link to={`/creator/${creator.id}`}>
                   <Button className="bg-purple-600 hover:bg-purple-700">Visit Page</Button>
