@@ -29,16 +29,20 @@ export interface Post {
 export interface CreatorProfile {
   id: string;
   user_id: string;
+  display_name: string;
+  displayName: string;
   username: string;
-  fullName?: string;
+  fullName: string;
   email: string;
-  bio?: string | null;
-  display_name?: string | null;
-  displayName?: string; // Add this field for compatibility
-  avatar_url?: string;
-  profile_image_url?: string;
-  banner_url?: string | null;
-  tiers?: Tier[];
+  bio: string;
+  avatar_url: string;
+  profile_image_url: string;
+  banner_url: string;
+  website?: string;
+  followers_count?: number;
+  following_count?: number;
+  tags?: string[];
+  created_at: string;
 }
 
 export interface Tier {

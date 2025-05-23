@@ -40,6 +40,7 @@ export const useCreatorSettings = () => {
         avatar_url: data.profile_image_url,
         profile_image_url: data.profile_image_url,
         banner_url: data.banner_url,
+        tags: data.tags || [],
         created_at: data.created_at
       } as CreatorSettings;
       
@@ -58,6 +59,7 @@ export const useCreatorSettings = () => {
         display_name: updatedSettings.display_name,
         banner_url: updatedSettings.banner_url,
         profile_image_url: updatedSettings.profile_image_url || updatedSettings.avatar_url,
+        tags: updatedSettings.tags,
       };
       
       const { error } = await supabase
@@ -106,7 +108,6 @@ export const useCreatorSettings = () => {
     try {
       setIsUploading(true);
       
-      // Create storage bucket if it doesn't exist (handled server-side)
       // Check if the file is an actual image
       if (!file.type.startsWith('image/')) {
         throw new Error("Please upload an image file");

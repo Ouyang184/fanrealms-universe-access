@@ -30,7 +30,7 @@ export default function CreatorStudioSettings() {
     }
   }, [settings, isLoading]);
 
-  const handleChange = (name: string, value: string) => {
+  const handleChange = (name: string, value: string | string[]) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value
