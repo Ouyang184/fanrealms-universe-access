@@ -7,11 +7,11 @@ import { SocialLinks } from "@/components/SocialLinks";
 import { CreatorProfile } from "@/types";
 
 interface ProfileHeaderProps {
-  creator: CreatorProfile & { displayName: string };
+  creator: CreatorProfile & { display_name?: string };
 }
 
 export function ProfileHeader({ creator }: ProfileHeaderProps) {
-  const displayName = creator.displayName || creator.username || "Creator";
+  const displayName = creator.display_name || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
   const bannerImage = creator.banner_url || "/default-banner.jpg";
 

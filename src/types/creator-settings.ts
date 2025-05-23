@@ -7,7 +7,6 @@ export interface CreatorSettingsData {
   email?: string;
   bio?: string;
   display_name?: string;
-  displayName?: string; // Keep both for backward compatibility
   avatar_url?: string;
   profile_image_url?: string;
   banner_url?: string;

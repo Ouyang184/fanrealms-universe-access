@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,9 +29,6 @@ export default function CreatorProfile() {
     );
   }
 
-  // Ensure display_name is prioritized
-  const displayName = creator.display_name || creator.username;
-
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -45,7 +41,7 @@ export default function CreatorProfile() {
       </div>
 
       <div className="space-y-8">
-        <ProfileHeader creator={{...creator, displayName}} />
+        <ProfileHeader creator={creator} />
         
         <div className="px-4">
           <p>{creator.bio || "You haven't added a bio yet. Add one in your creator settings."}</p>
