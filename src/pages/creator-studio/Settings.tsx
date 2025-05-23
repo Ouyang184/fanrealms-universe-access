@@ -31,6 +31,7 @@ export default function CreatorStudioSettings() {
   }, [settings, isLoading]);
 
   const handleChange = (name: string, value: string | string[]) => {
+    console.log('Form field changed:', { name, value });
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -52,16 +53,19 @@ export default function CreatorStudioSettings() {
     setIsSaving(true);
     
     try {
-      // Prepare the data for saving
+      console.log('Saving form data:', formData);
+      
+      // Prepare the data for saving - ensure display_name is properly mapped
       const dataToSave = {
         ...formData,
-        // Ensure we have the correct field mappings
-        display_name: formData.display_name || formData.displayName,
+        display_name: formData.display_name || '',
         bio: formData.bio || '',
         tags: formData.tags || [],
-        profile_image_url: formData.profile_image_url || formData.avatar_url,
+        profile_image_url: formData.profile_image_url || formData.avatar_url || '',
         banner_url: formData.banner_url || '',
       };
+
+      console.log('Data to save:', dataToSave);
 
       await updateSettings(dataToSave);
       

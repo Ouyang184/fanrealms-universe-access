@@ -52,8 +52,9 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange('tags', updatedTags);
   };
 
-  // Calculate display name - either from settings or default to username
-  const displayName = settings.display_name || settings.fullName || settings.username || '';
+  // Calculate display name - prioritize display_name, then fallback to other fields
+  const displayName = settings.display_name || settings.displayName || settings.fullName || settings.username || '';
+  const avatarUrl = settings.profile_image_url || settings.avatar_url;
 
   return (
     <Card>
@@ -65,7 +66,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={settings.avatar_url || undefined} alt={displayName} />
+              <AvatarImage src={avatarUrl || undefined} alt={displayName} />
               <AvatarFallback>{displayName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <Button 
@@ -103,7 +104,12 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 type="email"
                 value={settings.email || ''}
                 onChange={handleChange}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed here
+              </p>
             </div>
           </div>
         </div>

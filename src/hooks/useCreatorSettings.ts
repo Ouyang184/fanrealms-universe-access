@@ -95,7 +95,15 @@ export const useCreatorSettings = () => {
         }
       }
       
-      return { ...settings, ...updatedSettings };
+      // Return the updated data with proper field mapping
+      return {
+        ...settings,
+        ...data,
+        display_name: data.display_name,
+        displayName: data.display_name,
+        profile_image_url: data.profile_image_url,
+        avatar_url: data.profile_image_url,
+      };
     },
     onSuccess: (data) => {
       console.log('Mutation success, updating cache:', data);
