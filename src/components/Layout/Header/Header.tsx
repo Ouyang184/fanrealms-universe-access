@@ -19,12 +19,7 @@ export function Header() {
           <HeaderNotifications />
           
           {user ? (
-            <>
-              <Button asChild variant="default" className="bg-primary hover:bg-primary/90">
-                <Link to="/create">Create</Link>
-              </Button>
-              <UserDropdownMenu />
-            </>
+            <UserDropdownMenu />
           ) : (
             <Button asChild variant="default">
               <Link to="/login">Login</Link>
