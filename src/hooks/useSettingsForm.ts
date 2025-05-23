@@ -45,8 +45,12 @@ export const useSettingsForm = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData || !user?.id) {
-      console.error('useSettingsForm: Missing data:', { formData: !!formData, userId: user?.id });
+    if (!formData || !user?.id || !settings?.id) {
+      console.error('useSettingsForm: Missing data:', { 
+        formData: !!formData, 
+        userId: user?.id, 
+        creatorId: settings?.id 
+      });
       toast({
         title: "Error",
         description: "Unable to save settings. Please try refreshing the page.",
@@ -60,6 +64,7 @@ export const useSettingsForm = () => {
     try {
       console.log('useSettingsForm: Starting save with form data:', formData);
       console.log('useSettingsForm: Current user ID:', user.id);
+      console.log('useSettingsForm: Current creator ID:', settings.id);
       
       // Prepare the data for saving - ensure display_name is correctly mapped
       const dataToSave = {
@@ -72,13 +77,13 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // Update the database using the user_id, but use maybeSingle instead of single
+      // Update the database using the creator ID (more reliable than user_id)
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
-        .eq("user_id", user.id)
+        .eq("id", settings.id)
         .select()
-        .maybeSingle();
+        .single();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
@@ -86,8 +91,8 @@ export const useSettingsForm = () => {
       }
 
       if (!updatedData) {
-        console.error('useSettingsForm: No creator record found for user_id:', user.id);
-        throw new Error('Creator profile not found. Please contact support.');
+        console.error('useSettingsForm: No creator record updated');
+        throw new Error('Failed to update creator profile. Please try again.');
       }
 
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
