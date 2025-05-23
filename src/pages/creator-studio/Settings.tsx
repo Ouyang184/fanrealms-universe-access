@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +75,7 @@ export default function CreatorStudioSettings() {
 
       console.log('CreatorStudioSettings: Data to save:', dataToSave);
 
-      // Direct Supabase update
+      // Direct Supabase update with .select().single() to get the updated data
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
@@ -90,6 +89,17 @@ export default function CreatorStudioSettings() {
       }
 
       console.log('CreatorStudioSettings: Save completed successfully, updated data:', updatedData);
+      
+      // Update formData immediately with the saved data to prevent reversion
+      setFormData(prev => ({
+        ...prev,
+        display_name: updatedData.display_name,
+        displayName: updatedData.display_name, // Keep both in sync
+        bio: updatedData.bio,
+        tags: updatedData.tags,
+        profile_image_url: updatedData.profile_image_url,
+        banner_url: updatedData.banner_url,
+      }));
       
       // Show success toast
       toast({
