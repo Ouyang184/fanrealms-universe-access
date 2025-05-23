@@ -7,10 +7,12 @@ import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInf
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { Spinner } from "@/components/ui/spinner";
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { 
     settings, 
     isLoading, 
@@ -99,10 +101,24 @@ export default function CreatorStudioSettings() {
       // Wait for the update to complete
       await new Promise<void>((resolve, reject) => {
         updateSettings(changedFields, {
-          onSuccess: (updatedData: any) => {
+          onSuccess: async (updatedData: any) => {
             console.log('Update completed successfully:', updatedData);
+            
+            // Wait a moment then refetch to get the absolute latest data
+            await new Promise((res) => setTimeout(res, 300));
+            const { data: newSettings } = await queryClient.refetchQueries({ 
+              queryKey: ['creator-settings', user?.id] 
+            });
+            
             // Update local form data with the fresh data from the server
-            setFormData({ ...updatedData });
+            if (newSettings && Array.isArray(newSettings) && newSettings[0]) {
+              const freshSettings = newSettings[0];
+              console.log('Updating form with fresh settings:', freshSettings);
+              setFormData({ ...freshSettings });
+            } else if (updatedData) {
+              setFormData({ ...updatedData });
+            }
+            
             setHasUnsavedChanges(false);
             resolve();
           },

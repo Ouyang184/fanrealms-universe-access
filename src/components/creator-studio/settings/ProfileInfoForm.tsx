@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -52,7 +51,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange('tags', updatedTags);
   };
 
-  // Consistently use display_name field
+  // Consistently use display_name field - this ensures we show the current form value
   const displayName = settings.display_name || settings.username || '';
 
   return (
