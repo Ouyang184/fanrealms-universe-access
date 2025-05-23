@@ -1,6 +1,7 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -169,12 +170,16 @@ export default function ExploreCategoryPage() {
   
   const [sortOption, setSortOption] = useState<string>("top-rated");
   const [contentType, setContentType] = useState<string>(category || "all");
+  const [isContentTypeOpen, setIsContentTypeOpen] = useState(false);
   
   // Find the current category object based on route parameter
   const currentCategory = categories.find(cat => cat.route === category);
   
   // Filter creators based on the selected category
   const [filteredCreators, setFilteredCreators] = useState(sampleCreators);
+  
+  // Add ref to track dropdown state
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Set document title
@@ -197,7 +202,21 @@ export default function ExploreCategoryPage() {
     if (category) {
       setContentType(category);
     }
-  }, [category]);
+    
+    // Add scroll event listener to close dropdown when scrolling
+    const handleScroll = () => {
+      if (isContentTypeOpen) {
+        setIsContentTypeOpen(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [category, isContentTypeOpen]);
   
   // Apply sorting and filtering
   const applyFilters = (creators: typeof sampleCreators) => {
@@ -220,6 +239,7 @@ export default function ExploreCategoryPage() {
   // Navigate to a different category
   const handleCategoryChange = (categoryRoute: string) => {
     navigate(`/explore/${categoryRoute}`);
+    setIsContentTypeOpen(false); // Close dropdown after selection
   };
 
   // Reset filters function
@@ -282,7 +302,7 @@ export default function ExploreCategoryPage() {
                 <span className="mr-3 font-medium">Filters:</span>
               </div>
               
-              <DropdownMenu>
+              <DropdownMenu open={isContentTypeOpen} onOpenChange={setIsContentTypeOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
                     Content Type
@@ -293,6 +313,7 @@ export default function ExploreCategoryPage() {
                   className="max-h-[350px] overflow-y-auto"
                   align="start"
                   sideOffset={8}
+                  ref={dropdownRef}
                 >
                   <ScrollArea className="h-full max-h-[300px]">
                     <DropdownMenuItem 
