@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Award } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Award, ChevronRight } from "lucide-react";
 import { CreatorProfile } from "@/types";
 
 interface FeaturedCreatorsProps {
@@ -144,7 +144,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
           })
         ) : (
           <div className="col-span-3 text-center py-10 text-gray-400">
-            No creators found. Try adjusting your search or filters.
+            No creators found in this category yet. Check back soon!
           </div>
         )}
       </div>
