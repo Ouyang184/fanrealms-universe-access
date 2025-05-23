@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -7,17 +8,15 @@ import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInf
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { Spinner } from "@/components/ui/spinner";
-import { supabase } from "@/lib/supabase";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreatorStudioSettings() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const { 
     settings, 
     isLoading, 
     isUploading,
+    updateSettings, 
     uploadProfileImage 
   } = useCreatorSettings();
   
@@ -58,94 +57,64 @@ export default function CreatorStudioSettings() {
     setIsSaving(true);
     
     try {
-      console.log('=== DIRECT SAVE INITIATED ===');
+      console.log('=== SAVE INITIATED ===');
+      console.log('Current settings:', settings);
       console.log('Form data to save:', formData);
       
-      // First check if creator exists
-      const { data: creator, error: fetchError } = await supabase
-        .from("creators")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error('Fetch error:', fetchError);
-        throw fetchError;
-      }
-
-      console.log('Current creator:', creator);
-
-      if (!creator) {
-        console.log('No creator found, creating new one');
-        const { error: insertError } = await supabase
-          .from("creators")
-          .insert({ 
-            user_id: user.id, 
-            display_name: formData.display_name || '',
-            bio: formData.bio || '',
-            profile_image_url: formData.profile_image_url || null,
-            banner_url: formData.banner_url || null,
-            tags: formData.tags || []
-          });
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          throw insertError;
-        }
-      } else {
-        console.log('Updating existing creator');
-        const { error: updateError } = await supabase
-          .from("creators")
-          .update({ 
-            display_name: formData.display_name || '',
-            bio: formData.bio || '',
-            profile_image_url: formData.profile_image_url || null,
-            banner_url: formData.banner_url || null,
-            tags: formData.tags || []
-          })
-          .eq("user_id", user.id);
-        if (updateError) {
-          console.error('Update error:', updateError);
-          throw updateError;
-        }
-      }
-
-      // Clear all related caches and refetch
-      console.log('Invalidating queries and refetching...');
-      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
-      await queryClient.invalidateQueries({ queryKey: ['creatorProfile'] });
-      await queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
+      // Create the payload with only the changed fields
+      const changedFields: any = {};
       
-      // Small delay to ensure database consistency
-      await new Promise(resolve => setTimeout(resolve, 250));
-      
-      // Fetch fresh data to confirm the update
-      const { data: updatedCreator, error: refetchError } = await supabase
-        .from("creators")
-        .select("*, users:user_id(username, email)")
-        .eq("user_id", user.id)
-        .single();
-        
-      if (refetchError) {
-        console.error('Refetch error:', refetchError);
-      } else {
-        console.log('Fresh data from database:', updatedCreator);
+      // Compare each field and only include if changed
+      if (formData.display_name !== settings?.display_name) {
+        changedFields.display_name = formData.display_name;
       }
-
-      setHasUnsavedChanges(false);
-
-      toast({
-        title: "Success",
-        description: `Settings saved successfully. Display name: "${formData.display_name}"`,
+      if (formData.bio !== settings?.bio) {
+        changedFields.bio = formData.bio;
+      }
+      if (formData.username !== settings?.username) {
+        changedFields.username = formData.username;
+      }
+      if (formData.banner_url !== settings?.banner_url) {
+        changedFields.banner_url = formData.banner_url;
+      }
+      if (formData.profile_image_url !== settings?.profile_image_url) {
+        changedFields.profile_image_url = formData.profile_image_url;
+      }
+      if (formData.avatar_url !== settings?.avatar_url) {
+        changedFields.avatar_url = formData.avatar_url;
+      }
+      if (JSON.stringify(formData.tags) !== JSON.stringify(settings?.tags)) {
+        changedFields.tags = formData.tags;
+      }
+      
+      console.log('Payload (only changed fields):', changedFields);
+      
+      if (Object.keys(changedFields).length === 0) {
+        console.log('No changes detected, skipping update');
+        setHasUnsavedChanges(false);
+        setIsSaving(false);
+        return;
+      }
+      
+      // Wait for the update to complete
+      await new Promise<void>((resolve, reject) => {
+        updateSettings(changedFields, {
+          onSuccess: () => {
+            console.log('Update completed successfully');
+            setHasUnsavedChanges(false);
+            resolve();
+          },
+          onError: (error: any) => {
+            console.error("Error saving settings:", error);
+            reject(error);
+          }
+        });
       });
       
       console.log('=== SAVE COMPLETED ===');
     } catch (error) {
       console.error("Save failed:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save settings. Please try again.",
-        variant: "destructive",
-      });
+      // Keep form data as is so user doesn't lose changes
     } finally {
       setIsSaving(false);
     }
