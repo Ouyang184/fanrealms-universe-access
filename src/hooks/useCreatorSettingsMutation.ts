@@ -16,27 +16,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       
       console.log('=== UPDATE DEBUG INFO ===');
       console.log('User ID:', user.id);
-      console.log('Settings:', settings);
       console.log('Updated settings:', updatedSettings);
-      
-      // First, let's find the creator record by user_id (most reliable approach)
-      const { data: existingCreator, error: findError } = await supabase
-        .from('creators')
-        .select('id, user_id, display_name')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (findError) {
-        console.error('Error finding creator:', findError);
-        throw findError;
-      }
-      
-      if (!existingCreator) {
-        console.error('No creator found for user_id:', user.id);
-        throw new Error('Creator profile not found. Please refresh the page.');
-      }
-      
-      console.log('Found creator:', existingCreator);
       
       // Prepare creator update data with only the fields that are actually changing
       const creatorUpdateData: Partial<CreatorUpdateData> = {};
@@ -50,25 +30,18 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
 
       console.log('Creator update data:', creatorUpdateData);
       
-      // Perform the update using the creator ID we found
-      const { data: updatedCreator, error: updateError } = await supabase
+      // Simple update without complex joins - just like Account Settings
+      const { error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
-        .eq('id', existingCreator.id)
-        .select('*, users:user_id(username, email)')
-        .maybeSingle();
+        .eq('user_id', user.id);
       
       if (updateError) {
         console.error('Error updating creator:', updateError);
         throw updateError;
       }
       
-      if (!updatedCreator) {
-        console.error('No creator record was returned after update');
-        throw new Error('Failed to update creator record');
-      }
-      
-      console.log('Successfully updated creator:', updatedCreator);
+      console.log('Creator updated successfully');
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -84,6 +57,20 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
           // Don't throw here, creator update was successful
         }
       }
+      
+      // Fetch the updated data separately - simple and reliable
+      const { data: updatedCreator, error: fetchError } = await supabase
+        .from('creators')
+        .select('*, users:user_id(username, email)')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (fetchError || !updatedCreator) {
+        console.error('Error fetching updated creator:', fetchError);
+        throw new Error('Failed to fetch updated creator data');
+      }
+      
+      console.log('Successfully fetched updated creator:', updatedCreator);
       
       // Format and return the updated data
       const formattedData = formatCreatorData(updatedCreator);
