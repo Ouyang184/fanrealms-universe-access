@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,69 +72,52 @@ export const useSettingsForm = () => {
 
       console.log('useSettingsForm: Data to save:', dataToSave);
 
-      // First, check if creator record exists
-      const { data: existingCreator, error: checkError } = await supabase
-        .from("creators")
-        .select("id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (checkError) {
-        console.error('useSettingsForm: Error checking existing creator:', checkError);
-        throw new Error('Failed to find creator profile');
-      }
-
-      if (!existingCreator) {
-        throw new Error('Creator profile not found');
-      }
-
-      // Update the database using the creator ID
+      // Update the database using the user_id, but use maybeSingle instead of single
       const { data: updatedData, error: updateError } = await supabase
         .from("creators")
         .update(dataToSave)
         .eq("user_id", user.id)
         .select()
-        .single();
+        .maybeSingle();
         
       if (updateError) {
         console.error('useSettingsForm: Supabase update error:', updateError);
         throw updateError;
       }
 
+      if (!updatedData) {
+        console.error('useSettingsForm: No creator record found for user_id:', user.id);
+        throw new Error('Creator profile not found. Please contact support.');
+      }
+
       console.log('useSettingsForm: Save completed successfully, updated data:', updatedData);
       
-      if (updatedData) {
-        console.log('useSettingsForm: Saved data from DB:', updatedData);
-        
-        // Update form data with the exact values from the database
-        const updatedFormData = {
-          ...formData,
-          display_name: updatedData.display_name,
-          bio: updatedData.bio,
-          tags: updatedData.tags,
-          profile_image_url: updatedData.profile_image_url,
-          banner_url: updatedData.banner_url,
-        };
-        
-        console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
-        setFormData(updatedFormData);
-        
-        // Mark as saved (no unsaved changes)
-        setHasUnsavedChanges(false);
-        
-        // Invalidate queries to ensure other components refresh
-        await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
-        
-        // Force a refetch to ensure fresh data
-        await refetch();
-        
-        toast({
-          title: "Success",
-          description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
-        });
-      } else {
-        throw new Error('No data returned from save operation');
-      }
+      // Update form data with the exact values from the database
+      const updatedFormData = {
+        ...formData,
+        display_name: updatedData.display_name,
+        bio: updatedData.bio,
+        tags: updatedData.tags,
+        profile_image_url: updatedData.profile_image_url,
+        banner_url: updatedData.banner_url,
+      };
+      
+      console.log('useSettingsForm: Setting form data to saved values:', updatedFormData);
+      setFormData(updatedFormData);
+      
+      // Mark as saved (no unsaved changes)
+      setHasUnsavedChanges(false);
+      
+      // Invalidate queries to ensure other components refresh
+      await queryClient.invalidateQueries({ queryKey: ['creator-settings'] });
+      
+      // Force a refetch to ensure fresh data
+      await refetch();
+      
+      toast({
+        title: "Success",
+        description: `Settings saved successfully! Display name is now: "${updatedData.display_name || 'Not set'}"`,
+      });
       
     } catch (error: any) {
       console.error("useSettingsForm: Error in handleSave:", error);
