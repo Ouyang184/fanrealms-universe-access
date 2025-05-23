@@ -18,6 +18,20 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       console.log('User ID:', user.id);
       console.log('Updated settings:', updatedSettings);
       
+      // First, let's check if the creator exists and what the current values are
+      const { data: currentCreator, error: fetchError } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (fetchError) {
+        console.error('Error fetching current creator:', fetchError);
+        throw new Error('Could not find creator record');
+      }
+      
+      console.log('Current creator data before update:', currentCreator);
+      
       // Prepare creator update data with only the fields that are actually changing
       const creatorUpdateData: Partial<CreatorUpdateData> = {};
       
@@ -30,31 +44,20 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
 
       console.log('Creator update data to send to DB:', creatorUpdateData);
       
-      // Simple update without complex joins - just like Account Settings
-      const { error: updateError } = await supabase
+      // Try the update with explicit WHERE clause and return the updated data
+      const { data: updateResult, error: updateError } = await supabase
         .from('creators')
         .update(creatorUpdateData)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select('*')
+        .single();
       
       if (updateError) {
         console.error('Error updating creator:', updateError);
         throw updateError;
       }
       
-      console.log('Creator updated successfully');
-      
-      // Let's verify the update actually worked by checking what's in the database immediately after
-      const { data: verifyUpdate, error: verifyError } = await supabase
-        .from('creators')
-        .select('display_name, user_id')
-        .eq('user_id', user.id)
-        .single();
-      
-      console.log('VERIFICATION - What is actually in the database after update:', verifyUpdate);
-      
-      if (verifyError) {
-        console.error('Error verifying update:', verifyError);
-      }
+      console.log('Update result returned from database:', updateResult);
       
       // Update user fields if needed
       if (updatedSettings.fullName || updatedSettings.username) {
@@ -71,19 +74,19 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         }
       }
       
-      // Fetch the updated data separately - simple and reliable
-      const { data: updatedCreator, error: fetchError } = await supabase
+      // Fetch the updated data with user info
+      const { data: updatedCreator, error: finalFetchError } = await supabase
         .from('creators')
         .select('*, users:user_id(username, email)')
         .eq('user_id', user.id)
         .single();
       
-      if (fetchError || !updatedCreator) {
-        console.error('Error fetching updated creator:', fetchError);
+      if (finalFetchError || !updatedCreator) {
+        console.error('Error fetching updated creator:', finalFetchError);
         throw new Error('Failed to fetch updated creator data');
       }
       
-      console.log('Successfully fetched updated creator from DB:', updatedCreator);
+      console.log('Final fetched creator data:', updatedCreator);
       
       // Format and return the updated data
       const formattedData = formatCreatorData(updatedCreator);
