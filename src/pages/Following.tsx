@@ -9,22 +9,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Users, TrendingUp, Star, Heart, MessageSquare } from "lucide-react";
 import { useCreators } from "@/hooks/useCreators";
-import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useFollows } from "@/hooks/useFollows";
 import { useFollow } from "@/hooks/useFollow";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorProfile } from "@/types";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function FollowingPage() {
-  const queryClient = useQueryClient();
-  
   // Set document title when component mounts
   useEffect(() => {
     document.title = "Following | Creator Platform";
   }, []);
 
-  const { data: creators, isLoading: loadingCreators, refetch: refetchCreators } = useCreators();
-  const { subscriptions, loadingSubscriptions, refetch: refetchSubscriptions } = useSubscriptions();
+  const { data: allCreators, isLoading: loadingCreators, refetch: refetchCreators } = useCreators();
+  const { data: followedCreators = [], isLoading: loadingFollows, refetch: refetchFollows } = useFollows();
   const { unfollowCreator, followCreator } = useFollow();
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,11 +30,11 @@ export default function FollowingPage() {
   // Refetch data when component mounts to ensure fresh data
   useEffect(() => {
     refetchCreators();
-    refetchSubscriptions();
-  }, [refetchCreators, refetchSubscriptions]);
+    refetchFollows();
+  }, [refetchCreators, refetchFollows]);
 
   // Loading state
-  if (loadingCreators || loadingSubscriptions) {
+  if (loadingCreators || loadingFollows) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -46,14 +43,6 @@ export default function FollowingPage() {
       </MainLayout>
     );
   }
-
-  // Get followed creator IDs
-  const followedCreatorIds = subscriptions?.map(sub => sub.creator_id) || [];
-  
-  // Filter for followed creators with real data
-  const followedCreators = creators?.filter(creator => 
-    followedCreatorIds.includes(creator.id)
-  ) || [];
 
   // Get real categories from creator tags
   const allCategories = followedCreators.flatMap(creator => creator.tags || []);
@@ -69,8 +58,11 @@ export default function FollowingPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // Get followed creator IDs for recommendations
+  const followedCreatorIds = followedCreators.map(creator => creator.id);
+  
   // Recommended creators (not followed) - limit to 6
-  const recommendedCreators = creators?.filter(creator => 
+  const recommendedCreators = allCreators?.filter(creator => 
     !followedCreatorIds.includes(creator.id)
   ).slice(0, 6) || [];
 
@@ -85,7 +77,7 @@ export default function FollowingPage() {
       // Force refresh the data after unfollowing
       await Promise.all([
         refetchCreators(),
-        refetchSubscriptions()
+        refetchFollows()
       ]);
     } catch (error) {
       console.error('Error unfollowing creator:', error);
@@ -98,7 +90,7 @@ export default function FollowingPage() {
       // Force refresh the data after following
       await Promise.all([
         refetchCreators(),
-        refetchSubscriptions()
+        refetchFollows()
       ]);
     } catch (error) {
       console.error('Error following creator:', error);

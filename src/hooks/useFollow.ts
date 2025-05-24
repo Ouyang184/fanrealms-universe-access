@@ -12,13 +12,13 @@ export function useFollow() {
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Function to check if user is following a creator
+  // Function to check if user is following a creator using follows table
   const checkFollowStatus = async (creatorId: string): Promise<boolean> => {
     if (!user) return false;
     
     try {
       const { data, error } = await supabase
-        .from("subscriptions")
+        .from("follows")
         .select("id")
         .eq("user_id", user.id)
         .eq("creator_id", creatorId)
@@ -36,7 +36,7 @@ export function useFollow() {
     }
   };
 
-  // Function to follow a creator
+  // Function to follow a creator using follows table
   const followCreator = async (creatorId: string): Promise<void> => {
     if (!user) {
       toast({
@@ -47,19 +47,16 @@ export function useFollow() {
       return;
     }
     
-    // Prevent duplicate requests
     if (isLoading) return;
     
     setIsLoading(true);
     
     try {
       const { error } = await supabase
-        .from("subscriptions")
+        .from("follows")
         .insert({
           user_id: user.id,
-          creator_id: creatorId,
-          is_paid: false,
-          tier_id: null
+          creator_id: creatorId
         });
       
       if (error) {
@@ -83,6 +80,7 @@ export function useFollow() {
           queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
           queryClient.invalidateQueries({ queryKey: ["creators"] }),
           queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
+          queryClient.invalidateQueries({ queryKey: ["follows"] }),
           queryClient.invalidateQueries({ queryKey: ["posts"] })
         ]);
       }
@@ -97,18 +95,17 @@ export function useFollow() {
     }
   };
 
-  // Function to unfollow a creator
+  // Function to unfollow a creator using follows table
   const unfollowCreator = async (creatorId: string): Promise<void> => {
     if (!user) return;
     
-    // Prevent duplicate requests
     if (isLoading) return;
     
     setIsLoading(true);
     
     try {
       const { error } = await supabase
-        .from("subscriptions")
+        .from("follows")
         .delete()
         .eq("user_id", user.id)
         .eq("creator_id", creatorId);
@@ -126,6 +123,7 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
         queryClient.invalidateQueries({ queryKey: ["creators"] }),
         queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
+        queryClient.invalidateQueries({ queryKey: ["follows"] }),
         queryClient.invalidateQueries({ queryKey: ["posts"] })
       ]);
     } catch (error: any) {

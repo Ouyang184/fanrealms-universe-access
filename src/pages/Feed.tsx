@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +7,7 @@ import { FeedFilters } from "@/components/feed/FeedFilters";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
-import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useFollows } from "@/hooks/useFollows";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
@@ -33,8 +32,8 @@ export default function FeedPage() {
     document.title = "Feed | Creator Platform";
   }, []);
 
-  // Get user's subscriptions
-  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  // Get user's followed creators
+  const { data: followedCreators = [], isLoading: loadingFollows } = useFollows();
   
   // Fetch posts
   const { data: posts, isLoading: loadingPosts } = usePosts();
@@ -69,8 +68,8 @@ export default function FeedPage() {
     markPostAsRead(post.id);
   };
   
-  // If still loading subscriptions or posts, show loading state
-  if (loadingSubscriptions || loadingPosts) {
+  // If still loading followed creators or posts, show loading state
+  if (loadingFollows || loadingPosts) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -80,11 +79,11 @@ export default function FeedPage() {
     );
   }
   
-  // Check if user has subscriptions
-  const hasSubscriptions = subscriptions && subscriptions.length > 0;
+  // Check if user has followed creators
+  const hasFollowedCreators = followedCreators && followedCreators.length > 0;
 
-  // If user has no subscriptions, show the empty feed state
-  if (!hasSubscriptions) {
+  // If user has no followed creators, show the empty feed state
+  if (!hasFollowedCreators) {
     return (
       <MainLayout>
         <div className="flex-1">
@@ -102,24 +101,18 @@ export default function FeedPage() {
     );
   }
 
-  // Get the creator IDs (not user IDs) of creators the user is subscribed to
-  const followedCreatorIds = subscriptions.map(sub => sub.creator_id).filter(Boolean);
+  // Get the creator IDs from followed creators
+  const followedCreatorIds = followedCreators.map(creator => creator.id).filter(Boolean);
   
   console.log('Followed creator IDs:', followedCreatorIds);
   console.log('All posts:', posts);
   console.log('Read posts from state:', Array.from(readPosts));
   
   // Filter posts by matching the post's author_id with creators the user follows
-  // We need to check if the post author is a creator that the user follows
   const followedPosts = posts?.filter(post => {
-    // Check if any of the followed creators has this post author as their user_id
-    const isFromFollowedCreator = subscriptions.some(sub => {
-      // Compare post author_id with creator's user_id (use the creator's user_id, not the users table id)
-      const creatorUserId = sub.creator?.user_id;
-      const isMatch = creatorUserId === post.authorId;
-      console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against creator ${creatorUserId}: ${isMatch ? 'MATCH' : 'NO MATCH'}`);
-      return isMatch;
-    });
+    // Check if the post author_id matches any of the followed creator user_ids
+    const isFromFollowedCreator = followedCreatorIds.includes(post.authorId);
+    console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against followed creators: ${isFromFollowedCreator ? 'MATCH' : 'NO MATCH'}`);
     return isFromFollowedCreator;
   }) || [];
   
