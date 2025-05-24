@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download } from "lucide-react";
+import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download, FileImage, Lock } from "lucide-react";
 import { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { useState } from "react";
@@ -81,17 +81,31 @@ export function ContentItem({ post, type }: ContentItemProps) {
     return null;
   };
 
-  // Get file icon for non-image/video files
+  // Get file icon for different file types
   const getFileIcon = (type: string) => {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'pdf':
         return <FileText className="h-8 w-8 text-red-600" />;
       case 'video':
         return <Video className="h-8 w-8 text-blue-600" />;
       case 'image':
-        return <FileText className="h-8 w-8 text-green-600" />;
+        return <FileImage className="h-8 w-8 text-green-600" />;
       default:
         return <File className="h-8 w-8 text-gray-600" />;
+    }
+  };
+
+  // Get file type label with icon
+  const getFileTypeLabel = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'pdf':
+        return { icon: "📄", label: "PDF" };
+      case 'video':
+        return { icon: "🎥", label: "Video" };
+      case 'image':
+        return { icon: "🖼", label: "Image" };
+      default:
+        return { icon: "📎", label: "File" };
     }
   };
 
@@ -100,10 +114,12 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const thumbnail = getPostThumbnail(post);
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
+  const isPremium = !!post.tier_id;
 
-  // Use real metadata from post
-  const authorName = post.authorName || "Unknown Creator";
+  // Use real metadata from post - ensure we don't show "Unknown"
+  const authorName = post.authorName || post.users?.username || "Creator";
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
+  const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
   return (
     <>
@@ -118,8 +134,9 @@ export function ContentItem({ post, type }: ContentItemProps) {
                 className="w-full h-full object-cover"
                 style={{ aspectRatio: '16/9' }}
                 onError={(e) => {
-                  // Fallback if image fails to load
+                  // Hide broken images
                   e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement?.classList.add('hidden');
                 }}
               />
               {/* Video play overlay */}
@@ -130,10 +147,19 @@ export function ContentItem({ post, type }: ContentItemProps) {
                   </div>
                 </div>
               )}
+              
+              {/* Premium lock overlay for visual media */}
+              {isPremium && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="bg-black/80 rounded-full p-3">
+                    <Lock className="h-8 w-8 text-white/70" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
-          {/* File attachment display with real filename */}
+          {/* File attachment display with proper preview */}
           {hasFileAttachment && !hasVisualMedia && (
             <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
               <div className="text-center">
@@ -141,7 +167,22 @@ export function ContentItem({ post, type }: ContentItemProps) {
                 <p className="text-sm text-gray-300 mt-2 px-4 truncate">
                   {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
                 </p>
+                {fileTypeLabel && (
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <span>{fileTypeLabel.icon}</span>
+                    <span className="text-xs text-gray-400">{fileTypeLabel.label}</span>
+                  </div>
+                )}
               </div>
+              
+              {/* Premium lock overlay for files */}
+              {isPremium && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="bg-black/80 rounded-full p-3">
+                    <Lock className="h-8 w-8 text-white/70" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
@@ -158,6 +199,15 @@ export function ContentItem({ post, type }: ContentItemProps) {
                   </p>
                 )}
               </div>
+              
+              {/* Premium lock overlay for text posts */}
+              {isPremium && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="bg-black/80 rounded-full p-3">
+                    <Lock className="h-8 w-8 text-white/70" />
+                  </div>
+                </div>
+              )}
             </div>
           )}
           
@@ -169,16 +219,17 @@ export function ContentItem({ post, type }: ContentItemProps) {
             </Badge>
           </div>
           
-          {/* Content type indicator - ONLY show when there are actual attachments */}
-          {(hasVisualMedia || hasFileAttachment) && (
+          {/* File type indicator - Always show when there are attachments */}
+          {firstMedia && (
             <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+              {fileTypeLabel && <span>{fileTypeLabel.icon}</span>}
               {contentType === "video" && <Video className="h-3 w-3" />}
               {(contentType === "image" || contentType === "file" || contentType === "pdf") && <FileText className="h-3 w-3" />}
-              {contentType}
+              <span>{fileTypeLabel?.label || contentType}</span>
             </div>
           )}
 
-          {/* Only show download indicator for actual file attachments */}
+          {/* Download indicator for file attachments */}
           {hasFileAttachment && (
             <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
               <Download className="h-3 w-3" />
@@ -204,7 +255,9 @@ export function ContentItem({ post, type }: ContentItemProps) {
               <Clock className="h-3 w-3" />
               {displayDate}
             </div>
-            <Badge className="ml-auto bg-purple-600">{post.tier_id ? "Premium" : "Free"}</Badge>
+            <Badge className={`ml-auto ${isPremium ? 'bg-purple-600' : 'bg-green-600'}`}>
+              {isPremium ? "Premium" : "Free"}
+            </Badge>
           </div>
         </CardContent>
         <CardFooter className="p-4 pt-0 flex justify-between">

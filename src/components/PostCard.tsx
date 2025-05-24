@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Play, FileText, File } from 'lucide-react';
+import { Play, FileText, File, FileImage, Video } from 'lucide-react';
 import { formatRelativeDate } from '@/utils/auth-helpers';
 import { PostAttachments } from './PostAttachments';
 
@@ -65,21 +65,38 @@ const PostCard: React.FC<PostCardProps> = ({
     return null;
   };
 
+  // Get file type label with icon
+  const getFileTypeLabel = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'pdf':
+        return { icon: "📄", label: "PDF" };
+      case 'video':
+        return { icon: "🎥", label: "Video" };
+      case 'image':
+        return { icon: "🖼", label: "Image" };
+      default:
+        return { icon: "📎", label: "File" };
+    }
+  };
+
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
   const firstMedia = getFirstMedia(attachments);
   
-  // Use real metadata
-  const displayAuthorName = authorName || users?.username || "Unknown Creator";
+  // Use real metadata - avoid showing "Unknown"
+  const displayAuthorName = authorName || users?.username || "Creator";
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
+  const isPremium = !!tier_id;
 
   // Get file icon for different file types
   const getFileIcon = (type: string) => {
-    switch (type) {
+    switch (type.toLowerCase()) {
       case 'pdf':
         return <FileText className="h-4 w-4 text-red-600" />;
       case 'video':
-        return <Play className="h-4 w-4 text-blue-600" />;
+        return <Video className="h-4 w-4 text-blue-600" />;
+      case 'image':
+        return <FileImage className="h-4 w-4 text-green-600" />;
       default:
         return <File className="h-4 w-4 text-gray-600" />;
     }
@@ -97,7 +114,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">{displayAuthorName}</p>
               <div className="flex items-center gap-2">
-                {tier_id && (
+                {isPremium && (
                   <Badge variant="secondary" className="text-xs">
                     Premium
                   </Badge>
@@ -115,7 +132,7 @@ const PostCard: React.FC<PostCardProps> = ({
           <h3 className="text-lg font-semibold leading-tight">{title}</h3>
           <p className="text-muted-foreground leading-relaxed">{content}</p>
           
-          {/* Display media thumbnail with proper sizing */}
+          {/* Display media thumbnail with proper sizing and file type indication */}
           {firstMedia && (
             <div className="relative">
               {firstMedia.type === 'image' && (
@@ -129,6 +146,11 @@ const PostCard: React.FC<PostCardProps> = ({
                       e.currentTarget.style.display = 'none';
                     }}
                   />
+                  {/* File type overlay */}
+                  <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
+                    <span>🖼</span>
+                    <span>Image</span>
+                  </div>
                 </div>
               )}
               
@@ -148,15 +170,33 @@ const PostCard: React.FC<PostCardProps> = ({
                       <Play className="h-4 w-4 text-white fill-white" />
                     </div>
                   </div>
+                  {/* File type overlay */}
+                  <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
+                    <span>🎥</span>
+                    <span>Video</span>
+                  </div>
                 </div>
               )}
               
               {firstMedia.type !== 'image' && firstMedia.type !== 'video' && (
                 <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30 w-fit">
                   {getFileIcon(firstMedia.type)}
-                  <span className="text-sm font-medium truncate max-w-48">
-                    {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium truncate max-w-48">
+                      {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const fileLabel = getFileTypeLabel(firstMedia.type);
+                        return (
+                          <>
+                            <span className="text-xs">{fileLabel.icon}</span>
+                            <span className="text-xs text-muted-foreground">{fileLabel.label}</span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
