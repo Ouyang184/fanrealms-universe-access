@@ -13,7 +13,7 @@ interface FollowedCreatorsProps {
 
 export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps) {
   const { user } = useAuth();
-  const { subscriptions, loadingSubscriptions, refetch } = useSubscriptions();
+  const { subscriptions, loadingSubscriptions } = useSubscriptions();
   const [followedCreators, setFollowedCreators] = useState<any[]>([]);
   
   useEffect(() => {
@@ -23,7 +23,7 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
         .filter(sub => sub.creator_id) // Ensure we have valid creator IDs
         .map(sub => ({
           id: sub.creator_id,
-          name: sub.creator?.users?.username || sub.creator?.display_name || 'Creator',
+          name: sub.creator?.users?.username || 'Creator',
           username: sub.creator?.users?.username || 'creator',
           avatar: sub.creator?.profile_image_url || sub.creator?.users?.profile_picture || "/placeholder.svg"
         }));
@@ -31,13 +31,6 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
       setFollowedCreators(creators);
     }
   }, [subscriptions, loadingSubscriptions]);
-
-  // Refetch subscriptions when component mounts to get fresh data
-  useEffect(() => {
-    if (user) {
-      refetch();
-    }
-  }, [user, refetch]);
 
   if (loadingSubscriptions) {
     return null;
