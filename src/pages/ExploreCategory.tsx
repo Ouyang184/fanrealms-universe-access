@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState, useRef } from "react";
@@ -48,6 +47,22 @@ const categories = [
   { id: 12, name: "Film & Video", icon: "🎬", route: "film-video" },
 ];
 
+// Category mapping for better tag matching
+const categoryTagMapping = {
+  "art-illustration": ["art", "illustration", "drawing", "painting", "digital art", "artwork"],
+  "gaming": ["gaming", "games", "esports", "streaming", "twitch"],
+  "music": ["music", "audio", "songs", "beats", "musician", "producer"],
+  "writing": ["writing", "author", "stories", "poetry", "blog", "content"],
+  "photography": ["photography", "photos", "camera", "portrait", "landscape"],
+  "education": ["education", "teaching", "tutorial", "learning", "courses"],
+  "podcasts": ["podcast", "audio", "talk", "interview", "radio"],
+  "cooking": ["cooking", "food", "recipes", "chef", "culinary"],
+  "fitness": ["fitness", "workout", "health", "gym", "exercise"],
+  "technology": ["technology", "tech", "programming", "coding", "software"],
+  "fashion": ["fashion", "style", "clothing", "beauty", "makeup"],
+  "film-video": ["film", "video", "movies", "cinema", "youtube", "content creator"]
+};
+
 export default function ExploreCategoryPage() {
   const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
@@ -69,6 +84,21 @@ export default function ExploreCategoryPage() {
   // Add ref to track dropdown state
   const dropdownRef = useRef<HTMLDivElement>(null);
   
+  // Helper function to check if creator matches category
+  const creatorMatchesCategory = (creator: CreatorProfile, categoryRoute: string) => {
+    if (!categoryRoute || categoryRoute === "all") return true;
+    
+    const categoryTags = categoryTagMapping[categoryRoute] || [categoryRoute];
+    const creatorBio = (creator.bio || "").toLowerCase();
+    const creatorTags = (creator.tags || []).map(tag => tag.toLowerCase());
+    
+    // Check if any category tag matches creator's tags or bio
+    return categoryTags.some(categoryTag => 
+      creatorTags.some(tag => tag.includes(categoryTag) || categoryTag.includes(tag)) ||
+      creatorBio.includes(categoryTag)
+    );
+  };
+  
   useEffect(() => {
     // Set document title
     document.title = currentCategory 
@@ -76,21 +106,14 @@ export default function ExploreCategoryPage() {
       : "Explore Categories | FanRealms";
     
     // Filter creators when category or creators data changes
-    if (category && allCreators.length > 0) {
-      const categoryName = categories.find(cat => cat.route === category)?.name || "";
-      
-      // Filter creators by matching category name in bio or tags
-      const filtered = allCreators.filter(creator => {
-        const bio = (creator.bio || "").toLowerCase();
-        const tags = (creator.tags || []).map(tag => tag.toLowerCase());
-        
-        return bio.includes(categoryName.toLowerCase()) || 
-               tags.some(tag => tag.includes(categoryName.toLowerCase()));
-      });
+    if (allCreators.length > 0) {
+      const filtered = allCreators.filter(creator => 
+        creatorMatchesCategory(creator, category || "all")
+      );
       
       setFilteredCreators(filtered);
     } else {
-      setFilteredCreators(allCreators);
+      setFilteredCreators([]);
     }
     
     // Update contentType state when category route changes
@@ -111,7 +134,7 @@ export default function ExploreCategoryPage() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [category, isContentTypeOpen, allCreators]);
+  }, [category, isContentTypeOpen, allCreators, currentCategory]);
   
   // Apply sorting and filtering to the creators list
   const applyFilters = (creators: CreatorProfile[]) => {

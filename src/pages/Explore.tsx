@@ -16,6 +16,22 @@ import { CommunitySection } from "@/components/explore/CommunitySection";
 import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
 import { NewsletterSection } from "@/components/explore/NewsletterSection";
 
+// Category mapping for better tag matching
+const categoryTagMapping = {
+  "art-illustration": ["art", "illustration", "drawing", "painting", "digital art", "artwork"],
+  "gaming": ["gaming", "games", "esports", "streaming", "twitch"],
+  "music": ["music", "audio", "songs", "beats", "musician", "producer"],
+  "writing": ["writing", "author", "stories", "poetry", "blog", "content"],
+  "photography": ["photography", "photos", "camera", "portrait", "landscape"],
+  "education": ["education", "teaching", "tutorial", "learning", "courses"],
+  "podcasts": ["podcast", "audio", "talk", "interview", "radio"],
+  "cooking": ["cooking", "food", "recipes", "chef", "culinary"],
+  "fitness": ["fitness", "workout", "health", "gym", "exercise"],
+  "technology": ["technology", "tech", "programming", "coding", "software"],
+  "fashion": ["fashion", "style", "clothing", "beauty", "makeup"],
+  "film-video": ["film", "video", "movies", "cinema", "youtube", "content creator"]
+};
+
 export default function ExplorePage() {
   // Get search parameters to check if we're filtering by category
   const [searchParams] = useSearchParams();
@@ -40,6 +56,21 @@ export default function ExplorePage() {
   const [filteredRecommended, setFilteredRecommended] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Helper function to check if creator matches category
+  const creatorMatchesCategory = (creator, category) => {
+    if (!category) return true;
+    
+    const categoryTags = categoryTagMapping[category] || [category];
+    const creatorBio = (creator.bio || "").toLowerCase();
+    const creatorTags = (creator.tags || []).map(tag => tag.toLowerCase());
+    
+    // Check if any category tag matches creator's tags or bio
+    return categoryTags.some(categoryTag => 
+      creatorTags.some(tag => tag.includes(categoryTag) || categoryTag.includes(tag)) ||
+      creatorBio.includes(categoryTag)
+    );
+  };
+
   // Filter content when category or search changes
   useEffect(() => {
     if (!popularCreators.length && !posts.length) return;
@@ -51,8 +82,7 @@ export default function ExplorePage() {
     // Filter by category if present
     if (categoryFilter) {
       creatorFilter = popularCreators.filter(creator => 
-        (creator.bio || "").toLowerCase().includes(categoryFilter.toLowerCase()) ||
-        (creator.tags || []).some(tag => tag.toLowerCase().includes(categoryFilter.toLowerCase()))
+        creatorMatchesCategory(creator, categoryFilter)
       );
       
       postsFilter = posts.filter(post => 
