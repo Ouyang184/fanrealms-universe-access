@@ -23,8 +23,8 @@ export interface Post {
   authorName?: string;
   authorAvatar?: string | null;
   date?: string;
-  image?: string;
   tier_id?: string | null;
+  attachments?: any; // JSON from database
 }
 
 export interface CreatorProfile {
@@ -74,5 +74,6 @@ export namespace Tables {
     content: string;
     author_id: string;
     tier_id?: string | null;
+    attachments?: any;
   }
 }

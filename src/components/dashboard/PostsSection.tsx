@@ -67,7 +67,18 @@ export function PostsSection({
           ) : posts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {posts.map((post) => (
-                <PostCard key={post.id} {...post} />
+                <PostCard 
+                  key={post.id} 
+                  id={post.id}
+                  title={post.title}
+                  content={post.content}
+                  authorName={post.authorName || 'Unknown'}
+                  authorAvatar={post.authorAvatar}
+                  createdAt={post.createdAt}
+                  date={post.date || post.createdAt}
+                  tier_id={post.tier_id}
+                  attachments={post.attachments}
+                />
               ))}
             </div>
           ) : (
@@ -88,7 +99,18 @@ export function PostsSection({
           ) : posts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {posts.map((post) => (
-                <PostCard key={post.id} {...post} />
+                <PostCard 
+                  key={post.id} 
+                  id={post.id}
+                  title={post.title}
+                  content={post.content}
+                  authorName={post.authorName || 'Unknown'}
+                  authorAvatar={post.authorAvatar}
+                  createdAt={post.createdAt}
+                  date={post.date || post.createdAt}
+                  tier_id={post.tier_id}
+                  attachments={post.attachments}
+                />
               ))}
             </div>
           ) : (

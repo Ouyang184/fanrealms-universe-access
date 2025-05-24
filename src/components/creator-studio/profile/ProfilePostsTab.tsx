@@ -36,8 +36,15 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
       {posts.map((post) => (
         <PostCard 
           key={post.id}
-          {...post}
-          image={`https://picsum.photos/seed/${post.id}/800/450`}
+          id={post.id}
+          title={post.title}
+          content={post.content}
+          authorName={post.authorName || 'Unknown'}
+          authorAvatar={post.authorAvatar}
+          createdAt={post.createdAt}
+          date={post.date || post.createdAt}
+          tier_id={post.tier_id}
+          attachments={post.attachments}
         />
       ))}
     </div>

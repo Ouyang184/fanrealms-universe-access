@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Tables } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -79,17 +78,15 @@ export function CreatePostForm() {
         }
       }
 
-      const newPost: Partial<Tables.Post> = {
-        title,
-        content,
-        author_id: user.id,
-        tier_id: selectedTierId,
-        attachments: uploadedAttachments
-      };
-
       const { error } = await supabase
         .from('posts')
-        .insert([newPost]);
+        .insert({
+          title,
+          content,
+          author_id: user.id,
+          tier_id: selectedTierId,
+          attachments: uploadedAttachments
+        });
 
       if (error) throw error;
 
