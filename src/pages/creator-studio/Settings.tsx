@@ -1,14 +1,19 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { StripeConnectSection } from "@/components/creator-studio/StripeConnectSection";
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useState } from "react";
+import { Save } from "lucide-react";
 
 export default function CreatorStudioSettings() {
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
+  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   if (isLoading) {
     return (
@@ -27,7 +32,10 @@ export default function CreatorStudioSettings() {
   }
 
   const handleSettingsChange = (name: string, value: string | string[]) => {
-    updateSettings({ [name]: value });
+    setPendingChanges(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleImageUpload = (type: 'avatar') => {
@@ -48,8 +56,31 @@ export default function CreatorStudioSettings() {
   };
 
   const handleBannerUpdate = (bannerUrl: string) => {
-    updateSettings({ banner_url: bannerUrl });
+    setPendingChanges(prev => ({
+      ...prev,
+      banner_url: bannerUrl
+    }));
   };
+
+  const handleSaveChanges = async () => {
+    if (Object.keys(pendingChanges).length === 0) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateSettings(pendingChanges);
+      setPendingChanges({});
+    } catch (error) {
+      console.error('Error saving changes:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Merge current settings with pending changes for display
+  const displaySettings = { ...settings, ...pendingChanges };
+  const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
     <div className="space-y-8">
@@ -68,7 +99,7 @@ export default function CreatorStudioSettings() {
 
         <TabsContent value="profile" className="space-y-6">
           <ProfileInfoForm 
-            settings={settings}
+            settings={displaySettings}
             onSettingsChange={handleSettingsChange}
             onImageUpload={handleImageUpload}
             isUploading={isUploading}
@@ -86,11 +117,23 @@ export default function CreatorStudioSettings() {
         <TabsContent value="banner" className="space-y-6">
           <BannerSection 
             userId={settings.user_id}
-            currentBannerUrl={settings.banner_url}
+            currentBannerUrl={displaySettings.banner_url}
             onBannerUpdate={handleBannerUpdate}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Save Changes Button */}
+      <div className="flex justify-end pt-6 border-t">
+        <Button 
+          onClick={handleSaveChanges}
+          disabled={!hasChanges || isSaving}
+          className="min-w-[120px]"
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
     </div>
   );
 }
