@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,7 +60,10 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {creators.length > 0 ? (
           creators.map((creator) => {
-            // Create proper route to creator profile
+            // Use display name with fallbacks
+            const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
+            
+            // Create proper route to creator profile using display name or username
             const creatorLink = creator.username 
               ? `/creator/${creator.username}` 
               : `/creator/${creator.id}`;
@@ -72,7 +74,7 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                   {creator.banner_url && (
                     <img 
                       src={creator.banner_url} 
-                      alt={creator.displayName || ""} 
+                      alt={displayName} 
                       className="w-full h-full object-cover opacity-60"
                     />
                   )}
@@ -82,14 +84,14 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
                       <AvatarImage src={creator.avatar_url || creator.profile_image_url || ''} />
                       <AvatarFallback className="bg-gray-800 text-xl">
-                        {(creator.displayName || creator.username || "").substring(0, 2).toUpperCase()}
+                        {displayName.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <Badge className="mt-2 bg-purple-600 flex items-center gap-1">
                       <Award className="h-3 w-3" /> Featured
                     </Badge>
                   </div>
-                  <h3 className="text-xl font-bold mt-4">{creator.displayName || creator.username}</h3>
+                  <h3 className="text-xl font-bold mt-4">{displayName}</h3>
                   <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
                   <div className="mt-6 flex items-center justify-between">

@@ -78,8 +78,8 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
           ))
         ) : creators.length > 0 ? (
           creators.map((creator) => {
-            // Get display name with fallbacks
-            const displayName = creator.displayName || creator.username || "Creator";
+            // Use display name with fallbacks
+            const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
             
             // Get avatar URL with fallbacks
             const avatarUrl = creator.profile_image_url || creator.avatar_url;
@@ -90,7 +90,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
               : `/creator/${creator.id}`;
             
             // Get first letter for avatar fallback
-            const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
+            const avatarFallback = displayName.substring(0, 1).toUpperCase();
             
             return (
               <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
