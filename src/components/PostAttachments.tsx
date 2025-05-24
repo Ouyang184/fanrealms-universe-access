@@ -55,15 +55,15 @@ export function PostAttachments({ attachments }: PostAttachmentsProps) {
 
   return (
     <div className="mt-4 space-y-4">
-      {/* Images Grid */}
+      {/* Images Grid - Responsive scaling for modal */}
       {images.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {images.map((attachment, index) => (
             <div key={index} className="relative group">
               <img
                 src={attachment.url}
                 alt={attachment.name}
-                className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={() => window.open(attachment.url, '_blank')}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -85,14 +85,14 @@ export function PostAttachments({ attachments }: PostAttachmentsProps) {
         </div>
       )}
 
-      {/* Videos */}
+      {/* Videos - Responsive scaling for modal */}
       {videos.length > 0 && (
         <div className="space-y-3">
           {videos.map((attachment, index) => (
             <div key={index} className="border rounded-lg overflow-hidden">
               <video
                 controls
-                className="w-full max-h-96"
+                className="w-full max-h-80 sm:max-h-96"
                 preload="metadata"
               >
                 <source src={attachment.url} type="video/mp4" />
