@@ -13,12 +13,6 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorProfile } from "@/types";
 
-// Enhanced interface for creators with additional data
-interface EnrichedCreatorProfile extends CreatorProfile {
-  subscribers: number;
-  category: string;
-}
-
 export default function FollowingPage() {
   // Set document title when component mounts
   useEffect(() => {
@@ -42,46 +36,31 @@ export default function FollowingPage() {
     );
   }
 
-  // Transform creators data to match expected interface
-  const enrichedCreators: EnrichedCreatorProfile[] = creators?.map(creator => ({
-    ...creator,
-    display_name: creator.display_name || creator.username || 'Creator',
-    displayName: creator.display_name || creator.username || 'Creator',
-    username: creator.username || 'creator',
-    fullName: creator.display_name || creator.username || 'Creator',
-    email: creator.email || 'creator@example.com',
-    avatar_url: creator.profile_image_url || creator.avatar_url || '',
-    profile_image_url: creator.profile_image_url || creator.avatar_url || '',
-    banner_url: creator.banner_url || '',
-    created_at: creator.created_at || new Date().toISOString(),
-    subscribers: Math.floor(Math.random() * 1000) + 100,
-    category: ['Tech', 'Art', 'Music', 'Gaming', 'Fitness'][Math.floor(Math.random() * 5)],
-    follower_count: creator.follower_count || Math.floor(Math.random() * 1000) + 100,
-  })) || [];
-
   // Get followed creator IDs
   const followedCreatorIds = subscriptions?.map(sub => sub.creator_id) || [];
   
-  // Filter for followed creators
-  const followedCreators = enrichedCreators.filter(creator => 
+  // Filter for followed creators with real data
+  const followedCreators = creators?.filter(creator => 
     followedCreatorIds.includes(creator.id)
-  );
+  ) || [];
 
-  // Get categories from followed creators
-  const categories = ["all", ...new Set(followedCreators.map(creator => creator.category))];
+  // Get real categories from creator tags
+  const allCategories = followedCreators.flatMap(creator => creator.tags || []);
+  const uniqueCategories = [...new Set(allCategories)];
+  const categories = ["all", ...uniqueCategories];
 
   // Filter creators based on search and category
   const filteredCreators = followedCreators.filter(creator => {
     const matchesSearch = creator.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          creator.bio.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || creator.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || (creator.tags && creator.tags.includes(selectedCategory));
     return matchesSearch && matchesCategory;
   });
 
-  // Recommended creators (not followed)
-  const recommendedCreators = enrichedCreators
-    .filter(creator => !followedCreatorIds.includes(creator.id))
-    .slice(0, 6);
+  // Recommended creators (not followed) - limit to 6
+  const recommendedCreators = creators?.filter(creator => 
+    !followedCreatorIds.includes(creator.id)
+  ).slice(0, 6) || [];
 
   return (
     <MainLayout>
@@ -161,7 +140,7 @@ export default function FollowingPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Categories</p>
-                    <p className="text-2xl font-bold">{categories.length - 1}</p>
+                    <p className="text-2xl font-bold">{uniqueCategories.length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -194,7 +173,14 @@ export default function FollowingPage() {
                     <Card key={creator.id} className="overflow-hidden">
                       <CardContent className="p-0">
                         {/* Banner */}
-                        <div className="h-24 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+                        <div 
+                          className="h-24 bg-gradient-to-r from-blue-500 to-purple-600"
+                          style={{
+                            backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        ></div>
                         
                         {/* Profile */}
                         <div className="px-4 pb-4">
@@ -206,9 +192,11 @@ export default function FollowingPage() {
                             <div className="flex-1 mt-8">
                               <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold">{creator.displayName}</h3>
-                                <Badge variant="secondary" className="text-xs">
-                                  {creator.category}
-                                </Badge>
+                                {creator.tags && creator.tags.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {creator.tags[0]}
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                                 {creator.bio}
@@ -256,7 +244,14 @@ export default function FollowingPage() {
                   <Card key={creator.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       {/* Banner */}
-                      <div className="h-24 bg-gradient-to-r from-green-500 to-blue-600"></div>
+                      <div 
+                        className="h-24 bg-gradient-to-r from-green-500 to-blue-600"
+                        style={{
+                          backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }}
+                      ></div>
                       
                       {/* Profile */}
                       <div className="px-4 pb-4">
@@ -268,9 +263,11 @@ export default function FollowingPage() {
                           <div className="flex-1 mt-8">
                             <div className="flex items-center justify-between mb-2">
                               <h3 className="font-semibold">{creator.displayName}</h3>
-                              <Badge variant="secondary" className="text-xs">
-                                {creator.category}
-                              </Badge>
+                              {creator.tags && creator.tags.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {creator.tags[0]}
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                               {creator.bio}
