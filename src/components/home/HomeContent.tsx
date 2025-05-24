@@ -7,6 +7,7 @@ import { CategoriesSection } from "./CategoriesSection";
 import { HowItWorks } from "./HowItWorks";
 import { HomeFooter } from "./HomeFooter";
 import { ContentPreviewModal } from "@/components/content/ContentPreviewModal";
+import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { formatRelativeDate } from "@/utils/auth-helpers";
@@ -14,7 +15,9 @@ import { Post } from "@/types";
 
 export function HomeContent() {
   const [selectedContent, setSelectedContent] = useState<any>(null);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [postModalOpen, setPostModalOpen] = useState(false);
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
 
@@ -52,7 +55,23 @@ export function HomeContent() {
     return null;
   };
 
-  // Map real posts to the content format expected by ContentTabs
+  // Map real posts to the format expected by ContentItem (from Explore page)
+  const mapPostToContentItem = (post: Post) => {
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      authorId: post.author_id,
+      authorName: post.authorName || 'Creator',
+      authorAvatar: post.authorAvatar || null,
+      createdAt: post.createdAt,
+      date: post.date || formatRelativeDate(post.createdAt),
+      tier_id: post.tier_id,
+      attachments: post.attachments,
+    };
+  };
+
+  // Map real posts to the old content format for legacy modals
   const mapPostToContent = (post: Post) => {
     const thumbnail = getPostThumbnail(post);
     
@@ -112,7 +131,12 @@ export function HomeContent() {
   // Only show content if we have real posts data
   const hasRealData = posts.length > 0;
   
-  // Split posts into categories for the tabs - only if we have real data
+  // Split posts into categories for the tabs - map to ContentItem format
+  const forYouPosts = hasRealData ? posts.slice(0, 8).map(mapPostToContentItem) : [];
+  const trendingPosts = hasRealData ? posts.slice(0, 4).map(mapPostToContentItem) : [];
+  const recentPosts = hasRealData ? posts.slice(0, 4).map(mapPostToContentItem) : [];
+
+  // Legacy content mapping for old modals
   const forYouContent = hasRealData ? posts.slice(0, 8).map(mapPostToContent) : [];
   const trendingContent = hasRealData ? posts.slice(0, 4).map(mapPostToContent) : [];
   const recentContent = hasRealData ? posts.slice(0, 4).map(mapPostToContent) : [];
@@ -122,15 +146,20 @@ export function HomeContent() {
     setModalOpen(true);
   };
 
+  const handlePostClick = (post: Post) => {
+    setSelectedPost(post);
+    setPostModalOpen(true);
+  };
+
   return (
     <div>
       <HeroSection />
       
       <ContentTabs 
-        forYouContent={forYouContent}
-        trendingContent={trendingContent}
-        recentContent={recentContent}
-        onCardClick={handleCardClick}
+        forYouPosts={forYouPosts}
+        trendingPosts={trendingPosts}
+        recentPosts={recentPosts}
+        onPostClick={handlePostClick}
         isLoading={isLoadingPosts}
       />
       
@@ -144,6 +173,14 @@ export function HomeContent() {
           open={modalOpen}
           onOpenChange={setModalOpen}
           content={selectedContent}
+        />
+      )}
+
+      {selectedPost && (
+        <PostPreviewModal
+          open={postModalOpen}
+          onOpenChange={setPostModalOpen}
+          post={selectedPost}
         />
       )}
     </div>

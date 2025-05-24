@@ -3,34 +3,20 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
-import { ContentCard } from "@/components/content/ContentCard";
+import { ContentItem } from "@/components/explore/ContentItem";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface ContentItem {
-  id: string | number;
-  title: string;
-  description: string;
-  thumbnail: string;
-  creator: {
-    id: string | number;
-    name: string;
-    avatar: string;
-  };
-  type: string;
-  date: string;
-  preview: boolean;
-}
+import { Post } from "@/types";
 
 interface ContentTabsProps {
-  forYouContent: ContentItem[];
-  trendingContent: ContentItem[];
-  recentContent: ContentItem[];
-  onCardClick: (content: ContentItem) => void;
+  forYouPosts: Post[];
+  trendingPosts: Post[];
+  recentPosts: Post[];
+  onPostClick: (post: Post) => void;
   isLoading?: boolean;
 }
 
-export function ContentTabs({ forYouContent, trendingContent, recentContent, onCardClick, isLoading = false }: ContentTabsProps) {
-  const renderContent = (content: ContentItem[]) => {
+export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostClick, isLoading = false }: ContentTabsProps) {
+  const renderContent = (posts: Post[], type: 'trending' | 'new') => {
     if (isLoading) {
       return Array.from({ length: 8 }).map((_, index) => (
         <div key={`skeleton-${index}`} className="bg-gray-900 border-gray-800 rounded-lg overflow-hidden">
@@ -50,7 +36,7 @@ export function ContentTabs({ forYouContent, trendingContent, recentContent, onC
       ));
     }
 
-    if (content.length === 0) {
+    if (posts.length === 0) {
       return (
         <div className="col-span-full text-center py-12 text-muted-foreground">
           <p className="text-lg mb-2">No content available yet</p>
@@ -59,23 +45,10 @@ export function ContentTabs({ forYouContent, trendingContent, recentContent, onC
       );
     }
 
-    return content.map((item) => (
-      <ContentCard 
-        key={item.id} 
-        content={{
-          id: typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id,
-          title: item.title,
-          thumbnail: item.thumbnail,
-          creator: {
-            name: item.creator.name,
-            avatar: item.creator.avatar
-          },
-          type: item.type,
-          date: item.date,
-          preview: item.preview
-        }}
-        onClick={onCardClick}
-      />
+    return posts.map((post) => (
+      <div key={post.id} onClick={() => onPostClick(post)}>
+        <ContentItem post={post} type={type} />
+      </div>
     ));
   };
 
@@ -100,19 +73,19 @@ export function ContentTabs({ forYouContent, trendingContent, recentContent, onC
 
       <TabsContent value="for-you" className="mt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {renderContent(forYouContent)}
+          {renderContent(forYouPosts, 'new')}
         </div>
       </TabsContent>
 
       <TabsContent value="trending" className="mt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {renderContent(trendingContent)}
+          {renderContent(trendingPosts, 'trending')}
         </div>
       </TabsContent>
 
       <TabsContent value="recent" className="mt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {renderContent(recentContent)}
+          {renderContent(recentPosts, 'new')}
         </div>
       </TabsContent>
     </Tabs>
