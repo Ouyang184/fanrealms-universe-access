@@ -76,9 +76,22 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
 
   const parsedAttachments = parseAttachments(post.attachments);
   
-  // Only show attachments if we have valid attachment data
-  const hasValidAttachments = parsedAttachments.length > 0 && 
-    parsedAttachments.some(att => att && att.url && att.name);
+  // Normalize attachments to match PostAttachments component expectations
+  const normalizedAttachments = parsedAttachments.map(att => {
+    // Ensure each attachment has the required properties
+    if (att && typeof att === 'object') {
+      return {
+        url: att.url || att.file_path || '',
+        name: att.name || att.filename || att.file_name || 'Unknown file',
+        type: att.type || att.file_type || (att.name && att.name.includes('.pdf') ? 'pdf' : att.name && (att.name.includes('.jpg') || att.name.includes('.png') || att.name.includes('.jpeg') || att.name.includes('.gif')) ? 'image' : att.name && (att.name.includes('.mp4') || att.name.includes('.mov') || att.name.includes('.avi')) ? 'video' : 'pdf'),
+        size: att.size || att.file_size || 0
+      };
+    }
+    return null;
+  }).filter(att => att && att.url && att.name); // Only keep valid attachments
+  
+  // Only show attachments if we have valid normalized attachment data
+  const hasValidAttachments = normalizedAttachments.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,9 +126,9 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
         {hasValidAttachments && (
           <div className="my-6">
             <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-              Attachments ({parsedAttachments.length})
+              Attachments ({normalizedAttachments.length})
             </h4>
-            <PostAttachments attachments={parsedAttachments} />
+            <PostAttachments attachments={normalizedAttachments} />
           </div>
         )}
 
@@ -124,7 +137,7 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
             <div className="text-sm text-muted-foreground">
               {post.tier_id ? 'Premium content' : 'Free content'}
               {hasValidAttachments && (
-                <span className="ml-2">• {parsedAttachments.length} attachment{parsedAttachments.length !== 1 ? 's' : ''}</span>
+                <span className="ml-2">• {normalizedAttachments.length} attachment{normalizedAttachments.length !== 1 ? 's' : ''}</span>
               )}
             </div>
             <div className="flex gap-2">
