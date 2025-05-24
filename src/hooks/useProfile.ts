@@ -2,42 +2,104 @@
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import type { DbUser } from '@/types';
+
+export interface ProfileData {
+  id: string;
+  email: string;
+  username: string;
+  profile_picture?: string | null;
+  website?: string | null;
+  created_at: string;
+  bio?: string | null;
+  tags?: string[];
+  display_name?: string | null;
+  creator_id?: string | null;
+}
 
 export const useProfile = () => {
   const { toast } = useToast();
 
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string): Promise<ProfileData | null> => {
     try {
-      const { data, error } = await supabase
+      // First get the user data
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (userError) throw userError;
+
+      // Then get the creator data if it exists
+      const { data: creatorData, error: creatorError } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // Note: creatorError is not thrown as it's optional - user might not be a creator
+
+      // Combine the data
+      const profileData: ProfileData = {
+        ...userData,
+        bio: creatorData?.bio || null,
+        tags: creatorData?.tags || [],
+        display_name: creatorData?.display_name || null,
+        creator_id: creatorData?.id || null
+      };
       
-      return data as DbUser;
+      return profileData;
     } catch (error) {
       console.error('Error fetching user profile:', error);
       return null;
     }
   }, []);
 
-  const updateProfile = useCallback(async (userId: string, data: Partial<DbUser>) => {
+  const updateProfile = useCallback(async (userId: string, data: Partial<ProfileData>) => {
     try {
-      // Remove the updated_at field since it doesn't exist in the users table
-      const updates = {
-        ...data
-        // Removed the updated_at field that was causing the error
-      };
+      // Separate user data from creator data
+      const { bio, tags, display_name, creator_id, ...userData } = data;
+      const creatorData = { bio, tags, display_name };
 
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', userId);
+      // Update users table
+      if (Object.keys(userData).length > 0) {
+        const { error: userError } = await supabase
+          .from('users')
+          .update(userData)
+          .eq('id', userId);
 
-      if (error) throw error;
+        if (userError) throw userError;
+      }
+
+      // Update or create creator data if bio, tags, or display_name are provided
+      if (bio !== undefined || tags !== undefined || display_name !== undefined) {
+        // Check if creator record exists
+        const { data: existingCreator } = await supabase
+          .from('creators')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (existingCreator) {
+          // Update existing creator record
+          const { error: creatorError } = await supabase
+            .from('creators')
+            .update(creatorData)
+            .eq('user_id', userId);
+
+          if (creatorError) throw creatorError;
+        } else {
+          // Create new creator record
+          const { error: creatorError } = await supabase
+            .from('creators')
+            .insert({
+              user_id: userId,
+              ...creatorData
+            });
+
+          if (creatorError) throw creatorError;
+        }
+      }
 
       toast({
         title: "Profile updated",
