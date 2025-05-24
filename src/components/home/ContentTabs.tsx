@@ -50,30 +50,33 @@ export function ContentTabs({ forYouContent, trendingContent, recentContent, onC
       ));
     }
 
-    return content.length > 0 ? (
-      content.map((item) => (
-        <ContentCard 
-          key={item.id} 
-          content={{
-            id: typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id,
-            title: item.title,
-            thumbnail: item.thumbnail,
-            creator: {
-              name: item.creator.name,
-              avatar: item.creator.avatar
-            },
-            type: item.type,
-            date: item.date,
-            preview: item.preview
-          }}
-          onClick={onCardClick}
-        />
-      ))
-    ) : (
-      <div className="col-span-full text-center py-8 text-muted-foreground">
-        No content available
-      </div>
-    );
+    if (content.length === 0) {
+      return (
+        <div className="col-span-full text-center py-12 text-muted-foreground">
+          <p className="text-lg mb-2">No content available yet</p>
+          <p className="text-sm">Check back later for new posts from creators!</p>
+        </div>
+      );
+    }
+
+    return content.map((item) => (
+      <ContentCard 
+        key={item.id} 
+        content={{
+          id: typeof item.id === 'string' ? parseInt(item.id, 10) || 0 : item.id,
+          title: item.title,
+          thumbnail: item.thumbnail,
+          creator: {
+            name: item.creator.name,
+            avatar: item.creator.avatar
+          },
+          type: item.type,
+          date: item.date,
+          preview: item.preview
+        }}
+        onClick={onCardClick}
+      />
+    ));
   };
 
   return (
