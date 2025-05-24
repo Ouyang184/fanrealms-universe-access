@@ -36,9 +36,6 @@ const CreatorPage: React.FC = () => {
     setActiveTab,
     isLoadingCreator,
     isLoadingPosts,
-    isFollowing,
-    followLoading,
-    handleFollowToggle,
     refreshCreatorData
   } = useCreatorPage(identifier);
   
@@ -87,9 +84,6 @@ const CreatorPage: React.FC = () => {
       <div className="space-y-8 max-w-5xl mx-auto">
         <CreatorHeader 
           creator={{...creator, displayName}}
-          isFollowing={isFollowing}
-          followLoading={followLoading}
-          onFollowToggle={handleFollowToggle}
         />
         
         <div className="px-4">
