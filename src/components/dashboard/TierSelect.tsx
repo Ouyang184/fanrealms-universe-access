@@ -6,19 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 
@@ -37,7 +31,6 @@ interface TierSelectProps {
 }
 
 export function TierSelect({ onSelect, value, disabled = false }: TierSelectProps) {
-  const [open, setOpen] = useState(false);
   const { user } = useAuth();
 
   // Fetch creator profile to get the creator ID
@@ -104,112 +97,99 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
 
   const isLoading = isLoadingCreator || isLoadingTiers;
 
+  const handleValueChange = (selectedValue: string) => {
+    if (selectedValue === "public") {
+      onSelect(null);
+    } else {
+      onSelect(selectedValue);
+    }
+  };
+
   return (
     <div className="space-y-2">
       <div className="text-sm text-muted-foreground">
         Choose who can see this post
       </div>
-      <Popover open={open && !disabled} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            disabled={disabled || isLoading}
-            className="w-full justify-between h-auto p-3"
-          >
-            {isLoading ? (
-              <Skeleton className="h-4 w-24" />
-            ) : selectedTier ? (
-              <div className="flex items-center gap-3 text-left">
+      
+      <Select 
+        value={value === null ? "public" : value || ""} 
+        onValueChange={handleValueChange}
+        disabled={disabled || isLoading}
+      >
+        <SelectTrigger className="w-full h-auto p-3">
+          {isLoading ? (
+            <Skeleton className="h-4 w-24" />
+          ) : selectedTier ? (
+            <div className="flex items-center gap-3 text-left w-full">
+              <div className="flex-shrink-0">
+                {selectedTier.isPublic ? (
+                  <Globe className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Lock className="h-4 w-4 text-purple-600" />
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{selectedTier.title}</span>
+                  {!selectedTier.isPublic && (
+                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                      ${Number(selectedTier.price).toFixed(2)}/month
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {selectedTier.description}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <SelectValue placeholder="Select post visibility..." />
+          )}
+        </SelectTrigger>
+        
+        <SelectContent className="w-full max-w-[400px]">
+          {options.map((tier) => (
+            <SelectItem
+              key={tier.id || "public"}
+              value={tier.id || "public"}
+              className="p-3"
+            >
+              <div className="flex items-center gap-3 w-full">
                 <div className="flex-shrink-0">
-                  {selectedTier.isPublic ? (
+                  {tier.isPublic ? (
                     <Globe className="h-4 w-4 text-green-600" />
                   ) : (
                     <Lock className="h-4 w-4 text-purple-600" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{selectedTier.title}</span>
-                    {!selectedTier.isPublic && (
-                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                        ${Number(selectedTier.price).toFixed(2)}/month
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{tier.title}</span>
+                    {!tier.isPublic && (
+                      <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 ml-2">
+                        ${Number(tier.price).toFixed(2)}/month
                       </Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {selectedTier.description}
+                    {tier.description}
                   </div>
+                  {tier.isPublic && (
+                    <div className="text-xs text-green-600 mt-1 font-medium">
+                      Free for everyone
+                    </div>
+                  )}
+                  {!tier.isPublic && (
+                    <div className="text-xs text-purple-600 mt-1 font-medium">
+                      Premium members only
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
-              <span className="text-muted-foreground">Select post visibility...</span>
-            )}
-            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0">
-          <Command>
-            <CommandInput placeholder="Search visibility options..." />
-            <CommandEmpty>No options found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((tier) => (
-                <CommandItem
-                  key={tier.id || "public"}
-                  value={tier.title}
-                  onSelect={() => {
-                    onSelect(tier.id);
-                    setOpen(false);
-                  }}
-                  className="p-3"
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Check
-                      className={cn(
-                        "h-4 w-4 flex-shrink-0",
-                        (tier.id === null && value === null) || tier.id === value 
-                          ? "opacity-100" 
-                          : "opacity-0"
-                      )}
-                    />
-                    <div className="flex-shrink-0">
-                      {tier.isPublic ? (
-                        <Globe className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Lock className="h-4 w-4 text-purple-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{tier.title}</span>
-                        {!tier.isPublic && (
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 ml-2">
-                            ${Number(tier.price).toFixed(2)}/month
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {tier.description}
-                      </div>
-                      {tier.isPublic && (
-                        <div className="text-xs text-green-600 mt-1 font-medium">
-                          Free for everyone
-                        </div>
-                      )}
-                      {!tier.isPublic && (
-                        <div className="text-xs text-purple-600 mt-1 font-medium">
-                          Premium members only
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
-        </PopoverContent>
-      </Popover>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       
       {selectedTier && (
         <div className={cn(
@@ -231,7 +211,7 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
           <div className="mt-1 text-xs opacity-90">
             {selectedTier.isPublic 
               ? "This post will be visible to all visitors and followers."
-              : `Only subscribers to your "${selectedTier.title}" tier (${selectedTier.price}/month) and higher tiers can view this post.`
+              : `Only subscribers to your "${selectedTier.title}" tier ($${selectedTier.price}/month) and higher tiers can view this post.`
             }
           </div>
         </div>
