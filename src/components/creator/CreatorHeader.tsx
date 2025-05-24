@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,6 @@ export function CreatorHeader({
   // Use display_name consistently
   const displayName = creator.display_name || creator.username || "Creator";
   const avatarUrl = creator.avatar_url || creator.profile_image_url;
-  const bannerImage = creator.banner_url || "/default-banner.jpg";
   
   // Make sure we use the correct ID for the creator
   const creatorId = creator.id || creator.user_id;
@@ -33,12 +33,14 @@ export function CreatorHeader({
   return (
     <div className="relative">
       <div className="h-48 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg overflow-hidden">
-        {creator.banner_url && (
+        {creator.banner_url ? (
           <img 
-            src={bannerImage} 
+            src={creator.banner_url} 
             alt="Creator Banner" 
             className="w-full h-full object-cover"
           />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-primary/30 to-secondary/30" />
         )}
       </div>
       <div className="flex flex-col md:flex-row items-center md:items-end p-4 -mt-16 md:-mt-12">

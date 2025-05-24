@@ -9,7 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 interface BannerUploadProps {
   userId: string;
   currentBannerUrl?: string | null;
-  onBannerUpdate: (url: string) => void;  // Changed from Promise<void> to void
+  onBannerUpdate: (url: string) => void;
 }
 
 export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: BannerUploadProps) {
@@ -48,21 +48,42 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
       setIsUploading(true);
       
       const fileExt = selectedFile.name.split('.').pop();
-      const filePath = `${userId}/banner.${fileExt}`;
+      const fileName = `banner-${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+      
+      console.log('Uploading banner to:', filePath);
       
       // Upload to Storage
       const { error: uploadError } = await supabase.storage
         .from('banners')
         .upload(filePath, selectedFile, { upsert: true });
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('banners')
         .getPublicUrl(filePath);
       
-      // Update creator profile
+      console.log('Banner uploaded, public URL:', publicUrl);
+      
+      // Update creator profile in database
+      const { error: updateError } = await supabase
+        .from('creators')
+        .update({ banner_url: publicUrl })
+        .eq('user_id', userId);
+      
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        throw updateError;
+      }
+      
+      console.log('Creator profile updated with banner URL');
+      
+      // Call the callback to update the parent component
       onBannerUpdate(publicUrl);
       
       toast({
