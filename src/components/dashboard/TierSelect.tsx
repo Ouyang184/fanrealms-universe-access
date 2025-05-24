@@ -77,7 +77,7 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
     enabled: !!creatorProfile?.id
   });
 
-  // Add a "Public" option at the beginning
+  // Create options with public first, then tiers ordered by price (lowest to highest)
   const options = [
     { 
       id: null, 
@@ -105,10 +105,25 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
     }
   };
 
+  // Helper function to get access description
+  const getAccessDescription = (tier: any, tierIndex: number) => {
+    if (tier.isPublic) {
+      return "Everyone can view this post";
+    }
+    
+    const higherTiers = options.slice(tierIndex + 1);
+    if (higherTiers.length === 0) {
+      return `Only ${tier.title} subscribers can view this post`;
+    }
+    
+    const tierNames = [tier.title, ...higherTiers.map(t => t.title)];
+    return `${tierNames.join(", ")} subscribers can view this post`;
+  };
+
   return (
     <div className="space-y-2">
       <div className="text-sm text-muted-foreground">
-        Choose who can see this post
+        Choose minimum tier required to view this post
       </div>
       
       <Select 
@@ -143,12 +158,12 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
               </div>
             </div>
           ) : (
-            <SelectValue placeholder="Select post visibility..." />
+            <SelectValue placeholder="Select minimum tier required..." />
           )}
         </SelectTrigger>
         
         <SelectContent className="w-full max-w-[400px]">
-          {options.map((tier) => (
+          {options.map((tier, index) => (
             <SelectItem
               key={tier.id || "public"}
               value={tier.id || "public"}
@@ -174,16 +189,9 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
                   <div className="text-xs text-muted-foreground mt-0.5">
                     {tier.description}
                   </div>
-                  {tier.isPublic && (
-                    <div className="text-xs text-green-600 mt-1 font-medium">
-                      Free for everyone
-                    </div>
-                  )}
-                  {!tier.isPublic && (
-                    <div className="text-xs text-purple-600 mt-1 font-medium">
-                      Premium members only
-                    </div>
-                  )}
+                  <div className="text-xs mt-1 font-medium text-blue-600">
+                    {getAccessDescription(tier, index)}
+                  </div>
                 </div>
               </div>
             </SelectItem>
@@ -205,13 +213,18 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
               <Lock className="h-4 w-4" />
             )}
             <span className="font-medium">
-              {selectedTier.isPublic ? "Public Post" : "Premium Post"}
+              {selectedTier.isPublic ? "Public Post" : `${selectedTier.title}+ Required`}
             </span>
           </div>
           <div className="mt-1 text-xs opacity-90">
             {selectedTier.isPublic 
               ? "This post will be visible to all visitors and followers."
-              : `Only subscribers to your "${selectedTier.title}" tier ($${selectedTier.price}/month) and higher tiers can view this post.`
+              : (() => {
+                  const selectedIndex = options.findIndex(opt => opt.id === selectedTier.id);
+                  const allowedTiers = options.slice(selectedIndex);
+                  const tierNames = allowedTiers.map(t => t.title);
+                  return `Only subscribers to ${tierNames.join(", ")} can view this post. Higher tier members automatically get access.`;
+                })()
             }
           </div>
         </div>
