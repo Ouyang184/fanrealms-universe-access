@@ -7,7 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Users, TrendingUp, Star, Heart, MessageSquare } from "lucide-react";
+import { 
+  Search, 
+  Users, 
+  TrendingUp, 
+  Star, 
+  Heart, 
+  MessageSquare,
+  MoreHorizontal 
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useCreators } from "@/hooks/useCreators";
 import { useFollows } from "@/hooks/useFollows";
 import { useFollow } from "@/hooks/useFollow";
@@ -207,72 +222,100 @@ export default function FollowingPage() {
                   {filteredCreators.map((creator) => {
                     const displayName = creator.display_name || creator.username || 'Creator';
                     return (
-                      <Card key={creator.id} className="overflow-hidden">
+                      <Card key={creator.id} className="overflow-hidden bg-card border">
                         <CardContent className="p-0">
-                          {/* Banner */}
+                          {/* Banner - consistent with site design */}
                           <div 
-                            className="h-24 bg-gradient-to-r from-blue-500 to-purple-600"
+                            className="h-20 bg-gradient-to-r from-primary/20 to-primary/10"
                             style={{
                               backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
                               backgroundSize: 'cover',
                               backgroundPosition: 'center'
                             }}
-                          ></div>
+                          />
                           
-                          {/* Profile */}
+                          {/* Profile Section */}
                           <div className="px-4 pb-4">
-                            <div className="flex items-start gap-3 -mt-8">
-                              <Avatar className="h-16 w-16 border-4 border-white">
+                            <div className="flex items-start justify-between -mt-8">
+                              <Avatar className="h-16 w-16 border-4 border-background">
                                 <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="bg-muted text-lg font-semibold">
+                                  {displayName.charAt(0)}
+                                </AvatarFallback>
                               </Avatar>
-                              <div className="flex-1 mt-8">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h3 className="font-semibold">{displayName}</h3>
-                                  {creator.tags && creator.tags.length > 0 && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      {creator.tags[0]}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                  {creator.bio || "No bio available"}
-                                </p>
-                                
-                                {/* Stats */}
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                                  <div className="flex items-center gap-1">
-                                    <Users className="h-4 w-4" />
-                                    <span>{(creator.follower_count || 0).toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Heart className="h-4 w-4" />
-                                    <span>{Math.floor(Math.random() * 1000)}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span>{Math.floor(Math.random() * 100)}</span>
-                                  </div>
-                                </div>
-                                
-                                {/* Action Buttons */}
-                                <div className="flex gap-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="flex-1"
+                              
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="mt-8 h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
                                     onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
                                   >
                                     View Profile
-                                  </Button>
-                                  <Button 
-                                    variant="destructive" 
-                                    size="sm"
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    Notification Settings
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
                                     onClick={() => handleUnfollow(creator.id)}
+                                    className="text-destructive focus:text-destructive"
                                   >
                                     Unfollow
-                                  </Button>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            
+                            {/* Creator Info */}
+                            <div className="mt-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-lg">{displayName}</h3>
+                                {creator.tags && creator.tags.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {creator.tags[0]}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                                {creator.bio || "Creator on the platform"}
+                              </p>
+                              
+                              {/* Metrics - consistent styling */}
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-4 w-4" />
+                                  <span>{(creator.follower_count || 0).toLocaleString()}</span>
                                 </div>
+                                <div className="flex items-center gap-1">
+                                  <Heart className="h-4 w-4" />
+                                  <span>{Math.floor(Math.random() * 1000)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  <span>{Math.floor(Math.random() * 100)}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                                >
+                                  View Content
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                >
+                                  <MessageSquare className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -290,67 +333,71 @@ export default function FollowingPage() {
                 {recommendedCreators.map((creator) => {
                   const displayName = creator.display_name || creator.username || 'Creator';
                   return (
-                    <Card key={creator.id} className="overflow-hidden">
+                    <Card key={creator.id} className="overflow-hidden bg-card border">
                       <CardContent className="p-0">
                         {/* Banner */}
                         <div 
-                          className="h-24 bg-gradient-to-r from-green-500 to-blue-600"
+                          className="h-20 bg-gradient-to-r from-secondary/20 to-secondary/10"
                           style={{
                             backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
                             backgroundSize: 'cover',
                             backgroundPosition: 'center'
                           }}
-                        ></div>
+                        />
                         
-                        {/* Profile */}
+                        {/* Profile Section */}
                         <div className="px-4 pb-4">
-                          <div className="flex items-start gap-3 -mt-8">
-                            <Avatar className="h-16 w-16 border-4 border-white">
+                          <div className="flex items-start -mt-8">
+                            <Avatar className="h-16 w-16 border-4 border-background">
                               <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                              <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                              <AvatarFallback className="bg-muted text-lg font-semibold">
+                                {displayName.charAt(0)}
+                              </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 mt-8">
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold">{displayName}</h3>
-                                {creator.tags && creator.tags.length > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {creator.tags[0]}
-                                  </Badge>
-                                )}
+                          </div>
+                          
+                          {/* Creator Info */}
+                          <div className="mt-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg">{displayName}</h3>
+                              {creator.tags && creator.tags.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {creator.tags[0]}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                              {creator.bio || "Creator on the platform"}
+                            </p>
+                            
+                            {/* Metrics */}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-4 w-4" />
+                                <span>{(creator.follower_count || 0).toLocaleString()}</span>
                               </div>
-                              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                {creator.bio || "No bio available"}
-                              </p>
-                              
-                              {/* Stats */}
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-4 w-4" />
-                                  <span>{(creator.follower_count || 0).toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Heart className="h-4 w-4" />
-                                  <span>{Math.floor(Math.random() * 1000)}</span>
-                                </div>
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-yellow-500" />
+                                <span>{(4 + Math.random()).toFixed(1)}</span>
                               </div>
-                              
-                              {/* Action Buttons */}
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={() => handleFollow(creator.id)}
-                                >
-                                  Follow
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
-                                >
-                                  View
-                                </Button>
-                              </div>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => handleFollow(creator.id)}
+                              >
+                                Follow
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                              >
+                                View
+                              </Button>
                             </div>
                           </div>
                         </div>
