@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -148,9 +147,6 @@ export default function ExplorePage() {
 
         {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />
-
-        {/* Community Section */}
-        <CommunitySection />
 
         {/* Popular Tags Section */}
         <PopularTagsSection />
