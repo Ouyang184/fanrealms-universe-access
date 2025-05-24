@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -77,22 +78,23 @@ export function useCreatorFetch(identifier?: string) {
     refetchOnWindowFocus: false
   });
   
-  // Fetch creator's posts
+  // Fetch creator's posts (public and accessible ones)
   const {
     data: posts = [],
     isLoading: isLoadingPosts,
     refetch: refetchPosts
   } = useQuery({
-    queryKey: ['creatorPosts', creator?.id || creator?.user_id],
+    queryKey: ['creatorPosts', creator?.user_id],
     queryFn: async () => {
-      const creatorId = creator?.id || creator?.user_id;
-      if (!creatorId) {
-        console.log("No creator ID available for fetching posts");
+      const creatorUserId = creator?.user_id;
+      if (!creatorUserId) {
+        console.log("No creator user ID available for fetching posts");
         return [];
       }
       
-      console.log(`Fetching posts for creator ID: ${creatorId}`);
+      console.log(`Fetching posts for creator user ID: ${creatorUserId}`);
       
+      // Fetch all posts for this creator
       const { data: postsData, error } = await supabase
         .from('posts')
         .select(`
@@ -100,9 +102,14 @@ export function useCreatorFetch(identifier?: string) {
           users:author_id (
             username,
             profile_picture
+          ),
+          membership_tiers (
+            id,
+            title,
+            price
           )
         `)
-        .eq('author_id', creatorId)
+        .eq('author_id', creatorUserId)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -119,10 +126,11 @@ export function useCreatorFetch(identifier?: string) {
         ...post,
         authorName: creator.display_name || post.users?.username || 'Unknown', 
         authorAvatar: post.users?.profile_picture,
-        date: formatRelativeDate(post.created_at)
+        date: formatRelativeDate(post.created_at),
+        tierInfo: post.membership_tiers
       }));
     },
-    enabled: !!(creator?.id || creator?.user_id),
+    enabled: !!creator?.user_id,
     staleTime: 60000 // Cache results for 1 minute
   });
 

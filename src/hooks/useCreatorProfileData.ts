@@ -51,7 +51,7 @@ export function useCreatorProfileData() {
     enabled: !!user?.id && !!creatorProfile
   });
   
-  // Fetch creator's posts
+  // Fetch all creator's posts (including public ones)
   const {
     data: posts = [], 
     isLoading: isLoadingPosts,
@@ -67,6 +67,11 @@ export function useCreatorProfileData() {
           users:author_id (
             username,
             profile_picture
+          ),
+          membership_tiers (
+            id,
+            title,
+            price
           )
         `)
         .eq('author_id', user.id)
@@ -86,13 +91,14 @@ export function useCreatorProfileData() {
         ...post,
         authorName: post.users.username,
         authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at)
+        date: formatRelativeDate(post.created_at),
+        tierInfo: post.membership_tiers
       })) as Post[];
     },
     enabled: !!user?.id
   });
 
-  // Fetch membership tiers
+  // Fetch membership tiers with proper structure
   const {
     data: tiers = [],
     isLoading: isLoadingTiers,
@@ -117,7 +123,7 @@ export function useCreatorProfileData() {
         return [];
       }
       
-      // Count subscribers for each tier
+      // Count subscribers for each tier and format properly
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         const { count, error: countError } = await supabase
           .from('subscriptions')
@@ -125,9 +131,12 @@ export function useCreatorProfileData() {
           .eq('tier_id', tier.id);
           
         return {
-          ...tier,
+          id: tier.id,
           name: tier.title,
-          features: [tier.description],
+          title: tier.title,
+          price: tier.price,
+          description: tier.description,
+          features: tier.description ? [tier.description] : [],
           subscriberCount: count || 0
         };
       }));
