@@ -13,19 +13,28 @@ import { useSubscriptions } from "@/hooks/useSubscriptions";
 import { useFollow } from "@/hooks/useFollow";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorProfile } from "@/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function FollowingPage() {
+  const queryClient = useQueryClient();
+  
   // Set document title when component mounts
   useEffect(() => {
     document.title = "Following | Creator Platform";
   }, []);
 
-  const { data: creators, isLoading: loadingCreators } = useCreators();
-  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const { data: creators, isLoading: loadingCreators, refetch: refetchCreators } = useCreators();
+  const { subscriptions, loadingSubscriptions, refetch: refetchSubscriptions } = useSubscriptions();
   const { unfollowCreator, followCreator } = useFollow();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Refetch data when component mounts to ensure fresh data
+  useEffect(() => {
+    refetchCreators();
+    refetchSubscriptions();
+  }, [refetchCreators, refetchSubscriptions]);
 
   // Loading state
   if (loadingCreators || loadingSubscriptions) {
@@ -53,8 +62,9 @@ export default function FollowingPage() {
 
   // Filter creators based on search and category
   const filteredCreators = followedCreators.filter(creator => {
-    const matchesSearch = creator.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         creator.bio.toLowerCase().includes(searchTerm.toLowerCase());
+    const displayName = creator.display_name || creator.username || 'Creator';
+    const matchesSearch = displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (creator.bio || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || (creator.tags && creator.tags.includes(selectedCategory));
     return matchesSearch && matchesCategory;
   });
@@ -72,6 +82,11 @@ export default function FollowingPage() {
   const handleUnfollow = async (creatorId: string) => {
     try {
       await unfollowCreator(creatorId);
+      // Force refresh the data after unfollowing
+      await Promise.all([
+        refetchCreators(),
+        refetchSubscriptions()
+      ]);
     } catch (error) {
       console.error('Error unfollowing creator:', error);
     }
@@ -80,6 +95,11 @@ export default function FollowingPage() {
   const handleFollow = async (creatorId: string) => {
     try {
       await followCreator(creatorId);
+      // Force refresh the data after following
+      await Promise.all([
+        refetchCreators(),
+        refetchSubscriptions()
+      ]);
     } catch (error) {
       console.error('Error following creator:', error);
     }
@@ -192,12 +212,97 @@ export default function FollowingPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCreators.map((creator) => (
+                  {filteredCreators.map((creator) => {
+                    const displayName = creator.display_name || creator.username || 'Creator';
+                    return (
+                      <Card key={creator.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          {/* Banner */}
+                          <div 
+                            className="h-24 bg-gradient-to-r from-blue-500 to-purple-600"
+                            style={{
+                              backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                          ></div>
+                          
+                          {/* Profile */}
+                          <div className="px-4 pb-4">
+                            <div className="flex items-start gap-3 -mt-8">
+                              <Avatar className="h-16 w-16 border-4 border-white">
+                                <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                                <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 mt-8">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className="font-semibold">{displayName}</h3>
+                                  {creator.tags && creator.tags.length > 0 && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {creator.tags[0]}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                                  {creator.bio || "No bio available"}
+                                </p>
+                                
+                                {/* Stats */}
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                                  <div className="flex items-center gap-1">
+                                    <Users className="h-4 w-4" />
+                                    <span>{(creator.follower_count || 0).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Heart className="h-4 w-4" />
+                                    <span>{Math.floor(Math.random() * 1000)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span>{Math.floor(Math.random() * 100)}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Action Buttons */}
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="flex-1"
+                                    onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                                  >
+                                    View Profile
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleUnfollow(creator.id)}
+                                  >
+                                    Unfollow
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Recommended Tab */}
+            <TabsContent value="recommended" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedCreators.map((creator) => {
+                  const displayName = creator.display_name || creator.username || 'Creator';
+                  return (
                     <Card key={creator.id} className="overflow-hidden">
                       <CardContent className="p-0">
                         {/* Banner */}
                         <div 
-                          className="h-24 bg-gradient-to-r from-blue-500 to-purple-600"
+                          className="h-24 bg-gradient-to-r from-green-500 to-blue-600"
                           style={{
                             backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
                             backgroundSize: 'cover',
@@ -209,12 +314,12 @@ export default function FollowingPage() {
                         <div className="px-4 pb-4">
                           <div className="flex items-start gap-3 -mt-8">
                             <Avatar className="h-16 w-16 border-4 border-white">
-                              <AvatarImage src={creator.avatar_url || undefined} />
-                              <AvatarFallback>{creator.displayName.charAt(0)}</AvatarFallback>
+                              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                              <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 mt-8">
                               <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold">{creator.displayName}</h3>
+                                <h3 className="font-semibold">{displayName}</h3>
                                 {creator.tags && creator.tags.length > 0 && (
                                   <Badge variant="secondary" className="text-xs">
                                     {creator.tags[0]}
@@ -222,7 +327,7 @@ export default function FollowingPage() {
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                {creator.bio}
+                                {creator.bio || "No bio available"}
                               </p>
                               
                               {/* Stats */}
@@ -235,28 +340,23 @@ export default function FollowingPage() {
                                   <Heart className="h-4 w-4" />
                                   <span>{Math.floor(Math.random() * 1000)}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <MessageSquare className="h-4 w-4" />
-                                  <span>{Math.floor(Math.random() * 100)}</span>
-                                </div>
                               </div>
                               
                               {/* Action Buttons */}
                               <div className="flex gap-2">
                                 <Button 
-                                  variant="outline" 
                                   size="sm" 
                                   className="flex-1"
-                                  onClick={() => window.location.href = `/creator/${creator.username}`}
+                                  onClick={() => handleFollow(creator.id)}
                                 >
-                                  View Profile
+                                  Follow
                                 </Button>
                                 <Button 
-                                  variant="destructive" 
+                                  variant="outline" 
                                   size="sm"
-                                  onClick={() => handleUnfollow(creator.id)}
+                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
                                 >
-                                  Unfollow
+                                  View
                                 </Button>
                               </div>
                             </div>
@@ -264,82 +364,8 @@ export default function FollowingPage() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Recommended Tab */}
-            <TabsContent value="recommended" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recommendedCreators.map((creator) => (
-                  <Card key={creator.id} className="overflow-hidden">
-                    <CardContent className="p-0">
-                      {/* Banner */}
-                      <div 
-                        className="h-24 bg-gradient-to-r from-green-500 to-blue-600"
-                        style={{
-                          backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
-                        }}
-                      ></div>
-                      
-                      {/* Profile */}
-                      <div className="px-4 pb-4">
-                        <div className="flex items-start gap-3 -mt-8">
-                          <Avatar className="h-16 w-16 border-4 border-white">
-                            <AvatarImage src={creator.avatar_url || undefined} />
-                            <AvatarFallback>{creator.displayName.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 mt-8">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="font-semibold">{creator.displayName}</h3>
-                              {creator.tags && creator.tags.length > 0 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {creator.tags[0]}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {creator.bio}
-                            </p>
-                            
-                            {/* Stats */}
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                              <div className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                <span>{(creator.follower_count || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Heart className="h-4 w-4" />
-                                <span>{Math.floor(Math.random() * 1000)}</span>
-                              </div>
-                            </div>
-                            
-                            {/* Action Buttons */}
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                className="flex-1"
-                                onClick={() => handleFollow(creator.id)}
-                              >
-                                Follow
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => window.location.href = `/creator/${creator.username}`}
-                              >
-                                View
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                  );
+                })}
               </div>
             </TabsContent>
           </Tabs>

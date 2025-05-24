@@ -14,9 +14,21 @@ interface FollowedCreatorsProps {
 
 export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps) {
   const { user } = useAuth();
-  const { subscriptions, loadingSubscriptions } = useSubscriptions();
-  const { data: creators } = useCreators();
+  const { subscriptions, loadingSubscriptions, refetch: refetchSubscriptions } = useSubscriptions();
+  const { data: creators, refetch: refetchCreators } = useCreators();
   const [followedCreators, setFollowedCreators] = useState<any[]>([]);
+  
+  // Refetch data periodically to ensure fresh state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user?.id) {
+        refetchSubscriptions();
+        refetchCreators();
+      }
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id, refetchSubscriptions, refetchCreators]);
   
   useEffect(() => {
     if (!loadingSubscriptions && subscriptions && creators) {

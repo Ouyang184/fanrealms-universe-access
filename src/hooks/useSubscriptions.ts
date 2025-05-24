@@ -11,9 +11,11 @@ export const useSubscriptions = () => {
   const { user } = useAuth();
 
   // Get user's subscriptions
-  const { data: subscriptions, isLoading: loadingSubscriptions } = useQuery({
-    queryKey: ['subscriptions'],
+  const { data: subscriptions, isLoading: loadingSubscriptions, refetch } = useQuery({
+    queryKey: ['subscriptions', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+      
       const { data, error } = await supabase
         .from('subscriptions')
         .select(`
@@ -23,10 +25,12 @@ export const useSubscriptions = () => {
             user_id,
             bio,
             profile_image_url,
-            users!creators_user_id_fkey(
-              username,
-              profile_picture
-            )
+            display_name,
+            username,
+            avatar_url,
+            banner_url,
+            follower_count,
+            tags
           ),
           tier:membership_tiers(
             id,
@@ -34,15 +38,17 @@ export const useSubscriptions = () => {
             price,
             description
           )
-        `);
+        `)
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error fetching subscriptions:', error);
         throw error;
       }
 
-      return data;
+      return data || [];
     },
+    enabled: !!user?.id,
   });
 
   // Subscribe/Follow a creator
@@ -66,6 +72,8 @@ export const useSubscriptions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['creators'] });
+      queryClient.invalidateQueries({ queryKey: ['followedCreators'] });
       toast({
         title: "Subscribed successfully",
         description: "You are now following this creator",
@@ -93,6 +101,8 @@ export const useSubscriptions = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['creators'] });
+      queryClient.invalidateQueries({ queryKey: ['followedCreators'] });
       toast({
         title: "Unsubscribed successfully",
         description: "You are no longer following this creator",
@@ -113,5 +123,6 @@ export const useSubscriptions = () => {
     loadingSubscriptions,
     subscribe,
     unsubscribe,
+    refetch,
   };
 };
