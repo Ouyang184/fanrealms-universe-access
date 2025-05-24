@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import { CreatorProfile } from "@/types";
 
@@ -15,6 +14,7 @@ export const findByCreatorId = async (identifier?: string) => {
   
   console.log(`Looking up creator by creator.id: "${identifier}"`);
   
+  // First try to get the creator with user info
   const { data: creatorById, error: idError } = await supabase
     .from('creators')
     .select(`
@@ -29,22 +29,25 @@ export const findByCreatorId = async (identifier?: string) => {
     .eq('id', identifier)
     .maybeSingle();
     
-  if (creatorById && creatorById.users) {
+  if (creatorById) {
     console.log("Found creator by creator.id:", creatorById);
     
+    // Handle case where user relationship might be missing
+    const userInfo = creatorById.users || {};
+    
     // Create the display name once and use it for both properties
-    const displayNameValue = creatorById.display_name || creatorById.users.username;
+    const displayNameValue = creatorById.display_name || userInfo.username || `Creator ${identifier.substring(0, 8)}`;
     
     const creatorProfile = {
       ...creatorById,
       id: creatorById.id,      // Primary key from creators table
       user_id: creatorById.user_id, // Keep user_id from auth
-      username: creatorById.users.username || `user-${creatorById.user_id.substring(0, 8)}`,
-      email: creatorById.users.email || "",
+      username: userInfo.username || `user-${creatorById.user_id?.substring(0, 8) || 'unknown'}`,
+      email: userInfo.email || "",
       fullName: displayNameValue,
       display_name: displayNameValue,
       displayName: displayNameValue, // Add this required property
-      avatar_url: creatorById.users.profile_picture || null,
+      avatar_url: userInfo.profile_picture || null,
       tags: creatorById.tags || []
     };
     
