@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,7 +10,7 @@ export function useCreatorProfileData() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
   
-  // Fetch creator's details
+  // Fetch creator's details including follower count
   const { 
     data: creator, 
     isLoading: isLoadingCreator,
@@ -36,16 +35,29 @@ export function useCreatorProfileData() {
         return null;
       }
       
+      // Get the latest creator data including follower_count
+      const { data: latestCreatorData, error: creatorError } = await supabase
+        .from('creators')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (creatorError) {
+        console.error('Error fetching latest creator data:', creatorError);
+      }
+      
       return {
         ...creatorProfile,
+        ...latestCreatorData, // This will include the latest follower_count
         username: userData.username,
         fullName: userData.username,
-        displayName: creatorProfile.display_name || userData.username,
+        displayName: latestCreatorData?.display_name || userData.username,
         email: userData.email,
         avatar_url: userData.profile_picture,
-        banner_url: creatorProfile.banner_url || null,
-        bio: creatorProfile.bio || "No bio provided yet.",
-        display_name: creatorProfile.display_name || null
+        banner_url: latestCreatorData?.banner_url || null,
+        bio: latestCreatorData?.bio || "No bio provided yet.",
+        display_name: latestCreatorData?.display_name || null,
+        follower_count: latestCreatorData?.follower_count || 0
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile

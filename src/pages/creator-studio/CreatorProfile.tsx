@@ -66,6 +66,7 @@ export default function CreatorProfile() {
         <ProfileStatistics 
           postCount={posts.length} 
           tierCount={tiers.length} 
+          followerCount={creator.follower_count || 0}
         />
         
         <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab}>
