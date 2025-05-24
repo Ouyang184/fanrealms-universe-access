@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Users, TrendingUp, Star, Heart, MessageSquare } from "lucide-react";
 import { useCreators } from "@/hooks/useCreators";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useFollow } from "@/hooks/useFollow";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorProfile } from "@/types";
 
@@ -21,6 +22,7 @@ export default function FollowingPage() {
 
   const { data: creators, isLoading: loadingCreators } = useCreators();
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const { unfollowCreator, followCreator } = useFollow();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -61,6 +63,27 @@ export default function FollowingPage() {
   const recommendedCreators = creators?.filter(creator => 
     !followedCreatorIds.includes(creator.id)
   ).slice(0, 6) || [];
+
+  // Calculate total followers count from followed creators
+  const totalFollowersCount = followedCreators.reduce((sum, creator) => 
+    sum + (creator.follower_count || 0), 0
+  );
+
+  const handleUnfollow = async (creatorId: string) => {
+    try {
+      await unfollowCreator(creatorId);
+    } catch (error) {
+      console.error('Error unfollowing creator:', error);
+    }
+  };
+
+  const handleFollow = async (creatorId: string) => {
+    try {
+      await followCreator(creatorId);
+    } catch (error) {
+      console.error('Error following creator:', error);
+    }
+  };
 
   return (
     <MainLayout>
@@ -125,7 +148,7 @@ export default function FollowingPage() {
                   <div>
                     <p className="text-sm text-muted-foreground">Total Followers</p>
                     <p className="text-2xl font-bold">
-                      {followedCreators.reduce((sum, creator) => sum + (creator.follower_count || 0), 0).toLocaleString()}
+                      {totalFollowersCount.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -218,15 +241,24 @@ export default function FollowingPage() {
                                 </div>
                               </div>
                               
-                              {/* Action Button */}
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="w-full"
-                                onClick={() => window.location.href = `/creator/${creator.username}`}
-                              >
-                                View Profile
-                              </Button>
+                              {/* Action Buttons */}
+                              <div className="flex gap-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => window.location.href = `/creator/${creator.username}`}
+                                >
+                                  View Profile
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleUnfollow(creator.id)}
+                                >
+                                  Unfollow
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -290,9 +322,7 @@ export default function FollowingPage() {
                               <Button 
                                 size="sm" 
                                 className="flex-1"
-                                onClick={() => {
-                                  // Add follow logic here
-                                }}
+                                onClick={() => handleFollow(creator.id)}
                               >
                                 Follow
                               </Button>

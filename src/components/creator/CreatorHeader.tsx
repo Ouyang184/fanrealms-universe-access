@@ -5,21 +5,15 @@ import { Button } from "@/components/ui/button";
 import { SocialLinks } from "@/components/SocialLinks";
 import { CreatorProfile } from "@/types";
 import { CreatorChatModal } from "@/components/messaging/CreatorChatModal";
+import { useFollow } from "@/hooks/useFollow";
 
 interface CreatorHeaderProps {
   creator: CreatorProfile & { displayName?: string };
-  isFollowing: boolean;
-  followLoading: boolean;
-  onFollowToggle: () => Promise<void>;
 }
 
-export function CreatorHeader({ 
-  creator, 
-  isFollowing, 
-  followLoading, 
-  onFollowToggle 
-}: CreatorHeaderProps) {
+export function CreatorHeader({ creator }: CreatorHeaderProps) {
   const [showChatModal, setShowChatModal] = useState(false);
+  const { isFollowing, isLoading, checkFollowStatus, followCreator, unfollowCreator, setIsFollowing } = useFollow();
   
   // Use display_name consistently
   const displayName = creator.display_name || creator.username || "Creator";
@@ -31,7 +25,24 @@ export function CreatorHeader({
   useEffect(() => {
     console.log("CreatorHeader rendering with creator:", creator);
     console.log("Using creatorId for social links:", creatorId);
-  }, [creator, creatorId]);
+    
+    // Check follow status when component mounts
+    if (creatorId) {
+      checkFollowStatus(creatorId).then(status => {
+        setIsFollowing(status);
+      });
+    }
+  }, [creator, creatorId, checkFollowStatus, setIsFollowing]);
+
+  const handleFollowToggle = async () => {
+    if (!creatorId) return;
+    
+    if (isFollowing) {
+      await unfollowCreator(creatorId);
+    } else {
+      await followCreator(creatorId);
+    }
+  };
 
   return (
     <>
@@ -56,6 +67,9 @@ export function CreatorHeader({
           </Avatar>
           <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left flex-1">
             <h1 className="text-3xl font-bold">{displayName}</h1>
+            <p className="text-muted-foreground mt-1">
+              {(creator.follower_count || 0).toLocaleString()} followers
+            </p>
             
             {creatorId && (
               <div className="mt-2">
@@ -68,11 +82,11 @@ export function CreatorHeader({
               Message
             </Button>
             <Button
-              onClick={onFollowToggle}
-              disabled={followLoading}
+              onClick={handleFollowToggle}
+              disabled={isLoading}
               variant={isFollowing ? "outline" : "default"}
             >
-              {isFollowing ? "Following" : "Follow"}
+              {isLoading ? "Loading..." : isFollowing ? "Following" : "Follow"}
             </Button>
           </div>
         </div>

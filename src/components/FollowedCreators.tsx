@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarSeparator } from "@/components/ui/sidebar";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useCreators } from "@/hooks/useCreators";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface FollowedCreatorsProps {
@@ -14,23 +15,27 @@ interface FollowedCreatorsProps {
 export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps) {
   const { user } = useAuth();
   const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const { data: creators } = useCreators();
   const [followedCreators, setFollowedCreators] = useState<any[]>([]);
   
   useEffect(() => {
-    if (!loadingSubscriptions && subscriptions) {
-      // Extract creator info from subscriptions
-      const creators = subscriptions
-        .filter(sub => sub.creator_id) // Ensure we have valid creator IDs
-        .map(sub => ({
-          id: sub.creator_id,
-          name: sub.creator?.users?.username || 'Creator',
-          username: sub.creator?.users?.username || 'creator',
-          avatar: sub.creator?.profile_image_url || sub.creator?.users?.profile_picture || "/placeholder.svg"
+    if (!loadingSubscriptions && subscriptions && creators) {
+      // Get followed creator IDs
+      const followedCreatorIds = subscriptions.map(sub => sub.creator_id).filter(Boolean);
+      
+      // Filter creators to get the followed ones with full data
+      const followedCreatorsData = creators
+        .filter(creator => followedCreatorIds.includes(creator.id))
+        .map(creator => ({
+          id: creator.id,
+          name: creator.display_name || creator.username || 'Creator',
+          username: creator.username || 'creator',
+          avatar: creator.avatar_url || creator.profile_image_url || "/placeholder.svg"
         }));
       
-      setFollowedCreators(creators);
+      setFollowedCreators(followedCreatorsData);
     }
-  }, [subscriptions, loadingSubscriptions]);
+  }, [subscriptions, loadingSubscriptions, creators]);
 
   if (loadingSubscriptions) {
     return null;
@@ -42,7 +47,7 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
     <div className="mt-6">
       {!isCollapsed && (
         <h3 className="px-4 text-sm font-semibold text-muted-foreground mb-2">
-          Following
+          Following ({followedCreators.length})
         </h3>
       )}
       <div className="space-y-1">
