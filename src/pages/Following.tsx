@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -166,7 +165,7 @@ function FollowingPageContent() {
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Following & Favorites</h1>
           <p className="text-muted-foreground">Manage your followed creators and favorites in one place</p>
@@ -200,158 +199,175 @@ function FollowingPageContent() {
         </div>
       </div>
 
-      {/* Categories Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="overflow-auto flex w-full justify-start">
-          {categoryCounts.map((category) => (
-            <TabsTrigger
-              key={category.name}
-              value={category.name}
-              className="flex items-center gap-2"
-            >
-              {category.icon}
-              {category.name}
-              <Badge variant="outline" className="ml-1">
-                {category.count}
-              </Badge>
-            </TabsTrigger>
-          ))}
-          <TabsTrigger value="Favorites" className="flex items-center gap-2">
-            <Heart className="h-4 w-4" />
-            Favorites
-            <Badge variant="outline" className="ml-1">
-              {favoriteCount}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+      {/* Enhanced Categories Tabs */}
+      <div className="mb-8">
+        <div className="bg-card/50 backdrop-blur-sm border rounded-xl p-1">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 gap-1 bg-transparent h-auto p-0">
+              {categoryCounts.map((category) => (
+                <TabsTrigger
+                  key={category.name}
+                  value={category.name}
+                  className="flex flex-col items-center gap-1 px-3 py-3 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2">
+                    {category.icon}
+                    <span className="font-medium text-sm">{category.name}</span>
+                  </div>
+                  <Badge 
+                    variant={activeTab === category.name ? "secondary" : "outline"} 
+                    className="text-xs px-2 py-0.5 min-w-[2rem] justify-center"
+                  >
+                    {category.count}
+                  </Badge>
+                </TabsTrigger>
+              ))}
+              <TabsTrigger 
+                value="Favorites" 
+                className="flex flex-col items-center gap-1 px-3 py-3 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-200 hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-2">
+                  <Heart className="h-4 w-4" />
+                  <span className="font-medium text-sm">Favorites</span>
+                </div>
+                <Badge 
+                  variant={activeTab === "Favorites" ? "secondary" : "outline"} 
+                  className="text-xs px-2 py-0.5 min-w-[2rem] justify-center bg-red-500/10 text-red-600 border-red-500/20"
+                >
+                  {favoriteCount}
+                </Badge>
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
-          <div className="grid grid-cols-1 gap-4">
-            {filteredCreators.length > 0 ? (
-              filteredCreators.map((creator) => (
-                <Card key={creator.id}>
-                  <CardContent className="p-0">
-                    <div className="flex flex-col md:flex-row">
-                      {/* Cover Image (only visible on larger screens) */}
-                      <div className="hidden md:block w-48 h-full relative overflow-hidden">
-                        <img
-                          src={creator.banner_url || "/placeholder.svg"}
-                          alt={creator.username || "Creator"}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
+            <TabsContent value={activeTab} className="mt-6">
+              <div className="grid grid-cols-1 gap-4">
+                {filteredCreators.length > 0 ? (
+                  filteredCreators.map((creator) => (
+                    <Card key={creator.id}>
+                      <CardContent className="p-0">
+                        <div className="flex flex-col md:flex-row">
+                          {/* Cover Image (only visible on larger screens) */}
+                          <div className="hidden md:block w-48 h-full relative overflow-hidden">
+                            <img
+                              src={creator.banner_url || "/placeholder.svg"}
+                              alt={creator.username || "Creator"}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
 
-                      {/* Creator Info */}
-                      <div className="flex-1 p-4 md:p-6">
-                        <div className="flex items-start">
-                          <Avatar className="h-16 w-16 mr-4">
-                            <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
-                            <AvatarFallback className="text-xl">{(creator.username || "C").charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <h3 className="text-xl font-bold">{creator.username}</h3>
-                                {creator.isLive && <Badge variant="destructive">LIVE</Badge>}
+                          {/* Creator Info */}
+                          <div className="flex-1 p-4 md:p-6">
+                            <div className="flex items-start">
+                              <Avatar className="h-16 w-16 mr-4">
+                                <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
+                                <AvatarFallback className="text-xl">{(creator.username || "C").charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="text-xl font-bold">{creator.username}</h3>
+                                    {creator.isLive && <Badge variant="destructive">LIVE</Badge>}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {creator.tiers && creator.tiers[0] && (
+                                      <Badge className={getTierColor(creator.tiers[0].name)}>
+                                        {creator.tiers[0].name}
+                                      </Badge>
+                                    )}
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem>View Creator Page</DropdownMenuItem>
+                                        <DropdownMenuItem>Change Subscription Tier</DropdownMenuItem>
+                                        <DropdownMenuItem>Notification Settings</DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => unfollowCreator(creator.id)} className="text-destructive">Unfollow</DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                </div>
+                                <p className="text-muted-foreground text-sm mt-1">{creator.bio || "No bio available"}</p>
+                                <div className="flex flex-wrap gap-2 mt-3">
+                                  {creator.tags?.map((tag, index) => (
+                                    <Badge key={index} variant="outline">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                {creator.tiers && creator.tiers[0] && (
-                                  <Badge className={getTierColor(creator.tiers[0].name)}>
-                                    {creator.tiers[0].name}
-                                  </Badge>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between mt-4 pt-4 border-t">
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Users className="h-4 w-4" />
+                                  <span>{creator.subscribers?.toLocaleString() || '0'} subscribers</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Star className="h-4 w-4 text-yellow-500" />
+                                  <span>{creator.rating?.toFixed(1) || '0.0'}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Last post: {creator.lastPost || 'N/A'}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 mt-3 md:mt-0">
+                                {(creator.notifications || 0) > 0 && (
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <Bell className="h-4 w-4" />
+                                    {creator.notifications} New
+                                  </Button>
                                 )}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem>View Creator Page</DropdownMenuItem>
-                                    <DropdownMenuItem>Change Subscription Tier</DropdownMenuItem>
-                                    <DropdownMenuItem>Notification Settings</DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => unfollowCreator(creator.id)} className="text-destructive">Unfollow</DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`gap-2 ${creator.isFavorite ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
+                                  onClick={() => toggleFavorite(creator.id)}
+                                >
+                                  <Heart className={`h-4 w-4 ${creator.isFavorite ? 'fill-primary' : ''}`} />
+                                  {creator.isFavorite ? 'Favorited' : 'Favorite'}
+                                </Button>
+                                <Button variant="outline" size="sm" className="gap-2">
+                                  <MessageSquare className="h-4 w-4" />
+                                  Message
+                                </Button>
+                                <Button 
+                                  onClick={() => handleUnfollowCreator(creator.id)}
+                                  disabled={followLoading}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  {followLoading ? "Unfollowing..." : "Unfollow"}
+                                </Button>
                               </div>
                             </div>
-                            <p className="text-muted-foreground text-sm mt-1">{creator.bio || "No bio available"}</p>
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {creator.tags?.map((tag, index) => (
-                                <Badge key={index} variant="outline">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
                           </div>
                         </div>
-
-                        <div className="flex flex-wrap items-center justify-between mt-4 pt-4 border-t">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Users className="h-4 w-4" />
-                              <span>{creator.subscribers?.toLocaleString() || '0'} subscribers</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Star className="h-4 w-4 text-yellow-500" />
-                              <span>{creator.rating?.toFixed(1) || '0.0'}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4" />
-                              <span>Last post: {creator.lastPost || 'N/A'}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 mt-3 md:mt-0">
-                            {(creator.notifications || 0) > 0 && (
-                              <Button variant="outline" size="sm" className="gap-2">
-                                <Bell className="h-4 w-4" />
-                                {creator.notifications} New
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={`gap-2 ${creator.isFavorite ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
-                              onClick={() => toggleFavorite(creator.id)}
-                            >
-                              <Heart className={`h-4 w-4 ${creator.isFavorite ? 'fill-primary' : ''}`} />
-                              {creator.isFavorite ? 'Favorited' : 'Favorite'}
-                            </Button>
-                            <Button variant="outline" size="sm" className="gap-2">
-                              <MessageSquare className="h-4 w-4" />
-                              Message
-                            </Button>
-                            <Button 
-                              onClick={() => handleUnfollowCreator(creator.id)}
-                              disabled={followLoading}
-                              variant="destructive"
-                              size="sm"
-                            >
-                              {followLoading ? "Unfollowing..." : "Unfollow"}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-12">
-                <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-medium mb-2">No creators found</h3>
-                <p className="text-muted-foreground mb-6">
-                  {activeTab === "All"
-                    ? "You haven't followed any creators yet. Explore to find creators to follow!"
-                    : `You don't have any creators in the ${activeTab} category.`}
-                </p>
-                <Button>Explore Creators</Button>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-medium mb-2">No creators found</h3>
+                    <p className="text-muted-foreground mb-6">
+                      {activeTab === "All"
+                        ? "You haven't followed any creators yet. Explore to find creators to follow!"
+                        : `You don't have any creators in the ${activeTab} category.`}
+                    </p>
+                    <Button>Explore Creators</Button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {/* Suggestions Section */}
       <div className="mt-10">
