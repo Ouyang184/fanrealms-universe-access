@@ -229,6 +229,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          attachments: Json | null
           author_id: string
           content: string
           created_at: string
@@ -237,6 +238,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          attachments?: Json | null
           author_id: string
           content: string
           created_at?: string
@@ -245,6 +247,7 @@ export type Database = {
           title: string
         }
         Update: {
+          attachments?: Json | null
           author_id?: string
           content?: string
           created_at?: string

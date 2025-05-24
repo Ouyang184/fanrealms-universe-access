@@ -31,8 +31,8 @@ const profileSchema = z.object({
   username: z.string().min(1, { message: "Username is required" }),
   email: z.string().email().optional(),
   profile_picture: z.string().optional().nullable(),
-  website: z.string().url({ message: "Must be a valid URL" }).optional().nullable(),
-  bio: z.string().optional().nullable(),
+  website: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal("")),
+  bio: z.string().optional().or(z.literal("")),
   tags: z.array(z.string()).optional(),
 });
 
@@ -58,10 +58,10 @@ const ProfilePage: React.FC = () => {
       username: '',
       email: '',
       profile_picture: '',
-      website: null,
-      bio: null,
+      website: '',
+      bio: '',
       tags: [],
-    }
+    } satisfies ProfileFormValues
   });
 
   useEffect(() => {
@@ -73,14 +73,15 @@ const ProfilePage: React.FC = () => {
         
         // Reset form with profile data
         if (profile) {
-          form.reset({
+          const formData: ProfileFormValues = {
             username: profile.username || '',
             email: profile.email || '',
-            profile_picture: profile.profile_picture || null,
-            website: profile.website || null,
-            bio: profile.bio || null,
+            profile_picture: profile.profile_picture || '',
+            website: profile.website || '',
+            bio: profile.bio || '',
             tags: profile.tags || [],
-          });
+          };
+          form.reset(formData);
         }
         
         setLoading(false);
@@ -373,14 +374,15 @@ const ProfilePage: React.FC = () => {
                         onClick={() => {
                           setIsEditing(false);
                           clearSelectedImage();
-                          form.reset({
+                          const formData: ProfileFormValues = {
                             username: profileData?.username || '',
                             email: profileData?.email || '',
-                            profile_picture: profileData?.profile_picture || null,
-                            website: profileData?.website || null,
-                            bio: profileData?.bio || null,
+                            profile_picture: profileData?.profile_picture || '',
+                            website: profileData?.website || '',
+                            bio: profileData?.bio || '',
                             tags: profileData?.tags || [],
-                          });
+                          };
+                          form.reset(formData);
                         }}
                         disabled={isSubmitting}
                       >

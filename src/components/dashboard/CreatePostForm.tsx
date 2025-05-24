@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader } from "lucide-react";
 import { TierSelect } from "./TierSelect";
+import { FileAttachment, AttachmentFile } from "@/components/creator-studio/FileAttachment";
 
 export function CreatePostForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,9 +26,37 @@ export function CreatePostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const uploadFile = async (file: File, userId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('post-attachments')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('post-attachments')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: `Failed to upload ${file.name}. Please try again.`,
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +64,20 @@ export function CreatePostForm() {
     
     setIsLoading(true);
     try {
+      // Upload attachments
+      const uploadedAttachments = [];
+      for (const attachment of attachments) {
+        const url = await uploadFile(attachment.file, user.id);
+        if (url) {
+          uploadedAttachments.push({
+            url,
+            name: attachment.file.name,
+            type: attachment.type,
+            size: attachment.file.size
+          });
+        }
+      }
+
       const { error } = await supabase
         .from('posts')
         .insert([
@@ -42,7 +85,8 @@ export function CreatePostForm() {
             title,
             content,
             author_id: user.id,
-            tier_id: selectedTierId
+            tier_id: selectedTierId,
+            attachments: uploadedAttachments
           }
         ]);
 
@@ -57,6 +101,7 @@ export function CreatePostForm() {
       setTitle("");
       setContent("");
       setSelectedTierId(null);
+      setAttachments([]);
       setIsOpen(false);
       
       // Refresh posts list
@@ -79,7 +124,7 @@ export function CreatePostForm() {
       <DialogTrigger asChild>
         <Button>Create Post</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>
@@ -110,6 +155,13 @@ export function CreatePostForm() {
               className="min-h-[150px]"
             />
           </div>
+          
+          <FileAttachment
+            attachments={attachments}
+            onAttachmentsChange={setAttachments}
+            disabled={isLoading}
+          />
+          
           <div className="space-y-2">
             <Label htmlFor="tier">Visibility</Label>
             <TierSelect
