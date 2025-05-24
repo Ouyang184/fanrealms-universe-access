@@ -6,6 +6,7 @@ import { CreatorProfile } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { 
   cleanIdentifier,
+  findByCreatorId,
   findByUsername,
   findByUserId,
   findByDisplayName,
@@ -29,42 +30,41 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log(`Fetching creator profile for identifier: "${identifier}"`);
       
+      // Strategy 1: Try to find by creator.id first (most direct)
+      let creatorProfile = await findByCreatorId(identifier);
+      if (creatorProfile) {
+        console.log("Found creator by creator.id:", creatorProfile);
+        return creatorProfile;
+      }
+      
       // Try different lookup strategies in sequence
       const cleaned = cleanIdentifier(identifier);
       
-      // Strategy 1: Try to find by username
-      let creatorProfile = await findByUsername(cleaned);
+      // Strategy 2: Try to find by username
+      creatorProfile = await findByUsername(cleaned);
       if (creatorProfile) {
         console.log("Found creator by username:", creatorProfile);
-        // Make sure id is set (needed for social links)
-        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
         return creatorProfile;
       }
       
-      // Strategy 2: Try to find creator directly by user_id
+      // Strategy 3: Try to find creator directly by user_id
       creatorProfile = await findByUserId(cleaned);
       if (creatorProfile) {
         console.log("Found creator by user_id:", creatorProfile);
-        // Make sure id is set (needed for social links)
-        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
         return creatorProfile;
       }
       
-      // Strategy 3: Try to find by display_name
+      // Strategy 4: Try to find by display_name
       creatorProfile = await findByDisplayName(cleaned);
       if (creatorProfile) {
         console.log("Found creator by display_name:", creatorProfile);
-        // Make sure id is set (needed for social links)
-        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
         return creatorProfile;
       }
       
-      // Strategy 4: Try to find by abbreviated user ID
+      // Strategy 5: Try to find by abbreviated user ID
       creatorProfile = await findByAbbreviatedUserId(identifier);
       if (creatorProfile) {
         console.log("Found creator by abbreviated user ID:", creatorProfile);
-        // Make sure id is set (needed for social links)
-        creatorProfile.id = creatorProfile.id || creatorProfile.user_id;
         return creatorProfile;
       }
       

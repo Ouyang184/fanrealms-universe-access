@@ -9,7 +9,52 @@ export const cleanIdentifier = (identifier?: string): string | undefined => {
     : identifier;
 };
 
-// Strategy 1: Find by username
+// Strategy 1: Find by creator.id (primary key)
+export const findByCreatorId = async (identifier?: string) => {
+  if (!identifier) return null;
+  
+  console.log(`Looking up creator by creator.id: "${identifier}"`);
+  
+  const { data: creatorById, error: idError } = await supabase
+    .from('creators')
+    .select(`
+      *,
+      users!creators_user_id_fkey (
+        id,
+        username,
+        email,
+        profile_picture
+      )
+    `)
+    .eq('id', identifier)
+    .maybeSingle();
+    
+  if (creatorById && creatorById.users) {
+    console.log("Found creator by creator.id:", creatorById);
+    
+    // Create the display name once and use it for both properties
+    const displayNameValue = creatorById.display_name || creatorById.users.username;
+    
+    const creatorProfile = {
+      ...creatorById,
+      id: creatorById.id,      // Primary key from creators table
+      user_id: creatorById.user_id, // Keep user_id from auth
+      username: creatorById.users.username || `user-${creatorById.user_id.substring(0, 8)}`,
+      email: creatorById.users.email || "",
+      fullName: displayNameValue,
+      display_name: displayNameValue,
+      displayName: displayNameValue, // Add this required property
+      avatar_url: creatorById.users.profile_picture || null,
+      tags: creatorById.tags || []
+    };
+    
+    return creatorProfile as CreatorProfile;
+  }
+  
+  return null;
+};
+
+// Strategy 2: Find by username
 export const findByUsername = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
   
@@ -59,7 +104,7 @@ export const findByUsername = async (cleanedIdentifier?: string) => {
   return null;
 };
 
-// Strategy 2: Find by user_id
+// Strategy 3: Find by user_id
 export const findByUserId = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
   
@@ -104,7 +149,7 @@ export const findByUserId = async (cleanedIdentifier?: string) => {
   return null;
 };
 
-// Strategy 3: Find by display_name
+// Strategy 4: Find by display_name
 export const findByDisplayName = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
   
@@ -150,7 +195,7 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
   return null;
 };
 
-// Strategy 4: Find by shortened user_id (with "user-" prefix)
+// Strategy 5: Find by shortened user_id (with "user-" prefix)
 export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
   if (!originalIdentifier || !originalIdentifier.startsWith('user-')) return null;
   
