@@ -43,17 +43,13 @@ export const useStripeSubscription = () => {
   });
 
   // Create subscription
-  const { mutate: createSubscription } = useMutation({
+  const { mutateAsync: createSubscription } = useMutation({
     mutationFn: async ({ tierId, creatorId }: { tierId: string, creatorId: string }) => {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: { action: 'create_subscription', tierId, creatorId }
       });
 
       if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      // Return client secret for payment confirmation
       return data;
     },
     onError: (error) => {
