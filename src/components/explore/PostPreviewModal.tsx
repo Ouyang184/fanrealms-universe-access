@@ -26,10 +26,44 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
 
   // Enhanced attachment parsing to handle different data formats
   const parseAttachments = (attachments: any) => {
-    if (!attachments) return [];
+    console.log('Raw attachments received:', attachments);
+    console.log('Attachments type:', typeof attachments);
+    console.log('Attachments constructor:', attachments?.constructor?.name);
+    
+    if (!attachments) {
+      console.log('No attachments found');
+      return [];
+    }
+    
+    // Handle the specific case where attachments have _type and value properties
+    if (attachments && typeof attachments === 'object' && attachments._type !== undefined) {
+      console.log('Found _type structure:', attachments);
+      // If the value is "undefined" string or actual undefined, return empty array
+      if (attachments.value === "undefined" || attachments.value === undefined || attachments.value === null) {
+        console.log('Attachments value is undefined/null');
+        return [];
+      }
+      // Try to parse the value if it's a string
+      if (typeof attachments.value === 'string') {
+        try {
+          const parsed = JSON.parse(attachments.value);
+          console.log('Parsed attachments from value string:', parsed);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          console.log('Failed to parse attachments value as JSON:', error);
+          return [];
+        }
+      }
+      // If value is already an array, return it
+      if (Array.isArray(attachments.value)) {
+        console.log('Attachments value is array:', attachments.value);
+        return attachments.value;
+      }
+    }
     
     // If it's already an array, return it
     if (Array.isArray(attachments)) {
+      console.log('Attachments is array:', attachments);
       return attachments;
     }
     
@@ -37,6 +71,7 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
     if (typeof attachments === 'string') {
       try {
         const parsed = JSON.parse(attachments);
+        console.log('Parsed attachments from string:', parsed);
         return Array.isArray(parsed) ? parsed : [];
       } catch (error) {
         console.log('Failed to parse attachments JSON:', error);
@@ -44,11 +79,13 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
       }
     }
     
-    // If it's an object, wrap it in an array
+    // If it's an object (but not the _type structure), wrap it in an array
     if (typeof attachments === 'object') {
+      console.log('Wrapping object in array:', attachments);
       return [attachments];
     }
     
+    console.log('No valid attachment format found, returning empty array');
     return [];
   };
 
@@ -56,6 +93,7 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
   
   console.log('Post attachments raw:', post.attachments);
   console.log('Post attachments parsed:', parsedAttachments);
+  console.log('Final parsed attachments count:', parsedAttachments.length);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,7 +127,21 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
         {/* Display attachments with proper scaling */}
         {parsedAttachments.length > 0 && (
           <div className="my-6">
+            <h4 className="text-sm font-medium mb-3 text-muted-foreground">
+              Attachments ({parsedAttachments.length})
+            </h4>
             <PostAttachments attachments={parsedAttachments} />
+          </div>
+        )}
+
+        {/* Debug information for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="my-4 p-3 bg-gray-100 rounded text-xs">
+            <strong>Debug Info:</strong>
+            <pre className="mt-1 whitespace-pre-wrap">
+              Raw: {JSON.stringify(post.attachments, null, 2)}
+              Parsed: {JSON.stringify(parsedAttachments, null, 2)}
+            </pre>
           </div>
         )}
 
