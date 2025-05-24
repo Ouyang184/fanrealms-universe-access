@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader } from "lucide-react";
+import { Loader, Globe, Lock } from "lucide-react";
 import { TierSelect } from "@/components/dashboard/TierSelect";
 import { FileAttachment, AttachmentFile } from "./FileAttachment";
 
@@ -90,9 +90,10 @@ export function CreatePostForm() {
 
       if (error) throw error;
 
+      const postType = selectedTierId ? "premium" : "public";
       toast({
         title: "Post created",
-        description: "Your post has been published successfully.",
+        description: `Your ${postType} post has been published successfully.`,
       });
 
       // Reset form and close dialog
@@ -126,10 +127,10 @@ export function CreatePostForm() {
         <DialogHeader>
           <DialogTitle>Create New Post</DialogTitle>
           <DialogDescription>
-            Share your thoughts, ideas, or content with your followers.
+            Share your thoughts, ideas, or content with your followers. Choose who can see your post.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
@@ -141,6 +142,7 @@ export function CreatePostForm() {
               disabled={isLoading}
             />
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
             <Textarea
@@ -161,14 +163,15 @@ export function CreatePostForm() {
           />
           
           <div className="space-y-2">
-            <Label htmlFor="tier">Visibility</Label>
+            <Label>Post Visibility</Label>
             <TierSelect
               onSelect={setSelectedTierId}
               value={selectedTierId}
               disabled={isLoading}
             />
           </div>
-          <div className="flex justify-end gap-3">
+          
+          <div className="flex justify-end gap-3 pt-4 border-t">
             <Button 
               type="button" 
               variant="outline" 
@@ -177,14 +180,21 @@ export function CreatePostForm() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="min-w-[120px]">
               {isLoading ? (
                 <>
                   <Loader className="mr-2 h-4 w-4 animate-spin" />
                   Publishing...
                 </>
               ) : (
-                "Publish Post"
+                <>
+                  {selectedTierId ? (
+                    <Lock className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Globe className="mr-2 h-4 w-4" />
+                  )}
+                  Publish {selectedTierId ? "Premium" : "Public"} Post
+                </>
               )}
             </Button>
           </div>
