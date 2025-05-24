@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      creator_earnings: {
+        Row: {
+          amount: number
+          created_at: string | null
+          creator_id: string
+          id: string
+          net_amount: number
+          payment_date: string | null
+          platform_fee: number
+          stripe_transfer_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          net_amount: number
+          payment_date?: string | null
+          platform_fee: number
+          stripe_transfer_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          net_amount?: number
+          payment_date?: string | null
+          platform_fee?: number
+          stripe_transfer_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_earnings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "creator_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_links: {
         Row: {
           created_at: string | null
@@ -44,6 +95,72 @@ export type Database = {
           },
         ]
       }
+      creator_subscriptions: {
+        Row: {
+          amount_paid: number | null
+          created_at: string | null
+          creator_earnings: number | null
+          creator_id: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          platform_fee: number | null
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string | null
+          creator_earnings?: number | null
+          creator_id: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          platform_fee?: number | null
+          status?: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          tier_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string | null
+          creator_earnings?: number | null
+          creator_id?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          platform_fee?: number | null
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          tier_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           banner_url: string | null
@@ -52,6 +169,10 @@ export type Database = {
           display_name: string | null
           id: string
           profile_image_url: string | null
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
           tags: string[] | null
           user_id: string
           website: string | null
@@ -63,6 +184,10 @@ export type Database = {
           display_name?: string | null
           id?: string
           profile_image_url?: string | null
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
           user_id: string
           website?: string | null
@@ -74,6 +199,10 @@ export type Database = {
           display_name?: string | null
           id?: string
           profile_image_url?: string | null
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
           user_id?: string
           website?: string | null
@@ -134,6 +263,7 @@ export type Database = {
           description: string
           id: string
           price: number
+          stripe_price_id: string | null
           title: string
         }
         Insert: {
@@ -142,6 +272,7 @@ export type Database = {
           description: string
           id?: string
           price: number
+          stripe_price_id?: string | null
           title: string
         }
         Update: {
@@ -150,6 +281,7 @@ export type Database = {
           description?: string
           id?: string
           price?: number
+          stripe_price_id?: string | null
           title?: string
         }
         Relationships: [
@@ -271,6 +403,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_customers: {
+        Row: {
+          created_at: string | null
+          id: string
+          stripe_customer_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       subscriptions: {
         Row: {

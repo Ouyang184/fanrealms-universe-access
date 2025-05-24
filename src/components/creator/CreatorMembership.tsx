@@ -1,17 +1,20 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreatorProfile } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { SubscribeButton } from "./SubscribeButton";
 
 interface CreatorMembershipProps {
   creator: CreatorProfile;
 }
 
 export function CreatorMembership({ creator }: CreatorMembershipProps) {
+  const { user } = useAuth();
+
   // Fetch membership tiers for this creator
   const { data: tiers = [], isLoading } = useQuery({
     queryKey: ['creatorMembershipTiers', creator.id],
@@ -32,9 +35,10 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       // Count subscribers for each tier
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         const { count } = await supabase
-          .from('subscriptions')
+          .from('creator_subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id);
+          .eq('tier_id', tier.id)
+          .eq('status', 'active');
           
         return {
           id: tier.id,
@@ -51,6 +55,25 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     enabled: !!creator.id
   });
 
+  // Check user's current subscriptions to this creator
+  const { data: userSubscriptions = [] } = useQuery({
+    queryKey: ['userCreatorSubscriptions', user?.id, creator.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('creator_subscriptions')
+        .select('tier_id, status')
+        .eq('user_id', user.id)
+        .eq('creator_id', creator.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id && !!creator.id
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -58,6 +81,10 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       </div>
     );
   }
+
+  const isSubscribedToTier = (tierId: string) => {
+    return userSubscriptions.some(sub => sub.tier_id === tierId);
+  };
 
   return (
     <div className="text-center p-8">
@@ -87,9 +114,15 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
                 </ul>
               </div>
               
-              <Button className="w-full mt-4" variant="default">
-                Subscribe
-              </Button>
+              <div className="mt-4">
+                <SubscribeButton
+                  tierId={tier.id}
+                  creatorId={creator.id}
+                  tierName={tier.name}
+                  price={tier.price}
+                  isSubscribed={isSubscribedToTier(tier.id)}
+                />
+              </div>
             </div>
           ))}
         </div>
