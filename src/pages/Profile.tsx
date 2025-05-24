@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useToast } from '@/hooks/use-toast';
@@ -17,12 +19,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { X, Upload } from 'lucide-react';
 
+const AVAILABLE_TAGS = [
+  "Gaming", "Art", "Music", "Writing", "Photography", "Education",
+  "Fitness", "Cooking", "Technology", "Travel", "Fashion", "Design", 
+  "Podcasting", "Comedy", "Film", "Dance", "Science", "Finance", 
+  "Business", "Crafts", "Beauty", "Health", "Lifestyle", "Sports",
+  "News", "Politics", "History", "Nature", "Automotive", "Real Estate"
+];
+
 // Form validation schema
 const profileSchema = z.object({
   username: z.string().min(1, { message: "Username is required" }),
   email: z.string().email().optional(),
   profile_picture: z.string().optional().nullable(),
   website: z.string().url({ message: "Must be a valid URL" }).optional().nullable(),
+  bio: z.string().optional().nullable(),
+  tags: z.array(z.string()).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -36,6 +48,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string>("");
   const { fetchUserProfile, updateProfile, uploadProfileImage } = useProfile();
   const { toast } = useToast();
 
@@ -47,6 +60,8 @@ const ProfilePage: React.FC = () => {
       email: '',
       profile_picture: '',
       website: null,
+      bio: null,
+      tags: [],
     }
   });
 
@@ -64,6 +79,8 @@ const ProfilePage: React.FC = () => {
             email: profile.email || '',
             profile_picture: profile.profile_picture || null,
             website: profile.website || null,
+            bio: profile.bio || null,
+            tags: profile.tags || [],
           });
         }
         
@@ -104,6 +121,22 @@ const ProfilePage: React.FC = () => {
     setPreviewUrl(null);
   };
 
+  const handleTagAdd = (tag: string) => {
+    if (!tag) return;
+    
+    const currentTags = form.getValues('tags') || [];
+    if (currentTags.includes(tag)) return;
+    
+    form.setValue('tags', [...currentTags, tag]);
+    setSelectedTag("");
+  };
+
+  const removeTag = (tag: string) => {
+    const currentTags = form.getValues('tags') || [];
+    const updatedTags = currentTags.filter(t => t !== tag);
+    form.setValue('tags', updatedTags);
+  };
+
   const onSubmit = async (formData: ProfileFormValues) => {
     if (!user?.id) return;
     
@@ -125,6 +158,8 @@ const ProfilePage: React.FC = () => {
         username: formData.username,
         profile_picture: imageUrl,
         website: formData.website,
+        bio: formData.bio,
+        tags: formData.tags,
       };
       
       // Update profile
@@ -153,6 +188,10 @@ const ProfilePage: React.FC = () => {
       </MainLayout>
     );
   }
+
+  // Get available tags for dropdown (exclude already selected ones)
+  const currentTags = form.watch('tags') || [];
+  const availableOptions = AVAILABLE_TAGS.filter(tag => !currentTags.includes(tag));
 
   return (
     <AuthGuard>
@@ -245,6 +284,70 @@ const ProfilePage: React.FC = () => {
                         </div>
                       </div>
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bio</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              rows={4}
+                              placeholder="Tell others about yourself..."
+                              {...field}
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid gap-2">
+                      <FormLabel htmlFor="tags">Content Tags</FormLabel>
+                      <div className="space-y-3">
+                        <Select value={selectedTag} onValueChange={handleTagAdd}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a content tag to add..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background border shadow-lg max-h-64 overflow-y-auto z-50">
+                            {availableOptions.map((tag) => (
+                              <SelectItem key={tag} value={tag} className="cursor-pointer hover:bg-accent">
+                                {tag}
+                              </SelectItem>
+                            ))}
+                            {availableOptions.length === 0 && (
+                              <SelectItem value="" disabled className="text-muted-foreground">
+                                All available tags have been selected
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Display selected tags */}
+                        {currentTags && currentTags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {currentTags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="px-3 py-1 flex items-center gap-2">
+                                {tag}
+                                <button 
+                                  type="button" 
+                                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 focus:outline-none" 
+                                  onClick={() => removeTag(tag)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Select tags that describe your content. This helps others discover your profile. You have selected {currentTags?.length || 0} tag{currentTags?.length !== 1 ? 's' : ''}.
+                        </p>
+                      </div>
+                    </div>
                     
                     <FormField
                       control={form.control}
@@ -276,6 +379,8 @@ const ProfilePage: React.FC = () => {
                             email: profileData?.email || '',
                             profile_picture: profileData?.profile_picture || null,
                             website: profileData?.website || null,
+                            bio: profileData?.bio || null,
+                            tags: profileData?.tags || [],
                           });
                         }}
                         disabled={isSubmitting}
@@ -316,6 +421,28 @@ const ProfilePage: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  {profileData?.bio && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Bio</h4>
+                      <p className="text-muted-foreground">{profileData.bio}</p>
+                    </div>
+                  )}
+
+                  {/* Content Tags Section */}
+                  {profileData?.tags && profileData.tags.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-3">Content Tags</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {profileData.tags.map((tag: string) => (
+                          <Badge key={tag} variant="secondary" className="px-3 py-1">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid gap-3">
                     <div>
                       <h4 className="text-sm font-medium">Email</h4>
