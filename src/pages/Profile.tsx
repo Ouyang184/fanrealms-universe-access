@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,7 +35,7 @@ const ProfilePage: React.FC = () => {
   const { fetchUserProfile, updateProfile, uploadProfileImage } = useProfile();
   const { toast } = useToast();
 
-  // Initialize form with explicit ProfileFormValues type
+  // Initialize form with explicit ProfileFormValues type and proper defaults
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -58,6 +57,7 @@ const ProfilePage: React.FC = () => {
         setProfileData(profile);
         
         if (profile) {
+          // Reset form with proper typing
           form.reset({
             username: profile.username || '',
             email: profile.email || '',
@@ -133,6 +133,7 @@ const ProfilePage: React.FC = () => {
   const handleCancel = () => {
     setIsEditing(false);
     clearSelectedImage();
+    // Reset form with proper typing
     form.reset({
       username: profileData?.username || '',
       email: profileData?.email || '',
