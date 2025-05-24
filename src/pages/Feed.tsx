@@ -1,14 +1,18 @@
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { FeedFilters } from "@/components/feed/FeedFilters";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
+import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { useSubscriptions } from "@/hooks/useSubscriptions";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
+import { Post } from "@/types";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -21,6 +25,36 @@ export default function FeedPage() {
   
   // Fetch posts
   const { data: posts, isLoading: loadingPosts } = usePosts();
+  
+  // State for tracking read posts and preview modal
+  const [readPosts, setReadPosts] = useState<Set<string>>(new Set());
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  // Load read posts from localStorage on component mount
+  useEffect(() => {
+    const savedReadPosts = localStorage.getItem('readPosts');
+    if (savedReadPosts) {
+      setReadPosts(new Set(JSON.parse(savedReadPosts)));
+    }
+  }, []);
+  
+  // Save read posts to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
+  }, [readPosts]);
+  
+  // Mark a post as read
+  const markPostAsRead = (postId: string) => {
+    setReadPosts(prev => new Set([...prev, postId]));
+  };
+  
+  // Handle post preview
+  const handlePostPreview = (post: Post) => {
+    setSelectedPost(post);
+    setIsPreviewOpen(true);
+    markPostAsRead(post.id);
+  };
   
   // If still loading subscriptions or posts, show loading state
   if (loadingSubscriptions || loadingPosts) {
@@ -77,8 +111,9 @@ export default function FeedPage() {
   
   console.log('Filtered followed posts:', followedPosts);
   
-  // Count unread posts (for demo purposes, assume 3 are unread)
-  const unreadCount = Math.min(followedPosts.length, 3);
+  // Calculate unread posts based on what user hasn't seen
+  const unreadPosts = followedPosts.filter(post => !readPosts.has(post.id));
+  const unreadCount = unreadPosts.length;
 
   // Check if there are any posts
   const hasPosts = followedPosts.length > 0;
@@ -105,7 +140,9 @@ export default function FeedPage() {
               </TabsTrigger>
               <TabsTrigger value="unread">
                 Unread
-                <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCount}</Badge>
+                {unreadCount > 0 && (
+                  <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCount}</Badge>
+                )}
               </TabsTrigger>
               <TabsTrigger value="saved">
                 Saved
@@ -121,17 +158,33 @@ export default function FeedPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {followedPosts.map((post) => (
-                    <PostCard 
-                      key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      content={post.content}
-                      authorName={post.authorName}
-                      authorAvatar={post.authorAvatar}
-                      date={post.date}
-                      createdAt={post.createdAt}
-                      tier_id={post.tier_id}
-                    />
+                    <div key={post.id} className="relative">
+                      <PostCard 
+                        id={post.id}
+                        title={post.title}
+                        content={post.content}
+                        authorName={post.authorName}
+                        authorAvatar={post.authorAvatar}
+                        date={post.date}
+                        createdAt={post.createdAt}
+                        tier_id={post.tier_id}
+                      />
+                      <div className="absolute top-4 right-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePostPreview(post)}
+                          className="bg-white/90 hover:bg-white"
+                        >
+                          Preview
+                        </Button>
+                      </div>
+                      {!readPosts.has(post.id) && (
+                        <div className="absolute top-4 left-4">
+                          <Badge className="bg-blue-500 text-white">New</Badge>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
@@ -141,18 +194,32 @@ export default function FeedPage() {
             <TabsContent value="unread" className="mt-6 space-y-6">
               {unreadCount > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {followedPosts.slice(0, unreadCount).map((post) => (
-                    <PostCard 
-                      key={post.id}
-                      id={post.id}
-                      title={post.title}
-                      content={post.content}
-                      authorName={post.authorName}
-                      authorAvatar={post.authorAvatar}
-                      date={post.date}
-                      createdAt={post.createdAt}
-                      tier_id={post.tier_id}
-                    />
+                  {unreadPosts.map((post) => (
+                    <div key={post.id} className="relative">
+                      <PostCard 
+                        id={post.id}
+                        title={post.title}
+                        content={post.content}
+                        authorName={post.authorName}
+                        authorAvatar={post.authorAvatar}
+                        date={post.date}
+                        createdAt={post.createdAt}
+                        tier_id={post.tier_id}
+                      />
+                      <div className="absolute top-4 right-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePostPreview(post)}
+                          className="bg-white/90 hover:bg-white"
+                        >
+                          Preview
+                        </Button>
+                      </div>
+                      <div className="absolute top-4 left-4">
+                        <Badge className="bg-blue-500 text-white">New</Badge>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -169,6 +236,13 @@ export default function FeedPage() {
           </Tabs>
         </div>
       </div>
+      
+      {/* Post Preview Modal */}
+      <PostPreviewModal
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        post={selectedPost}
+      />
     </MainLayout>
   );
 }
