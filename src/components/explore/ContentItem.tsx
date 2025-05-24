@@ -66,7 +66,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
     }
   };
   
-  // Generate thumbnail for post
+  // Generate thumbnail for post with proper sizing
   const getPostThumbnail = (post: Post) => {
     const firstMedia = getFirstMedia(post.attachments);
     
@@ -101,7 +101,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
 
-  // Fix metadata display using correct Post type properties
+  // Use real metadata from post
   const authorName = post.authorName || "Unknown Creator";
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
 
@@ -109,13 +109,14 @@ export function ContentItem({ post, type }: ContentItemProps) {
     <>
       <Card className="bg-gray-900 border-gray-800 overflow-hidden">
         <div className="relative">
-          {/* Visual media thumbnail */}
+          {/* Visual media thumbnail with proper aspect ratio */}
           {hasVisualMedia && thumbnail && (
             <div className="relative w-full h-40">
               <img
                 src={thumbnail}
                 alt={post.title}
                 className="w-full h-full object-cover"
+                style={{ aspectRatio: '16/9' }}
                 onError={(e) => {
                   // Fallback if image fails to load
                   e.currentTarget.style.display = 'none';
@@ -132,7 +133,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
             </div>
           )}
           
-          {/* File attachment display (for non-visual files) */}
+          {/* File attachment display with real filename */}
           {hasFileAttachment && !hasVisualMedia && (
             <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
               <div className="text-center">
@@ -195,23 +196,10 @@ export function ContentItem({ post, type }: ContentItemProps) {
           </div>
           <h3 className="font-semibold line-clamp-2">{post.title}</h3>
           <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-            {type === 'trending' ? (
-              <>
-                <div className="flex items-center gap-1">
-                  <Eye className="h-3 w-3" />
-                  {Math.floor(Math.random() * 10000) + 500}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Heart className="h-3 w-3" />
-                  {Math.floor(Math.random() * 1000) + 50}
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {displayDate}
-              </div>
-            )}
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {displayDate}
+            </div>
             <Badge className="ml-auto bg-purple-600">{post.tier_id ? "Premium" : "Free"}</Badge>
           </div>
         </CardContent>

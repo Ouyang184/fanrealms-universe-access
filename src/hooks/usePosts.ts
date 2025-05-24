@@ -33,7 +33,8 @@ export const usePosts = () => {
         authorAvatar: post.users?.profile_picture || null,
         createdAt: post.created_at,
         date: formatRelativeDate(post.created_at),
-        tier_id: post.tier_id
+        tier_id: post.tier_id,
+        attachments: post.attachments // Include the actual attachments data
       }));
     }
   });

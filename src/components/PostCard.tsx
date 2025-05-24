@@ -68,7 +68,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
   const firstMedia = getFirstMedia(attachments);
   
-  // Fix metadata display
+  // Use real metadata
   const displayAuthorName = authorName || users?.username || "Unknown Creator";
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
@@ -115,7 +115,7 @@ const PostCard: React.FC<PostCardProps> = ({
           <h3 className="text-lg font-semibold leading-tight">{title}</h3>
           <p className="text-muted-foreground leading-relaxed">{content}</p>
           
-          {/* Display media thumbnail if available */}
+          {/* Display media thumbnail with proper sizing */}
           {firstMedia && (
             <div className="relative">
               {firstMedia.type === 'image' && (
@@ -124,6 +124,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     src={firstMedia.url}
                     alt={firstMedia.name || "Media thumbnail"}
                     className="w-full h-full object-cover"
+                    style={{ aspectRatio: '1/1' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
@@ -137,6 +138,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     src={firstMedia.url}
                     alt={firstMedia.name || "Video thumbnail"}
                     className="w-full h-full object-cover"
+                    style={{ aspectRatio: '1/1' }}
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
