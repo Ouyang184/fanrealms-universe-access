@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -101,18 +102,19 @@ export default function FeedPage() {
     );
   }
 
-  // Get the creator IDs from followed creators
-  const followedCreatorIds = followedCreators.map(creator => creator.id).filter(Boolean);
+  // Get the creator user IDs from followed creators (this is the key fix)
+  const followedCreatorUserIds = followedCreators.map(creator => creator.user_id).filter(Boolean);
   
-  console.log('Followed creator IDs:', followedCreatorIds);
+  console.log('Followed creators:', followedCreators);
+  console.log('Followed creator user IDs:', followedCreatorUserIds);
   console.log('All posts:', posts);
   console.log('Read posts from state:', Array.from(readPosts));
   
-  // Filter posts by matching the post's author_id with creators the user follows
+  // Filter posts by matching the post's authorId with the user_id of followed creators
   const followedPosts = posts?.filter(post => {
-    // Check if the post author_id matches any of the followed creator user_ids
-    const isFromFollowedCreator = followedCreatorIds.includes(post.authorId);
-    console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against followed creators: ${isFromFollowedCreator ? 'MATCH' : 'NO MATCH'}`);
+    // Check if the post authorId matches any of the followed creator user_ids
+    const isFromFollowedCreator = followedCreatorUserIds.includes(post.authorId);
+    console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against followed creator user IDs: ${isFromFollowedCreator ? 'MATCH' : 'NO MATCH'}`);
     return isFromFollowedCreator;
   }) || [];
   
@@ -164,6 +166,9 @@ export default function FeedPage() {
               {!hasPosts ? (
                 <div className="text-center py-10">
                   <p className="text-muted-foreground">No posts from creators you follow yet.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Posts will appear here when creators you follow publish new content.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -183,7 +188,7 @@ export default function FeedPage() {
                         <Button
                           size="sm"
                           onClick={() => handlePostPreview(post)}
-                          className="bg-purple-600 hover:bg-purple-700 text-black"
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
                         >
                           Preview
                         </Button>
@@ -219,7 +224,7 @@ export default function FeedPage() {
                         <Button
                           size="sm"
                           onClick={() => handlePostPreview(post)}
-                          className="bg-purple-600 hover:bg-purple-700 text-black"
+                          className="bg-purple-600 hover:bg-purple-700 text-white"
                         >
                           Preview
                         </Button>
@@ -233,6 +238,9 @@ export default function FeedPage() {
               ) : (
                 <div className="text-center py-10">
                   <p className="text-muted-foreground">No unread posts from creators you follow.</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Check back later or explore new creators to follow.
+                  </p>
                 </div>
               )}
             </TabsContent>
