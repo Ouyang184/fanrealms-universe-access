@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { PostAttachments } from "@/components/PostAttachments";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { Post } from "@/types";
 
@@ -76,22 +75,15 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
 
   const parsedAttachments = parseAttachments(post.attachments);
   
-  // Normalize attachments to match PostAttachments component expectations
-  const normalizedAttachments = parsedAttachments.map(att => {
-    // Ensure each attachment has the required properties
-    if (att && typeof att === 'object') {
-      return {
-        url: att.url || att.file_path || '',
-        name: att.name || att.filename || att.file_name || 'Unknown file',
-        type: att.type || att.file_type || (att.name && att.name.includes('.pdf') ? 'pdf' : att.name && (att.name.includes('.jpg') || att.name.includes('.png') || att.name.includes('.jpeg') || att.name.includes('.gif')) ? 'image' : att.name && (att.name.includes('.mp4') || att.name.includes('.mov') || att.name.includes('.avi')) ? 'video' : 'pdf'),
-        size: att.size || att.file_size || 0
-      };
-    }
-    return null;
-  }).filter(att => att && att.url && att.name); // Only keep valid attachments
+  // Separate images and videos
+  const images = parsedAttachments.filter(att => 
+    att && att.type === 'image' && att.url
+  );
+  const videos = parsedAttachments.filter(att => 
+    att && att.type === 'video' && att.url
+  );
   
-  // Only show attachments if we have valid normalized attachment data
-  const hasValidAttachments = normalizedAttachments.length > 0;
+  const hasMedia = images.length > 0 || videos.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,13 +114,79 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
           </DialogDescription>
         </DialogHeader>
 
-        {/* Display attachments only if we have valid attachment data */}
-        {hasValidAttachments && (
-          <div className="my-6">
-            <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-              Attachments ({normalizedAttachments.length})
-            </h4>
-            <PostAttachments attachments={normalizedAttachments} />
+        {/* Display media attachments */}
+        {hasMedia && (
+          <div className="my-6 space-y-4">
+            {/* Images */}
+            {images.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Images ({images.length})
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image.url}
+                        alt={image.name || `Image ${index + 1}`}
+                        className="w-full max-h-80 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(image.url, '_blank')}
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(image.url, '_blank');
+                          }}
+                          className="bg-white/90 hover:bg-white"
+                        >
+                          View Full Size
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Videos */}
+            {videos.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Videos ({videos.length})
+                </h4>
+                <div className="space-y-3">
+                  {videos.map((video, index) => (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      <video
+                        controls
+                        className="w-full max-h-96"
+                        preload="metadata"
+                      >
+                        <source src={video.url} type="video/mp4" />
+                        <source src={video.url} type="video/webm" />
+                        <source src={video.url} type="video/ogg" />
+                        Your browser does not support the video tag.
+                      </video>
+                      <div className="p-3 bg-muted/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate">
+                            {video.name || `Video ${index + 1}`}
+                          </span>
+                          {video.size && (
+                            <Badge variant="secondary" className="text-xs">
+                              {(video.size / (1024 * 1024)).toFixed(1)} MB
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -136,8 +194,10 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
           <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
               {post.tier_id ? 'Premium content' : 'Free content'}
-              {hasValidAttachments && (
-                <span className="ml-2">• {normalizedAttachments.length} attachment{normalizedAttachments.length !== 1 ? 's' : ''}</span>
+              {hasMedia && (
+                <span className="ml-2">
+                  • {images.length + videos.length} attachment{images.length + videos.length !== 1 ? 's' : ''}
+                </span>
               )}
             </div>
             <div className="flex gap-2">
