@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,8 +66,8 @@ export default function FeedPage() {
   const followedPosts = posts?.filter(post => {
     // Check if any of the followed creators has this post author as their user_id
     const isFromFollowedCreator = subscriptions.some(sub => {
-      // Compare post author_id with creator's user_id
-      const creatorUserId = sub.creator?.user_id || sub.creator?.users?.id;
+      // Compare post author_id with creator's user_id (use the creator's user_id, not the users table id)
+      const creatorUserId = sub.creator?.user_id;
       const isMatch = creatorUserId === post.authorId;
       console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against creator ${creatorUserId}: ${isMatch ? 'MATCH' : 'NO MATCH'}`);
       return isMatch;
