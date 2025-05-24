@@ -31,7 +31,20 @@ export default function CreatorStudioSettings() {
   };
 
   const handleImageUpload = (type: 'avatar') => {
-    uploadProfileImage(type);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        try {
+          await uploadProfileImage(file);
+        } catch (error) {
+          console.error('Error uploading image:', error);
+        }
+      }
+    };
+    input.click();
   };
 
   const handleBannerUpdate = (bannerUrl: string) => {
