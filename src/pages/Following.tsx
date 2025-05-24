@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -248,7 +247,7 @@ function FollowingPageContent() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Users className="h-4 w-4" />
-                          <span>{creator.subscribers?.toLocaleString() || '0'} followers</span>
+                          <span>{(creator.followers_count || creator.subscribers || 0).toLocaleString()} followers</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Star className="h-4 w-4 text-yellow-500" />
@@ -332,7 +331,7 @@ function FollowingPageContent() {
                         <Badge variant="outline" className="text-xs">
                           {creator.category}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">{creator.subscribers?.toLocaleString()} followers</span>
+                        <span className="text-xs text-muted-foreground">{(creator.followers_count || creator.subscribers || 0).toLocaleString()} followers</span>
                       </div>
                     </div>
                   </div>

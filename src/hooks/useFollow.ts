@@ -52,6 +52,22 @@ export function useFollow() {
     
     setIsLoading(true);
     
+    // Optimistically update the UI by incrementing follower count
+    queryClient.setQueryData(["creators"], (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((creator: any) => 
+        creator.id === creatorId 
+          ? { ...creator, followers_count: (creator.followers_count || 0) + 1 }
+          : creator
+      );
+    });
+
+    // Update creator profile data if it exists
+    queryClient.setQueryData(["creatorProfile", creatorId], (oldData: any) => {
+      if (!oldData) return oldData;
+      return { ...oldData, followers_count: (oldData.followers_count || 0) + 1 };
+    });
+    
     try {
       const { error } = await supabase
         .from("subscriptions")
@@ -68,6 +84,19 @@ export function useFollow() {
             description: "You're already following this creator",
           });
           setIsFollowing(true);
+          // Revert optimistic update
+          queryClient.setQueryData(["creators"], (oldData: any) => {
+            if (!oldData) return oldData;
+            return oldData.map((creator: any) => 
+              creator.id === creatorId 
+                ? { ...creator, followers_count: Math.max((creator.followers_count || 1) - 1, 0) }
+                : creator
+            );
+          });
+          queryClient.setQueryData(["creatorProfile", creatorId], (oldData: any) => {
+            if (!oldData) return oldData;
+            return { ...oldData, followers_count: Math.max((oldData.followers_count || 1) - 1, 0) };
+          });
         } else {
           throw error;
         }
@@ -85,6 +114,20 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["posts"] });
       }
     } catch (error: any) {
+      // Revert optimistic update on error
+      queryClient.setQueryData(["creators"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((creator: any) => 
+          creator.id === creatorId 
+            ? { ...creator, followers_count: Math.max((creator.followers_count || 1) - 1, 0) }
+            : creator
+        );
+      });
+      queryClient.setQueryData(["creatorProfile", creatorId], (oldData: any) => {
+        if (!oldData) return oldData;
+        return { ...oldData, followers_count: Math.max((oldData.followers_count || 1) - 1, 0) };
+      });
+      
       toast({
         title: "Error",
         description: error.message || "Failed to follow creator",
@@ -103,6 +146,22 @@ export function useFollow() {
     if (isLoading) return;
     
     setIsLoading(true);
+    
+    // Optimistically update the UI by decrementing follower count
+    queryClient.setQueryData(["creators"], (oldData: any) => {
+      if (!oldData) return oldData;
+      return oldData.map((creator: any) => 
+        creator.id === creatorId 
+          ? { ...creator, followers_count: Math.max((creator.followers_count || 1) - 1, 0) }
+          : creator
+      );
+    });
+
+    // Update creator profile data if it exists
+    queryClient.setQueryData(["creatorProfile", creatorId], (oldData: any) => {
+      if (!oldData) return oldData;
+      return { ...oldData, followers_count: Math.max((oldData.followers_count || 1) - 1, 0) };
+    });
     
     try {
       const { error } = await supabase
@@ -125,6 +184,20 @@ export function useFollow() {
       queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
       queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (error: any) {
+      // Revert optimistic update on error
+      queryClient.setQueryData(["creators"], (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((creator: any) => 
+          creator.id === creatorId 
+            ? { ...creator, followers_count: (creator.followers_count || 0) + 1 }
+            : creator
+        );
+      });
+      queryClient.setQueryData(["creatorProfile", creatorId], (oldData: any) => {
+        if (!oldData) return oldData;
+        return { ...oldData, followers_count: (oldData.followers_count || 0) + 1 };
+      });
+      
       toast({
         title: "Error",
         description: error.message || "Failed to unfollow creator",
