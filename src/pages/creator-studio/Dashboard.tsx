@@ -69,6 +69,20 @@ export default function Dashboard() {
     })
     .slice(0, 3); // Limit to 3 items total
 
+  // Helper function to get post thumbnail
+  const getPostThumbnail = (post: any) => {
+    // Check if there are image attachments
+    if (post.attachments && Array.isArray(post.attachments)) {
+      const imageAttachment = post.attachments.find(
+        (attachment: any) => attachment.type === 'image'
+      );
+      if (imageAttachment) {
+        return imageAttachment.url;
+      }
+    }
+    return `/placeholder.svg?seed=${post.id}`;
+  };
+
   return (
     <CreatorCheck>
       <div className="max-w-7xl mx-auto">
@@ -184,7 +198,7 @@ export default function Dashboard() {
                       <div key={post.id} className="flex gap-4 p-3 rounded-lg border bg-muted/20">
                         <div className="relative w-24 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
                           <img
-                            src={post.image || `/placeholder.svg?seed=${post.id}`}
+                            src={getPostThumbnail(post)}
                             alt={post.title}
                             className="w-full h-full object-cover"
                           />

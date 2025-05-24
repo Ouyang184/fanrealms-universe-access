@@ -25,9 +25,18 @@ export function ContentItem({ post, type }: ContentItemProps) {
     }
   };
   
-  // Generate a thumbnail for a post
+  // Generate a thumbnail for a post - use first image attachment or placeholder
   const getPostThumbnail = (post: Post) => {
-    return post?.image || `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(post.title || "Post")}`;
+    // Check if there are image attachments
+    if (post.attachments && Array.isArray(post.attachments)) {
+      const imageAttachment = post.attachments.find(
+        (attachment: any) => attachment.type === 'image'
+      );
+      if (imageAttachment) {
+        return imageAttachment.url;
+      }
+    }
+    return `/placeholder.svg?height=200&width=300&text=${encodeURIComponent(post.title || "Post")}`;
   };
 
   const contentType = determineContentType(post);
