@@ -36,7 +36,7 @@ const ProfilePage: React.FC = () => {
   const { fetchUserProfile, updateProfile, uploadProfileImage } = useProfile();
   const { toast } = useToast();
 
-  // Initialize form with react-hook-form with explicit typing
+  // Initialize form with explicit ProfileFormValues type
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -46,7 +46,8 @@ const ProfilePage: React.FC = () => {
       website: null,
       bio: null,
       tags: [],
-    } as ProfileFormValues
+    },
+    mode: 'onChange'
   });
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const ProfilePage: React.FC = () => {
             website: profile.website || null,
             bio: profile.bio || null,
             tags: profile.tags || [],
-          } as ProfileFormValues);
+          });
         }
         
         setLoading(false);
@@ -139,7 +140,7 @@ const ProfilePage: React.FC = () => {
       website: profileData?.website || null,
       bio: profileData?.bio || null,
       tags: profileData?.tags || [],
-    } as ProfileFormValues);
+    });
   };
 
   if (loading) {
