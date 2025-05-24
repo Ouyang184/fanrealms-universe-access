@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,16 +56,26 @@ export default function FeedPage() {
     );
   }
 
-  // Filter posts to only show those from creators the user is subscribed to
-  const followedCreatorIds = subscriptions.map(sub => sub.creator_id);
+  // Get the user IDs of creators the user is subscribed to
+  const followedCreatorUserIds = subscriptions.map(sub => {
+    // Handle both possible data structures
+    return sub.creator?.user_id || sub.creator_id;
+  }).filter(Boolean);
   
-  // Filter posts by creators the user follows using authorName
-  const followedPosts = posts?.filter(post => 
-    post && followedCreatorIds.includes(post.authorName)
-  ) || [];
+  console.log('Followed creator user IDs:', followedCreatorUserIds);
+  console.log('All posts:', posts);
+  
+  // Filter posts by matching the post's author_id with followed creator user_ids
+  const followedPosts = posts?.filter(post => {
+    const isFromFollowedCreator = followedCreatorUserIds.includes(post.authorId);
+    console.log(`Post "${post.title}" by ${post.authorName} (${post.authorId}): ${isFromFollowedCreator ? 'INCLUDED' : 'EXCLUDED'}`);
+    return isFromFollowedCreator;
+  }) || [];
+  
+  console.log('Filtered followed posts:', followedPosts);
   
   // Count unread posts (for demo purposes, assume 3 are unread)
-  const unreadCount = 3;
+  const unreadCount = Math.min(followedPosts.length, 3);
 
   // Check if there are any posts
   const hasPosts = followedPosts.length > 0;
@@ -125,21 +136,27 @@ export default function FeedPage() {
 
             {/* Unread Tab */}
             <TabsContent value="unread" className="mt-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {followedPosts.slice(0, unreadCount).map((post) => (
-                  <PostCard 
-                    key={post.id}
-                    id={post.id}
-                    title={post.title}
-                    content={post.content}
-                    authorName={post.authorName}
-                    authorAvatar={post.authorAvatar}
-                    date={post.date}
-                    createdAt={post.createdAt}
-                    tier_id={post.tier_id}
-                  />
-                ))}
-              </div>
+              {unreadCount > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {followedPosts.slice(0, unreadCount).map((post) => (
+                    <PostCard 
+                      key={post.id}
+                      id={post.id}
+                      title={post.title}
+                      content={post.content}
+                      authorName={post.authorName}
+                      authorAvatar={post.authorAvatar}
+                      date={post.date}
+                      createdAt={post.createdAt}
+                      tier_id={post.tier_id}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">No unread posts from creators you follow.</p>
+                </div>
+              )}
             </TabsContent>
 
             {/* Saved Tab */}
