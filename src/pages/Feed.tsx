@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,12 +168,11 @@ export default function FeedPage() {
                         createdAt={post.createdAt}
                         tier_id={post.tier_id}
                       />
-                      <div className="absolute top-4 right-4">
+                      <div className="absolute bottom-4 right-4">
                         <Button
                           size="sm"
-                          variant="outline"
                           onClick={() => handlePostPreview(post)}
-                          className="bg-white/90 hover:bg-white"
+                          className="bg-purple-600 hover:bg-purple-700 text-black"
                         >
                           Preview
                         </Button>
@@ -206,12 +204,11 @@ export default function FeedPage() {
                         createdAt={post.createdAt}
                         tier_id={post.tier_id}
                       />
-                      <div className="absolute top-4 right-4">
+                      <div className="absolute bottom-4 right-4">
                         <Button
                           size="sm"
-                          variant="outline"
                           onClick={() => handlePostPreview(post)}
-                          className="bg-white/90 hover:bg-white"
+                          className="bg-purple-600 hover:bg-purple-700 text-black"
                         >
                           Preview
                         </Button>
