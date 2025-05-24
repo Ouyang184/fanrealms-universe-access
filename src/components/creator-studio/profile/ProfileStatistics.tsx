@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface ProfileStatisticsProps {
   postCount: number;
   tierCount: number;
+  followerCount?: number;
 }
 
-export function ProfileStatistics({ postCount, tierCount }: ProfileStatisticsProps) {
+export function ProfileStatistics({ postCount, tierCount, followerCount = 0 }: ProfileStatisticsProps) {
   return (
     <Card>
       <CardHeader>
@@ -15,7 +16,7 @@ export function ProfileStatistics({ postCount, tierCount }: ProfileStatisticsPro
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-4 border rounded-lg text-center">
-          <p className="text-2xl font-bold">--</p>
+          <p className="text-2xl font-bold">{followerCount.toLocaleString()}</p>
           <p className="text-muted-foreground">Followers</p>
         </div>
         <div className="p-4 border rounded-lg text-center">

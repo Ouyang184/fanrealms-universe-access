@@ -167,6 +167,7 @@ export type Database = {
           bio: string | null
           created_at: string
           display_name: string | null
+          follower_count: number
           id: string
           profile_image_url: string | null
           stripe_account_id: string | null
@@ -182,6 +183,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          follower_count?: number
           id?: string
           profile_image_url?: string | null
           stripe_account_id?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          follower_count?: number
           id?: string
           profile_image_url?: string | null
           stripe_account_id?: string | null

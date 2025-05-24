@@ -64,7 +64,8 @@ export const useCreators = (searchTerm?: string) => {
           banner_url: creator.banner_url || null,
           created_at: creator.created_at || new Date().toISOString(),
           bio: creator.bio || "",
-          tags: creator.tags || []
+          tags: creator.tags || [],
+          followers_count: creator.follower_count || 0 // Add follower count from database
         };
       });
 

@@ -69,6 +69,7 @@ function FollowingPageContent() {
   const { followCreator, unfollowCreator, isLoading: followLoading } = useFollow();
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [followingStates, setFollowingStates] = useState<Record<string, boolean>>({});
 
   // Get list of followed creators using subscription data and creators list
   const followedCreators: EnrichedCreatorProfile[] = creators
@@ -87,7 +88,7 @@ function FollowingPageContent() {
         isFavorite: favorites[creator.id] || Math.random() > 0.7,
         notifications: Math.floor(Math.random() * 4),
         rating: 4 + Math.random(),
-        subscribers: Math.floor(Math.random() * 15000) + 1000,
+        subscribers: creator.followers_count || Math.floor(Math.random() * 15000) + 1000, // Use actual follower count
         lastPost: ["2 hours ago", "Yesterday", "3 days ago", "1 week ago"][
           Math.floor(Math.random() * 4)
         ],
@@ -100,9 +101,18 @@ function FollowingPageContent() {
     .slice(0, 3)
     .map(creator => ({
       ...creator,
-      subscribers: Math.floor(Math.random() * 15000) + 1000,
+      subscribers: creator.followers_count || Math.floor(Math.random() * 15000) + 1000, // Use actual follower count
       category: ["Art", "Gaming", "Music"][Math.floor(Math.random() * 3)]
     }));
+
+  // Initialize following states
+  useEffect(() => {
+    const initialStates: Record<string, boolean> = {};
+    suggestedCreators.forEach(creator => {
+      initialStates[creator.id] = subscriptions?.some(sub => sub.creator_id === creator.id) || false;
+    });
+    setFollowingStates(initialStates);
+  }, [subscriptions, suggestedCreators.length]);
 
   const toggleFavorite = (creatorId: string) => {
     setFavorites(prev => ({
@@ -114,6 +124,7 @@ function FollowingPageContent() {
   const handleFollowCreator = async (creatorId: string) => {
     try {
       await followCreator(creatorId);
+      setFollowingStates(prev => ({ ...prev, [creatorId]: true }));
     } catch (error) {
       console.error('Error following creator:', error);
     }
@@ -122,6 +133,7 @@ function FollowingPageContent() {
   const handleUnfollowCreator = async (creatorId: string) => {
     try {
       await unfollowCreator(creatorId);
+      setFollowingStates(prev => ({ ...prev, [creatorId]: false }));
     } catch (error) {
       console.error('Error unfollowing creator:', error);
     }
@@ -216,7 +228,7 @@ function FollowingPageContent() {
                                 <DropdownMenuItem>Change Subscription Tier</DropdownMenuItem>
                                 <DropdownMenuItem>Notification Settings</DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => unfollowCreator(creator.id)} className="text-destructive">Unfollow</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleUnfollowCreator(creator.id)} className="text-destructive">Unfollow</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -236,7 +248,7 @@ function FollowingPageContent() {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Users className="h-4 w-4" />
-                          <span>{creator.subscribers?.toLocaleString() || '0'} subscribers</span>
+                          <span>{creator.subscribers?.toLocaleString() || '0'} followers</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Star className="h-4 w-4 text-yellow-500" />
@@ -301,38 +313,42 @@ function FollowingPageContent() {
       <div className="mt-10">
         <h2 className="text-2xl font-bold mb-6">Suggested Creators</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {suggestedCreators.map((creator) => (
-            <Card key={creator.id}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-14 w-14">
-                    <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
-                    <AvatarFallback>{(creator.username || "C").charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h3 className="font-bold">{creator.username}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {creator.bio || "No bio available"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {creator.category}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{creator.subscribers?.toLocaleString()} subscribers</span>
+          {suggestedCreators.map((creator) => {
+            const isFollowing = followingStates[creator.id];
+            return (
+              <Card key={creator.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-14 w-14">
+                      <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
+                      <AvatarFallback>{(creator.username || "C").charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="font-bold">{creator.username}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {creator.bio || "No bio available"}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {creator.category}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{creator.subscribers?.toLocaleString()} followers</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="mt-4 flex justify-end">
-                  <Button 
-                    onClick={() => handleFollowCreator(creator.id)}
-                    disabled={followLoading}
-                  >
-                    {followLoading ? "Following..." : "Follow"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="mt-4 flex justify-end">
+                    <Button 
+                      onClick={() => isFollowing ? handleUnfollowCreator(creator.id) : handleFollowCreator(creator.id)}
+                      disabled={followLoading}
+                      variant={isFollowing ? "outline" : "default"}
+                    >
+                      {followLoading ? "..." : (isFollowing ? "Following" : "Follow")}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -42,7 +42,7 @@ export interface CreatorProfile {
   profile_image_url: string;
   banner_url: string;
   website?: string;
-  followers_count?: number;
+  followers_count?: number; // Add follower count field
   following_count?: number;
   tags?: string[];
   created_at: string;

@@ -47,6 +47,9 @@ export function useFollow() {
       return;
     }
     
+    // Prevent duplicate requests
+    if (isLoading) return;
+    
     setIsLoading(true);
     
     try {
@@ -64,6 +67,7 @@ export function useFollow() {
           toast({
             description: "You're already following this creator",
           });
+          setIsFollowing(true);
         } else {
           throw error;
         }
@@ -78,6 +82,7 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
         queryClient.invalidateQueries({ queryKey: ["creators"] });
         queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
+        queryClient.invalidateQueries({ queryKey: ["posts"] });
       }
     } catch (error: any) {
       toast({
@@ -93,6 +98,9 @@ export function useFollow() {
   // Function to unfollow a creator
   const unfollowCreator = async (creatorId: string): Promise<void> => {
     if (!user) return;
+    
+    // Prevent duplicate requests
+    if (isLoading) return;
     
     setIsLoading(true);
     
@@ -115,6 +123,7 @@ export function useFollow() {
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
       queryClient.invalidateQueries({ queryKey: ["creators"] });
       queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (error: any) {
       toast({
         title: "Error",

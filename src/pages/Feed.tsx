@@ -56,19 +56,23 @@ export default function FeedPage() {
     );
   }
 
-  // Get the user IDs of creators the user is subscribed to
-  const followedCreatorUserIds = subscriptions.map(sub => {
-    // Handle both possible data structures
-    return sub.creator?.user_id || sub.creator_id;
-  }).filter(Boolean);
+  // Get the creator IDs (not user IDs) of creators the user is subscribed to
+  const followedCreatorIds = subscriptions.map(sub => sub.creator_id).filter(Boolean);
   
-  console.log('Followed creator user IDs:', followedCreatorUserIds);
+  console.log('Followed creator IDs:', followedCreatorIds);
   console.log('All posts:', posts);
   
-  // Filter posts by matching the post's author_id with followed creator user_ids
+  // Filter posts by matching the post's author_id with creators the user follows
+  // We need to check if the post author is a creator that the user follows
   const followedPosts = posts?.filter(post => {
-    const isFromFollowedCreator = followedCreatorUserIds.includes(post.authorId);
-    console.log(`Post "${post.title}" by ${post.authorName} (${post.authorId}): ${isFromFollowedCreator ? 'INCLUDED' : 'EXCLUDED'}`);
+    // Check if any of the followed creators has this post author as their user_id
+    const isFromFollowedCreator = subscriptions.some(sub => {
+      // Compare post author_id with creator's user_id
+      const creatorUserId = sub.creator?.user_id || sub.creator?.users?.id;
+      const isMatch = creatorUserId === post.authorId;
+      console.log(`Checking post "${post.title}" by ${post.authorName} (${post.authorId}) against creator ${creatorUserId}: ${isMatch ? 'MATCH' : 'NO MATCH'}`);
+      return isMatch;
+    });
     return isFromFollowedCreator;
   }) || [];
   
