@@ -31,7 +31,7 @@ export default function CreatorStudioSettings() {
   };
 
   const handleImageUpload = (type: 'avatar') => {
-    uploadProfileImage();
+    uploadProfileImage(type);
   };
 
   const handleBannerUpdate = (bannerUrl: string) => {
