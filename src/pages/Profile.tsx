@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +46,7 @@ const ProfilePage: React.FC = () => {
       website: null,
       bio: null,
       tags: [],
-    },
+    } satisfies ProfileFormValues,
     mode: 'onChange'
   });
 
@@ -58,14 +59,15 @@ const ProfilePage: React.FC = () => {
         
         if (profile) {
           // Reset form with proper typing
-          form.reset({
+          const resetValues: ProfileFormValues = {
             username: profile.username || '',
             email: profile.email || '',
             profile_picture: profile.profile_picture || null,
             website: profile.website || null,
             bio: profile.bio || null,
             tags: profile.tags || [],
-          });
+          };
+          form.reset(resetValues);
         }
         
         setLoading(false);
@@ -134,14 +136,15 @@ const ProfilePage: React.FC = () => {
     setIsEditing(false);
     clearSelectedImage();
     // Reset form with proper typing
-    form.reset({
+    const resetValues: ProfileFormValues = {
       username: profileData?.username || '',
       email: profileData?.email || '',
       profile_picture: profileData?.profile_picture || null,
       website: profileData?.website || null,
       bio: profileData?.bio || null,
       tags: profileData?.tags || [],
-    });
+    };
+    form.reset(resetValues);
   };
 
   if (loading) {
