@@ -117,7 +117,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const isPremium = !!post.tier_id;
 
   // Use real metadata from post - ensure we don't show "Unknown"
-  const authorName = post.authorName || post.users?.username || "Creator";
+  const authorName = post.authorName || "Creator";
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
