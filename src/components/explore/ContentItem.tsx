@@ -149,10 +149,14 @@ export function ContentItem({ post, type }: ContentItemProps) {
           {!hasVisualMedia && !hasFileAttachment && (
             <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/50 to-blue-900/50 flex items-center justify-center p-4">
               <div className="text-center">
-                <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-300 line-clamp-3">
-                  {post.content || post.title}
+                <p className="text-lg text-gray-200 line-clamp-4 font-medium">
+                  {post.title}
                 </p>
+                {post.content && post.content !== post.title && (
+                  <p className="text-sm text-gray-300 mt-2 line-clamp-2">
+                    {post.content}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -165,14 +169,14 @@ export function ContentItem({ post, type }: ContentItemProps) {
             </Badge>
           </div>
           
-          {/* Content type indicator */}
-          <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
-            {contentType === "video" && <Video className="h-3 w-3" />}
-            {(contentType === "image" || contentType === "file" || contentType === "pdf") && <FileText className="h-3 w-3" />}
-            {contentType === "article" && <FileText className="h-3 w-3" />}
-            {contentType === "post" && <FileText className="h-3 w-3" />}
-            {contentType}
-          </div>
+          {/* Content type indicator - ONLY show when there are actual attachments */}
+          {(hasVisualMedia || hasFileAttachment) && (
+            <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+              {contentType === "video" && <Video className="h-3 w-3" />}
+              {(contentType === "image" || contentType === "file" || contentType === "pdf") && <FileText className="h-3 w-3" />}
+              {contentType}
+            </div>
+          )}
 
           {/* Only show download indicator for actual file attachments */}
           {hasFileAttachment && (
