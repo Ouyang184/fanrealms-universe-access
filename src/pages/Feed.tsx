@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +14,19 @@ import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
 
+// Helper function to load read posts from localStorage synchronously
+const getReadPostsFromStorage = (): Set<string> => {
+  try {
+    const savedReadPosts = localStorage.getItem('readPosts');
+    if (savedReadPosts) {
+      return new Set(JSON.parse(savedReadPosts));
+    }
+  } catch (error) {
+    console.error('Error loading read posts from localStorage:', error);
+  }
+  return new Set();
+};
+
 export default function FeedPage() {
   // Set document title when component mounts
   useEffect(() => {
@@ -25,27 +39,27 @@ export default function FeedPage() {
   // Fetch posts
   const { data: posts, isLoading: loadingPosts } = usePosts();
   
-  // State for tracking read posts and preview modal
-  const [readPosts, setReadPosts] = useState<Set<string>>(new Set());
+  // Initialize read posts from localStorage synchronously to prevent flickering
+  const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage());
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
-  // Load read posts from localStorage on component mount
-  useEffect(() => {
-    const savedReadPosts = localStorage.getItem('readPosts');
-    if (savedReadPosts) {
-      setReadPosts(new Set(JSON.parse(savedReadPosts)));
-    }
-  }, []);
-  
   // Save read posts to localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
+    try {
+      localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
+    } catch (error) {
+      console.error('Error saving read posts to localStorage:', error);
+    }
   }, [readPosts]);
   
   // Mark a post as read
   const markPostAsRead = (postId: string) => {
-    setReadPosts(prev => new Set([...prev, postId]));
+    setReadPosts(prev => {
+      const newReadPosts = new Set([...prev, postId]);
+      console.log(`Marking post ${postId} as read. Total read posts:`, newReadPosts.size);
+      return newReadPosts;
+    });
   };
   
   // Handle post preview
@@ -93,6 +107,7 @@ export default function FeedPage() {
   
   console.log('Followed creator IDs:', followedCreatorIds);
   console.log('All posts:', posts);
+  console.log('Read posts from state:', Array.from(readPosts));
   
   // Filter posts by matching the post's author_id with creators the user follows
   // We need to check if the post author is a creator that the user follows
@@ -113,6 +128,9 @@ export default function FeedPage() {
   // Calculate unread posts based on what user hasn't seen
   const unreadPosts = followedPosts.filter(post => !readPosts.has(post.id));
   const unreadCount = unreadPosts.length;
+
+  console.log('Unread posts count:', unreadCount);
+  console.log('Unread posts:', unreadPosts.map(p => `${p.title} (${p.id})`));
 
   // Check if there are any posts
   const hasPosts = followedPosts.length > 0;
