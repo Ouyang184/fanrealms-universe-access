@@ -101,8 +101,8 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
 
-  // Fix metadata display
-  const authorName = post.authorName || post.users?.username || "Unknown Creator";
+  // Fix metadata display using correct Post type properties
+  const authorName = post.authorName || "Unknown Creator";
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
 
   return (
@@ -186,7 +186,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
           <div className="flex items-center gap-2 mb-2">
             <Avatar className="h-6 w-6">
               <AvatarImage 
-                src={post.authorAvatar || post.users?.profile_picture || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
+                src={post.authorAvatar || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
                 alt={authorName} 
               />
               <AvatarFallback className="text-xs">{authorName.substring(0, 1)}</AvatarFallback>
