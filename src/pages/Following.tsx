@@ -86,7 +86,7 @@ interface EnrichedCreatorProfile extends CreatorProfile {
 function FollowingPageContent() {
   const { data: creators = [], isLoading } = useCreators();
   const { subscriptions } = useSubscriptions();
-  const { followCreator, unfollowCreator } = useFollow();
+  const { followCreator, unfollowCreator, isLoading: followLoading } = useFollow();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("All");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -140,6 +140,22 @@ function FollowingPageContent() {
       ...prev,
       [creatorId]: !prev[creatorId]
     }));
+  };
+
+  const handleFollowCreator = async (creatorId: string) => {
+    try {
+      await followCreator(creatorId);
+    } catch (error) {
+      console.error('Error following creator:', error);
+    }
+  };
+
+  const handleUnfollowCreator = async (creatorId: string) => {
+    try {
+      await unfollowCreator(creatorId);
+    } catch (error) {
+      console.error('Error unfollowing creator:', error);
+    }
   };
   
   const filteredCreators = activeTab === "All" 
@@ -306,7 +322,14 @@ function FollowingPageContent() {
                               <MessageSquare className="h-4 w-4" />
                               Message
                             </Button>
-                            <Button>View Content</Button>
+                            <Button 
+                              onClick={() => handleUnfollowCreator(creator.id)}
+                              disabled={followLoading}
+                              variant="destructive"
+                              size="sm"
+                            >
+                              {followLoading ? "Unfollowing..." : "Unfollow"}
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -356,7 +379,12 @@ function FollowingPageContent() {
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                  <Button onClick={() => followCreator(creator.id)}>Follow</Button>
+                  <Button 
+                    onClick={() => handleFollowCreator(creator.id)}
+                    disabled={followLoading}
+                  >
+                    {followLoading ? "Following..." : "Follow"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

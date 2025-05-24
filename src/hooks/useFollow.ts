@@ -72,8 +72,12 @@ export function useFollow() {
           description: "You are now following this creator",
         });
         setIsFollowing(true);
+        
+        // Invalidate all relevant queries to refresh data
         queryClient.invalidateQueries({ queryKey: ["creatorProfile"] });
         queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+        queryClient.invalidateQueries({ queryKey: ["creators"] });
+        queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
       }
     } catch (error: any) {
       toast({
@@ -105,8 +109,12 @@ export function useFollow() {
         description: "You have unfollowed this creator",
       });
       setIsFollowing(false);
+      
+      // Invalidate all relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["creatorProfile"] });
       queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["creators"] });
+      queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
     } catch (error: any) {
       toast({
         title: "Error",

@@ -13,22 +13,31 @@ interface FollowedCreatorsProps {
 
 export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps) {
   const { user } = useAuth();
-  const { subscriptions, loadingSubscriptions } = useSubscriptions();
+  const { subscriptions, loadingSubscriptions, refetch } = useSubscriptions();
   const [followedCreators, setFollowedCreators] = useState<any[]>([]);
   
   useEffect(() => {
     if (!loadingSubscriptions && subscriptions) {
       // Extract creator info from subscriptions
-      const creators = subscriptions.map(sub => ({
-        id: sub.creator_id,
-        name: sub.creator?.users?.username || 'Creator',
-        username: sub.creator?.users?.username || 'creator',
-        avatar: sub.creator?.profile_image_url || sub.creator?.users?.profile_picture || "/placeholder.svg"
-      }));
+      const creators = subscriptions
+        .filter(sub => sub.creator_id) // Ensure we have valid creator IDs
+        .map(sub => ({
+          id: sub.creator_id,
+          name: sub.creator?.users?.username || sub.creator?.display_name || 'Creator',
+          username: sub.creator?.users?.username || 'creator',
+          avatar: sub.creator?.profile_image_url || sub.creator?.users?.profile_picture || "/placeholder.svg"
+        }));
       
       setFollowedCreators(creators);
     }
   }, [subscriptions, loadingSubscriptions]);
+
+  // Refetch subscriptions when component mounts to get fresh data
+  useEffect(() => {
+    if (user) {
+      refetch();
+    }
+  }, [user, refetch]);
 
   if (loadingSubscriptions) {
     return null;
