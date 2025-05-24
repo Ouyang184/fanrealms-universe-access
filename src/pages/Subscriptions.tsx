@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -257,6 +256,7 @@ export default function SubscriptionsPage() {
               {subscriptions?.map((subscription) => {
                 const creator = subscription.creator;
                 const tier = subscription.tier;
+                const user = creator?.users;
                 
                 // Format subscription date
                 const createdDate = new Date(subscription.created_at);
@@ -278,17 +278,17 @@ export default function SubscriptionsPage() {
                   <Card key={subscription.id} className="overflow-hidden">
                     <div
                       className="h-32 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${creator?.profile_image_url || "/placeholder.svg"})` }}
+                      style={{ backgroundImage: `url(${creator?.banner_url || creator?.profile_image_url || "/placeholder.svg"})` }}
                     />
                     <CardContent className="pt-0 -mt-12 p-6">
                       <div className="flex justify-between items-start">
                         <Avatar className="h-20 w-20 border-4 border-background">
                           <AvatarImage
-                            src={creator?.profile_image_url || creator?.users?.profile_picture || "/placeholder.svg"}
-                            alt={creator?.users?.username || "Creator"}
+                            src={creator?.profile_image_url || user?.profile_picture || "/placeholder.svg"}
+                            alt={user?.username || "Creator"}
                           />
                           <AvatarFallback>
-                            {(creator?.users?.username || "C").charAt(0)}
+                            {(creator?.display_name || user?.username || "C").charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                         {tier && (
@@ -297,7 +297,9 @@ export default function SubscriptionsPage() {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-xl font-semibold mt-4">{creator?.users?.username || "Creator"}</h3>
+                      <h3 className="text-xl font-semibold mt-4">
+                        {creator?.display_name || user?.username || "Creator"}
+                      </h3>
                       <p className="text-muted-foreground text-sm mt-1">{creator?.bio || "No bio available"}</p>
 
                       <div className="mt-4 space-y-3">
@@ -451,6 +453,7 @@ export default function SubscriptionsPage() {
                   {subscriptions?.map((subscription) => {
                     const creator = subscription.creator;
                     const tier = subscription.tier;
+                    const user = creator?.users;
                     
                     // Calculate next billing date (1 month from creation)
                     const createdDate = new Date(subscription.created_at);
@@ -470,13 +473,17 @@ export default function SubscriptionsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={creator?.profile_image_url || creator?.users?.profile_picture || "/placeholder.svg"}
-                              alt={creator?.users?.username || "Creator"}
+                              src={creator?.profile_image_url || user?.profile_picture || "/placeholder.svg"}
+                              alt={user?.username || "Creator"}
                             />
-                            <AvatarFallback>{(creator?.users?.username || "C").charAt(0)}</AvatarFallback>
+                            <AvatarFallback>
+                              {(creator?.display_name || user?.username || "C").charAt(0)}
+                            </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{creator?.users?.username || "Creator"}</div>
+                            <div className="font-medium">
+                              {creator?.display_name || user?.username || "Creator"}
+                            </div>
                             <div className="text-sm text-muted-foreground">{tier?.title || "Free"}</div>
                           </div>
                         </div>
