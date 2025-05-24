@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
@@ -61,7 +60,7 @@ export function HomeContent() {
       id: post.id,
       title: post.title,
       content: post.content,
-      authorId: post.author_id,
+      authorId: post.authorId,
       authorName: post.authorName || 'Creator',
       authorAvatar: post.authorAvatar || null,
       createdAt: post.createdAt,
