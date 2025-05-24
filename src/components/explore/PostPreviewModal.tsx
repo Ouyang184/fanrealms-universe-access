@@ -24,8 +24,38 @@ interface PostPreviewModalProps {
 export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalProps) {
   if (!post) return null;
 
-  // Parse attachments from JSON
-  const parsedAttachments = post.attachments ? (Array.isArray(post.attachments) ? post.attachments : []) : [];
+  // Enhanced attachment parsing to handle different data formats
+  const parseAttachments = (attachments: any) => {
+    if (!attachments) return [];
+    
+    // If it's already an array, return it
+    if (Array.isArray(attachments)) {
+      return attachments;
+    }
+    
+    // If it's a string, try to parse it as JSON
+    if (typeof attachments === 'string') {
+      try {
+        const parsed = JSON.parse(attachments);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        console.log('Failed to parse attachments JSON:', error);
+        return [];
+      }
+    }
+    
+    // If it's an object, wrap it in an array
+    if (typeof attachments === 'object') {
+      return [attachments];
+    }
+    
+    return [];
+  };
+
+  const parsedAttachments = parseAttachments(post.attachments);
+  
+  console.log('Post attachments raw:', post.attachments);
+  console.log('Post attachments parsed:', parsedAttachments);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -57,14 +87,19 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
         </DialogHeader>
 
         {/* Display attachments with proper scaling */}
-        <div className="my-6">
-          <PostAttachments attachments={parsedAttachments} />
-        </div>
+        {parsedAttachments.length > 0 && (
+          <div className="my-6">
+            <PostAttachments attachments={parsedAttachments} />
+          </div>
+        )}
 
         <DialogFooter>
           <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-muted-foreground">
               {post.tier_id ? 'Premium content' : 'Free content'}
+              {parsedAttachments.length > 0 && (
+                <span className="ml-2">• {parsedAttachments.length} attachment{parsedAttachments.length !== 1 ? 's' : ''}</span>
+              )}
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
