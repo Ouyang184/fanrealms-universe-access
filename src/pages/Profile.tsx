@@ -18,7 +18,7 @@ const profileSchema = z.object({
   username: z.string().min(1, { message: "Username is required" }),
   email: z.string().email().optional(),
   profile_picture: z.string().optional().nullable(),
-  website: z.string().url({ message: "Must be a valid URL" }).optional().nullable(),
+  website: z.string().url({ message: "Must be a valid URL" }).optional().or(z.literal('')).nullable(),
   bio: z.string().optional().nullable(),
   tags: z.array(z.string()).optional(),
 });
@@ -42,7 +42,7 @@ const ProfilePage: React.FC = () => {
     defaultValues: {
       username: '',
       email: '',
-      profile_picture: '',
+      profile_picture: null,
       website: null,
       bio: null,
       tags: [],
