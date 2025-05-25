@@ -1,8 +1,7 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   Calendar,
   FileText,
   ImageIcon,
@@ -50,6 +49,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+type SortOption = "newest" | "oldest" | "most-viewed";
+
 export default function CreatorPostsPage() {
   const { 
     posts, 
@@ -62,16 +63,43 @@ export default function CreatorPostsPage() {
     handleFilterChange 
   } = useCreatorPosts();
   const navigate = useNavigate();
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
 
   // Filter posts based on filter tab
   const getFilteredPosts = () => {
-    if (filter === "all") {
-      return posts;
-    }
-    return posts.filter(post => post.type === filter);
+    let filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
+    
+    // Apply sorting
+    return [...filteredPosts].sort((a, b) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "most-viewed":
+          const aViews = a.engagement?.views || 0;
+          const bViews = b.engagement?.views || 0;
+          return bViews - aViews;
+        default:
+          return 0;
+      }
+    });
   };
 
   const filteredPosts = getFilteredPosts();
+
+  const getSortLabel = (option: SortOption) => {
+    switch (option) {
+      case "newest":
+        return "Newest first";
+      case "oldest":
+        return "Oldest first";
+      case "most-viewed":
+        return "Most viewed";
+      default:
+        return "Sort by";
+    }
+  };
 
   return (
     <MainLayout>
@@ -91,7 +119,7 @@ export default function CreatorPostsPage() {
           </div>
         </div>
 
-        {/* Search and Filter Bar */}
+        {/* Search and Sort Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="relative w-full sm:w-auto sm:flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -103,22 +131,23 @@ export default function CreatorPostsPage() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  <span>Sort by</span>
+                  <span>{getSortLabel(sortBy)}</span>
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
-                <DropdownMenuItem>Newest first</DropdownMenuItem>
-                <DropdownMenuItem>Oldest first</DropdownMenuItem>
-                <DropdownMenuItem>Most viewed</DropdownMenuItem>
-                <DropdownMenuItem>Most engagement</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                  Newest first
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                  Oldest first
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("most-viewed")}>
+                  Most viewed
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
