@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import {
   Search,
@@ -36,6 +37,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
+import { useDeletePost } from "@/hooks/useDeletePost";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function CreatorPostsPage() {
   const { 
@@ -261,11 +274,21 @@ export default function CreatorPostsPage() {
 // Post Card Component 
 function PostCard({ post }: { post: CreatorPost }) {
   const navigate = useNavigate();
+  const { deletePost, isDeleting } = useDeletePost();
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Navigate to edit page (replace with actual edit route)
     console.log("Edit post:", post.id);
+  };
+
+  const handleDeletePost = () => {
+    console.log('Delete button clicked for post:', post.id);
+    if (!post.id) {
+      console.error('No post ID provided');
+      return;
+    }
+    deletePost(post.id);
   };
   
   const getStatusBadgeStyles = (status: string) => {
@@ -341,9 +364,35 @@ function PostCard({ post }: { post: CreatorPost }) {
               <DropdownMenuItem className="flex items-center gap-2">
                 <Copy className="h-4 w-4" /> Duplicate
               </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2 text-destructive focus:text-destructive">
-                <Trash className="h-4 w-4" /> Delete
-              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-destructive focus:text-destructive"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <Trash className="h-4 w-4" /> Delete
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your post
+                      and remove all associated comments and likes.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeletePost}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete Post'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
