@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -48,11 +49,13 @@ export function useFollow() {
       return;
     }
     
+    console.log("Following creator:", creatorId, "User:", user.id);
+    
     // Check if user is trying to follow themselves
     try {
       const { data: creator, error } = await supabase
         .from("creators")
-        .select("user_id")
+        .select("user_id, display_name, users(username)")
         .eq("id", creatorId)
         .single();
       
@@ -65,6 +68,8 @@ export function useFollow() {
         });
         return;
       }
+      
+      console.log("Creator data:", creator);
       
       if (creator?.user_id === user.id) {
         toast({
@@ -108,20 +113,26 @@ export function useFollow() {
           throw error;
         }
       } else {
+        console.log("Follow successful, creating notification...");
         toast({
           description: "You are now following this creator",
         });
         setIsFollowing(true);
         
-        // Create follow notification
+        // Create follow notification - get the creator's user_id for the notification
         const { data: creatorData } = await supabase
           .from("creators")
           .select("user_id")
           .eq("id", creatorId)
           .single();
           
+        console.log("Creator user_id for notification:", creatorData?.user_id);
+          
         if (creatorData?.user_id) {
+          console.log("Creating follow notification...");
           await createFollowNotification(creatorId, creatorData.user_id);
+        } else {
+          console.error("Could not find creator user_id for notification");
         }
         
         // Invalidate all relevant queries to refresh data immediately
@@ -136,6 +147,7 @@ export function useFollow() {
         ]);
       }
     } catch (error: any) {
+      console.error("Error following creator:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to follow creator",

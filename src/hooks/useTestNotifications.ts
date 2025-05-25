@@ -6,7 +6,12 @@ export const useTestNotifications = () => {
   const { user } = useAuth();
 
   const createTestNotifications = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log("No user found, cannot create test notifications");
+      return;
+    }
+
+    console.log("Creating test notifications for user:", user.id);
 
     const testNotifications = [
       {
@@ -31,14 +36,15 @@ export const useTestNotifications = () => {
     ];
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notifications')
-        .insert(testNotifications);
+        .insert(testNotifications)
+        .select('*');
 
       if (error) {
         console.error('Error creating test notifications:', error);
       } else {
-        console.log('Test notifications created successfully');
+        console.log('Test notifications created successfully:', data);
       }
     } catch (error) {
       console.error('Error in createTestNotifications:', error);
