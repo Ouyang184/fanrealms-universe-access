@@ -28,6 +28,8 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   const { deletePost, isDeleting } = useDeletePost();
   const isAuthor = user?.id === authorId;
 
+  console.log('PostInteractions - postId:', postId, 'authorId:', authorId, 'userId:', user?.id, 'isAuthor:', isAuthor);
+
   const handleShare = () => {
     // Copy post URL to clipboard
     const url = `${window.location.origin}/post/${postId}`;
@@ -41,6 +43,11 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   };
 
   const handleDelete = () => {
+    console.log('Delete button clicked for post:', postId);
+    if (!postId) {
+      console.error('No post ID provided');
+      return;
+    }
     deletePost(postId);
   };
 
@@ -83,7 +90,7 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
                   disabled={isDeleting}
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="text-sm">Delete</span>
+                  <span className="text-sm">{isDeleting ? 'Deleting...' : 'Delete'}</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
