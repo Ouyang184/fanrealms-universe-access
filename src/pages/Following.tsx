@@ -27,8 +27,11 @@ import { useFollows } from "@/hooks/useFollows";
 import { useFollow } from "@/hooks/useFollow";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorProfile } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function FollowingPage() {
+  const { user } = useAuth();
+  
   // Set document title when component mounts
   useEffect(() => {
     document.title = "Following | Creator Platform";
@@ -75,10 +78,14 @@ export default function FollowingPage() {
   // Get followed creator IDs for proper filtering - using the actual creator IDs from the followed list
   const followedCreatorIds = new Set(followedCreators.map(creator => creator.id));
   
-  // Recommended creators - exclude already followed creators more effectively
+  // Recommended creators - exclude already followed creators and the current user's own creator profile
   const recommendedCreators = allCreators?.filter(creator => {
     // Exclude if already in followed creators list
     if (followedCreatorIds.has(creator.id)) {
+      return false;
+    }
+    // Exclude the current user's own creator profile
+    if (creator.user_id === user?.id) {
       return false;
     }
     // Also check by user_id as backup in case IDs don't match perfectly
