@@ -124,6 +124,37 @@ export function useConversations() {
     mutationFn: async ({ receiverId, messageText }: { receiverId: string; messageText: string }) => {
       if (!user?.id) throw new Error('Must be logged in to send messages');
 
+      console.log('Attempting to send message:', { senderId: user.id, receiverId, messageText });
+
+      // First, ensure conversation participants exist
+      try {
+        // Create conversation participant for sender
+        await supabase
+          .from('conversation_participants')
+          .upsert({
+            user_id: user.id,
+            other_user_id: receiverId,
+            last_message_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,other_user_id'
+          });
+
+        // Create conversation participant for receiver
+        await supabase
+          .from('conversation_participants')
+          .upsert({
+            user_id: receiverId,
+            other_user_id: user.id,
+            last_message_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id,other_user_id'
+          });
+      } catch (error) {
+        console.log('Conversation participants creation failed (may already exist):', error);
+        // Continue anyway as they might already exist
+      }
+
+      // Now send the message
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -135,12 +166,22 @@ export function useConversations() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Message sending error:', error);
+        throw error;
+      }
+
+      console.log('Message sent successfully:', data);
       return data;
     },
     onSuccess: () => {
+      console.log('Message sent, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['user-messages'] });
+      toast({
+        title: "Success",
+        description: "Message sent successfully!",
+      });
     },
     onError: (error) => {
       console.error('Send message error:', error);
