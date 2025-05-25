@@ -92,45 +92,51 @@ export function PostComments({ postId }: PostCommentsProps) {
                 {user ? 'Be the first to comment!' : 'No comments yet.'}
               </p>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={comment.users.profile_picture || undefined} 
-                      alt={comment.users.username} 
-                    />
-                    <AvatarFallback>
-                      {comment.users.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">
-                          {comment.users.username}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelativeDate(comment.created_at)}
-                        </span>
+              comments.map((comment) => {
+                // Safely extract user data with null checks
+                const username = comment.users?.username || 'Unknown User';
+                const profilePicture = comment.users?.profile_picture || undefined;
+                
+                return (
+                  <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={profilePicture} 
+                        alt={username} 
+                      />
+                      <AvatarFallback>
+                        {username.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">
+                            {username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatRelativeDate(comment.created_at)}
+                          </span>
+                        </div>
+                        
+                        {user?.id === comment.user_id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteComment(comment.id)}
+                            className="h-6 w-6 p-0 hover:bg-destructive/20"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                       
-                      {user?.id === comment.user_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteComment(comment.id)}
-                          className="h-6 w-6 p-0 hover:bg-destructive/20"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
+                      <p className="text-sm leading-relaxed">{comment.content}</p>
                     </div>
-                    
-                    <p className="text-sm leading-relaxed">{comment.content}</p>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
