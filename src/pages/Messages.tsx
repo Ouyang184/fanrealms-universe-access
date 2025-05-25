@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,16 +14,14 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function MessagesPage() {
   const { user } = useAuth();
-  const { conversations, isLoading: conversationsLoading } = useConversations();
+  const { conversations, isLoading: conversationsLoading, sendMessage, isSendingMessage } = useConversations();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const { 
     messages, 
-    isLoading: messagesLoading, 
-    sendMessage, 
-    isSendingMessage 
+    isLoading: messagesLoading
   } = useMessages(selectedConversation);
 
   // Set document title when component mounts
