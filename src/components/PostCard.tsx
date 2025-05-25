@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, FileText, File, FileImage, Video } from 'lucide-react';
 import { formatRelativeDate } from '@/utils/auth-helpers';
 import { PostAttachments } from './PostAttachments';
+import { PostInteractions } from './post/PostInteractions';
 
 interface PostCardProps {
   id: string;
@@ -24,6 +24,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({
+  id,
   title,
   content,
   authorName,
@@ -79,16 +80,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
-  const firstMedia = getFirstMedia(attachments);
-  
-  // Use real metadata - avoid showing "Unknown"
-  const displayAuthorName = authorName || users?.username || "Creator";
-  const displayAvatar = authorAvatar || users?.profile_picture;
-  const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
-  const isPremium = !!tier_id;
-
-  // Get file icon for different file types
   const getFileIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'pdf':
@@ -101,6 +92,15 @@ const PostCard: React.FC<PostCardProps> = ({
         return <File className="h-4 w-4 text-gray-600" />;
     }
   };
+
+  const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
+  const firstMedia = getFirstMedia(attachments);
+  
+  // Use real metadata - avoid showing "Unknown"
+  const displayAuthorName = authorName || users?.username || "Creator";
+  const displayAvatar = authorAvatar || users?.profile_picture;
+  const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
+  const isPremium = !!tier_id;
 
   return (
     <Card className="w-full">
@@ -127,7 +127,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 space-y-4">
         <div className="space-y-3">
           <h3 className="text-lg font-semibold leading-tight">{title}</h3>
           <p className="text-muted-foreground leading-relaxed">{content}</p>
@@ -146,7 +146,6 @@ const PostCard: React.FC<PostCardProps> = ({
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  {/* File type overlay */}
                   <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
                     <span>🖼</span>
                     <span>Image</span>
@@ -170,7 +169,6 @@ const PostCard: React.FC<PostCardProps> = ({
                       <Play className="h-4 w-4 text-white fill-white" />
                     </div>
                   </div>
-                  {/* File type overlay */}
                   <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
                     <span>🎥</span>
                     <span>Video</span>
@@ -205,6 +203,9 @@ const PostCard: React.FC<PostCardProps> = ({
           {/* Display all attachments */}
           <PostAttachments attachments={parsedAttachments} />
         </div>
+        
+        {/* Add the new interactions component */}
+        <PostInteractions postId={id} />
       </CardContent>
     </Card>
   );
