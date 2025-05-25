@@ -183,6 +183,7 @@ export default function FeedPage() {
                         date={post.date}
                         createdAt={post.createdAt}
                         tier_id={post.tier_id}
+                        authorId={post.authorId}
                       />
                       <div className="absolute bottom-4 right-4">
                         <Button
@@ -219,6 +220,7 @@ export default function FeedPage() {
                         date={post.date}
                         createdAt={post.createdAt}
                         tier_id={post.tier_id}
+                        authorId={post.authorId}
                       />
                       <div className="absolute bottom-4 right-4">
                         <Button

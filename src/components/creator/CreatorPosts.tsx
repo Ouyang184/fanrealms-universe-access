@@ -48,6 +48,7 @@ export function CreatorPosts({ posts }: CreatorPostsProps) {
                 date={post.date || post.createdAt}
                 tier_id={post.tier_id}
                 attachments={post.attachments}
+                authorId={post.authorId}
               />
             ))}
           </div>
@@ -77,6 +78,7 @@ export function CreatorPosts({ posts }: CreatorPostsProps) {
                 date={post.date || post.createdAt}
                 tier_id={post.tier_id}
                 attachments={post.attachments}
+                authorId={post.authorId}
               />
             ))}
           </div>

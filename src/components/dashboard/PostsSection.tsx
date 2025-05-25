@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export function PostsSection({
                   date={post.date || post.createdAt}
                   tier_id={post.tier_id}
                   attachments={post.attachments}
-                  author_id={post.authorId}
+                  authorId={post.authorId}
                 />
               ))}
             </div>
@@ -110,7 +111,7 @@ export function PostsSection({
                   date={post.date || post.createdAt}
                   tier_id={post.tier_id}
                   attachments={post.attachments}
-                  author_id={post.authorId}
+                  authorId={post.authorId}
                 />
               ))}
             </div>
