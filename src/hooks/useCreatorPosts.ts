@@ -8,7 +8,7 @@ import { Post } from "@/types";
 import { CreatorPost } from "@/types/creator-studio";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 
-export type PostFilter = "all" | "article" | "image" | "video" | "audio";
+export type PostFilter = "all" | "article" | "image" | "video" | "audio" | "media";
 export type PostStatus = "published" | "scheduled" | "draft";
 
 export function useCreatorPosts() {
