@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -121,30 +122,22 @@ export function useConversations() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async ({ receiverId, messageText }: { receiverId: string; messageText: string }) => {
+      if (!user?.id) throw new Error('Must be logged in to send messages');
+
       // Validate that the user ID matches the logged-in user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) throw new Error('Must be logged in to send messages');
-
-      console.log('Attempting to send message:', { senderId: currentUser.id, receiverId, messageText });
-
-      // First, create conversation participant entry
-      const { error: participantError } = await supabase
-        .from('conversation_participants')
-        .insert({
-          user_id: currentUser.id, // This must match auth.uid()
-          other_user_id: receiverId
-        });
-
-      if (participantError && participantError.code !== '23505') { // 23505 is unique constraint violation (already exists)
-        console.error('Conversation participant creation error:', participantError);
-        throw participantError;
+      if (currentUser?.id !== user.id) {
+        console.error("Auth mismatch: user ID does not match logged-in user");
+        throw new Error("Authentication error");
       }
 
-      // Then send the message
+      console.log('Attempting to send message:', { senderId: user.id, receiverId, messageText });
+
+      // Send the message - the trigger will handle conversation participants
       const { data, error } = await supabase
         .from('messages')
         .insert({
-          sender_id: currentUser.id, // This must match auth.uid()
+          sender_id: user.id, // This must match auth.uid()
           receiver_id: receiverId,
           message_text: messageText,
           is_read: false
