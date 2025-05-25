@@ -14,24 +14,21 @@ export const useNotificationActions = () => {
     console.log("Creating follow notification for:", { creatorId, creatorUserId, followerUserId: user.id });
 
     try {
-      // Get creator info for the notification
-      const { data: creator, error: creatorError } = await supabase
-        .from('creators')
-        .select('display_name, users(username)')
-        .eq('id', creatorId)
+      // Get follower info for the notification
+      const { data: followerUser, error: followerError } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user.id)
         .single();
 
-      if (creatorError) {
-        console.error('Error fetching creator for notification:', creatorError);
-        return;
+      if (followerError) {
+        console.error('Error fetching follower info:', followerError);
+        // Continue with email fallback
       }
 
-      console.log("Creator info for notification:", creator);
+      const followerName = followerUser?.username || user.email?.split('@')[0] || 'Someone';
 
-      const creatorName = creator?.display_name || creator?.users?.username || 'A creator';
-      const followerName = user.email?.split('@')[0] || 'Someone';
-
-      console.log("Creating notification with:", { creatorName, followerName });
+      console.log("Creating notification with follower name:", followerName);
 
       // Create notification for the creator being followed
       const { data, error } = await supabase
@@ -42,9 +39,10 @@ export const useNotificationActions = () => {
           content: `${followerName} started following you`,
           related_id: creatorId,
           related_user_id: user.id,
+          is_read: false,
           metadata: {
             follower_username: followerName,
-            creator_name: creatorName
+            creator_id: creatorId
           }
         })
         .select('*')
@@ -52,14 +50,16 @@ export const useNotificationActions = () => {
 
       if (error) {
         console.error('Error creating follow notification:', error);
-        throw error;
+        // Don't throw error to avoid breaking the follow flow
+        return null;
       } else {
         console.log('Follow notification created successfully:', data);
         return data;
       }
     } catch (error) {
       console.error('Error in createFollowNotification:', error);
-      throw error;
+      // Don't throw error to avoid breaking the follow flow
+      return null;
     }
   };
 

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SocialLinks } from "@/components/SocialLinks";
@@ -14,6 +14,7 @@ interface CreatorHeaderProps {
 export function CreatorHeader({ creator }: CreatorHeaderProps) {
   const [showChatModal, setShowChatModal] = useState(false);
   const { isFollowing, isLoading, checkFollowStatus, followCreator, unfollowCreator, setIsFollowing } = useFollow();
+  const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
   
   // Use display_name consistently
   const displayName = creator.display_name || creator.username || "Creator";
@@ -22,25 +23,36 @@ export function CreatorHeader({ creator }: CreatorHeaderProps) {
   // Make sure we use the correct ID for the creator
   const creatorId = creator.id || creator.user_id;
   
-  useEffect(() => {
-    console.log("CreatorHeader rendering with creator:", creator);
-    console.log("Using creatorId for social links:", creatorId);
-    
-    // Check follow status when component mounts
-    if (creatorId) {
-      checkFollowStatus(creatorId).then(status => {
+  // Check follow status only once when component mounts
+  const initializeFollowStatus = useCallback(async () => {
+    if (creatorId && !hasCheckedStatus) {
+      console.log("CreatorHeader checking follow status for:", creatorId);
+      setHasCheckedStatus(true);
+      try {
+        const status = await checkFollowStatus(creatorId);
         setIsFollowing(status);
-      });
+        console.log("Follow status set to:", status);
+      } catch (error) {
+        console.error("Error checking follow status:", error);
+      }
     }
-  }, [creator, creatorId, checkFollowStatus, setIsFollowing]);
+  }, [creatorId, hasCheckedStatus, checkFollowStatus, setIsFollowing]);
+
+  useEffect(() => {
+    initializeFollowStatus();
+  }, [initializeFollowStatus]);
 
   const handleFollowToggle = async () => {
     if (!creatorId) return;
     
-    if (isFollowing) {
-      await unfollowCreator(creatorId);
-    } else {
-      await followCreator(creatorId);
+    try {
+      if (isFollowing) {
+        await unfollowCreator(creatorId);
+      } else {
+        await followCreator(creatorId);
+      }
+    } catch (error) {
+      console.error("Error toggling follow status:", error);
     }
   };
 
