@@ -47,6 +47,42 @@ export function useFollow() {
       return;
     }
     
+    // Check if user is trying to follow themselves
+    try {
+      const { data: creator, error } = await supabase
+        .from("creators")
+        .select("user_id")
+        .eq("id", creatorId)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching creator:", error);
+        toast({
+          title: "Error",
+          description: "Failed to follow creator",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (creator?.user_id === user.id) {
+        toast({
+          title: "Cannot Follow Yourself",
+          description: "You cannot follow your own creator profile",
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking creator ownership:", error);
+      toast({
+        title: "Error",
+        description: "Failed to follow creator",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (isLoading) return;
     
     setIsLoading(true);
