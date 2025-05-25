@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -94,7 +93,8 @@ export function useFollow() {
     setIsLoading(true);
     
     try {
-      const { data: insertData, error } = await supabase
+      // First, insert the follow relationship
+      const { data: insertData, error: followError } = await supabase
         .from("follows")
         .insert({
           user_id: user.id,
@@ -103,14 +103,14 @@ export function useFollow() {
         .select('creator_id')
         .single();
       
-      if (error) {
-        if (error.code === "23505") { // Unique constraint violation
+      if (followError) {
+        if (followError.code === "23505") { // Unique constraint violation
           toast({
             description: "You're already following this creator",
           });
           setIsFollowing(true);
         } else {
-          throw error;
+          throw followError;
         }
       } else {
         console.log("Follow successful");
@@ -136,6 +136,9 @@ export function useFollow() {
           }
         }
         
+        // Note: Conversation participants are automatically created by the database trigger
+        // when a follow is inserted, so we don't need to manually create them here
+        
         // Invalidate relevant queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
@@ -149,11 +152,21 @@ export function useFollow() {
       }
     } catch (error: any) {
       console.error("Error following creator:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to follow creator",
-        variant: "destructive",
-      });
+      
+      // Provide more specific error messages
+      if (error.message?.includes("row-level security")) {
+        toast({
+          title: "Permission Error",
+          description: "There was an issue with permissions. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to follow creator",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
