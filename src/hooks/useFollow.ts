@@ -38,6 +38,47 @@ export function useFollow() {
     }
   };
 
+  // Function to ensure conversation participants exist
+  const ensureConversationParticipants = async (creatorId: string, creatorUserId: string): Promise<void> => {
+    if (!user) return;
+    
+    try {
+      // Check if conversation participants already exist
+      const { data: existingParticipant } = await supabase
+        .from("conversation_participants")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("other_user_id", creatorUserId)
+        .maybeSingle();
+      
+      if (!existingParticipant) {
+        // Create conversation participant entries
+        const { error: participantError } = await supabase
+          .from("conversation_participants")
+          .insert([
+            {
+              user_id: user.id,
+              other_user_id: creatorUserId,
+              last_message_at: new Date().toISOString()
+            },
+            {
+              user_id: creatorUserId,
+              other_user_id: user.id,
+              last_message_at: new Date().toISOString()
+            }
+          ]);
+        
+        if (participantError) {
+          console.error("Error creating conversation participants:", participantError);
+        } else {
+          console.log("Conversation participants created successfully");
+        }
+      }
+    } catch (error) {
+      console.error("Error ensuring conversation participants:", error);
+    }
+  };
+
   // Function to follow a creator using follows table
   const followCreator = async (creatorId: string): Promise<void> => {
     if (!user) {
@@ -119,7 +160,7 @@ export function useFollow() {
         });
         setIsFollowing(true);
         
-        // Create follow notification - get the creator's user_id for the notification
+        // Get the creator's user_id for the notification and conversation
         const { data: creatorData } = await supabase
           .from("creators")
           .select("user_id")
@@ -133,6 +174,9 @@ export function useFollow() {
           try {
             await createFollowNotification(creatorId, creatorData.user_id);
             console.log("Follow notification created successfully");
+            
+            // Ensure conversation participants are created
+            await ensureConversationParticipants(creatorId, creatorData.user_id);
           } catch (notificationError) {
             console.error("Failed to create follow notification:", notificationError);
             // Don't fail the follow action if notification creation fails
