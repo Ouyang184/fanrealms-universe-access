@@ -1,9 +1,7 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, Clock, Zap, Filter } from "lucide-react";
+import { TrendingUp, Clock, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContentItem } from "./ContentItem";
 import { RecommendedCreator } from "./RecommendedCreator";
@@ -45,22 +43,6 @@ export function ContentTabs({
               Recommended
             </TabsTrigger>
           </TabsList>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Sort
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-gray-900 border-gray-800 text-white">
-              <DropdownMenuItem>Most Popular</DropdownMenuItem>
-              <DropdownMenuItem>Newest First</DropdownMenuItem>
-              <DropdownMenuItem>Highest Rated</DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-800" />
-              <DropdownMenuItem>Free Content</DropdownMenuItem>
-              <DropdownMenuItem>Premium Content</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         <TabsContent value="trending" className="mt-0">
