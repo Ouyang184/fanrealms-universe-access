@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,28 @@ export function CreatePostForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch user's creator profile to get creator_id
+  const { data: creatorProfile } = useQuery({
+    queryKey: ['userCreator', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching creator profile:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
 
   const uploadFile = async (file: File, userId: string): Promise<string | null> => {
     try {
@@ -84,6 +106,7 @@ export function CreatePostForm() {
           title,
           content,
           author_id: user.id,
+          creator_id: creatorProfile?.id || null, // Set creator_id for notifications
           tier_id: selectedTierId,
           attachments: uploadedAttachments
         });
