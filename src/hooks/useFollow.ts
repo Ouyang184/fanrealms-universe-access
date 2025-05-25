@@ -1,14 +1,15 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNotificationActions } from "./useNotificationActions";
 
 export function useFollow() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { createFollowNotification } = useNotificationActions();
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -88,12 +89,14 @@ export function useFollow() {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase
+      const { data: insertData, error } = await supabase
         .from("follows")
         .insert({
           user_id: user.id,
           creator_id: creatorId
-        });
+        })
+        .select('creator_id')
+        .single();
       
       if (error) {
         if (error.code === "23505") { // Unique constraint violation
@@ -110,6 +113,17 @@ export function useFollow() {
         });
         setIsFollowing(true);
         
+        // Create follow notification
+        const { data: creatorData } = await supabase
+          .from("creators")
+          .select("user_id")
+          .eq("id", creatorId)
+          .single();
+          
+        if (creatorData?.user_id) {
+          await createFollowNotification(creatorId, creatorData.user_id);
+        }
+        
         // Invalidate all relevant queries to refresh data immediately
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
@@ -117,7 +131,8 @@ export function useFollow() {
           queryClient.invalidateQueries({ queryKey: ["creators"] }),
           queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
           queryClient.invalidateQueries({ queryKey: ["follows"] }),
-          queryClient.invalidateQueries({ queryKey: ["posts"] })
+          queryClient.invalidateQueries({ queryKey: ["posts"] }),
+          queryClient.invalidateQueries({ queryKey: ["notifications"] })
         ]);
       }
     } catch (error: any) {
