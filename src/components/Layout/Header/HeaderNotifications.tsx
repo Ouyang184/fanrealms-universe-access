@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export function HeaderNotifications() {
   const { user } = useAuth();
   const { unreadCounts } = useNotifications();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const location = useLocation();
   
   useEffect(() => {
     if (!user?.id) return;
@@ -33,9 +34,10 @@ export function HeaderNotifications() {
     
     // Initial fetch
     fetchMessagesCount();
-      
+    
+    // Set up realtime subscription for message changes
     const messagesChannel = supabase
-      .channel(`messages-${user.id}`)
+      .channel(`header-messages-${user.id}`)
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, 
         () => {
@@ -49,6 +51,29 @@ export function HeaderNotifications() {
       supabase.removeChannel(messagesChannel);
     };
   }, [user?.id]);
+
+  // Refresh message count when returning to any page from messages
+  useEffect(() => {
+    if (user?.id && location.pathname !== '/messages') {
+      // Small delay to allow any pending updates to complete
+      const timer = setTimeout(() => {
+        const fetchMessagesCount = async () => {
+          const { count, error } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', user.id)
+            .eq('is_read', false);
+            
+          if (!error && count !== null) {
+            setUnreadMessages(count);
+          }
+        };
+        fetchMessagesCount();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, user?.id]);
 
   return (
     <div className="flex items-center gap-2">

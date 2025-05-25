@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ interface MessageData {
 
 export function useMessages(userId: string | undefined) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: messages = [], isLoading, refetch } = useQuery({
     queryKey: ['user-messages', userId],
@@ -84,6 +85,32 @@ export function useMessages(userId: string | undefined) {
     enabled: !!userId,
   });
 
+  // Mark messages as read mutation
+  const markMessagesAsReadMutation = useMutation({
+    mutationFn: async (otherUserId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Mark all unread messages from the other user as read
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('receiver_id', user.id)
+        .eq('sender_id', otherUserId)
+        .eq('is_read', false);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['user-messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+    onError: (error) => {
+      console.error('Error marking messages as read:', error);
+    }
+  });
+
   // Set up realtime subscription
   useEffect(() => {
     if (!userId) return;
@@ -101,6 +128,17 @@ export function useMessages(userId: string | undefined) {
           refetch();
         }
       )
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}` 
+        }, 
+        () => {
+          refetch();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -108,7 +146,12 @@ export function useMessages(userId: string | undefined) {
     };
   }, [userId, refetch]);
 
-  return { messages, isLoading };
+  return { 
+    messages, 
+    isLoading, 
+    markMessagesAsRead: markMessagesAsReadMutation.mutate,
+    isMarkingAsRead: markMessagesAsReadMutation.isPending
+  };
 }
 
 export type { MessageData };

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,7 +22,9 @@ export default function MessagesPage() {
 
   const { 
     messages, 
-    isLoading: messagesLoading
+    isLoading: messagesLoading,
+    markMessagesAsRead,
+    isMarkingAsRead
   } = useMessages(selectedConversation);
 
   // Set document title when component mounts
@@ -36,6 +39,14 @@ export default function MessagesPage() {
     }
   }, [conversations, selectedConversation]);
 
+  // Mark messages as read when conversation is selected
+  useEffect(() => {
+    if (selectedConversation && user?.id) {
+      // Mark messages from the selected conversation as read
+      markMessagesAsRead(selectedConversation);
+    }
+  }, [selectedConversation, user?.id, markMessagesAsRead]);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
     
@@ -48,6 +59,10 @@ export default function MessagesPage() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+  };
+
+  const handleConversationSelect = (conversationId: string) => {
+    setSelectedConversation(conversationId);
   };
 
   // Filter conversations based on search term
@@ -128,7 +143,7 @@ export default function MessagesPage() {
                                   ? 'bg-muted border-l-primary'
                                   : 'border-l-transparent'
                               }`}
-                              onClick={() => setSelectedConversation(conversation.other_user_id)}
+                              onClick={() => handleConversationSelect(conversation.other_user_id)}
                             >
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-12 w-12">
@@ -203,7 +218,7 @@ export default function MessagesPage() {
                         <div className="flex flex-col h-[400px]">
                           {/* Messages */}
                           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-                            {messagesLoading ? (
+                            {messagesLoading || isMarkingAsRead ? (
                               <div className="flex justify-center items-center h-full">
                                 <LoadingSpinner />
                               </div>
