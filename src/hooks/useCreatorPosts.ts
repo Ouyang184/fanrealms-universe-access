@@ -66,6 +66,11 @@ export function useCreatorPosts() {
       
       // Transform to CreatorPost format with mock data for fields we don't yet have
       return data.map((post): CreatorPost => {
+        // Safely access user data with null checks
+        const userData = post.users || {};
+        const username = userData.username || 'Unknown Creator';
+        const profilePicture = userData.profile_picture || null;
+        
         // Determine post type (simplified - in real app would be from a column)
         const typeKeywords: Record<string, string[]> = {
           article: ["blog", "article", "write", "tutorial"],
@@ -112,8 +117,8 @@ export function useCreatorPosts() {
           id: post.id,
           title: post.title,
           content: post.content,
-          authorName: post.users?.username || 'Unknown',
-          authorAvatar: post.users?.profile_picture || null,
+          authorName: username,
+          authorAvatar: profilePicture,
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
