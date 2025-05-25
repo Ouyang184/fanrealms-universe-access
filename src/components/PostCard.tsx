@@ -21,6 +21,7 @@ interface PostCardProps {
     username?: string;
     profile_picture?: string;
   };
+  author_id?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -32,7 +33,8 @@ const PostCard: React.FC<PostCardProps> = ({
   createdAt,
   tier_id,
   attachments,
-  users
+  users,
+  author_id
 }) => {
   // Parse attachments from JSON and get first media item
   const getFirstMedia = (attachments: any) => {
@@ -204,8 +206,8 @@ const PostCard: React.FC<PostCardProps> = ({
           <PostAttachments attachments={parsedAttachments} />
         </div>
         
-        {/* Add the new interactions component */}
-        <PostInteractions postId={id} />
+        {/* Add the interactions component with author ID */}
+        <PostInteractions postId={id} authorId={author_id} />
       </CardContent>
     </Card>
   );

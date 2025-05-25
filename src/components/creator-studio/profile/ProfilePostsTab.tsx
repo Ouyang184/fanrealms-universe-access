@@ -45,6 +45,7 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
           date={post.date || post.createdAt}
           tier_id={post.tier_id}
           attachments={post.attachments}
+          author_id={post.authorId}
         />
       ))}
     </div>
