@@ -26,7 +26,9 @@ interface PostInteractionsProps {
 export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   const { user } = useAuth();
   const { deletePost, isDeleting } = useDeletePost();
-  const isAuthor = user?.id === authorId;
+  
+  // Clean up the authorId comparison - ensure both are strings and handle undefined
+  const isAuthor = user?.id && authorId && user.id === authorId;
 
   console.log('PostInteractions - postId:', postId, 'authorId:', authorId, 'userId:', user?.id, 'isAuthor:', isAuthor);
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -104,6 +105,13 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
   const isPremium = !!tier_id;
 
+  // Properly extract the author_id string value
+  const authorIdValue = typeof author_id === 'string' ? author_id : 
+                       (author_id && typeof author_id === 'object' && 'value' in author_id) ? 
+                       (author_id as any).value : undefined;
+
+  console.log('PostCard - Raw author_id:', author_id, 'Extracted authorIdValue:', authorIdValue);
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
@@ -206,8 +214,8 @@ const PostCard: React.FC<PostCardProps> = ({
           <PostAttachments attachments={parsedAttachments} />
         </div>
         
-        {/* Add the interactions component with author ID */}
-        <PostInteractions postId={id} authorId={author_id} />
+        {/* Add the interactions component with the properly extracted author ID */}
+        <PostInteractions postId={id} authorId={authorIdValue} />
       </CardContent>
     </Card>
   );
