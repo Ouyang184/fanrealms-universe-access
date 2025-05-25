@@ -94,7 +94,7 @@ export function useFollow() {
     setIsLoading(true);
     
     try {
-      // Insert the follow relationship directly without relying on triggers for conversation creation
+      // Insert the follow relationship - the database trigger will handle conversation creation
       const { data: insertData, error: followError } = await supabase
         .from("follows")
         .insert({
@@ -137,36 +137,6 @@ export function useFollow() {
           }
         }
         
-        // Manually create conversation participants as fallback if trigger fails
-        try {
-          if (creatorData?.user_id) {
-            // Create conversation participant for follower to see creator
-            await supabase
-              .from("conversation_participants")
-              .upsert({
-                user_id: user.id,
-                other_user_id: creatorData.user_id,
-                last_message_at: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,other_user_id'
-              });
-            
-            // Create conversation participant for creator to see follower
-            await supabase
-              .from("conversation_participants")
-              .upsert({
-                user_id: creatorData.user_id,
-                other_user_id: user.id,
-                last_message_at: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,other_user_id'
-              });
-          }
-        } catch (conversationError) {
-          console.warn("Could not create conversation participants (this is optional):", conversationError);
-          // Don't fail the follow if conversation creation fails
-        }
-        
         // Invalidate relevant queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
@@ -180,32 +150,11 @@ export function useFollow() {
       }
     } catch (error: any) {
       console.error("Error following creator:", error);
-      
-      // Provide more specific error messages
-      if (error.message?.includes("row-level security") || error.message?.includes("conversation_participants")) {
-        // If RLS blocks conversation creation, still try to complete the follow
-        toast({
-          description: "You are now following this creator",
-        });
-        setIsFollowing(true);
-        
-        // Invalidate queries even if conversation creation failed
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
-          queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
-          queryClient.invalidateQueries({ queryKey: ["creators"] }),
-          queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
-          queryClient.invalidateQueries({ queryKey: ["follows"] }),
-          queryClient.invalidateQueries({ queryKey: ["posts"] }),
-          queryClient.invalidateQueries({ queryKey: ["conversations"] })
-        ]);
-      } else {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to follow creator",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to follow creator",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
