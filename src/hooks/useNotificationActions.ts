@@ -52,11 +52,14 @@ export const useNotificationActions = () => {
 
       if (error) {
         console.error('Error creating follow notification:', error);
+        throw error;
       } else {
         console.log('Follow notification created successfully:', data);
+        return data;
       }
     } catch (error) {
       console.error('Error in createFollowNotification:', error);
+      throw error;
     }
   };
 

@@ -5,30 +5,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export function HeaderNotifications() {
   const { user } = useAuth();
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const { unreadCounts } = useNotifications();
   const [unreadMessages, setUnreadMessages] = useState(0);
   
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Fetch unread notifications count from the notifications table
-    const fetchNotificationsCount = async () => {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-        
-      if (!error && count !== null) {
-        setUnreadNotifications(count);
-      } else {
-        // Reset to 0 if there's an error or no data
-        setUnreadNotifications(0);
-      }
-    };
     
     // Fetch unread messages count
     const fetchMessagesCount = async () => {
@@ -47,19 +32,7 @@ export function HeaderNotifications() {
     };
     
     // Initial fetch
-    fetchNotificationsCount();
     fetchMessagesCount();
-    
-    // Set up subscription for real-time updates for notifications
-    const notificationsChannel = supabase
-      .channel(`notifications-${user.id}`)
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
-        () => {
-          fetchNotificationsCount();
-        }
-      )
-      .subscribe();
       
     const messagesChannel = supabase
       .channel(`messages-${user.id}`)
@@ -73,7 +46,6 @@ export function HeaderNotifications() {
     
     // Cleanup subscriptions
     return () => {
-      supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(messagesChannel);
     };
   }, [user?.id]);
@@ -88,9 +60,9 @@ export function HeaderNotifications() {
           className="text-muted-foreground hover:text-foreground relative"
         >
           <Bell className="h-5 w-5" />
-          {unreadNotifications > 0 && (
+          {unreadCounts.all > 0 && (
             <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              {unreadCounts.all > 9 ? '9+' : unreadCounts.all}
             </span>
           )}
           <span className="sr-only">Notifications</span>

@@ -22,10 +22,15 @@ export const useNotifications = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('No user ID found for notifications query');
+        return [];
+      }
+      
+      console.log('Fetching notifications for user:', user.id);
       
       const { data, error } = await supabase
         .from('notifications')
@@ -38,9 +43,11 @@ export const useNotifications = () => {
         throw error;
       }
 
+      console.log('Fetched notifications:', data);
       return data as Notification[];
     },
     enabled: !!user?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const markAsReadMutation = useMutation({
@@ -125,11 +132,13 @@ export const useNotifications = () => {
     system: notifications.filter(
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.is_read,
     ).length,
+    follow: notifications.filter((n) => n.type === "follow" && !n.is_read).length,
   };
 
   return {
     notifications,
     isLoading,
+    error,
     unreadCounts,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,

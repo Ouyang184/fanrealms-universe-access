@@ -130,7 +130,13 @@ export function useFollow() {
           
         if (creatorData?.user_id) {
           console.log("Creating follow notification...");
-          await createFollowNotification(creatorId, creatorData.user_id);
+          try {
+            await createFollowNotification(creatorId, creatorData.user_id);
+            console.log("Follow notification created successfully");
+          } catch (notificationError) {
+            console.error("Failed to create follow notification:", notificationError);
+            // Don't fail the follow action if notification creation fails
+          }
         } else {
           console.error("Could not find creator user_id for notification");
         }
