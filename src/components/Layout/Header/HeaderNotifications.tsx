@@ -16,12 +16,13 @@ export function HeaderNotifications() {
   useEffect(() => {
     if (!user?.id) return;
     
-    // Fetch unread messages count
+    // Fetch unread messages count, excluding messages sent to self
     const fetchMessagesCount = async () => {
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', user.id)
+        .neq('sender_id', user.id) // Exclude messages sent by the user themselves
         .eq('is_read', false);
         
       if (!error && count !== null) {
@@ -62,6 +63,7 @@ export function HeaderNotifications() {
             .from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('receiver_id', user.id)
+            .neq('sender_id', user.id) // Exclude messages sent by the user themselves
             .eq('is_read', false);
             
           if (!error && count !== null) {
