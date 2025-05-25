@@ -1,112 +1,94 @@
 
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Message } from "@/components/messaging/Message";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MessageSquare, Search, Send, Users } from "lucide-react";
+import { useConversations } from "@/hooks/useConversations";
+import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDeleteMessage } from "@/hooks/useDeleteMessage";
+import { DeleteMessageDialog } from "@/components/messaging/DeleteMessageDialog";
 
-interface MessageData {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  message_text: string;
-  created_at: string;
-  is_read: boolean;
-  sender_username?: string;
-  sender_profile_picture?: string;
-}
-
-export default function CreatorMessages() {
+export default function CreatorStudioMessagesPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { conversations, isLoading: conversationsLoading, sendMessage, isSendingMessage } = useConversations();
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const { data: messages = [], isLoading, refetch } = useQuery({
-    queryKey: ['creator-messages', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
+  const deleteMessageMutation = useDeleteMessage();
 
-      // Fetch messages where the creator is the receiver
-      const { data: messagesData, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('receiver_id', user.id)
-        .order('created_at', { ascending: false });
+  const { 
+    messages, 
+    isLoading: messagesLoading,
+    markMessagesAsRead,
+    isMarkingAsRead
+  } = useMessages(selectedConversation);
 
-      if (error) {
-        // Only show toast for actual server errors, not empty results
-        if (error.code !== 'PGRST116') {  // PGRST116 is "No rows returned" which isn't a real error
-          toast({
-            title: "Error",
-            description: "Failed to load messages",
-            variant: "destructive",
-          });
-          console.error("Error loading messages:", error);
-          return [];
-        }
-      }
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = "Messages | Creator Studio";
+  }, []);
 
-      // Now fetch user data for senders
-      const senderIds = new Set<string>();
-      messagesData?.forEach(message => {
-        senderIds.add(message.sender_id);
+  // Select first conversation if none selected
+  useEffect(() => {
+    if (conversations.length > 0 && !selectedConversation) {
+      setSelectedConversation(conversations[0].other_user_id);
+    }
+  }, [conversations, selectedConversation]);
+
+  // Mark messages as read when conversation is selected
+  useEffect(() => {
+    if (selectedConversation && user?.id) {
+      markMessagesAsRead(selectedConversation);
+    }
+  }, [selectedConversation, user?.id, markMessagesAsRead]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return;
+    
+    try {
+      await sendMessage({
+        receiverId: selectedConversation,
+        messageText: newMessage.trim()
       });
+      setNewMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
 
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', Array.from(senderIds));
+  const handleConversationSelect = (conversationId: string) => {
+    setSelectedConversation(conversationId);
+  };
 
-      if (usersError) {
-        console.error("Error loading users:", usersError);
-        return [];
-      }
-
-      // Map user data to messages
-      const userMap = new Map();
-      usersData?.forEach(user => {
-        userMap.set(user.id, user);
-      });
-
-      // Combine message data with sender info
-      return messagesData?.map(message => {
-        const senderData = userMap.get(message.sender_id);
-        return {
-          ...message,
-          sender_username: senderData?.username || "Unknown User",
-          sender_profile_picture: senderData?.profile_picture
-        };
-      }) || [];
-    },
-    enabled: !!user?.id,
+  const filteredConversations = conversations.filter(conv => {
+    const otherUserName = conv.creator_profile?.display_name || conv.other_user?.username || 'Unknown';
+    return otherUserName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Set up realtime subscription for new messages
-  useEffect(() => {
-    if (!user?.id) return;
+  const selectedConvData = conversations.find(conv => conv.other_user_id === selectedConversation);
 
-    const channel = supabase
-      .channel(`messages-${user.id}`)
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}` 
-        }, 
-        () => {
-          refetch();
-        }
-      )
-      .subscribe();
+  const handleDeleteMessage = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteDialog(true);
+  };
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetch]);
+  const confirmDeleteMessage = () => {
+    if (messageToDelete) {
+      deleteMessageMutation.mutate(messageToDelete);
+      setShowDeleteDialog(false);
+      setMessageToDelete(null);
+    }
+  };
 
-  if (isLoading) {
+  if (conversationsLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <LoadingSpinner />
@@ -116,31 +98,219 @@ export default function CreatorMessages() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
-            <div className="mb-4 text-muted-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-40">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
-            </div>
-            <p className="text-lg font-medium">No messages yet</p>
-            <p className="text-muted-foreground text-sm mt-1">
-              Messages from your fans will appear here
-            </p>
-          </div>
-        ) : (
-          messages.map((message: MessageData) => (
-            <Message
-              key={message.id}
-              senderName={message.sender_username || "Unknown User"}
-              messageText={message.message_text}
-              createdAt={message.created_at}
-              isRead={message.is_read}
-            />
-          ))
-        )}
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Messages</h1>
+        <p className="text-muted-foreground">
+          Manage your conversations with subscribers and fans
+        </p>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+        {/* Conversations List */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Conversations ({filteredConversations.length})
+            </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="space-y-1 max-h-[400px] overflow-y-auto">
+              {filteredConversations.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2" />
+                  <p>No conversations found</p>
+                  {searchTerm && (
+                    <p className="text-sm">Try adjusting your search</p>
+                  )}
+                </div>
+              ) : (
+                filteredConversations.map((conversation) => {
+                  const displayName = conversation.creator_profile?.display_name || 
+                                    conversation.other_user?.username || 'Unknown User';
+                  const avatarUrl = conversation.creator_profile?.profile_image_url ||
+                                  conversation.other_user?.profile_picture;
+                  
+                  return (
+                    <div
+                      key={conversation.other_user_id}
+                      className={`p-4 cursor-pointer hover:bg-muted/50 border-l-4 transition-colors ${
+                        selectedConversation === conversation.other_user_id
+                          ? 'bg-muted border-l-primary'
+                          : 'border-l-transparent'
+                      }`}
+                      onClick={() => handleConversationSelect(conversation.other_user_id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+                          <AvatarFallback>
+                            {displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-medium truncate">{displayName}</h3>
+                            {conversation.unread_count > 0 && (
+                              <Badge variant="destructive" className="text-xs">
+                                {conversation.unread_count}
+                              </Badge>
+                            )}
+                          </div>
+                          {conversation.last_message && (
+                            <p className="text-sm text-muted-foreground truncate mt-1">
+                              {conversation.last_message.message_text}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {conversation.last_message_at ? 
+                              new Date(conversation.last_message_at).toLocaleDateString() : 
+                              'No messages'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Chat Area */}
+        <Card className="lg:col-span-2">
+          {selectedConversation && selectedConvData ? (
+            <>
+              <CardHeader className="border-b">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage 
+                      src={selectedConvData.creator_profile?.profile_image_url || 
+                           selectedConvData.other_user?.profile_picture || undefined} 
+                      alt={selectedConvData.creator_profile?.display_name || 
+                           selectedConvData.other_user?.username || 'User'} 
+                    />
+                    <AvatarFallback>
+                      {(selectedConvData.creator_profile?.display_name || 
+                        selectedConvData.other_user?.username || 'U').charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold">
+                      {selectedConvData.creator_profile?.display_name || 
+                       selectedConvData.other_user?.username || 'Unknown User'}
+                    </h3>
+                    {selectedConvData.creator_profile?.bio && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedConvData.creator_profile.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="flex-1 p-4">
+                <div className="flex flex-col h-[400px]">
+                  {/* Messages */}
+                  <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+                    {messagesLoading || isMarkingAsRead ? (
+                      <div className="flex justify-center items-center h-full">
+                        <LoadingSpinner />
+                      </div>
+                    ) : messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                        <MessageSquare className="h-12 w-12 mb-4" />
+                        <p>No messages yet</p>
+                        <p className="text-sm">Send a message to start the conversation</p>
+                      </div>
+                    ) : (
+                      messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${
+                            message.sender_id === user?.id ? 'justify-end' : 'justify-start'
+                          }`}
+                        >
+                          <div
+                            className={`max-w-[70%] p-3 rounded-lg transition-colors ${
+                              message.sender_id === user?.id
+                                ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
+                                : 'bg-muted'
+                            }`}
+                            onClick={() => {
+                              if (message.sender_id === user?.id) {
+                                handleDeleteMessage(message.id);
+                              }
+                            }}
+                            title={message.sender_id === user?.id ? "Click to delete message" : ""}
+                          >
+                            <p className="text-sm">{message.message_text}</p>
+                            <p className={`text-xs mt-1 ${
+                              message.sender_id === user?.id 
+                                ? 'text-primary-foreground/70' 
+                                : 'text-muted-foreground'
+                            }`}>
+                              {new Date(message.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type your message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={isSendingMessage}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() || isSendingMessage}
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="flex items-center justify-center h-full">
+              <div className="text-center text-muted-foreground">
+                <MessageSquare className="h-16 w-16 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
+                <p>Choose a conversation from the list to start messaging</p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+
+      <DeleteMessageDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDeleteMessage}
+        isDeleting={deleteMessageMutation.isPending}
+      />
     </div>
   );
 }
