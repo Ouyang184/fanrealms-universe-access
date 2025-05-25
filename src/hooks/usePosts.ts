@@ -28,13 +28,13 @@ export const usePosts = () => {
         id: post.id,
         title: post.title,
         content: post.content,
-        authorId: post.author_id, // Make sure this is properly mapped
+        authorId: post.author_id,
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
         createdAt: post.created_at,
         date: formatRelativeDate(post.created_at),
         tier_id: post.tier_id,
-        attachments: post.attachments
+        attachments: post.attachments // Include the actual attachments data
       }));
     }
   });

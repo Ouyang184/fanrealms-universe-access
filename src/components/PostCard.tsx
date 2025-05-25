@@ -105,10 +105,10 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
   const isPremium = !!tier_id;
 
-  // Extract the author_id - handle both string and object forms
+  // Properly extract the author_id string value
   const authorIdValue = typeof author_id === 'string' ? author_id : 
                        (author_id && typeof author_id === 'object' && 'value' in author_id) ? 
-                       (author_id as any).value : author_id;
+                       (author_id as any).value : undefined;
 
   console.log('PostCard - Raw author_id:', author_id, 'Extracted authorIdValue:', authorIdValue);
 
