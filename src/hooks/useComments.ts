@@ -14,7 +14,7 @@ export interface Comment {
   users: {
     username: string;
     profile_picture?: string;
-  };
+  } | null;
 }
 
 export const useComments = (postId: string) => {
@@ -22,9 +22,11 @@ export const useComments = (postId: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: comments = [], isLoading } = useQuery({
+  const { data: comments = [], isLoading, error } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
+      console.log('Fetching comments for post:', postId);
+      
       const { data, error } = await supabase
         .from('comments')
         .select(`
@@ -37,7 +39,12 @@ export const useComments = (postId: string) => {
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching comments:', error);
+        throw error;
+      }
+      
+      console.log('Fetched comments:', data);
       return data as Comment[];
     },
     enabled: !!postId
@@ -46,6 +53,8 @@ export const useComments = (postId: string) => {
   const addCommentMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!user?.id) throw new Error('Must be logged in to comment');
+
+      console.log('Adding comment:', { postId, userId: user.id, content });
 
       const { data, error } = await supabase
         .from('comments')
@@ -63,7 +72,12 @@ export const useComments = (postId: string) => {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+      }
+      
+      console.log('Added comment:', data);
       return data;
     },
     onSuccess: () => {
@@ -73,6 +87,7 @@ export const useComments = (postId: string) => {
       });
     },
     onError: (error) => {
+      console.error('Comment mutation error:', error);
       toast({
         title: "Error",
         description: "Failed to add comment. Please try again.",
@@ -83,13 +98,20 @@ export const useComments = (postId: string) => {
 
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
+      if (!user?.id) throw new Error('Must be logged in to delete comment');
+
+      console.log('Deleting comment:', commentId);
+
       const { error } = await supabase
         .from('comments')
         .delete()
         .eq('id', commentId)
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting comment:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
@@ -98,6 +120,7 @@ export const useComments = (postId: string) => {
       });
     },
     onError: (error) => {
+      console.error('Delete comment error:', error);
       toast({
         title: "Error",
         description: "Failed to delete comment. Please try again.",
@@ -109,6 +132,7 @@ export const useComments = (postId: string) => {
   return {
     comments,
     isLoading,
+    error,
     addComment: addCommentMutation.mutate,
     deleteComment: deleteCommentMutation.mutate,
     isAddingComment: addCommentMutation.isPending,

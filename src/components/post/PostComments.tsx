@@ -20,6 +20,7 @@ export function PostComments({ postId }: PostCommentsProps) {
   const { 
     comments, 
     isLoading, 
+    error,
     addComment, 
     deleteComment, 
     isAddingComment 
@@ -32,6 +33,15 @@ export function PostComments({ postId }: PostCommentsProps) {
     addComment(newComment.trim());
     setNewComment('');
   };
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('PostComments rendered with:', { postId, comments, isLoading, error });
+  }, [postId, comments, isLoading, error]);
+
+  if (error) {
+    console.error('Comments error:', error);
+  }
 
   return (
     <div className="space-y-4">
@@ -87,50 +97,61 @@ export function PostComments({ postId }: PostCommentsProps) {
               <div className="flex justify-center py-4">
                 <LoadingSpinner />
               </div>
+            ) : error ? (
+              <p className="text-center text-destructive py-4">
+                Error loading comments. Please try again.
+              </p>
             ) : comments.length === 0 ? (
               <p className="text-center text-muted-foreground py-4">
-                {user ? 'Be the first to comment!' : 'No comments yet.'}
+                {user ? 'No comments yet. Be the first to comment!' : 'No comments yet.'}
               </p>
             ) : (
-              comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage 
-                      src={comment.users.profile_picture || undefined} 
-                      alt={comment.users.username} 
-                    />
-                    <AvatarFallback>
-                      {comment.users.username.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">
-                          {comment.users.username}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelativeDate(comment.created_at)}
-                        </span>
+              comments.map((comment) => {
+                // Safely access user data with null checks
+                const username = comment.users?.username || 'Unknown User';
+                const profilePicture = comment.users?.profile_picture || null;
+                const userInitial = username.charAt(0).toUpperCase();
+
+                return (
+                  <div key={comment.id} className="flex gap-3 p-3 rounded-lg bg-muted/50">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage 
+                        src={profilePicture || undefined} 
+                        alt={username} 
+                      />
+                      <AvatarFallback>
+                        {userInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">
+                            {username}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatRelativeDate(comment.created_at)}
+                          </span>
+                        </div>
+                        
+                        {user?.id === comment.user_id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteComment(comment.id)}
+                            className="h-6 w-6 p-0 hover:bg-destructive/20"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                       
-                      {user?.id === comment.user_id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteComment(comment.id)}
-                          className="h-6 w-6 p-0 hover:bg-destructive/20"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
+                      <p className="text-sm leading-relaxed">{comment.content}</p>
                     </div>
-                    
-                    <p className="text-sm leading-relaxed">{comment.content}</p>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
