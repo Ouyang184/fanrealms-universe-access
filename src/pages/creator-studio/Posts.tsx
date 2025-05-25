@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Search,
@@ -19,8 +18,7 @@ import {
   CalendarDays,
   CheckCircle2,
   MessageSquare,
-  Loader,
-  Film
+  Loader
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,14 +171,6 @@ export default function CreatorPostsPage() {
                 <Video className="h-4 w-4 mr-2" />
                 Videos
               </TabsTrigger>
-              <TabsTrigger value="audio">
-                <Music className="h-4 w-4 mr-2" />
-                Audio
-              </TabsTrigger>
-              <TabsTrigger value="media">
-                <Film className="h-4 w-4 mr-2" />
-                Media
-              </TabsTrigger>
             </TabsList>
             <div className="hidden sm:flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Show draft posts</span>
@@ -189,7 +179,7 @@ export default function CreatorPostsPage() {
           </div>
 
           {/* Content for all tabs */}
-          {["all", "article", "image", "video", "audio", "media"].map((tabValue) => (
+          {["all", "article", "image", "video"].map((tabValue) => (
             <TabsContent key={tabValue} value={tabValue} className="space-y-4">
               {isLoading ? (
                 // Loading state
@@ -234,12 +224,8 @@ export default function CreatorPostsPage() {
                         <FileText className="h-10 w-10 text-muted-foreground" />
                       ) : tabValue === "image" ? (
                         <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                      ) : tabValue === "video" ? (
-                        <Video className="h-10 w-10 text-muted-foreground" />
-                      ) : tabValue === "audio" ? (
-                        <Music className="h-10 w-10 text-muted-foreground" />
                       ) : (
-                        <Film className="h-10 w-10 text-muted-foreground" />
+                        <Video className="h-10 w-10 text-muted-foreground" />
                       )}
                     </div>
                     <h3 className="mt-4 text-lg font-medium">No posts found</h3>
