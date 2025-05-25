@@ -21,10 +21,10 @@ export function useFollow() {
     try {
       const { data, error } = await supabase
         .from("follows")
-        .select("id")
+        .select("user_id, creator_id")
         .eq("user_id", user.id)
         .eq("creator_id", creatorId)
-        .single();
+        .maybeSingle();
       
       if (error && error.code !== "PGRST116") {
         console.error("Error checking follow status:", error);
@@ -149,7 +149,8 @@ export function useFollow() {
           queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
           queryClient.invalidateQueries({ queryKey: ["follows"] }),
           queryClient.invalidateQueries({ queryKey: ["posts"] }),
-          queryClient.invalidateQueries({ queryKey: ["notifications"] })
+          queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+          queryClient.invalidateQueries({ queryKey: ["conversations"] })
         ]);
       }
     } catch (error: any) {
@@ -193,7 +194,8 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["creators"] }),
         queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
         queryClient.invalidateQueries({ queryKey: ["follows"] }),
-        queryClient.invalidateQueries({ queryKey: ["posts"] })
+        queryClient.invalidateQueries({ queryKey: ["posts"] }),
+        queryClient.invalidateQueries({ queryKey: ["conversations"] })
       ]);
     } catch (error: any) {
       toast({
