@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -124,37 +123,33 @@ export function useConversations() {
     mutationFn: async ({ receiverId, messageText }: { receiverId: string; messageText: string }) => {
       if (!user?.id) throw new Error('Must be logged in to send messages');
 
+      // Validate that the user ID matches the logged-in user
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser?.id !== user.id) {
+        console.error("Auth mismatch: user ID does not match logged-in user");
+        throw new Error("Authentication error");
+      }
+
       console.log('Attempting to send message:', { senderId: user.id, receiverId, messageText });
 
-      // First, ensure conversation participants exist
+      // Only insert the sender's conversation participant row
+      // The database trigger will automatically create the receiver's row
       try {
-        // Create conversation participant for sender
         await supabase
           .from('conversation_participants')
           .upsert({
-            user_id: user.id,
+            user_id: user.id, // This must match auth.uid()
             other_user_id: receiverId,
             last_message_at: new Date().toISOString()
           }, {
             onConflict: 'user_id,other_user_id'
           });
-
-        // Create conversation participant for receiver
-        await supabase
-          .from('conversation_participants')
-          .upsert({
-            user_id: receiverId,
-            other_user_id: user.id,
-            last_message_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,other_user_id'
-          });
       } catch (error) {
-        console.log('Conversation participants creation failed (may already exist):', error);
-        // Continue anyway as they might already exist
+        console.log('Conversation participant creation failed (may already exist):', error);
+        // Continue anyway as it might already exist
       }
 
-      // Now send the message
+      // Send the message
       const { data, error } = await supabase
         .from('messages')
         .insert({
