@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -132,28 +133,11 @@ export function useConversations() {
 
       console.log('Attempting to send message:', { senderId: user.id, receiverId, messageText });
 
-      // Only insert the sender's conversation participant row
-      // The database trigger will automatically create the receiver's row
-      try {
-        await supabase
-          .from('conversation_participants')
-          .upsert({
-            user_id: user.id, // This must match auth.uid()
-            other_user_id: receiverId,
-            last_message_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id,other_user_id'
-          });
-      } catch (error) {
-        console.log('Conversation participant creation failed (may already exist):', error);
-        // Continue anyway as it might already exist
-      }
-
-      // Send the message
+      // Send the message - the trigger will handle conversation participants
       const { data, error } = await supabase
         .from('messages')
         .insert({
-          sender_id: user.id,
+          sender_id: user.id, // This must match auth.uid()
           receiver_id: receiverId,
           message_text: messageText,
           is_read: false
