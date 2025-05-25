@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useNotifications, Notification } from "@/hooks/useNotifications"
 import { formatDistanceToNow } from "date-fns"
+import { useEffect } from "react"
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -39,8 +40,24 @@ export default function Notifications() {
     unreadCounts, 
     markAsRead, 
     markAllAsRead, 
-    deleteNotification 
+    deleteNotification,
+    markAsReadOnView
   } = useNotifications();
+  
+  // Auto-mark unread notifications as read when user views the page
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const unreadNotifications = notifications.filter(n => !n.is_read);
+      if (unreadNotifications.length > 0) {
+        // Mark as read after a short delay to ensure user has "seen" them
+        const timer = setTimeout(() => {
+          markAsReadOnView(unreadNotifications.map(n => n.id));
+        }, 2000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [notifications, markAsReadOnView]);
   
   // If still loading notifications, show loading state
   if (loadingNotifications) {
@@ -64,6 +81,7 @@ export default function Notifications() {
       case "comment":
         return <MessageSquare className="h-4 w-4 text-green-400" />
       case "content":
+      case "post":
         return <FileText className="h-4 w-4 text-purple-400" />
       case "subscription":
         return <Star className="h-4 w-4 text-yellow-400" />
@@ -144,7 +162,7 @@ export default function Notifications() {
                   {notification.type === "like" && (
                     <DropdownMenuItem>View post</DropdownMenuItem>
                   )}
-                  {notification.type === "content" && (
+                  {(notification.type === "content" || notification.type === "post") && (
                     <>
                       <DropdownMenuItem>View content</DropdownMenuItem>
                       <DropdownMenuItem>Turn off notifications from this creator</DropdownMenuItem>
@@ -340,9 +358,9 @@ export default function Notifications() {
             </CardHeader>
             <CardContent className="space-y-4 pt-0">
               {notifications
-                .filter((notification) => notification.type === "content")
+                .filter((notification) => notification.type === "content" || notification.type === "post")
                 .map(renderNotification)}
-              {notifications.filter((notification) => notification.type === "content").length === 0 && (
+              {notifications.filter((notification) => notification.type === "content" || notification.type === "post").length === 0 && (
                 <div className="text-center py-8 text-gray-400">
                   <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p>No new content notifications</p>

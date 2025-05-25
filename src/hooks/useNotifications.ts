@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'mention' | 'like' | 'comment' | 'content' | 'subscription' | 'system' | 'follow' | 'promotion';
+  type: 'mention' | 'like' | 'comment' | 'content' | 'subscription' | 'system' | 'follow' | 'promotion' | 'post';
   title?: string;
   content: string;
   related_id?: string;
@@ -122,13 +122,33 @@ export const useNotifications = () => {
     }
   });
 
+  // Auto-mark notifications as read when they are viewed
+  const markAsReadOnView = async (notificationIds: string[]) => {
+    if (notificationIds.length === 0) return;
+    
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', notificationIds)
+        .eq('user_id', user?.id)
+        .eq('is_read', false);
+
+      if (!error) {
+        queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
+      }
+    } catch (error) {
+      console.error('Error auto-marking notifications as read:', error);
+    }
+  };
+
   // Count unread notifications by type
   const unreadCounts = {
     all: notifications.filter((n) => !n.is_read).length,
     mentions: notifications.filter((n) => n.type === "mention" && !n.is_read).length,
     comments: notifications.filter((n) => n.type === "comment" && !n.is_read).length,
     likes: notifications.filter((n) => n.type === "like" && !n.is_read).length,
-    content: notifications.filter((n) => n.type === "content" && !n.is_read).length,
+    content: notifications.filter((n) => (n.type === "content" || n.type === "post") && !n.is_read).length,
     system: notifications.filter(
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.is_read,
     ).length,
@@ -143,6 +163,7 @@ export const useNotifications = () => {
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,
     deleteNotification: deleteNotificationMutation.mutate,
+    markAsReadOnView,
     isMarkingAsRead: markAsReadMutation.isPending,
     isMarkingAllAsRead: markAllAsReadMutation.isPending,
     isDeletingNotification: deleteNotificationMutation.isPending,

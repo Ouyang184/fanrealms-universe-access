@@ -359,7 +359,10 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean | null
+          metadata: Json | null
           related_id: string | null
+          related_user_id: string | null
+          title: string | null
           type: string
           user_id: string
         }
@@ -368,7 +371,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
+          metadata?: Json | null
           related_id?: string | null
+          related_user_id?: string | null
+          title?: string | null
           type: string
           user_id: string
         }
@@ -377,7 +383,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean | null
+          metadata?: Json | null
           related_id?: string | null
+          related_user_id?: string | null
+          title?: string | null
           type?: string
           user_id?: string
         }
@@ -397,6 +406,7 @@ export type Database = {
           author_id: string
           content: string
           created_at: string
+          creator_id: string | null
           id: string
           tier_id: string | null
           title: string
@@ -406,6 +416,7 @@ export type Database = {
           author_id: string
           content: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           tier_id?: string | null
           title: string
@@ -415,6 +426,7 @@ export type Database = {
           author_id?: string
           content?: string
           created_at?: string
+          creator_id?: string | null
           id?: string
           tier_id?: string | null
           title?: string
