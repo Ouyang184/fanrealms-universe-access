@@ -11,6 +11,8 @@ import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useDeleteMessage } from "@/hooks/useDeleteMessage";
+import { DeleteMessageDialog } from "@/components/messaging/DeleteMessageDialog";
 
 export default function MessagesPage() {
   const { user } = useAuth();
@@ -18,6 +20,10 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const deleteMessageMutation = useDeleteMessage();
 
   const { 
     messages, 
@@ -72,6 +78,19 @@ export default function MessagesPage() {
 
   const selectedConvData = conversations.find(conv => conv.other_user_id === selectedConversation);
 
+  const handleDeleteMessage = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteMessage = () => {
+    if (messageToDelete) {
+      deleteMessageMutation.mutate(messageToDelete);
+      setShowDeleteDialog(false);
+      setMessageToDelete(null);
+    }
+  };
+
   if (conversationsLoading) {
     return (
       <MainLayout>
@@ -84,7 +103,7 @@ export default function MessagesPage() {
 
   return (
     <MainLayout>
-      <div className="flex-1 -m-6">
+      <div className="flex-1">
         <div className="h-full">
           <div className="p-6 pb-0">
             <h1 className="text-3xl font-bold mb-2">Messages</h1>
@@ -237,11 +256,17 @@ export default function MessagesPage() {
                                     }`}
                                   >
                                     <div
-                                      className={`max-w-[70%] p-3 rounded-lg ${
+                                      className={`max-w-[70%] p-3 rounded-lg transition-colors ${
                                         message.sender_id === user?.id
-                                          ? 'bg-primary text-primary-foreground'
+                                          ? 'bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer'
                                           : 'bg-muted'
                                       }`}
+                                      onClick={() => {
+                                        if (message.sender_id === user?.id) {
+                                          handleDeleteMessage(message.id);
+                                        }
+                                      }}
+                                      title={message.sender_id === user?.id ? "Click to delete message" : ""}
                                     >
                                       <p className="text-sm">{message.message_text}</p>
                                       <p className={`text-xs mt-1 ${
@@ -298,6 +323,13 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
+
+      <DeleteMessageDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDeleteMessage}
+        isDeleting={deleteMessageMutation.isPending}
+      />
     </MainLayout>
   );
 }

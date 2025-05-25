@@ -11,6 +11,7 @@ interface MessageData {
   message_text: string;
   created_at: string;
   is_read: boolean;
+  deleted_at: string | null;
   sender_username?: string;
   sender_profile_picture?: string;
   receiver_username?: string;
@@ -26,11 +27,12 @@ export function useMessages(userId: string | undefined) {
     queryFn: async () => {
       if (!userId) return [];
 
-      // Fetch messages
+      // Fetch messages that are not deleted
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .is('deleted_at', null) // Only get non-deleted messages
         .order('created_at', { ascending: false });
 
       if (error) {
