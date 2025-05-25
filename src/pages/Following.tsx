@@ -11,7 +11,6 @@ import {
   Search, 
   Users, 
   TrendingUp, 
-  Star, 
   Heart, 
   MessageSquare,
   MoreHorizontal 
@@ -76,7 +75,7 @@ export default function FollowingPage() {
   // Get followed creator IDs for recommendations
   const followedCreatorIds = followedCreators.map(creator => creator.id);
   
-  // Recommended creators (not followed) - limit to 6
+  // Recommended creators (not followed) - limit to 6 and exclude already followed creators
   const recommendedCreators = allCreators?.filter(creator => 
     !followedCreatorIds.includes(creator.id)
   ).slice(0, 6) || [];
@@ -186,7 +185,7 @@ export default function FollowingPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 rounded-lg">
-                    <Star className="h-5 w-5 text-purple-600" />
+                    <Users className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Categories</p>
@@ -284,7 +283,7 @@ export default function FollowingPage() {
                                 {creator.bio || "Creator on the platform"}
                               </p>
                               
-                              {/* Metrics - consistent styling */}
+                              {/* Metrics - removed star rating */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
                                   <Users className="h-4 w-4" />
@@ -329,83 +328,89 @@ export default function FollowingPage() {
 
             {/* Recommended Tab */}
             <TabsContent value="recommended" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {recommendedCreators.map((creator) => {
-                  const displayName = creator.display_name || creator.username || 'Creator';
-                  return (
-                    <Card key={creator.id} className="overflow-hidden bg-card border">
-                      <CardContent className="p-0">
-                        {/* Banner */}
-                        <div 
-                          className="h-20 bg-gradient-to-r from-secondary/20 to-secondary/10"
-                          style={{
-                            backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center'
-                          }}
-                        />
-                        
-                        {/* Profile Section */}
-                        <div className="px-4 pb-4">
-                          <div className="flex items-start -mt-8">
-                            <Avatar className="h-16 w-16 border-4 border-background">
-                              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                              <AvatarFallback className="bg-muted text-lg font-semibold">
-                                {displayName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
+              {recommendedCreators.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No recommendations available</h3>
+                  <p className="text-muted-foreground">
+                    You're already following all available creators or there are no other creators on the platform yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {recommendedCreators.map((creator) => {
+                    const displayName = creator.display_name || creator.username || 'Creator';
+                    return (
+                      <Card key={creator.id} className="overflow-hidden bg-card border">
+                        <CardContent className="p-0">
+                          {/* Banner */}
+                          <div 
+                            className="h-20 bg-gradient-to-r from-secondary/20 to-secondary/10"
+                            style={{
+                              backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                          />
                           
-                          {/* Creator Info */}
-                          <div className="mt-3">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-lg">{displayName}</h3>
-                              {creator.tags && creator.tags.length > 0 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  {creator.tags[0]}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                              {creator.bio || "Creator on the platform"}
-                            </p>
-                            
-                            {/* Metrics */}
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                              <div className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                <span>{(creator.follower_count || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Star className="h-4 w-4 text-yellow-500" />
-                                <span>{(4 + Math.random()).toFixed(1)}</span>
-                              </div>
+                          {/* Profile Section */}
+                          <div className="px-4 pb-4">
+                            <div className="flex items-start -mt-8">
+                              <Avatar className="h-16 w-16 border-4 border-background">
+                                <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                                <AvatarFallback className="bg-muted text-lg font-semibold">
+                                  {displayName.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
                             </div>
                             
-                            {/* Action Buttons */}
-                            <div className="flex gap-2">
-                              <Button 
-                                size="sm" 
-                                className="flex-1"
-                                onClick={() => handleFollow(creator.id)}
-                              >
-                                Follow
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
-                              >
-                                View
-                              </Button>
+                            {/* Creator Info */}
+                            <div className="mt-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-lg">{displayName}</h3>
+                                {creator.tags && creator.tags.length > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {creator.tags[0]}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                                {creator.bio || "Creator on the platform"}
+                              </p>
+                              
+                              {/* Metrics - removed star rating */}
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-1">
+                                  <Users className="h-4 w-4" />
+                                  <span>{(creator.follower_count || 0).toLocaleString()}</span>
+                                </div>
+                              </div>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  className="flex-1"
+                                  onClick={() => handleFollow(creator.id)}
+                                >
+                                  Follow
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                                >
+                                  View
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
