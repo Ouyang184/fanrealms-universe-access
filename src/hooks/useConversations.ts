@@ -44,15 +44,7 @@ export function useConversations() {
       // Get conversation participants
       const { data: participants, error: participantsError } = await supabase
         .from('conversation_participants')
-        .select(`
-          *,
-          other_user:users!conversation_participants_other_user_id_fkey(
-            id,
-            username,
-            email,
-            profile_picture
-          )
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('last_message_at', { ascending: false });
 
@@ -65,8 +57,19 @@ export function useConversations() {
         return [];
       }
 
-      // Get creator profiles for participants who are creators
+      // Get user data for all other users
       const otherUserIds = participants.map(p => p.other_user_id);
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, username, email, profile_picture')
+        .in('id', otherUserIds);
+
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        throw usersError;
+      }
+
+      // Get creator profiles for participants who are creators
       const { data: creatorProfiles } = await supabase
         .from('creators')
         .select('id, user_id, display_name, profile_image_url, bio')
@@ -89,6 +92,7 @@ export function useConversations() {
 
       // Build the conversation data
       const conversationData: ConversationParticipant[] = participants.map(participant => {
+        const otherUser = usersData?.find(u => u.id === participant.other_user_id);
         const creatorProfile = creatorProfiles?.find(cp => cp.user_id === participant.other_user_id);
         
         // Find the most recent message between these two users
@@ -104,6 +108,7 @@ export function useConversations() {
 
         return {
           ...participant,
+          other_user: otherUser || null,
           creator_profile: creatorProfile,
           last_message: lastMessage,
           unread_count: unreadCount
