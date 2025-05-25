@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Search,
   Calendar,
@@ -65,7 +64,7 @@ export default function CreatorPostsPage() {
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
-  // Filter posts based on filter tab
+  // Filter posts based on filter tab and apply sorting
   const getFilteredPosts = () => {
     let filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
     

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -7,7 +8,7 @@ import { Post } from "@/types";
 import { CreatorPost } from "@/types/creator-studio";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 
-export type PostFilter = "all" | "articles" | "images" | "videos" | "audio";
+export type PostFilter = "all" | "article" | "image" | "video" | "audio";
 export type PostStatus = "published" | "scheduled" | "draft";
 
 export function useCreatorPosts() {
@@ -39,13 +40,6 @@ export function useCreatorPosts() {
         .eq('author_id', user.id)
         .order('created_at', { ascending: false });
 
-      // Apply content type filter if not "all"
-      if (filter !== "all") {
-        // This is a simplified example. In a real app, you'd have a 'type' column
-        // to filter by content type. We're simulating this behavior here.
-        query = query.ilike('title', `%${filter}%`);
-      }
-      
       // Apply search query if provided
       if (searchQuery) {
         query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
@@ -69,22 +63,46 @@ export function useCreatorPosts() {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
         
-        // Determine post type (simplified - in real app would be from a column)
-        const typeKeywords: Record<string, string[]> = {
-          article: ["blog", "article", "write", "tutorial"],
-          image: ["image", "photo", "picture", "art", "design"],
-          video: ["video", "tutorial", "stream", "recording"],
-          audio: ["audio", "podcast", "song", "music", "sound"]
-        };
-        
+        // Determine post type based on tags or content keywords
         let postType: "article" | "image" | "video" | "audio" = "article";
-        for (const [type, keywords] of Object.entries(typeKeywords)) {
-          if (keywords.some(keyword => 
-            post.title?.toLowerCase().includes(keyword) || 
-            post.content?.toLowerCase().includes(keyword))
-          ) {
-            postType = type as any;
-            break;
+        
+        // Check if post has tags and determine type from tags
+        const tags = post.title
+          ?.split(' ')
+          .filter(word => word.length > 3)
+          .slice(0, 3)
+          .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, ''));
+
+        // Check for type keywords in tags first, then in title/content
+        if (tags) {
+          if (tags.some(tag => ['image', 'photo', 'picture', 'art', 'design'].includes(tag))) {
+            postType = "image";
+          } else if (tags.some(tag => ['video', 'tutorial', 'stream', 'recording'].includes(tag))) {
+            postType = "video";
+          } else if (tags.some(tag => ['audio', 'podcast', 'song', 'music', 'sound'].includes(tag))) {
+            postType = "audio";
+          } else if (tags.some(tag => ['article', 'blog', 'write', 'tutorial'].includes(tag))) {
+            postType = "article";
+          }
+        }
+        
+        // Fallback to checking title and content if no tags match
+        if (postType === "article") {
+          const typeKeywords: Record<string, string[]> = {
+            image: ["image", "photo", "picture", "art", "design"],
+            video: ["video", "tutorial", "stream", "recording"],
+            audio: ["audio", "podcast", "song", "music", "sound"],
+            article: ["blog", "article", "write", "tutorial"]
+          };
+          
+          for (const [type, keywords] of Object.entries(typeKeywords)) {
+            if (keywords.some(keyword => 
+              post.title?.toLowerCase().includes(keyword) || 
+              post.content?.toLowerCase().includes(keyword))
+            ) {
+              postType = type as any;
+              break;
+            }
           }
         }
 
@@ -103,13 +121,6 @@ export function useCreatorPosts() {
         
         // Generate engagement metrics (would be real metrics in production)
         const randomEngagement = generateRandomEngagement(status);
-
-        // Generate mock tags from title words
-        const tags = post.title
-          ?.split(' ')
-          .filter(word => word.length > 3)
-          .slice(0, 3)
-          .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, ''));
           
         return {
           id: post.id,
