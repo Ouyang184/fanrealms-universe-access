@@ -72,13 +72,21 @@ export default function FollowingPage() {
     return matchesSearch && matchesCategory;
   });
 
-  // Get followed creator IDs for recommendations
-  const followedCreatorIds = followedCreators.map(creator => creator.id);
+  // Get followed creator IDs for proper filtering - using the actual creator IDs from the followed list
+  const followedCreatorIds = new Set(followedCreators.map(creator => creator.id));
   
-  // Recommended creators (not followed) - limit to 6 and exclude already followed creators
-  const recommendedCreators = allCreators?.filter(creator => 
-    !followedCreatorIds.includes(creator.id)
-  ).slice(0, 6) || [];
+  // Recommended creators - exclude already followed creators more effectively
+  const recommendedCreators = allCreators?.filter(creator => {
+    // Exclude if already in followed creators list
+    if (followedCreatorIds.has(creator.id)) {
+      return false;
+    }
+    // Also check by user_id as backup in case IDs don't match perfectly
+    const isFollowedByUserId = followedCreators.some(followed => 
+      followed.user_id === creator.user_id || followed.id === creator.user_id
+    );
+    return !isFollowedByUserId;
+  }).slice(0, 6) || [];
 
   // Calculate total followers count from followed creators
   const totalFollowersCount = followedCreators.reduce((sum, creator) => 
@@ -200,7 +208,7 @@ export default function FollowingPage() {
           <Tabs defaultValue="following" className="space-y-6">
             <TabsList>
               <TabsTrigger value="following">Following ({followedCreators.length})</TabsTrigger>
-              <TabsTrigger value="recommended">Recommended</TabsTrigger>
+              <TabsTrigger value="recommended">Recommended ({recommendedCreators.length})</TabsTrigger>
             </TabsList>
 
             {/* Following Tab */}
@@ -283,7 +291,7 @@ export default function FollowingPage() {
                                 {creator.bio || "Creator on the platform"}
                               </p>
                               
-                              {/* Metrics - removed star rating */}
+                              {/* Metrics */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
                                   <Users className="h-4 w-4" />
@@ -378,7 +386,7 @@ export default function FollowingPage() {
                                 {creator.bio || "Creator on the platform"}
                               </p>
                               
-                              {/* Metrics - removed star rating */}
+                              {/* Metrics */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
                                   <Users className="h-4 w-4" />
