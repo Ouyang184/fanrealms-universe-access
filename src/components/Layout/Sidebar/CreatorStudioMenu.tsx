@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   Grid, 
   FileText, 
-  Mail, 
   Award, 
   UserCheck, 
   DollarSign, 
@@ -41,7 +40,6 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
   const studioItems = [
     { path: "/creator-studio/dashboard", icon: Grid, label: "Dashboard" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
-    { path: "/creator-studio/messages", icon: Mail, label: "Messages" },
     { path: "/creator-studio/membership-tiers", icon: Award, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: UserCheck, label: "Subscribers" },
     { path: "/creator-studio/payouts", icon: DollarSign, label: "Payouts" },

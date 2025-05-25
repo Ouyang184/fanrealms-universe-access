@@ -26,7 +26,6 @@ import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
 import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
 import AccountSettings from "./pages/AccountSettings";
-import CreatorMessages from "./pages/creator-studio/Messages";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import CreatorPostsPage from "./pages/creator-studio/Posts";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
@@ -97,13 +96,6 @@ export default function App() {
                   <CreatorCheck>
                     <CreatorPostsPage />
                   </CreatorCheck>
-                } />
-                <Route path="/creator-studio/messages" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorMessages />
-                    </CreatorCheck>
-                  </MainLayout>
                 } />
                 <Route path="/creator-studio/membership-tiers" element={
                   <MainLayout>
