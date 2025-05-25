@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const deleteMessageMutation = useDeleteMessage();
 
@@ -38,6 +39,20 @@ export default function MessagesPage() {
     markMessagesAsRead,
     isMarkingAsRead
   } = useMessages(selectedConversation);
+
+  // Sort messages chronologically (oldest first)
+  const sortedMessages = messages.sort((a, b) => 
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  // Auto-scroll to bottom when messages change or conversation changes
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [sortedMessages, selectedConversation]);
 
   // Set document title when component mounts
   useEffect(() => {
@@ -255,13 +270,13 @@ export default function MessagesPage() {
                   <div className="flex justify-center items-center h-full">
                     <LoadingSpinner />
                   </div>
-                ) : messages.length === 0 ? (
+                ) : sortedMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                     <p>No messages yet</p>
                     <p className="text-sm">Send a message to start the conversation</p>
                   </div>
                 ) : (
-                  messages.map((message) => (
+                  sortedMessages.map((message) => (
                     <div 
                       key={message.id} 
                       className={cn("flex", message.sender_id === user?.id ? "justify-end" : "justify-start")}
@@ -318,6 +333,8 @@ export default function MessagesPage() {
                     </div>
                   ))
                 )}
+                {/* Invisible div to scroll to */}
+                <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
 
