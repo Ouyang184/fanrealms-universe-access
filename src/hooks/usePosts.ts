@@ -28,7 +28,7 @@ export const usePosts = () => {
         id: post.id,
         title: post.title,
         content: post.content,
-        authorId: post.author_id, // Make sure this is properly mapped
+        authorId: post.author_id, // Now properly mapped from author_id
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
         createdAt: post.created_at,

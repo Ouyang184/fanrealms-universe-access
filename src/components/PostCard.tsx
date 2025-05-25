@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,7 +21,7 @@ interface PostCardProps {
     username?: string;
     profile_picture?: string;
   };
-  author_id?: string;
+  authorId: string; // Now properly typed as required string
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -35,7 +34,7 @@ const PostCard: React.FC<PostCardProps> = ({
   tier_id,
   attachments,
   users,
-  author_id
+  authorId
 }) => {
   // Parse attachments from JSON and get first media item
   const getFirstMedia = (attachments: any) => {
@@ -105,12 +104,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
   const isPremium = !!tier_id;
 
-  // Extract the author_id - handle both string and object forms
-  const authorIdValue = typeof author_id === 'string' ? author_id : 
-                       (author_id && typeof author_id === 'object' && 'value' in author_id) ? 
-                       (author_id as any).value : author_id;
-
-  console.log('PostCard - Raw author_id:', author_id, 'Extracted authorIdValue:', authorIdValue);
+  console.log('PostCard - authorId:', authorId);
 
   return (
     <Card className="w-full">
@@ -214,8 +208,8 @@ const PostCard: React.FC<PostCardProps> = ({
           <PostAttachments attachments={parsedAttachments} />
         </div>
         
-        {/* Add the interactions component with the properly extracted author ID */}
-        <PostInteractions postId={id} authorId={authorIdValue} />
+        {/* Use the properly provided authorId */}
+        <PostInteractions postId={id} authorId={authorId} />
       </CardContent>
     </Card>
   );
