@@ -14,7 +14,7 @@ export function HeaderNotifications() {
   useEffect(() => {
     if (!user?.id) return;
     
-    // Fetch unread notifications count
+    // Fetch unread notifications count from the notifications table
     const fetchNotificationsCount = async () => {
       const { count, error } = await supabase
         .from('notifications')
@@ -50,7 +50,7 @@ export function HeaderNotifications() {
     fetchNotificationsCount();
     fetchMessagesCount();
     
-    // Set up subscription for real-time updates
+    // Set up subscription for real-time updates for notifications
     const notificationsChannel = supabase
       .channel(`notifications-${user.id}`)
       .on('postgres_changes', 
