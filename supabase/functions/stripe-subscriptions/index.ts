@@ -16,7 +16,10 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response('Missing authorization', { status: 401 })
+      return new Response(JSON.stringify({ error: 'Missing authorization' }), { 
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -28,14 +31,20 @@ serve(async (req) => {
     // Get user from token
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 })
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     const { action, tierId, creatorId } = await req.json()
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
 
     if (!stripeSecretKey) {
-      return new Response('Missing Stripe configuration', { status: 500 })
+      return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
@@ -50,11 +59,17 @@ serve(async (req) => {
         .single()
 
       if (tierError || !tier) {
-        return new Response('Tier not found', { status: 404 })
+        return new Response(JSON.stringify({ error: 'Tier not found' }), { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
       }
 
       if (!tier.creators.stripe_account_id) {
-        return new Response('Creator not connected to Stripe', { status: 400 })
+        return new Response(JSON.stringify({ error: 'Creator not connected to Stripe' }), { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
       }
 
       // Create or get Stripe customer
@@ -155,7 +170,10 @@ serve(async (req) => {
         .single()
 
       if (!subscription) {
-        return new Response('Subscription not found', { status: 404 })
+        return new Response(JSON.stringify({ error: 'Subscription not found' }), { 
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
       }
 
       // Cancel Stripe subscription
@@ -166,7 +184,10 @@ serve(async (req) => {
       })
     }
 
-    return new Response('Invalid action', { status: 400 })
+    return new Response(JSON.stringify({ error: 'Invalid action' }), { 
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
 
   } catch (error) {
     console.error('Subscription error:', error)
