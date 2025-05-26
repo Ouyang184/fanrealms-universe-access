@@ -34,6 +34,7 @@ import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
+import PaymentPage from "./pages/Payment";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -69,6 +70,9 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/logout/loading" element={<LogoutLoading />} />
+                
+                {/* Payment route */}
+                <Route path="/payment" element={<PaymentPage />} />
                 
                 {/* Creator profile page */}
                 <Route path="/creator/:id" element={<CreatorPage />} />
