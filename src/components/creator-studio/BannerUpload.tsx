@@ -70,19 +70,6 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
       
       console.log('Banner uploaded, public URL:', publicUrl);
       
-      // Update creator profile in database
-      const { error: updateError } = await supabase
-        .from('creators')
-        .update({ banner_url: publicUrl })
-        .eq('user_id', userId);
-      
-      if (updateError) {
-        console.error('Database update error:', updateError);
-        throw updateError;
-      }
-      
-      console.log('Creator profile updated with banner URL');
-      
       // Call the callback to update the parent component
       onBannerUpdate(publicUrl);
       
@@ -91,8 +78,9 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
         description: "Banner image updated successfully!"
       });
       
-      // Clear the file selection but keep the preview
+      // Clear the file selection and update preview
       setSelectedFile(null);
+      setPreviewUrl(null);
       
     } catch (error: any) {
       console.error('Upload error:', error);
