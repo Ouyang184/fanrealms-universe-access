@@ -383,12 +383,29 @@ async function handleSubscriptionDeleted(supabase: any, subscription: any) {
 
 async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice: any) {
   console.log('Processing invoice payment succeeded:', invoice.id)
+  console.log('Invoice object details:', JSON.stringify(invoice, null, 2))
   
-  const subscriptionId = invoice.subscription
+  let subscriptionId = invoice.subscription
+  
+  // If subscription ID is not directly available, try to get it from the subscription field
+  if (!subscriptionId && invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
+    // Check if it's in the line items
+    const lineItem = invoice.lines.data[0]
+    if (lineItem.subscription) {
+      subscriptionId = lineItem.subscription
+    }
+  }
+  
   if (!subscriptionId) {
-    console.error('No subscription ID in invoice')
+    console.error('No subscription ID found in invoice:', {
+      invoiceId: invoice.id,
+      subscription: invoice.subscription,
+      lines: invoice.lines?.data?.map(line => ({ id: line.id, subscription: line.subscription }))
+    })
     return
   }
+
+  console.log('Found subscription ID:', subscriptionId)
 
   try {
     const amountPaid = invoice.amount_paid / 100 // Convert from cents
@@ -404,10 +421,11 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
         amount_paid: amountPaid,
         platform_fee: platformFee,
         creator_earnings: creatorEarnings,
+        status: 'active', // Ensure status is active on successful payment
         updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', subscriptionId)
-      .select('creator_id')
+      .select('creator_id, user_id, tier_id')
       .maybeSingle()
 
     if (subError) {
@@ -420,7 +438,27 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
       return
     }
 
-    console.log('Updated subscription payment details')
+    console.log('Updated subscription payment details for:', subscription)
+
+    // Also update the subscriptions table to ensure counting is correct
+    const { error: subscriptionsError } = await supabase
+      .from('subscriptions')
+      .upsert({
+        user_id: subscription.user_id,
+        creator_id: subscription.creator_id,
+        tier_id: subscription.tier_id,
+        is_paid: true,
+        created_at: new Date().toISOString()
+      }, { 
+        onConflict: 'user_id,creator_id',
+        ignoreDuplicates: false 
+      })
+
+    if (subscriptionsError) {
+      console.error('Error upserting subscription for counting:', subscriptionsError)
+    } else {
+      console.log('Successfully updated subscriptions table for counting')
+    }
 
     // Record creator earnings
     const { error: earningsError } = await supabase
