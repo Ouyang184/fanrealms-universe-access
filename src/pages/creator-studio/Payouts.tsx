@@ -2,19 +2,46 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Clock, Table as TableIcon, DollarSign, ExternalLink, TrendingUp } from "lucide-react";
+import { AlertCircle, Clock, Table as TableIcon, DollarSign, ExternalLink, TrendingUp, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useStripeConnect } from "@/hooks/useStripeConnect";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { toast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function CreatorStudioPayouts() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
   const { connectStatus, balance, createLoginLink } = useStripeConnect();
+  const queryClient = useQueryClient();
+
+  // Manual sync mutation
+  const { mutate: syncEarnings, isPending: isSyncing } = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('sync-stripe-earnings');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['creatorEarnings'] });
+      queryClient.invalidateQueries({ queryKey: ['stripeBalance'] });
+      toast({
+        title: "Sync completed",
+        description: `${data.syncedCount} new earnings synced from Stripe.`,
+      });
+    },
+    onError: (error) => {
+      console.error('Sync error:', error);
+      toast({
+        title: "Sync failed",
+        description: "Failed to sync earnings from Stripe. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Fetch creator earnings
   const { data: earnings = [], isLoading: earningsLoading } = useQuery({
@@ -57,7 +84,29 @@ export default function CreatorStudioPayouts() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
+        {connectStatus?.stripe_account_id && (
+          <Button 
+            onClick={() => syncEarnings()}
+            disabled={isSyncing}
+            variant="outline"
+            size="sm"
+          >
+            {isSyncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync from Stripe
+              </>
+            )}
+          </Button>
+        )}
+      </div>
       
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -124,6 +173,18 @@ export default function CreatorStudioPayouts() {
           </div>
         </CardHeader>
         <CardContent>
+          {connectStatus?.stripe_account_id && (
+            <div className="mb-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Earnings Sync</AlertTitle>
+                <AlertDescription>
+                  Earnings are automatically synced via webhooks. Use the "Sync from Stripe" button above if you notice missing earnings.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          
           <Table>
             <TableCaption>A list of your recent earnings</TableCaption>
             <TableHeader>
@@ -140,7 +201,7 @@ export default function CreatorStudioPayouts() {
                 earnings.map((earning) => (
                   <TableRow key={earning.id}>
                     <TableCell>
-                      {new Date(earning.created_at).toLocaleDateString()}
+                      {new Date(earning.payment_date || earning.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>Subscription Payment</TableCell>
                     <TableCell>${earning.amount.toFixed(2)}</TableCell>
