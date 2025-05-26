@@ -110,22 +110,21 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Webhook received');
+    console.log('=== WEBHOOK EVENT RECEIVED ===');
     const body = await req.text()
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
     if (!stripeSecretKey) {
       console.error('Missing Stripe secret key')
       return new Response('Configuration error', { status: 500 })
     }
 
-    // Initialize Supabase client
+    // Initialize Supabase client with service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
 
-    // Parse the event without signature verification for now to avoid SubtleCrypto issues
+    // Parse the event
     let event
     try {
       event = JSON.parse(body)
@@ -138,19 +137,27 @@ serve(async (req) => {
     // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('=== PROCESSING CHECKOUT SESSION COMPLETED ===');
         await handleCheckoutSessionCompleted(supabase, event.data.object)
         break
       
       case 'customer.subscription.created':
+        console.log('=== PROCESSING SUBSCRIPTION CREATED ===');
+        await handleSubscriptionCreatedOrUpdated(supabase, event.data.object)
+        break
+      
       case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(supabase, event.data.object)
+        console.log('=== PROCESSING SUBSCRIPTION UPDATED ===');
+        await handleSubscriptionCreatedOrUpdated(supabase, event.data.object)
         break
       
       case 'customer.subscription.deleted':
+        console.log('=== PROCESSING SUBSCRIPTION DELETED ===');
         await handleSubscriptionDeleted(supabase, event.data.object)
         break
       
       case 'invoice.payment_succeeded':
+        console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED ===');
         const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
         await handleInvoicePaymentSucceeded(supabase, stripe, event.data.object)
         break
@@ -159,13 +166,14 @@ serve(async (req) => {
         console.log(`Unhandled event type: ${event.type}`)
     }
 
+    console.log('=== WEBHOOK PROCESSING COMPLETE ===');
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
 
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('=== WEBHOOK ERROR ===', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
@@ -174,7 +182,7 @@ serve(async (req) => {
 })
 
 async function handleCheckoutSessionCompleted(supabase: any, session: any) {
-  console.log('Handling checkout session completed:', session.id)
+  console.log('Processing checkout session completed:', session.id)
   
   if (session.mode !== 'subscription') {
     console.log('Not a subscription checkout, skipping')
@@ -182,28 +190,23 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
   }
 
   try {
-    // Get subscription details
     const subscriptionId = session.subscription
     if (!subscriptionId) {
       console.error('No subscription ID in checkout session')
       return
     }
 
-    console.log('Processing subscription for checkout session:', session.id, 'subscription:', subscriptionId)
+    console.log('Looking for subscription record with stripe_subscription_id:', subscriptionId)
 
-    // Find the creator subscription record and update it to active
+    // Find the creator subscription record
     const { data: creatorSub, error: subError } = await supabase
       .from('creator_subscriptions')
-      .update({ 
-        status: 'active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', subscriptionId)
       .select('*')
+      .eq('stripe_subscription_id', subscriptionId)
       .single()
 
     if (subError) {
-      console.error('Error updating creator subscription:', subError)
+      console.error('Error finding creator subscription:', subError)
       return
     }
 
@@ -212,16 +215,33 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
       return
     }
 
-    console.log('Successfully updated creator subscription to active:', creatorSub.id)
+    console.log('Found creator subscription:', creatorSub.id, 'updating to active')
 
-    // Also insert/update the subscriptions table for counting
+    // Update creator subscription to active
+    const { error: updateError } = await supabase
+      .from('creator_subscriptions')
+      .update({ 
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscriptionId)
+
+    if (updateError) {
+      console.error('Error updating creator subscription:', updateError)
+      return
+    }
+
+    console.log('Successfully updated creator subscription to active')
+
+    // Also ensure entry in subscriptions table for counting
     const { error: insertError } = await supabase
       .from('subscriptions')
       .upsert({
         user_id: creatorSub.user_id,
         creator_id: creatorSub.creator_id,
         tier_id: creatorSub.tier_id,
-        is_paid: true
+        is_paid: true,
+        created_at: new Date().toISOString()
       }, { 
         onConflict: 'user_id,creator_id',
         ignoreDuplicates: false 
@@ -230,7 +250,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
     if (insertError) {
       console.error('Error upserting subscription:', insertError)
     } else {
-      console.log('Successfully upserted subscription record for counting')
+      console.log('Successfully upserted subscription record')
     }
 
   } catch (error) {
@@ -238,23 +258,17 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
   }
 }
 
-async function handleSubscriptionUpdated(supabase: any, subscription: any) {
-  console.log('Handling subscription updated:', subscription.id, 'status:', subscription.status)
+async function handleSubscriptionCreatedOrUpdated(supabase: any, subscription: any) {
+  console.log('Processing subscription created/updated:', subscription.id, 'status:', subscription.status)
   
   try {
-    // Check if we have valid dates
-    const currentPeriodStart = subscription.current_period_start ? new Date(subscription.current_period_start * 1000) : null
-    const currentPeriodEnd = subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null
-    
-    // Validate dates
-    if (currentPeriodStart && isNaN(currentPeriodStart.getTime())) {
-      console.error('Invalid current_period_start:', subscription.current_period_start)
-      return
-    }
-    if (currentPeriodEnd && isNaN(currentPeriodEnd.getTime())) {
-      console.error('Invalid current_period_end:', subscription.current_period_end)
-      return
-    }
+    // Validate and convert timestamps
+    const currentPeriodStart = subscription.current_period_start ? 
+      new Date(subscription.current_period_start * 1000).toISOString() : null
+    const currentPeriodEnd = subscription.current_period_end ? 
+      new Date(subscription.current_period_end * 1000).toISOString() : null
+
+    console.log('Updating subscription periods:', { currentPeriodStart, currentPeriodEnd })
 
     const updateData: any = {
       status: subscription.status,
@@ -262,10 +276,10 @@ async function handleSubscriptionUpdated(supabase: any, subscription: any) {
     }
 
     if (currentPeriodStart) {
-      updateData.current_period_start = currentPeriodStart.toISOString()
+      updateData.current_period_start = currentPeriodStart
     }
     if (currentPeriodEnd) {
-      updateData.current_period_end = currentPeriodEnd.toISOString()
+      updateData.current_period_end = currentPeriodEnd
     }
 
     const { data: updatedSub, error } = await supabase
@@ -276,73 +290,99 @@ async function handleSubscriptionUpdated(supabase: any, subscription: any) {
       .single()
 
     if (error) {
-      console.error('Error updating subscription:', error)
-    } else {
-      console.log('Successfully updated subscription:', subscription.id, 'to status:', subscription.status)
+      console.error('Error updating creator subscription:', error)
+      return
     }
 
-    // Update the subscriptions table as well based on status
-    if (updatedSub) {
-      if (subscription.status === 'active') {
-        await supabase
-          .from('subscriptions')
-          .upsert({
-            user_id: updatedSub.user_id,
-            creator_id: updatedSub.creator_id,
-            tier_id: updatedSub.tier_id,
-            is_paid: true
-          }, { onConflict: 'user_id,creator_id' })
-        
+    if (!updatedSub) {
+      console.log('No creator subscription found for stripe_subscription_id:', subscription.id)
+      return
+    }
+
+    console.log('Successfully updated creator subscription:', subscription.id, 'to status:', subscription.status)
+
+    // Update the subscriptions table based on status
+    if (subscription.status === 'active') {
+      const { error: upsertError } = await supabase
+        .from('subscriptions')
+        .upsert({
+          user_id: updatedSub.user_id,
+          creator_id: updatedSub.creator_id,
+          tier_id: updatedSub.tier_id,
+          is_paid: true,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'user_id,creator_id' })
+      
+      if (upsertError) {
+        console.error('Error upserting active subscription:', upsertError)
+      } else {
         console.log('Updated subscriptions table for active subscription')
-      } else if (['canceled', 'incomplete', 'past_due'].includes(subscription.status)) {
-        // Remove from subscriptions table for inactive statuses
-        await supabase
-          .from('subscriptions')
-          .delete()
-          .eq('user_id', updatedSub.user_id)
-          .eq('creator_id', updatedSub.creator_id)
-        
-        console.log('Removed subscription from subscriptions table for inactive status:', subscription.status)
+      }
+    } else if (['canceled', 'incomplete', 'past_due', 'unpaid'].includes(subscription.status)) {
+      // Remove from subscriptions table for inactive statuses
+      const { error: deleteError } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', updatedSub.user_id)
+        .eq('creator_id', updatedSub.creator_id)
+      
+      if (deleteError) {
+        console.error('Error removing inactive subscription:', deleteError)
+      } else {
+        console.log('Removed subscription from subscriptions table for status:', subscription.status)
       }
     }
   } catch (error) {
-    console.error('Error in handleSubscriptionUpdated:', error)
+    console.error('Error in handleSubscriptionCreatedOrUpdated:', error)
   }
 }
 
 async function handleSubscriptionDeleted(supabase: any, subscription: any) {
-  console.log('Handling subscription deleted:', subscription.id)
+  console.log('Processing subscription deleted:', subscription.id)
   
-  // Update creator_subscriptions
-  const { data: canceledSub, error } = await supabase
-    .from('creator_subscriptions')
-    .update({
-      status: 'canceled',
-      updated_at: new Date().toISOString()
-    })
-    .eq('stripe_subscription_id', subscription.id)
-    .select('user_id, creator_id')
-    .single()
+  try {
+    // Update creator_subscriptions
+    const { data: canceledSub, error } = await supabase
+      .from('creator_subscriptions')
+      .update({
+        status: 'canceled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscription.id)
+      .select('user_id, creator_id')
+      .single()
 
-  if (error) {
-    console.error('Error canceling subscription:', error)
-    return
-  }
+    if (error) {
+      console.error('Error canceling creator subscription:', error)
+      return
+    }
 
-  // Remove from subscriptions table
-  if (canceledSub) {
-    await supabase
+    if (!canceledSub) {
+      console.log('No creator subscription found to cancel for:', subscription.id)
+      return
+    }
+
+    console.log('Successfully canceled creator subscription')
+
+    // Remove from subscriptions table
+    const { error: deleteError } = await supabase
       .from('subscriptions')
       .delete()
       .eq('user_id', canceledSub.user_id)
       .eq('creator_id', canceledSub.creator_id)
     
-    console.log('Removed canceled subscription from subscriptions table')
+    if (deleteError) {
+      console.error('Error removing canceled subscription:', deleteError)
+    } else {
+      console.log('Removed canceled subscription from subscriptions table')
+    }
+  } catch (error) {
+    console.error('Error in handleSubscriptionDeleted:', error)
   }
 }
 
 async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice: any) {
-  console.log('Handling invoice payment succeeded:', invoice.id)
+  console.log('Processing invoice payment succeeded:', invoice.id)
   
   const subscriptionId = invoice.subscription
   if (!subscriptionId) {
@@ -350,46 +390,55 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
     return
   }
 
-  const amountPaid = invoice.amount_paid / 100 // Convert from cents
-  const platformFee = amountPaid * 0.05 // 5% platform fee
-  const creatorEarnings = amountPaid - platformFee
+  try {
+    const amountPaid = invoice.amount_paid / 100 // Convert from cents
+    const platformFee = amountPaid * 0.05 // 5% platform fee
+    const creatorEarnings = amountPaid - platformFee
 
-  // Update subscription with payment details
-  const { data: subscription, error: subError } = await supabase
-    .from('creator_subscriptions')
-    .update({
-      amount_paid: amountPaid,
-      platform_fee: platformFee,
-      creator_earnings: creatorEarnings,
-      updated_at: new Date().toISOString()
-    })
-    .eq('stripe_subscription_id', subscriptionId)
-    .select('creator_id')
-    .maybeSingle()
+    console.log('Payment details:', { amountPaid, platformFee, creatorEarnings })
 
-  if (subError) {
-    console.error('Error updating subscription payment:', subError)
-    return
-  }
+    // Update subscription with payment details
+    const { data: subscription, error: subError } = await supabase
+      .from('creator_subscriptions')
+      .update({
+        amount_paid: amountPaid,
+        platform_fee: platformFee,
+        creator_earnings: creatorEarnings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('stripe_subscription_id', subscriptionId)
+      .select('creator_id')
+      .maybeSingle()
 
-  if (!subscription) {
-    console.log('No subscription found for stripe_subscription_id:', subscriptionId)
-    return
-  }
+    if (subError) {
+      console.error('Error updating subscription payment:', subError)
+      return
+    }
 
-  // Record creator earnings
-  const { error: earningsError } = await supabase
-    .from('creator_earnings')
-    .insert({
-      creator_id: subscription.creator_id,
-      amount: amountPaid,
-      platform_fee: platformFee,
-      net_amount: creatorEarnings,
-    })
+    if (!subscription) {
+      console.log('No subscription found for stripe_subscription_id:', subscriptionId)
+      return
+    }
 
-  if (earningsError) {
-    console.error('Error recording creator earnings:', earningsError)
-  } else {
-    console.log('Successfully recorded creator earnings')
+    console.log('Updated subscription payment details')
+
+    // Record creator earnings
+    const { error: earningsError } = await supabase
+      .from('creator_earnings')
+      .insert({
+        creator_id: subscription.creator_id,
+        amount: amountPaid,
+        platform_fee: platformFee,
+        net_amount: creatorEarnings,
+        created_at: new Date().toISOString()
+      })
+
+    if (earningsError) {
+      console.error('Error recording creator earnings:', earningsError)
+    } else {
+      console.log('Successfully recorded creator earnings')
+    }
+  } catch (error) {
+    console.error('Error in handleInvoicePaymentSucceeded:', error)
   }
 }

@@ -15,11 +15,13 @@ interface CreatorMembershipProps {
 export function CreatorMembership({ creator }: CreatorMembershipProps) {
   const { user } = useAuth();
 
-  // Fetch membership tiers for this creator
+  // Fetch membership tiers for this creator with accurate subscriber counts
   const { data: tiers = [], isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creator.id],
     queryFn: async () => {
       if (!creator.id) return [];
+      
+      console.log('Fetching membership tiers for creator:', creator.id);
       
       const { data: tiersData, error } = await supabase
         .from('membership_tiers')
@@ -32,8 +34,13 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         return [];
       }
       
-      // Count subscribers for each tier using creator_subscriptions table with active status
+      console.log('Fetched tiers data:', tiersData);
+      
+      // Count active subscribers for each tier
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
+        console.log('Counting subscribers for tier:', tier.id);
+        
+        // Count from creator_subscriptions table with active status
         const { count, error: countError } = await supabase
           .from('creator_subscriptions')
           .select('*', { count: 'exact', head: true })
@@ -43,6 +50,8 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         if (countError) {
           console.error('Error counting subscribers for tier:', tier.id, countError);
         }
+
+        console.log('Subscriber count for tier', tier.id, ':', count);
           
         return {
           id: tier.id,
@@ -54,10 +63,11 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         };
       }));
       
+      console.log('Final tiers with subscriber counts:', tiersWithSubscribers);
       return tiersWithSubscribers;
     },
     enabled: !!creator.id,
-    refetchInterval: 2000, // Refetch every 2 seconds to get updated counts quickly
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 
   // Check user's current subscriptions to this creator
@@ -65,6 +75,8 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     queryKey: ['userCreatorSubscriptions', user?.id, creator.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      
+      console.log('Checking user subscriptions for user:', user.id, 'creator:', creator.id);
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
@@ -82,7 +94,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return data;
     },
     enabled: !!user?.id && !!creator.id,
-    refetchInterval: 1000, // Refetch every 1 second to catch new subscriptions faster
+    refetchInterval: 3000, // Refetch every 3 seconds
   });
 
   // Listen for subscription success events
@@ -90,26 +102,27 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     const handleSubscriptionSuccess = (event: CustomEvent) => {
       const { creatorId } = event.detail;
       if (creatorId === creator.id) {
-        console.log('Subscription successful, refreshing data immediately...');
-        // Multiple immediate refreshes to catch the update as soon as possible
+        console.log('Subscription successful, refreshing data...');
+        
+        // Immediate refresh
         refetchTiers();
         refetchSubscriptions();
         
-        // Additional refreshes at intervals
+        // Staggered refreshes to catch database updates
         setTimeout(() => {
           refetchTiers();
           refetchSubscriptions();
-        }, 1000);
-        
-        setTimeout(() => {
-          refetchTiers();
-          refetchSubscriptions();
-        }, 3000);
+        }, 2000);
         
         setTimeout(() => {
           refetchTiers();
           refetchSubscriptions();
         }, 5000);
+        
+        setTimeout(() => {
+          refetchTiers();
+          refetchSubscriptions();
+        }, 10000);
       }
     };
 
@@ -119,6 +132,39 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess as EventListener);
     };
   }, [creator.id, refetchTiers, refetchSubscriptions]);
+
+  // Also listen for successful payments from Stripe
+  useEffect(() => {
+    const handlePaymentSuccess = () => {
+      console.log('Payment successful, refreshing subscription data...');
+      
+      // Multiple immediate refreshes
+      refetchTiers();
+      refetchSubscriptions();
+      
+      // Additional refreshes at intervals
+      setTimeout(() => {
+        refetchTiers();
+        refetchSubscriptions();
+      }, 2000);
+      
+      setTimeout(() => {
+        refetchTiers();
+        refetchSubscriptions();
+      }, 5000);
+      
+      setTimeout(() => {
+        refetchTiers();
+        refetchSubscriptions();
+      }, 10000);
+    };
+
+    window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    
+    return () => {
+      window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+    };
+  }, [refetchTiers, refetchSubscriptions]);
 
   if (isLoading) {
     return (
@@ -136,7 +182,8 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
 
   // Force refresh when user successfully subscribes
   const handleSubscriptionSuccess = () => {
-    console.log('Subscription successful, refreshing data immediately...');
+    console.log('Manual subscription refresh triggered');
+    
     // Multiple immediate refreshes
     refetchTiers();
     refetchSubscriptions();
@@ -145,17 +192,17 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     setTimeout(() => {
       refetchTiers();
       refetchSubscriptions();
-    }, 1000);
-    
-    setTimeout(() => {
-      refetchTiers();
-      refetchSubscriptions();
-    }, 3000);
+    }, 2000);
     
     setTimeout(() => {
       refetchTiers();
       refetchSubscriptions();
     }, 5000);
+    
+    setTimeout(() => {
+      refetchTiers();
+      refetchSubscriptions();
+    }, 10000);
   };
 
   return (
