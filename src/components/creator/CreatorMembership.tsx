@@ -57,7 +57,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return tiersWithSubscribers;
     },
     enabled: !!creator.id,
-    refetchInterval: 3000, // Refetch every 3 seconds to get updated counts quickly
+    refetchInterval: 2000, // Refetch every 2 seconds to get updated counts quickly
   });
 
   // Check user's current subscriptions to this creator
@@ -82,7 +82,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return data;
     },
     enabled: !!user?.id && !!creator.id,
-    refetchInterval: 2000, // Refetch every 2 seconds to catch new subscriptions faster
+    refetchInterval: 1000, // Refetch every 1 second to catch new subscriptions faster
   });
 
   // Listen for subscription success events
@@ -90,11 +90,22 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     const handleSubscriptionSuccess = (event: CustomEvent) => {
       const { creatorId } = event.detail;
       if (creatorId === creator.id) {
-        console.log('Subscription successful, refreshing data...');
-        // Immediate refresh for faster UI update
+        console.log('Subscription successful, refreshing data immediately...');
+        // Multiple immediate refreshes to catch the update as soon as possible
         refetchTiers();
         refetchSubscriptions();
-        // Additional refresh after webhook processing
+        
+        // Additional refreshes at intervals
+        setTimeout(() => {
+          refetchTiers();
+          refetchSubscriptions();
+        }, 1000);
+        
+        setTimeout(() => {
+          refetchTiers();
+          refetchSubscriptions();
+        }, 3000);
+        
         setTimeout(() => {
           refetchTiers();
           refetchSubscriptions();
@@ -125,11 +136,22 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
 
   // Force refresh when user successfully subscribes
   const handleSubscriptionSuccess = () => {
-    console.log('Subscription successful, refreshing data...');
-    // Immediate refresh
+    console.log('Subscription successful, refreshing data immediately...');
+    // Multiple immediate refreshes
     refetchTiers();
     refetchSubscriptions();
-    // Additional refresh after webhook processing
+    
+    // Additional refreshes at intervals
+    setTimeout(() => {
+      refetchTiers();
+      refetchSubscriptions();
+    }, 1000);
+    
+    setTimeout(() => {
+      refetchTiers();
+      refetchSubscriptions();
+    }, 3000);
+    
     setTimeout(() => {
       refetchTiers();
       refetchSubscriptions();

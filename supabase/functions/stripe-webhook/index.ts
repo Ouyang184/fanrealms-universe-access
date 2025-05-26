@@ -189,35 +189,32 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
       return
     }
 
-    console.log('Looking for creator subscription with stripe_subscription_id:', subscriptionId)
+    console.log('Processing subscription for checkout session:', session.id, 'subscription:', subscriptionId)
 
-    // Find the creator subscription record
+    // Find the creator subscription record and update it to active
     const { data: creatorSub, error: subError } = await supabase
       .from('creator_subscriptions')
-      .select('*')
+      .update({ 
+        status: 'active',
+        updated_at: new Date().toISOString()
+      })
       .eq('stripe_subscription_id', subscriptionId)
+      .select('*')
       .single()
 
-    if (subError || !creatorSub) {
-      console.error('Could not find creator subscription:', subError)
+    if (subError) {
+      console.error('Error updating creator subscription:', subError)
       return
     }
 
-    console.log('Found creator subscription:', creatorSub.id)
-
-    // Update the creator subscription status to active
-    const { error: updateError } = await supabase
-      .from('creator_subscriptions')
-      .update({ status: 'active' })
-      .eq('stripe_subscription_id', subscriptionId)
-
-    if (updateError) {
-      console.error('Error updating creator subscription status:', updateError)
-    } else {
-      console.log('Updated creator subscription status to active')
+    if (!creatorSub) {
+      console.error('Could not find creator subscription for stripe_subscription_id:', subscriptionId)
+      return
     }
 
-    // Insert or update the subscriptions table (for counting)
+    console.log('Successfully updated creator subscription to active:', creatorSub.id)
+
+    // Also insert/update the subscriptions table for counting
     const { error: insertError } = await supabase
       .from('subscriptions')
       .upsert({
@@ -233,7 +230,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
     if (insertError) {
       console.error('Error upserting subscription:', insertError)
     } else {
-      console.log('Successfully upserted subscription record')
+      console.log('Successfully upserted subscription record for counting')
     }
 
   } catch (error) {
@@ -242,7 +239,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
 }
 
 async function handleSubscriptionUpdated(supabase: any, subscription: any) {
-  console.log('Handling subscription updated:', subscription.id)
+  console.log('Handling subscription updated:', subscription.id, 'status:', subscription.status)
   
   try {
     // Check if we have valid dates
@@ -260,7 +257,8 @@ async function handleSubscriptionUpdated(supabase: any, subscription: any) {
     }
 
     const updateData: any = {
-      status: subscription.status
+      status: subscription.status,
+      updated_at: new Date().toISOString()
     }
 
     if (currentPeriodStart) {
@@ -270,36 +268,41 @@ async function handleSubscriptionUpdated(supabase: any, subscription: any) {
       updateData.current_period_end = currentPeriodEnd.toISOString()
     }
 
-    const { error } = await supabase
+    const { data: updatedSub, error } = await supabase
       .from('creator_subscriptions')
       .update(updateData)
       .eq('stripe_subscription_id', subscription.id)
+      .select('*')
+      .single()
 
     if (error) {
       console.error('Error updating subscription:', error)
     } else {
-      console.log('Successfully updated subscription:', subscription.id)
+      console.log('Successfully updated subscription:', subscription.id, 'to status:', subscription.status)
     }
 
-    // Update the subscriptions table as well
-    if (subscription.status === 'active') {
-      const { data: creatorSub } = await supabase
-        .from('creator_subscriptions')
-        .select('user_id, creator_id, tier_id')
-        .eq('stripe_subscription_id', subscription.id)
-        .single()
-
-      if (creatorSub) {
+    // Update the subscriptions table as well based on status
+    if (updatedSub) {
+      if (subscription.status === 'active') {
         await supabase
           .from('subscriptions')
           .upsert({
-            user_id: creatorSub.user_id,
-            creator_id: creatorSub.creator_id,
-            tier_id: creatorSub.tier_id,
+            user_id: updatedSub.user_id,
+            creator_id: updatedSub.creator_id,
+            tier_id: updatedSub.tier_id,
             is_paid: true
           }, { onConflict: 'user_id,creator_id' })
         
         console.log('Updated subscriptions table for active subscription')
+      } else if (['canceled', 'incomplete', 'past_due'].includes(subscription.status)) {
+        // Remove from subscriptions table for inactive statuses
+        await supabase
+          .from('subscriptions')
+          .delete()
+          .eq('user_id', updatedSub.user_id)
+          .eq('creator_id', updatedSub.creator_id)
+        
+        console.log('Removed subscription from subscriptions table for inactive status:', subscription.status)
       }
     }
   } catch (error) {
@@ -311,32 +314,30 @@ async function handleSubscriptionDeleted(supabase: any, subscription: any) {
   console.log('Handling subscription deleted:', subscription.id)
   
   // Update creator_subscriptions
-  const { error } = await supabase
+  const { data: canceledSub, error } = await supabase
     .from('creator_subscriptions')
     .update({
       status: 'canceled',
+      updated_at: new Date().toISOString()
     })
     .eq('stripe_subscription_id', subscription.id)
+    .select('user_id, creator_id')
+    .single()
 
   if (error) {
     console.error('Error canceling subscription:', error)
+    return
   }
 
   // Remove from subscriptions table
-  const { data: creatorSub } = await supabase
-    .from('creator_subscriptions')
-    .select('user_id, creator_id')
-    .eq('stripe_subscription_id', subscription.id)
-    .single()
-
-  if (creatorSub) {
+  if (canceledSub) {
     await supabase
       .from('subscriptions')
       .delete()
-      .eq('user_id', creatorSub.user_id)
-      .eq('creator_id', creatorSub.creator_id)
+      .eq('user_id', canceledSub.user_id)
+      .eq('creator_id', canceledSub.creator_id)
     
-    console.log('Removed subscription from subscriptions table')
+    console.log('Removed canceled subscription from subscriptions table')
   }
 }
 
@@ -360,6 +361,7 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
       amount_paid: amountPaid,
       platform_fee: platformFee,
       creator_earnings: creatorEarnings,
+      updated_at: new Date().toISOString()
     })
     .eq('stripe_subscription_id', subscriptionId)
     .select('creator_id')
