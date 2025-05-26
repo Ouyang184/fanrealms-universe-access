@@ -72,16 +72,16 @@ function PaymentForm({ clientSecret, amount, tierName, onSuccess, onError }: Pay
     style: {
       base: {
         fontSize: '16px',
-        color: 'hsl(var(--foreground))',
+        color: '#ffffff',
         fontFamily: 'system-ui, sans-serif',
         '::placeholder': {
-          color: 'hsl(var(--muted-foreground))',
+          color: '#9ca3af',
         },
-        backgroundColor: 'hsl(var(--background))',
+        backgroundColor: 'transparent',
       },
       invalid: {
-        color: 'hsl(var(--destructive))',
-        iconColor: 'hsl(var(--destructive))',
+        color: '#ef4444',
+        iconColor: '#ef4444',
       },
     },
     hidePostalCode: true,

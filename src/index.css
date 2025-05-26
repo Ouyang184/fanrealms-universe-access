@@ -74,7 +74,7 @@
   padding: 12px;
   border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) - 2px);
-  background-color: hsl(var(--background));
+  background-color: hsl(var(--card));
   transition: border-color 0.15s ease;
 }
 
