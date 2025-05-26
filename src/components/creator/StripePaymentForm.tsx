@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -12,8 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Load Stripe (you'll need to add your publishable key)
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_...');
+// Load Stripe with your actual publishable key
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 interface PaymentFormProps {
   clientSecret: string;
