@@ -57,7 +57,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return tiersWithSubscribers;
     },
     enabled: !!creator.id,
-    refetchInterval: 5000, // Refetch every 5 seconds to get updated counts quickly
+    refetchInterval: 3000, // Refetch every 3 seconds to get updated counts quickly
   });
 
   // Check user's current subscriptions to this creator
@@ -82,7 +82,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return data;
     },
     enabled: !!user?.id && !!creator.id,
-    refetchInterval: 3000, // Refetch every 3 seconds to catch new subscriptions faster
+    refetchInterval: 2000, // Refetch every 2 seconds to catch new subscriptions faster
   });
 
   // Listen for subscription success events
@@ -91,11 +91,14 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       const { creatorId } = event.detail;
       if (creatorId === creator.id) {
         console.log('Subscription successful, refreshing data...');
-        // Wait a moment for webhook processing, then refresh
+        // Immediate refresh for faster UI update
+        refetchTiers();
+        refetchSubscriptions();
+        // Additional refresh after webhook processing
         setTimeout(() => {
           refetchTiers();
           refetchSubscriptions();
-        }, 2000);
+        }, 5000);
       }
     };
 
@@ -123,11 +126,14 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
   // Force refresh when user successfully subscribes
   const handleSubscriptionSuccess = () => {
     console.log('Subscription successful, refreshing data...');
-    // Wait a moment for webhook processing, then refresh
+    // Immediate refresh
+    refetchTiers();
+    refetchSubscriptions();
+    // Additional refresh after webhook processing
     setTimeout(() => {
       refetchTiers();
       refetchSubscriptions();
-    }, 2000);
+    }, 5000);
   };
 
   return (
