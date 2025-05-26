@@ -32,13 +32,17 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         return [];
       }
       
-      // Count subscribers for each tier
+      // Count subscribers for each tier using creator_subscriptions table
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
-        const { count } = await supabase
+        const { count, error: countError } = await supabase
           .from('creator_subscriptions')
           .select('*', { count: 'exact', head: true })
           .eq('tier_id', tier.id)
           .eq('status', 'active');
+
+        if (countError) {
+          console.error('Error counting subscribers for tier:', tier.id, countError);
+        }
           
         return {
           id: tier.id,
@@ -52,10 +56,11 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       
       return tiersWithSubscribers;
     },
-    enabled: !!creator.id
+    enabled: !!creator.id,
+    refetchInterval: 10000, // Refetch every 10 seconds to get updated counts
   });
 
-  // Check user's current subscriptions to this creator with better query
+  // Check user's current subscriptions to this creator
   const { data: userSubscriptions = [], refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creator.id],
     queryFn: async () => {
