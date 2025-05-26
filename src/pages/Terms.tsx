@@ -4,11 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Check, X, Shield, FileText, Users, CreditCard } from 'lucide-react';
+import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
+
+  const handleAcceptContinue = () => {
+    if (finalAgreement) {
+      // Navigate to home if agreed
+      window.location.href = '/home';
+    } else {
+      // Exit website if not agreed
+      window.location.href = '/';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -316,20 +326,14 @@ export default function Terms() {
                       I Agree to All Terms
                     </label>
                   </div>
-                  
-                  <div className="flex items-center space-x-3 text-muted-foreground">
-                    <X className="w-5 h-5 text-red-600" />
-                    <span>I Do Not Agree (Exit Platform)</span>
-                  </div>
                 </div>
 
                 <div className="flex gap-4">
                   <Button 
                     size="lg" 
-                    disabled={!finalAgreement}
-                    asChild
+                    onClick={handleAcceptContinue}
                   >
-                    <Link to="/home">Accept & Continue</Link>
+                    Accept & Continue
                   </Button>
                   <Button variant="outline" size="lg" asChild>
                     <Link to="/">Decline & Exit</Link>
