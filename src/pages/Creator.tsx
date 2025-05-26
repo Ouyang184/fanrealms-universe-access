@@ -41,7 +41,16 @@ const CreatorPage: React.FC = () => {
     refreshCreatorData
   } = useCreatorPage(identifier);
 
-  const { isFollowing, follow, unfollow } = useFollow(creator?.id);
+  const { isFollowing, followCreator, unfollowCreator, setIsFollowing, checkFollowStatus } = useFollow();
+  
+  // Check follow status when creator is loaded
+  useEffect(() => {
+    if (creator?.id) {
+      checkFollowStatus(creator.id).then(status => {
+        setIsFollowing(status);
+      });
+    }
+  }, [creator?.id, checkFollowStatus, setIsFollowing]);
   
   // Add effect to refresh data if needed
   useEffect(() => {
@@ -50,6 +59,18 @@ const CreatorPage: React.FC = () => {
       refreshCreatorData();
     }
   }, [identifier, creator, isLoadingCreator, refreshCreatorData]);
+  
+  const handleFollow = async () => {
+    if (creator?.id) {
+      await followCreator(creator.id);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (creator?.id) {
+      await unfollowCreator(creator.id);
+    }
+  };
   
   console.log('Creator Page:', { identifier, creator, isLoading: isLoadingCreator });
   
@@ -86,8 +107,8 @@ const CreatorPage: React.FC = () => {
         <CreatorHeader 
           creator={creator}
           isFollowing={isFollowing}
-          onFollow={follow}
-          onUnfollow={unfollow}
+          onFollow={handleFollow}
+          onUnfollow={handleUnfollow}
         />
         
         {/* Content Tags Section */}
