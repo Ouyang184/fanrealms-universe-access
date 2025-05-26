@@ -92,26 +92,24 @@ export function StripeConnectSection() {
               <CreditCard className="mr-2 h-4 w-4" />
               Connect Stripe Account
             </Button>
+          ) : !isOnboardingComplete ? (
+            // Show Complete Onboarding button for connected but incomplete accounts
+            <Button 
+              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              variant="default"
+            >
+              Complete Onboarding
+            </Button>
           ) : (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => createLoginLink(connectStatus.stripe_account_id)}
-                disabled={isLoading}
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open Stripe Dashboard
-              </Button>
-              
-              {!isOnboardingComplete && (
-                <Button 
-                  onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
-                  variant="default"
-                >
-                  Complete Onboarding
-                </Button>
-              )}
-            </>
+            // Only show dashboard access for fully onboarded accounts
+            <Button
+              variant="outline"
+              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              disabled={isLoading}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Open Stripe Dashboard
+            </Button>
           )}
         </div>
 
