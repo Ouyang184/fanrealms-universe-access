@@ -19,15 +19,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
-    console.log('Auth state change setup');
+    console.log('Auth state change setup with persistent sessions');
     
+    // First, check for existing session
+    supabase.auth.getSession()
+      .then(({ data: { session: initialSession } }) => {
+        console.log('Got initial session:', initialSession ? 'exists' : 'none');
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        if (initialSession?.user) {
+          setTimeout(() => {
+            fetchUserProfile(initialSession.user.id).then(userProfile => {
+              if (userProfile) {
+                setProfile(userProfile);
+              }
+            });
+          }, 0);
+        }
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error getting session:", error);
+        setLoading(false);
+      });
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        // Clear user data when signed out
+        // Only clear data on explicit sign out
         if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing all auth data');
+          console.log('User signed out, clearing auth data');
           setSession(null);
           setUser(null);
           setProfile(null);
@@ -45,32 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             });
           }, 0);
-        } else {
+        } else if (event !== 'SIGNED_OUT') {
           setProfile(null);
         }
       }
     );
-
-    // On initial load, check if there's an existing session
-    supabase.auth.getSession()
-      .then(({ data: { session: initialSession } }) => {
-        console.log('Got initial session:', initialSession ? 'exists' : 'none');
-        if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-          return fetchUserProfile(initialSession.user.id).then(userProfile => {
-            if (userProfile) {
-              setProfile(userProfile);
-            }
-          });
-        }
-      })
-      .catch(error => {
-        console.error("Error getting session:", error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
 
     return () => {
       subscription.unsubscribe();

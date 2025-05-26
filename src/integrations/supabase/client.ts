@@ -16,7 +16,7 @@ const getEnvVar = (key: keyof Window['env']) => {
 const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
 const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
-// Create the Supabase client with proper auth configuration
+// Create the Supabase client with persistent session configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_ANON_KEY,
@@ -24,12 +24,15 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      storageKey: 'supabase-auth'
+      detectSessionInUrl: true,
+      storageKey: 'fanrealms-auth',
+      storage: window.localStorage,
+      flowType: 'pkce'
     }
   }
 );
 
-console.log('Supabase client initialized');
+console.log('Supabase client initialized with persistent sessions');
 
 // Export supabase for use in other files
 export { supabase as default };

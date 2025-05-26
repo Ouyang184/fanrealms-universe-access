@@ -1,3 +1,4 @@
+
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -157,13 +158,8 @@ export const useAuthFunctions = () => {
 
   const signOut = useCallback(async () => {
     try {
-      // Clear all authentication data
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      // Remove any locally stored auth data
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('supabase-auth');
-      sessionStorage.removeItem('supabase-auth');
+      // Only sign out from current session, don't clear localStorage
+      await supabase.auth.signOut({ scope: 'local' });
       
       toast({
         title: "Signed out successfully",
