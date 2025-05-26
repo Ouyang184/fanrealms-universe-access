@@ -11,7 +11,7 @@ export default function PaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
+  const { clientSecret, amount, tierName, tierId, creatorId, onSuccess } = location.state || {};
 
   // If no payment data is available, redirect back
   if (!clientSecret || !amount || !tierName) {
@@ -31,6 +31,11 @@ export default function PaymentPage() {
   }
 
   const handlePaymentSuccess = () => {
+    // Call the success callback if provided
+    if (onSuccess) {
+      onSuccess();
+    }
+    
     navigate('/feed', { 
       state: { 
         showSuccessMessage: true,

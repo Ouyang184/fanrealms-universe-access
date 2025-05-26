@@ -15,6 +15,7 @@ interface SubscribeButtonProps {
   tierName: string;
   price: number;
   isSubscribed?: boolean;
+  onSubscriptionSuccess?: () => void;
 }
 
 export function SubscribeButton({ 
@@ -22,7 +23,8 @@ export function SubscribeButton({
   creatorId, 
   tierName, 
   price, 
-  isSubscribed = false 
+  isSubscribed = false,
+  onSubscriptionSuccess
 }: SubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
@@ -109,7 +111,8 @@ export function SubscribeButton({
             amount: price * 100, // Convert to cents
             tierName,
             tierId,
-            creatorId
+            creatorId,
+            onSuccess: onSubscriptionSuccess // Pass the callback
           }
         });
       } else {

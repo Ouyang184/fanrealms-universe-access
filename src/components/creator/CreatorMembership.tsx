@@ -16,7 +16,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
   const { user } = useAuth();
 
   // Fetch membership tiers for this creator
-  const { data: tiers = [], isLoading } = useQuery({
+  const { data: tiers = [], isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creator.id],
     queryFn: async () => {
       if (!creator.id) return [];
@@ -32,7 +32,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         return [];
       }
       
-      // Count subscribers for each tier using creator_subscriptions table
+      // Count subscribers for each tier using creator_subscriptions table with active status
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         const { count, error: countError } = await supabase
           .from('creator_subscriptions')
@@ -57,7 +57,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return tiersWithSubscribers;
     },
     enabled: !!creator.id,
-    refetchInterval: 10000, // Refetch every 10 seconds to get updated counts
+    refetchInterval: 5000, // Refetch every 5 seconds to get updated counts quickly
   });
 
   // Check user's current subscriptions to this creator
@@ -82,7 +82,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       return data;
     },
     enabled: !!user?.id && !!creator.id,
-    refetchInterval: 5000, // Refetch every 5 seconds to catch new subscriptions
+    refetchInterval: 3000, // Refetch every 3 seconds to catch new subscriptions faster
   });
 
   if (isLoading) {
@@ -97,6 +97,16 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     const isSubscribed = userSubscriptions.some(sub => sub.tier_id === tierId);
     console.log(`Checking subscription for tier ${tierId}:`, isSubscribed);
     return isSubscribed;
+  };
+
+  // Force refresh when user successfully subscribes
+  const handleSubscriptionSuccess = () => {
+    console.log('Subscription successful, refreshing data...');
+    // Wait a moment for webhook processing, then refresh
+    setTimeout(() => {
+      refetchTiers();
+      refetchSubscriptions();
+    }, 2000);
   };
 
   return (
@@ -146,6 +156,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
                     tierName={tier.name}
                     price={tier.price}
                     isSubscribed={isSubscribed}
+                    onSubscriptionSuccess={handleSubscriptionSuccess}
                   />
                 </div>
               </div>
