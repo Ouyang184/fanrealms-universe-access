@@ -27,8 +27,9 @@ export function SubscribeButton({
   onSubscriptionSuccess
 }: SubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
+  const { createSubscription, cancelSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
   const navigate = useNavigate();
+  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
 
   // Check if user is subscribed to this specific tier
   const { data: userSubscription } = useQuery({
@@ -141,15 +142,62 @@ export function SubscribeButton({
     }
   };
 
+  const handleUnsubscribe = async () => {
+    if (!userSubscription) return;
+
+    setIsUnsubscribing(true);
+    
+    try {
+      await cancelSubscription(userSubscription.id);
+      
+      toast({
+        title: "Success",
+        description: "Successfully unsubscribed from this tier.",
+      });
+      
+      // Trigger refresh if callback is provided
+      if (onSubscriptionSuccess) {
+        onSubscriptionSuccess();
+      }
+    } catch (error) {
+      console.error('Unsubscribe error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unsubscribe. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUnsubscribing(false);
+    }
+  };
+
   // Check if user is subscribed to this tier
   const isUserSubscribed = userSubscription !== null || isSubscribed;
 
   if (isUserSubscribed) {
     return (
-      <Button variant="outline" disabled className="w-full">
-        <Check className="mr-2 h-4 w-4 text-green-500" />
-        Subscribed
-      </Button>
+      <div className="space-y-2">
+        <Button variant="outline" disabled className="w-full">
+          <Check className="mr-2 h-4 w-4 text-green-500" />
+          Subscribed
+        </Button>
+        <Button 
+          variant="destructive" 
+          size="sm" 
+          className="w-full"
+          onClick={handleUnsubscribe}
+          disabled={isUnsubscribing}
+        >
+          {isUnsubscribing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Unsubscribing...
+            </>
+          ) : (
+            'Unsubscribe'
+          )}
+        </Button>
+      </div>
     );
   }
 
