@@ -101,17 +101,9 @@ export function SubscribeButton({
       console.log('Subscription creation result:', result);
       
       if (result?.clientSecret) {
-        console.log('Navigating to payment page with clientSecret');
-        // Navigate to payment page with subscription details
-        navigate('/payment', {
-          state: {
-            clientSecret: result.clientSecret,
-            amount: price * 100, // Convert to cents
-            tierName,
-            tierId,
-            creatorId
-          }
-        });
+        console.log('Redirecting to Stripe checkout');
+        // Redirect to Stripe checkout page directly
+        window.location.href = `https://checkout.stripe.com/pay/${result.clientSecret}#fidkdWxOYHwnPyd1blpxYHZxWjA0VGJ8Q31nSGprfGlcSltGNWpMNjx2VkthTUhGdjNBNDFGSXVvTnBIQGE8T3BLVk9PVm5%2FYj1JUG43MDE0Um92V2lEQ1JoYVRGS3JMY05jMFdAQ3JqZjREbTBsYGZyYWInKSd3YGNgd3dgd0p3bGJsayc%2FcXdwYHgl`;
       } else {
         console.error('No clientSecret received:', result);
         toast({
