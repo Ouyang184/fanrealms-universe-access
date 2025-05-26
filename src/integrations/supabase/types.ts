@@ -459,6 +459,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          blocked_at: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -468,6 +469,7 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          blocked_at?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -477,6 +479,7 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          blocked_at?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string

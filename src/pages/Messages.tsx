@@ -9,13 +9,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Send, Paperclip, Check, CheckCheck, Star } from "lucide-react";
+import { Search, MoreVertical, Send, Paperclip, Check, CheckCheck, UserX, UserCheck } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDeleteMessage } from "@/hooks/useDeleteMessage";
 import { DeleteMessageDialog } from "@/components/messaging/DeleteMessageDialog";
@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 export default function MessagesPage() {
   const { user } = useAuth();
   const { conversations, isLoading: conversationsLoading, sendMessage, isSendingMessage } = useConversations();
+  const { isUserBlocked, blockUser, unblockUser, isLoading: blockLoading } = useBlockedUsers();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,6 +78,11 @@ export default function MessagesPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConversation) return;
     
+    // Check if user is blocked before sending
+    if (isUserBlocked(selectedConversation)) {
+      return; // Don't send message if user is blocked
+    }
+    
     try {
       await sendMessage({
         receiverId: selectedConversation,
@@ -92,6 +98,16 @@ export default function MessagesPage() {
     setSelectedConversation(conversationId);
   };
 
+  const handleBlockUser = async () => {
+    if (!selectedConversation) return;
+    
+    if (isUserBlocked(selectedConversation)) {
+      await unblockUser(selectedConversation);
+    } else {
+      await blockUser(selectedConversation);
+    }
+  };
+
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
     const otherUserName = conv.creator_profile?.display_name || conv.other_user?.username || 'Unknown';
@@ -99,6 +115,7 @@ export default function MessagesPage() {
   });
 
   const selectedConvData = conversations.find(conv => conv.other_user_id === selectedConversation);
+  const isSelectedUserBlocked = selectedConversation ? isUserBlocked(selectedConversation) : false;
 
   const handleDeleteMessage = (messageId: string) => {
     setMessageToDelete(messageId);
@@ -147,6 +164,7 @@ export default function MessagesPage() {
                 const avatarUrl = conversation.creator_profile?.profile_image_url ||
                                 conversation.other_user?.profile_picture;
                 const isCreator = !!conversation.creator_profile;
+                const isBlocked = isUserBlocked(conversation.other_user_id);
                 
                 return (
                   <button
@@ -154,6 +172,7 @@ export default function MessagesPage() {
                     className={cn(
                       "w-full flex items-start p-3 gap-3 hover:bg-gray-900/50 transition-colors text-left",
                       selectedConversation === conversation.other_user_id && "bg-gray-900/70",
+                      isBlocked && "opacity-50"
                     )}
                     onClick={() => handleConversationSelect(conversation.other_user_id)}
                   >
@@ -164,7 +183,9 @@ export default function MessagesPage() {
                           {displayName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-black" />
+                      {!isBlocked && (
+                        <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-black" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -175,6 +196,11 @@ export default function MessagesPage() {
                               Creator
                             </Badge>
                           )}
+                          {isBlocked && (
+                            <Badge variant="outline" className="h-5 border-red-500 text-red-400 text-xs">
+                              Blocked
+                            </Badge>
+                          )}
                         </div>
                         <span className="text-xs text-gray-400">
                           {conversation.last_message_at ? 
@@ -183,13 +209,18 @@ export default function MessagesPage() {
                           }
                         </span>
                       </div>
-                      {conversation.last_message && (
+                      {conversation.last_message && !isBlocked && (
                         <p className="text-sm text-gray-400 truncate">
                           {conversation.last_message.message_text}
                         </p>
                       )}
+                      {isBlocked && (
+                        <p className="text-sm text-red-400 truncate">
+                          Messages are blocked
+                        </p>
+                      )}
                     </div>
-                    {conversation.unread_count > 0 && (
+                    {!isBlocked && conversation.unread_count > 0 && (
                       <Badge className="bg-purple-600 hover:bg-purple-600">
                         {conversation.unread_count}
                       </Badge>
@@ -224,7 +255,9 @@ export default function MessagesPage() {
                         selectedConvData.other_user?.username || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-black" />
+                  {!isSelectedUserBlocked && (
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-black" />
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -237,8 +270,15 @@ export default function MessagesPage() {
                         Creator
                       </Badge>
                     )}
+                    {isSelectedUserBlocked && (
+                      <Badge variant="outline" className="h-5 border-red-500 text-red-400 text-xs">
+                        Blocked
+                      </Badge>
+                    )}
                   </div>
-                  <p className="text-xs text-gray-400">Online</p>
+                  <p className="text-xs text-gray-400">
+                    {isSelectedUserBlocked ? 'Blocked' : 'Online'}
+                  </p>
                 </div>
               </div>
               <DropdownMenu>
@@ -249,12 +289,23 @@ export default function MessagesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800 text-white">
-                  <DropdownMenuItem className="flex items-center gap-2">
-                    <Star className="h-4 w-4" />
-                    Star conversation
+                  <DropdownMenuItem 
+                    className="flex items-center gap-2 text-red-400 cursor-pointer"
+                    onClick={handleBlockUser}
+                    disabled={blockLoading}
+                  >
+                    {isSelectedUserBlocked ? (
+                      <>
+                        <UserCheck className="h-4 w-4" />
+                        Unblock user
+                      </>
+                    ) : (
+                      <>
+                        <UserX className="h-4 w-4" />
+                        Block user
+                      </>
+                    )}
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-gray-800" />
-                  <DropdownMenuItem className="flex items-center gap-2 text-red-400">Block user</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -266,7 +317,21 @@ export default function MessagesPage() {
                   <span className="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-full">Today</span>
                 </div>
 
-                {messagesLoading || isMarkingAsRead ? (
+                {isSelectedUserBlocked ? (
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                    <UserX className="h-12 w-12 mb-4 text-red-400" />
+                    <p className="text-lg font-medium">User is blocked</p>
+                    <p className="text-sm">You have blocked this user. Messages are hidden.</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={handleBlockUser}
+                      disabled={blockLoading}
+                    >
+                      Unblock User
+                    </Button>
+                  </div>
+                ) : messagesLoading || isMarkingAsRead ? (
                   <div className="flex justify-center items-center h-full">
                     <LoadingSpinner />
                   </div>
@@ -339,38 +404,40 @@ export default function MessagesPage() {
             </ScrollArea>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-800">
-              <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                  <Paperclip className="h-5 w-5" />
-                  <span className="sr-only">Attach file</span>
-                </Button>
-                <div className="flex-1">
-                  <Input
-                    placeholder="Type a message..."
-                    className="bg-gray-900 border-gray-700 focus-visible:ring-purple-500"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e);
-                      }
-                    }}
-                    disabled={isSendingMessage}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="bg-purple-600 hover:bg-purple-700"
-                  size="icon"
-                  disabled={!newMessage.trim() || isSendingMessage}
-                >
-                  <Send className="h-5 w-5" />
-                  <span className="sr-only">Send message</span>
-                </Button>
-              </form>
-            </div>
+            {!isSelectedUserBlocked && (
+              <div className="p-4 border-t border-gray-800">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                  <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+                    <Paperclip className="h-5 w-5" />
+                    <span className="sr-only">Attach file</span>
+                  </Button>
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Type a message..."
+                      className="bg-gray-900 border-gray-700 focus-visible:ring-purple-500"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(e);
+                        }
+                      }}
+                      disabled={isSendingMessage}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className="bg-purple-600 hover:bg-purple-700"
+                    size="icon"
+                    disabled={!newMessage.trim() || isSendingMessage}
+                  >
+                    <Send className="h-5 w-5" />
+                    <span className="sr-only">Send message</span>
+                  </Button>
+                </form>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex items-center justify-center h-full">
