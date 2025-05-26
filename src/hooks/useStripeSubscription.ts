@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -24,7 +23,13 @@ export const useStripeSubscription = () => {
           creator:creators(
             id,
             display_name,
-            users!creators_user_id_fkey(username)
+            bio,
+            profile_image_url,
+            banner_url,
+            users!creators_user_id_fkey(
+              username,
+              profile_picture
+            )
           ),
           tier:membership_tiers(
             id,
