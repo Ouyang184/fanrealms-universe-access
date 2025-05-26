@@ -1,14 +1,15 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, FileText, Video, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, FileText, Video, Image as ImageIcon, Music } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface AttachmentFile {
   file: File;
   id: string;
-  type: 'image' | 'video' | 'pdf';
+  type: 'image' | 'video' | 'audio' | 'pdf' | 'other';
 }
 
 interface FileAttachmentProps {
@@ -26,40 +27,72 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
     'image/jpg': 'jpg', 
     'image/png': 'png',
     'image/webp': 'webp',
+    'image/gif': 'gif',
     'video/mp4': 'mp4',
     'video/mpeg': 'mpeg',
     'video/quicktime': 'mov',
     'video/x-msvideo': 'avi',
     'video/webm': 'webm',
+    'audio/mpeg': 'mp3',
+    'audio/mp3': 'mp3',
+    'audio/wav': 'wav',
+    'audio/ogg': 'ogg',
+    'audio/aac': 'aac',
+    'audio/m4a': 'm4a',
     'application/pdf': 'pdf'
   };
 
-  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  // File size limits per type (in bytes)
+  const FILE_SIZE_LIMITS = {
+    image: 15 * 1024 * 1024,    // 15MB
+    video: 200 * 1024 * 1024,   // 200MB  
+    audio: 50 * 1024 * 1024,    // 50MB
+    pdf: 25 * 1024 * 1024,      // 25MB
+    other: 25 * 1024 * 1024     // 25MB
+  };
 
-  const getFileType = (file: File): 'image' | 'video' | 'pdf' => {
+  const MAX_TOTAL_SIZE = 500 * 1024 * 1024; // 500MB per post
+
+  const getFileType = (file: File): 'image' | 'video' | 'audio' | 'pdf' | 'other' => {
     console.log('File type:', file.type, 'File name:', file.name);
     if (file.type.startsWith('image/')) return 'image';
     if (file.type.startsWith('video/')) return 'video';
+    if (file.type.startsWith('audio/')) return 'audio';
     if (file.type === 'application/pdf') return 'pdf';
     
     // Fallback: check file extension if MIME type is not recognized
     const extension = file.name.split('.').pop()?.toLowerCase();
     if (['mp4', 'mpeg', 'mov', 'avi', 'webm'].includes(extension || '')) return 'video';
-    if (['jpg', 'jpeg', 'png', 'webp'].includes(extension || '')) return 'image';
+    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) return 'image';
+    if (['mp3', 'wav', 'ogg', 'aac', 'm4a'].includes(extension || '')) return 'audio';
     if (extension === 'pdf') return 'pdf';
     
-    return 'pdf'; // fallback
+    return 'other'; // fallback
   };
 
-  const getFileIcon = (type: 'image' | 'video' | 'pdf') => {
+  const getFileIcon = (type: 'image' | 'video' | 'audio' | 'pdf' | 'other') => {
     switch (type) {
       case 'image':
         return <ImageIcon className="h-4 w-4" />;
       case 'video':
         return <Video className="h-4 w-4" />;
+      case 'audio':
+        return <Music className="h-4 w-4" />;
       case 'pdf':
         return <FileText className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
     }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getTotalSize = (currentAttachments: AttachmentFile[]) => {
+    return currentAttachments.reduce((total, att) => total + att.file.size, 0);
   };
 
   const handleFileSelect = (files: FileList | null) => {
@@ -70,28 +103,41 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
     Array.from(files).forEach((file) => {
       console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
       
-      // More lenient file type validation - allow video files even if MIME type isn't perfect
+      // More lenient file type validation
       const fileType = getFileType(file);
       const extension = file.name.split('.').pop()?.toLowerCase();
       
       // Check if it's a supported file type
       const isValidType = Object.keys(ACCEPTED_FILE_TYPES).includes(file.type) || 
-                         ['mp4', 'mpeg', 'mov', 'avi', 'webm', 'jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(extension || '');
+                         ['mp4', 'mpeg', 'mov', 'avi', 'webm', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'mp3', 'wav', 'ogg', 'aac', 'm4a', 'pdf'].includes(extension || '');
       
       if (!isValidType) {
         toast({
           title: "Invalid file type",
-          description: `${file.name} is not a supported file type. Please use JPG, PNG, PDF, MP4, MOV, AVI, or WebM files.`,
+          description: `${file.name} is not a supported file type. Please use supported image, video, audio, or PDF files.`,
           variant: "destructive",
         });
         return;
       }
 
-      // Validate file size
-      if (file.size > MAX_FILE_SIZE) {
+      // Validate file size based on type
+      const sizeLimit = FILE_SIZE_LIMITS[fileType];
+      if (file.size > sizeLimit) {
         toast({
           title: "File too large",
-          description: `${file.name} is too large. Maximum file size is 50MB.`,
+          description: `${file.name} is too large. Maximum size for ${fileType} files is ${formatFileSize(sizeLimit)}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check total size limit
+      const currentTotalSize = getTotalSize(attachments);
+      const newTotalSize = currentTotalSize + file.size;
+      if (newTotalSize > MAX_TOTAL_SIZE) {
+        toast({
+          title: "Total size limit exceeded",
+          description: `Adding this file would exceed the 500MB total limit per post. Current total: ${formatFileSize(currentTotalSize)}.`,
           variant: "destructive",
         });
         return;
@@ -139,9 +185,16 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
     setDragOver(false);
   };
 
+  const currentTotalSize = getTotalSize(attachments);
+
   return (
     <div className="space-y-4">
-      <Label>File Attachments (Optional)</Label>
+      <div className="flex items-center justify-between">
+        <Label>File Attachments (Optional)</Label>
+        <div className="text-xs text-muted-foreground">
+          Total: {formatFileSize(currentTotalSize)} / 500MB
+        </div>
+      </div>
       
       {/* File Upload Area */}
       <div
@@ -157,14 +210,15 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
         <p className="text-sm text-muted-foreground mb-2">
           Drag and drop files here, or click to select
         </p>
-        <p className="text-xs text-muted-foreground">
-          Supports JPG, PNG, PDF, MP4, MOV, AVI, and WebM files (max 50MB each)
-        </p>
+        <div className="text-xs text-muted-foreground space-y-1">
+          <p>Supported formats: Images, Videos, Audio, PDFs</p>
+          <p>Limits: Images (15MB) • Videos (200MB) • Audio (50MB) • Others (25MB)</p>
+        </div>
         <input
           id="file-upload"
           type="file"
           multiple
-          accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mpeg,.mov,.avi,.webm,video/*,image/*,application/pdf"
+          accept=".jpg,.jpeg,.png,.webp,.gif,.pdf,.mp4,.mpeg,.mov,.avi,.webm,.mp3,.wav,.ogg,.aac,.m4a,video/*,image/*,audio/*,application/pdf"
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files)}
           disabled={disabled}
@@ -192,7 +246,7 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
                         {attachment.type.toUpperCase()}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {(attachment.file.size / 1024 / 1024).toFixed(1)} MB
+                        {formatFileSize(attachment.file.size)}
                       </span>
                     </div>
                   </div>
