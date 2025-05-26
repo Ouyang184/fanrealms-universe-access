@@ -65,7 +65,7 @@ export default function LandingPage() {
               <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl"></div>
               <div className="relative bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
                 <img
-                  src="/placeholder.svg?height=600&width=800&text=FanRealms+Preview"
+                  src="/lovable-uploads/cf5846ed-9cbb-42e6-a9a2-9e05259fb226.png"
                   alt="FanRealms platform preview"
                   className="w-full"
                 />
