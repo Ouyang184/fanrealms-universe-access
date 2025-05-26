@@ -1,167 +1,159 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Search,
-  ChevronLeft,
-  ChevronDown,
-  Check,
-} from "lucide-react";
-import { FeaturedCreators } from "@/components/explore/FeaturedCreators";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useCreators } from "@/hooks/useCreators";
+import { usePosts } from "@/hooks/usePosts";
+import { usePopularCreators } from "@/hooks/usePopularCreators";
+
+// Import the refactored components
+import { ExploreHero } from "@/components/explore/ExploreHero";
 import { ExploreCategories } from "@/components/explore/ExploreCategories";
+import { FeaturedCreators } from "@/components/explore/FeaturedCreators";
 import { ContentTabs } from "@/components/explore/ContentTabs";
 import { DiscoverSection } from "@/components/explore/DiscoverSection";
-import { usePopularCreators } from "@/hooks/usePopularCreators";
-import { usePosts } from "@/hooks/usePosts";
+import { CommunitySection } from "@/components/explore/CommunitySection";
+import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
+import { NewsletterSection } from "@/components/explore/NewsletterSection";
+
+// Category mapping for better tag matching
+const categoryTagMapping = {
+  "art-illustration": ["art", "illustration", "drawing", "painting", "digital art", "artwork"],
+  "gaming": ["gaming", "games", "esports", "streaming", "twitch"],
+  "music": ["music", "audio", "songs", "beats", "musician", "producer"],
+  "writing": ["writing", "author", "stories", "poetry", "blog", "content"],
+  "photography": ["photography", "photos", "camera", "portrait", "landscape"],
+  "education": ["education", "teaching", "tutorial", "learning", "courses"],
+  "podcasts": ["podcast", "audio", "talk", "interview", "radio"],
+  "cooking": ["cooking", "food", "recipes", "chef", "culinary"],
+  "fitness": ["fitness", "workout", "health", "gym", "exercise"],
+  "technology": ["technology", "tech", "programming", "coding", "software"],
+  "fashion": ["fashion", "style", "clothing", "beauty", "makeup"],
+  "film-video": ["film", "video", "movies", "cinema", "youtube", "content creator"]
+};
 
 export default function ExplorePage() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOption, setSortOption] = useState<string>("most-popular");
-
-  // Fetch data for content sections
-  const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
+  // Get search parameters to check if we're filtering by category
+  const [searchParams] = useSearchParams();
+  const categoryFilter = searchParams.get("category");
+  
+  // Fetch real data from Supabase
+  const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
+  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true); // Explicitly exclude AI creators
+  
+  // Set document title when component mounts
+  useEffect(() => {
+    document.title = categoryFilter 
+      ? `${categoryFilter} | FanRealms` 
+      : "Explore | Creator Platform";
+  }, [categoryFilter]);
+  
+  // State for filtered content based on category
+  const [filteredCreators, setFilteredCreators] = useState([]);
+  const [filteredTrending, setFilteredTrending] = useState([]);
+  const [filteredNewReleases, setFilteredNewReleases] = useState([]);
+  const [filteredRecommended, setFilteredRecommended] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter creators based on search if needed
-  const filteredCreators = searchQuery.trim() 
-    ? creators.filter(creator => 
-        (creator.displayName || creator.username || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (creator.bio || "").toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : creators;
-
-  // Apply sorting to creators
-  const sortedCreators = [...filteredCreators].sort((a, b) => {
-    if (sortOption === "most-popular") {
-      const subscribersA = (a.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
-      const subscribersB = (b.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
-      return subscribersB - subscribersA;
-    } else if (sortOption === "newest") {
-      const dateA = new Date(a.created_at || Date.now()).getTime();
-      const dateB = new Date(b.created_at || Date.now()).getTime();
-      return dateB - dateA;
-    } else if (sortOption === "top-rated") {
-      return (b.tiers?.length || 0) - (a.tiers?.length || 0);
-    }
-    return 0;
-  });
-
-  const handleSearch = () => {
-    // Search functionality could be enhanced here
-    console.log("Searching for:", searchQuery);
+  // Helper function to check if creator matches category
+  const creatorMatchesCategory = (creator, category) => {
+    if (!category) return true;
+    
+    const categoryTags = categoryTagMapping[category] || [category];
+    const creatorBio = (creator.bio || "").toLowerCase();
+    const creatorTags = (creator.tags || []).map(tag => tag.toLowerCase());
+    
+    // Check if any category tag matches creator's tags or bio
+    return categoryTags.some(categoryTag => 
+      creatorTags.some(tag => tag.includes(categoryTag) || categoryTag.includes(tag)) ||
+      creatorBio.includes(categoryTag)
+    );
   };
 
+  // Filter content when category or search changes
+  useEffect(() => {
+    if (!popularCreators.length && !posts.length) return;
+    
+    // Start with real creators only, from the popular creators query (which already excludes AI)
+    let creatorFilter = popularCreators;
+    let postsFilter = posts;
+    
+    // Filter by category if present
+    if (categoryFilter) {
+      creatorFilter = popularCreators.filter(creator => 
+        creatorMatchesCategory(creator, categoryFilter)
+      );
+      
+      postsFilter = posts.filter(post => 
+        (post.content || "").toLowerCase().includes(categoryFilter.toLowerCase()) ||
+        (post.title || "").toLowerCase().includes(categoryFilter.toLowerCase())
+      );
+    }
+    
+    // Filter by search query if present
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      creatorFilter = creatorFilter.filter(creator => 
+        (creator.display_name || "").toLowerCase().includes(query) ||
+        (creator.displayName || "").toLowerCase().includes(query) ||
+        (creator.bio || "").toLowerCase().includes(query)
+      );
+      
+      postsFilter = postsFilter.filter(post => 
+        (post.title || "").toLowerCase().includes(query) ||
+        (post.content || "").toLowerCase().includes(query)
+      );
+    }
+    
+    // Update state with filtered data
+    setFilteredCreators(creatorFilter.slice(0, 3)); // Featured creators (limited to 3)
+    setFilteredTrending(postsFilter.slice(0, 4)); // Trending posts
+    setFilteredNewReleases(postsFilter.sort((a, b) => 
+      new Date(b.createdAt || Date.now()).getTime() - 
+      new Date(a.createdAt || Date.now()).getTime()
+    ).slice(0, 4)); // Latest posts
+    setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
+    
+  }, [categoryFilter, searchQuery, popularCreators, posts]);
+  
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
         {/* Hero Section */}
-        <section className="mb-8">
-          <div className="relative rounded-xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
-            <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
-              <h1 className="text-4xl font-bold mb-2">Explore FanRealms</h1>
-              <p className="text-xl text-gray-200 max-w-2xl mb-6">
-                Discover amazing creators and exclusive content across various categories
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search for creators, content, or topics..."
-                    className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  className="bg-purple-600 hover:bg-purple-700"
-                  onClick={handleSearch}
-                >
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Back to All Button */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between">
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/')}>
-              <ChevronLeft className="h-4 w-4" />
-              Back to Home
-            </Button>
-          </div>
-        </section>
-
-        {/* All Featured Creators Section */}
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-3xl font-bold">All Featured Creators</h2>
-              <p className="text-gray-400 mt-1">
-                Discover all {sortedCreators.length} featured creators on FanRealms
-              </p>
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  Sort: {sortOption === "most-popular" ? "Most Popular" : sortOption === "newest" ? "Newest" : "Top Rated"}
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
-                <DropdownMenuItem onClick={() => setSortOption("most-popular")} className="flex items-center gap-2">
-                  <span>Most Popular</span>
-                  {sortOption === "most-popular" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption("newest")} className="flex items-center gap-2">
-                  <span>Newest</span>
-                  {sortOption === "newest" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption("top-rated")} className="flex items-center gap-2">
-                  <span>Top Rated</span>
-                  {sortOption === "top-rated" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <FeaturedCreators 
-            creators={sortedCreators} 
-            isLoading={isLoadingCreators}
-            categoryFilter={null}
-          />
-        </section>
+        <ExploreHero 
+          categoryFilter={categoryFilter} 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery} 
+        />
 
         {/* Categories Section */}
         <ExploreCategories />
 
-        {/* Content Tabs */}
-        <ContentTabs
-          trendingPosts={posts.slice(0, 4)}
-          newReleases={posts.slice(0, 4)}
-          recommendedCreators={creators.slice(0, 4)}
-          isLoadingPosts={isLoadingPosts}
-          isLoadingCreators={isLoadingCreators}
+        {/* Featured Creators - Only display real creators from the database */}
+        <FeaturedCreators 
+          creators={filteredCreators}
+          isLoading={isLoadingCreators || isLoadingPopular}
+          categoryFilter={categoryFilter}
         />
 
-        {/* Discover More */}
+        {/* Content Tabs - Only display real content from the database */}
+        <ContentTabs
+          trendingPosts={filteredTrending}
+          newReleases={filteredNewReleases}
+          recommendedCreators={filteredRecommended}
+          isLoadingPosts={isLoadingPosts}
+          isLoadingCreators={isLoadingCreators || isLoadingPopular}
+        />
+
+        {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />
+
+        {/* Popular Tags Section */}
+        <PopularTagsSection />
+
+        {/* Newsletter Section */}
+        <NewsletterSection />
       </div>
     </MainLayout>
-  );
+  )
 }
