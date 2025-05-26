@@ -156,7 +156,11 @@ export default function ExploreCategoryPage() {
   
   // Navigate to a different category
   const handleCategoryChange = (categoryRoute: string) => {
-    navigate(`/explore/${categoryRoute}`);
+    if (categoryRoute === "all") {
+      navigate('/explore');
+    } else {
+      navigate(`/explore/${categoryRoute}`);
+    }
   };
 
   // Helper function to get creator tags
