@@ -26,15 +26,15 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+    <Dialog open={open} onOpenChange={onDecline}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-4 shrink-0">
           <DialogTitle className="text-2xl font-bold">Terms of Service & Privacy Policy</DialogTitle>
           <p className="text-muted-foreground">Please review and accept our terms to continue</p>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[60vh] px-6">
-          <div className="space-y-6">
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-6 pb-4">
             {/* Introduction */}
             <Card>
               <CardHeader>
@@ -179,9 +179,9 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
           </div>
         </ScrollArea>
 
-        <div className="p-6 pt-4 border-t">
+        <div className="p-6 pt-4 border-t shrink-0">
           <div className="space-y-4">
-            <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center space-x-3">
                 <Checkbox
                   id="final-agreement"
@@ -195,23 +195,13 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <Button 
-                size="lg" 
-                onClick={handleAcceptContinue}
-                className="flex-1"
-              >
-                Accept & Continue
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={onDecline}
-                className="flex-1"
-              >
-                Decline & Exit
-              </Button>
-            </div>
+            <Button 
+              size="lg" 
+              onClick={handleAcceptContinue}
+              className="w-full"
+            >
+              Accept & Continue
+            </Button>
           </div>
         </div>
       </DialogContent>
