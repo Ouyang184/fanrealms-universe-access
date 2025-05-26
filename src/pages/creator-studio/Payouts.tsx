@@ -28,9 +28,10 @@ export default function CreatorStudioPayouts() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creatorEarnings'] });
       queryClient.invalidateQueries({ queryKey: ['stripeBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['stripeConnectStatus'] });
       toast({
         title: "Sync completed",
-        description: `${data.syncedCount} new earnings synced from Stripe.`,
+        description: `${data?.syncedCount || 0} new earnings synced from Stripe.`,
       });
     },
     onError: (error) => {
@@ -85,8 +86,11 @@ export default function CreatorStudioPayouts() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
-        {connectStatus?.stripe_account_id && (
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
+          <p className="text-muted-foreground">Manage your earnings and payouts from Stripe</p>
+        </div>
+        <div className="flex gap-2">
           <Button 
             onClick={() => syncEarnings()}
             disabled={isSyncing}
@@ -105,8 +109,20 @@ export default function CreatorStudioPayouts() {
               </>
             )}
           </Button>
-        )}
+        </div>
       </div>
+
+      {/* Sync Status Alert */}
+      {connectStatus?.stripe_account_id && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Webhook Status</AlertTitle>
+          <AlertDescription>
+            Your earnings are automatically synced via webhooks. If you notice missing data or status issues, 
+            use the "Sync from Stripe" button above to manually refresh your account status and earnings.
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -173,18 +189,6 @@ export default function CreatorStudioPayouts() {
           </div>
         </CardHeader>
         <CardContent>
-          {connectStatus?.stripe_account_id && (
-            <div className="mb-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Earnings Sync</AlertTitle>
-                <AlertDescription>
-                  Earnings are automatically synced via webhooks. Use the "Sync from Stripe" button above if you notice missing earnings.
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-          
           <Table>
             <TableCaption>A list of your recent earnings</TableCaption>
             <TableHeader>
