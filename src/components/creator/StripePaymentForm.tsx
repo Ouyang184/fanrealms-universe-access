@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -7,8 +8,8 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CreditCard, Shield } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, CreditCard, Shield, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Load Stripe with your actual publishable key
@@ -83,46 +84,43 @@ function PaymentForm({ clientSecret, amount, tierName, onSuccess, onError }: Pay
         iconColor: '#ef4444',
       },
     },
-    hidePostalCode: true,
+    hidePostalCode: false,
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Payment Details</h3>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Shield className="h-4 w-4 mr-1" />
-            Secured by Stripe
-          </div>
-        </div>
-        
-        <div className="border rounded-lg p-4 bg-card">
-          <div className="flex items-center mb-3">
-            <CreditCard className="h-4 w-4 mr-2 text-muted-foreground" />
-            <label className="text-sm font-medium">Card Information</label>
+      {/* Card Input */}
+      <Card className="border border-border">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center space-x-2">
+              <CreditCard className="h-4 w-4" />
+              <span className="text-sm">•••• •••• •••• ••••</span>
+            </div>
+            <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
+              <span className="text-xs text-white font-bold">VISA</span>
+            </div>
           </div>
           <div className="stripe-card-element">
             <CardElement options={cardElementOptions} />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="bg-muted/50 rounded-lg p-4">
-        <div className="flex justify-between items-center">
-          <span className="font-medium">Subscribing to:</span>
-          <span>{tierName}</span>
-        </div>
-        <div className="flex justify-between items-center mt-2">
-          <span className="font-medium">Monthly charge:</span>
-          <span className="text-lg font-bold">${(amount / 100).toFixed(2)}</span>
-        </div>
-      </div>
+      {/* Add New Payment Method */}
+      <button
+        type="button"
+        className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm"
+      >
+        <Plus className="h-4 w-4" />
+        <span>Add new payment method</span>
+      </button>
 
+      {/* Subscribe Button */}
       <Button 
         type="submit" 
         disabled={!stripe || isProcessing} 
-        className="w-full"
+        className="w-full bg-white text-black hover:bg-gray-100 border border-gray-300"
         size="lg"
       >
         {isProcessing ? (
@@ -131,7 +129,10 @@ function PaymentForm({ clientSecret, amount, tierName, onSuccess, onError }: Pay
             Processing...
           </>
         ) : (
-          `Complete Payment - $${(amount / 100).toFixed(2)}/month`
+          <>
+            <Shield className="mr-2 h-4 w-4" />
+            Subscribe now
+          </>
         )}
       </Button>
     </form>
@@ -149,20 +150,13 @@ interface StripePaymentFormProps {
 export function StripePaymentForm({ clientSecret, amount, tierName, onSuccess, onError }: StripePaymentFormProps) {
   return (
     <Elements stripe={stripePromise}>
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="text-center">Complete Your Subscription</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PaymentForm
-            clientSecret={clientSecret}
-            amount={amount}
-            tierName={tierName}
-            onSuccess={onSuccess}
-            onError={onError}
-          />
-        </CardContent>
-      </Card>
+      <PaymentForm
+        clientSecret={clientSecret}
+        amount={amount}
+        tierName={tierName}
+        onSuccess={onSuccess}
+        onError={onError}
+      />
     </Elements>
   );
 }
