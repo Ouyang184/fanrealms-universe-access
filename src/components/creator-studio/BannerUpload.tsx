@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { useCreatorImageUpload } from "@/hooks/useCreatorImageUpload";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface BannerUploadProps {
@@ -13,10 +13,10 @@ interface BannerUploadProps {
 }
 
 export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: BannerUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const { uploadBannerImage, isUploading } = useCreatorImageUpload();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -45,42 +45,21 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
     if (!selectedFile) return;
 
     try {
-      setIsUploading(true);
+      const publicUrl = await uploadBannerImage(selectedFile);
       
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `banner-${Date.now()}.${fileExt}`;
-      const filePath = `${userId}/${fileName}`;
-      
-      console.log('Uploading banner to:', filePath);
-      
-      // Upload to Storage
-      const { error: uploadError } = await supabase.storage
-        .from('banners')
-        .upload(filePath, selectedFile, { upsert: true });
-      
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+      if (publicUrl) {
+        // Call the callback to update the parent component
+        onBannerUpdate(publicUrl);
+        
+        toast({
+          title: "Success",
+          description: "Banner image updated successfully!"
+        });
+        
+        // Clear the file selection and update preview
+        setSelectedFile(null);
+        setPreviewUrl(null);
       }
-      
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('banners')
-        .getPublicUrl(filePath);
-      
-      console.log('Banner uploaded, public URL:', publicUrl);
-      
-      // Call the callback to update the parent component
-      onBannerUpdate(publicUrl);
-      
-      toast({
-        title: "Success",
-        description: "Banner image updated successfully!"
-      });
-      
-      // Clear the file selection and update preview
-      setSelectedFile(null);
-      setPreviewUrl(null);
       
     } catch (error: any) {
       console.error('Upload error:', error);
@@ -89,8 +68,6 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
         description: error.message || "Failed to upload banner image",
         variant: "destructive"
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 
