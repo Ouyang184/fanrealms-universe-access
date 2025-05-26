@@ -104,15 +104,21 @@ export function SubscribeButton({
       
       if (result?.clientSecret) {
         console.log('Navigating to payment page with clientSecret');
-        // Navigate to payment page with subscription details
+        // Store the success callback in sessionStorage to avoid serialization issues
+        if (onSubscriptionSuccess) {
+          sessionStorage.setItem('subscriptionSuccessCallback', 'true');
+          sessionStorage.setItem('subscriptionCreatorId', creatorId);
+          sessionStorage.setItem('subscriptionTierId', tierId);
+        }
+        
+        // Navigate to payment page with subscription details (without function)
         navigate('/payment', {
           state: {
             clientSecret: result.clientSecret,
             amount: price * 100, // Convert to cents
             tierName,
             tierId,
-            creatorId,
-            onSuccess: onSubscriptionSuccess // Pass the callback
+            creatorId
           }
         });
       } else {

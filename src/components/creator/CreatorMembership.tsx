@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { CreatorProfile } from "@/types";
 import { useQuery } from "@tanstack/react-query";
@@ -84,6 +84,27 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     enabled: !!user?.id && !!creator.id,
     refetchInterval: 3000, // Refetch every 3 seconds to catch new subscriptions faster
   });
+
+  // Listen for subscription success events
+  useEffect(() => {
+    const handleSubscriptionSuccess = (event: CustomEvent) => {
+      const { creatorId } = event.detail;
+      if (creatorId === creator.id) {
+        console.log('Subscription successful, refreshing data...');
+        // Wait a moment for webhook processing, then refresh
+        setTimeout(() => {
+          refetchTiers();
+          refetchSubscriptions();
+        }, 2000);
+      }
+    };
+
+    window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess as EventListener);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess as EventListener);
+    };
+  }, [creator.id, refetchTiers, refetchSubscriptions]);
 
   if (isLoading) {
     return (

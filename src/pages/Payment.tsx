@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { StripePaymentForm } from '@/components/creator/StripePaymentForm';
@@ -11,7 +11,7 @@ export default function PaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { clientSecret, amount, tierName, tierId, creatorId, onSuccess } = location.state || {};
+  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
   // If no payment data is available, redirect back
   if (!clientSecret || !amount || !tierName) {
@@ -31,9 +31,21 @@ export default function PaymentPage() {
   }
 
   const handlePaymentSuccess = () => {
-    // Call the success callback if provided
-    if (onSuccess) {
-      onSuccess();
+    // Check if there's a success callback to trigger
+    const hasCallback = sessionStorage.getItem('subscriptionSuccessCallback');
+    const callbackCreatorId = sessionStorage.getItem('subscriptionCreatorId');
+    const callbackTierId = sessionStorage.getItem('subscriptionTierId');
+    
+    if (hasCallback && callbackCreatorId === creatorId && callbackTierId === tierId) {
+      // Clear the callback flags
+      sessionStorage.removeItem('subscriptionSuccessCallback');
+      sessionStorage.removeItem('subscriptionCreatorId');
+      sessionStorage.removeItem('subscriptionTierId');
+      
+      // Trigger a custom event that the creator page can listen to
+      window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+        detail: { creatorId, tierId }
+      }));
     }
     
     navigate('/feed', { 
