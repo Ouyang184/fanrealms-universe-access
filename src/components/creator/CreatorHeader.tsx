@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Globe, Calendar, Users } from "lucide-react";
 import { SubscribeButton } from "./SubscribeButton";
-import type { Creator } from "@/types";
+import type { CreatorProfile } from "@/types";
 
 interface CreatorHeaderProps {
-  creator: Creator;
+  creator: CreatorProfile;
   isFollowing: boolean;
   onFollow: () => void;
   onUnfollow: () => void;
@@ -79,8 +79,20 @@ export function CreatorHeader({
           
           {/* Action buttons */}
           {!isOwnProfile && (
-            <div className="flex gap-2">
-              <SubscribeButton creator={creator} />
+            <div className="flex flex-col gap-2">
+              {creator.tiers && creator.tiers.length > 0 && (
+                <div className="space-y-2">
+                  {creator.tiers.map((tier) => (
+                    <SubscribeButton
+                      key={tier.id}
+                      tierId={tier.id}
+                      creatorId={creator.id}
+                      tierName={tier.name}
+                      price={tier.price}
+                    />
+                  ))}
+                </div>
+              )}
               <Button
                 variant={isFollowing ? "outline" : "default"}
                 onClick={isFollowing ? onUnfollow : onFollow}

@@ -179,7 +179,7 @@ export function SubscribeButton({
       <div className="space-y-2">
         <Button variant="outline" disabled className="w-full">
           <Check className="mr-2 h-4 w-4 text-green-500" />
-          Subscribed
+          Subscribed to {tierName}
         </Button>
         <Button 
           variant="destructive" 
@@ -222,7 +222,7 @@ export function SubscribeButton({
           Processing...
         </>
       ) : (
-        `Subscribe for $${price}/month`
+        `Subscribe to ${tierName} - $${price}/month`
       )}
     </Button>
   );

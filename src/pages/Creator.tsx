@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useCreatorPage } from "@/hooks/useCreatorPage";
+import { useFollow } from "@/hooks/useFollow";
 import { CreatorHeader } from "@/components/creator/CreatorHeader";
 import { CreatorPosts } from "@/components/creator/CreatorPosts";
 import { CreatorMembership } from "@/components/creator/CreatorMembership";
@@ -39,6 +40,8 @@ const CreatorPage: React.FC = () => {
     isLoadingPosts,
     refreshCreatorData
   } = useCreatorPage(identifier);
+
+  const { isFollowing, follow, unfollow } = useFollow(creator?.id);
   
   // Add effect to refresh data if needed
   useEffect(() => {
@@ -77,14 +80,14 @@ const CreatorPage: React.FC = () => {
     );
   }
 
-  // Ensure we use display_name if available, otherwise fall back to username
-  const displayName = creator.display_name || creator.username;
-
   return (
     <MainLayout>
       <div className="space-y-8 max-w-5xl mx-auto">
         <CreatorHeader 
-          creator={{...creator, displayName}}
+          creator={creator}
+          isFollowing={isFollowing}
+          onFollow={follow}
+          onUnfollow={unfollow}
         />
         
         {/* Content Tags Section */}
