@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -20,6 +21,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
 import ExploreCategoryPage from "./pages/ExploreCategory";
+import FeaturedCreatorsPage from "./pages/FeaturedCreators";
 import Logout from "./pages/Logout";
 import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
@@ -62,6 +64,7 @@ export default function App() {
                 <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
+                <Route path="/explore/featured-creators" element={<FeaturedCreatorsPage />} />
                 
                 {/* Auth routes */}
                 <Route path="/login" element={<Login />} />
