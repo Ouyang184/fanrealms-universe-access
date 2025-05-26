@@ -49,15 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        // Only clear data on explicit sign out
-        if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing auth data');
-          setSession(null);
-          setUser(null);
-          setProfile(null);
-          return;
-        }
-        
+        // Handle session changes
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -69,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             });
           }, 0);
-        } else if (event !== 'SIGNED_OUT') {
+        } else {
+          // Clear profile when no session exists
           setProfile(null);
         }
       }
