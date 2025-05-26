@@ -40,7 +40,7 @@ export function ContentCard({
       <CardHeader className="p-4">
         <div className="flex items-center gap-3 mb-2">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={authorAvatar} alt={authorName} />
+            <AvatarImage src={authorAvatar || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={authorName} />
             <AvatarFallback>{authorName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">

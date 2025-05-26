@@ -24,7 +24,7 @@ export function DiscoverSection() {
           <Card className="bg-gray-900 border-gray-800 overflow-hidden">
             <div className="relative">
               <img
-                src="/placeholder.svg?height=200&width=400&text=Top+Rated"
+                src="/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"
                 alt="Top Rated Creators"
                 className="w-full h-40 object-cover"
               />
@@ -45,7 +45,7 @@ export function DiscoverSection() {
           <Card className="bg-gray-900 border-gray-800 overflow-hidden">
             <div className="relative">
               <img
-                src="/placeholder.svg?height=200&width=400&text=New+Creators"
+                src="/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"
                 alt="New Creators"
                 className="w-full h-40 object-cover"
               />
@@ -66,7 +66,7 @@ export function DiscoverSection() {
           <Card className="bg-gray-900 border-gray-800 overflow-hidden">
             <div className="relative">
               <img
-                src="/placeholder.svg?height=200&width=400&text=Free+Content"
+                src="/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"
                 alt="Free Content"
                 className="w-full h-40 object-cover"
               />

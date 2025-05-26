@@ -52,7 +52,7 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
     <Card className="bg-gray-900 border-gray-800 flex overflow-hidden">
       <div className="p-4 flex-shrink-0">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={avatarUrl} alt={displayName} />
+          <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
           <AvatarFallback className="bg-gray-800 text-xl">{avatarFallback}</AvatarFallback>
         </Avatar>
       </div>

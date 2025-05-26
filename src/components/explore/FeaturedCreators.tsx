@@ -109,7 +109,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                 <CardContent className="pt-0 -mt-12 p-6">
                   <div className="flex justify-between items-start">
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
-                      <AvatarImage src={avatarUrl || ''} alt={displayName} />
+                      <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
                       <AvatarFallback className="bg-gray-800 text-xl">
                         {avatarFallback}
                       </AvatarFallback>
