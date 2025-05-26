@@ -387,12 +387,20 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
   
   let subscriptionId = invoice.subscription
   
-  // If subscription ID is not directly available, try to get it from the subscription field
-  if (!subscriptionId && invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
-    // Check if it's in the line items
-    const lineItem = invoice.lines.data[0]
-    if (lineItem.subscription) {
-      subscriptionId = lineItem.subscription
+  // If subscription ID is not directly available, try to get it from other locations
+  if (!subscriptionId) {
+    // Check in parent.subscription_details.subscription (this is where it actually is)
+    if (invoice.parent?.subscription_details?.subscription) {
+      subscriptionId = invoice.parent.subscription_details.subscription
+      console.log('Found subscription ID in parent.subscription_details:', subscriptionId)
+    }
+    // Also check line items as fallback
+    else if (invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
+      const lineItem = invoice.lines.data[0]
+      if (lineItem.parent?.subscription_item_details?.subscription) {
+        subscriptionId = lineItem.parent.subscription_item_details.subscription
+        console.log('Found subscription ID in line item parent:', subscriptionId)
+      }
     }
   }
   
@@ -400,7 +408,12 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
     console.error('No subscription ID found in invoice:', {
       invoiceId: invoice.id,
       subscription: invoice.subscription,
-      lines: invoice.lines?.data?.map(line => ({ id: line.id, subscription: line.subscription }))
+      parent: invoice.parent,
+      lines: invoice.lines?.data?.map(line => ({ 
+        id: line.id, 
+        subscription: line.subscription,
+        parent: line.parent 
+      }))
     })
     return
   }
