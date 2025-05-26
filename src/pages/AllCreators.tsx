@@ -1,27 +1,29 @@
 
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
-import { usePopularCreators } from "@/hooks/usePopularCreators";
+import { useCreators } from "@/hooks/useCreators";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, ArrowLeft } from "lucide-react";
+import { Users, ArrowLeft } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 type SortOption = "newest" | "oldest" | "popular" | "alphabetical" | "price-low" | "price-high";
 
-export default function AllFeaturedCreatorsPage() {
-  const { data: creators = [], isLoading } = usePopularCreators(true);
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+export default function AllCreatorsPage() {
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: creators = [], isLoading } = useCreators(searchTerm);
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [sortedCreators, setSortedCreators] = useState<CreatorProfile[]>([]);
 
   // Helper function to get creator tags
   const getCreatorTags = (creator: CreatorProfile) => {
-    const defaultTags = ["Content Creator"];
+    const defaultTags = ["Creator"];
     
     if (!creator) return defaultTags;
     
@@ -79,7 +81,7 @@ export default function AllFeaturedCreatorsPage() {
         break;
       case "popular":
       default:
-        // Keep original order for popular (as returned from API)
+        sorted.sort((a, b) => (b.followers_count || 0) - (a.followers_count || 0));
         break;
     }
 
@@ -87,7 +89,7 @@ export default function AllFeaturedCreatorsPage() {
   }, [creators, sortBy]);
 
   useEffect(() => {
-    document.title = "Featured Creators | FanRealms";
+    document.title = "All Creators | FanRealms";
   }, []);
 
   return (
@@ -104,9 +106,9 @@ export default function AllFeaturedCreatorsPage() {
           
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Featured Creators</h1>
+              <h1 className="text-3xl font-bold mb-2">All Creators</h1>
               <p className="text-gray-400">
-                Discover our hand-picked {creators.length} featured creators on FanRealms
+                Discover all {creators.length} creators on FanRealms
               </p>
             </div>
             
@@ -118,15 +120,25 @@ export default function AllFeaturedCreatorsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="popular">Most Popular</SelectItem>
                   <SelectItem value="newest">Newest First</SelectItem>
                   <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="popular">Most Popular</SelectItem>
                   <SelectItem value="alphabetical">A-Z</SelectItem>
                   <SelectItem value="price-low">Price: Low to High</SelectItem>
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          {/* Search */}
+          <div className="mt-4">
+            <Input
+              placeholder="Search creators by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md bg-gray-800 border-gray-700"
+            />
           </div>
         </div>
 
@@ -173,9 +185,6 @@ export default function AllFeaturedCreatorsPage() {
                         className="w-full h-full object-cover mix-blend-overlay"
                       />
                     )}
-                    <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
-                      <Award className="h-3 w-3" /> Featured
-                    </Badge>
                   </div>
                   <CardContent className="pt-0 -mt-12 p-6">
                     <div className="flex justify-between items-start">
@@ -215,9 +224,14 @@ export default function AllFeaturedCreatorsPage() {
             })
           ) : (
             <div className="col-span-full text-center py-20 text-gray-400">
-              <Award className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold mb-2">No Featured Creators Found</h3>
-              <p>Check back soon for new featured creators!</p>
+              <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No Creators Found</h3>
+              <p>
+                {searchTerm 
+                  ? `No creators found matching "${searchTerm}"`
+                  : "No creators have joined yet. Be the first!"
+                }
+              </p>
             </div>
           )}
         </div>

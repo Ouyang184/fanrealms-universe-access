@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -36,6 +37,7 @@ import CreatorProfile from "./pages/creator-studio/CreatorProfile";
 import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
+import AllCreatorsPage from "./pages/AllCreators";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -62,7 +64,8 @@ export default function App() {
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/explore/all" element={<AllFeaturedCreatorsPage />} />
+                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
+                <Route path="/explore/all" element={<AllCreatorsPage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
                 
                 {/* Auth routes */}
