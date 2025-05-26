@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -35,6 +34,7 @@ import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
 import PaymentPage from "./pages/Payment";
+import Terms from "./pages/Terms";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -70,6 +70,9 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/logout/loading" element={<LogoutLoading />} />
+                
+                {/* Legal pages */}
+                <Route path="/terms" element={<Terms />} />
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
