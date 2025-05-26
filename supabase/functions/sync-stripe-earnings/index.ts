@@ -51,14 +51,14 @@ serve(async (req) => {
       .single()
 
     if (creatorError || !creator || !creator.stripe_account_id) {
-      console.log('ERROR: Creator not found or no Stripe account');
+      console.log('ERROR: Creator not found or no Stripe account:', creatorError);
       return new Response(JSON.stringify({ error: 'Creator not found or Stripe not connected' }), { 
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log('Creator found:', creator.id);
+    console.log('Creator found:', creator.id, 'Stripe Account:', creator.stripe_account_id);
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeSecretKey) {
@@ -73,17 +73,19 @@ serve(async (req) => {
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     // 1. FIRST: Update Stripe Connect account status
-    console.log('Fetching Stripe account details...');
+    console.log('Fetching Stripe account details for:', creator.stripe_account_id);
+    let accountUpdateSuccess = false;
+    
     try {
       const account = await stripe.accounts.retrieve(creator.stripe_account_id);
-      console.log('Account details:', {
+      console.log('Account details retrieved:', {
         id: account.id,
         charges_enabled: account.charges_enabled,
         payouts_enabled: account.payouts_enabled,
         details_submitted: account.details_submitted
       });
 
-      // Update creator account status
+      // Update creator account status in database
       const { error: updateError } = await supabaseService
         .from('creators')
         .update({
@@ -97,9 +99,10 @@ serve(async (req) => {
         console.error('Error updating creator account status:', updateError);
       } else {
         console.log('Successfully updated creator account status');
+        accountUpdateSuccess = true;
       }
     } catch (accountError) {
-      console.error('Error fetching Stripe account:', accountError);
+      console.error('Error fetching/updating Stripe account:', accountError);
     }
 
     // 2. SECOND: Sync earnings (existing logic)
@@ -156,13 +159,13 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Sync completed. ${syncedCount} new earnings synced.`);
+    console.log(`Sync completed. ${syncedCount} new earnings synced. Account status updated: ${accountUpdateSuccess}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
       syncedCount,
       totalCharges: charges.data.length,
-      accountStatusUpdated: true
+      accountStatusUpdated: accountUpdateSuccess
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
