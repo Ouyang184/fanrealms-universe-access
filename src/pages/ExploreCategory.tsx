@@ -1,12 +1,12 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +18,6 @@ import {
   Search,
   Filter,
   Star,
-  Users,
   ChevronRight,
   ChevronLeft,
   Award,
@@ -27,7 +26,6 @@ import {
   TrendingUp,
   Clock,
 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { CreatorProfile } from "@/types";
 
@@ -69,7 +67,6 @@ export default function ExploreCategoryPage() {
   
   const [sortOption, setSortOption] = useState<string>("top-rated");
   const [contentType, setContentType] = useState<string>(category || "all");
-  const [isContentTypeOpen, setIsContentTypeOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   
   // Find the current category object based on route parameter
@@ -80,9 +77,6 @@ export default function ExploreCategoryPage() {
   
   // Filter creators based on the selected category
   const [filteredCreators, setFilteredCreators] = useState<CreatorProfile[]>([]);
-  
-  // Add ref to track dropdown state
-  const dropdownRef = useRef<HTMLDivElement>(null);
   
   // Helper function to check if creator matches category
   const creatorMatchesCategory = (creator: CreatorProfile, categoryRoute: string) => {
@@ -120,21 +114,7 @@ export default function ExploreCategoryPage() {
     if (category) {
       setContentType(category);
     }
-    
-    // Add scroll event listener to close dropdown when scrolling
-    const handleScroll = () => {
-      if (isContentTypeOpen) {
-        setIsContentTypeOpen(false);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    
-    // Cleanup event listener
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [category, isContentTypeOpen, allCreators, currentCategory]);
+  }, [category, allCreators, currentCategory]);
   
   // Apply sorting and filtering to the creators list
   const applyFilters = (creators: CreatorProfile[]) => {
@@ -154,17 +134,14 @@ export default function ExploreCategoryPage() {
     
     // Apply sorting
     if (sortOption === "top-rated") {
-      // Sort by number of tiers as a proxy for "rating" since we don't have ratings yet
       result.sort((a, b) => (b.tiers?.length || 0) - (a.tiers?.length || 0));
     } else if (sortOption === "newest") {
-      // Sort by creation date
       result.sort((a, b) => {
         const dateA = new Date(a.created_at || Date.now()).getTime();
         const dateB = new Date(b.created_at || Date.now()).getTime();
         return dateB - dateA;
       });
     } else if (sortOption === "most-popular") {
-      // Sort by total subscribers across all tiers
       result.sort((a, b) => {
         const subscribersA = (a.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
         const subscribersB = (b.tiers || []).reduce((sum, tier) => sum + (tier.subscriberCount || 0), 0);
@@ -180,18 +157,10 @@ export default function ExploreCategoryPage() {
   // Navigate to a different category
   const handleCategoryChange = (categoryRoute: string) => {
     navigate(`/explore/${categoryRoute}`);
-    setIsContentTypeOpen(false); // Close dropdown after selection
-  };
-
-  // Reset filters function
-  const resetFilters = () => {
-    setSortOption("top-rated");
-    setSearchQuery("");
   };
 
   // Helper function to get creator tags
   const getCreatorTags = (creator: CreatorProfile) => {
-    // Extract tags from bio or default to category tags
     const defaultTags = ["Content Creator"];
     
     if (!creator) return defaultTags;
@@ -201,11 +170,9 @@ export default function ExploreCategoryPage() {
     }
     
     const bio = creator.bio || "";
-    // Extract hashtags from bio
     const extractedTags = bio.match(/#\w+/g) || [];
     const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
     
-    // If no tags found in bio, extract keywords
     if (formattedTags.length === 0 && bio) {
       const keywords = bio.split(' ')
         .filter(word => word.length > 4)
@@ -271,43 +238,36 @@ export default function ExploreCategoryPage() {
                 <span className="mr-3 font-medium">Filters:</span>
               </div>
               
-              <DropdownMenu open={isContentTypeOpen} onOpenChange={setIsContentTypeOpen}>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
                     Content Type
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  className="max-h-[350px] overflow-y-auto"
-                  align="start"
-                  sideOffset={8}
-                  ref={dropdownRef}
-                >
-                  <ScrollArea className="h-full max-h-[300px]">
+                <DropdownMenuContent className="bg-gray-900 border-gray-800">
+                  <DropdownMenuItem 
+                    onClick={() => handleCategoryChange("all")} 
+                    className="flex items-center gap-2"
+                  >
+                    {contentType === "all" && <Check className="h-4 w-4" />}
+                    <span className={contentType === "all" ? "font-medium" : ""}>All Categories</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  
+                  {categories.map((cat) => (
                     <DropdownMenuItem 
-                      onClick={() => handleCategoryChange("all")} 
+                      key={cat.id}
+                      onClick={() => handleCategoryChange(cat.route)} 
                       className="flex items-center gap-2"
                     >
-                      {contentType === "all" && <Check className="h-4 w-4" />}
-                      <span className={contentType === "all" ? "font-medium" : ""}>All Categories</span>
+                      {cat.route === contentType && <Check className="h-4 w-4" />}
+                      <span className="flex items-center gap-2">
+                        <span>{cat.icon}</span>
+                        <span className={cat.route === contentType ? "font-medium" : ""}>{cat.name}</span>
+                      </span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    
-                    {categories.map((cat) => (
-                      <DropdownMenuItem 
-                        key={cat.id}
-                        onClick={() => handleCategoryChange(cat.route)} 
-                        className="flex items-center gap-2"
-                      >
-                        {cat.route === contentType && <Check className="h-4 w-4" />}
-                        <span className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span className={cat.route === contentType ? "font-medium" : ""}>{cat.name}</span>
-                        </span>
-                      </DropdownMenuItem>
-                    ))}
-                  </ScrollArea>
+                  ))}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -319,7 +279,7 @@ export default function ExploreCategoryPage() {
                   Sort: {sortOption === "top-rated" ? "Top Rated" : sortOption === "newest" ? "Newest" : "Most Popular"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
                 <DropdownMenuItem onClick={() => setSortOption("top-rated")} className="flex items-center gap-2">
                   <Star className="h-4 w-4" />
                   <span>Top Rated</span>
@@ -354,7 +314,6 @@ export default function ExploreCategoryPage() {
           </div>
 
           {isLoadingCreators ? (
-            // Loading state
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {Array(6).fill(0).map((_, i) => (
                 <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
@@ -380,18 +339,12 @@ export default function ExploreCategoryPage() {
           ) : displayCreators.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {displayCreators.map((creator) => {
-                // Create proper route to creator profile
                 const creatorLink = creator.username 
                   ? `/creator/${creator.username}` 
                   : `/creator/${creator.id}`;
                 
-                // Get display name with fallbacks
                 const displayName = creator.display_name || creator.username || "Creator";
-                
-                // Get avatar URL with fallbacks
                 const avatarUrl = creator.profile_image_url || creator.avatar_url;
-                
-                // Get first letter for avatar fallback
                 const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
                 
                 return (
@@ -447,41 +400,14 @@ export default function ExploreCategoryPage() {
             </div>
           ) : (
             <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-800">
-              <Users className="h-16 w-16 mx-auto mb-4 text-gray-600" />
               <h3 className="text-xl font-medium mb-2">No creators found</h3>
               <p className="text-gray-400 mb-6 max-w-md mx-auto">
                 {searchQuery 
                   ? "We couldn't find any creators matching your search. Try different keywords."
                   : `We couldn't find any ${currentCategory ? currentCategory.name : ''} creators yet. Check back soon!`}
               </p>
-              {searchQuery && (
-                <Button 
-                  variant="outline"
-                  onClick={resetFilters}
-                >
-                  Reset Filters
-                </Button>
-              )}
             </div>
           )}
-        </section>
-
-        {/* Newsletter */}
-        <section>
-          <Card className="bg-purple-900/30 border-purple-800">
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div>
-                  <h2 className="text-2xl font-bold mb-2">Stay Updated</h2>
-                  <p className="text-gray-300 mb-4">
-                    Get notified when new {currentCategory ? currentCategory.name : ''} creators join FanRealms.
-                  </p>
-                  <Button className="bg-purple-600 hover:bg-purple-700">Subscribe to Updates</Button>
-                </div>
-                <div className="text-7xl">{currentCategory?.icon || "✨"}</div>
-              </div>
-            </CardContent>
-          </Card>
         </section>
       </div>
     </MainLayout>
