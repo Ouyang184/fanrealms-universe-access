@@ -1,4 +1,6 @@
 
+import { Link } from "react-router-dom";
+
 export function HomeFooter() {
   return (
     <footer className="border-t border-gray-800 pt-8 mt-12">
@@ -57,9 +59,9 @@ export function HomeFooter() {
           <h3 className="font-bold mb-4">Legal</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/terms" className="text-sm text-gray-400 hover:text-white">
                 Terms of Service
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="text-sm text-gray-400 hover:text-white">
