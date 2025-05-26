@@ -45,18 +45,31 @@ export const useStripeSubscription = () => {
   // Create subscription
   const { mutateAsync: createSubscription } = useMutation({
     mutationFn: async ({ tierId, creatorId }: { tierId: string, creatorId: string }) => {
+      console.log('Creating subscription via Supabase function...', { tierId, creatorId });
+      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: { action: 'create_subscription', tierId, creatorId }
       });
 
-      if (error) throw error;
+      console.log('Supabase function response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to create subscription');
+      }
+      
+      if (!data) {
+        console.error('No data returned from subscription function');
+        throw new Error('No response data received');
+      }
+
       return data;
     },
     onError: (error) => {
-      console.error('Error creating subscription:', error);
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to create subscription. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
         variant: "destructive"
       });
     }

@@ -49,6 +49,8 @@ export function SubscribeButton({
                               creatorStripeStatus?.stripe_charges_enabled;
 
   const handleSubscribe = async () => {
+    console.log('Subscribe button clicked', { tierId, creatorId, tierName, price });
+    
     if (!user) {
       toast({
         title: "Authentication required",
@@ -70,9 +72,12 @@ export function SubscribeButton({
     setIsProcessing(true);
 
     try {
+      console.log('Creating subscription...');
       const result = await createSubscription({ tierId, creatorId });
+      console.log('Subscription creation result:', result);
       
       if (result?.clientSecret) {
+        console.log('Navigating to payment page with clientSecret');
         // Navigate to payment page with subscription details
         navigate('/payment', {
           state: {
@@ -84,6 +89,7 @@ export function SubscribeButton({
           }
         });
       } else {
+        console.error('No clientSecret received:', result);
         toast({
           title: "Error",
           description: "Failed to initialize payment. Please try again.",
@@ -94,7 +100,7 @@ export function SubscribeButton({
       console.error('Subscription error:', error);
       toast({
         title: "Error",
-        description: "Failed to create subscription. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
         variant: "destructive"
       });
     } finally {
