@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
 import { useCreators } from "@/hooks/useCreators";
@@ -81,7 +80,7 @@ export default function AllCreatorsPage() {
         break;
       case "popular":
       default:
-        sorted.sort((a, b) => (b.followers_count || 0) - (a.followers_count || 0));
+        sorted.sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0));
         break;
     }
 
