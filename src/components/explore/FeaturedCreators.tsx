@@ -48,9 +48,11 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
         <h2 className="text-2xl font-bold">
           {categoryFilter ? `${categoryFilter} Creators` : 'Featured Creators'}
         </h2>
-        <Button variant="link" className="text-purple-400">
-          View All <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+        <Link to="/explore/all">
+          <Button variant="link" className="text-purple-400">
+            View All <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
