@@ -42,6 +42,9 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
             ul { margin: 10px 0; }
             li { margin: 5px 0; }
             .section { margin: 30px 0; }
+            table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
           </style>
         </head>
         <body>
@@ -87,6 +90,12 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
               <li>Distribute malware, spam, or pirated material.</li>
               <li>Circumvent payment systems (e.g., chargebacks, off-platform transactions).</li>
             </ul>
+
+            <h3>3.3 Content Ownership & Licensing</h3>
+            <ul>
+              <li>Creators retain ownership of their content but grant the Platform a non-exclusive license to distribute it.</li>
+              <li>Fans may not redistribute paid content without permission.</li>
+            </ul>
           </div>
 
           <div class="section">
@@ -108,20 +117,85 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
           </div>
 
           <div class="section">
-            <h2>5. Privacy Policy Summary</h2>
-            <h3>5.1 Data We Collect</h3>
+            <h2>5. Copyright & DMCA Compliance</h2>
+            <h3>5.1 Copyright Infringement Claims</h3>
+            <p>We comply with the Digital Millennium Copyright Act (DMCA).</p>
+            <p>To file a takedown request, submit:</p>
             <ul>
-              <li>Account information (email, username, age verification)</li>
-              <li>Payment data (processed via secure third parties)</li>
-              <li>Content and usage data</li>
-              <li>Device and analytics information</li>
+              <li>A physical or electronic signature of the copyright owner.</li>
+              <li>Identification of the infringing material.</li>
+              <li>Contact information.</li>
+              <li>A statement of good faith belief that the use is unauthorized.</li>
+            </ul>
+            <p>Submit claims to: legal@fanrealms.com</p>
+            
+            <h3>5.2 Counter-Notification</h3>
+            <p>If content is wrongly removed, you may submit a counter-notice under penalty of perjury.</p>
+          </div>
+
+          <div class="section">
+            <h2>6. Termination & Suspension</h2>
+            <ul>
+              <li>We may terminate accounts for violations without refunds.</li>
+              <li>Users may appeal bans via support@fanrealms.com</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>7. Dispute Resolution & Governing Law</h2>
+            <ul>
+              <li><strong>Arbitration Clause:</strong> Disputes must be resolved via binding arbitration (not class action).</li>
+              <li><strong>Governing Law:</strong> These terms are governed by United States law.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>8. Privacy Policy (Detailed Breakdown)</h2>
+            <h3>8.1 Data Collected</h3>
+            <table>
+              <tr><th>Category</th><th>Examples</th><th>Purpose</th></tr>
+              <tr><td>Account Data</td><td>Email, username, age verification</td><td>User authentication</td></tr>
+              <tr><td>Payment Data</td><td>Card details (via Stripe/PayPal)</td><td>Transaction processing</td></tr>
+              <tr><td>Content Data</td><td>Posts, messages, media</td><td>Platform functionality</td></tr>
+              <tr><td>Usage Data</td><td>IP, cookies, device info</td><td>Analytics & security</td></tr>
+            </table>
+            
+            <h3>8.2 How We Use Data</h3>
+            <ul>
+              <li>To provide services (payments, moderation).</li>
+              <li>To improve the Platform (bug fixes, UX enhancements).</li>
+              <li>For legal compliance (fraud prevention, subpoenas).</li>
             </ul>
             
-            <h3>5.2 Your Rights</h3>
+            <h3>8.3 Data Sharing & Third Parties</h3>
             <ul>
-              <li>Access and delete your data</li>
-              <li>Opt-out of data processing (where applicable)</li>
-              <li>Withdraw consent at any time</li>
+              <li>Creators see fan interactions (tips, subscriptions).</li>
+              <li>Payment processors (Stripe, PayPal) handle transactions.</li>
+              <li>Cloud providers (AWS, Google Cloud) store data securely.</li>
+              <li>Legal authorities (if required by law).</li>
+            </ul>
+            
+            <h3>8.4 User Rights (GDPR/CCPA)</h3>
+            <ul>
+              <li><strong>Access/Delete Data:</strong> Email support@fanrealms.com</li>
+              <li><strong>Opt-Out (CCPA):</strong> Contact us for data deletion requests</li>
+              <li><strong>EU Users:</strong> Withdraw consent anytime</li>
+            </ul>
+            
+            <h3>8.5 Data Retention & Security</h3>
+            <ul>
+              <li>We retain data as long as necessary (or per legal requirements).</li>
+              <li>Encryption & firewalls protect sensitive data.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <h2>9. Final Consent & Agreement</h2>
+            <p>By checking ✅ I Agree, you confirm:</p>
+            <ul>
+              <li>You are 18+ (or have parental consent).</li>
+              <li>You read and accept all terms.</li>
+              <li>You waive class-action lawsuits (arbitration only).</li>
             </ul>
           </div>
         </body>
@@ -237,6 +311,16 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
                         <li>Circumvent payment systems (e.g., chargebacks, off-platform transactions).</li>
                       </ul>
                     </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">3.3 Content Ownership & Licensing</h3>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li>Creators retain ownership of their content but grant the Platform a non-exclusive license to distribute it.</li>
+                        <li>Fans may not redistribute paid content without permission.</li>
+                      </ul>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -274,30 +358,163 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
                   </CardContent>
                 </Card>
 
-                {/* Privacy Policy Summary */}
+                {/* Copyright & DMCA */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>5. Privacy Policy Summary</CardTitle>
+                    <CardTitle>5. Copyright & DMCA Compliance</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold mb-2">5.1 Data We Collect</h3>
+                      <h3 className="text-lg font-semibold mb-2">5.1 Copyright Infringement Claims</h3>
+                      <div className="space-y-3 text-sm">
+                        <p>We comply with the Digital Millennium Copyright Act (DMCA).</p>
+                        <p>To file a takedown request, submit:</p>
+                        <ul className="list-disc pl-6 space-y-1">
+                          <li>A physical or electronic signature of the copyright owner.</li>
+                          <li>Identification of the infringing material.</li>
+                          <li>Contact information.</li>
+                          <li>A statement of good faith belief that the use is unauthorized.</li>
+                        </ul>
+                        <p>Submit claims to: legal@fanrealms.com</p>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">5.2 Counter-Notification</h3>
+                      <p className="text-sm">If content is wrongly removed, you may submit a counter-notice under penalty of perjury.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Termination */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>6. Termination & Suspension</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc pl-6 space-y-1 text-sm">
+                      <li>We may terminate accounts for violations without refunds.</li>
+                      <li>Users may appeal bans via support@fanrealms.com</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Dispute Resolution */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>7. Dispute Resolution & Governing Law</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="list-disc pl-6 space-y-1 text-sm">
+                      <li><strong>Arbitration Clause:</strong> Disputes must be resolved via binding arbitration (not class action).</li>
+                      <li><strong>Governing Law:</strong> These terms are governed by United States law.</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Privacy Policy Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>8. Privacy Policy (Detailed Breakdown)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">8.1 Data Collected</h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse border border-border text-sm">
+                          <thead>
+                            <tr className="bg-muted">
+                              <th className="border border-border p-3 text-left">Category</th>
+                              <th className="border border-border p-3 text-left">Examples</th>
+                              <th className="border border-border p-3 text-left">Purpose</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="border border-border p-3">Account Data</td>
+                              <td className="border border-border p-3">Email, username, age verification</td>
+                              <td className="border border-border p-3">User authentication</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-border p-3">Payment Data</td>
+                              <td className="border border-border p-3">Card details (via Stripe/PayPal)</td>
+                              <td className="border border-border p-3">Transaction processing</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-border p-3">Content Data</td>
+                              <td className="border border-border p-3">Posts, messages, media</td>
+                              <td className="border border-border p-3">Platform functionality</td>
+                            </tr>
+                            <tr>
+                              <td className="border border-border p-3">Usage Data</td>
+                              <td className="border border-border p-3">IP, cookies, device info</td>
+                              <td className="border border-border p-3">Analytics & security</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">8.2 How We Use Data</h3>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
-                        <li>Account information (email, username, age verification)</li>
-                        <li>Payment data (processed via secure third parties)</li>
-                        <li>Content and usage data</li>
-                        <li>Device and analytics information</li>
+                        <li>To provide services (payments, moderation).</li>
+                        <li>To improve the Platform (bug fixes, UX enhancements).</li>
+                        <li>For legal compliance (fraud prevention, subpoenas).</li>
                       </ul>
                     </div>
 
                     <Separator />
 
                     <div>
-                      <h3 className="text-lg font-semibold mb-2">5.2 Your Rights</h3>
+                      <h3 className="text-lg font-semibold mb-2">8.3 Data Sharing & Third Parties</h3>
                       <ul className="list-disc pl-6 space-y-1 text-sm">
-                        <li>Access and delete your data</li>
-                        <li>Opt-out of data processing (where applicable)</li>
-                        <li>Withdraw consent at any time</li>
+                        <li>Creators see fan interactions (tips, subscriptions).</li>
+                        <li>Payment processors (Stripe, PayPal) handle transactions.</li>
+                        <li>Cloud providers (AWS, Google Cloud) store data securely.</li>
+                        <li>Legal authorities (if required by law).</li>
+                      </ul>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">8.4 User Rights (GDPR/CCPA)</h3>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li><strong>Access/Delete Data:</strong> Email support@fanrealms.com</li>
+                        <li><strong>Opt-Out (CCPA):</strong> Contact us for data deletion requests</li>
+                        <li><strong>EU Users:</strong> Withdraw consent anytime</li>
+                      </ul>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">8.5 Data Retention & Security</h3>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li>We retain data as long as necessary (or per legal requirements).</li>
+                        <li>Encryption & firewalls protect sensitive data.</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Final Consent */}
+                <Card className="border-2 border-primary">
+                  <CardHeader>
+                    <CardTitle>9. Final Consent & Agreement</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="font-medium text-sm">By checking ✅ I Agree, you confirm:</p>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li>You are 18+ (or have parental consent).</li>
+                        <li>You read and accept all terms.</li>
+                        <li>You waive class-action lawsuits (arbitration only).</li>
                       </ul>
                     </div>
                   </CardContent>
