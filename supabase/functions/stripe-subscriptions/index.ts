@@ -169,7 +169,7 @@ serve(async (req) => {
           recurring: { interval: 'month' },
           product_data: {
             name: tier.title,
-            description: tier.description,
+            // Removed description - it's not a valid parameter here
           },
         })
         stripePriceId = price.id
