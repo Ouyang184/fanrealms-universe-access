@@ -1,12 +1,14 @@
 
-import { Loader } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface LoadingSpinnerProps {
   className?: string;
 }
 
 const LoadingSpinner = ({ className = "" }: LoadingSpinnerProps) => {
-  return <Loader className={`loading-spinner ${className}`} />;
+  return (
+    <div className={cn("animate-spin rounded-full h-8 w-8 border-b-2 border-primary", className)} />
+  );
 };
 
 export default LoadingSpinner;

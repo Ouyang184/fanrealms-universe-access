@@ -63,7 +63,7 @@ export default function Notifications() {
   if (loadingNotifications) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <LoadingSpinner />
+        <LoadingSpinner className="h-12 w-12" />
       </div>
     );
   }

@@ -1,5 +1,5 @@
 
-import { Spinner } from "@/components/ui/spinner";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { cn } from "@/lib/utils";
 
 interface LoadingViewProps {
@@ -16,9 +16,9 @@ export function LoadingView({
   message = "Loading..."
 }: LoadingViewProps) {
   const spinnerSize = {
-    sm: "h-8 w-8",
-    md: "h-12 w-12",
-    lg: "h-16 w-16"
+    sm: "h-6 w-6",
+    md: "h-8 w-8", 
+    lg: "h-12 w-12"
   };
 
   return (
@@ -27,7 +27,7 @@ export function LoadingView({
       fullHeight ? "h-[calc(100vh-4rem)]" : "py-12", 
       className
     )}>
-      <Spinner className={spinnerSize[size]} />
+      <LoadingSpinner className={spinnerSize[size]} />
       {message && (
         <p className="mt-4 text-muted-foreground">{message}</p>
       )}
