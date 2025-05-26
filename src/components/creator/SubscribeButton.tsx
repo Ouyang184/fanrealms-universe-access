@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +27,30 @@ export function SubscribeButton({
   const { user } = useAuth();
   const { createSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
   const navigate = useNavigate();
+
+  // Check if user is subscribed to this specific tier
+  const { data: userSubscription } = useQuery({
+    queryKey: ['userTierSubscription', user?.id, tierId],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('creator_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('tier_id', tierId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking subscription:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id && !!tierId
+  });
 
   // Check if creator has completed Stripe setup
   const { data: creatorStripeStatus } = useQuery({
@@ -108,9 +132,13 @@ export function SubscribeButton({
     }
   };
 
-  if (isSubscribed) {
+  // Check if user is subscribed to this tier
+  const isUserSubscribed = userSubscription !== null || isSubscribed;
+
+  if (isUserSubscribed) {
     return (
-      <Button variant="outline" disabled>
+      <Button variant="outline" disabled className="w-full">
+        <Check className="mr-2 h-4 w-4 text-green-500" />
         Subscribed
       </Button>
     );

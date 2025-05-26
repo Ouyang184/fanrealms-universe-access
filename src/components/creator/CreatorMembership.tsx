@@ -55,23 +55,29 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     enabled: !!creator.id
   });
 
-  // Check user's current subscriptions to this creator
-  const { data: userSubscriptions = [] } = useQuery({
+  // Check user's current subscriptions to this creator with better query
+  const { data: userSubscriptions = [], refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creator.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
-        .select('tier_id, status')
+        .select('tier_id, status, stripe_subscription_id')
         .eq('user_id', user.id)
         .eq('creator_id', creator.id)
         .eq('status', 'active');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user subscriptions:', error);
+        return [];
+      }
+      
+      console.log('User subscriptions for creator:', data);
       return data;
     },
-    enabled: !!user?.id && !!creator.id
+    enabled: !!user?.id && !!creator.id,
+    refetchInterval: 5000, // Refetch every 5 seconds to catch new subscriptions
   });
 
   if (isLoading) {
@@ -83,7 +89,9 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
   }
 
   const isSubscribedToTier = (tierId: string) => {
-    return userSubscriptions.some(sub => sub.tier_id === tierId);
+    const isSubscribed = userSubscriptions.some(sub => sub.tier_id === tierId);
+    console.log(`Checking subscription for tier ${tierId}:`, isSubscribed);
+    return isSubscribed;
   };
 
   return (
@@ -93,38 +101,51 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       
       {tiers && tiers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {tiers.map(tier => (
-            <div key={tier.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-              <h4 className="font-medium text-lg">{tier.name}</h4>
-              <p className="text-2xl font-bold mt-2 text-primary">${Number(tier.price).toFixed(2)}/mo</p>
-              
-              <Badge variant="secondary" className="mt-2">
-                {tier.subscriberCount} subscribers
-              </Badge>
-              
-              <div className="mt-4">
-                <p className="text-sm text-muted-foreground mb-3">{tier.description}</p>
-                <ul className="text-sm space-y-1">
-                  {tier.features.map((feature, i) => (
-                    <li key={i} className="flex items-start">
-                      <span className="text-primary mr-2">•</span>
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+          {tiers.map(tier => {
+            const isSubscribed = isSubscribedToTier(tier.id);
+            return (
+              <div 
+                key={tier.id} 
+                className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                  isSubscribed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''
+                }`}
+              >
+                {isSubscribed && (
+                  <Badge className="mb-2 bg-green-500">
+                    Your Plan
+                  </Badge>
+                )}
+                <h4 className="font-medium text-lg">{tier.name}</h4>
+                <p className="text-2xl font-bold mt-2 text-primary">${Number(tier.price).toFixed(2)}/mo</p>
+                
+                <Badge variant="secondary" className="mt-2">
+                  {tier.subscriberCount} subscribers
+                </Badge>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-3">{tier.description}</p>
+                  <ul className="text-sm space-y-1">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start">
+                        <span className="text-primary mr-2">•</span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="mt-4">
+                  <SubscribeButton
+                    tierId={tier.id}
+                    creatorId={creator.id}
+                    tierName={tier.name}
+                    price={tier.price}
+                    isSubscribed={isSubscribed}
+                  />
+                </div>
               </div>
-              
-              <div className="mt-4">
-                <SubscribeButton
-                  tierId={tier.id}
-                  creatorId={creator.id}
-                  tierName={tier.name}
-                  price={tier.price}
-                  isSubscribed={isSubscribedToTier(tier.id)}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="bg-muted/50 rounded-lg p-8">
