@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
@@ -156,7 +155,11 @@ export default function ExploreCategoryPage() {
   
   // Navigate to a different category
   const handleCategoryChange = (categoryRoute: string) => {
-    navigate(`/explore/${categoryRoute}`);
+    if (categoryRoute === "all") {
+      navigate('/explore');
+    } else {
+      navigate(`/explore/${categoryRoute}`);
+    }
   };
 
   // Helper function to get creator tags
@@ -221,8 +224,8 @@ export default function ExploreCategoryPage() {
 
         {/* Back to All Categories Button */}
         <section className="mb-8">
-          <div className="flex items-center justify-end">
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" className="gap-2" onClick={() => navigate('/explore')}>
               <ChevronLeft className="h-4 w-4" />
               Back to All
             </Button>
