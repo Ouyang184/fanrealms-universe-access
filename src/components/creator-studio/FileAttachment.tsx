@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -26,18 +25,29 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
     'image/jpeg': 'jpg',
     'image/jpg': 'jpg', 
     'image/png': 'png',
+    'image/webp': 'webp',
     'video/mp4': 'mp4',
     'video/mpeg': 'mpeg',
     'video/quicktime': 'mov',
+    'video/x-msvideo': 'avi',
+    'video/webm': 'webm',
     'application/pdf': 'pdf'
   };
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
   const getFileType = (file: File): 'image' | 'video' | 'pdf' => {
+    console.log('File type:', file.type, 'File name:', file.name);
     if (file.type.startsWith('image/')) return 'image';
     if (file.type.startsWith('video/')) return 'video';
     if (file.type === 'application/pdf') return 'pdf';
+    
+    // Fallback: check file extension if MIME type is not recognized
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (['mp4', 'mpeg', 'mov', 'avi', 'webm'].includes(extension || '')) return 'video';
+    if (['jpg', 'jpeg', 'png', 'webp'].includes(extension || '')) return 'image';
+    if (extension === 'pdf') return 'pdf';
+    
     return 'pdf'; // fallback
   };
 
@@ -58,11 +68,20 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
     const newAttachments: AttachmentFile[] = [];
 
     Array.from(files).forEach((file) => {
-      // Validate file type
-      if (!Object.keys(ACCEPTED_FILE_TYPES).includes(file.type)) {
+      console.log('Processing file:', file.name, 'Type:', file.type, 'Size:', file.size);
+      
+      // More lenient file type validation - allow video files even if MIME type isn't perfect
+      const fileType = getFileType(file);
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      
+      // Check if it's a supported file type
+      const isValidType = Object.keys(ACCEPTED_FILE_TYPES).includes(file.type) || 
+                         ['mp4', 'mpeg', 'mov', 'avi', 'webm', 'jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(extension || '');
+      
+      if (!isValidType) {
         toast({
           title: "Invalid file type",
-          description: `${file.name} is not a supported file type. Please use JPG, PNG, PDF, or video files.`,
+          description: `${file.name} is not a supported file type. Please use JPG, PNG, PDF, MP4, MOV, AVI, or WebM files.`,
           variant: "destructive",
         });
         return;
@@ -81,12 +100,18 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
       newAttachments.push({
         file,
         id: Math.random().toString(36).substr(2, 9),
-        type: getFileType(file)
+        type: fileType
       });
+      
+      console.log('Added file:', file.name, 'as type:', fileType);
     });
 
     if (newAttachments.length > 0) {
       onAttachmentsChange([...attachments, ...newAttachments]);
+      toast({
+        title: "Files added",
+        description: `${newAttachments.length} file(s) added successfully.`,
+      });
     }
   };
 
@@ -133,13 +158,13 @@ export function FileAttachment({ attachments, onAttachmentsChange, disabled }: F
           Drag and drop files here, or click to select
         </p>
         <p className="text-xs text-muted-foreground">
-          Supports JPG, PNG, PDF, and video files (max 50MB each)
+          Supports JPG, PNG, PDF, MP4, MOV, AVI, and WebM files (max 50MB each)
         </p>
         <input
           id="file-upload"
           type="file"
           multiple
-          accept=".jpg,.jpeg,.png,.pdf,.mp4,.mpeg,.mov"
+          accept=".jpg,.jpeg,.png,.webp,.pdf,.mp4,.mpeg,.mov,.avi,.webm,video/*,image/*,application/pdf"
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files)}
           disabled={disabled}
