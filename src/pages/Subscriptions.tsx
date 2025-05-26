@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -184,13 +183,13 @@ export default function SubscriptionsPage() {
                   <Card key={subscription.id} className="overflow-hidden">
                     <div
                       className="h-32 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${creator?.banner_url || creator?.profile_image_url || "/placeholder.svg"})` }}
+                      style={{ backgroundImage: `url(${creator?.banner_url || creator?.profile_image_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"})` }}
                     />
                     <CardContent className="pt-0 -mt-12 p-6">
                       <div className="flex justify-between items-start">
                         <Avatar className="h-20 w-20 border-4 border-background">
                           <AvatarImage
-                            src={creator?.profile_image_url || user?.profile_picture || "/placeholder.svg"}
+                            src={creator?.profile_image_url || user?.profile_picture || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"}
                             alt={user?.username || "Creator"}
                           />
                           <AvatarFallback>
@@ -314,7 +313,7 @@ export default function SubscriptionsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
                             <AvatarImage
-                              src={creator?.profile_image_url || user?.profile_picture || "/placeholder.svg"}
+                              src={creator?.profile_image_url || user?.profile_picture || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"}
                               alt={user?.username || "Creator"}
                             />
                             <AvatarFallback>

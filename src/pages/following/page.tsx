@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -224,7 +223,7 @@ export default function FollowingPage() {
                       {/* Cover Image (only visible on larger screens) */}
                       <div className="hidden md:block w-48 h-full relative overflow-hidden">
                         <img
-                          src={creator.banner_url || "/placeholder.svg"}
+                          src={creator.banner_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"}
                           alt={creator.username || "Creator"}
                           className="h-full w-full object-cover"
                         />
@@ -234,9 +233,10 @@ export default function FollowingPage() {
                       <div className="flex-1 p-4 md:p-6">
                         <div className="flex items-start">
                           <Avatar className="h-16 w-16 mr-4">
-                            <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
+                            <AvatarImage src={creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} alt={creator.username || "Creator"} />
                             <AvatarFallback className="text-xl">{(creator.username || "C").charAt(0)}</AvatarFallback>
                           </Avatar>
+                          
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
@@ -344,9 +344,10 @@ export default function FollowingPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-14 w-14">
-                    <AvatarImage src={creator.avatar_url || "/placeholder.svg"} alt={creator.username || "Creator"} />
+                    <AvatarImage src={creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} alt={creator.username || "Creator"} />
                     <AvatarFallback>{(creator.username || "C").charAt(0)}</AvatarFallback>
                   </Avatar>
+                  
                   <div className="flex-1">
                     <h3 className="font-bold">{creator.username}</h3>
                     <p className="text-sm text-muted-foreground line-clamp-1">
