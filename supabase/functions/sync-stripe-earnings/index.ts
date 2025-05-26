@@ -72,7 +72,37 @@ serve(async (req) => {
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    // Fetch recent charges from Stripe for this connected account
+    // 1. FIRST: Update Stripe Connect account status
+    console.log('Fetching Stripe account details...');
+    try {
+      const account = await stripe.accounts.retrieve(creator.stripe_account_id);
+      console.log('Account details:', {
+        id: account.id,
+        charges_enabled: account.charges_enabled,
+        payouts_enabled: account.payouts_enabled,
+        details_submitted: account.details_submitted
+      });
+
+      // Update creator account status
+      const { error: updateError } = await supabaseService
+        .from('creators')
+        .update({
+          stripe_onboarding_complete: account.details_submitted && account.charges_enabled,
+          stripe_charges_enabled: account.charges_enabled,
+          stripe_payouts_enabled: account.payouts_enabled,
+        })
+        .eq('id', creator.id);
+
+      if (updateError) {
+        console.error('Error updating creator account status:', updateError);
+      } else {
+        console.log('Successfully updated creator account status');
+      }
+    } catch (accountError) {
+      console.error('Error fetching Stripe account:', accountError);
+    }
+
+    // 2. SECOND: Sync earnings (existing logic)
     console.log('Fetching charges from Stripe...');
     const charges = await stripe.charges.list({
       limit: 50, // Get last 50 charges
@@ -131,7 +161,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       syncedCount,
-      totalCharges: charges.data.length 
+      totalCharges: charges.data.length,
+      accountStatusUpdated: true
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
