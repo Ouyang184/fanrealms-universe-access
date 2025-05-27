@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Lock } from 'lucide-react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -99,9 +99,13 @@ function CheckoutForm() {
     );
   }
 
+  const monthlyAmount = (amount / 100).toFixed(2);
+  const salesTax = (amount * 0.08 / 100).toFixed(2); // 8% tax
+  const totalAmount = (amount * 1.08 / 100).toFixed(2);
+
   return (
     <MainLayout>
-      <div className="max-w-2xl mx-auto py-10">
+      <div className="max-w-6xl mx-auto py-10">
         <div className="mb-6">
           <Button 
             onClick={() => navigate(-1)} 
@@ -113,47 +117,134 @@ function CheckoutForm() {
           </Button>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Complete Your Subscription</CardTitle>
-            <CardDescription>
-              Subscribing to {tierName} for ${(amount / 100).toFixed(2)}/month
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="p-4 border rounded-lg">
-                <PaymentElement 
-                  options={{
-                    layout: "tabs"
-                  }}
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                disabled={!stripe || isLoading}
-                className="w-full"
-                size="lg"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing Payment...
-                  </>
-                ) : (
-                  `Subscribe for $${(amount / 100).toFixed(2)}/month`
-                )}
-              </Button>
-              
-              <div className="text-xs text-muted-foreground text-center">
-                <p>• Secure payment processed by Stripe</p>
-                <p>• Cancel anytime from your subscription settings</p>
-                <p>• 5% platform fee included</p>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Payment Details - Left Side */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Payment details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Payment Amount */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Payment amount</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Pay the set price or you can choose to pay more.
+                  </p>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1">
+                      <div className="bg-muted p-3 rounded-md">
+                        <span className="text-sm text-muted-foreground">Monthly payment</span>
+                        <div className="font-medium">${monthlyAmount}/month</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">$</span>
+                      <input 
+                        type="number" 
+                        value={monthlyAmount} 
+                        readOnly
+                        className="w-20 p-2 border rounded text-right bg-muted"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Payment method</h3>
+                  <div className="border rounded-lg p-4">
+                    <PaymentElement 
+                      options={{
+                        layout: "tabs"
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Terms */}
+                <div className="text-xs text-muted-foreground">
+                  <p>
+                    You'll pay ${totalAmount} today, and then ${monthlyAmount} monthly on the 1st. Your next charge will be on 1 June.
+                  </p>
+                  <p className="mt-2">
+                    By clicking Subscribe now, you agree to our Terms of Use and Privacy Policy. 
+                    This subscription automatically renews monthly, and you'll be notified in advance if the 
+                    monthly amount increases. Cancel at any time in your membership settings.
+                  </p>
+                </div>
+
+                {/* Subscribe Button */}
+                <Button 
+                  type="submit" 
+                  onClick={handleSubmit}
+                  disabled={!stripe || isLoading}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="mr-2 h-4 w-4" />
+                      Subscribe now
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Order Summary - Right Side */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Creator Info */}
+                <div className="flex items-center space-x-3 pb-4 border-b">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">
+                      {tierName?.charAt(0) || 'T'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Creator Subscription</div>
+                    <div className="text-sm text-muted-foreground">{tierName}</div>
+                  </div>
+                </div>
+
+                {/* Payment Breakdown */}
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Monthly payment</span>
+                    <span>${monthlyAmount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>One-time credit</span>
+                    <span>-$10.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sales Tax</span>
+                    <span>${salesTax}</span>
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="border-t pt-4">
+                  <div className="flex justify-between font-semibold text-lg">
+                    <span>Total due today</span>
+                    <span>${totalAmount}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
