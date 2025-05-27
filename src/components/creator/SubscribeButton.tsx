@@ -5,7 +5,6 @@ import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
 import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
-import { ManualCancelButton } from './buttons/ManualCancelButton';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -33,17 +32,14 @@ export function SubscribeButton({
 
   if (isUserSubscribed) {
     return (
-      <div className="space-y-2">
-        <SubscribedButton
-          tierName={tierName}
-          subscriptionData={subscriptionStatus?.data}
-          tierId={tierId}
-          creatorId={creatorId}
-          onOptimisticUpdate={onOptimisticUpdate}
-          onSubscriptionSuccess={onSubscriptionSuccess}
-        />
-        <ManualCancelButton creatorId={creatorId} />
-      </div>
+      <SubscribedButton
+        tierName={tierName}
+        subscriptionData={subscriptionStatus?.data}
+        tierId={tierId}
+        creatorId={creatorId}
+        onOptimisticUpdate={onOptimisticUpdate}
+        onSubscriptionSuccess={onSubscriptionSuccess}
+      />
     );
   }
 
