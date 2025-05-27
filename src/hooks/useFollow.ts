@@ -94,13 +94,13 @@ export function useFollow() {
     setIsLoading(true);
     
     try {
-      // Insert the follow relationship - the database trigger will handle conversation creation
+      // Insert the follow relationship with explicit user_id for RLS
       const { data: insertData, error: followError } = await supabase
         .from("follows")
-        .insert({
+        .insert([{
           user_id: user.id,
           creator_id: creatorId
-        })
+        }])
         .select('creator_id')
         .single();
       
