@@ -18,29 +18,23 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check for existing active subscriptions with enhanced verification
-  console.log('Checking for existing subscriptions to creator:', creatorId, 'for user:', user.id);
+  // First, clean up any stale or cancelled subscriptions
+  console.log('Cleaning up stale subscriptions...');
   
-  const { data: existingCreatorSubs, error: existingCreatorError } = await supabaseService
+  const { data: allCreatorSubs, error: fetchError } = await supabaseService
     .from('creator_subscriptions')
     .select('*')
     .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .in('status', ['active', 'pending', 'trialing']);
+    .eq('creator_id', creatorId);
 
-  if (existingCreatorError) {
-    console.error('Error checking creator_subscriptions:', existingCreatorError);
-  } else {
-    console.log('Found creator_subscriptions:', existingCreatorSubs?.length || 0, existingCreatorSubs);
-  }
-
-  // If there are existing subscriptions, verify their status with Stripe
-  if (existingCreatorSubs && existingCreatorSubs.length > 0) {
-    console.log('Found existing creator subscriptions, verifying with Stripe...');
+  if (fetchError) {
+    console.error('Error fetching creator subscriptions:', fetchError);
+  } else if (allCreatorSubs && allCreatorSubs.length > 0) {
+    console.log('Found creator subscriptions to verify:', allCreatorSubs.length);
     
     let hasValidActiveSubscription = false;
     
-    for (const sub of existingCreatorSubs) {
+    for (const sub of allCreatorSubs) {
       if (sub.stripe_subscription_id) {
         try {
           const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
@@ -53,12 +47,13 @@ export async function handleCreateSubscription(
             console.log('User has valid active subscription');
             break;
           } else if (stripeSubscription.status === 'canceled' || 
-                    stripeSubscription.status === 'incomplete_expired') {
-            // Clean up canceled subscription
-            console.log('Cleaning up canceled subscription:', sub.id);
+                    stripeSubscription.status === 'incomplete_expired' ||
+                    stripeSubscription.status === 'incomplete') {
+            // Clean up canceled/failed subscription
+            console.log('Cleaning up canceled/failed subscription:', sub.id);
             await supabaseService
               .from('creator_subscriptions')
-              .update({ status: 'canceled' })
+              .delete()
               .eq('id', sub.id);
           }
         } catch (stripeError) {
@@ -95,8 +90,9 @@ export async function handleCreateSubscription(
     if (hasValidActiveSubscription) {
       console.log('User already has active subscription to this creator');
       return createJsonResponse({ 
-        error: 'You already have an active subscription to this creator. Please visit your Subscriptions page to manage it, or refresh the page to see your current status.' 
-      }, 400);
+        error: 'You already have an active subscription to this creator. Please refresh the page to see your current subscription status.',
+        shouldRefresh: true
+      }, 409); // Use 409 Conflict instead of 400
     }
   }
 

@@ -46,9 +46,10 @@ export function ActiveSubscribeButton({
       if (result?.error) {
         console.error('ActiveSubscribeButton: Server returned error:', result.error);
         
-        // Check if it's an existing subscription error
+        // Check if it's an existing subscription error (409 Conflict)
         if (result.error.includes('already have an active subscription') || 
-            result.error.includes('existing subscription')) {
+            result.error.includes('existing subscription') ||
+            result.shouldRefresh) {
           
           // Refresh all subscription-related data immediately
           await Promise.all([

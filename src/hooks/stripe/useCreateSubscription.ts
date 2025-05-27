@@ -31,13 +31,25 @@ export const useCreateSubscription = () => {
 
       if (error) {
         console.error('useCreateSubscription: Edge function error:', error);
+        
+        // Check if it's a 409 Conflict (existing subscription)
+        if (error.message && error.message.includes('409')) {
+          return { 
+            error: 'You already have an active subscription to this creator. Please refresh the page to see your current subscription status.',
+            shouldRefresh: true
+          };
+        }
+        
         throw new Error(error.message || 'Failed to invoke subscription function');
       }
 
       if (data?.error) {
         console.error('useCreateSubscription: Function returned error:', data.error);
-        // Don't throw here, return the error so the component can handle it
-        return { error: data.error };
+        // Return the error so the component can handle it appropriately
+        return { 
+          error: data.error,
+          shouldRefresh: data.shouldRefresh || false
+        };
       }
 
       if (!data) {
