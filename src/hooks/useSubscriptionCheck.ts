@@ -19,95 +19,84 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
         creatorId 
       });
 
-      // Check both tables for any subscription records
-      const [creatorSubsResult, basicSubsResult] = await Promise.all([
-        supabase
-          .from('creator_subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('creator_id', creatorId)
-          .eq('tier_id', tierId),
-        supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('creator_id', creatorId)
-          .eq('tier_id', tierId)
-      ]);
+      // Check creator_subscriptions first (Stripe-managed)
+      const { data: creatorSubs, error: creatorSubsError } = await supabase
+        .from('creator_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
+        .eq('status', 'active');
 
-      if (creatorSubsResult.error) {
-        console.error('Error checking creator subscriptions:', creatorSubsResult.error);
+      if (creatorSubsError) {
+        console.error('Error checking creator subscriptions:', creatorSubsError);
       }
 
-      if (basicSubsResult.error) {
-        console.error('Error checking basic subscriptions:', basicSubsResult.error);
-      }
-
-      const allSubs = [
-        ...(creatorSubsResult.data || []),
-        ...(basicSubsResult.data || [])
-      ];
-
-      console.log('Found subscription records:', allSubs.length, allSubs);
-
-      // If we have any subscription records, verify them with Stripe
-      let activeSubscription = null;
-      const staleRecords = [];
-
-      for (const sub of allSubs) {
-        if ('stripe_subscription_id' in sub && sub.stripe_subscription_id) {
+      // If we have an active creator subscription, verify it with Stripe
+      if (creatorSubs && creatorSubs.length > 0) {
+        const activeSub = creatorSubs[0];
+        
+        // Only verify with Stripe if we have a stripe_subscription_id
+        if (activeSub.stripe_subscription_id) {
           try {
-            console.log('Verifying subscription with Stripe:', sub.stripe_subscription_id);
+            console.log('Verifying subscription with Stripe:', activeSub.stripe_subscription_id);
             
-            // Call our edge function to verify with Stripe
             const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('stripe-subscriptions', {
               body: {
                 action: 'verify_subscription',
-                subscriptionId: sub.stripe_subscription_id
+                subscriptionId: activeSub.stripe_subscription_id
               }
             });
 
-            console.log('Stripe verification result:', verifyResult, verifyError);
+            if (verifyError) {
+              console.error('Stripe verification error:', verifyError);
+              // Don't delete on verification error, just return current state
+              return { isSubscribed: true, data: activeSub };
+            }
 
-            if (verifyError || !verifyResult?.isActive) {
-              console.log('Subscription not active in Stripe, marking as stale:', sub.id);
-              staleRecords.push(sub);
-            } else if (verifyResult.isActive && !verifyResult.cancelAtPeriodEnd) {
-              console.log('Found truly active subscription:', sub.id);
-              activeSubscription = sub;
-              break;
+            if (verifyResult?.isActive) {
+              console.log('Stripe confirms subscription is active');
+              return { isSubscribed: true, data: activeSub };
+            } else {
+              console.log('Stripe says subscription is not active, but keeping record');
+              // Don't auto-delete, let manual sync handle cleanup
+              return { isSubscribed: false, data: null };
             }
           } catch (error) {
-            console.error('Error verifying subscription with Stripe:', error);
-            staleRecords.push(sub);
+            console.error('Error verifying with Stripe:', error);
+            // On error, assume subscription is still valid
+            return { isSubscribed: true, data: activeSub };
           }
         } else {
-          // Check if it's a basic subscription that should be considered active
-          if ('is_paid' in sub && sub.is_paid) {
-            console.log('Found basic paid subscription:', sub.id);
-            activeSubscription = sub;
-          } else {
-            staleRecords.push(sub);
-          }
+          // No Stripe ID but marked as active - treat as valid
+          console.log('Active subscription without Stripe ID');
+          return { isSubscribed: true, data: activeSub };
         }
       }
 
-      // Don't clean up records automatically - let the user sync manually
-      console.log('Stale records found (not auto-cleaning):', staleRecords.length);
+      // Check basic subscriptions table as fallback
+      const { data: basicSubs, error: basicSubsError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
+        .eq('is_paid', true);
 
-      if (activeSubscription) {
-        console.log('useSubscriptionCheck: Found active subscription');
-        return {
-          isSubscribed: true,
-          data: activeSubscription
-        };
+      if (basicSubsError) {
+        console.error('Error checking basic subscriptions:', basicSubsError);
       }
 
-      console.log('useSubscriptionCheck: No active subscription found');
+      if (basicSubs && basicSubs.length > 0) {
+        console.log('Found basic subscription');
+        return { isSubscribed: true, data: basicSubs[0] };
+      }
+
+      console.log('No active subscription found');
       return { isSubscribed: false, data: null };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 10000, // 10 seconds
+    staleTime: 30000, // 30 seconds - longer cache
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

@@ -24,6 +24,7 @@ export async function handleSyncAllSubscriptions(
 
     let syncedCount = 0;
     let cleanedCount = 0;
+    let activatedCount = 0;
 
     for (const sub of allSubs || []) {
       if (sub.stripe_subscription_id) {
@@ -32,8 +33,8 @@ export async function handleSyncAllSubscriptions(
           
           const isActive = stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end;
           
-          if (isActive) {
-            // Update subscription with latest Stripe data
+          if (isActive && sub.status !== 'active') {
+            // Activate subscription that became active
             await supabaseService
               .from('creator_subscriptions')
               .update({
@@ -44,7 +45,7 @@ export async function handleSyncAllSubscriptions(
               })
               .eq('id', sub.id);
 
-            // Ensure corresponding basic subscription exists
+            // Ensure corresponding basic subscription exists for legacy compatibility
             await supabaseService
               .from('subscriptions')
               .upsert({
@@ -58,35 +59,56 @@ export async function handleSyncAllSubscriptions(
                 ignoreDuplicates: false 
               });
 
-            syncedCount++;
-          } else {
-            // Remove inactive subscriptions
+            activatedCount++;
+          } else if (isActive) {
+            // Update existing active subscription
             await supabaseService
               .from('creator_subscriptions')
-              .delete()
+              .update({
+                current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
+                current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                updated_at: new Date().toISOString()
+              })
               .eq('id', sub.id);
 
+            syncedCount++;
+          } else {
+            // Mark as inactive but don't delete immediately
+            await supabaseService
+              .from('creator_subscriptions')
+              .update({
+                status: 'inactive',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', sub.id);
+
+            // Remove from basic subscriptions
             await supabaseService
               .from('subscriptions')
               .delete()
               .eq('user_id', sub.user_id)
-              .eq('creator_id', sub.creator_id);
+              .eq('creator_id', sub.creator_id)
+              .eq('tier_id', sub.tier_id);
 
             cleanedCount++;
           }
         } catch (stripeError) {
           if (stripeError.code === 'resource_missing') {
-            // Subscription doesn't exist in Stripe, clean up
+            // Subscription doesn't exist in Stripe, mark as inactive
             await supabaseService
               .from('creator_subscriptions')
-              .delete()
+              .update({
+                status: 'inactive',
+                updated_at: new Date().toISOString()
+              })
               .eq('id', sub.id);
 
             await supabaseService
               .from('subscriptions')
               .delete()
               .eq('user_id', sub.user_id)
-              .eq('creator_id', sub.creator_id);
+              .eq('creator_id', sub.creator_id)
+              .eq('tier_id', sub.tier_id);
 
             cleanedCount++;
           } else {
@@ -96,13 +118,14 @@ export async function handleSyncAllSubscriptions(
       }
     }
 
-    console.log('Sync complete:', { syncedCount, cleanedCount });
+    console.log('Sync complete:', { syncedCount, cleanedCount, activatedCount });
 
     return createJsonResponse({
       success: true,
       syncedCount,
       cleanedCount,
-      message: `Synced ${syncedCount} subscriptions, cleaned ${cleanedCount} stale records`
+      activatedCount,
+      message: `Synced ${syncedCount} subscriptions, activated ${activatedCount}, cleaned ${cleanedCount} inactive records`
     });
 
   } catch (error) {
