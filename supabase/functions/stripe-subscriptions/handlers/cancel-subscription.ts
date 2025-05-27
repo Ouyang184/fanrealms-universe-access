@@ -53,20 +53,6 @@ export async function handleCancelSubscription(
 
   if (!subscriptionData) {
     console.log('ERROR: Subscription not found for user:', user.id, 'subscription ID:', subscriptionId);
-    
-    // Debug: Let's see what subscriptions this user has
-    const { data: allUserSubs } = await supabaseService
-      .from('creator_subscriptions')
-      .select('id, status, stripe_subscription_id')
-      .eq('user_id', user.id);
-    console.log('All user creator_subscriptions:', allUserSubs);
-
-    const { data: allBasicSubs } = await supabaseService
-      .from('subscriptions')
-      .select('id, creator_id, tier_id, is_paid')
-      .eq('user_id', user.id);
-    console.log('All user subscriptions:', allBasicSubs);
-    
     return createJsonResponse({ error: 'Subscription not found or already cancelled' }, 404);
   }
 
@@ -96,31 +82,23 @@ export async function handleCancelSubscription(
       console.error('Error updating creator_subscriptions status:', updateError);
       return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
     }
-  }
-
-  // Remove/update subscription in basic subscriptions table
-  if (isCreatorSubscription) {
-    // Remove from subscriptions table if it exists there too
-    const { error: deleteError } = await supabaseService
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', subscriptionData.user_id)
-      .eq('creator_id', subscriptionData.creator_id);
-
-    if (deleteError) {
-      console.error('Error removing subscription from subscriptions table:', deleteError);
-    }
   } else {
+    // Handle basic subscription (no Stripe integration)
+    console.log('Handling basic subscription cancellation (no Stripe)');
+    
     // Just remove from subscriptions table
     const { error: deleteError } = await supabaseService
       .from('subscriptions')
       .delete()
-      .eq('id', subscriptionId);
+      .eq('id', subscriptionId)
+      .eq('user_id', user.id);
 
     if (deleteError) {
       console.error('Error removing subscription from subscriptions table:', deleteError);
       return createJsonResponse({ error: 'Failed to remove subscription' }, 500);
     }
+
+    console.log('Basic subscription removed successfully');
   }
 
   console.log('Subscription cancelled successfully');
