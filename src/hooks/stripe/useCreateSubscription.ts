@@ -36,7 +36,8 @@ export const useCreateSubscription = () => {
 
       if (data?.error) {
         console.error('useCreateSubscription: Function returned error:', data.error);
-        throw new Error(data.error);
+        // Don't throw here, return the error so the component can handle it
+        return { error: data.error };
       }
 
       if (!data) {

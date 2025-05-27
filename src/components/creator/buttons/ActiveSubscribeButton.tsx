@@ -38,10 +38,37 @@ export function ActiveSubscribeButton({
     }
 
     try {
-      console.log('ActiveSubscribeButton: Starting subscription creation for tier:', tierId, 'creator:', creatorId);
+      console.log('ActiveSubscribeButton: Starting subscription creation for tier:', tierId, 'creator:', creatorId, 'user:', user.id);
       
       const result = await createSubscription({ tierId, creatorId });
       console.log('ActiveSubscribeButton: Subscription creation result:', result);
+      
+      if (result?.error) {
+        console.error('ActiveSubscribeButton: Server returned error:', result.error);
+        
+        if (result.error.includes('already have an active subscription')) {
+          // Force refresh subscription data and show appropriate message
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
+            queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+          ]);
+          
+          toast({
+            title: "Already Subscribed",
+            description: "You already have an active subscription to this creator. Refreshing your subscription status...",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Subscription Failed",
+            description: result.error,
+            variant: "destructive"
+          });
+        }
+        return;
+      }
       
       if (result?.clientSecret) {
         // Store subscription details for payment page
@@ -89,23 +116,11 @@ export function ActiveSubscribeButton({
     } catch (error) {
       console.error('ActiveSubscribeButton: Subscription error:', error);
       
-      if (error instanceof Error && error.message.includes('already have an active subscription')) {
-        // Refresh data to show current state
-        await queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] });
-        await queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] });
-        
-        toast({
-          title: "Already Subscribed",
-          description: "You already have an active subscription to this creator.",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Subscription Failed",
-          description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Subscription Failed",
+        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

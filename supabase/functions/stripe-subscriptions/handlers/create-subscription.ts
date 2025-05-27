@@ -18,8 +18,8 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check for existing active subscriptions to this creator
-  console.log('Checking for existing subscriptions to creator:', creatorId);
+  // Check for existing active subscriptions to this creator with more detailed logging
+  console.log('Checking for existing subscriptions to creator:', creatorId, 'for user:', user.id);
   
   const { data: existingCreatorSubs, error: existingCreatorError } = await supabaseService
     .from('creator_subscriptions')
@@ -30,6 +30,8 @@ export async function handleCreateSubscription(
 
   if (existingCreatorError) {
     console.error('Error checking creator_subscriptions:', existingCreatorError);
+  } else {
+    console.log('Found creator_subscriptions:', existingCreatorSubs?.length || 0, existingCreatorSubs);
   }
 
   const { data: existingBasicSubs, error: existingBasicError } = await supabaseService
@@ -41,15 +43,84 @@ export async function handleCreateSubscription(
 
   if (existingBasicError) {
     console.error('Error checking subscriptions:', existingBasicError);
+  } else {
+    console.log('Found basic subscriptions:', existingBasicSubs?.length || 0, existingBasicSubs);
   }
 
-  // Prevent duplicate subscriptions
+  // If there are existing subscriptions, clean them up first to avoid conflicts
   if ((existingCreatorSubs && existingCreatorSubs.length > 0) || 
       (existingBasicSubs && existingBasicSubs.length > 0)) {
-    console.log('User already has active subscription to this creator');
-    return createJsonResponse({ 
-      error: 'You already have an active subscription to this creator. Only one subscription per creator is allowed.' 
-    }, 400);
+    
+    console.log('Found existing subscriptions, cleaning them up...');
+    
+    // Delete any stale basic subscriptions
+    if (existingBasicSubs && existingBasicSubs.length > 0) {
+      const { error: deleteBasicError } = await supabaseService
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId);
+      
+      if (deleteBasicError) {
+        console.error('Error deleting basic subscriptions:', deleteBasicError);
+      } else {
+        console.log('Deleted basic subscriptions successfully');
+      }
+    }
+    
+    // For creator subscriptions, check if they're actually active in Stripe
+    if (existingCreatorSubs && existingCreatorSubs.length > 0) {
+      for (const sub of existingCreatorSubs) {
+        if (sub.stripe_subscription_id) {
+          try {
+            const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+            console.log('Stripe subscription status:', stripeSubscription.status);
+            
+            // If the Stripe subscription is not active, clean up the database record
+            if (stripeSubscription.status !== 'active' && stripeSubscription.status !== 'trialing') {
+              console.log('Cleaning up inactive subscription record:', sub.id);
+              const { error: deleteError } = await supabaseService
+                .from('creator_subscriptions')
+                .delete()
+                .eq('id', sub.id);
+              
+              if (deleteError) {
+                console.error('Error deleting inactive subscription:', deleteError);
+              }
+            } else {
+              console.log('User already has active subscription to this creator');
+              return createJsonResponse({ 
+                error: 'You already have an active subscription to this creator. Only one subscription per creator is allowed.' 
+              }, 400);
+            }
+          } catch (stripeError) {
+            console.error('Error checking Stripe subscription:', stripeError);
+            // If we can't verify with Stripe, delete the record to be safe
+            const { error: deleteError } = await supabaseService
+              .from('creator_subscriptions')
+              .delete()
+              .eq('id', sub.id);
+            
+            if (deleteError) {
+              console.error('Error deleting unverifiable subscription:', deleteError);
+            } else {
+              console.log('Deleted unverifiable subscription record');
+            }
+          }
+        } else {
+          // No Stripe subscription ID, delete the record
+          console.log('Deleting subscription without Stripe ID:', sub.id);
+          const { error: deleteError } = await supabaseService
+            .from('creator_subscriptions')
+            .delete()
+            .eq('id', sub.id);
+          
+          if (deleteError) {
+            console.error('Error deleting subscription without Stripe ID:', deleteError);
+          }
+        }
+      }
+    }
   }
 
   // Get tier and creator details
