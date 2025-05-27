@@ -8,13 +8,12 @@ import { StripeConnectSection } from "@/components/creator-studio/StripeConnectS
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useState } from "react";
-import { Save, Loader } from "lucide-react";
+import { Save } from "lucide-react";
 
 export default function CreatorStudioSettings() {
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
   const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("profile");
 
   if (isLoading) {
     return (
@@ -64,10 +63,12 @@ export default function CreatorStudioSettings() {
   };
 
   const handleSaveChanges = async () => {
+    if (Object.keys(pendingChanges).length === 0) {
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Always attempt to save, even if there are no pending changes
-      // This ensures the user can save their current state
       await updateSettings(pendingChanges);
       setPendingChanges({});
     } catch (error) {
@@ -79,8 +80,7 @@ export default function CreatorStudioSettings() {
 
   // Merge current settings with pending changes for display
   const displaySettings = { ...settings, ...pendingChanges };
-  // Allow saving even with no changes - user should be able to confirm current state
-  const canSave = !isSaving;
+  const hasChanges = Object.keys(pendingChanges).length > 0;
 
   return (
     <div className="space-y-8">
@@ -89,7 +89,7 @@ export default function CreatorStudioSettings() {
         <p className="text-muted-foreground">Manage your creator profile and account settings</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+      <Tabs defaultValue="profile" className="space-y-8">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -123,18 +123,14 @@ export default function CreatorStudioSettings() {
         </TabsContent>
       </Tabs>
 
-      {/* Save Changes Button - Always available for main settings */}
+      {/* Save Changes Button */}
       <div className="flex justify-end pt-6 border-t">
         <Button 
           onClick={handleSaveChanges}
-          disabled={!canSave}
+          disabled={!hasChanges || isSaving}
           className="min-w-[120px]"
         >
-          {isSaving ? (
-            <Loader className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
+          <Save className="mr-2 h-4 w-4" />
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
