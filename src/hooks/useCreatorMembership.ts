@@ -18,7 +18,7 @@ export const useCreatorMembership = (creatorId: string) => {
   const queryClient = useQueryClient();
   const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, boolean>>({});
 
-  // Fetch membership tiers with real-time subscriber counts
+  // Fetch membership tiers with enhanced subscriber counts
   const { data: tiers, isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creatorId],
     queryFn: async () => {
@@ -32,18 +32,33 @@ export const useCreatorMembership = (creatorId: string) => {
 
       if (tiersError) throw tiersError;
 
-      // Get subscriber counts for each tier
+      // Get enhanced subscriber counts for each tier (check both tables)
       const tiersWithCounts = await Promise.all(
         tiersData.map(async (tier) => {
-          const { count, error: countError } = await supabase
+          // Count from creator_subscriptions first
+          const { count: creatorSubCount, error: creatorCountError } = await supabase
             .from('creator_subscriptions')
             .select('*', { count: 'exact', head: true })
             .eq('tier_id', tier.id)
             .eq('status', 'active');
 
-          if (countError) {
-            console.error('Error counting subscribers for tier:', tier.id, countError);
+          // Count from subscriptions table as well
+          const { count: regularSubCount, error: regularCountError } = await supabase
+            .from('subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('tier_id', tier.id)
+            .eq('creator_id', creatorId)
+            .eq('is_paid', true);
+
+          if (creatorCountError) {
+            console.error('Error counting creator subscriptions for tier:', tier.id, creatorCountError);
           }
+          if (regularCountError) {
+            console.error('Error counting regular subscriptions for tier:', tier.id, regularCountError);
+          }
+
+          // Use the higher count to ensure we don't miss any subscriptions
+          const totalCount = Math.max(creatorSubCount || 0, regularSubCount || 0);
 
           return {
             id: tier.id,
@@ -51,68 +66,92 @@ export const useCreatorMembership = (creatorId: string) => {
             price: tier.price,
             description: tier.description || '',
             features: tier.description ? tier.description.split('|') : [],
-            subscriberCount: count || 0,
+            subscriberCount: totalCount,
           };
         })
       );
 
-      console.log('Fetched tiers with subscriber counts:', tiersWithCounts);
+      console.log('Fetched tiers with enhanced subscriber counts:', tiersWithCounts);
       return tiersWithCounts;
     },
     enabled: !!creatorId,
     staleTime: 0,
-    refetchInterval: 2000, // Refresh every 2 seconds for real-time updates
+    refetchInterval: 2000,
   });
 
-  // Fetch user's subscriptions to check which tiers they're subscribed to
+  // Enhanced subscription check for user's subscriptions
   const { data: userSubscriptions, refetch: refetchUserSubscriptions } = useQuery({
-    queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
+    queryKey: ['enhancedUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('Fetching user subscriptions for creator:', creatorId);
+      console.log('Enhanced subscription check for user:', user.id, 'creator:', creatorId);
       
-      const { data, error } = await supabase
+      // Check creator_subscriptions table first
+      const { data: creatorSubs, error: creatorSubsError } = await supabase
         .from('creator_subscriptions')
         .select('tier_id, status')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('status', 'active');
 
-      if (error) {
-        console.error('Error fetching user subscriptions:', error);
-        return [];
+      // Check subscriptions table as well
+      const { data: regularSubs, error: regularSubsError } = await supabase
+        .from('subscriptions')
+        .select('tier_id')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('is_paid', true);
+
+      if (creatorSubsError) {
+        console.error('Error fetching creator subscriptions:', creatorSubsError);
+      }
+      if (regularSubsError) {
+        console.error('Error fetching regular subscriptions:', regularSubsError);
       }
 
-      console.log('User subscriptions for creator:', data);
-      return data;
+      // Combine results, prioritizing creator_subscriptions
+      const allSubs = [...(creatorSubs || [])];
+      
+      // Add subscriptions from the regular table that aren't already covered
+      if (regularSubs) {
+        regularSubs.forEach(regSub => {
+          const alreadyExists = allSubs.some(cs => cs.tier_id === regSub.tier_id);
+          if (!alreadyExists) {
+            allSubs.push({ tier_id: regSub.tier_id, status: 'active' });
+          }
+        });
+      }
+
+      console.log('Enhanced user subscriptions for creator:', allSubs);
+      return allSubs;
     },
     enabled: !!user?.id && !!creatorId,
     staleTime: 0,
-    refetchInterval: 1000, // Very frequent updates for subscription state
+    refetchInterval: 1000,
   });
 
-  // Check if user is subscribed to a specific tier
+  // Check if user is subscribed to a specific tier (enhanced)
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to server data
+    // Fall back to enhanced server data
     return userSubscriptions?.some(sub => sub.tier_id === tierId && sub.status === 'active') || false;
   }, [userSubscriptions, localSubscriptionStates]);
 
-  // Handle subscription success with optimistic updates
+  // Handle subscription success with enhanced updates
   const handleSubscriptionSuccess = useCallback(async () => {
-    console.log('Subscription success detected, refreshing data...');
+    console.log('Enhanced subscription success detected, refreshing data...');
     
     // Invalidate all related queries immediately
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['enhancedUserCreatorSubscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
       queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
     ]);
 
     // Force immediate refetch
@@ -204,6 +243,20 @@ export const useCreatorMembership = (creatorId: string) => {
     isLoading,
     isSubscribedToTier,
     handleSubscriptionSuccess,
-    updateLocalSubscriptionState,
+    updateLocalSubscriptionState: useCallback((tierId: string, isSubscribed: boolean) => {
+      setLocalSubscriptionStates(prev => ({
+        ...prev,
+        [tierId]: isSubscribed
+      }));
+      
+      // Clear local state after a delay to let server data take over
+      setTimeout(() => {
+        setLocalSubscriptionStates(prev => {
+          const newState = { ...prev };
+          delete newState[tierId];
+          return newState;
+        });
+      }, 5000);
+    }, []),
   };
 };

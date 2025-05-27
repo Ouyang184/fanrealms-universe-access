@@ -35,15 +35,16 @@ export function SubscribeButton({
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>({});
 
-  // Check if user is subscribed to this specific tier with aggressive refresh
-  const { data: userSubscription, refetch: refetchUserSubscription } = useQuery({
-    queryKey: ['userTierSubscription', user?.id, tierId],
+  // Enhanced subscription check that looks at both tables
+  const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery({
+    queryKey: ['enhancedSubscriptionCheck', user?.id, tierId, creatorId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!user?.id) return { isSubscribed: false, source: 'no-user' };
       
-      console.log('SubscribeButton: Checking subscription for user:', user.id, 'tier:', tierId);
+      console.log('Enhanced subscription check for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
       
-      const { data, error } = await supabase
+      // Check creator_subscriptions table first
+      const { data: creatorSub, error: creatorSubError } = await supabase
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
@@ -51,18 +52,38 @@ export function SubscribeButton({
         .eq('status', 'active')
         .maybeSingle();
 
-      if (error) {
-        console.error('SubscribeButton: Error checking subscription:', error);
-        setDebugInfo(prev => ({ ...prev, subscriptionError: error.message }));
-        return null;
+      if (creatorSubError) {
+        console.error('Error checking creator_subscriptions:', creatorSubError);
       }
-      
-      console.log('SubscribeButton: Subscription data:', data);
-      setDebugInfo(prev => ({ ...prev, subscriptionData: data, lastChecked: new Date().toISOString() }));
-      
-      return data;
+
+      if (creatorSub) {
+        console.log('Found active subscription in creator_subscriptions:', creatorSub);
+        return { isSubscribed: true, source: 'creator_subscriptions', data: creatorSub };
+      }
+
+      // Check subscriptions table as fallback
+      const { data: regularSub, error: regularSubError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
+        .eq('is_paid', true)
+        .maybeSingle();
+
+      if (regularSubError) {
+        console.error('Error checking subscriptions:', regularSubError);
+      }
+
+      if (regularSub) {
+        console.log('Found subscription in subscriptions table:', regularSub);
+        return { isSubscribed: true, source: 'subscriptions', data: regularSub };
+      }
+
+      console.log('No active subscription found in either table');
+      return { isSubscribed: false, source: 'none' };
     },
-    enabled: !!user?.id && !!tierId,
+    enabled: !!user?.id && !!tierId && !!creatorId,
     staleTime: 0,
     refetchInterval: 3000, // Check every 3 seconds
   });
@@ -85,12 +106,12 @@ export function SubscribeButton({
         // Force immediate refresh of subscription data
         setTimeout(async () => {
           await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+            queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
             queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
             queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
           ]);
           
-          await refetchUserSubscription();
+          await refetchSubscriptionStatus();
         }, 1000);
         
         if (onSubscriptionSuccess) {
@@ -106,12 +127,12 @@ export function SubscribeButton({
         }
         
         await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+          queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
           queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
           queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
         ]);
         
-        await refetchUserSubscription();
+        await refetchSubscriptionStatus();
         
         if (onSubscriptionSuccess) {
           onSubscriptionSuccess();
@@ -128,7 +149,7 @@ export function SubscribeButton({
       window.removeEventListener('paymentSuccess', handleSubscriptionUpdate as EventListener);
       window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate as EventListener);
     };
-  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess, onOptimisticUpdate, tierId, creatorId]);
+  }, [queryClient, refetchSubscriptionStatus, onSubscriptionSuccess, onOptimisticUpdate, tierId, creatorId]);
 
   // Check if creator has completed Stripe setup
   const { data: creatorStripeStatus } = useQuery({
@@ -218,12 +239,14 @@ export function SubscribeButton({
   };
 
   const handleUnsubscribe = async () => {
-    if (!userSubscription) return;
+    if (!subscriptionStatus?.data) return;
 
     setIsUnsubscribing(true);
     
     try {
-      await cancelSubscription(userSubscription.id);
+      // Use the subscription ID from whichever table has the data
+      const subscriptionId = subscriptionStatus.data.id;
+      await cancelSubscription(subscriptionId);
       
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
         detail: { creatorId, tierId }
@@ -255,15 +278,15 @@ export function SubscribeButton({
     setDebugInfo(prev => ({ ...prev, manualRefresh: new Date().toISOString() }));
     
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+      queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
       queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
     ]);
     
-    await refetchUserSubscription();
+    await refetchSubscriptionStatus();
   };
 
-  const isUserSubscribed = userSubscription !== null || isSubscribed;
+  const isUserSubscribed = subscriptionStatus?.isSubscribed || isSubscribed;
 
   if (isUserSubscribed) {
     return (
@@ -293,7 +316,11 @@ export function SubscribeButton({
         {process.env.NODE_ENV === 'development' && (
           <details className="text-xs bg-muted p-2 rounded">
             <summary>Debug Info (Dev Only)</summary>
-            <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+            <div className="mt-2 space-y-1">
+              <div>Source: {subscriptionStatus?.source}</div>
+              <div>Is Subscribed: {subscriptionStatus?.isSubscribed ? 'Yes' : 'No'}</div>
+              <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+            </div>
             <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
               Refresh Status
             </Button>
@@ -333,7 +360,11 @@ export function SubscribeButton({
       {process.env.NODE_ENV === 'development' && (
         <details className="text-xs bg-muted p-2 rounded">
           <summary>Debug Info (Dev Only)</summary>
-          <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+          <div className="mt-2 space-y-1">
+            <div>Source: {subscriptionStatus?.source || 'none'}</div>
+            <div>Is Subscribed: {subscriptionStatus?.isSubscribed ? 'Yes' : 'No'}</div>
+            <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+          </div>
           <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
             Refresh Status
           </Button>
