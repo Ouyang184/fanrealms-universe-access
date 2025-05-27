@@ -49,31 +49,34 @@ export async function handleCreateSubscription(
             canceled_at: stripeSubscription.canceled_at
           });
           
-          // Check if subscription is truly active and not set to cancel
-          const isReallyActive = stripeSubscription.status === 'active' && 
-                               !stripeSubscription.cancel_at_period_end &&
-                               !stripeSubscription.ended_at &&
-                               !stripeSubscription.canceled_at;
+          // MORE LENIENT CHECK: Only block if subscription is truly active AND not set to cancel
+          // Allow resubscription if:
+          // 1. Subscription is cancelled
+          // 2. Subscription is set to cancel at period end
+          // 3. Subscription has ended
+          // 4. Subscription is incomplete/past_due for too long
+          const isActiveAndNotCancelling = stripeSubscription.status === 'active' && 
+                                         !stripeSubscription.cancel_at_period_end &&
+                                         !stripeSubscription.ended_at &&
+                                         !stripeSubscription.canceled_at;
           
-          // Also check if it's a trialing subscription
-          const isTrialing = stripeSubscription.status === 'trialing';
+          const isTrialingAndNotCancelling = stripeSubscription.status === 'trialing' && 
+                                           !stripeSubscription.cancel_at_period_end &&
+                                           !stripeSubscription.ended_at &&
+                                           !stripeSubscription.canceled_at;
           
-          // Check if it's past due but still recoverable
-          const isPastDue = stripeSubscription.status === 'past_due';
-          
-          if (isReallyActive || isTrialing || isPastDue) {
-            console.log('Found valid active subscription:', {
+          if (isActiveAndNotCancelling || isTrialingAndNotCancelling) {
+            console.log('Found TRULY active subscription that should block new subscription:', {
               status: stripeSubscription.status,
               cancel_at_period_end: stripeSubscription.cancel_at_period_end,
-              isReallyActive,
-              isTrialing,
-              isPastDue
+              isActiveAndNotCancelling,
+              isTrialingAndNotCancelling
             });
             hasValidActiveSubscription = true;
             break;
           } else {
-            // Subscription is cancelled, incomplete, or set to cancel - clean it up
-            console.log('Cleaning up inactive/cancelled subscription:', {
+            // Subscription is cancelled, set to cancel, or ended - clean it up
+            console.log('Cleaning up inactive/cancelled/ending subscription:', {
               id: sub.id,
               stripe_status: stripeSubscription.status,
               cancel_at_period_end: stripeSubscription.cancel_at_period_end,
@@ -81,23 +84,21 @@ export async function handleCreateSubscription(
               canceled_at: stripeSubscription.canceled_at
             });
             
-            // Update the status in our database to match Stripe
-            await supabaseService
-              .from('creator_subscriptions')
-              .update({ 
-                status: stripeSubscription.status,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', sub.id);
-              
-            // If it's completely cancelled/ended, we could also delete it
+            // Update the status in our database to reflect reality
             if (stripeSubscription.status === 'canceled' || 
                 stripeSubscription.ended_at || 
-                stripeSubscription.status === 'incomplete_expired') {
-              console.log('Deleting completely cancelled subscription from database:', sub.id);
+                stripeSubscription.status === 'incomplete_expired' ||
+                stripeSubscription.cancel_at_period_end) {
+              
+              console.log('Marking subscription as inactive/cancelled in database:', sub.id);
               await supabaseService
                 .from('creator_subscriptions')
-                .delete()
+                .update({ 
+                  status: stripeSubscription.cancel_at_period_end ? 'cancelling' : 'cancelled',
+                  cancel_at: stripeSubscription.cancel_at_period_end ? 
+                    new Date(stripeSubscription.current_period_end * 1000).toISOString() : null,
+                  updated_at: new Date().toISOString()
+                })
                 .eq('id', sub.id);
             }
           }
@@ -133,13 +134,13 @@ export async function handleCreateSubscription(
     }
     
     if (hasValidActiveSubscription) {
-      console.log('User has confirmed valid active subscription to this creator');
+      console.log('User has confirmed TRULY active subscription to this creator that should block new subscription');
       return createJsonResponse({ 
         error: 'You already have an active subscription to this creator. Please refresh the page to see your current subscription status.',
         shouldRefresh: true
       }, 409);
     } else {
-      console.log('No valid active subscriptions found after cleanup');
+      console.log('No truly active subscriptions found after cleanup - allowing new subscription');
     }
   }
 
