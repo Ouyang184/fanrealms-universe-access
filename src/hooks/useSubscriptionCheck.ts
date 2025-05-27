@@ -15,16 +15,16 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
       
       console.log('Enhanced subscription check for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first
+      // Check creator_subscriptions table first - look for ANY active subscription to this creator
       const { data: creatorSub, error: creatorSubError } = await supabase
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tier_id', tierId)
+        .eq('creator_id', creatorId)
         .eq('status', 'active')
         .maybeSingle();
 
-      if (creatorSubError) {
+      if (creatorSubError && creatorSubError.code !== 'PGRST116') {
         console.error('Error checking creator_subscriptions:', creatorSubError);
       }
 
@@ -39,11 +39,10 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
         .eq('is_paid', true)
         .maybeSingle();
 
-      if (regularSubError) {
+      if (regularSubError && regularSubError.code !== 'PGRST116') {
         console.error('Error checking subscriptions:', regularSubError);
       }
 

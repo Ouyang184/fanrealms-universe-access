@@ -79,7 +79,7 @@ export const useCreatorMembership = (creatorId: string) => {
     refetchInterval: 2000,
   });
 
-  // Enhanced subscription check for user's subscriptions
+  // Enhanced subscription check for user's subscriptions - check for ANY subscription to this creator
   const { data: userSubscriptions, refetch: refetchUserSubscriptions } = useQuery({
     queryKey: ['enhancedUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -87,7 +87,7 @@ export const useCreatorMembership = (creatorId: string) => {
       
       console.log('Enhanced subscription check for user:', user.id, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first
+      // Check creator_subscriptions table first - look for ANY active subscription to this creator
       const { data: creatorSubs, error: creatorSubsError } = await supabase
         .from('creator_subscriptions')
         .select('tier_id, status')
@@ -130,6 +130,11 @@ export const useCreatorMembership = (creatorId: string) => {
     staleTime: 0,
     refetchInterval: 1000,
   });
+
+  // Check if user is subscribed to ANY tier of this creator (not just a specific tier)
+  const isSubscribedToCreator = useCallback((): boolean => {
+    return userSubscriptions ? userSubscriptions.length > 0 : false;
+  }, [userSubscriptions]);
 
   // Check if user is subscribed to a specific tier (enhanced)
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
@@ -242,6 +247,7 @@ export const useCreatorMembership = (creatorId: string) => {
     tiers,
     isLoading,
     isSubscribedToTier,
+    isSubscribedToCreator,
     handleSubscriptionSuccess,
     updateLocalSubscriptionState: useCallback((tierId: string, isSubscribed: boolean) => {
       setLocalSubscriptionStates(prev => ({
