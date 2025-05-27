@@ -69,10 +69,10 @@ export function useCreatorMembership(creatorId: string) {
     },
     enabled: !!creatorId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Refetch every 3 seconds
+    refetchInterval: 2000, // Very frequent updates
   });
 
-  // Check user's current subscriptions to this creator with more aggressive caching strategy
+  // Check user's current subscriptions to this creator - more aggressive refresh
   const { data: userSubscriptions = [], refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -82,7 +82,7 @@ export function useCreatorMembership(creatorId: string) {
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
-        .select('tier_id, status, stripe_subscription_id')
+        .select('tier_id, status, stripe_subscription_id, id')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('status', 'active');
@@ -97,50 +97,50 @@ export function useCreatorMembership(creatorId: string) {
     },
     enabled: !!user?.id && !!creatorId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 2000, // Very frequent updates for subscription status
+    refetchInterval: 1000, // Every second for immediate updates
   });
 
   const isSubscribedToTier = (tierId: string) => {
-    const isSubscribed = userSubscriptions.some(sub => sub.tier_id === tierId);
-    console.log(`Checking subscription for tier ${tierId}:`, isSubscribed);
+    const isSubscribed = userSubscriptions.some(sub => sub.tier_id === tierId && sub.status === 'active');
+    console.log(`Checking subscription for tier ${tierId}:`, isSubscribed, 'userSubscriptions:', userSubscriptions);
     return isSubscribed;
   };
 
   const handleSubscriptionSuccess = () => {
     console.log('Manual subscription refresh triggered');
     
-    // Multiple immediate refreshes
-    refetchTiers();
-    refetchSubscriptions();
+    // Immediate multiple refreshes
+    Promise.all([
+      refetchTiers(),
+      refetchSubscriptions()
+    ]);
     
-    // Additional refreshes at intervals to ensure data consistency
+    // Staggered refreshes to ensure data consistency
     setTimeout(() => {
-      refetchTiers();
-      refetchSubscriptions();
-    }, 1000);
+      Promise.all([refetchTiers(), refetchSubscriptions()]);
+    }, 500);
     
     setTimeout(() => {
-      refetchTiers();
-      refetchSubscriptions();
+      Promise.all([refetchTiers(), refetchSubscriptions()]);
+    }, 1500);
+    
+    setTimeout(() => {
+      Promise.all([refetchTiers(), refetchSubscriptions()]);
     }, 3000);
     
     setTimeout(() => {
-      refetchTiers();
-      refetchSubscriptions();
+      Promise.all([refetchTiers(), refetchSubscriptions()]);
     }, 5000);
-    
-    setTimeout(() => {
-      refetchTiers();
-      refetchSubscriptions();
-    }, 10000);
   };
 
-  // Listen for subscription success events
+  // Listen for subscription success events with immediate refresh
   useEffect(() => {
     const handleSubscriptionSuccessEvent = (event: CustomEvent) => {
-      const { creatorId: eventCreatorId } = event.detail;
-      if (eventCreatorId === creatorId) {
-        console.log('Subscription successful, refreshing data...');
+      const { creatorId: eventCreatorId } = event.detail || {};
+      console.log('Subscription success event received:', event.detail);
+      
+      if (eventCreatorId === creatorId || !eventCreatorId) {
+        console.log('Subscription successful for this creator, refreshing data...');
         handleSubscriptionSuccess();
       }
     };
@@ -155,16 +155,36 @@ export function useCreatorMembership(creatorId: string) {
       handleSubscriptionSuccess();
     };
 
+    // Listen for multiple event types
     window.addEventListener('subscriptionSuccess', handleSubscriptionSuccessEvent as EventListener);
     window.addEventListener('paymentSuccess', handlePaymentSuccess);
     window.addEventListener('subscriptionCanceled', handleSubscriptionCanceled);
+    
+    // Also listen for page visibility changes to refresh when user returns
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Page became visible, refreshing subscription data...');
+        handleSubscriptionSuccess();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccessEvent as EventListener);
       window.removeEventListener('paymentSuccess', handlePaymentSuccess);
       window.removeEventListener('subscriptionCanceled', handleSubscriptionCanceled);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [creatorId]);
+
+  // Auto-refresh on mount
+  useEffect(() => {
+    if (user?.id && creatorId) {
+      console.log('Component mounted, refreshing subscription data...');
+      handleSubscriptionSuccess();
+    }
+  }, [user?.id, creatorId]);
 
   return {
     tiers,
