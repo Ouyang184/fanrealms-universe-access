@@ -43,6 +43,7 @@ export function ActiveSubscribeButton({
       const result = await createSubscription({ tierId, creatorId });
       console.log('ActiveSubscribeButton: Subscription creation result:', result);
       
+      // Check if there's an error (existing subscription)
       if (result?.error) {
         console.error('ActiveSubscribeButton: Server returned error:', result.error);
         
@@ -77,7 +78,7 @@ export function ActiveSubscribeButton({
         return;
       }
       
-      // This should ALWAYS navigate to payment page - never create subscription directly
+      // Navigate to payment page with client secret
       if (result?.clientSecret) {
         console.log('ActiveSubscribeButton: Navigating to payment page with client secret');
         navigate('/payment', {

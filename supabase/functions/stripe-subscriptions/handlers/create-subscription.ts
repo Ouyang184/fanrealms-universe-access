@@ -39,7 +39,7 @@ export async function handleCreateSubscription(
     return createJsonResponse({ 
       error: 'You already have an active subscription to this tier.',
       shouldRefresh: true
-    }, 409);
+    }, 200); // Changed to 200 status code
   }
 
   const { data: existingBasicSub, error: basicSubError } = await supabaseService
@@ -60,7 +60,7 @@ export async function handleCreateSubscription(
     return createJsonResponse({ 
       error: 'You already have an active subscription to this tier.',
       shouldRefresh: true
-    }, 409);
+    }, 200); // Changed to 200 status code
   }
 
   // Clean up old pending subscriptions (older than 1 hour)
@@ -145,7 +145,7 @@ export async function handleCreateSubscription(
         return createJsonResponse({ 
           error: 'You already have an active subscription to this tier.',
           shouldRefresh: true
-        }, 409);
+        }, 200); // Changed to 200 status code
       }
     }
 
