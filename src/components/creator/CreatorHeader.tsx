@@ -1,8 +1,7 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Calendar, Users } from "lucide-react";
+import { Calendar, Users } from "lucide-react";
 import { SubscribeButton } from "./SubscribeButton";
 import { SocialLinks } from "@/components/SocialLinks";
 import type { CreatorProfile } from "@/types";
@@ -155,37 +154,16 @@ export function CreatorHeader({
           </div>
         )}
         
-        {/* Links section */}
-        <div className="mt-6 space-y-4">
-          {/* Website link */}
-          {creator.website && (
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Website</h3>
-              <div className="flex items-center gap-2 text-sm">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <a 
-                  href={creator.website} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:text-primary/80 transition-colors font-medium"
-                >
-                  {creator.website}
-                </a>
-              </div>
-            </div>
-          )}
-          
-          {/* Website links */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Website Links</h3>
-            <SocialLinks 
-              creatorId={creator.id} 
-              variant="outline" 
-              size="sm"
-              showText={true}
-              className="gap-3"
-            />
-          </div>
+        {/* Website Links section - keeping only the social links */}
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Website Links</h3>
+          <SocialLinks 
+            creatorId={creator.id} 
+            variant="outline" 
+            size="sm"
+            showText={true}
+            className="gap-3"
+          />
         </div>
       </div>
     </div>
