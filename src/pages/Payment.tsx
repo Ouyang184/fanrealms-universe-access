@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -228,14 +227,7 @@ function CheckoutForm() {
                       <PaymentElement 
                         options={{
                           layout: "tabs",
-                          paymentMethodOrder: ['card', 'klarna', 'paypal'],
-                          fields: {
-                            billingDetails: {
-                              address: {
-                                country: 'never'
-                              }
-                            }
-                          }
+                          paymentMethodOrder: ['card', 'klarna', 'paypal']
                         }}
                         onReady={() => {
                           console.log('PaymentElement ready');
@@ -251,8 +243,6 @@ function CheckoutForm() {
                           if (event.complete) {
                             setElementError(null);
                           }
-                          // Note: StripePaymentElementChangeEvent doesn't have an 'error' property
-                          // Errors are handled through onLoadError or other specific error events
                         }}
                       />
                     ) : (
