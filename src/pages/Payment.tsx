@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -219,16 +220,6 @@ function CheckoutForm() {
                 {/* Payment Method */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Payment method</h3>
-                  
-                  {/* Debug Information */}
-                  <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
-                    <div className="font-semibold mb-2">Debug Info:</div>
-                    <div>Stripe loaded: {stripe ? '✅' : '❌'}</div>
-                    <div>Elements loaded: {elements ? '✅' : '❌'}</div>
-                    <div>Client secret: {clientSecret ? '✅' : '❌'}</div>
-                    <div>Publishable key: {stripePublishableKey ? '✅ Set' : '❌ Missing'}</div>
-                    {elementError && <div className="text-destructive">Error: {elementError}</div>}
-                  </div>
 
                   <div className="border rounded-lg p-6 bg-white min-h-[200px]">
                     {stripe && elements && clientSecret ? (
