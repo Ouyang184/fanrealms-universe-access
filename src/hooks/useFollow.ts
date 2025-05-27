@@ -13,6 +13,7 @@ export function useFollow() {
   const { createFollowNotification } = useNotificationActions();
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [optimisticFollowerCount, setOptimisticFollowerCount] = useState<number | null>(null);
 
   // Function to check if user is following a creator using follows table
   const checkFollowStatus = async (creatorId: string): Promise<boolean> => {
@@ -38,7 +39,7 @@ export function useFollow() {
     }
   };
 
-  // Function to follow a creator using follows table
+  // Function to follow a creator using follows table with optimistic updates
   const followCreator = async (creatorId: string): Promise<void> => {
     if (!user) {
       toast({
@@ -55,7 +56,7 @@ export function useFollow() {
     try {
       const { data: creator, error } = await supabase
         .from("creators")
-        .select("user_id, display_name, users(username)")
+        .select("user_id, display_name, users(username), follower_count")
         .eq("id", creatorId)
         .single();
       
@@ -79,6 +80,23 @@ export function useFollow() {
         });
         return;
       }
+
+      // Optimistic update - immediately update UI
+      setIsFollowing(true);
+      const currentCount = creator.follower_count || 0;
+      setOptimisticFollowerCount(currentCount + 1);
+      
+      // Update cache optimistically
+      queryClient.setQueryData(['creatorProfile', creatorId], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            follower_count: currentCount + 1
+          };
+        }
+        return oldData;
+      });
+      
     } catch (error) {
       console.error("Error checking creator ownership:", error);
       toast({
@@ -111,6 +129,10 @@ export function useFollow() {
           });
           setIsFollowing(true);
         } else {
+          // Revert optimistic update on error
+          setIsFollowing(false);
+          setOptimisticFollowerCount(null);
+          queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
           throw followError;
         }
       } else {
@@ -118,7 +140,6 @@ export function useFollow() {
         toast({
           description: "You are now following this creator",
         });
-        setIsFollowing(true);
         
         // Get the creator's user_id for the notification
         const { data: creatorData } = await supabase
@@ -137,7 +158,8 @@ export function useFollow() {
           }
         }
         
-        // Invalidate relevant queries - including creator profile queries
+        // Clear optimistic state and invalidate queries to sync with server
+        setOptimisticFollowerCount(null);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
           queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] }),
@@ -151,6 +173,10 @@ export function useFollow() {
       }
     } catch (error: any) {
       console.error("Error following creator:", error);
+      // Revert optimistic update on error
+      setIsFollowing(false);
+      setOptimisticFollowerCount(null);
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
       toast({
         title: "Error",
         description: error.message || "Failed to follow creator",
@@ -161,9 +187,38 @@ export function useFollow() {
     }
   };
 
-  // Function to unfollow a creator using follows table
+  // Function to unfollow a creator using follows table with optimistic updates
   const unfollowCreator = async (creatorId: string): Promise<void> => {
     if (!user) return;
+    
+    // Get current follower count for optimistic update
+    try {
+      const { data: creator } = await supabase
+        .from("creators")
+        .select("follower_count")
+        .eq("id", creatorId)
+        .single();
+      
+      // Optimistic update - immediately update UI
+      setIsFollowing(false);
+      const currentCount = creator?.follower_count || 0;
+      const newCount = Math.max(currentCount - 1, 0);
+      setOptimisticFollowerCount(newCount);
+      
+      // Update cache optimistically
+      queryClient.setQueryData(['creatorProfile', creatorId], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            follower_count: newCount
+          };
+        }
+        return oldData;
+      });
+      
+    } catch (error) {
+      console.error("Error getting creator data for optimistic update:", error);
+    }
     
     if (isLoading) return;
     
@@ -176,14 +231,20 @@ export function useFollow() {
         .eq("user_id", user.id)
         .eq("creator_id", creatorId);
       
-      if (error) throw error;
+      if (error) {
+        // Revert optimistic update on error
+        setIsFollowing(true);
+        setOptimisticFollowerCount(null);
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
+        throw error;
+      }
       
       toast({
         description: "You have unfollowed this creator",
       });
-      setIsFollowing(false);
       
-      // Invalidate relevant queries - including creator profile queries
+      // Clear optimistic state and invalidate queries to sync with server
+      setOptimisticFollowerCount(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
         queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] }),
@@ -195,6 +256,10 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["conversations"] })
       ]);
     } catch (error: any) {
+      // Revert optimistic update on error
+      setIsFollowing(true);
+      setOptimisticFollowerCount(null);
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
       toast({
         title: "Error",
         description: error.message || "Failed to unfollow creator",
@@ -208,7 +273,9 @@ export function useFollow() {
   return {
     isFollowing,
     isLoading,
+    optimisticFollowerCount,
     setIsFollowing,
+    setOptimisticFollowerCount,
     checkFollowStatus,
     followCreator,
     unfollowCreator,

@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ interface CreatorHeaderProps {
   onUnfollow: () => void;
   isOwnProfile?: boolean;
   onNavigateToAbout?: () => void;
+  optimisticFollowerCount?: number | null;
 }
 
 export function CreatorHeader({ 
@@ -21,7 +23,8 @@ export function CreatorHeader({
   onFollow, 
   onUnfollow,
   isOwnProfile = false,
-  onNavigateToAbout 
+  onNavigateToAbout,
+  optimisticFollowerCount 
 }: CreatorHeaderProps) {
   const MAX_BIO_LENGTH = 150;
   const shouldTruncateBio = creator.bio && creator.bio.length > MAX_BIO_LENGTH;
@@ -34,6 +37,11 @@ export function CreatorHeader({
       onNavigateToAbout();
     }
   };
+
+  // Use optimistic count if available, otherwise use the creator's follower count
+  const displayFollowerCount = optimisticFollowerCount !== null 
+    ? optimisticFollowerCount 
+    : creator.follower_count || 0;
 
   return (
     <div className="relative">
@@ -76,11 +84,11 @@ export function CreatorHeader({
                 )}
               </div>
               
-              {/* Stats row */}
+              {/* Stats row with optimistic updates */}
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span className="font-medium">{creator.follower_count || 0}</span>
+                  <span className="font-medium">{displayFollowerCount}</span>
                   <span>followers</span>
                 </div>
                 {creator.created_at && (

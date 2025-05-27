@@ -40,7 +40,14 @@ const CreatorPage: React.FC = () => {
     refreshCreatorData
   } = useCreatorPage(identifier);
 
-  const { isFollowing, followCreator, unfollowCreator, setIsFollowing, checkFollowStatus } = useFollow();
+  const { 
+    isFollowing, 
+    followCreator, 
+    unfollowCreator, 
+    setIsFollowing, 
+    checkFollowStatus,
+    optimisticFollowerCount 
+  } = useFollow();
   
   // Check follow status when creator is loaded
   useEffect(() => {
@@ -120,6 +127,7 @@ const CreatorPage: React.FC = () => {
           onFollow={handleFollow}
           onUnfollow={handleUnfollow}
           onNavigateToAbout={handleNavigateToAbout}
+          optimisticFollowerCount={optimisticFollowerCount}
         />
         
         {/* Tab Navigation - properly spaced below header */}
