@@ -8,6 +8,8 @@ import { HomeFooter } from "./HomeFooter";
 import { ContentPreviewModal } from "@/components/content/ContentPreviewModal";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { usePosts } from "@/hooks/usePosts";
+import { usePostsByCategories } from "@/hooks/usePostsByCategories";
+import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { Post } from "@/types";
@@ -17,10 +19,18 @@ export function HomeContent() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
-  const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
+  
+  // Get user preferences
+  const { data: userPreferences = [], isLoading: isLoadingPreferences } = useUserPreferences();
+  const categoryIds = userPreferences.map(pref => pref.category_id);
+  
+  // Get posts filtered by user preferences for "For You" section (with fallback to all posts)
+  const { data: forYouPosts = [], isLoading: isLoadingForYou } = usePostsByCategories(categoryIds);
+  
+  // Get all posts for trending and recent sections
+  const { data: allPosts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
 
-  // Helper function to get actual thumbnail from post attachments
   const getPostThumbnail = (post: Post) => {
     if (!post.attachments) return null;
     
@@ -45,7 +55,6 @@ export function HomeContent() {
       }
     }
 
-    // Find first image or video attachment
     if (Array.isArray(parsedAttachments) && parsedAttachments.length > 0) {
       const firstMedia = parsedAttachments.find(att => att.type === 'image' || att.type === 'video');
       return firstMedia?.url || null;
@@ -54,7 +63,6 @@ export function HomeContent() {
     return null;
   };
 
-  // Map real posts to the format expected by ContentItem (from Explore page)
   const mapPostToContentItem = (post: Post) => {
     return {
       id: post.id,
@@ -70,7 +78,6 @@ export function HomeContent() {
     };
   };
 
-  // Map real posts to the old content format for legacy modals
   const mapPostToContent = (post: Post) => {
     const thumbnail = getPostThumbnail(post);
     
@@ -86,16 +93,13 @@ export function HomeContent() {
       },
       type: determineContentType(post),
       date: post.date || formatRelativeDate(post.createdAt),
-      preview: !post.tier_id, // Free content is previewable
+      preview: !post.tier_id,
     };
   };
 
-  // Determine content type based on post data
   const determineContentType = (post: Post) => {
-    // Check attachments first
     const thumbnail = getPostThumbnail(post);
     if (thumbnail) {
-      // If we have actual media, determine type from attachments
       if (!post.attachments) return 'post';
       
       let parsedAttachments = [];
@@ -117,7 +121,6 @@ export function HomeContent() {
       }
     }
     
-    // Fallback to content analysis
     if (post.content.includes('youtube.com') || post.content.includes('vimeo.com')) {
       return 'video';
     } else if (post.content.length > 1000) {
@@ -127,18 +130,14 @@ export function HomeContent() {
     }
   };
 
-  // Only show content if we have real posts data
-  const hasRealData = posts.length > 0;
+  // Use filtered posts for "For You" (includes fallback) and regular posts for other sections
+  const hasForYouData = forYouPosts.length > 0;
+  const hasGeneralData = allPosts.length > 0;
   
-  // Split posts into categories for the tabs - map to ContentItem format
-  const forYouPosts = hasRealData ? posts.slice(0, 8).map(mapPostToContentItem) : [];
-  const trendingPosts = hasRealData ? posts.slice(0, 4).map(mapPostToContentItem) : [];
-  const recentPosts = hasRealData ? posts.slice(0, 4).map(mapPostToContentItem) : [];
-
-  // Legacy content mapping for old modals
-  const forYouContent = hasRealData ? posts.slice(0, 8).map(mapPostToContent) : [];
-  const trendingContent = hasRealData ? posts.slice(0, 4).map(mapPostToContent) : [];
-  const recentContent = hasRealData ? posts.slice(0, 4).map(mapPostToContent) : [];
+  // Map to ContentItem format
+  const forYouContentItems = hasForYouData ? forYouPosts.slice(0, 8).map(mapPostToContentItem) : [];
+  const trendingPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
+  const recentPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
 
   const handleCardClick = (content: any) => {
     setSelectedContent(content);
@@ -155,11 +154,11 @@ export function HomeContent() {
       <HeroSection />
       
       <ContentTabs 
-        forYouPosts={forYouPosts}
+        forYouPosts={forYouContentItems}
         trendingPosts={trendingPosts}
         recentPosts={recentPosts}
         onPostClick={handlePostClick}
-        isLoading={isLoadingPosts}
+        isLoading={isLoadingForYou || isLoadingPosts}
       />
       
       <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
