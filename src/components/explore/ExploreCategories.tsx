@@ -18,7 +18,8 @@ export function ExploreCategories() {
     console.log('Category selected:', category);
     if (category === "all") {
       console.log('Navigating to /explore/all');
-      navigate("/explore/all");
+      // Force navigation to /explore/all
+      window.location.href = "/explore/all";
     } else {
       console.log('Navigating to /explore with category:', category);
       navigate(`/explore?category=${category}`);
@@ -38,7 +39,10 @@ export function ExploreCategories() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
             <DropdownMenuItem 
-              onClick={() => handleCategorySelect("all")}
+              onClick={() => {
+                console.log('All Categories clicked');
+                handleCategorySelect("all");
+              }}
               className="cursor-pointer"
             >
               All Categories
