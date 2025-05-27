@@ -16,7 +16,6 @@ serve(async (req) => {
   try {
     console.log('Stripe subscriptions function called');
     console.log('Request method:', req.method);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -98,6 +97,28 @@ serve(async (req) => {
         });
       }
 
+      // Check if user already has an active subscription to this creator
+      console.log('Checking for existing subscription...');
+      const { data: existingSub, error: existingError } = await supabaseService
+        .from('creator_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('status', 'active')
+        .maybeSingle()
+
+      if (existingError) {
+        console.error('Error checking existing subscription:', existingError);
+      }
+
+      if (existingSub) {
+        console.log('User already has active subscription to this creator');
+        return new Response(JSON.stringify({ error: 'You already have an active subscription to this creator' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // Get tier and creator details
       console.log('Fetching tier details...');
       const { data: tier, error: tierError } = await supabase
@@ -169,7 +190,6 @@ serve(async (req) => {
           recurring: { interval: 'month' },
           product_data: {
             name: tier.title,
-            // Removed description - it's not a valid parameter here
           },
         })
         stripePriceId = price.id
@@ -184,9 +204,6 @@ serve(async (req) => {
 
       console.log('Using price ID:', stripePriceId);
 
-      // Calculate application fee (5% platform fee)
-      const applicationFee = Math.round(tier.price * 100 * 0.05)
-
       // Create subscription with destination charge
       console.log('Creating Stripe subscription...');
       const subscription = await stripe.subscriptions.create({
@@ -199,13 +216,18 @@ serve(async (req) => {
         payment_behavior: 'default_incomplete',
         payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier_id: tierId,
+        },
       })
 
       console.log('Subscription created:', subscription.id);
 
-      // Store subscription in database
+      // Store subscription in database with pending status initially
       console.log('Storing subscription in database...');
-      await supabaseService
+      const { data: createdSub, error: insertError } = await supabaseService
         .from('creator_subscriptions')
         .insert({
           user_id: user.id,
@@ -213,12 +235,30 @@ serve(async (req) => {
           tier_id: tierId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
-          status: subscription.status,
+          status: 'pending', // Start as pending, will be updated by webhook
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         })
+        .select('*')
+        .single()
 
-      console.log('Subscription stored in database');
+      if (insertError) {
+        console.error('Error storing subscription:', insertError);
+        // Try to cancel the Stripe subscription if database insert failed
+        try {
+          await stripe.subscriptions.cancel(subscription.id);
+        } catch (cancelError) {
+          console.error('Error canceling Stripe subscription after database failure:', cancelError);
+        }
+        return new Response(JSON.stringify({ error: 'Failed to store subscription' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log('Subscription stored in database:', createdSub.id);
 
       return new Response(JSON.stringify({
         subscriptionId: subscription.id,
