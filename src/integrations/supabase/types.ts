@@ -207,6 +207,7 @@ export type Database = {
       creator_subscriptions: {
         Row: {
           amount_paid: number | null
+          cancel_at: string | null
           created_at: string | null
           creator_earnings: number | null
           creator_id: string
@@ -223,6 +224,7 @@ export type Database = {
         }
         Insert: {
           amount_paid?: number | null
+          cancel_at?: string | null
           created_at?: string | null
           creator_earnings?: number | null
           creator_id: string
@@ -239,6 +241,7 @@ export type Database = {
         }
         Update: {
           amount_paid?: number | null
+          cancel_at?: string | null
           created_at?: string | null
           creator_earnings?: number | null
           creator_id?: string
