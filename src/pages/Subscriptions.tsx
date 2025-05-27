@@ -11,6 +11,7 @@ import { SubscriptionSummary } from "@/components/subscriptions/SubscriptionSumm
 import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard"
 import { BillingHistory } from "@/components/subscriptions/BillingHistory"
 import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscriptionsState"
+import { ForceCancelButton } from "@/components/creator/buttons/ForceCancelButton"
 
 export default function SubscriptionsPage() {
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
@@ -94,38 +95,13 @@ export default function SubscriptionsPage() {
 
   const hasSubscriptions = userSubscriptions && userSubscriptions.length > 0;
 
-  if (!hasSubscriptions) {
-    return (
-      <MainLayout>
-        <div className="max-w-5xl mx-auto w-full p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
-            <Button 
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-          <EmptySubscriptionsState 
-            onRefresh={handleManualRefresh}
-            isRefreshing={isRefreshing}
-          />
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
     <MainLayout>
       <div className="max-w-5xl mx-auto w-full p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
+            <ForceCancelButton />
             <Button 
               onClick={handleManualRefresh}
               disabled={isRefreshing}
@@ -147,34 +123,43 @@ export default function SubscriptionsPage() {
           </div>
         </div>
 
-        <SubscriptionSummary subscriptions={userSubscriptions} />
+        {!hasSubscriptions ? (
+          <EmptySubscriptionsState 
+            onRefresh={handleManualRefresh}
+            isRefreshing={isRefreshing}
+          />
+        ) : (
+          <>
+            <SubscriptionSummary subscriptions={userSubscriptions} />
 
-        <Tabs defaultValue="subscriptions" className="mb-8">
-          <TabsList className="w-full md:w-auto">
-            <TabsTrigger value="subscriptions">
-              Active Subscriptions ({userSubscriptions?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="billing">
-              Billing History
-            </TabsTrigger>
-          </TabsList>
+            <Tabs defaultValue="subscriptions" className="mb-8">
+              <TabsList className="w-full md:w-auto">
+                <TabsTrigger value="subscriptions">
+                  Active Subscriptions ({userSubscriptions?.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="billing">
+                  Billing History
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="subscriptions" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {userSubscriptions?.map((subscription) => (
-                <SubscriptionCard
-                  key={subscription.id}
-                  subscription={subscription}
-                  onCancel={cancelSubscription}
-                />
-              ))}
-            </div>
-          </TabsContent>
+              <TabsContent value="subscriptions" className="mt-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {userSubscriptions?.map((subscription) => (
+                    <SubscriptionCard
+                      key={subscription.id}
+                      subscription={subscription}
+                      onCancel={cancelSubscription}
+                    />
+                  ))}
+                </div>
+              </TabsContent>
 
-          <TabsContent value="billing" className="mt-6">
-            <BillingHistory subscriptions={userSubscriptions} />
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="billing" className="mt-6">
+                <BillingHistory subscriptions={userSubscriptions} />
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </div>
     </MainLayout>
   )
