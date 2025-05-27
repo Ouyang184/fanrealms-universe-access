@@ -38,10 +38,7 @@ export function ExploreCategories() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
             <DropdownMenuItem 
-              onClick={(e) => {
-                e.preventDefault();
-                handleCategorySelect("all");
-              }}
+              onClick={() => handleCategorySelect("all")}
               className="cursor-pointer"
             >
               All Categories
