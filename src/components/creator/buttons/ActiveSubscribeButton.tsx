@@ -2,9 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useAuth } from '@/contexts/AuthContext';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 interface ActiveSubscribeButtonProps {
@@ -21,7 +21,8 @@ export function ActiveSubscribeButton({
   price 
 }: ActiveSubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
+  const { createSubscription, isProcessing } = useCreateSubscription();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubscribe = async () => {
@@ -33,8 +34,6 @@ export function ActiveSubscribeButton({
       });
       return;
     }
-
-    setIsProcessing(true);
 
     try {
       console.log('ActiveSubscribeButton: Creating subscription for tier:', tierId, 'creator:', creatorId);
@@ -67,13 +66,26 @@ export function ActiveSubscribeButton({
       }
     } catch (error) {
       console.error('ActiveSubscribeButton: Subscription error:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
+      
+      // Check if it's the "already subscribed" error
+      if (error instanceof Error && error.message.includes('already have an active subscription')) {
+        toast({
+          title: "Already Subscribed",
+          description: "You already have an active subscription to this creator.",
+          variant: "default"
+        });
+        
+        // Trigger a refresh of subscription data
+        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+          detail: { tierId, creatorId, tierName }
+        }));
+      } else {
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

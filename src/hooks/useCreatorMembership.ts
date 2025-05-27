@@ -79,18 +79,18 @@ export const useCreatorMembership = (creatorId: string) => {
     refetchInterval: 2000,
   });
 
-  // Get all user subscriptions to this creator (for unsubscribe functionality)
+  // Get all user subscriptions to this creator with enhanced checking
   const { data: userCreatorSubscriptions, refetch: refetchUserCreatorSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('Fetching all user subscriptions to creator:', user.id, 'creator:', creatorId);
+      console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
       // Check creator_subscriptions table first - get all active subscriptions to this creator
       const { data: creatorSubs, error: creatorSubsError } = await supabase
         .from('creator_subscriptions')
-        .select('tier_id, status')
+        .select('tier_id, status, cancel_at')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('status', 'active');
@@ -118,12 +118,12 @@ export const useCreatorMembership = (creatorId: string) => {
         regularSubs.forEach(regSub => {
           const alreadyExists = allSubs.some(cs => cs.tier_id === regSub.tier_id);
           if (!alreadyExists) {
-            allSubs.push({ tier_id: regSub.tier_id, status: 'active' });
+            allSubs.push({ tier_id: regSub.tier_id, status: 'active', cancel_at: null });
           }
         });
       }
 
-      console.log('User subscriptions to creator:', allSubs);
+      console.log('User subscriptions to creator found:', allSubs.length, allSubs);
       return allSubs;
     },
     enabled: !!user?.id && !!creatorId,
@@ -133,18 +133,26 @@ export const useCreatorMembership = (creatorId: string) => {
 
   // Check if user is subscribed to ANY tier of this creator (for unsubscribe/cancel functionality)
   const isSubscribedToCreator = useCallback((): boolean => {
-    return userCreatorSubscriptions ? userCreatorSubscriptions.length > 0 : false;
+    const hasSubscriptions = userCreatorSubscriptions ? userCreatorSubscriptions.length > 0 : false;
+    console.log('isSubscribedToCreator check:', hasSubscriptions, userCreatorSubscriptions);
+    return hasSubscriptions;
   }, [userCreatorSubscriptions]);
 
   // Check if user is subscribed to a specific tier (for subscribe button functionality)
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
+      console.log('Using local state for tier:', tierId, localSubscriptionStates[tierId]);
       return localSubscriptionStates[tierId];
     }
     
     // Fall back to server data - check for specific tier subscription
-    return userCreatorSubscriptions?.some(sub => sub.tier_id === tierId && sub.status === 'active') || false;
+    const isSubscribed = userCreatorSubscriptions?.some(sub => 
+      sub.tier_id === tierId && sub.status === 'active'
+    ) || false;
+    
+    console.log('isSubscribedToTier check for tier:', tierId, 'result:', isSubscribed);
+    return isSubscribed;
   }, [userCreatorSubscriptions, localSubscriptionStates]);
 
   // Handle subscription success with enhanced updates
@@ -168,6 +176,7 @@ export const useCreatorMembership = (creatorId: string) => {
 
   // Update local subscription state optimistically
   const updateLocalSubscriptionState = useCallback((tierId: string, isSubscribed: boolean) => {
+    console.log('Updating local subscription state for tier:', tierId, 'to:', isSubscribed);
     setLocalSubscriptionStates(prev => ({
       ...prev,
       [tierId]: isSubscribed
