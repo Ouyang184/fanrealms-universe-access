@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
@@ -102,13 +101,13 @@ export default function CreatorStudioSubscribers() {
     enabled: !!creatorData?.id
   });
 
-  // Fetch active subscribers with corrected queries
+  // Enhanced fetch active subscribers
   const { isLoading: loadingSubscribers, refetch: refetchSubscribers } = useQuery({
     queryKey: ["active-subscribers", creatorData?.id],
     queryFn: async () => {
       if (!creatorData?.id) return [];
       
-      console.log('Fetching active subscribers for creator:', creatorData.id);
+      console.log('Fetching enhanced active subscribers for creator:', creatorData.id);
       
       // Query creator_subscriptions table with separate user lookup
       const { data: creatorSubs, error: creatorSubsError } = await supabase
@@ -131,40 +130,7 @@ export default function CreatorStudioSubscribers() {
         console.error("Error fetching creator_subscriptions:", creatorSubsError);
       }
 
-      // Query subscriptions table with separate user lookup
-      const { data: regularSubs, error: regularSubsError } = await supabase
-        .from("subscriptions")
-        .select(`
-          id,
-          user_id,
-          tier_id,
-          created_at
-        `)
-        .eq("creator_id", creatorData.id)
-        .eq("is_paid", true);
-
-      if (regularSubsError) {
-        console.error("Error fetching subscriptions:", regularSubsError);
-      }
-
-      // Use creator_subscriptions as primary source
       let subscriptionData = creatorSubs || [];
-      
-      // If no data in creator_subscriptions, fall back to subscriptions table
-      if (subscriptionData.length === 0 && regularSubs && regularSubs.length > 0) {
-        console.log('No data in creator_subscriptions, using subscriptions table');
-        subscriptionData = regularSubs.map((sub: any) => ({
-          id: sub.id,
-          created_at: sub.created_at,
-          tier_id: sub.tier_id,
-          status: 'active',
-          amount_paid: 0,
-          current_period_start: null,
-          current_period_end: null,
-          stripe_subscription_id: '',
-          user_id: sub.user_id
-        }));
-      }
 
       if (!subscriptionData || subscriptionData.length === 0) {
         console.log('No subscription data found');
@@ -219,24 +185,30 @@ export default function CreatorStudioSubscribers() {
         };
       });
       
-      console.log('Formatted subscribers:', formattedSubscribers);
+      console.log('Enhanced formatted subscribers:', formattedSubscribers);
       setSubscribers(formattedSubscribers);
       return formattedSubscribers;
     },
     enabled: !!creatorData?.id,
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 1000, // Refresh every second for real-time updates
     staleTime: 0 // Always consider data stale to ensure fresh fetches
   });
 
-  // Manual refresh function
-  const handleManualRefresh = async () => {
+  // Enhanced manual refresh function
+  const handleManualRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
+      console.log('Enhanced manual refresh triggered');
+      
       // Invalidate and refetch all related queries
-      await queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
-      await queryClient.invalidateQueries({ queryKey: ["creator-profile"] });
-      await queryClient.invalidateQueries({ queryKey: ["subscriber-tiers"] });
-      await queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] }); // Also invalidate user subscriptions
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["active-subscribers"] }),
+        queryClient.invalidateQueries({ queryKey: ["creator-profile"] }),
+        queryClient.invalidateQueries({ queryKey: ["subscriber-tiers"] }),
+        queryClient.invalidateQueries({ queryKey: ["tiers"] }),
+        queryClient.invalidateQueries({ queryKey: ["enhancedUserSubscriptions"] }),
+      ]);
+      
       await refetchSubscribers();
       
       toast({
@@ -253,65 +225,60 @@ export default function CreatorStudioSubscribers() {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [queryClient, refetchSubscribers, toast]);
 
-  // Listen for subscription events
+  // Enhanced subscription event listener
   useEffect(() => {
-    const handleSubscriptionUpdate = async () => {
-      console.log('Subscribers: Subscription event detected, refreshing data...');
+    const handleSubscriptionUpdate = async (event: CustomEvent) => {
+      console.log('Subscribers: Enhanced subscription event detected:', event.type, event.detail);
       await handleManualRefresh();
     };
 
     // Listen for custom subscription events
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    const events = [
+      'subscriptionSuccess',
+      'paymentSuccess', 
+      'subscriptionCreated',
+      'subscriptionUpdated',
+      'subscriptionCanceled'
+    ];
+
+    events.forEach(eventType => {
+      window.addEventListener(eventType, handleSubscriptionUpdate as EventListener);
+    });
     
     return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      events.forEach(eventType => {
+        window.removeEventListener(eventType, handleSubscriptionUpdate as EventListener);
+      });
     };
-  }, []);
+  }, [handleManualRefresh]);
 
-  // Set up real-time subscription for creator_subscriptions table
+  // Enhanced real-time subscription for creator_subscriptions table
   useEffect(() => {
     if (!creatorData?.id) return;
 
-    console.log('Setting up real-time subscription for creator:', creatorData.id);
+    console.log('Setting up enhanced real-time subscription for creator:', creatorData.id);
     
     const channel = supabase
-      .channel('creator-subscriptions-changes')
+      .channel(`enhanced-creator-subscriptions-${creatorData.id}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'creator_subscriptions',
         filter: `creator_id=eq.${creatorData.id}`
       }, (payload) => {
-        console.log('Real-time update received:', payload);
-        // Invalidate queries to refetch data
-        queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
-        queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] });
-        refetchSubscribers();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'subscriptions',
-        filter: `creator_id=eq.${creatorData.id}`
-      }, (payload) => {
-        console.log('Real-time subscriptions update received:', payload);
-        queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
-        queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] });
-        refetchSubscribers();
+        console.log('Enhanced real-time update received:', payload);
+        // Immediately trigger refresh
+        handleManualRefresh();
       })
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
+      console.log('Cleaning up enhanced real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [creatorData?.id, queryClient, refetchSubscribers]);
+  }, [creatorData?.id, handleManualRefresh]);
 
   // Filter subscribers based on search term and tier filter
   const filteredSubscribers = subscribers.filter(subscriber => {
