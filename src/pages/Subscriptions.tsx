@@ -23,8 +23,8 @@ export default function SubscriptionsPage() {
     console.log('Subscriptions page loaded, refreshing data...');
     refetchSubscriptions();
 
-    const handleSubscriptionUpdate = async () => {
-      console.log('Subscription update event detected on subscriptions page');
+    const handleSubscriptionUpdate = async (eventType: string) => {
+      console.log(`${eventType} event detected on subscriptions page`);
       setIsRefreshing(true);
       try {
         await refetchSubscriptions();
@@ -40,9 +40,13 @@ export default function SubscriptionsPage() {
     };
 
     // Listen for subscription events with more immediate response
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    const handleSubscriptionSuccess = () => handleSubscriptionUpdate('subscriptionSuccess');
+    const handlePaymentSuccess = () => handleSubscriptionUpdate('paymentSuccess');
+    const handleSubscriptionCanceled = () => handleSubscriptionUpdate('subscriptionCanceled');
+    
+    window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess);
+    window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionCanceled);
     
     // Also listen for page visibility changes to refresh when user returns
     const handleVisibilityChange = () => {
@@ -54,11 +58,18 @@ export default function SubscriptionsPage() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
+    // Auto-refresh every 10 seconds to catch any updates
+    const intervalId = setInterval(() => {
+      console.log('Auto-refreshing subscriptions...');
+      refetchSubscriptions();
+    }, 10000);
+    
     return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
+      window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionCanceled);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(intervalId);
     };
   }, [refetchSubscriptions, toast]);
 

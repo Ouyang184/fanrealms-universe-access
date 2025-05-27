@@ -49,7 +49,8 @@ export const useUserSubscriptions = () => {
       
       console.log('Fetching active subscriptions for user:', user.id);
       
-      const { data: subscriptions, error } = await supabase
+      // First try to get from creator_subscriptions table (Stripe-managed subscriptions)
+      const { data: stripeSubscriptions, error: stripeError } = await supabase
         .from('creator_subscriptions')
         .select(`
           *,
@@ -77,17 +78,77 @@ export const useUserSubscriptions = () => {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching user subscriptions:', error);
-        throw error;
+      if (stripeError) {
+        console.error('Error fetching Stripe subscriptions:', stripeError);
       }
 
-      console.log('Found user subscriptions:', subscriptions?.length || 0);
-      return subscriptions as CreatorSubscriptionWithDetails[] || [];
+      console.log('Found Stripe subscriptions:', stripeSubscriptions?.length || 0);
+
+      // If no Stripe subscriptions found, check the basic subscriptions table
+      if (!stripeSubscriptions || stripeSubscriptions.length === 0) {
+        console.log('No Stripe subscriptions found, checking basic subscriptions...');
+        
+        const { data: basicSubscriptions, error: basicError } = await supabase
+          .from('subscriptions')
+          .select(`
+            *,
+            creator:creators (
+              id,
+              display_name,
+              bio,
+              profile_image_url,
+              banner_url,
+              users (
+                id,
+                username,
+                email,
+                profile_picture
+              )
+            ),
+            tier:membership_tiers (
+              id,
+              title,
+              description,
+              price
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('is_paid', true)
+          .order('created_at', { ascending: false });
+
+        if (basicError) {
+          console.error('Error fetching basic subscriptions:', basicError);
+          return [];
+        }
+
+        console.log('Found basic subscriptions:', basicSubscriptions?.length || 0);
+
+        // Convert basic subscriptions to the expected format
+        return (basicSubscriptions || []).map(sub => ({
+          id: sub.id,
+          user_id: sub.user_id,
+          creator_id: sub.creator_id,
+          tier_id: sub.tier_id || '',
+          stripe_subscription_id: '',
+          stripe_customer_id: '',
+          status: 'active',
+          current_period_start: null,
+          current_period_end: null,
+          amount_paid: sub.tier?.price || null,
+          platform_fee: null,
+          creator_earnings: null,
+          created_at: sub.created_at,
+          updated_at: null,
+          creator: sub.creator,
+          tier: sub.tier
+        })) as CreatorSubscriptionWithDetails[];
+      }
+
+      return stripeSubscriptions as CreatorSubscriptionWithDetails[] || [];
     },
     enabled: !!user?.id,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Refetch every 3 seconds to catch updates quickly
+    refetchInterval: 5000, // Refetch every 5 seconds to catch updates quickly
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
