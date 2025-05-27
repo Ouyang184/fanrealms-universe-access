@@ -162,11 +162,6 @@ serve(async (req) => {
         await handleInvoicePaymentSucceeded(supabase, stripe, event.data.object)
         break
       
-      case 'payment_intent.succeeded':
-        console.log('=== PROCESSING PAYMENT INTENT SUCCEEDED ===');
-        await handlePaymentIntentSucceeded(supabase, event.data.object)
-        break
-      
       default:
         console.log(`Unhandled event type: ${event.type}`)
     }
@@ -203,7 +198,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
 
     console.log('Looking for subscription record with stripe_subscription_id:', subscriptionId)
 
-    // Find the creator subscription record and update it to active immediately
+    // Find the creator subscription record
     const { data: creatorSub, error: subError } = await supabase
       .from('creator_subscriptions')
       .select('*')
@@ -386,32 +381,15 @@ async function handleSubscriptionDeleted(supabase: any, subscription: any) {
   }
 }
 
-async function handlePaymentIntentSucceeded(supabase: any, paymentIntent: any) {
-  console.log('Processing payment intent succeeded:', paymentIntent.id)
-  
-  try {
-    // Check if this payment intent is related to a subscription
-    if (paymentIntent.invoice) {
-      console.log('Payment intent has invoice, will be handled by invoice.payment_succeeded')
-      return
-    }
-
-    // For subscription payments, we primarily rely on other events
-    console.log('Payment intent succeeded for amount:', paymentIntent.amount_received / 100)
-    
-  } catch (error) {
-    console.error('Error in handlePaymentIntentSucceeded:', error)
-  }
-}
-
 async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice: any) {
   console.log('Processing invoice payment succeeded:', invoice.id)
+  console.log('Invoice object details:', JSON.stringify(invoice, null, 2))
   
   let subscriptionId = invoice.subscription
   
   // If subscription ID is not directly available, try to get it from other locations
   if (!subscriptionId) {
-    // Check in parent.subscription_details.subscription
+    // Check in parent.subscription_details.subscription (this is where it actually is)
     if (invoice.parent?.subscription_details?.subscription) {
       subscriptionId = invoice.parent.subscription_details.subscription
       console.log('Found subscription ID in parent.subscription_details:', subscriptionId)
@@ -449,7 +427,7 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
 
     console.log('Payment details:', { amountPaid, platformFee, creatorEarnings })
 
-    // Update subscription with payment details and ensure it's active
+    // Update subscription with payment details
     const { data: subscription, error: subError } = await supabase
       .from('creator_subscriptions')
       .update({
