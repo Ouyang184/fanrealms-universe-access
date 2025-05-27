@@ -95,6 +95,21 @@ export function useFollowActions() {
       }
     } else {
       console.log("Follow successful");
+      
+      // Update the follower count in the creators table
+      const newFollowerCount = (creator.follower_count || 0) + 1;
+      const { error: updateError } = await supabase
+        .from("creators")
+        .update({ follower_count: newFollowerCount })
+        .eq("id", creatorId);
+      
+      if (updateError) {
+        console.error("Error updating follower count:", updateError);
+        // Don't throw here as the follow was successful, just log the error
+      } else {
+        console.log("Follower count updated to:", newFollowerCount);
+      }
+      
       toast({
         description: "You are now following this creator",
       });
@@ -108,12 +123,24 @@ export function useFollowActions() {
         // Don't fail the follow action if notification creation fails
       }
       
-      return { alreadyFollowing: false, currentFollowerCount: creator.follower_count || 0 };
+      return { alreadyFollowing: false, currentFollowerCount: newFollowerCount };
     }
   };
 
   const performUnfollowOperation = async (creatorId: string) => {
     if (!user) throw new Error("No user authenticated");
+    
+    // Get current follower count before unfollowing
+    const { data: creator, error: creatorError } = await supabase
+      .from("creators")
+      .select("follower_count")
+      .eq("id", creatorId)
+      .single();
+    
+    if (creatorError) {
+      console.error("Error fetching creator for unfollow:", creatorError);
+      throw creatorError;
+    }
     
     const { error } = await supabase
       .from("follows")
@@ -127,9 +154,26 @@ export function useFollowActions() {
     }
     
     console.log("Unfollow successful");
+    
+    // Update the follower count in the creators table
+    const newFollowerCount = Math.max((creator.follower_count || 0) - 1, 0);
+    const { error: updateError } = await supabase
+      .from("creators")
+      .update({ follower_count: newFollowerCount })
+      .eq("id", creatorId);
+    
+    if (updateError) {
+      console.error("Error updating follower count:", updateError);
+      // Don't throw here as the unfollow was successful, just log the error
+    } else {
+      console.log("Follower count updated to:", newFollowerCount);
+    }
+    
     toast({
       description: "You have unfollowed this creator",
     });
+    
+    return { newFollowerCount };
   };
 
   return {

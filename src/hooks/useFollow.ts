@@ -1,4 +1,3 @@
-
 import { useFollowState } from "./useFollowState";
 import { useFollowActions } from "./useFollowActions";
 import { useFollowOptimisticUpdates } from "./useFollowOptimisticUpdates";
@@ -78,8 +77,11 @@ export function useFollow() {
         setIsFollowing(true);
       }
       
-      // Finalize the mutation after success
-      finalizeMutationAfterSuccess(creatorId, true, setOptimisticFollowerCount);
+      // Finalize the mutation after success - no need to clear optimistic state since DB is updated
+      setTimeout(() => {
+        console.log("Clearing optimistic state after follow");
+        setOptimisticFollowerCount(null);
+      }, 500);
       
     } catch (error: any) {
       console.error("Error following creator:", error);
@@ -136,10 +138,13 @@ export function useFollow() {
     );
     
     try {
-      await performUnfollowOperation(creatorId);
+      const result = await performUnfollowOperation(creatorId);
       
-      // Finalize the mutation after success
-      finalizeMutationAfterSuccess(creatorId, false, setOptimisticFollowerCount);
+      // Since the database is updated, just clear optimistic state after a short delay
+      setTimeout(() => {
+        console.log("Clearing optimistic state after unfollow");
+        setOptimisticFollowerCount(null);
+      }, 500);
       
     } catch (error: any) {
       console.error("Error unfollowing creator:", error);
