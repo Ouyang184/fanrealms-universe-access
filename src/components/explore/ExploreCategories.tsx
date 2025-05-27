@@ -15,9 +15,12 @@ export function ExploreCategories() {
   const navigate = useNavigate();
 
   const handleCategorySelect = (category: string) => {
+    console.log('Category selected:', category);
     if (category === "all") {
+      console.log('Navigating to /explore/all');
       navigate("/explore/all");
     } else {
+      console.log('Navigating to /explore with category:', category);
       navigate(`/explore?category=${category}`);
     }
   };
