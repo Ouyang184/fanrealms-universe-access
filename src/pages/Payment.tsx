@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -246,12 +245,12 @@ function CheckoutForm() {
                           setElementError(`Failed to load payment methods: ${error.message}`);
                         }}
                         onChange={(event) => {
-                          if (event.error) {
-                            console.error('PaymentElement error:', event.error);
-                            setElementError(event.error.message);
-                          } else {
+                          console.log('PaymentElement change:', event);
+                          if (event.complete) {
                             setElementError(null);
                           }
+                          // Note: StripePaymentElementChangeEvent doesn't have an 'error' property
+                          // Errors are handled through onLoadError or other specific error events
                         }}
                       />
                     ) : (
