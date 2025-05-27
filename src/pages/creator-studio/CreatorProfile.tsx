@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { ProfileHeader } from "@/components/creator-studio/profile/ProfileHeader";
@@ -32,9 +31,9 @@ export default function CreatorProfile() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="space-y-0 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Creator Profile</h1>
+        <h1 className="text-2xl font-semibold">Creator Profile Preview</h1>
         <Button asChild variant="outline">
           <Link to={`/creator/${creator.username}`}>
             View Public Profile
@@ -42,47 +41,38 @@ export default function CreatorProfile() {
         </Button>
       </div>
 
-      <div className="space-y-8">
-        <ProfileHeader creator={creator} />
+      {/* Use the same header component structure as public profile */}
+      <ProfileHeader creator={creator} />
         
-        {/* Content Tags Section */}
-        {creator.tags && creator.tags.length > 0 && (
-          <div className="px-4">
-            <h3 className="text-lg font-semibold mb-3">Content Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {creator.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="px-3 py-1">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        <div className="px-4">
-          <p>{creator.bio || "You haven't added a bio yet. Add one in your creator settings."}</p>
+      {/* Tab Navigation - properly spaced below header */}
+      <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="px-6 py-4">
+          <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 max-w-md mx-auto h-11">
+              <TabsTrigger value="posts" className="text-sm font-medium">Your Posts</TabsTrigger>
+              <TabsTrigger value="membership" className="text-sm font-medium">Membership Tiers</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="posts" className="pt-6 px-0">
+              <div className="px-6">
+                <ProfileStatistics 
+                  postCount={posts.length} 
+                  tierCount={tiers.length} 
+                  followerCount={creator.follower_count || 0}
+                />
+                <div className="mt-6">
+                  <ProfilePostsTab posts={posts} isLoading={isLoadingPosts} />
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="membership" className="pt-6 px-0">
+              <div className="px-6">
+                <ProfileMembershipTab tiers={tiers} isLoading={isLoadingTiers} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-        
-        <ProfileStatistics 
-          postCount={posts.length} 
-          tierCount={tiers.length} 
-          followerCount={creator.follower_count || 0}
-        />
-        
-        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 max-w-md mx-auto">
-            <TabsTrigger value="posts">Your Posts</TabsTrigger>
-            <TabsTrigger value="membership">Membership Tiers</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="pt-6">
-            <ProfilePostsTab posts={posts} isLoading={isLoadingPosts} />
-          </TabsContent>
-          
-          <TabsContent value="membership" className="pt-6">
-            <ProfileMembershipTab tiers={tiers} isLoading={isLoadingTiers} />
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );
