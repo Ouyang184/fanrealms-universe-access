@@ -52,15 +52,11 @@ export function SubscribeButton({
   }
 
   return (
-    <div className="space-y-2">
-      <ActiveSubscribeButton
-        tierId={tierId}
-        creatorId={creatorId}
-        tierName={tierName}
-        price={price}
-      />
-      {/* Show manual cancel button for debugging if needed */}
-      <ManualCancelButton creatorId={creatorId} />
-    </div>
+    <ActiveSubscribeButton
+      tierId={tierId}
+      creatorId={creatorId}
+      tierName={tierName}
+      price={price}
+    />
   );
 }
