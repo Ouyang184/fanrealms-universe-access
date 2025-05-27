@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -13,13 +12,14 @@ import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
   
   // Fetch creator tiers with accurate subscriber counts
-  const { data: tiers, isLoading, error } = useQuery({
+  const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers"],
     queryFn: async () => {
       if (!user) return [];
@@ -80,6 +80,28 @@ export default function CreatorStudioTiers() {
     enabled: !!user,
     refetchInterval: 5000, // Refetch every 5 seconds to keep counts updated
   });
+
+  // Listen for subscription events
+  useEffect(() => {
+    const handleSubscriptionUpdate = async () => {
+      console.log('MembershipTiers: Subscription event detected, refreshing data...');
+      
+      // Invalidate and refetch queries immediately
+      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      await refetch();
+    };
+
+    // Listen for custom subscription events
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    };
+  }, [queryClient, refetch]);
   
   // Set up real-time subscription for creator_subscriptions table
   useEffect(() => {
@@ -104,9 +126,7 @@ export default function CreatorStudioTiers() {
       console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [user]);
-  
-  const queryClient = useQueryClient();
+  }, [user, queryClient]);
   
   const handleEditTier = (tier: Tier) => {
     setEditingTier(tier);

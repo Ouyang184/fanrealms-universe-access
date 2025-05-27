@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
@@ -234,6 +233,25 @@ export default function CreatorStudioSubscribers() {
     }
   };
 
+  // Listen for subscription events
+  useEffect(() => {
+    const handleSubscriptionUpdate = async () => {
+      console.log('Subscribers: Subscription event detected, refreshing data...');
+      await handleManualRefresh();
+    };
+
+    // Listen for custom subscription events
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    };
+  }, []);
+
   // Set up real-time subscription for creator_subscriptions table
   useEffect(() => {
     if (!creatorData?.id) return;
@@ -272,40 +290,6 @@ export default function CreatorStudioSubscribers() {
       supabase.removeChannel(channel);
     };
   }, [creatorData?.id, queryClient, refetchSubscribers]);
-
-  // Listen for custom subscription events from payment flow and unsubscribe actions
-  useEffect(() => {
-    const handleSubscriptionUpdate = () => {
-      console.log('Subscription update event detected, refreshing data...');
-      handleManualRefresh();
-    };
-
-    // Listen for custom subscription events
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
-    
-    return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
-    };
-  }, []);
-
-  function formatDate(dateString: string) {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
-
-  function getTierBadgeVariant(tier: string) {
-    const tierLower = tier.toLowerCase();
-    if (tierLower.includes('exclusive')) return 'default';
-    if (tierLower.includes('supporter')) return 'secondary';
-    return 'outline';
-  }
 
   // Filter subscribers based on search term and tier filter
   const filteredSubscribers = subscribers.filter(subscriber => {
