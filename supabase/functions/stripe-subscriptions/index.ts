@@ -289,10 +289,9 @@ serve(async (req) => {
       console.log('Looking for subscription in creator_subscriptions table...');
       const { data: creatorSubscription, error: creatorSubError } = await supabaseService
         .from('creator_subscriptions')
-        .select('stripe_subscription_id, id, user_id, creator_id')
+        .select('stripe_subscription_id, id, user_id, creator_id, status')
         .eq('user_id', user.id)
         .eq('id', subscriptionId)
-        .eq('status', 'active')
         .maybeSingle()
 
       if (creatorSubError) {
@@ -304,16 +303,26 @@ serve(async (req) => {
       }
 
       if (!creatorSubscription) {
-        console.log('ERROR: Subscription not found');
+        console.log('ERROR: Subscription not found for user:', user.id, 'subscription ID:', subscriptionId);
+        // Let's also try to find any subscription for this user to debug
+        const { data: allUserSubs } = await supabaseService
+          .from('creator_subscriptions')
+          .select('id, status, stripe_subscription_id')
+          .eq('user_id', user.id)
+        console.log('All user subscriptions:', allUserSubs);
+        
         return new Response(JSON.stringify({ error: 'Subscription not found or already cancelled' }), { 
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
+      console.log('Found subscription:', creatorSubscription);
+
       // Cancel Stripe subscription if we have a stripe_subscription_id
       if (creatorSubscription.stripe_subscription_id) {
         try {
+          console.log('Cancelling Stripe subscription:', creatorSubscription.stripe_subscription_id);
           await stripe.subscriptions.cancel(creatorSubscription.stripe_subscription_id)
           console.log('Stripe subscription cancelled successfully');
         } catch (stripeError) {
