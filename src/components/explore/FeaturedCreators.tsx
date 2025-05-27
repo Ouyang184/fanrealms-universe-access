@@ -95,12 +95,12 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
             
             return (
               <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-                <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
+                <div className="h-32 bg-gray-800 relative">
                   {creator.banner_url && (
                     <img
                       src={creator.banner_url}
                       alt={displayName}
-                      className="w-full h-full object-cover mix-blend-overlay"
+                      className="w-full h-full object-cover"
                     />
                   )}
                   <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
