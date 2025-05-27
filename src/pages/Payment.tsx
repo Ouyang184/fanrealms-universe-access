@@ -15,15 +15,33 @@ function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
+  useEffect(() => {
+    if (!stripe || !elements) {
+      return;
+    }
+    
+    // Check if PaymentElement is ready
+    const paymentElement = elements.getElement(PaymentElement);
+    if (paymentElement) {
+      setPaymentElementReady(true);
+    }
+  }, [stripe, elements]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements) {
+      toast({
+        title: "Payment system not ready",
+        description: "Please wait for the payment system to load.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -153,12 +171,21 @@ function CheckoutForm() {
                 {/* Payment Method */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Payment method</h3>
-                  <div className="border rounded-lg p-4">
-                    <PaymentElement 
-                      options={{
-                        layout: "tabs"
-                      }}
-                    />
+                  <div className="border rounded-lg p-6 bg-white">
+                    {stripe && elements ? (
+                      <PaymentElement 
+                        options={{
+                          layout: "tabs",
+                          paymentMethodOrder: ['card', 'klarna', 'paypal'],
+                        }}
+                        onReady={() => setPaymentElementReady(true)}
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-32">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="ml-2">Loading payment methods...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -175,25 +202,26 @@ function CheckoutForm() {
                 </div>
 
                 {/* Subscribe Button */}
-                <Button 
-                  type="submit" 
-                  onClick={handleSubmit}
-                  disabled={!stripe || isLoading}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing Payment...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Subscribe now
-                    </>
-                  )}
-                </Button>
+                <form onSubmit={handleSubmit}>
+                  <Button 
+                    type="submit" 
+                    disabled={!stripe || !paymentElementReady || isLoading}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing Payment...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="mr-2 h-4 w-4" />
+                        Subscribe now
+                      </>
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </div>
@@ -277,6 +305,11 @@ export default function Payment() {
       theme: 'stripe' as const,
       variables: {
         colorPrimary: '#000000',
+        colorBackground: '#ffffff',
+        colorText: '#30313d',
+        colorDanger: '#df1b41',
+        spacingUnit: '4px',
+        borderRadius: '8px',
       },
     },
   };
