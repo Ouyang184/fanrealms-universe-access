@@ -200,6 +200,7 @@ export default function CreatorStudioSubscribers() {
       await queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
       await queryClient.invalidateQueries({ queryKey: ["creator-profile"] });
       await queryClient.invalidateQueries({ queryKey: ["subscriber-tiers"] });
+      await queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] }); // Also invalidate user subscriptions
       await refetchSubscribers();
       
       toast({
@@ -235,6 +236,7 @@ export default function CreatorStudioSubscribers() {
         console.log('Real-time update received:', payload);
         // Invalidate queries to refetch data
         queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
+        queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] });
         refetchSubscribers();
       })
       .on('postgres_changes', {
@@ -245,6 +247,7 @@ export default function CreatorStudioSubscribers() {
       }, (payload) => {
         console.log('Real-time subscriptions update received:', payload);
         queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
+        queryClient.invalidateQueries({ queryKey: ["userSubscriptions"] });
         refetchSubscribers();
       })
       .subscribe();
@@ -255,7 +258,7 @@ export default function CreatorStudioSubscribers() {
     };
   }, [creatorData?.id, queryClient, refetchSubscribers]);
 
-  // Listen for custom subscription events from payment flow
+  // Listen for custom subscription events from payment flow and unsubscribe actions
   useEffect(() => {
     const handleSubscriptionUpdate = () => {
       console.log('Subscription update event detected, refreshing data...');
@@ -265,10 +268,12 @@ export default function CreatorStudioSubscribers() {
     // Listen for custom subscription events
     window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
     window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
     
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
       window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
     };
   }, []);
 

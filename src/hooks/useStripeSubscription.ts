@@ -112,7 +112,7 @@ export const useStripeSubscription = () => {
       queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
       queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
       
-      // Dispatch custom event
+      // Dispatch custom event for unsubscribe
       window.dispatchEvent(new CustomEvent('subscriptionCanceled'));
       
       toast({
