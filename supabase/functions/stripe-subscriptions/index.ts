@@ -23,18 +23,19 @@ serve(async (req) => {
 
     // Authenticate user
     const user = await authenticateUser(authHeader, supabaseUrl, supabaseAnonKey);
+    console.log('User authenticated:', user.id);
 
     // Parse request body
     let requestBody: SubscriptionRequest;
     try {
       requestBody = await req.json();
-      console.log('Request body parsed:', requestBody);
+      console.log('Request body parsed:', JSON.stringify(requestBody, null, 2));
     } catch (parseError) {
       console.log('ERROR: Failed to parse request body:', parseError);
       return createJsonResponse({ error: 'Invalid JSON in request body' }, 400);
     }
 
-    // Fix: Handle both tierId/creatorId and tier_id/creator_id parameter names
+    // Handle both parameter naming conventions and validate required fields
     const { 
       action, 
       tier_id, 
@@ -44,7 +45,12 @@ serve(async (req) => {
       subscriptionId 
     } = requestBody;
     
-    console.log('Action:', action, 'TierID:', tierId, 'CreatorID:', creatorId, 'SubscriptionID:', subscriptionId);
+    console.log('Extracted parameters:', { 
+      action, 
+      tierId: tierId || tier_id, 
+      creatorId: creatorId || creator_id, 
+      subscriptionId 
+    });
 
     if (!action) {
       console.log('ERROR: Missing action in request');
@@ -52,7 +58,6 @@ serve(async (req) => {
     }
 
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-
     if (!stripeSecretKey) {
       console.log('ERROR: Missing Stripe secret key');
       return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
@@ -67,28 +72,45 @@ serve(async (req) => {
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
     if (action === 'create_subscription') {
+      if (!tierId || !creatorId) {
+        console.log('ERROR: Missing required parameters for create_subscription');
+        console.log('Required: tierId, creatorId');
+        console.log('Received:', { tierId, creatorId });
+        return createJsonResponse({ 
+          error: 'Missing required parameters: tierId and creatorId are required' 
+        }, 400);
+      }
+
       return await handleCreateSubscription(
         stripe, 
         supabase, 
         supabaseService, 
         user, 
-        tierId!, 
-        creatorId!
+        tierId, 
+        creatorId
       );
     } else if (action === 'cancel_subscription') {
+      if (!subscriptionId) {
+        console.log('ERROR: Missing subscriptionId for cancel_subscription');
+        return createJsonResponse({ error: 'Missing required parameter: subscriptionId' }, 400);
+      }
+
       return await handleCancelSubscription(
         stripe,
         supabaseService,
         user,
-        subscriptionId!
+        subscriptionId
       );
     }
 
     console.log('ERROR: Invalid action:', action);
-    return createJsonResponse({ error: 'Invalid action' }, 400);
+    return createJsonResponse({ error: 'Invalid action. Supported actions: create_subscription, cancel_subscription' }, 400);
 
   } catch (error) {
     console.error('Subscription error:', error);
-    return createJsonResponse({ error: error.message }, 500);
+    return createJsonResponse({ 
+      error: error.message || 'Internal server error',
+      details: error.toString()
+    }, 500);
   }
 });

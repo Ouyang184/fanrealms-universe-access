@@ -26,7 +26,12 @@ export const useCreateSubscription = () => {
 
       if (error) {
         console.error('Error creating subscription:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to create subscription');
+      }
+
+      if (data?.error) {
+        console.error('Function returned error:', data.error);
+        throw new Error(data.error);
       }
 
       console.log('Subscription created successfully:', data);
@@ -36,7 +41,7 @@ export const useCreateSubscription = () => {
       console.error('Failed to create subscription:', error);
       toast({
         title: "Error",
-        description: "Failed to create subscription. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
         variant: "destructive"
       });
       throw error;

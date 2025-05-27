@@ -4,10 +4,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Star, Zap } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionEvents } from "@/hooks/useSubscriptionEvents";
+import { useCreateSubscription } from "@/hooks/stripe/useCreateSubscription";
 
 interface MembershipTier {
   id: string;
@@ -41,10 +41,10 @@ export function MembershipSubscriptionCard({
   isSubscribed = false,
   onSubscriptionChange 
 }: MembershipSubscriptionCardProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const { triggerSubscriptionSuccess } = useSubscriptionEvents();
+  const { createSubscription, isProcessing } = useCreateSubscription();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -56,46 +56,41 @@ export function MembershipSubscriptionCard({
       return;
     }
 
-    setIsLoading(true);
     try {
       console.log('Creating subscription for tier:', tier.id, 'creator:', creatorId);
       
-      const { data, error } = await supabase.functions.invoke('create-subscription', {
-        body: {
-          tier_id: tier.id,
-          creator_id: creatorId,
-          user_id: user.id
-        }
+      const result = await createSubscription({ 
+        tierId: tier.id, 
+        creatorId 
       });
 
-      if (error) throw error;
+      if (result?.clientSecret) {
+        // Handle payment flow - navigate to payment page or show payment modal
+        toast({
+          title: "Payment Required",
+          description: "Please complete your payment to activate the subscription.",
+        });
+      } else if (result?.subscriptionId) {
+        // Subscription created successfully
+        toast({
+          title: "Subscription successful!",
+          description: `You are now subscribed to ${tier.name}.`,
+        });
 
-      console.log('Subscription created successfully:', data);
+        // Trigger subscription success events
+        triggerSubscriptionSuccess({
+          tierId: tier.id,
+          creatorId,
+          tierName: tier.name
+        });
 
-      toast({
-        title: "Subscription successful!",
-        description: `You are now subscribed to ${tier.name}.`,
-      });
-
-      // Trigger subscription success events
-      triggerSubscriptionSuccess({
-        tierId: tier.id,
-        creatorId,
-        tierName: tier.name
-      });
-
-      // Call the callback if provided
-      onSubscriptionChange?.();
+        // Call the callback if provided
+        onSubscriptionChange?.();
+      }
 
     } catch (error: any) {
       console.error('Subscription error:', error);
-      toast({
-        title: "Subscription failed",
-        description: error.message || "Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      // Error is already handled in the hook
     }
   };
 
@@ -150,10 +145,10 @@ export function MembershipSubscriptionCard({
         ) : (
           <Button 
             onClick={handleSubscribe} 
-            disabled={isLoading}
+            disabled={isProcessing}
             className="w-full"
           >
-            {isLoading ? "Processing..." : `Subscribe for $${tier.price}/month`}
+            {isProcessing ? "Processing..." : `Subscribe for $${tier.price}/month`}
           </Button>
         )}
       </CardFooter>
