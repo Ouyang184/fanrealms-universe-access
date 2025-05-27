@@ -19,6 +19,9 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
         creatorId 
       });
 
+      // Get Stripe secret key to verify subscriptions directly with Stripe
+      const stripeKey = process.env.NODE_ENV === 'development' ? 'sk_test_...' : 'sk_live_...';
+
       // Check both tables for any subscription records
       const [creatorSubsResult, basicSubsResult] = await Promise.all([
         supabase
@@ -33,7 +36,6 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
           .eq('user_id', user.id)
           .eq('creator_id', creatorId)
           .eq('tier_id', tierId)
-          .eq('is_paid', true)
       ]);
 
       if (creatorSubsResult.error) {
@@ -51,20 +53,58 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
 
       console.log('Found subscription records:', allSubs.length);
 
-      // Find the most recent active subscription
+      // Verify each subscription against Stripe and clean up stale records
       let activeSubscription = null;
+      const staleRecords = [];
 
       for (const sub of allSubs) {
-        // For creator subscriptions, check if status is active
-        if ('status' in sub && sub.status === 'active') {
-          activeSubscription = sub;
-          break;
+        if ('stripe_subscription_id' in sub && sub.stripe_subscription_id) {
+          try {
+            // Call our edge function to verify with Stripe
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('stripe-subscriptions', {
+              body: {
+                action: 'verify_subscription',
+                subscriptionId: sub.stripe_subscription_id
+              }
+            });
+
+            if (verifyError || !verifyResult?.isActive) {
+              console.log('Subscription not active in Stripe, marking as stale:', sub.id);
+              staleRecords.push(sub);
+            } else if (verifyResult.isActive && !verifyResult.cancelAtPeriodEnd) {
+              console.log('Found truly active subscription:', sub.id);
+              activeSubscription = sub;
+              break;
+            }
+          } catch (error) {
+            console.error('Error verifying subscription with Stripe:', error);
+            staleRecords.push(sub);
+          }
+        } else {
+          // No Stripe subscription ID, check if it's just a basic subscription record
+          if ('is_paid' in sub && sub.is_paid) {
+            // For basic subscriptions without Stripe integration, consider them stale if no Stripe ID
+            staleRecords.push(sub);
+          }
         }
+      }
+
+      // Clean up stale records
+      for (const staleRecord of staleRecords) {
+        console.log('Cleaning up stale subscription record:', staleRecord.id);
         
-        // For basic subscriptions, if it has is_paid = true, consider it active
-        if ('is_paid' in sub && sub.is_paid) {
-          activeSubscription = sub;
-          break;
+        if ('stripe_subscription_id' in staleRecord) {
+          // Creator subscription
+          await supabase
+            .from('creator_subscriptions')
+            .delete()
+            .eq('id', staleRecord.id);
+        } else {
+          // Basic subscription
+          await supabase
+            .from('subscriptions')
+            .delete()
+            .eq('id', staleRecord.id);
         }
       }
 
@@ -80,7 +120,7 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
       return { isSubscribed: false, data: null };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Filter, CreditCard, RefreshCw } from "lucide-react"
+import { Filter, CreditCard, RefreshCw, Sync } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
 import { useStripeSubscription } from "@/hooks/useStripeSubscription"
 import { useEffect, useState } from "react"
@@ -12,10 +12,12 @@ import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard"
 import { BillingHistory } from "@/components/subscriptions/BillingHistory"
 import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscriptionsState"
 import { ForceCancelButton } from "@/components/creator/buttons/ForceCancelButton"
+import { supabase } from "@/lib/supabase"
 
 export default function SubscriptionsPage() {
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
   
   // Auto-refresh on page load and listen for subscription events
@@ -39,7 +41,7 @@ export default function SubscriptionsPage() {
       }
     };
 
-    // Listen for subscription events with more immediate response
+    // Listen for subscription events
     const handleSubscriptionSuccess = () => handleSubscriptionUpdate('subscriptionSuccess');
     const handlePaymentSuccess = () => handleSubscriptionUpdate('paymentSuccess');
     const handleSubscriptionCanceled = () => handleSubscriptionUpdate('subscriptionCanceled');
@@ -48,7 +50,7 @@ export default function SubscriptionsPage() {
     window.addEventListener('paymentSuccess', handlePaymentSuccess);
     window.addEventListener('subscriptionCanceled', handleSubscriptionCanceled);
     
-    // Also listen for page visibility changes to refresh when user returns
+    // Listen for page visibility changes
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         console.log('Page became visible, refreshing subscriptions...');
@@ -58,11 +60,11 @@ export default function SubscriptionsPage() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Auto-refresh every 10 seconds to catch any updates
+    // Auto-refresh every 30 seconds
     const intervalId = setInterval(() => {
       console.log('Auto-refreshing subscriptions...');
       refetchSubscriptions();
-    }, 10000);
+    }, 30000);
     
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
@@ -94,6 +96,43 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    try {
+      console.log('Full sync triggered');
+      
+      // Call the sync function
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'sync_all_subscriptions'
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Sync result:', data);
+      
+      // Refresh the data after sync
+      await refetchSubscriptions();
+      
+      toast({
+        title: "Sync Complete",
+        description: data?.message || "All subscription data has been synchronized with Stripe",
+      });
+    } catch (error) {
+      console.error('Error syncing subscriptions:', error);
+      toast({
+        title: "Sync Error",
+        description: "Failed to synchronize subscription data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (subscriptionsLoading && !isRefreshing) {
     return (
       <MainLayout>
@@ -113,6 +152,16 @@ export default function SubscriptionsPage() {
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
             <ForceCancelButton />
+            <Button 
+              onClick={handleSyncAll}
+              disabled={isSyncing}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Sync className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Syncing...' : 'Sync All'}
+            </Button>
             <Button 
               onClick={handleManualRefresh}
               disabled={isRefreshing}

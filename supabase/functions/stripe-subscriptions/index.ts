@@ -5,6 +5,10 @@ import { corsHeaders, handleCorsPreflightRequest, createJsonResponse } from './u
 import { authenticateUser } from './utils/auth.ts';
 import { handleCreateSubscription } from './handlers/create-subscription.ts';
 import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
+import { handleVerifySubscription } from './handlers/verify-subscription.ts';
+import { handleGetSubscriberCount } from './handlers/get-subscriber-count.ts';
+import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts';
+import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
 import type { SubscriptionRequest } from './types.ts';
 
 serve(async (req) => {
@@ -17,7 +21,6 @@ serve(async (req) => {
     console.log('=== STRIPE SUBSCRIPTIONS FUNCTION START ===');
     console.log('Request method:', req.method);
     console.log('Request URL:', req.url);
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
     // Check environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -32,33 +35,12 @@ serve(async (req) => {
       stripeSecretKey: stripeSecretKey ? 'SET' : 'MISSING'
     });
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.log('ERROR: Missing Supabase configuration');
-      return createJsonResponse({ error: 'Missing Supabase configuration' }, 500);
-    }
-
-    if (!stripeSecretKey) {
-      console.log('ERROR: Missing Stripe secret key');
-      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
-    }
-
-    if (!supabaseServiceKey) {
-      console.log('ERROR: Missing Supabase service role key');
-      return createJsonResponse({ error: 'Missing Supabase service configuration' }, 500);
+    if (!supabaseUrl || !supabaseAnonKey || !stripeSecretKey || !supabaseServiceKey) {
+      console.log('ERROR: Missing required environment variables');
+      return createJsonResponse({ error: 'Missing required configuration' }, 500);
     }
 
     const authHeader = req.headers.get('Authorization');
-    console.log('Authorization header present:', !!authHeader);
-
-    // Authenticate user
-    let user;
-    try {
-      user = await authenticateUser(authHeader, supabaseUrl, supabaseAnonKey);
-      console.log('User authenticated successfully:', { userId: user.id, email: user.email });
-    } catch (authError) {
-      console.log('ERROR: Authentication failed:', authError);
-      return createJsonResponse({ error: 'Authentication failed: ' + authError.message }, 401);
-    }
 
     // Parse request body
     let requestBody: SubscriptionRequest;
@@ -78,21 +60,22 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON in request body: ' + parseError.message }, 400);
     }
 
-    // Handle both parameter naming conventions and validate required fields
     const { 
       action, 
       tier_id, 
       creator_id, 
       tierId = tier_id, 
       creatorId = creator_id, 
-      subscriptionId 
+      subscriptionId,
+      userId 
     } = requestBody;
     
     console.log('Extracted parameters:', { 
       action, 
       tierId: tierId || tier_id, 
       creatorId: creatorId || creator_id, 
-      subscriptionId 
+      subscriptionId,
+      userId 
     });
 
     if (!action) {
@@ -109,11 +92,38 @@ serve(async (req) => {
     });
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Handle actions that don't require authentication
+    if (action === 'verify_subscription') {
+      if (!subscriptionId) {
+        return createJsonResponse({ error: 'Missing subscriptionId' }, 400);
+      }
+      return await handleVerifySubscription(stripe, supabaseService, subscriptionId);
+    }
+
+    if (action === 'get_subscriber_count') {
+      if (!tierId || !creatorId) {
+        return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
+      }
+      return await handleGetSubscriberCount(stripe, supabaseService, tierId, creatorId);
+    }
+
+    if (action === 'sync_all_subscriptions') {
+      return await handleSyncAllSubscriptions(stripe, supabaseService, creatorId);
+    }
+
+    // For actions that require authentication
+    let user;
+    try {
+      user = await authenticateUser(authHeader, supabaseUrl, supabaseAnonKey);
+      console.log('User authenticated successfully:', { userId: user.id, email: user.email });
+    } catch (authError) {
+      console.log('ERROR: Authentication failed:', authError);
+      return createJsonResponse({ error: 'Authentication failed: ' + authError.message }, 401);
+    }
+
     if (action === 'create_subscription') {
       if (!tierId || !creatorId) {
         console.log('ERROR: Missing required parameters for create_subscription');
-        console.log('Required: tierId, creatorId');
-        console.log('Received:', { tierId, creatorId });
         return createJsonResponse({ 
           error: 'Missing required parameters: tierId and creatorId are required' 
         }, 400);
@@ -141,17 +151,23 @@ serve(async (req) => {
         user,
         subscriptionId
       );
+    } else if (action === 'get_user_subscriptions') {
+      if (!creatorId) {
+        return createJsonResponse({ error: 'Missing creatorId' }, 400);
+      }
+      return await handleGetUserSubscriptions(stripe, supabaseService, user.id, creatorId);
     }
 
     console.log('ERROR: Invalid action:', action);
-    return createJsonResponse({ error: 'Invalid action. Supported actions: create_subscription, cancel_subscription' }, 400);
+    return createJsonResponse({ 
+      error: 'Invalid action. Supported actions: create_subscription, cancel_subscription, verify_subscription, get_subscriber_count, get_user_subscriptions, sync_all_subscriptions' 
+    }, 400);
 
   } catch (error) {
     console.error('=== SUBSCRIPTION FUNCTION ERROR ===');
     console.error('Error type:', error.constructor.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    console.error('Error details:', error);
     
     return createJsonResponse({ 
       error: error.message || 'Internal server error',
