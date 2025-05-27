@@ -137,9 +137,10 @@ export function useFollow() {
           }
         }
         
-        // Invalidate relevant queries
+        // Invalidate relevant queries - including creator profile queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
+          queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] }),
           queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
           queryClient.invalidateQueries({ queryKey: ["creators"] }),
           queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
@@ -182,9 +183,10 @@ export function useFollow() {
       });
       setIsFollowing(false);
       
-      // Invalidate relevant queries
+      // Invalidate relevant queries - including creator profile queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["creatorProfile"] }),
+        queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] }),
         queryClient.invalidateQueries({ queryKey: ["subscriptions"] }),
         queryClient.invalidateQueries({ queryKey: ["creators"] }),
         queryClient.invalidateQueries({ queryKey: ["followedCreators"] }),
