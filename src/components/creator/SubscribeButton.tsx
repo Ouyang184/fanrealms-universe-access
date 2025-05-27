@@ -5,6 +5,8 @@ import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
 import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
+import { Button } from '@/components/ui/button';
+import { Clock } from 'lucide-react';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -29,6 +31,17 @@ export function SubscribeButton({
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
   const isUserSubscribed = subscriptionStatus?.isSubscribed || isSubscribed;
+  const isPendingPayment = subscriptionStatus?.isPendingPayment;
+
+  // Show pending payment state
+  if (isPendingPayment) {
+    return (
+      <Button variant="outline" disabled className="w-full">
+        <Clock className="mr-2 h-4 w-4 text-orange-500" />
+        Payment Pending
+      </Button>
+    );
+  }
 
   if (isUserSubscribed) {
     return (
