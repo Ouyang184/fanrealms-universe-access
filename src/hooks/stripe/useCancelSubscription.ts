@@ -16,7 +16,6 @@ export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>
     try {
       console.log('Cancelling subscription:', subscriptionId);
       
-      // Make sure we're calling the correct function name: 'stripe-subscriptions'
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
