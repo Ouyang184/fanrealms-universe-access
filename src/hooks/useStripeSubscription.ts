@@ -46,6 +46,7 @@ export const useStripeSubscription = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOperating, setIsOperating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Fetch user's active subscriptions with creator and tier details
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
@@ -95,6 +96,43 @@ export const useStripeSubscription = () => {
     staleTime: 0,
     refetchInterval: 5000,
   });
+
+  // Create subscription function
+  const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+    if (!user || isProcessing) return null;
+
+    setIsProcessing(true);
+    try {
+      console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
+      
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'create_subscription',
+          tierId: tierId,
+          creatorId: creatorId
+        }
+      });
+
+      if (error) {
+        console.error('Error creating subscription:', error);
+        throw error;
+      }
+
+      console.log('Subscription created successfully:', data);
+      return data;
+
+    } catch (error) {
+      console.error('Failed to create subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create subscription. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [user, isProcessing, toast]);
 
   // Cancel subscription function
   const cancelSubscription = useCallback(async (subscriptionId: string) => {
@@ -166,6 +204,9 @@ export const useStripeSubscription = () => {
     userSubscriptions,
     subscriptionsLoading,
     isOperating,
+    isProcessing,
+    setIsProcessing,
+    createSubscription,
     cancelSubscription,
     refetchSubscriptions: refreshSubscriptions,
   };
