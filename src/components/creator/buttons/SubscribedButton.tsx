@@ -54,24 +54,14 @@ export function SubscribedButton({
     try {
       console.log('SubscribedButton: Cancelling subscription:', subscriptionData.id);
       
-      // Optimistic update - immediately show unsubscribed state
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(false);
-      }
-      
       const subscriptionId = subscriptionData.id;
       await cancelSubscription(subscriptionId);
       
       console.log('SubscribedButton: Subscription cancelled successfully');
       
-      // Force immediate refresh of all subscription-related queries
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.refetchQueries({ queryKey: ['enhancedSubscriptionCheck', undefined, tierId, creatorId] }),
-      ]);
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(false);
+      }
       
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
         detail: { creatorId, tierId, subscriptionId }
@@ -79,20 +69,20 @@ export function SubscribedButton({
       
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled successfully.",
+        description: "Your subscription will be cancelled at the end of your current billing period.",
       });
+      
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+      ]);
       
       if (onSubscriptionSuccess) {
         onSubscriptionSuccess();
       }
     } catch (error) {
       console.error('SubscribedButton: Unsubscribe error:', error);
-      
-      // Revert optimistic update on error
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(true);
-      }
-      
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
