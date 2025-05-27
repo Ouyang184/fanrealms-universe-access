@@ -7,12 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isOperating, setIsOperating] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const cancelSubscription = useCallback(async (subscriptionId: string) => {
-    if (!user || isOperating) return;
+    if (!user || isCancelling) return;
 
-    setIsOperating(true);
+    setIsCancelling(true);
     try {
       console.log('Cancelling subscription:', subscriptionId);
       
@@ -53,12 +53,12 @@ export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>
         variant: "destructive"
       });
     } finally {
-      setIsOperating(false);
+      setIsCancelling(false);
     }
-  }, [user, isOperating, refetchSubscriptions, toast]);
+  }, [user, isCancelling, refetchSubscriptions, toast]);
 
   return {
     cancelSubscription,
-    isOperating
+    isCancelling
   };
 };

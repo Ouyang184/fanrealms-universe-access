@@ -14,12 +14,12 @@ export const useStripeSubscription = () => {
   };
   
   const { refreshSubscriptions } = useSubscriptionRefresh(wrappedRefetchSubscriptions);
-  const { cancelSubscription, isOperating } = useCancelSubscription(wrappedRefetchSubscriptions);
+  const { cancelSubscription, isCancelling } = useCancelSubscription(wrappedRefetchSubscriptions);
 
   return {
     userSubscriptions,
     subscriptionsLoading,
-    isOperating,
+    isCancelling,
     isProcessing,
     setIsProcessing,
     createSubscription,

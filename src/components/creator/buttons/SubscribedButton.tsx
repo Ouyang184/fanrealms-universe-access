@@ -24,12 +24,11 @@ export function SubscribedButton({
   onOptimisticUpdate,
   onSubscriptionSuccess 
 }: SubscribedButtonProps) {
-  const { cancelSubscription } = useStripeSubscription();
+  const { cancelSubscription, isCancelling } = useStripeSubscription();
   const queryClient = useQueryClient();
-  const [isUnsubscribing, setIsUnsubscribing] = useState(false);
 
   // Check if subscription is in cancelling state
-  const isCancelling = subscriptionData?.isCancelling || subscriptionData?.status === 'cancelling';
+  const isCancellingState = subscriptionData?.isCancelling || subscriptionData?.status === 'cancelling';
   const cancelAt = subscriptionData?.cancelAt || subscriptionData?.cancel_at;
 
   const formatCancelDate = (dateString: string) => {
@@ -52,8 +51,6 @@ export function SubscribedButton({
       return;
     }
 
-    setIsUnsubscribing(true);
-    
     try {
       console.log('SubscribedButton: Cancelling subscription:', subscriptionData.id);
       
@@ -91,12 +88,10 @@ export function SubscribedButton({
         description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsUnsubscribing(false);
     }
   };
 
-  if (isCancelling && cancelAt) {
+  if (isCancellingState && cancelAt) {
     return (
       <div className="space-y-2">
         <Button variant="outline" disabled className="w-full">
@@ -127,9 +122,9 @@ export function SubscribedButton({
         size="sm" 
         className="w-full"
         onClick={handleUnsubscribe}
-        disabled={isUnsubscribing}
+        disabled={isCancelling}
       >
-        {isUnsubscribing ? (
+        {isCancelling ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Cancelling...
