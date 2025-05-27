@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SubscribeButton } from "./SubscribeButton";
 
@@ -25,13 +25,45 @@ export function MembershipTierCard({
   isSubscribed, 
   onSubscriptionSuccess 
 }: MembershipTierCardProps) {
+  const [localSubscriberCount, setLocalSubscriberCount] = useState(tier.subscriberCount);
+  const [localIsSubscribed, setLocalIsSubscribed] = useState(isSubscribed);
+
+  // Update local state when props change
+  useEffect(() => {
+    setLocalSubscriberCount(tier.subscriberCount);
+    setLocalIsSubscribed(isSubscribed);
+  }, [tier.subscriberCount, isSubscribed]);
+
+  // Handle optimistic updates for subscription state
+  const handleOptimisticUpdate = (newIsSubscribed: boolean) => {
+    const wasSubscribed = localIsSubscribed;
+    setLocalIsSubscribed(newIsSubscribed);
+    
+    // Update subscriber count optimistically
+    if (newIsSubscribed && !wasSubscribed) {
+      // User just subscribed
+      setLocalSubscriberCount(prev => prev + 1);
+    } else if (!newIsSubscribed && wasSubscribed) {
+      // User just unsubscribed
+      setLocalSubscriberCount(prev => Math.max(0, prev - 1));
+    }
+  };
+
+  // Handle subscription success with potential count correction
+  const handleSubscriptionSuccess = () => {
+    // Call parent callback to refresh data
+    onSubscriptionSuccess();
+    
+    // The real data will update via the parent refresh, so we don't need to do anything else here
+  };
+
   return (
     <div 
       className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-        isSubscribed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''
+        localIsSubscribed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''
       }`}
     >
-      {isSubscribed && (
+      {localIsSubscribed && (
         <Badge className="mb-2 bg-green-500">
           Your Plan
         </Badge>
@@ -40,7 +72,7 @@ export function MembershipTierCard({
       <p className="text-2xl font-bold mt-2 text-primary">${Number(tier.price).toFixed(2)}/mo</p>
       
       <Badge variant="secondary" className="mt-2">
-        {tier.subscriberCount} subscribers
+        {localSubscriberCount} subscribers
       </Badge>
       
       <div className="mt-4">
@@ -61,8 +93,9 @@ export function MembershipTierCard({
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
-          isSubscribed={isSubscribed}
-          onSubscriptionSuccess={onSubscriptionSuccess}
+          isSubscribed={localIsSubscribed}
+          onSubscriptionSuccess={handleSubscriptionSuccess}
+          onOptimisticUpdate={handleOptimisticUpdate}
         />
       </div>
     </div>
