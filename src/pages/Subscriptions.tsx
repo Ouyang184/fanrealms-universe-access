@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Filter, CreditCard, RefreshCw, Sync } from "lucide-react"
+import { Filter, CreditCard, RefreshCw, RotateCcw } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
 import { useStripeSubscription } from "@/hooks/useStripeSubscription"
 import { useEffect, useState } from "react"
@@ -159,7 +159,7 @@ export default function SubscriptionsPage() {
               size="sm"
               className="gap-2"
             >
-              <Sync className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <RotateCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Sync All'}
             </Button>
             <Button 
