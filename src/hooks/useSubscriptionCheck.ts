@@ -15,45 +15,53 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
       
       console.log('Enhanced subscription check for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first - look for subscription to this specific tier
-      const { data: creatorSub, error: creatorSubError } = await supabase
+      // Check creator_subscriptions table first - look for ANY active subscription to this creator
+      const { data: creatorSubs, error: creatorSubError } = await supabase
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('tier_id', tierId)
         .eq('creator_id', creatorId)
-        .eq('status', 'active')
-        .maybeSingle();
+        .eq('status', 'active');
 
       if (creatorSubError && creatorSubError.code !== 'PGRST116') {
         console.error('Error checking creator_subscriptions:', creatorSubError);
       }
 
-      if (creatorSub) {
-        console.log('Found active subscription in creator_subscriptions:', creatorSub);
-        return { isSubscribed: true, source: 'creator_subscriptions', data: creatorSub };
+      if (creatorSubs && creatorSubs.length > 0) {
+        console.log('Found active subscriptions in creator_subscriptions:', creatorSubs.length);
+        // Check if any subscription matches the specific tier
+        const tierSpecificSub = creatorSubs.find(sub => sub.tier_id === tierId);
+        if (tierSpecificSub) {
+          console.log('Found tier-specific subscription:', tierSpecificSub);
+          return { isSubscribed: true, source: 'creator_subscriptions', data: tierSpecificSub };
+        }
+        // If no tier-specific sub found, user is subscribed to creator but different tier
+        console.log('User subscribed to creator but different tier');
+        return { isSubscribed: true, source: 'creator_subscriptions', data: creatorSubs[0] };
       }
 
-      // Check subscriptions table as fallback for this specific tier
+      // Check subscriptions table as fallback
       const { data: regularSub, error: regularSubError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('is_paid', true)
-        .maybeSingle();
+        .eq('is_paid', true);
 
       if (regularSubError && regularSubError.code !== 'PGRST116') {
         console.error('Error checking subscriptions:', regularSubError);
       }
 
-      if (regularSub) {
+      if (regularSub && regularSub.length > 0) {
         console.log('Found subscription in subscriptions table:', regularSub);
-        return { isSubscribed: true, source: 'subscriptions', data: regularSub };
+        const tierSpecificSub = regularSub.find(sub => sub.tier_id === tierId);
+        if (tierSpecificSub) {
+          return { isSubscribed: true, source: 'subscriptions', data: tierSpecificSub };
+        }
+        return { isSubscribed: true, source: 'subscriptions', data: regularSub[0] };
       }
 
-      console.log('No active subscription found for this specific tier');
+      console.log('No active subscription found');
       return { isSubscribed: false, source: 'none' };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
@@ -67,7 +75,7 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
       console.log('useSubscriptionCheck: Received subscription event:', event.type, event.detail);
       
       if ((event.type === 'paymentSuccess' || event.type === 'subscriptionSuccess') && 
-          event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
+          event.detail?.creatorId === creatorId) {
         
         console.log('useSubscriptionCheck: Payment successful, updating subscription status');
         
