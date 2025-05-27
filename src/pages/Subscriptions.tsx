@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,13 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Filter, CreditCard, Clock, MoreHorizontal, Users, RefreshCw } from "lucide-react"
+import { Filter, CreditCard, Clock, MoreHorizontal, ChevronRight, Users } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
 import { useStripeSubscription } from "@/hooks/useStripeSubscription"
 import { useEffect, useState } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { Link } from "react-router-dom"
-import { useToast } from "@/hooks/use-toast"
 
 // Get tier badge color
 const getTierColor = (name: string | undefined) => {
@@ -38,60 +36,14 @@ const getTierColor = (name: string | undefined) => {
 };
 
 export default function SubscriptionsPage() {
-  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
+  const { userSubscriptions, subscriptionsLoading, cancelSubscription } = useStripeSubscription();
   const [hasSubscriptions, setHasSubscriptions] = useState<boolean>(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { toast } = useToast();
   
   useEffect(() => {
     if (!subscriptionsLoading) {
       setHasSubscriptions(userSubscriptions && userSubscriptions.length > 0);
-      console.log('Subscriptions data:', userSubscriptions);
     }
   }, [userSubscriptions, subscriptionsLoading]);
-
-  // Auto-refresh on page load and listen for subscription events
-  useEffect(() => {
-    console.log('Subscriptions page loaded, refreshing data...');
-    refetchSubscriptions();
-
-    const handleSubscriptionUpdate = () => {
-      console.log('Subscription update event detected on subscriptions page');
-      refetchSubscriptions();
-    };
-
-    // Listen for subscription events
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
-    
-    return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
-    };
-  }, [refetchSubscriptions]);
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      console.log('Manual refresh triggered');
-      await refetchSubscriptions();
-      toast({
-        title: "Refreshed",
-        description: "Subscription data has been updated",
-      });
-    } catch (error) {
-      console.error('Error refreshing subscriptions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh subscription data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   // Calculate monthly spending
   const monthlySpending = userSubscriptions?.reduce((total, sub) => {
@@ -121,19 +73,7 @@ export default function SubscriptionsPage() {
     return (
       <MainLayout>
         <div className="max-w-5xl mx-auto w-full p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
-            <Button 
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
+          <h1 className="text-2xl font-semibold mb-6">Your Subscriptions</h1>
           <Card className="w-full p-6">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <Users className="h-16 w-16 mb-4 text-muted-foreground" />
@@ -142,15 +82,9 @@ export default function SubscriptionsPage() {
                 You haven't subscribed to any creators yet.
                 Start following creators to see their content here!
               </p>
-              <div className="flex gap-3">
-                <Button asChild>
-                  <Link to="/explore">Explore Creators</Link>
-                </Button>
-                <Button variant="outline" onClick={handleManualRefresh} disabled={isRefreshing}>
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Check Again
-                </Button>
-              </div>
+              <Button asChild>
+                <Link to="/explore">Explore Creators</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -164,16 +98,6 @@ export default function SubscriptionsPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Filter className="h-4 w-4" />
               Filter
