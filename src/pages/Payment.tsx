@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -12,7 +13,8 @@ import { Loader2, ArrowLeft, Lock, AlertCircle } from 'lucide-react';
 const getStripePublishableKey = () => {
   // Try multiple ways to get the key
   const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
-             window.env?.VITE_STRIPE_PUBLISHABLE_KEY;
+             window.env?.VITE_STRIPE_PUBLISHABLE_KEY ||
+             'pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL';
   
   console.log('Stripe publishable key check:', {
     fromImportMeta: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
@@ -242,7 +244,7 @@ function CheckoutForm() {
                         }}
                         onLoadError={(error) => {
                           console.error('PaymentElement load error:', error);
-                          setElementError(`Failed to load payment methods: ${error.message}`);
+                          setElementError(`Failed to load payment methods: ${error.error?.message || 'Unknown error'}`);
                         }}
                         onChange={(event) => {
                           console.log('PaymentElement change:', event);
