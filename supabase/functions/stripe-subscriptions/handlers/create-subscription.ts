@@ -18,21 +18,35 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check if user already has an active subscription to this creator
-  console.log('Checking for existing subscription...');
-  const { data: existingSubs, error: existingError } = await supabaseService
+  // Check if user already has an active subscription to this creator in BOTH tables
+  console.log('Checking for existing subscription in creator_subscriptions...');
+  const { data: existingCreatorSubs, error: existingCreatorError } = await supabaseService
     .from('creator_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
     .eq('status', 'active');
 
-  if (existingError) {
-    console.error('Error checking existing subscription:', existingError);
+  if (existingCreatorError) {
+    console.error('Error checking creator_subscriptions:', existingCreatorError);
   }
 
-  if (existingSubs && existingSubs.length > 0) {
+  console.log('Checking for existing subscription in subscriptions...');
+  const { data: existingBasicSubs, error: existingBasicError } = await supabaseService
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId);
+
+  if (existingBasicError) {
+    console.error('Error checking subscriptions:', existingBasicError);
+  }
+
+  // If user has active subscriptions in either table, block creation
+  if ((existingCreatorSubs && existingCreatorSubs.length > 0) || (existingBasicSubs && existingBasicSubs.length > 0)) {
     console.log('User already has active subscription to this creator');
+    console.log('Creator subscriptions:', existingCreatorSubs);
+    console.log('Basic subscriptions:', existingBasicSubs);
     return createJsonResponse({ error: 'You already have an active subscription to this creator' }, 400);
   }
 
