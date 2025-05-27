@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Calendar, AlertCircle } from 'lucide-react';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface SubscribedButtonProps {
   tierName: string;
@@ -26,6 +27,19 @@ export function SubscribedButton({
   const { cancelSubscription } = useStripeSubscription();
   const queryClient = useQueryClient();
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+
+  // Check if subscription is in cancelling state
+  const isCancelling = subscriptionData?.isCancelling || subscriptionData?.status === 'cancelling';
+  const cancelAt = subscriptionData?.cancelAt || subscriptionData?.cancel_at;
+
+  const formatCancelDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const handleUnsubscribe = async () => {
     if (!subscriptionData) {
@@ -57,8 +71,8 @@ export function SubscribedButton({
       }));
       
       toast({
-        title: "Success",
-        description: "Successfully unsubscribed from this tier.",
+        title: "Subscription Cancelled",
+        description: "Your subscription will be cancelled at the end of your current billing period.",
       });
       
       await Promise.all([
@@ -82,6 +96,26 @@ export function SubscribedButton({
     }
   };
 
+  if (isCancelling && cancelAt) {
+    return (
+      <div className="space-y-2">
+        <Button variant="outline" disabled className="w-full">
+          <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
+          Cancelling at Period End
+        </Button>
+        <div className="text-center">
+          <Badge variant="outline" className="text-xs">
+            <Calendar className="mr-1 h-3 w-3" />
+            Active until {formatCancelDate(cancelAt)}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          You'll retain access to {tierName} until your billing period ends.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <Button variant="outline" disabled className="w-full">
@@ -98,7 +132,7 @@ export function SubscribedButton({
         {isUnsubscribing ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Unsubscribing...
+            Cancelling...
           </>
         ) : (
           'Cancel Subscription'

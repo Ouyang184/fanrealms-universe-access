@@ -1,4 +1,3 @@
-
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(
@@ -18,7 +17,7 @@ export async function handleCancelSubscription(
   console.log('Looking for subscription in creator_subscriptions table...');
   const { data: creatorSubscription, error: creatorSubError } = await supabaseService
     .from('creator_subscriptions')
-    .select('stripe_subscription_id, id, user_id, creator_id, status')
+    .select('stripe_subscription_id, id, user_id, creator_id, status, current_period_end')
     .eq('user_id', user.id)
     .eq('id', subscriptionId)
     .maybeSingle();
@@ -61,29 +60,42 @@ export async function handleCancelSubscription(
   // Cancel Stripe subscription if we have a stripe_subscription_id (only for creator_subscriptions)
   if (isCreatorSubscription && subscriptionData.stripe_subscription_id) {
     try {
-      console.log('Cancelling Stripe subscription:', subscriptionData.stripe_subscription_id);
-      await stripe.subscriptions.cancel(subscriptionData.stripe_subscription_id);
-      console.log('Stripe subscription cancelled successfully');
+      console.log('Cancelling Stripe subscription at period end:', subscriptionData.stripe_subscription_id);
+      
+      // Cancel at period end to honor billing cycle
+      const cancelledSubscription = await stripe.subscriptions.update(
+        subscriptionData.stripe_subscription_id,
+        {
+          cancel_at_period_end: true
+        }
+      );
+      
+      console.log('Stripe subscription cancelled at period end successfully');
+      console.log('Current period ends at:', new Date(cancelledSubscription.current_period_end * 1000));
+
+      // Update creator_subscriptions table - keep active but mark for cancellation
+      const { error: updateError } = await supabaseService
+        .from('creator_subscriptions')
+        .update({ 
+          status: 'cancelling', // New status to indicate cancellation scheduled
+          cancel_at: new Date(cancelledSubscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId);
+
+      if (updateError) {
+        console.error('Error updating creator_subscriptions status:', updateError);
+        return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
+      }
+
+      console.log('Subscription marked for cancellation at period end');
+
     } catch (stripeError) {
       console.error('Error cancelling Stripe subscription:', stripeError);
       return createJsonResponse({ error: 'Failed to cancel subscription' }, 500);
     }
-
-    // Update creator_subscriptions table
-    const { error: updateError } = await supabaseService
-      .from('creator_subscriptions')
-      .update({ 
-        status: 'cancelled',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', subscriptionId);
-
-    if (updateError) {
-      console.error('Error updating creator_subscriptions status:', updateError);
-      return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
-    }
   } else {
-    // Handle basic subscription (no Stripe integration)
+    // Handle basic subscription (no Stripe integration) - immediate cancellation
     console.log('Handling basic subscription cancellation (no Stripe)');
     
     // Just remove from subscriptions table
@@ -101,7 +113,10 @@ export async function handleCancelSubscription(
     console.log('Basic subscription removed successfully');
   }
 
-  console.log('Subscription cancelled successfully');
+  console.log('Subscription cancellation processed successfully');
 
-  return createJsonResponse({ success: true });
+  return createJsonResponse({ 
+    success: true,
+    message: isCreatorSubscription ? 'Subscription will be cancelled at the end of your current billing period' : 'Subscription cancelled immediately'
+  });
 }

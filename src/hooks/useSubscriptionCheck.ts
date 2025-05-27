@@ -21,7 +21,7 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('status', 'active');
+        .in('status', ['active', 'cancelling']); // Include cancelling status
 
       if (creatorSubError && creatorSubError.code !== 'PGRST116') {
         console.error('Error checking creator_subscriptions:', creatorSubError);
@@ -33,11 +33,30 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
         const tierSpecificSub = creatorSubs.find(sub => sub.tier_id === tierId);
         if (tierSpecificSub) {
           console.log('Found tier-specific subscription:', tierSpecificSub);
-          return { isSubscribed: true, source: 'creator_subscriptions', data: tierSpecificSub };
+          
+          // Check if subscription is still active (not past cancel_at date)
+          const isStillActive = !tierSpecificSub.cancel_at || new Date() < new Date(tierSpecificSub.cancel_at);
+          
+          return { 
+            isSubscribed: isStillActive, 
+            source: 'creator_subscriptions', 
+            data: tierSpecificSub,
+            isCancelling: tierSpecificSub.status === 'cancelling',
+            cancelAt: tierSpecificSub.cancel_at
+          };
         }
         // If no tier-specific sub found, user is subscribed to creator but different tier
         console.log('User subscribed to creator but different tier');
-        return { isSubscribed: true, source: 'creator_subscriptions', data: creatorSubs[0] };
+        const firstSub = creatorSubs[0];
+        const isStillActive = !firstSub.cancel_at || new Date() < new Date(firstSub.cancel_at);
+        
+        return { 
+          isSubscribed: isStillActive, 
+          source: 'creator_subscriptions', 
+          data: firstSub,
+          isCancelling: firstSub.status === 'cancelling',
+          cancelAt: firstSub.cancel_at
+        };
       }
 
       // Check subscriptions table as fallback
