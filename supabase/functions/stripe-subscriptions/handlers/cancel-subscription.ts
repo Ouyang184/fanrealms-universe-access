@@ -85,57 +85,87 @@ export async function handleCancelSubscription(
   // Handle single subscription cancellation
   console.log('Cancelling single subscription:', subscriptionId);
 
-  // First find the subscription in our database
-  const { data: subscription, error: subError } = await supabaseService
+  // First try to find the subscription in creator_subscriptions table
+  const { data: stripeSubscription, error: stripeSubError } = await supabaseService
     .from('creator_subscriptions')
     .select('*')
     .eq('id', subscriptionId)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (subError || !subscription) {
-    console.error('Subscription not found:', subError);
+  if (stripeSubError) {
+    console.error('Error querying creator_subscriptions:', stripeSubError);
+  }
+
+  if (stripeSubscription) {
+    console.log('Found Stripe subscription to cancel:', stripeSubscription.id);
+
+    // Cancel in Stripe
+    if (stripeSubscription.stripe_subscription_id) {
+      try {
+        console.log('Cancelling Stripe subscription:', stripeSubscription.stripe_subscription_id);
+        await stripe.subscriptions.cancel(stripeSubscription.stripe_subscription_id);
+        console.log('Stripe subscription cancelled successfully');
+      } catch (stripeError) {
+        console.error('Error cancelling Stripe subscription:', stripeError);
+        // Continue with database cleanup even if Stripe fails
+      }
+    }
+
+    // Remove from creator_subscriptions table completely
+    const { error: deleteError } = await supabaseService
+      .from('creator_subscriptions')
+      .delete()
+      .eq('id', subscriptionId)
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      console.error('Error deleting creator subscription:', deleteError);
+      return createJsonResponse({ error: 'Failed to cancel subscription' }, 500);
+    }
+
+    console.log('Stripe subscription cancelled and removed successfully');
+
+    return createJsonResponse({ 
+      success: true,
+      message: 'Subscription has been cancelled and removed'
+    });
+  }
+
+  // If not found in creator_subscriptions, try basic subscriptions table
+  console.log('Not found in creator_subscriptions, checking basic subscriptions...');
+  const { data: basicSubscription, error: basicSubError } = await supabaseService
+    .from('subscriptions')
+    .select('*')
+    .eq('id', subscriptionId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (basicSubError) {
+    console.error('Error querying basic subscriptions:', basicSubError);
+    return createJsonResponse({ error: 'Failed to find subscription' }, 500);
+  }
+
+  if (!basicSubscription) {
+    console.error('Subscription not found in either table');
     return createJsonResponse({ error: 'Subscription not found' }, 404);
   }
 
-  console.log('Found subscription to cancel:', subscription.id);
+  console.log('Found basic subscription to cancel:', basicSubscription.id);
 
-  // Cancel in Stripe
-  if (subscription.stripe_subscription_id) {
-    try {
-      console.log('Cancelling Stripe subscription:', subscription.stripe_subscription_id);
-      await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
-      console.log('Stripe subscription cancelled successfully');
-    } catch (stripeError) {
-      console.error('Error cancelling Stripe subscription:', stripeError);
-      // Continue with database cleanup even if Stripe fails
-    }
-  }
-
-  // Remove from creator_subscriptions table completely
-  const { error: deleteError } = await supabaseService
-    .from('creator_subscriptions')
+  // Remove from basic subscriptions table
+  const { error: deleteBasicError } = await supabaseService
+    .from('subscriptions')
     .delete()
     .eq('id', subscriptionId)
     .eq('user_id', user.id);
 
-  if (deleteError) {
-    console.error('Error deleting creator subscription:', deleteError);
+  if (deleteBasicError) {
+    console.error('Error deleting basic subscription:', deleteBasicError);
     return createJsonResponse({ error: 'Failed to cancel subscription' }, 500);
   }
 
-  // Also remove from basic subscriptions table
-  const { error: basicDeleteError } = await supabaseService
-    .from('subscriptions')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('creator_id', subscription.creator_id);
-
-  if (basicDeleteError) {
-    console.error('Error deleting basic subscription:', basicDeleteError);
-  }
-
-  console.log('Subscription cancelled and removed successfully');
+  console.log('Basic subscription cancelled and removed successfully');
 
   return createJsonResponse({ 
     success: true,
