@@ -46,7 +46,7 @@ export function ActiveSubscribeButton({
       if (result?.error) {
         console.error('ActiveSubscribeButton: Server returned error:', result.error);
         
-        // Check if it's an existing subscription error (409 Conflict)
+        // Check if it's an existing subscription error
         if (result.error.includes('already have an active subscription') || 
             result.error.includes('existing subscription') ||
             result.shouldRefresh) {
@@ -126,6 +126,29 @@ export function ActiveSubscribeButton({
       }
     } catch (error) {
       console.error('ActiveSubscribeButton: Subscription error:', error);
+      
+      // Handle the case where we have an existing subscription but it threw an error
+      if (error instanceof Error && error.message.includes('already have an active subscription')) {
+        // Refresh all subscription-related data immediately
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
+          queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+          queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+        ]);
+
+        toast({
+          title: "Already Subscribed",
+          description: "You already have an active subscription to this creator. The page will refresh to show your current subscription status.",
+        });
+        
+        // Force a page refresh after a short delay to ensure UI updates
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+        return;
+      }
       
       // Extract a meaningful error message
       let errorMessage = "Failed to create subscription. Please try again.";
