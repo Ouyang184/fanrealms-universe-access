@@ -36,6 +36,9 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
 import { useDeletePost } from "@/hooks/useDeletePost";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -297,6 +300,9 @@ export default function CreatorPostsPage() {
 function PostCard({ post }: { post: CreatorPost }) {
   const navigate = useNavigate();
   const { deletePost, isDeleting } = useDeletePost();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isPublishing, setIsPublishing] = useState(false);
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -311,6 +317,43 @@ function PostCard({ post }: { post: CreatorPost }) {
       return;
     }
     deletePost(post.id);
+  };
+
+  const handlePublishPost = async () => {
+    if (!post.id) {
+      console.error('No post ID provided');
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .update({ 
+          title: post.title.replace(/\bdraft\b/gi, '').trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', post.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Post published",
+        description: "Your post has been published successfully.",
+      });
+
+      // Refresh the posts list
+      queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
+    } catch (error: any) {
+      console.error('Error publishing post:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to publish post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPublishing(false);
+    }
   };
   
   const getStatusBadgeStyles = (status: string) => {
@@ -487,9 +530,18 @@ function PostCard({ post }: { post: CreatorPost }) {
             <Edit className="h-4 w-4 mr-2" />
             Continue Editing
           </Button>
-          <Button>
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Publish
+          <Button onClick={handlePublishPost} disabled={isPublishing}>
+            {isPublishing ? (
+              <>
+                <Loader className="h-4 w-4 mr-2 animate-spin" />
+                Publishing...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Publish
+              </>
+            )}
           </Button>
         </CardFooter>
       )}
