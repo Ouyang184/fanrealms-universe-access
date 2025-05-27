@@ -9,71 +9,46 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Lock, AlertCircle } from 'lucide-react';
 
-// Initialize Stripe with proper error handling
-const getStripePromise = () => {
-  const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+// Get Stripe publishable key from environment variables
+const getStripePublishableKey = () => {
+  // Try multiple ways to get the key
+  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
+             window.env?.VITE_STRIPE_PUBLISHABLE_KEY;
   
-  if (!publishableKey) {
-    console.error('Stripe publishable key is not set in environment variables');
-    return null;
-  }
+  console.log('Stripe publishable key check:', {
+    fromImportMeta: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
+    fromWindow: window.env?.VITE_STRIPE_PUBLISHABLE_KEY,
+    finalKey: key ? key.substring(0, 20) + '...' : 'NOT FOUND'
+  });
   
-  console.log('Initializing Stripe with key:', publishableKey.substring(0, 20) + '...');
-  return loadStripe(publishableKey);
+  return key;
 };
 
-const stripePromise = getStripePromise();
+// Initialize Stripe
+const stripePublishableKey = getStripePublishableKey();
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
-  const [stripeError, setStripeError] = useState<string | null>(null);
+  const [elementError, setElementError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
-  // Check Stripe initialization
+  // Debug Stripe initialization
   useEffect(() => {
-    if (!stripePromise) {
-      setStripeError('Stripe is not properly configured. Please check the publishable key.');
-      return;
-    }
-
-    const checkStripeReady = async () => {
-      try {
-        const stripeInstance = await stripePromise;
-        if (!stripeInstance) {
-          setStripeError('Failed to initialize Stripe. Please refresh the page.');
-        }
-      } catch (error) {
-        console.error('Stripe initialization error:', error);
-        setStripeError('Error initializing payment system. Please try again.');
-      }
-    };
-
-    checkStripeReady();
-  }, []);
-
-  // Handle PaymentElement ready state
-  useEffect(() => {
-    if (!stripe || !elements) {
-      return;
-    }
-    
-    try {
-      const paymentElement = elements.getElement(PaymentElement);
-      if (paymentElement) {
-        console.log('PaymentElement is ready');
-        setPaymentElementReady(true);
-      }
-    } catch (error) {
-      console.error('Error checking PaymentElement:', error);
-      setStripeError('Error loading payment methods. Please refresh the page.');
-    }
-  }, [stripe, elements]);
+    console.log('Stripe initialization check:', {
+      stripePromise: !!stripePromise,
+      stripe: !!stripe,
+      elements: !!elements,
+      clientSecret: !!clientSecret,
+      publishableKey: stripePublishableKey ? stripePublishableKey.substring(0, 20) + '...' : 'NOT SET'
+    });
+  }, [stripe, elements, clientSecret]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -159,22 +134,24 @@ function CheckoutForm() {
     );
   }
 
-  if (stripeError) {
+  if (!stripePromise) {
     return (
       <MainLayout>
         <div className="max-w-2xl mx-auto py-20 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Payment System Error</h2>
-          <p className="text-muted-foreground mb-6">{stripeError}</p>
-          <div className="space-x-4">
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Refresh Page
-            </Button>
-            <Button onClick={() => navigate(-1)} variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
+          <h2 className="text-2xl font-bold mb-4">Stripe Configuration Error</h2>
+          <p className="text-muted-foreground mb-6">
+            Stripe publishable key is missing. Please set VITE_STRIPE_PUBLISHABLE_KEY in your environment variables.
+          </p>
+          <div className="bg-muted p-4 rounded-lg mb-6">
+            <p className="text-sm font-mono">
+              Current key: {stripePublishableKey || 'NOT SET'}
+            </p>
           </div>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
         </div>
       </MainLayout>
     );
@@ -234,8 +211,19 @@ function CheckoutForm() {
                 {/* Payment Method */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Payment method</h3>
+                  
+                  {/* Debug Information */}
+                  <div className="mb-4 p-3 bg-muted rounded-lg text-sm">
+                    <div className="font-semibold mb-2">Debug Info:</div>
+                    <div>Stripe loaded: {stripe ? '✅' : '❌'}</div>
+                    <div>Elements loaded: {elements ? '✅' : '❌'}</div>
+                    <div>Client secret: {clientSecret ? '✅' : '❌'}</div>
+                    <div>Publishable key: {stripePublishableKey ? '✅ Set' : '❌ Missing'}</div>
+                    {elementError && <div className="text-destructive">Error: {elementError}</div>}
+                  </div>
+
                   <div className="border rounded-lg p-6 bg-white min-h-[200px]">
-                    {stripe && elements && !stripeError ? (
+                    {stripe && elements && clientSecret ? (
                       <PaymentElement 
                         options={{
                           layout: "tabs",
@@ -249,12 +237,21 @@ function CheckoutForm() {
                           }
                         }}
                         onReady={() => {
-                          console.log('PaymentElement onReady triggered');
+                          console.log('PaymentElement ready');
                           setPaymentElementReady(true);
+                          setElementError(null);
                         }}
                         onLoadError={(error) => {
                           console.error('PaymentElement load error:', error);
-                          setStripeError('Failed to load payment methods. Please refresh the page.');
+                          setElementError(`Failed to load payment methods: ${error.message}`);
+                        }}
+                        onChange={(event) => {
+                          if (event.error) {
+                            console.error('PaymentElement error:', event.error);
+                            setElementError(event.error.message);
+                          } else {
+                            setElementError(null);
+                          }
                         }}
                       />
                     ) : (
@@ -262,7 +259,10 @@ function CheckoutForm() {
                         <div className="text-center">
                           <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
                           <span className="text-sm text-muted-foreground">
-                            {stripeError ? 'Error loading payment methods' : 'Loading payment methods...'}
+                            {!stripe ? 'Initializing Stripe...' : 
+                             !elements ? 'Loading Elements...' : 
+                             !clientSecret ? 'Missing client secret...' : 
+                             'Loading payment methods...'}
                           </span>
                         </div>
                       </div>
@@ -286,7 +286,7 @@ function CheckoutForm() {
                 <form onSubmit={handleSubmit}>
                   <Button 
                     type="submit" 
-                    disabled={!stripe || !paymentElementReady || isLoading || stripeError !== null}
+                    disabled={!stripe || !paymentElementReady || isLoading || !!elementError}
                     className="w-full"
                     size="lg"
                   >
@@ -363,6 +363,12 @@ export default function Payment() {
   const location = useLocation();
   const { clientSecret } = location.state || {};
 
+  console.log('Payment component rendered:', {
+    clientSecret: !!clientSecret,
+    stripePromise: !!stripePromise,
+    publishableKey: stripePublishableKey ? 'Set' : 'Missing'
+  });
+
   if (!clientSecret) {
     return (
       <MainLayout>
@@ -385,9 +391,9 @@ export default function Payment() {
       <MainLayout>
         <div className="max-w-2xl mx-auto py-20 text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Configuration Error</h2>
+          <h2 className="text-2xl font-bold mb-4">Stripe Configuration Error</h2>
           <p className="text-muted-foreground mb-6">
-            Stripe is not properly configured. Please contact support.
+            VITE_STRIPE_PUBLISHABLE_KEY is not set in environment variables.
           </p>
           <Button onClick={() => window.history.back()} variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
