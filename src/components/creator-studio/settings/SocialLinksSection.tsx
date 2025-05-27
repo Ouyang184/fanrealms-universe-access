@@ -45,10 +45,10 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       if (error) throw error;
       setLinks(data || []);
     } catch (error: any) {
-      console.error("Error fetching social links:", error);
+      console.error("Error fetching website links:", error);
       toast({
         title: "Error",
-        description: "Failed to load social links",
+        description: "Failed to load website links",
         variant: "destructive",
       });
     } finally {
@@ -161,16 +161,16 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
 
       toast({
         title: "Success",
-        description: "Social links updated successfully",
+        description: "Website links updated successfully",
       });
 
       // Refetch to get the updated links with IDs
       fetchLinks();
     } catch (error: any) {
-      console.error("Error saving social links:", error);
+      console.error("Error saving website links:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save social links",
+        description: error.message || "Failed to save website links",
         variant: "destructive",
       });
     } finally {
@@ -192,7 +192,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Social Links</CardTitle>
+        <CardTitle>Website Links</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading ? (
@@ -200,7 +200,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
         ) : (
           <div className="space-y-4">
             {links.length === 0 ? (
-              <p className="text-muted-foreground">No social links added yet.</p>
+              <p className="text-muted-foreground">No website links added yet.</p>
             ) : (
               links.map((link, index) => (
                 <div key={link.id || index} className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
                     <Label htmlFor={`link-label-${index}`}>Label</Label>
                     <Input
                       id={`link-label-${index}`}
-                      placeholder="e.g., Twitter, Instagram"
+                      placeholder="e.g., Portfolio, Blog, Store"
                       value={link.label}
                       onChange={(e) => updateLink(index, "label", e.target.value)}
                     />

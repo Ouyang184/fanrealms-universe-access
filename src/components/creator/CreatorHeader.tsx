@@ -151,9 +151,9 @@ export function CreatorHeader({
             </div>
           )}
           
-          {/* Social links */}
+          {/* Website links */}
           <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Social Links</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Website Links</h3>
             <SocialLinks 
               creatorId={creator.id} 
               variant="outline" 

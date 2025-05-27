@@ -93,7 +93,7 @@ export default function CreatorStudioSettings() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="social">Social Links</TabsTrigger>
+          <TabsTrigger value="website">Website</TabsTrigger>
           <TabsTrigger value="banner">Banner</TabsTrigger>
         </TabsList>
 
@@ -110,7 +110,7 @@ export default function CreatorStudioSettings() {
           <StripeConnectSection />
         </TabsContent>
 
-        <TabsContent value="social" className="space-y-6">
+        <TabsContent value="website" className="space-y-6">
           <SocialLinksSection creatorId={settings.id} />
         </TabsContent>
 
