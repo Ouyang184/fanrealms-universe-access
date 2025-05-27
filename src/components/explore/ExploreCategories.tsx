@@ -20,8 +20,8 @@ export function ExploreCategories() {
       console.log('Navigating to /explore/all');
       navigate("/explore/all");
     } else {
-      console.log('Navigating to /explore with category:', category);
-      navigate(`/explore?category=${category}`);
+      console.log('Navigating to /explore/ with category:', category);
+      navigate(`/explore/${category}`);
     }
   };
 
@@ -39,7 +39,7 @@ export function ExploreCategories() {
           <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
             <DropdownMenuItem 
               onClick={() => {
-                console.log('All Categories clicked');
+                console.log('All Categories clicked - should navigate to /explore/all');
                 handleCategorySelect("all");
               }}
               className="cursor-pointer"
