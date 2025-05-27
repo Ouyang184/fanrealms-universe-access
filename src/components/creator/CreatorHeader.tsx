@@ -43,6 +43,13 @@ export function CreatorHeader({
     ? optimisticFollowerCount 
     : creator.follower_count || 0;
 
+  console.log("CreatorHeader render:", {
+    creatorFollowerCount: creator.follower_count,
+    optimisticFollowerCount,
+    displayFollowerCount,
+    isFollowing
+  });
+
   return (
     <div className="relative">
       {/* Banner Image */}
