@@ -1,3 +1,4 @@
+
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleSyncAllSubscriptions(
@@ -23,7 +24,6 @@ export async function handleSyncAllSubscriptions(
 
     let syncedCount = 0;
     let cleanedCount = 0;
-    let pendingCount = 0;
 
     for (const sub of allSubs || []) {
       if (sub.stripe_subscription_id) {
@@ -31,8 +31,6 @@ export async function handleSyncAllSubscriptions(
           const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
           
           const isActive = stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end;
-          const isIncompleteButRecent = stripeSubscription.status === 'incomplete' && 
-            (Date.now() - (stripeSubscription.created * 1000)) < 3600000; // 1 hour
           
           if (isActive) {
             // Update subscription with latest Stripe data
@@ -61,22 +59,8 @@ export async function handleSyncAllSubscriptions(
               });
 
             syncedCount++;
-          } else if (isIncompleteButRecent) {
-            // Keep incomplete but recent subscriptions (pending payment)
-            await supabaseService
-              .from('creator_subscriptions')
-              .update({
-                status: 'pending',
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', sub.id);
-            
-            pendingCount++;
-            console.log('Keeping pending subscription:', sub.stripe_subscription_id);
           } else {
-            // Remove inactive/old incomplete subscriptions
-            console.log('Removing inactive subscription:', sub.stripe_subscription_id, 'status:', stripeSubscription.status);
-            
+            // Remove inactive subscriptions
             await supabaseService
               .from('creator_subscriptions')
               .delete()
@@ -93,8 +77,6 @@ export async function handleSyncAllSubscriptions(
         } catch (stripeError) {
           if (stripeError.code === 'resource_missing') {
             // Subscription doesn't exist in Stripe, clean up
-            console.log('Cleaning up subscription that no longer exists in Stripe:', sub.stripe_subscription_id);
-            
             await supabaseService
               .from('creator_subscriptions')
               .delete()
@@ -114,14 +96,13 @@ export async function handleSyncAllSubscriptions(
       }
     }
 
-    console.log('Sync complete:', { syncedCount, cleanedCount, pendingCount });
+    console.log('Sync complete:', { syncedCount, cleanedCount });
 
     return createJsonResponse({
       success: true,
       syncedCount,
       cleanedCount,
-      pendingCount,
-      message: `Synced ${syncedCount} active, ${pendingCount} pending, cleaned ${cleanedCount} stale records`
+      message: `Synced ${syncedCount} subscriptions, cleaned ${cleanedCount} stale records`
     });
 
   } catch (error) {

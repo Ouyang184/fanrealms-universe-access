@@ -19,6 +19,9 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
         creatorId 
       });
 
+      // Get Stripe secret key to verify subscriptions directly with Stripe
+      const stripeKey = process.env.NODE_ENV === 'development' ? 'sk_test_...' : 'sk_live_...';
+
       // Check both tables for any subscription records
       const [creatorSubsResult, basicSubsResult] = await Promise.all([
         supabase
@@ -65,20 +68,13 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
               }
             });
 
-            if (verifyError) {
-              console.error('Error verifying subscription:', verifyError);
+            if (verifyError || !verifyResult?.isActive) {
+              console.log('Subscription not active in Stripe, marking as stale:', sub.id);
               staleRecords.push(sub);
-            } else if (verifyResult?.isActive || verifyResult?.isPendingPayment) {
-              console.log('Found active or pending subscription:', sub.id, 'status:', verifyResult.status);
-              activeSubscription = {
-                ...sub,
-                stripeStatus: verifyResult.status,
-                isPendingPayment: verifyResult.isPendingPayment
-              };
+            } else if (verifyResult.isActive && !verifyResult.cancelAtPeriodEnd) {
+              console.log('Found truly active subscription:', sub.id);
+              activeSubscription = sub;
               break;
-            } else {
-              console.log('Subscription not active, marking as stale:', sub.id, 'status:', verifyResult?.status);
-              staleRecords.push(sub);
             }
           } catch (error) {
             console.error('Error verifying subscription with Stripe:', error);
@@ -113,19 +109,18 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
       }
 
       if (activeSubscription) {
-        console.log('useSubscriptionCheck: Found active/pending subscription');
+        console.log('useSubscriptionCheck: Found active subscription');
         return {
-          isSubscribed: !activeSubscription.isPendingPayment, // Only true if fully active
-          isPendingPayment: activeSubscription.isPendingPayment,
+          isSubscribed: true,
           data: activeSubscription
         };
       }
 
       console.log('useSubscriptionCheck: No active subscription found');
-      return { isSubscribed: false, isPendingPayment: false, data: null };
+      return { isSubscribed: false, data: null };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 10000, // 10 seconds - more frequent checks
+    staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
