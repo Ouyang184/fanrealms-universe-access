@@ -14,6 +14,7 @@ export default function CreatorStudioSettings() {
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
   const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
 
   if (isLoading) {
     return (
@@ -63,12 +64,10 @@ export default function CreatorStudioSettings() {
   };
 
   const handleSaveChanges = async () => {
-    if (Object.keys(pendingChanges).length === 0) {
-      return;
-    }
-
     setIsSaving(true);
     try {
+      // Always attempt to save, even if there are no pending changes
+      // This ensures the user can save their current state
       await updateSettings(pendingChanges);
       setPendingChanges({});
     } catch (error) {
@@ -80,7 +79,8 @@ export default function CreatorStudioSettings() {
 
   // Merge current settings with pending changes for display
   const displaySettings = { ...settings, ...pendingChanges };
-  const hasChanges = Object.keys(pendingChanges).length > 0;
+  // Allow saving even with no changes - user should be able to confirm current state
+  const canSave = !isSaving;
 
   return (
     <div className="space-y-8">
@@ -89,7 +89,7 @@ export default function CreatorStudioSettings() {
         <p className="text-muted-foreground">Manage your creator profile and account settings</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-8">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -123,11 +123,11 @@ export default function CreatorStudioSettings() {
         </TabsContent>
       </Tabs>
 
-      {/* Save Changes Button */}
+      {/* Save Changes Button - Always available for main settings */}
       <div className="flex justify-end pt-6 border-t">
         <Button 
           onClick={handleSaveChanges}
-          disabled={!hasChanges || isSaving}
+          disabled={!canSave}
           className="min-w-[120px]"
         >
           <Save className="mr-2 h-4 w-4" />
