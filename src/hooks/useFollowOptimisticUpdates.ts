@@ -36,6 +36,7 @@ export function useFollowOptimisticUpdates() {
     setIsFollowing: (value: boolean) => void,
     setOptimisticFollowerCount: (value: number | null) => void
   ) => {
+    console.log("Reverting optimistic update back to:", originalCount, originalFollowState);
     setIsFollowing(originalFollowState);
     setOptimisticFollowerCount(null);
     
@@ -50,43 +51,31 @@ export function useFollowOptimisticUpdates() {
     });
   };
 
-  const clearOptimisticStateAfterDelay = (
+  const finalizeMutationAfterSuccess = (
     creatorId: string,
-    setOptimisticFollowerCount: (value: number | null) => void,
-    isUnfollow: boolean = false
+    newFollowState: boolean,
+    setOptimisticFollowerCount: (value: number | null) => void
   ) => {
-    const delay = isUnfollow ? 1500 : 2000;
+    console.log("Finalizing mutation for creator:", creatorId, "new follow state:", newFollowState);
     
+    // Wait a bit for the server to process the change, then invalidate to get fresh data
     setTimeout(() => {
-      if (isUnfollow) {
-        // Force a fresh fetch to get the actual count from the server
-        queryClient.invalidateQueries({ queryKey: ["creatorProfile", creatorId] });
-      }
-      
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: ["creatorProfile"] });
+      console.log("Invalidating queries after successful mutation");
+      queryClient.invalidateQueries({ queryKey: ["creatorProfile", creatorId] });
       queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] });
-      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      queryClient.invalidateQueries({ queryKey: ["creators"] });
-      queryClient.invalidateQueries({ queryKey: ["followedCreators"] });
       queryClient.invalidateQueries({ queryKey: ["follows"] });
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
-      queryClient.invalidateQueries({ queryKey: ["conversations"] });
       
-      if (isUnfollow) {
-        // Clear optimistic state only after cache is refreshed
-        setTimeout(() => {
-          setOptimisticFollowerCount(null);
-        }, 500);
-      } else {
+      // Clear optimistic state after a longer delay to ensure server has processed
+      setTimeout(() => {
+        console.log("Clearing optimistic state");
         setOptimisticFollowerCount(null);
-      }
-    }, delay);
+      }, 1000);
+    }, 2000);
   };
 
   return {
     applyOptimisticFollowUpdate,
     revertOptimisticUpdate,
-    clearOptimisticStateAfterDelay,
+    finalizeMutationAfterSuccess,
   };
 }
