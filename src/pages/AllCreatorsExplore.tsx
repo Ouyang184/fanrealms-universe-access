@@ -98,71 +98,59 @@ export default function AllCreatorsExplorePage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header Section */}
+        {/* Hero Section */}
         <section className="mb-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
+          <div className="relative rounded-xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
+            <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
+            <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
               <h1 className="text-4xl font-bold mb-2">All Creators</h1>
-              <p className="text-xl text-gray-400">
+              <p className="text-xl text-gray-200 max-w-2xl mb-6">
                 Discover amazing creators and exclusive content across all categories
               </p>
+              <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search for creators, content, or topics..."
+                    className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search
+                </Button>
+              </div>
             </div>
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
-              <ChevronLeft className="h-4 w-4" />
-              Back to All
-            </Button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search creators..."
-              className="pl-10 bg-gray-900/50 border-gray-700 focus-visible:ring-purple-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
           </div>
         </section>
 
-        {/* Filters Section */}
+        {/* Back to Explore Button */}
         <section className="mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/30 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 bg-gray-800 border-gray-700">
-                    <Filter className="h-4 w-4" />
-                    Content Type
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-gray-900 border-gray-800">
-                  <DropdownMenuItem>All Content</DropdownMenuItem>
-                  <DropdownMenuItem>Videos</DropdownMenuItem>
-                  <DropdownMenuItem>Images</DropdownMenuItem>
-                  <DropdownMenuItem>Articles</DropdownMenuItem>
-                  <DropdownMenuItem>Audio</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="flex items-center justify-end">
+            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
+              <ChevronLeft className="h-4 w-4" />
+              Back to Explore
+            </Button>
+          </div>
+        </section>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2 bg-gray-800 border-gray-700">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    More Filters
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="bg-gray-900 border-gray-800">
-                  <DropdownMenuItem>Price Range</DropdownMenuItem>
-                  <DropdownMenuItem>Rating</DropdownMenuItem>
-                  <DropdownMenuItem>Language</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {/* Filtering and Sorting */}
+        <section className="mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center">
+                <SlidersHorizontal className="h-5 w-5 mr-2 text-purple-400" />
+                <span className="mr-3 font-medium">Filters:</span>
+              </div>
             </div>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 bg-gray-800 border-gray-700">
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Filter className="h-4 w-4" />
                   Sort: {sortOption === "top-rated" ? "Top Rated" : sortOption === "newest" ? "Newest" : "Most Popular"}
                 </Button>
               </DropdownMenuTrigger>
@@ -187,19 +175,22 @@ export default function AllCreatorsExplorePage() {
           </div>
         </section>
 
-        {/* Results Count and Creators Grid */}
+        {/* Creators Grid */}
         <section className="mb-10">
-          <div className="mb-6">
-            <h2 className="text-lg font-medium text-gray-300">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">
               {isLoadingCreators 
                 ? "Loading creators..." 
-                : `${displayCreators.length} results`}
+                : `${displayCreators.length} Creators`}
             </h2>
+            <Button variant="link" className="text-purple-400">
+              View All <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
 
           {isLoadingCreators ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {Array(6).fill(0).map((_, i) => (
                 <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
                   <div className="h-32 bg-gray-800" />
                   <CardContent className="pt-0 -mt-12 p-6">
@@ -221,7 +212,7 @@ export default function AllCreatorsExplorePage() {
               ))}
             </div>
           ) : displayCreators.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {displayCreators.map((creator) => {
                 const creatorLink = creator.username 
                   ? `/creator/${creator.username}` 
@@ -232,7 +223,7 @@ export default function AllCreatorsExplorePage() {
                 const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
                 
                 return (
-                  <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden hover:bg-gray-800/50 transition-colors">
+                  <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                     <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
                       {creator.banner_url && (
                         <img
@@ -259,7 +250,7 @@ export default function AllCreatorsExplorePage() {
 
                       <div className="flex flex-wrap gap-2 mt-3">
                         {getCreatorTags(creator).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700 text-xs">
+                          <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
                             {tag}
                           </Badge>
                         ))}
@@ -273,8 +264,8 @@ export default function AllCreatorsExplorePage() {
                             <span className="font-medium text-white">Free</span>
                           )}
                         </div>
-                        <Button size="sm" className="bg-purple-600 hover:bg-purple-700" asChild>
-                          <a href={creatorLink}>View</a>
+                        <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+                          <a href={creatorLink}>View Creator</a>
                         </Button>
                       </div>
                     </CardContent>
