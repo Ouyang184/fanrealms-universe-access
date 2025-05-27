@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -30,10 +30,12 @@ function CheckoutForm() {
     setIsLoading(true);
 
     try {
+      console.log('Starting payment confirmation...');
+      
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success`,
+          return_url: `${window.location.origin}/creator/${creatorId}`,
         },
         redirect: 'if_required'
       });
@@ -48,24 +50,25 @@ function CheckoutForm() {
       } else {
         console.log('Payment successful!', result.paymentIntent);
         
-        // Dispatch immediate success events
-        window.dispatchEvent(new CustomEvent('paymentSuccess', {
-          detail: { creatorId, tierId, paymentIntent: result.paymentIntent }
-        }));
-        
-        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-          detail: { creatorId, tierId }
-        }));
-        
         toast({
           title: "Payment successful!",
           description: `You've successfully subscribed to ${tierName}`,
         });
 
-        // Wait a moment for events to propagate, then navigate
+        // Give some time for webhooks to process
         setTimeout(() => {
+          // Dispatch events for UI updates
+          window.dispatchEvent(new CustomEvent('paymentSuccess', {
+            detail: { creatorId, tierId, paymentIntent: result.paymentIntent }
+          }));
+          
+          window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+            detail: { creatorId, tierId }
+          }));
+          
+          // Navigate back to creator page
           navigate(`/creator/${creatorId}`, { replace: true });
-        }, 1000);
+        }, 2000);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -87,7 +90,10 @@ function CheckoutForm() {
           <p className="text-muted-foreground mb-6">
             The payment session is invalid or has expired.
           </p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
         </div>
       </MainLayout>
     );
@@ -96,6 +102,17 @@ function CheckoutForm() {
   return (
     <MainLayout>
       <div className="max-w-2xl mx-auto py-10">
+        <div className="mb-6">
+          <Button 
+            onClick={() => navigate(-1)} 
+            variant="ghost" 
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </div>
+        
         <Card>
           <CardHeader>
             <CardTitle>Complete Your Subscription</CardTitle>
@@ -105,21 +122,35 @@ function CheckoutForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <PaymentElement />
+              <div className="p-4 border rounded-lg">
+                <PaymentElement 
+                  options={{
+                    layout: "tabs"
+                  }}
+                />
+              </div>
+              
               <Button 
                 type="submit" 
                 disabled={!stripe || isLoading}
                 className="w-full"
+                size="lg"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    Processing Payment...
                   </>
                 ) : (
                   `Subscribe for $${(amount / 100).toFixed(2)}/month`
                 )}
               </Button>
+              
+              <div className="text-xs text-muted-foreground text-center">
+                <p>• Secure payment processed by Stripe</p>
+                <p>• Cancel anytime from your subscription settings</p>
+                <p>• 5% platform fee included</p>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -137,9 +168,13 @@ export default function Payment() {
       <MainLayout>
         <div className="max-w-2xl mx-auto py-20 text-center">
           <h2 className="text-2xl font-bold mb-4">Payment Session Required</h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             Please start the subscription process from a creator's page.
           </p>
+          <Button onClick={() => window.history.back()} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
         </div>
       </MainLayout>
     );
@@ -149,6 +184,9 @@ export default function Payment() {
     clientSecret,
     appearance: {
       theme: 'stripe' as const,
+      variables: {
+        colorPrimary: '#000000',
+      },
     },
   };
 
