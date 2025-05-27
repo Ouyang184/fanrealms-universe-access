@@ -1,31 +1,40 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
 
 export function SearchBar() {
-  const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const searchRef = useRef<HTMLDivElement>(null);
   
   // Only search when there's a search term
   const { data: creators = [], isLoading } = useCreators(searchTerm);
 
-  const handleOpenSearch = () => {
-    setOpen(true);
-  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Show dropdown when there's search term and results
+  useEffect(() => {
+    setIsOpen(searchTerm.length > 0);
+  }, [searchTerm, creators]);
 
   const handleCreatorSelect = (creatorId: string) => {
     const creator = creators.find(c => c.id === creatorId);
@@ -44,53 +53,64 @@ export function SearchBar() {
     
     console.log(`Header SearchBar: Navigating to creator profile for: "${routeIdentifier}" (${creator.display_name || 'No Display Name'})`);
     
-    setOpen(false);
+    setIsOpen(false);
     setSearchTerm(""); // Clear search term after selection
     
     // Navigate to the creator profile page
     navigate(`/creator/${routeIdentifier}`);
   };
 
-  const handleSearchInput = (value: string) => {
-    setSearchTerm(value);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleInputFocus = () => {
+    if (searchTerm.length > 0) {
+      setIsOpen(true);
+    }
   };
 
   return (
-    <div className="relative flex-1 max-w-xl">
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+    <div className="relative flex-1 max-w-xl" ref={searchRef}>
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
       <Input
         placeholder="Search for creators, posts, or content..."
-        className="pl-10"
-        onClick={handleOpenSearch}
-        readOnly
+        className="pl-10 pr-20"
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={handleInputFocus}
       />
       <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
         <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
         <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
       </div>
       
-      <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput 
-          placeholder="Search by username or display name..."
-          onValueChange={handleSearchInput}
-          value={searchTerm}
-        />
-        <CommandList>
-          <CommandEmpty>
-            {isLoading ? 
-              <div className="py-6 flex items-center justify-center">
-                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
-                <span>Searching...</span>
+      {/* Search Results Dropdown */}
+      {isOpen && (
+        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-50 shadow-lg border">
+          {isLoading ? (
+            <div className="p-4 flex items-center justify-center">
+              <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+              <span>Searching...</span>
+            </div>
+          ) : searchTerm.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground text-center">
+              Start typing to search for creators...
+            </div>
+          ) : creators.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground text-center">
+              No creators found.
+            </div>
+          ) : (
+            <div className="p-2">
+              <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
+                Creators
               </div>
-            : searchTerm.length === 0 ? "Start typing to search for creators..." : "No creators found."}
-          </CommandEmpty>
-          {searchTerm.length > 0 && (
-            <CommandGroup heading="Creators">
               {creators.map((creator) => (
-                <CommandItem
+                <div
                   key={creator.id}
-                  onSelect={() => handleCreatorSelect(creator.id)}
-                  className="flex items-center gap-2 p-2 cursor-pointer"
+                  onClick={() => handleCreatorSelect(creator.id)}
+                  className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
@@ -99,17 +119,17 @@ export function SearchBar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                    <span className="font-medium text-sm">{creator.display_name || creator.username || 'Unknown Creator'}</span>
                     {creator.username && (
                       <span className="text-xs text-muted-foreground">@{creator.username}</span>
                     )}
                   </div>
-                </CommandItem>
+                </div>
               ))}
-            </CommandGroup>
+            </div>
           )}
-        </CommandList>
-      </CommandDialog>
+        </Card>
+      )}
     </div>
   );
 }
