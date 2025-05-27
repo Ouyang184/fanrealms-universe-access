@@ -47,7 +47,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
         <h2 className="text-2xl font-bold">
           {categoryFilter ? `${categoryFilter} Creators` : 'Featured Creators'}
         </h2>
-        <Link to="/explore/featured">
+        <Link to="/explore/all">
           <Button variant="link" className="text-purple-400">
             View All <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
