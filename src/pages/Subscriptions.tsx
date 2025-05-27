@@ -24,10 +24,21 @@ export default function SubscriptionsPage() {
 
     const handleSubscriptionUpdate = async () => {
       console.log('Subscription update event detected on subscriptions page');
-      await refetchSubscriptions();
+      setIsRefreshing(true);
+      try {
+        await refetchSubscriptions();
+        toast({
+          title: "Updated",
+          description: "Subscription data has been refreshed",
+        });
+      } catch (error) {
+        console.error('Error refreshing on subscription update:', error);
+      } finally {
+        setIsRefreshing(false);
+      }
     };
 
-    // Listen for subscription events
+    // Listen for subscription events with more immediate response
     window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
     window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
     window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
@@ -48,7 +59,7 @@ export default function SubscriptionsPage() {
       window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [refetchSubscriptions]);
+  }, [refetchSubscriptions, toast]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -71,7 +82,7 @@ export default function SubscriptionsPage() {
     }
   };
 
-  if (subscriptionsLoading) {
+  if (subscriptionsLoading && !isRefreshing) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -123,7 +134,7 @@ export default function SubscriptionsPage() {
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {isRefreshing ? 'Updating...' : 'Refresh'}
             </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Filter className="h-4 w-4" />
@@ -141,7 +152,7 @@ export default function SubscriptionsPage() {
         <Tabs defaultValue="subscriptions" className="mb-8">
           <TabsList className="w-full md:w-auto">
             <TabsTrigger value="subscriptions">
-              Active Subscriptions
+              Active Subscriptions ({userSubscriptions?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="billing">
               Billing History

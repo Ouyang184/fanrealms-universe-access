@@ -6,6 +6,7 @@ import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -24,6 +25,7 @@ export function ActiveSubscribeButton({
   const { createSubscription, isProcessing } = useCreateSubscription();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -56,11 +58,39 @@ export function ActiveSubscribeButton({
             creatorId
           }
         });
+      } else if (result?.subscriptionId) {
+        // Direct subscription success - refresh all data immediately
+        console.log('ActiveSubscribeButton: Direct subscription success, refreshing data');
+        
+        // Invalidate all subscription-related queries
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+          queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+        ]);
+
+        // Force refetch with no cache
+        await Promise.all([
+          queryClient.refetchQueries({ queryKey: ['userActiveSubscriptions'] }),
+          queryClient.refetchQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
+        ]);
+
+        // Trigger global subscription events
+        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+          detail: { tierId, creatorId, tierName, subscriptionId: result.subscriptionId }
+        }));
+
+        toast({
+          title: "Subscription Successful!",
+          description: `You are now subscribed to ${tierName}.`,
+        });
       } else {
-        console.error('ActiveSubscribeButton: No client secret received');
+        console.error('ActiveSubscribeButton: Unexpected result format');
         toast({
           title: "Error",
-          description: "Failed to initialize payment. Please try again.",
+          description: "Subscription creation completed but status is unclear. Please refresh the page.",
           variant: "destructive"
         });
       }
@@ -69,16 +99,17 @@ export function ActiveSubscribeButton({
       
       // Check if it's the "already subscribed" error
       if (error instanceof Error && error.message.includes('already have an active subscription')) {
+        // Force refresh subscription data
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
+        ]);
+
         toast({
           title: "Already Subscribed",
           description: "You already have an active subscription to this creator.",
           variant: "default"
         });
-        
-        // Trigger a refresh of subscription data
-        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-          detail: { tierId, creatorId, tierName }
-        }));
       } else {
         toast({
           title: "Error",
