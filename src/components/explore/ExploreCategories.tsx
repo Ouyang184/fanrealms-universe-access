@@ -17,8 +17,8 @@ export function ExploreCategories() {
   const handleCategorySelect = (category: string) => {
     console.log('Category selected:', category);
     if (category === "all") {
-      console.log('Navigating to /explore/all');
-      navigate("/explore/all");
+      console.log('Navigating to featured creators at /explore/featured');
+      navigate("/explore/featured");
     } else {
       console.log('Navigating to /explore with category:', category);
       navigate(`/explore?category=${category}`);
@@ -39,12 +39,12 @@ export function ExploreCategories() {
           <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
             <DropdownMenuItem 
               onClick={() => {
-                console.log('All Categories clicked');
+                console.log('All Categories clicked - going to featured creators');
                 handleCategorySelect("all");
               }}
               className="cursor-pointer"
             >
-              All Categories
+              All Featured Creators
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleCategorySelect("art-illustration")}>
