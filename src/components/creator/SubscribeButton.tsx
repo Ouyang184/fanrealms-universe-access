@@ -232,6 +232,11 @@ export function SubscribeButton({
   const handleUnsubscribe = async () => {
     if (!subscriptionStatus?.data) {
       console.log('No subscription data available for cancellation');
+      toast({
+        title: "Error",
+        description: "No subscription found to cancel.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -244,8 +249,14 @@ export function SubscribeButton({
       const subscriptionId = subscriptionStatus.data.id;
       await cancelSubscription(subscriptionId);
       
-      console.log('SubscribeButton: Subscription cancelled, dispatching event');
+      console.log('SubscribeButton: Subscription cancelled successfully');
       
+      // Trigger optimistic update immediately
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(false);
+      }
+      
+      // Dispatch cancellation event
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
         detail: { creatorId, tierId, subscriptionId }
       }));
@@ -255,6 +266,13 @@ export function SubscribeButton({
         description: "Successfully unsubscribed from this tier.",
       });
       
+      // Refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+      ]);
+      
       if (onSubscriptionSuccess) {
         onSubscriptionSuccess();
       }
@@ -262,7 +280,7 @@ export function SubscribeButton({
       console.error('SubscribeButton: Unsubscribe error:', error);
       toast({
         title: "Error",
-        description: "Failed to unsubscribe. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
         variant: "destructive"
       });
     } finally {

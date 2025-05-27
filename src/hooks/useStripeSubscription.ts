@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -145,10 +144,9 @@ export const useStripeSubscription = () => {
       throw new Error('User not authenticated');
     }
 
-    setIsProcessing(true);
+    console.log('Canceling subscription:', subscriptionId);
+    
     try {
-      console.log('Canceling subscription:', subscriptionId);
-      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
@@ -163,24 +161,12 @@ export const useStripeSubscription = () => {
       }
 
       console.log('Subscription canceled successfully:', data);
-      
-      // Trigger cancellation events
-      const event = new CustomEvent('subscriptionCanceled', {
-        detail: { subscriptionId, timestamp: Date.now() }
-      });
-      window.dispatchEvent(event);
-      
-      // Refresh subscription data
-      await handleSubscriptionSuccess();
-      
       return data;
     } catch (error) {
       console.error('Error canceling subscription:', error);
       throw error;
-    } finally {
-      setIsProcessing(false);
     }
-  }, [user, handleSubscriptionSuccess]);
+  }, [user]);
 
   // Listen for subscription events from other parts of the app
   useEffect(() => {
