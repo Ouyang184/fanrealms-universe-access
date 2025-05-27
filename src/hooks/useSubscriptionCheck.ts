@@ -19,47 +19,60 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
         creatorId 
       });
 
-      // First check creator_subscriptions (Stripe managed)
-      const { data: stripeSubscription, error: stripeError } = await supabase
-        .from('creator_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('status', 'active')
-        .maybeSingle();
+      // Check both tables for any subscription records
+      const [creatorSubsResult, basicSubsResult] = await Promise.all([
+        supabase
+          .from('creator_subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('creator_id', creatorId)
+          .eq('tier_id', tierId),
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('creator_id', creatorId)
+          .eq('tier_id', tierId)
+          .eq('is_paid', true)
+      ]);
 
-      if (stripeError) {
-        console.error('Error checking Stripe subscription:', stripeError);
+      if (creatorSubsResult.error) {
+        console.error('Error checking creator subscriptions:', creatorSubsResult.error);
       }
 
-      if (stripeSubscription) {
-        console.log('useSubscriptionCheck: Found active Stripe subscription');
+      if (basicSubsResult.error) {
+        console.error('Error checking basic subscriptions:', basicSubsResult.error);
+      }
+
+      const allSubs = [
+        ...(creatorSubsResult.data || []),
+        ...(basicSubsResult.data || [])
+      ];
+
+      console.log('Found subscription records:', allSubs.length);
+
+      // Find the most recent active subscription
+      let activeSubscription = null;
+
+      for (const sub of allSubs) {
+        // For creator subscriptions, check if status is active
+        if ('status' in sub && sub.status === 'active') {
+          activeSubscription = sub;
+          break;
+        }
+        
+        // For basic subscriptions, if it has is_paid = true, consider it active
+        if ('is_paid' in sub && sub.is_paid) {
+          activeSubscription = sub;
+          break;
+        }
+      }
+
+      if (activeSubscription) {
+        console.log('useSubscriptionCheck: Found active subscription');
         return {
           isSubscribed: true,
-          data: stripeSubscription
-        };
-      }
-
-      // If no Stripe subscription, check basic subscriptions
-      const { data: basicSubscription, error: basicError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('is_paid', true)
-        .maybeSingle();
-
-      if (basicError) {
-        console.error('Error checking basic subscription:', basicError);
-      }
-
-      if (basicSubscription) {
-        console.log('useSubscriptionCheck: Found active basic subscription');
-        return {
-          isSubscribed: true,
-          data: basicSubscription
+          data: activeSubscription
         };
       }
 
@@ -68,7 +81,6 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Refetch every 3 seconds to catch updates quickly
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

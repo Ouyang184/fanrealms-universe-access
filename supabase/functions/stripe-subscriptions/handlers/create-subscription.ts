@@ -18,65 +18,116 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Simplified subscription check - only block if there's a truly active subscription
-  console.log('Checking for existing active subscriptions...');
+  // Enhanced subscription check - check both tables and verify with Stripe
+  console.log('Checking for existing subscriptions across all sources...');
   
-  const { data: existingActiveSubs, error: activeSubError } = await supabaseService
+  // Check creator_subscriptions first
+  const { data: creatorSubs, error: creatorSubError } = await supabaseService
     .from('creator_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .eq('tier_id', tierId)
-    .eq('status', 'active');
+    .eq('tier_id', tierId);
 
-  if (activeSubError) {
-    console.error('Error checking active subscriptions:', activeSubError);
+  if (creatorSubError) {
+    console.error('Error checking creator subscriptions:', creatorSubError);
   }
 
-  if (existingActiveSubs && existingActiveSubs.length > 0) {
-    console.log('Found existing active subscription for this exact tier:', existingActiveSubs[0]);
-    
-    // Double-check with Stripe to make sure it's actually active
-    const sub = existingActiveSubs[0];
+  // Check basic subscriptions
+  const { data: basicSubs, error: basicSubError } = await supabaseService
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId)
+    .eq('tier_id', tierId)
+    .eq('is_paid', true);
+
+  if (basicSubError) {
+    console.error('Error checking basic subscriptions:', basicSubError);
+  }
+
+  // Validate all subscriptions against Stripe
+  const allSubs = [...(creatorSubs || []), ...(basicSubs || [])];
+  let hasActiveSubscription = false;
+
+  for (const sub of allSubs) {
     if (sub.stripe_subscription_id) {
       try {
+        console.log('Verifying Stripe subscription:', sub.stripe_subscription_id);
         const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-        console.log('Stripe subscription status:', stripeSubscription.status);
         
-        // Only block if the Stripe subscription is truly active and not set to cancel
+        // Only consider it active if Stripe says it's active AND not set to cancel
         if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
-          console.log('Subscription is truly active and not cancelling - blocking new subscription');
-          return createJsonResponse({ 
-            error: 'You already have an active subscription to this tier. Please refresh the page to see your current subscription status.',
-            shouldRefresh: true
-          }, 409);
+          console.log('Found truly active subscription in Stripe');
+          hasActiveSubscription = true;
+          break;
         } else {
-          console.log('Subscription is not truly active, cleaning it up and allowing new subscription');
-          // Clean up the stale subscription record
-          await supabaseService
-            .from('creator_subscriptions')
-            .delete()
-            .eq('id', sub.id);
+          console.log('Subscription is not truly active, cleaning up:', {
+            status: stripeSubscription.status,
+            cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end
+          });
+          
+          // Clean up stale subscription records
+          if (creatorSubs?.some(cs => cs.id === sub.id)) {
+            await supabaseService
+              .from('creator_subscriptions')
+              .delete()
+              .eq('id', sub.id);
+          }
+          
+          if (basicSubs?.some(bs => bs.id === sub.id)) {
+            await supabaseService
+              .from('subscriptions')
+              .delete()
+              .eq('id', sub.id);
+          }
         }
       } catch (stripeError) {
         console.error('Error checking Stripe subscription:', stripeError);
+        
         // If subscription doesn't exist in Stripe, clean it up
         if (stripeError.code === 'resource_missing') {
           console.log('Cleaning up subscription that no longer exists in Stripe');
-          await supabaseService
-            .from('creator_subscriptions')
-            .delete()
-            .eq('id', sub.id);
+          if (creatorSubs?.some(cs => cs.id === sub.id)) {
+            await supabaseService
+              .from('creator_subscriptions')
+              .delete()
+              .eq('id', sub.id);
+          }
+          
+          if (basicSubs?.some(bs => bs.id === sub.id)) {
+            await supabaseService
+              .from('subscriptions')
+              .delete()
+              .eq('id', sub.id);
+          }
         }
       }
     } else {
       // No Stripe subscription ID, clean up the record
       console.log('Cleaning up subscription record without Stripe ID');
-      await supabaseService
-        .from('creator_subscriptions')
-        .delete()
-        .eq('id', sub.id);
+      if (creatorSubs?.some(cs => cs.id === sub.id)) {
+        await supabaseService
+          .from('creator_subscriptions')
+          .delete()
+          .eq('id', sub.id);
+      }
+      
+      if (basicSubs?.some(bs => bs.id === sub.id)) {
+        await supabaseService
+          .from('subscriptions')
+          .delete()
+          .eq('id', sub.id);
+      }
     }
+  }
+
+  if (hasActiveSubscription) {
+    console.log('User has a truly active subscription, blocking new subscription');
+    return createJsonResponse({ 
+      error: 'You already have an active subscription to this tier. Please refresh the page to see your current subscription status.',
+      shouldRefresh: true
+    }, 409);
   }
 
   // Clean up any old pending subscriptions (older than 1 hour)
@@ -90,23 +141,6 @@ export async function handleCreateSubscription(
     .eq('creator_id', creatorId)
     .eq('status', 'pending')
     .lt('created_at', oneHourAgo);
-
-  // Clean up any basic subscriptions as well
-  const { data: existingBasicSubs } = await supabaseService
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .eq('is_paid', true);
-
-  if (existingBasicSubs && existingBasicSubs.length > 0) {
-    console.log('Cleaning up basic subscriptions...');
-    await supabaseService
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('creator_id', creatorId);
-  }
 
   // Get tier and creator details
   console.log('Fetching tier and creator details...');

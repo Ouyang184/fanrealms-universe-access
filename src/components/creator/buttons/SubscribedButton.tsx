@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle } from 'lucide-react';
-import { useStripeSubscription } from '@/hooks/useStripeSubscription';
+import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,8 @@ export function SubscribedButton({
   onOptimisticUpdate,
   onSubscriptionSuccess 
 }: SubscribedButtonProps) {
-  const { cancelSubscription, isCancelling } = useStripeSubscription();
+  // Use separate state for cancellation to avoid conflicts
+  const [isCancelling, setIsCancelling] = useState(false);
   const queryClient = useQueryClient();
 
   // Check if subscription is in cancelling state
@@ -41,8 +42,8 @@ export function SubscribedButton({
   };
 
   const handleUnsubscribe = async () => {
-    if (!subscriptionData) {
-      console.log('No subscription data available for cancellation');
+    if (!subscriptionData || isCancelling) {
+      console.log('No subscription data available for cancellation or already cancelling');
       toast({
         title: "Error",
         description: "No subscription found to cancel.",
@@ -51,31 +52,52 @@ export function SubscribedButton({
       return;
     }
 
+    setIsCancelling(true);
+    
     try {
       console.log('SubscribedButton: Cancelling subscription:', subscriptionData.id);
       
-      const subscriptionId = subscriptionData.id;
-      await cancelSubscription(subscriptionId);
+      // Call the edge function to cancel subscription
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'cancel_subscription',
+          subscriptionId: subscriptionData.id
+        }
+      });
+
+      if (error) {
+        console.error('SubscribedButton: Error from edge function:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('SubscribedButton: Server returned error:', data.error);
+        throw new Error(data.error);
+      }
       
       console.log('SubscribedButton: Subscription cancelled successfully');
       
+      // Immediately update optimistic state
       if (onOptimisticUpdate) {
         onOptimisticUpdate(false);
       }
       
+      // Dispatch event for other components
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
-        detail: { creatorId, tierId, subscriptionId }
+        detail: { creatorId, tierId, subscriptionId: subscriptionData.id }
       }));
       
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription will be cancelled at the end of your current billing period.",
+        description: "Your subscription has been cancelled successfully.",
       });
       
+      // Invalidate all subscription-related queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
         queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
         queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+        queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
       ]);
       
       if (onSubscriptionSuccess) {
@@ -88,6 +110,8 @@ export function SubscribedButton({
         description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsCancelling(false);
     }
   };
 
