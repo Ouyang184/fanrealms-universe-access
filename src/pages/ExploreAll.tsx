@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
@@ -5,17 +6,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, ArrowLeft } from "lucide-react";
+import { Award, ArrowLeft, Filter } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type SortOption = "newest" | "oldest" | "popular" | "alphabetical" | "price-low" | "price-high";
+type ContentType = "all" | "art-illustration" | "gaming" | "music" | "writing" | "photography" | "education" | "podcasts" | "cooking" | "fitness" | "technology" | "fashion" | "film-video";
 
 export default function ExploreAllPage() {
   const { data: creators = [], isLoading } = usePopularCreators(true);
   const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [contentType, setContentType] = useState<ContentType>("all");
   const [sortedCreators, setSortedCreators] = useState<CreatorProfile[]>([]);
 
   // Helper function to get creator tags
@@ -42,11 +52,54 @@ export default function ExploreAllPage() {
     return formattedTags.length > 0 ? formattedTags : defaultTags;
   };
 
+  // Filter creators based on content type
+  const filterCreatorsByContentType = (creators: CreatorProfile[], type: ContentType) => {
+    if (type === "all") return creators;
+    
+    return creators.filter(creator => {
+      const tags = getCreatorTags(creator);
+      const bio = creator.bio?.toLowerCase() || "";
+      
+      switch (type) {
+        case "art-illustration":
+          return tags.some(tag => tag.toLowerCase().includes("art")) || bio.includes("art") || bio.includes("illustration");
+        case "gaming":
+          return tags.some(tag => tag.toLowerCase().includes("gaming")) || bio.includes("gaming") || bio.includes("game");
+        case "music":
+          return tags.some(tag => tag.toLowerCase().includes("music")) || bio.includes("music") || bio.includes("musician");
+        case "writing":
+          return tags.some(tag => tag.toLowerCase().includes("writing")) || bio.includes("writing") || bio.includes("writer");
+        case "photography":
+          return tags.some(tag => tag.toLowerCase().includes("photo")) || bio.includes("photo") || bio.includes("photographer");
+        case "education":
+          return tags.some(tag => tag.toLowerCase().includes("education")) || bio.includes("education") || bio.includes("teaching");
+        case "podcasts":
+          return tags.some(tag => tag.toLowerCase().includes("podcast")) || bio.includes("podcast");
+        case "cooking":
+          return tags.some(tag => tag.toLowerCase().includes("cooking")) || bio.includes("cooking") || bio.includes("chef");
+        case "fitness":
+          return tags.some(tag => tag.toLowerCase().includes("fitness")) || bio.includes("fitness") || bio.includes("workout");
+        case "technology":
+          return tags.some(tag => tag.toLowerCase().includes("tech")) || bio.includes("technology") || bio.includes("tech");
+        case "fashion":
+          return tags.some(tag => tag.toLowerCase().includes("fashion")) || bio.includes("fashion") || bio.includes("style");
+        case "film-video":
+          return tags.some(tag => tag.toLowerCase().includes("film")) || bio.includes("film") || bio.includes("video");
+        default:
+          return true;
+      }
+    });
+  };
+
   // Sort creators based on selected option
   useEffect(() => {
     if (!creators.length) return;
 
-    let sorted = [...creators];
+    // First filter by content type
+    let filtered = filterCreatorsByContentType(creators, contentType);
+    
+    // Then sort the filtered results
+    let sorted = [...filtered];
 
     switch (sortBy) {
       case "newest":
@@ -83,11 +136,30 @@ export default function ExploreAllPage() {
     }
 
     setSortedCreators(sorted);
-  }, [creators, sortBy]);
+  }, [creators, sortBy, contentType]);
 
   useEffect(() => {
     document.title = "All Featured Creators | FanRealms";
   }, []);
+
+  const getContentTypeLabel = (type: ContentType) => {
+    const labels: Record<ContentType, string> = {
+      "all": "All Content",
+      "art-illustration": "Art & Illustration",
+      "gaming": "Gaming",
+      "music": "Music",
+      "writing": "Writing",
+      "photography": "Photography",
+      "education": "Education",
+      "podcasts": "Podcasts",
+      "cooking": "Cooking",
+      "fitness": "Fitness",
+      "technology": "Technology",
+      "fashion": "Fashion",
+      "film-video": "Film & Video"
+    };
+    return labels[type];
+  };
 
   return (
     <MainLayout>
@@ -105,26 +177,85 @@ export default function ExploreAllPage() {
             <div>
               <h1 className="text-3xl font-bold mb-2">All Featured Creators</h1>
               <p className="text-gray-400">
-                Discover all {creators.length} featured creators on FanRealms
+                Discover all {sortedCreators.length} featured creators on FanRealms
               </p>
             </div>
             
-            {/* Sort Controls */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">Sort:</span>
-              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                <SelectTrigger className="w-48 bg-gray-800 border-gray-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="popular">Most Popular</SelectItem>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="alphabetical">A-Z</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Filter and Sort Controls */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Filters:</span>
+                
+                {/* Content Type Filter */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      {getContentTypeLabel(contentType)}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
+                    <DropdownMenuItem onClick={() => setContentType("all")}>
+                      All Content
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setContentType("art-illustration")}>
+                      Art & Illustration
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("gaming")}>
+                      Gaming
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("music")}>
+                      Music
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("writing")}>
+                      Writing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("photography")}>
+                      Photography
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("education")}>
+                      Education
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("podcasts")}>
+                      Podcasts
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("cooking")}>
+                      Cooking
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("fitness")}>
+                      Fitness
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("technology")}>
+                      Technology
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("fashion")}>
+                      Fashion
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("film-video")}>
+                      Film & Video
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Sort:</span>
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-48 bg-gray-800 border-gray-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="popular">Most Popular</SelectItem>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="alphabetical">A-Z</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
