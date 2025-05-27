@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -38,17 +39,9 @@ const getTierColor = (name: string | undefined) => {
 
 export default function SubscriptionsPage() {
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
-  const [hasSubscriptions, setHasSubscriptions] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
-  useEffect(() => {
-    if (!subscriptionsLoading) {
-      setHasSubscriptions(userSubscriptions && userSubscriptions.length > 0);
-      console.log('Subscriptions data:', userSubscriptions);
-    }
-  }, [userSubscriptions, subscriptionsLoading]);
-
   // Auto-refresh on page load and listen for subscription events
   useEffect(() => {
     console.log('Subscriptions page loaded, refreshing data...');
@@ -105,7 +98,7 @@ export default function SubscriptionsPage() {
 
   // Calculate monthly spending
   const monthlySpending = userSubscriptions?.reduce((total, sub) => {
-    return total + (sub.tier?.price || 0);
+    return total + (sub.tier?.price || sub.amount_paid || 0);
   }, 0) || 0;
 
   // Find next payment date
@@ -114,7 +107,7 @@ export default function SubscriptionsPage() {
   nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
   const nextPayment = {
     date: nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    amount: userSubscriptions?.find(s => s.tier)?.tier?.price || 0
+    amount: userSubscriptions?.find(s => s.tier || s.amount_paid)?.tier?.price || userSubscriptions?.[0]?.amount_paid || 0
   };
 
   if (subscriptionsLoading) {
@@ -126,6 +119,8 @@ export default function SubscriptionsPage() {
       </MainLayout>
     );
   }
+
+  const hasSubscriptions = userSubscriptions && userSubscriptions.length > 0;
 
   if (!hasSubscriptions) {
     return (
@@ -147,7 +142,7 @@ export default function SubscriptionsPage() {
           <Card className="w-full p-6">
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <Users className="h-16 w-16 mb-4 text-muted-foreground" />
-              <h3 className="text-xl font-medium mb-2">No Subscriptions Found</h3>
+              <h3 className="text-xl font-medium mb-2">No Active Subscriptions</h3>
               <p className="text-muted-foreground mb-6">
                 You haven't subscribed to any creators yet.
                 Start following creators to see their content here!
@@ -298,10 +293,10 @@ export default function SubscriptionsPage() {
                           <span className="text-muted-foreground">Membership Level</span>
                           <span className="font-medium">{tier?.title || "Free"}</span>
                         </div>
-                        {tier && (
+                        {(tier?.price || subscription.amount_paid) && (
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Monthly Payment</span>
-                            <span className="font-medium">${tier.price?.toFixed(2) || "0.00"}</span>
+                            <span className="font-medium">${(tier?.price || subscription.amount_paid || 0).toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-sm">
@@ -314,7 +309,7 @@ export default function SubscriptionsPage() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">Status</span>
-                          <span className="font-medium capitalize">{subscription.status}</span>
+                          <span className="font-medium capitalize text-green-600">{subscription.status}</span>
                         </div>
                       </div>
 
@@ -414,7 +409,7 @@ export default function SubscriptionsPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">${tier?.price?.toFixed(2) || "0.00"}</div>
+                          <div className="font-medium">${(tier?.price || subscription.amount_paid || 0).toFixed(2)}</div>
                           <div className="text-sm text-muted-foreground">{nextBilling}</div>
                         </div>
                       </div>
