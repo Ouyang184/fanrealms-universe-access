@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -16,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader, Globe, Lock } from "lucide-react";
+import { Loader, Globe, Lock, Video } from "lucide-react";
 import { TierSelect } from "@/components/dashboard/TierSelect";
 import { FileAttachment, AttachmentFile } from "./FileAttachment";
 
@@ -25,6 +24,7 @@ export function CreatePostForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const { user } = useAuth();
@@ -80,9 +80,30 @@ export function CreatePostForm() {
     }
   };
 
+  const isValidVideoUrl = (url: string): boolean => {
+    if (!url) return true; // Empty URL is valid
+    const videoUrlPatterns = [
+      /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)/,
+      /^https?:\/\/(www\.)?vimeo\.com/,
+      /^https?:\/\/(www\.)?dailymotion\.com/,
+      /^https?:\/\/(www\.)?twitch\.tv/
+    ];
+    return videoUrlPatterns.some(pattern => pattern.test(url));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    
+    // Validate video URL if provided
+    if (videoUrl && !isValidVideoUrl(videoUrl)) {
+      toast({
+        title: "Invalid video URL",
+        description: "Please enter a valid YouTube, Vimeo, Dailymotion, or Twitch URL.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
@@ -100,13 +121,23 @@ export function CreatePostForm() {
         }
       }
 
+      // Add video URL to attachments if provided
+      if (videoUrl) {
+        uploadedAttachments.push({
+          url: videoUrl,
+          name: "Video",
+          type: "video",
+          size: 0
+        });
+      }
+
       const { error } = await supabase
         .from('posts')
         .insert({
           title,
           content,
           author_id: user.id,
-          creator_id: creatorProfile?.id || null, // Set creator_id for notifications
+          creator_id: creatorProfile?.id || null,
           tier_id: selectedTierId,
           attachments: uploadedAttachments
         });
@@ -122,6 +153,7 @@ export function CreatePostForm() {
       // Reset form and close dialog
       setTitle("");
       setContent("");
+      setVideoUrl("");
       setSelectedTierId(null);
       setAttachments([]);
       setIsOpen(false);
@@ -177,6 +209,23 @@ export function CreatePostForm() {
               disabled={isLoading}
               className="min-h-[150px]"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="videoUrl" className="flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              Video URL (Optional)
+            </Label>
+            <Input
+              id="videoUrl"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="Paste YouTube, Vimeo, or other video URL..."
+              disabled={isLoading}
+            />
+            <p className="text-sm text-muted-foreground">
+              Supported platforms: YouTube, Vimeo, Dailymotion, Twitch
+            </p>
           </div>
           
           <FileAttachment

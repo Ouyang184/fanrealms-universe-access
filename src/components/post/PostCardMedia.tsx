@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Play, FileText, File, FileImage, Video } from 'lucide-react';
+import { parseVideoUrl, isVideoUrl } from '@/utils/videoUtils';
 
 interface PostCardMediaProps {
   attachments: any;
@@ -70,6 +71,32 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
 
   if (!firstMedia) return null;
 
+  // Check if this is a video URL that needs embedding
+  if (firstMedia.type === 'video' && isVideoUrl(firstMedia.url)) {
+    const videoInfo = parseVideoUrl(firstMedia.url);
+    
+    if (videoInfo && videoInfo.platform !== 'unknown') {
+      return (
+        <div className="relative w-full">
+          <div className="aspect-video w-full rounded-lg overflow-hidden border">
+            <iframe
+              src={videoInfo.embedUrl}
+              title={firstMedia.name || "Video"}
+              className="w-full h-full"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs text-white flex items-center gap-1">
+            <Video className="h-3 w-3" />
+            <span className="capitalize">{videoInfo.platform}</span>
+          </div>
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="relative">
       {firstMedia.type === 'image' && (
@@ -90,7 +117,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {firstMedia.type === 'video' && (
+      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && (
         <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
           <img
             src={firstMedia.url}
