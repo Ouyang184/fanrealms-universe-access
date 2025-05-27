@@ -77,35 +77,41 @@ export default function CreatorStudioSubscribers() {
     enabled: !!creatorData?.id
   });
 
-  // Fetch subscribers
-  const { isLoading: loadingSubscribers } = useQuery({
-    queryKey: ["subscribers", creatorData?.id],
+  // Fetch subscribers from creator_subscriptions table only
+  const { isLoading: loadingSubscribers, refetch: refetchSubscribers } = useQuery({
+    queryKey: ["active-subscribers", creatorData?.id],
     queryFn: async () => {
       if (!creatorData?.id) return [];
       
+      console.log('Fetching active subscribers for creator:', creatorData.id);
+      
       const { data, error } = await supabase
-        .from("subscriptions")
+        .from("creator_subscriptions")
         .select(`
           id,
           created_at,
           tier_id,
-          is_paid,
-          users!subscriptions_user_id_fkey(
+          status,
+          amount_paid,
+          current_period_start,
+          current_period_end,
+          users!creator_subscriptions_user_id_fkey(
             id,
             email,
             username,
             profile_picture
           ),
-          membership_tiers(
+          membership_tiers!creator_subscriptions_tier_id_fkey(
             id,
             title,
             price
           )
         `)
-        .eq("creator_id", creatorData.id);
+        .eq("creator_id", creatorData.id)
+        .eq("status", "active");
       
       if (error) {
-        console.error("Error fetching subscribers:", error);
+        console.error("Error fetching active subscribers:", error);
         toast({
           title: "Error",
           description: "Could not fetch subscribers",
@@ -114,22 +120,44 @@ export default function CreatorStudioSubscribers() {
         return [];
       }
       
+      console.log('Fetched active subscribers:', data);
+      
       // Transform the data to match SubscriberWithDetails format
       const formattedSubscribers: SubscriberWithDetails[] = data.map((sub: any) => ({
         id: sub.id,
         name: sub.users?.username || "Unknown User",
         email: sub.users?.email || "No email",
-        tier: sub.membership_tiers?.title || (sub.is_paid ? "Paid Tier" : "Free Tier"),
-        tierPrice: sub.membership_tiers?.price || 0,
+        tier: sub.membership_tiers?.title || "Unknown Tier",
+        tierPrice: sub.amount_paid || sub.membership_tiers?.price || 0,
         subscriptionDate: sub.created_at,
-        avatarUrl: sub.users?.profile_picture || undefined
+        avatarUrl: sub.users?.profile_picture || undefined,
+        status: sub.status as 'active' | 'expired' | 'pending'
       }));
       
+      console.log('Formatted subscribers:', formattedSubscribers);
       setSubscribers(formattedSubscribers);
       return formattedSubscribers;
     },
-    enabled: !!creatorData?.id
+    enabled: !!creatorData?.id,
+    refetchInterval: 10000 // Refetch every 10 seconds for real-time updates
   });
+
+  // Auto-refresh when new subscriptions might be created
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('Subscription update detected, refreshing data...');
+      refetchSubscribers();
+    };
+
+    // Listen for custom subscription events
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+    };
+  }, [refetchSubscribers]);
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {

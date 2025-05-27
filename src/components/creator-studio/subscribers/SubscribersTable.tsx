@@ -38,12 +38,13 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
   if (isLoading) {
     return (
       <Table>
-        <TableCaption>Loading subscribers...</TableCaption>
+        <TableCaption>Loading active subscribers...</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Subscriber</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Tier</TableHead>
+            <TableHead>Amount Paid</TableHead>
             <TableHead>Subscription Date</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -57,6 +58,7 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
               </TableCell>
               <TableCell><Skeleton className="h-4 w-32" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
             </TableRow>
@@ -68,12 +70,13 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
 
   return (
     <Table>
-      <TableCaption>A list of your subscribers</TableCaption>
+      <TableCaption>Active subscribers and their spending</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>Subscriber</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Tier</TableHead>
+          <TableHead>Amount Paid</TableHead>
           <TableHead>Subscription Date</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -92,8 +95,11 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
               <TableCell>{subscriber.email}</TableCell>
               <TableCell>
                 <Badge variant={getTierBadgeVariant(subscriber.tier)}>
-                  {subscriber.tier} (${subscriber.tierPrice})
+                  {subscriber.tier}
                 </Badge>
+              </TableCell>
+              <TableCell className="font-medium text-green-600">
+                ${subscriber.tierPrice.toFixed(2)}
               </TableCell>
               <TableCell>{formatDate(subscriber.subscriptionDate)}</TableCell>
               <TableCell className="text-right">
@@ -133,8 +139,8 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-              No subscribers found.
+            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+              No active subscribers found.
             </TableCell>
           </TableRow>
         )}

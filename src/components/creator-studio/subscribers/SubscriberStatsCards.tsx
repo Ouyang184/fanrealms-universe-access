@@ -49,27 +49,27 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
     );
   }
 
-  // Calculate estimated monthly revenue
-  const estimatedRevenue = subscribers.reduce((total, sub) => {
+  // Calculate actual monthly revenue from amount_paid (what users actually spent)
+  const actualRevenue = subscribers.reduce((total, sub) => {
     return total + (sub.tierPrice || 0);
   }, 0);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {/* Total Subscribers Card */}
+      {/* Total Active Subscribers Card */}
       <Card className="p-6">
         <div className="flex items-center gap-4">
           <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
             <UserCheck className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">Total Subscribers</p>
+            <p className="text-sm text-muted-foreground">Active Subscribers</p>
             <h3 className="text-2xl font-bold">{subscribers.length}</h3>
           </div>
         </div>
       </Card>
       
-      {/* Monthly Revenue Card - Links to Payouts Page */}
+      {/* Actual Monthly Revenue Card - Links to Payouts Page */}
       <Link to="/creator-studio/payouts">
         <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer">
           <div className="flex items-center gap-4">
@@ -78,7 +78,7 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-              <h3 className="text-2xl font-bold">${estimatedRevenue.toFixed(2)}</h3>
+              <h3 className="text-2xl font-bold">${actualRevenue.toFixed(2)}</h3>
             </div>
           </div>
         </Card>
@@ -101,7 +101,7 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
           </Card>
         ))
       ) : (
-        // Fallback to show the most populated tier from sample data
+        // Fallback to show the most populated tier from active subscribers
         Object.entries(tierCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 1)
