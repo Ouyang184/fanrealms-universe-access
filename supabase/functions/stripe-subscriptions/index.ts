@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -59,7 +60,16 @@ serve(async (req) => {
       });
     }
 
-    const { action, tierId, creatorId, subscriptionId } = requestBody;
+    // Fix: Handle both tierId/creatorId and tier_id/creator_id parameter names
+    const { 
+      action, 
+      tier_id, 
+      creator_id, 
+      tierId = tier_id, 
+      creatorId = creator_id, 
+      subscriptionId 
+    } = requestBody;
+    
     console.log('Action:', action, 'TierID:', tierId, 'CreatorID:', creatorId, 'SubscriptionID:', subscriptionId);
 
     if (!action) {
