@@ -79,7 +79,7 @@ export const useCreatorMembership = (creatorId: string) => {
     refetchInterval: 2000,
   });
 
-  // Enhanced subscription check for user's subscriptions - check for ANY subscription to this creator
+  // Enhanced subscription check for user's subscriptions - check tier-specific subscriptions
   const { data: userSubscriptions, refetch: refetchUserSubscriptions } = useQuery({
     queryKey: ['enhancedUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -87,7 +87,7 @@ export const useCreatorMembership = (creatorId: string) => {
       
       console.log('Enhanced subscription check for user:', user.id, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first - look for ANY active subscription to this creator
+      // Check creator_subscriptions table first - get all active subscriptions to this creator
       const { data: creatorSubs, error: creatorSubsError } = await supabase
         .from('creator_subscriptions')
         .select('tier_id, status')
@@ -95,7 +95,7 @@ export const useCreatorMembership = (creatorId: string) => {
         .eq('creator_id', creatorId)
         .eq('status', 'active');
 
-      // Check subscriptions table as well
+      // Check subscriptions table as well - get all subscriptions to this creator
       const { data: regularSubs, error: regularSubsError } = await supabase
         .from('subscriptions')
         .select('tier_id')
@@ -131,19 +131,19 @@ export const useCreatorMembership = (creatorId: string) => {
     refetchInterval: 1000,
   });
 
-  // Check if user is subscribed to ANY tier of this creator (not just a specific tier)
+  // Check if user is subscribed to ANY tier of this creator (for cancel button)
   const isSubscribedToCreator = useCallback((): boolean => {
     return userSubscriptions ? userSubscriptions.length > 0 : false;
   }, [userSubscriptions]);
 
-  // Check if user is subscribed to a specific tier (enhanced)
+  // Check if user is subscribed to a specific tier (for subscribe button)
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to enhanced server data
+    // Fall back to enhanced server data - check for specific tier subscription
     return userSubscriptions?.some(sub => sub.tier_id === tierId && sub.status === 'active') || false;
   }, [userSubscriptions, localSubscriptionStates]);
 

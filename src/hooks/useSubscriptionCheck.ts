@@ -15,11 +15,12 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
       
       console.log('Enhanced subscription check for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first - look for ANY active subscription to this creator
+      // Check creator_subscriptions table first - look for subscription to this specific tier
       const { data: creatorSub, error: creatorSubError } = await supabase
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('tier_id', tierId)
         .eq('creator_id', creatorId)
         .eq('status', 'active')
         .maybeSingle();
@@ -33,12 +34,13 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
         return { isSubscribed: true, source: 'creator_subscriptions', data: creatorSub };
       }
 
-      // Check subscriptions table as fallback
+      // Check subscriptions table as fallback for this specific tier
       const { data: regularSub, error: regularSubError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
         .eq('is_paid', true)
         .maybeSingle();
 
@@ -51,7 +53,7 @@ export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
         return { isSubscribed: true, source: 'subscriptions', data: regularSub };
       }
 
-      console.log('No active subscription found in either table');
+      console.log('No active subscription found for this specific tier');
       return { isSubscribed: false, source: 'none' };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
