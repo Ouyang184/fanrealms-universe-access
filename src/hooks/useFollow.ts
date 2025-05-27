@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -89,16 +90,17 @@ export function useFollow() {
       currentFollowerCount = creator.follower_count || 0;
       
       // Optimistic update - immediately update UI
-      console.log("Applying optimistic update - setting follow to true, count from", currentFollowerCount, "to", currentFollowerCount + 1);
+      const newCount = currentFollowerCount + 1;
+      console.log("Applying optimistic update - setting follow to true, count from", currentFollowerCount, "to", newCount);
       setIsFollowing(true);
-      setOptimisticFollowerCount(currentFollowerCount + 1);
+      setOptimisticFollowerCount(newCount);
       
       // Update cache optimistically
       queryClient.setQueryData(['creatorProfile', creatorId], (oldData: any) => {
         if (oldData) {
           return {
             ...oldData,
-            follower_count: currentFollowerCount + 1
+            follower_count: newCount
           };
         }
         return oldData;
@@ -172,7 +174,7 @@ export function useFollow() {
           }
         }
         
-        // Wait a moment before clearing optimistic state to ensure smooth UX
+        // Clear optimistic state after a longer delay to prevent flicker
         setTimeout(() => {
           setOptimisticFollowerCount(null);
           // Invalidate queries to sync with server
@@ -184,7 +186,7 @@ export function useFollow() {
           queryClient.invalidateQueries({ queryKey: ["follows"] });
           queryClient.invalidateQueries({ queryKey: ["posts"] });
           queryClient.invalidateQueries({ queryKey: ["conversations"] });
-        }, 1000);
+        }, 2000);
       }
     } catch (error: any) {
       console.error("Error following creator:", error);
@@ -234,7 +236,7 @@ export function useFollow() {
       setIsFollowing(false);
       setOptimisticFollowerCount(newCount);
       
-      // Update cache optimistically
+      // Update cache optimistically and prevent it from being overwritten
       queryClient.setQueryData(['creatorProfile', creatorId], (oldData: any) => {
         if (oldData) {
           return {
@@ -278,11 +280,10 @@ export function useFollow() {
         description: "You have unfollowed this creator",
       });
       
-      // Wait a moment before clearing optimistic state to ensure smooth UX
+      // Clear optimistic state after a longer delay and ensure cache is updated properly
       setTimeout(() => {
-        setOptimisticFollowerCount(null);
-        // Invalidate queries to sync with server
-        queryClient.invalidateQueries({ queryKey: ["creatorProfile"] });
+        // Force a fresh fetch to get the actual count from the server
+        queryClient.invalidateQueries({ queryKey: ["creatorProfile", creatorId] });
         queryClient.invalidateQueries({ queryKey: ["creatorProfileDetails"] });
         queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
         queryClient.invalidateQueries({ queryKey: ["creators"] });
@@ -290,7 +291,12 @@ export function useFollow() {
         queryClient.invalidateQueries({ queryKey: ["follows"] });
         queryClient.invalidateQueries({ queryKey: ["posts"] });
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
-      }, 1000);
+        
+        // Clear optimistic state only after cache is refreshed
+        setTimeout(() => {
+          setOptimisticFollowerCount(null);
+        }, 500);
+      }, 1500);
     } catch (error: any) {
       // Revert optimistic update on error
       setIsFollowing(true);
