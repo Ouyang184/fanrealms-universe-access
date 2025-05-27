@@ -33,7 +33,6 @@ export function SubscribeButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
-  const [localSubscriptionState, setLocalSubscriptionState] = useState(isSubscribed);
 
   // Check if user is subscribed to this specific tier with aggressive refresh
   const { data: userSubscription, refetch: refetchUserSubscription } = useQuery({
@@ -61,40 +60,69 @@ export function SubscribeButton({
     refetchInterval: 1000,
   });
 
-  // Update local state when subscription data changes
+  // Listen for subscription events - only update on successful payment
   useEffect(() => {
-    const newSubscriptionState = userSubscription !== null || isSubscribed;
-    if (newSubscriptionState !== localSubscriptionState) {
-      setLocalSubscriptionState(newSubscriptionState);
-    }
-  }, [userSubscription, isSubscribed, localSubscriptionState]);
-
-  // Listen for subscription events
-  useEffect(() => {
-    const handleSubscriptionUpdate = async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-      ]);
+    const handleSubscriptionUpdate = async (event: CustomEvent) => {
+      console.log('SubscribeButton: Received subscription event:', event.type, event.detail);
       
-      await refetchUserSubscription();
-      
-      if (onSubscriptionSuccess) {
-        onSubscriptionSuccess();
+      // Only trigger optimistic updates for successful payments, not subscription attempts
+      if ((event.type === 'paymentSuccess' || event.type === 'subscriptionSuccess') && 
+          event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
+        
+        console.log('SubscribeButton: Payment successful, updating button state');
+        
+        // Trigger optimistic update for successful payment
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(true);
+        }
+        
+        // Refresh queries
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+        ]);
+        
+        await refetchUserSubscription();
+        
+        if (onSubscriptionSuccess) {
+          onSubscriptionSuccess();
+        }
+      } else if (event.type === 'subscriptionCanceled' && 
+                 event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
+        
+        console.log('SubscribeButton: Subscription canceled, updating button state');
+        
+        // Trigger optimistic update for cancellation
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(false);
+        }
+        
+        // Refresh queries
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+        ]);
+        
+        await refetchUserSubscription();
+        
+        if (onSubscriptionSuccess) {
+          onSubscriptionSuccess();
+        }
       }
     };
 
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate as EventListener);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate as EventListener);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate as EventListener);
     
     return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate as EventListener);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate as EventListener);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate as EventListener);
     };
-  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess]);
+  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess, onOptimisticUpdate, tierId, creatorId]);
 
   // Check if creator has completed Stripe setup
   const { data: creatorStripeStatus } = useQuery({
@@ -135,12 +163,7 @@ export function SubscribeButton({
       return;
     }
 
-    // Optimistic update
-    setLocalSubscriptionState(true);
-    if (onOptimisticUpdate) {
-      onOptimisticUpdate(true);
-    }
-
+    // NO optimistic update here - wait for actual payment success
     setIsProcessing(true);
 
     try {
@@ -164,12 +187,6 @@ export function SubscribeButton({
           }
         });
       } else {
-        // Revert optimistic update on error
-        setLocalSubscriptionState(false);
-        if (onOptimisticUpdate) {
-          onOptimisticUpdate(false);
-        }
-        
         toast({
           title: "Error",
           description: "Failed to initialize payment. Please try again.",
@@ -177,12 +194,6 @@ export function SubscribeButton({
         });
       }
     } catch (error) {
-      // Revert optimistic update on error
-      setLocalSubscriptionState(false);
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(false);
-      }
-      
       console.error('SubscribeButton: Subscription error:', error);
       toast({
         title: "Error",
@@ -196,12 +207,6 @@ export function SubscribeButton({
 
   const handleUnsubscribe = async () => {
     if (!userSubscription) return;
-
-    // Optimistic update
-    setLocalSubscriptionState(false);
-    if (onOptimisticUpdate) {
-      onOptimisticUpdate(false);
-    }
 
     setIsUnsubscribing(true);
     
@@ -222,12 +227,6 @@ export function SubscribeButton({
         onSubscriptionSuccess();
       }
     } catch (error) {
-      // Revert optimistic update on error
-      setLocalSubscriptionState(true);
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(true);
-      }
-      
       console.error('SubscribeButton: Unsubscribe error:', error);
       toast({
         title: "Error",
@@ -239,7 +238,8 @@ export function SubscribeButton({
     }
   };
 
-  const isUserSubscribed = localSubscriptionState;
+  // Use actual subscription data, not optimistic updates for button state
+  const isUserSubscribed = userSubscription !== null || isSubscribed;
 
   if (isUserSubscribed) {
     return (

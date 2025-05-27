@@ -34,14 +34,14 @@ export function MembershipTierCard({
     setLocalIsSubscribed(isSubscribed);
   }, [tier.subscriberCount, isSubscribed]);
 
-  // Handle optimistic updates for subscription state
+  // Handle optimistic updates only for successful payments, not subscription attempts
   const handleOptimisticUpdate = (newIsSubscribed: boolean) => {
     const wasSubscribed = localIsSubscribed;
     setLocalIsSubscribed(newIsSubscribed);
     
-    // Update subscriber count optimistically
+    // Update subscriber count optimistically only after confirmed payment
     if (newIsSubscribed && !wasSubscribed) {
-      // User just subscribed
+      // User just subscribed (after payment success)
       setLocalSubscriberCount(prev => prev + 1);
     } else if (!newIsSubscribed && wasSubscribed) {
       // User just unsubscribed
