@@ -15,6 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 
 // Password change form schema
 const passwordFormSchema = z.object({
