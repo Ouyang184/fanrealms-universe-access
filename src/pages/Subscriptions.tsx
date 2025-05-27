@@ -13,11 +13,14 @@ import { BillingHistory } from "@/components/subscriptions/BillingHistory"
 import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscriptionsState"
 import { ForceCancelButton } from "@/components/creator/buttons/ForceCancelButton"
 import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function SubscriptionsPage() {
+  const { user } = useAuth();
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { toast } = useToast();
   
   // Auto-refresh on page load and listen for subscription events
@@ -133,6 +136,46 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const handleDebugCheck = async () => {
+    if (!user?.id) return;
+    
+    try {
+      console.log('Running debug check for user:', user.id);
+      
+      // Check both subscription tables directly
+      const [creatorSubs, basicSubs] = await Promise.all([
+        supabase
+          .from('creator_subscriptions')
+          .select('*')
+          .eq('user_id', user.id),
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+      ]);
+
+      const debugData = {
+        userId: user.id,
+        userEmail: user.email,
+        creatorSubscriptions: creatorSubs.data || [],
+        basicSubscriptions: basicSubs.data || [],
+        creatorSubsError: creatorSubs.error,
+        basicSubsError: basicSubs.error,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('Debug data:', debugData);
+      setDebugInfo(debugData);
+
+      toast({
+        title: "Debug Complete",
+        description: "Check console for detailed subscription data",
+      });
+    } catch (error) {
+      console.error('Debug check failed:', error);
+    }
+  };
+
   if (subscriptionsLoading && !isRefreshing) {
     return (
       <MainLayout>
@@ -152,6 +195,14 @@ export default function SubscriptionsPage() {
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
             <ForceCancelButton />
+            <Button 
+              onClick={handleDebugCheck}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              🐛 Debug
+            </Button>
             <Button 
               onClick={handleSyncAll}
               disabled={isSyncing}
@@ -182,6 +233,15 @@ export default function SubscriptionsPage() {
             </Button>
           </div>
         </div>
+
+        {debugInfo && (
+          <div className="mb-6 p-4 bg-gray-100 rounded-lg">
+            <h3 className="font-semibold mb-2">Debug Information:</h3>
+            <pre className="text-xs overflow-auto max-h-40">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
+        )}
 
         {!hasSubscriptions ? (
           <EmptySubscriptionsState 
