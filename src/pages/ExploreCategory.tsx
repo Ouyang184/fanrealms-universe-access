@@ -223,12 +223,12 @@ export default function ExploreCategoryPage() {
           </div>
         </section>
 
-        {/* Back to All Categories Button */}
+        {/* Back to Explore Button */}
         <section className="mb-8">
           <div className="flex items-center justify-end">
             <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
               <ChevronLeft className="h-4 w-4" />
-              Back to All
+              Back to Explore
             </Button>
           </div>
         </section>
