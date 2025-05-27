@@ -18,7 +18,7 @@ export default function CreatorStudioTiers() {
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
   
-  // Fetch creator tiers
+  // Fetch creator tiers with accurate subscriber counts
   const { data: tiers, isLoading, error } = useQuery({
     queryKey: ["tiers"],
     queryFn: async () => {
@@ -35,26 +35,78 @@ export default function CreatorStudioTiers() {
         throw new Error("Could not find your creator profile");
       }
       
+      console.log('Creator ID:', creatorData.id);
+      
       // Then get the tiers for this creator
-      const { data, error } = await supabase
+      const { data: tiersData, error: tiersError } = await supabase
         .from("membership_tiers")
-        .select("*")  // Select all columns instead of trying to access subscriber_count
+        .select("*")
         .eq("creator_id", creatorData.id)
         .order("price", { ascending: true });
       
-      if (error) throw error;
+      if (tiersError) throw tiersError;
       
-      // Transform the data to match our Tier interface
-      return data.map((tier) => ({
-        id: tier.id,
-        name: tier.title,
-        price: tier.price,
-        features: tier.description ? tier.description.split("|") : [],
-        subscriberCount: 0, // Default to 0 since we don't have a subscriber_count column
+      console.log('Tiers data:', tiersData);
+      
+      // Count active subscribers for each tier
+      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
+        console.log('Counting subscribers for tier:', tier.id);
+        
+        // Count from creator_subscriptions table with active status
+        const { count, error: countError } = await supabase
+          .from('creator_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('tier_id', tier.id)
+          .eq('status', 'active');
+
+        if (countError) {
+          console.error('Error counting subscribers for tier:', tier.id, countError);
+        }
+
+        console.log('Subscriber count for tier', tier.id, ':', count);
+        
+        return {
+          id: tier.id,
+          name: tier.title,
+          price: tier.price,
+          features: tier.description ? tier.description.split("|") : [],
+          subscriberCount: count || 0,
+        };
       }));
+      
+      console.log('Final tiers with subscriber counts:', tiersWithSubscribers);
+      return tiersWithSubscribers;
     },
     enabled: !!user,
+    refetchInterval: 5000, // Refetch every 5 seconds to keep counts updated
   });
+  
+  // Set up real-time subscription for creator_subscriptions table
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('Setting up real-time subscription for subscription changes');
+    
+    const channel = supabase
+      .channel('creator-subscriptions-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'creator_subscriptions'
+      }, (payload) => {
+        console.log('Real-time subscription update received:', payload);
+        // Invalidate and refetch the tiers query when subscription changes occur
+        queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      })
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+  
+  const queryClient = useQueryClient();
   
   const handleEditTier = (tier: Tier) => {
     setEditingTier(tier);
