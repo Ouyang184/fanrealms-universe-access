@@ -14,25 +14,68 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Stripe subscriptions function called');
+    console.log('=== STRIPE SUBSCRIPTIONS FUNCTION START ===');
     console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    // Check environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    
+    console.log('Environment check:', {
+      supabaseUrl: supabaseUrl ? 'SET' : 'MISSING',
+      supabaseAnonKey: supabaseAnonKey ? 'SET' : 'MISSING',
+      supabaseServiceKey: supabaseServiceKey ? 'SET' : 'MISSING',
+      stripeSecretKey: stripeSecretKey ? 'SET' : 'MISSING'
+    });
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.log('ERROR: Missing Supabase configuration');
+      return createJsonResponse({ error: 'Missing Supabase configuration' }, 500);
+    }
+
+    if (!stripeSecretKey) {
+      console.log('ERROR: Missing Stripe secret key');
+      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
+    }
+
+    if (!supabaseServiceKey) {
+      console.log('ERROR: Missing Supabase service role key');
+      return createJsonResponse({ error: 'Missing Supabase service configuration' }, 500);
+    }
+
     const authHeader = req.headers.get('Authorization');
+    console.log('Authorization header present:', !!authHeader);
 
     // Authenticate user
-    const user = await authenticateUser(authHeader, supabaseUrl, supabaseAnonKey);
-    console.log('User authenticated:', user.id);
+    let user;
+    try {
+      user = await authenticateUser(authHeader, supabaseUrl, supabaseAnonKey);
+      console.log('User authenticated successfully:', { userId: user.id, email: user.email });
+    } catch (authError) {
+      console.log('ERROR: Authentication failed:', authError);
+      return createJsonResponse({ error: 'Authentication failed: ' + authError.message }, 401);
+    }
 
     // Parse request body
     let requestBody: SubscriptionRequest;
     try {
-      requestBody = await req.json();
-      console.log('Request body parsed:', JSON.stringify(requestBody, null, 2));
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText);
+      
+      if (!bodyText || bodyText.trim() === '') {
+        console.log('ERROR: Empty request body');
+        return createJsonResponse({ error: 'Request body is empty' }, 400);
+      }
+      
+      requestBody = JSON.parse(bodyText);
+      console.log('Parsed request body:', JSON.stringify(requestBody, null, 2));
     } catch (parseError) {
       console.log('ERROR: Failed to parse request body:', parseError);
-      return createJsonResponse({ error: 'Invalid JSON in request body' }, 400);
+      return createJsonResponse({ error: 'Invalid JSON in request body: ' + parseError.message }, 400);
     }
 
     // Handle both parameter naming conventions and validate required fields
@@ -57,19 +100,14 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Missing action parameter' }, 400);
     }
 
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!stripeSecretKey) {
-      console.log('ERROR: Missing Stripe secret key');
-      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
-    }
-
-    console.log('Stripe secret key found');
-
+    console.log('Creating Stripe client...');
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey);
+    
+    console.log('Creating Supabase clients...');
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
-    const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     if (action === 'create_subscription') {
       if (!tierId || !creatorId) {
@@ -81,6 +119,7 @@ serve(async (req) => {
         }, 400);
       }
 
+      console.log('Calling handleCreateSubscription...');
       return await handleCreateSubscription(
         stripe, 
         supabase, 
@@ -95,6 +134,7 @@ serve(async (req) => {
         return createJsonResponse({ error: 'Missing required parameter: subscriptionId' }, 400);
       }
 
+      console.log('Calling handleCancelSubscription...');
       return await handleCancelSubscription(
         stripe,
         supabaseService,
@@ -107,10 +147,16 @@ serve(async (req) => {
     return createJsonResponse({ error: 'Invalid action. Supported actions: create_subscription, cancel_subscription' }, 400);
 
   } catch (error) {
-    console.error('Subscription error:', error);
+    console.error('=== SUBSCRIPTION FUNCTION ERROR ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', error);
+    
     return createJsonResponse({ 
       error: error.message || 'Internal server error',
-      details: error.toString()
+      details: error.toString(),
+      type: error.constructor.name
     }, 500);
   }
 });
