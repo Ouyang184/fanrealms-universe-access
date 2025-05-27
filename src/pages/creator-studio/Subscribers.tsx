@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
@@ -12,6 +13,27 @@ import { SubscribersTable } from "@/components/creator-studio/subscribers/Subscr
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+
+// Utility function to format dates
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+// Utility function to get tier badge variant
+const getTierBadgeVariant = (tier: string): "default" | "secondary" | "outline" => {
+  // You can customize this logic based on your tier naming convention
+  const lowerTier = tier.toLowerCase();
+  if (lowerTier.includes('premium') || lowerTier.includes('pro')) {
+    return "default";
+  } else if (lowerTier.includes('basic') || lowerTier.includes('starter')) {
+    return "secondary";
+  }
+  return "outline";
+};
 
 export default function CreatorStudioSubscribers() {
   const { user } = useAuth();
