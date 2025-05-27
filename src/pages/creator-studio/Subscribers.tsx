@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
@@ -80,7 +81,7 @@ export default function CreatorStudioSubscribers() {
     enabled: !!creatorData?.id
   });
 
-  // Fetch active subscribers with improved real-time updates
+  // Fetch active subscribers with corrected queries
   const { isLoading: loadingSubscribers, refetch: refetchSubscribers } = useQuery({
     queryKey: ["active-subscribers", creatorData?.id],
     queryFn: async () => {
@@ -88,100 +89,114 @@ export default function CreatorStudioSubscribers() {
       
       console.log('Fetching active subscribers for creator:', creatorData.id);
       
-      // First, let's check both creator_subscriptions and subscriptions tables
-      const [creatorSubsResult, subsResult] = await Promise.all([
-        supabase
-          .from("creator_subscriptions")
-          .select(`
-            id,
-            created_at,
-            tier_id,
-            status,
-            amount_paid,
-            current_period_start,
-            current_period_end,
-            stripe_subscription_id,
-            users!creator_subscriptions_user_id_fkey(
-              id,
-              email,
-              username,
-              profile_picture
-            ),
-            membership_tiers!creator_subscriptions_tier_id_fkey(
-              id,
-              title,
-              price
-            )
-          `)
-          .eq("creator_id", creatorData.id)
-          .eq("status", "active"),
-        
-        supabase
-          .from("subscriptions")
-          .select(`
-            *,
-            users!subscriptions_user_id_fkey(
-              id,
-              email,
-              username,
-              profile_picture
-            ),
-            membership_tiers!subscriptions_tier_id_fkey(
-              id,
-              title,
-              price
-            )
-          `)
-          .eq("creator_id", creatorData.id)
-          .eq("is_paid", true)
-      ]);
-      
-      console.log('Creator subscriptions result:', creatorSubsResult);
-      console.log('Subscriptions result:', subsResult);
-      
-      // Use creator_subscriptions as primary source since it has more detailed payment info
-      let data = creatorSubsResult.data || [];
+      // Query creator_subscriptions table with separate user lookup
+      const { data: creatorSubs, error: creatorSubsError } = await supabase
+        .from("creator_subscriptions")
+        .select(`
+          id,
+          created_at,
+          tier_id,
+          status,
+          amount_paid,
+          current_period_start,
+          current_period_end,
+          stripe_subscription_id,
+          user_id
+        `)
+        .eq("creator_id", creatorData.id)
+        .eq("status", "active");
+
+      if (creatorSubsError) {
+        console.error("Error fetching creator_subscriptions:", creatorSubsError);
+      }
+
+      // Query subscriptions table with separate user lookup
+      const { data: regularSubs, error: regularSubsError } = await supabase
+        .from("subscriptions")
+        .select(`
+          id,
+          user_id,
+          tier_id,
+          created_at
+        `)
+        .eq("creator_id", creatorData.id)
+        .eq("is_paid", true);
+
+      if (regularSubsError) {
+        console.error("Error fetching subscriptions:", regularSubsError);
+      }
+
+      // Use creator_subscriptions as primary source
+      let subscriptionData = creatorSubs || [];
       
       // If no data in creator_subscriptions, fall back to subscriptions table
-      if (data.length === 0 && subsResult.data && subsResult.data.length > 0) {
+      if (subscriptionData.length === 0 && regularSubs && regularSubs.length > 0) {
         console.log('No data in creator_subscriptions, using subscriptions table');
-        data = subsResult.data.map((sub: any) => ({
+        subscriptionData = regularSubs.map((sub: any) => ({
           id: sub.id,
           created_at: sub.created_at,
           tier_id: sub.tier_id,
           status: 'active',
-          amount_paid: sub.membership_tiers?.price || 0,
+          amount_paid: 0,
           current_period_start: null,
           current_period_end: null,
           stripe_subscription_id: '',
-          users: sub.users,
-          membership_tiers: sub.membership_tiers
+          user_id: sub.user_id
         }));
       }
-      
-      if (creatorSubsResult.error && subsResult.error) {
-        console.error("Error fetching subscribers:", creatorSubsResult.error, subsResult.error);
-        toast({
-          title: "Error",
-          description: "Could not fetch subscribers",
-          variant: "destructive"
-        });
+
+      if (!subscriptionData || subscriptionData.length === 0) {
+        console.log('No subscription data found');
+        setSubscribers([]);
         return [];
       }
+
+      // Get unique user IDs
+      const userIds = [...new Set(subscriptionData.map(sub => sub.user_id))];
       
-      console.log('Final subscriber data:', data);
+      // Fetch user details separately
+      const { data: usersData, error: usersError } = await supabase
+        .from("users")
+        .select("id, username, email, profile_picture")
+        .in("id", userIds);
+
+      if (usersError) {
+        console.error("Error fetching users:", usersError);
+      }
+
+      // Get unique tier IDs
+      const tierIds = [...new Set(subscriptionData.map(sub => sub.tier_id).filter(Boolean))];
       
+      // Fetch tier details separately
+      const { data: tiersData, error: tiersError } = await supabase
+        .from("membership_tiers")
+        .select("id, title, price")
+        .in("id", tierIds);
+
+      if (tiersError) {
+        console.error("Error fetching tiers:", tiersError);
+      }
+
+      // Create lookup maps
+      const usersMap = new Map(usersData?.map(user => [user.id, user]) || []);
+      const tiersMap = new Map(tiersData?.map(tier => [tier.id, tier]) || []);
+
       // Transform the data to match SubscriberWithDetails format
-      const formattedSubscribers: SubscriberWithDetails[] = data.map((sub: any) => ({
-        id: sub.id,
-        name: sub.users?.username || "Unknown User",
-        email: sub.users?.email || "No email",
-        tier: sub.membership_tiers?.title || "Unknown Tier",
-        tierPrice: sub.amount_paid || sub.membership_tiers?.price || 0,
-        subscriptionDate: sub.created_at,
-        avatarUrl: sub.users?.profile_picture || undefined,
-        status: sub.status as 'active' | 'expired' | 'pending'
-      }));
+      const formattedSubscribers: SubscriberWithDetails[] = subscriptionData.map((sub: any) => {
+        const user = usersMap.get(sub.user_id);
+        const tier = tiersMap.get(sub.tier_id);
+        
+        return {
+          id: sub.id,
+          name: user?.username || "Unknown User",
+          email: user?.email || "No email",
+          tier: tier?.title || "Unknown Tier",
+          tierPrice: sub.amount_paid || tier?.price || 0,
+          subscriptionDate: sub.created_at,
+          avatarUrl: user?.profile_picture || undefined,
+          status: sub.status as 'active' | 'expired' | 'pending'
+        };
+      });
       
       console.log('Formatted subscribers:', formattedSubscribers);
       setSubscribers(formattedSubscribers);
