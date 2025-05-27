@@ -24,9 +24,9 @@ export const useCreators = (searchTerm?: string) => {
 
       // If search term is provided, filter by username or display_name
       if (searchTerm && searchTerm.trim() !== '') {
-        const term = `%${searchTerm.toLowerCase().trim()}%`;
+        const term = searchTerm.toLowerCase().trim();
         query = query
-          .or(`display_name.ilike.${term},users.username.ilike.${term}`);
+          .or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%`);
       }
       
       const { data: creatorData, error } = await query;
