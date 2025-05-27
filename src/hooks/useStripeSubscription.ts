@@ -68,22 +68,6 @@ export const useStripeSubscription = () => {
     refetchInterval: 2000, // Refresh every 2 seconds
   });
 
-  // Create subscription function
-  const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
-    console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
-    
-    const { data, error } = await supabase.functions.invoke('create-subscription', {
-      body: {
-        tier_id: tierId,
-        creator_id: creatorId,
-        user_id: user?.id
-      }
-    });
-
-    if (error) throw error;
-    return data;
-  }, [user?.id]);
-
   // Function to trigger subscription success events
   const triggerSubscriptionEvents = useCallback((subscriptionData?: any) => {
     console.log('Triggering subscription success events with data:', subscriptionData);
@@ -200,8 +184,6 @@ export const useStripeSubscription = () => {
     userSubscriptions,
     subscriptionsLoading,
     isProcessing,
-    setIsProcessing,
-    createSubscription,
     refetchSubscriptions,
     handleSubscriptionSuccess,
     cancelSubscription,
