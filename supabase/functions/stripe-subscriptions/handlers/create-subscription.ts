@@ -47,80 +47,65 @@ export async function handleCreateSubscription(
     console.log('Found basic subscriptions:', existingBasicSubs?.length || 0, existingBasicSubs);
   }
 
-  // If there are existing subscriptions, clean them up first to avoid conflicts
-  if ((existingCreatorSubs && existingCreatorSubs.length > 0) || 
-      (existingBasicSubs && existingBasicSubs.length > 0)) {
+  // If there are existing subscriptions, verify their status with Stripe and clean up if needed
+  if (existingCreatorSubs && existingCreatorSubs.length > 0) {
+    console.log('Found existing creator subscriptions, verifying with Stripe...');
     
-    console.log('Found existing subscriptions, cleaning them up...');
+    let hasValidActiveSubscription = false;
     
-    // Delete any stale basic subscriptions
-    if (existingBasicSubs && existingBasicSubs.length > 0) {
-      const { error: deleteBasicError } = await supabaseService
-        .from('subscriptions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId);
-      
-      if (deleteBasicError) {
-        console.error('Error deleting basic subscriptions:', deleteBasicError);
-      } else {
-        console.log('Deleted basic subscriptions successfully');
-      }
-    }
-    
-    // For creator subscriptions, check if they're actually active in Stripe
-    if (existingCreatorSubs && existingCreatorSubs.length > 0) {
-      for (const sub of existingCreatorSubs) {
-        if (sub.stripe_subscription_id) {
-          try {
-            const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-            console.log('Stripe subscription status:', stripeSubscription.status);
-            
-            // If the Stripe subscription is not active, clean up the database record
-            if (stripeSubscription.status !== 'active' && stripeSubscription.status !== 'trialing') {
-              console.log('Cleaning up inactive subscription record:', sub.id);
-              const { error: deleteError } = await supabaseService
-                .from('creator_subscriptions')
-                .delete()
-                .eq('id', sub.id);
-              
-              if (deleteError) {
-                console.error('Error deleting inactive subscription:', deleteError);
-              }
-            } else {
-              console.log('User already has active subscription to this creator');
-              return createJsonResponse({ 
-                error: 'You already have an active subscription to this creator. Only one subscription per creator is allowed.' 
-              }, 400);
-            }
-          } catch (stripeError) {
-            console.error('Error checking Stripe subscription:', stripeError);
-            // If we can't verify with Stripe, delete the record to be safe
-            const { error: deleteError } = await supabaseService
+    for (const sub of existingCreatorSubs) {
+      if (sub.stripe_subscription_id) {
+        try {
+          const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+          console.log('Stripe subscription status for', sub.id, ':', stripeSubscription.status);
+          
+          if (stripeSubscription.status === 'active' || stripeSubscription.status === 'trialing') {
+            hasValidActiveSubscription = true;
+            console.log('User has valid active subscription');
+            break;
+          } else {
+            // Clean up inactive subscription
+            console.log('Cleaning up inactive subscription:', sub.id);
+            await supabaseService
               .from('creator_subscriptions')
               .delete()
               .eq('id', sub.id);
-            
-            if (deleteError) {
-              console.error('Error deleting unverifiable subscription:', deleteError);
-            } else {
-              console.log('Deleted unverifiable subscription record');
-            }
           }
-        } else {
-          // No Stripe subscription ID, delete the record
-          console.log('Deleting subscription without Stripe ID:', sub.id);
-          const { error: deleteError } = await supabaseService
+        } catch (stripeError) {
+          console.error('Error checking Stripe subscription:', stripeError);
+          // Clean up unverifiable subscription
+          console.log('Cleaning up unverifiable subscription:', sub.id);
+          await supabaseService
             .from('creator_subscriptions')
             .delete()
             .eq('id', sub.id);
-          
-          if (deleteError) {
-            console.error('Error deleting subscription without Stripe ID:', deleteError);
-          }
         }
+      } else {
+        // No Stripe subscription ID, clean up
+        console.log('Cleaning up subscription without Stripe ID:', sub.id);
+        await supabaseService
+          .from('creator_subscriptions')
+          .delete()
+          .eq('id', sub.id);
       }
     }
+    
+    if (hasValidActiveSubscription) {
+      console.log('User already has active subscription to this creator');
+      return createJsonResponse({ 
+        error: 'You already have an active subscription to this creator. Please visit the Subscriptions page to manage your existing subscription.' 
+      }, 400);
+    }
+  }
+
+  // Clean up any stale basic subscriptions
+  if (existingBasicSubs && existingBasicSubs.length > 0) {
+    console.log('Cleaning up basic subscriptions...');
+    await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('creator_id', creatorId);
   }
 
   // Get tier and creator details

@@ -46,26 +46,22 @@ export function ActiveSubscribeButton({
       if (result?.error) {
         console.error('ActiveSubscribeButton: Server returned error:', result.error);
         
-        if (result.error.includes('already have an active subscription')) {
-          // Force refresh subscription data and show appropriate message
+        // Show the specific error message from the server
+        toast({
+          title: "Subscription Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        
+        // If it's an existing subscription error, refresh the data
+        if (result.error.includes('already have an active subscription') || 
+            result.error.includes('existing subscription')) {
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
             queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
             queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
             queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
           ]);
-          
-          toast({
-            title: "Already Subscribed",
-            description: "You already have an active subscription to this creator. Refreshing your subscription status...",
-            variant: "default"
-          });
-        } else {
-          toast({
-            title: "Subscription Failed",
-            description: result.error,
-            variant: "destructive"
-          });
         }
         return;
       }
@@ -116,9 +112,15 @@ export function ActiveSubscribeButton({
     } catch (error) {
       console.error('ActiveSubscribeButton: Subscription error:', error);
       
+      // Extract a meaningful error message
+      let errorMessage = "Failed to create subscription. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Subscription Failed",
-        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
