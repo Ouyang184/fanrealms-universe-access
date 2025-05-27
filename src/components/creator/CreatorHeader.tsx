@@ -2,8 +2,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Globe, Calendar, Users } from "lucide-react";
+import { Globe, Calendar, Users } from "lucide-react";
 import { SubscribeButton } from "./SubscribeButton";
+import { SocialLinks } from "@/components/SocialLinks";
 import type { CreatorProfile } from "@/types";
 
 interface CreatorHeaderProps {
@@ -38,10 +39,10 @@ export function CreatorHeader({
       
       {/* Profile Content */}
       <div className="relative -mt-16 px-6 pb-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          {/* Avatar and basic info */}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          {/* Left side: Avatar and basic info */}
           <div className="flex flex-col md:flex-row md:items-end gap-4">
-            <Avatar className="w-32 h-32 border-4 border-background">
+            <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
               <AvatarImage 
                 src={creator.profile_image_url || creator.avatar_url} 
                 alt={creator.display_name || creator.username} 
@@ -51,24 +52,26 @@ export function CreatorHeader({
               </AvatarFallback>
             </Avatar>
             
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
+              {/* Name and username */}
               <div>
-                <h1 className="text-2xl font-bold">
+                <h1 className="text-3xl font-bold text-foreground">
                   {creator.display_name || creator.username}
                 </h1>
                 {creator.display_name && (
-                  <p className="text-muted-foreground">@{creator.username}</p>
+                  <p className="text-lg text-muted-foreground">@{creator.username}</p>
                 )}
               </div>
               
-              {/* Stats */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
+              {/* Stats row */}
+              <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>{creator.follower_count || 0} followers</span>
+                  <span className="font-medium">{creator.follower_count || 0}</span>
+                  <span>followers</span>
                 </div>
                 {creator.created_at && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     <span>Joined {new Date(creator.created_at).getFullYear()}</span>
                   </div>
@@ -77,9 +80,9 @@ export function CreatorHeader({
             </div>
           </div>
           
-          {/* Action buttons */}
+          {/* Right side: Action buttons */}
           {!isOwnProfile && (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3 md:items-end">
               {creator.tiers && creator.tiers.length > 0 && (
                 <div className="space-y-2">
                   {creator.tiers.map((tier) => (
@@ -96,6 +99,7 @@ export function CreatorHeader({
               <Button
                 variant={isFollowing ? "outline" : "default"}
                 onClick={isFollowing ? onUnfollow : onFollow}
+                className="min-w-[100px]"
               >
                 {isFollowing ? "Unfollow" : "Follow"}
               </Button>
@@ -103,37 +107,61 @@ export function CreatorHeader({
           )}
         </div>
         
-        {/* Bio and additional info */}
-        <div className="mt-6 space-y-4">
-          {creator.bio && (
-            <p className="text-foreground">{creator.bio}</p>
-          )}
-          
-          {/* Tags */}
-          {creator.tags && creator.tags.length > 0 && (
+        {/* Bio section - clearly separated */}
+        {creator.bio && (
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="max-w-3xl">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">About</h3>
+              <p className="text-foreground leading-relaxed">{creator.bio}</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Tags section */}
+        {creator.tags && creator.tags.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Categories</h3>
             <div className="flex flex-wrap gap-2">
               {creator.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary">
+                <Badge key={index} variant="secondary" className="px-3 py-1">
                   {tag}
                 </Badge>
               ))}
             </div>
-          )}
-          
+          </div>
+        )}
+        
+        {/* Links section */}
+        <div className="mt-6 space-y-4">
           {/* Website link */}
           {creator.website && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Globe className="w-4 h-4" />
-              <a 
-                href={creator.website} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                {creator.website}
-              </a>
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Website</h3>
+              <div className="flex items-center gap-2 text-sm">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <a 
+                  href={creator.website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  {creator.website}
+                </a>
+              </div>
             </div>
           )}
+          
+          {/* Social links */}
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Social Links</h3>
+            <SocialLinks 
+              creatorId={creator.id} 
+              variant="outline" 
+              size="sm"
+              showText={true}
+              className="gap-3"
+            />
+          </div>
         </div>
       </div>
     </div>

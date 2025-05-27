@@ -4,7 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useCreatorPage } from "@/hooks/useCreatorPage";
 import { useFollow } from "@/hooks/useFollow";
@@ -103,7 +102,7 @@ const CreatorPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-8 max-w-5xl mx-auto">
+      <div className="space-y-0 max-w-5xl mx-auto">
         <CreatorHeader 
           creator={creator}
           isFollowing={isFollowing}
@@ -111,43 +110,36 @@ const CreatorPage: React.FC = () => {
           onUnfollow={handleUnfollow}
         />
         
-        {/* Content Tags Section */}
-        {creator.tags && creator.tags.length > 0 && (
-          <div className="px-4">
-            <h3 className="text-lg font-semibold mb-3">Content Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {creator.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="px-3 py-1">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+        {/* Tab Navigation - properly spaced below header */}
+        <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+          <div className="px-6 py-4">
+            <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid grid-cols-3 max-w-md mx-auto h-11">
+                <TabsTrigger value="posts" className="text-sm font-medium">Posts</TabsTrigger>
+                <TabsTrigger value="membership" className="text-sm font-medium">Membership</TabsTrigger>
+                <TabsTrigger value="about" className="text-sm font-medium">About</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="posts" className="pt-6 px-0">
+                <div className="px-6">
+                  <CreatorPosts posts={posts || []} />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="membership" className="pt-6 px-0">
+                <div className="px-6">
+                  <CreatorMembership creator={creator} />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="about" className="pt-6 px-0">
+                <div className="px-6">
+                  <CreatorAbout creator={creator} />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
-        )}
-        
-        <div className="px-4">
-          <p>{creator.bio || "This creator hasn't added a bio yet."}</p>
         </div>
-        
-        <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 max-w-md mx-auto">
-            <TabsTrigger value="posts">Posts</TabsTrigger>
-            <TabsTrigger value="membership">Membership</TabsTrigger>
-            <TabsTrigger value="about">About</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="posts" className="pt-6">
-            <CreatorPosts posts={posts || []} />
-          </TabsContent>
-          
-          <TabsContent value="membership" className="pt-6">
-            <CreatorMembership creator={creator} />
-          </TabsContent>
-          
-          <TabsContent value="about" className="pt-6">
-            <CreatorAbout creator={creator} />
-          </TabsContent>
-        </Tabs>
       </div>
     </MainLayout>
   );
