@@ -33,13 +33,13 @@ export function SubscribeButton({
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
   const [localSubscriptionState, setLocalSubscriptionState] = useState(isSubscribed);
 
-  // Check if user is subscribed to this specific tier with very aggressive refresh
+  // Check if user is subscribed to this specific tier with aggressive refresh
   const { data: userSubscription, refetch: refetchUserSubscription } = useQuery({
     queryKey: ['userTierSubscription', user?.id, tierId],
     queryFn: async () => {
       if (!user?.id) return null;
       
-      console.log('SubscribeButton: Checking subscription for user:', user.id, 'tier:', tierId);
+      console.log('Checking subscription for user:', user.id, 'tier:', tierId);
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
@@ -50,56 +50,31 @@ export function SubscribeButton({
         .maybeSingle();
 
       if (error) {
-        console.error('SubscribeButton: Error checking subscription:', error);
+        console.error('Error checking subscription:', error);
         return null;
       }
       
-      console.log('SubscribeButton: Subscription check result for tier', tierId, ':', data);
+      console.log('Subscription check result for tier', tierId, ':', data);
       return data;
     },
     enabled: !!user?.id && !!tierId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 1000, // Every second for real-time updates
+    refetchInterval: 2000, // Very frequent updates
   });
 
   // Update local state when subscription data changes
   useEffect(() => {
     const newSubscriptionState = userSubscription !== null || isSubscribed;
-    if (newSubscriptionState !== localSubscriptionState) {
-      console.log('SubscribeButton: Updating local subscription state for tier', tierId, ':', newSubscriptionState);
-      setLocalSubscriptionState(newSubscriptionState);
-    }
-  }, [userSubscription, isSubscribed, tierId, localSubscriptionState]);
+    setLocalSubscriptionState(newSubscriptionState);
+    console.log('Updated local subscription state for tier', tierId, ':', newSubscriptionState);
+  }, [userSubscription, isSubscribed, tierId]);
 
-  // Listen for subscription events and force refresh immediately
+  // Listen for subscription events and force refresh
   useEffect(() => {
     const handleSubscriptionUpdate = async () => {
-      console.log('SubscribeButton: Subscription update event detected, refreshing tier subscription data...');
-      
-      // Invalidate all related queries immediately
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
-      ]);
-      
-      // Force immediate refetch
+      console.log('Subscription update event detected, refreshing tier subscription data...');
+      await queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] });
       await refetchUserSubscription();
-      
-      // Update local state immediately
-      const freshData = await supabase
-        .from('creator_subscriptions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('tier_id', tierId)
-        .eq('status', 'active')
-        .maybeSingle();
-      
-      if (freshData.data) {
-        console.log('SubscribeButton: Found fresh subscription data, updating state');
-        setLocalSubscriptionState(true);
-      }
       
       // Trigger the callback if provided
       if (onSubscriptionSuccess) {
@@ -107,21 +82,16 @@ export function SubscribeButton({
       }
     };
 
-    const handlePaymentSuccess = async () => {
-      console.log('SubscribeButton: Payment success detected');
-      await handleSubscriptionUpdate();
-    };
-
     window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
     window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
     
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
       window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
     };
-  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess, user?.id, tierId]);
+  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess]);
 
   // Check if creator has completed Stripe setup
   const { data: creatorStripeStatus } = useQuery({
@@ -144,7 +114,7 @@ export function SubscribeButton({
                               creatorStripeStatus?.stripe_charges_enabled;
 
   const handleSubscribe = async () => {
-    console.log('SubscribeButton: Subscribe button clicked', { tierId, creatorId, tierName, price });
+    console.log('Subscribe button clicked', { tierId, creatorId, tierName, price });
     
     if (!user) {
       toast({
@@ -167,12 +137,12 @@ export function SubscribeButton({
     setIsProcessing(true);
 
     try {
-      console.log('SubscribeButton: Creating subscription...');
+      console.log('Creating subscription...');
       const result = await createSubscription({ tierId, creatorId });
-      console.log('SubscribeButton: Subscription creation result:', result);
+      console.log('Subscription creation result:', result);
       
       if (result?.clientSecret) {
-        console.log('SubscribeButton: Navigating to payment page with clientSecret');
+        console.log('Navigating to payment page with clientSecret');
         // Store the success callback in sessionStorage to avoid serialization issues
         if (onSubscriptionSuccess) {
           sessionStorage.setItem('subscriptionSuccessCallback', 'true');
@@ -180,7 +150,7 @@ export function SubscribeButton({
           sessionStorage.setItem('subscriptionTierId', tierId);
         }
         
-        // Navigate to payment page with subscription details
+        // Navigate to payment page with subscription details (without function)
         navigate('/payment', {
           state: {
             clientSecret: result.clientSecret,
@@ -191,7 +161,7 @@ export function SubscribeButton({
           }
         });
       } else {
-        console.error('SubscribeButton: No clientSecret received:', result);
+        console.error('No clientSecret received:', result);
         toast({
           title: "Error",
           description: "Failed to initialize payment. Please try again.",
@@ -199,7 +169,7 @@ export function SubscribeButton({
         });
       }
     } catch (error) {
-      console.error('SubscribeButton: Subscription error:', error);
+      console.error('Subscription error:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
@@ -221,12 +191,11 @@ export function SubscribeButton({
       // Force immediate state update
       setLocalSubscriptionState(false);
       
-      // Invalidate and refetch subscription data immediately
+      // Invalidate and refetch subscription data
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
         queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
         queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
       ]);
       await refetchUserSubscription();
       
@@ -240,7 +209,7 @@ export function SubscribeButton({
         onSubscriptionSuccess();
       }
     } catch (error) {
-      console.error('SubscribeButton: Unsubscribe error:', error);
+      console.error('Unsubscribe error:', error);
       toast({
         title: "Error",
         description: "Failed to unsubscribe. Please try again.",
@@ -253,14 +222,6 @@ export function SubscribeButton({
 
   // Use local state that gets updated more aggressively
   const isUserSubscribed = localSubscriptionState;
-
-  console.log('SubscribeButton: Render state', { 
-    tierId, 
-    isUserSubscribed, 
-    localSubscriptionState, 
-    userSubscription: !!userSubscription,
-    isSubscribed 
-  });
 
   if (isUserSubscribed) {
     return (
