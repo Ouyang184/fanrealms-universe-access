@@ -1,7 +1,7 @@
 
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import {
@@ -19,28 +19,18 @@ export function SearchBar() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  
+  // Only search when there's a search term
   const { data: creators = [], isLoading } = useCreators(searchTerm);
-
-  // Add keyboard shortcut to open search
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
 
   const handleOpenSearch = () => {
     setOpen(true);
   };
 
-  const handleCreatorSelect = (userId: string) => {
-    const creator = creators.find(c => c.user_id === userId);
+  const handleCreatorSelect = (creatorId: string) => {
+    const creator = creators.find(c => c.id === creatorId);
     if (!creator) {
-      console.error("Creator not found with ID:", userId);
+      console.error("Creator not found with ID:", creatorId);
       toast({
         title: "Error",
         description: "Couldn't find that creator profile",
@@ -50,9 +40,8 @@ export function SearchBar() {
     }
     
     // Prioritize navigation by username if available
-    let routeIdentifier = creator.username || creator.user_id;
+    let routeIdentifier = creator.username || creator.id;
     
-    // If using user_id, do NOT prefix with "user-" - the creator page component will handle this
     console.log(`Header SearchBar: Navigating to creator profile for: "${routeIdentifier}" (${creator.display_name || 'No Display Name'})`);
     
     setOpen(false);
@@ -84,6 +73,7 @@ export function SearchBar() {
         <CommandInput 
           placeholder="Search by username or display name..."
           onValueChange={handleSearchInput}
+          value={searchTerm}
         />
         <CommandList>
           <CommandEmpty>
@@ -92,30 +82,32 @@ export function SearchBar() {
                 <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
                 <span>Searching...</span>
               </div>
-            : "No creators found."}
+            : searchTerm.length === 0 ? "Start typing to search for creators..." : "No creators found."}
           </CommandEmpty>
-          <CommandGroup heading="Creators">
-            {creators.map((creator) => (
-              <CommandItem
-                key={creator.user_id}
-                onSelect={() => handleCreatorSelect(creator.user_id)}
-                className="flex items-center gap-2 p-2 cursor-pointer"
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={creator.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
-                  {creator.username && (
-                    <span className="text-xs text-muted-foreground">@{creator.username}</span>
-                  )}
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {searchTerm.length > 0 && (
+            <CommandGroup heading="Creators">
+              {creators.map((creator) => (
+                <CommandItem
+                  key={creator.id}
+                  onSelect={() => handleCreatorSelect(creator.id)}
+                  className="flex items-center gap-2 p-2 cursor-pointer"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                    <AvatarFallback>
+                      {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{creator.display_name || creator.username || 'Unknown Creator'}</span>
+                    {creator.username && (
+                      <span className="text-xs text-muted-foreground">@{creator.username}</span>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </CommandList>
       </CommandDialog>
     </div>

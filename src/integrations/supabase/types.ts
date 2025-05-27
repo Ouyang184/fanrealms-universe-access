@@ -84,6 +84,20 @@ export type Database = {
             referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "conversation_participants_other_user_id_fkey"
+            columns: ["other_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
       }
       conversations: {
@@ -270,6 +284,7 @@ export type Database = {
           stripe_onboarding_complete: boolean | null
           stripe_payouts_enabled: boolean | null
           tags: string[] | null
+          updated_at: string | null
           user_id: string
           website: string | null
         }
@@ -286,6 +301,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean | null
           stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
+          updated_at?: string | null
           user_id: string
           website?: string | null
         }
@@ -302,6 +318,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean | null
           stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
+          updated_at?: string | null
           user_id?: string
           website?: string | null
         }
@@ -359,18 +376,21 @@ export type Database = {
           created_at: string
           creator_id: string
           id: number
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           creator_id: string
           id?: never
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           creator_id?: string
           id?: never
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -388,18 +408,21 @@ export type Database = {
           created_at: string
           id: string
           post_id: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           post_id: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
           post_id?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -428,6 +451,7 @@ export type Database = {
           price: number
           stripe_price_id: string | null
           title: string
+          updated_at: string | null
         }
         Insert: {
           created_at?: string
@@ -437,6 +461,7 @@ export type Database = {
           price: number
           stripe_price_id?: string | null
           title: string
+          updated_at?: string | null
         }
         Update: {
           created_at?: string
@@ -446,6 +471,7 @@ export type Database = {
           price?: number
           stripe_price_id?: string | null
           title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -547,6 +573,7 @@ export type Database = {
           id: string
           tier_id: string | null
           title: string
+          updated_at: string | null
         }
         Insert: {
           attachments?: Json | null
@@ -557,6 +584,7 @@ export type Database = {
           id?: string
           tier_id?: string | null
           title: string
+          updated_at?: string | null
         }
         Update: {
           attachments?: Json | null
@@ -567,6 +595,7 @@ export type Database = {
           id?: string
           tier_id?: string | null
           title?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -574,6 +603,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
             referencedColumns: ["id"]
           },
           {
@@ -664,6 +700,7 @@ export type Database = {
           email: string
           id: string
           profile_picture: string | null
+          updated_at: string | null
           username: string
           website: string | null
         }
@@ -672,6 +709,7 @@ export type Database = {
           email: string
           id?: string
           profile_picture?: string | null
+          updated_at?: string | null
           username: string
           website?: string | null
         }
@@ -680,6 +718,7 @@ export type Database = {
           email?: string
           id?: string
           profile_picture?: string | null
+          updated_at?: string | null
           username?: string
           website?: string | null
         }

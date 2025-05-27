@@ -25,7 +25,7 @@ export const useCreators = (searchTerm?: string) => {
       // If search term is provided, filter by username or display_name
       if (searchTerm && searchTerm.trim() !== '') {
         const term = searchTerm.toLowerCase().trim();
-        // Use separate filters and combine with or()
+        // Search in both display_name and username fields
         query = query.or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%`);
       }
       
@@ -39,7 +39,7 @@ export const useCreators = (searchTerm?: string) => {
       console.log('Raw creator data from search:', creatorData);
 
       // Transform the data to match our CreatorProfile type
-      const transformedCreators: CreatorProfile[] = creatorData.map((creator) => {
+      const transformedCreators: CreatorProfile[] = (creatorData || []).map((creator) => {
         const userId = creator.user_id;
         
         // Ensure we don't generate invalid UUIDs in the app by removing any "user-" prefix
@@ -47,14 +47,14 @@ export const useCreators = (searchTerm?: string) => {
           ? userId.substring(5) 
           : userId;
         
-        // Create a display name that is used in both display_name and displayName fields
-        const displayName = creator.display_name || creator.users?.username || `Creator ${cleanUserId.substring(0, 6)}`;
+        // Create a display name that prioritizes display_name, then username
+        const displayName = creator.display_name || creator.users?.username || `Creator ${cleanUserId?.substring(0, 6) || 'Unknown'}`;
         
         return {
           ...creator,
           user_id: cleanUserId, // Use clean ID without prefix 
-          id: cleanUserId,
-          username: creator.users?.username || `user-${cleanUserId.substring(0, 8)}`,
+          id: creator.id, // Keep the creator ID as is
+          username: creator.users?.username || `user-${cleanUserId?.substring(0, 8) || 'unknown'}`,
           email: creator.users?.email || "",
           fullName: creator.users?.username || "", // Add required fullName property
           avatar_url: creator.users?.profile_picture || null,
@@ -65,7 +65,8 @@ export const useCreators = (searchTerm?: string) => {
           created_at: creator.created_at || new Date().toISOString(),
           bio: creator.bio || "",
           tags: creator.tags || [],
-          followers_count: creator.follower_count || 0 // Add follower count from database
+          followers_count: creator.follower_count || 0, // Use follower_count from database
+          follower_count: creator.follower_count || 0 // Keep both naming conventions
         };
       });
 
