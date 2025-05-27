@@ -73,6 +73,7 @@ export const useCreators = (searchTerm?: string) => {
       console.log('Transformed creators for search:', transformedCreators);
       return transformedCreators;
     },
-    staleTime: 10000 // Reduced cache time for more frequent updates
+    staleTime: 5000, // Reduced cache time for more frequent updates when subscriptions change
+    refetchInterval: 30000 // Periodically refetch to sync with subscription changes
   });
 };

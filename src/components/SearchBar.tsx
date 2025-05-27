@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useCreators } from '@/hooks/useCreators';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   CommandDialog,
   CommandEmpty,
@@ -19,6 +20,7 @@ export function SearchBar() {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   // Only search when there's a search term
   const { data: creators = [], isLoading } = useCreators(searchTerm);
@@ -33,6 +35,27 @@ export function SearchBar() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  // Listen for subscription events to refresh creator data
+  useEffect(() => {
+    const handleSubscriptionUpdate = () => {
+      console.log('Subscription update detected in search bar, refreshing creator data...');
+      queryClient.invalidateQueries({ queryKey: ['creators'] });
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
+    };
+
+    // Listen for all subscription-related events
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+    };
+  }, [queryClient]);
 
   const handleCreatorSelect = (creatorId: string) => {
     const creator = creators.find(c => c.id === creatorId);
