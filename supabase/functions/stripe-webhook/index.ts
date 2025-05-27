@@ -323,18 +323,31 @@ async function handleSubscriptionCreatedOrUpdated(supabase: any, subscription: a
       } else {
         console.log('Updated subscriptions table for active subscription')
       }
-    } else if (['canceled', 'incomplete', 'past_due', 'unpaid'].includes(subscription.status)) {
-      // Remove from subscriptions table for inactive statuses
-      const { error: deleteError } = await supabase
+    } else if (['canceled', 'cancelled', 'incomplete', 'past_due', 'unpaid'].includes(subscription.status)) {
+      // Remove from both tables for inactive statuses
+      console.log('Removing subscription records for inactive status:', subscription.status)
+      
+      const { error: deleteCreatorError } = await supabase
+        .from('creator_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscription.id)
+      
+      if (deleteCreatorError) {
+        console.error('Error removing creator subscription:', deleteCreatorError)
+      } else {
+        console.log('Removed creator subscription for inactive status')
+      }
+
+      const { error: deleteBasicError } = await supabase
         .from('subscriptions')
         .delete()
         .eq('user_id', updatedSub.user_id)
         .eq('creator_id', updatedSub.creator_id)
       
-      if (deleteError) {
-        console.error('Error removing inactive subscription:', deleteError)
+      if (deleteBasicError) {
+        console.error('Error removing basic subscription:', deleteBasicError)
       } else {
-        console.log('Removed subscription from subscriptions table for status:', subscription.status)
+        console.log('Removed basic subscription for inactive status')
       }
     }
   } catch (error) {
@@ -346,40 +359,46 @@ async function handleSubscriptionDeleted(supabase: any, subscription: any) {
   console.log('Processing subscription deleted:', subscription.id)
   
   try {
-    // Update creator_subscriptions
-    const { data: canceledSub, error } = await supabase
+    // Get subscription info before deleting
+    const { data: subToDelete, error: fetchError } = await supabase
       .from('creator_subscriptions')
-      .update({
-        status: 'canceled',
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', subscription.id)
       .select('user_id, creator_id')
+      .eq('stripe_subscription_id', subscription.id)
       .single()
 
-    if (error) {
-      console.error('Error canceling creator subscription:', error)
+    if (fetchError) {
+      console.error('Error fetching subscription to delete:', fetchError)
       return
     }
 
-    if (!canceledSub) {
-      console.log('No creator subscription found to cancel for:', subscription.id)
+    if (!subToDelete) {
+      console.log('No creator subscription found to delete for:', subscription.id)
       return
     }
 
-    console.log('Successfully canceled creator subscription')
+    // Delete from creator_subscriptions
+    const { error: deleteCreatorError } = await supabase
+      .from('creator_subscriptions')
+      .delete()
+      .eq('stripe_subscription_id', subscription.id)
+
+    if (deleteCreatorError) {
+      console.error('Error deleting creator subscription:', deleteCreatorError)
+    } else {
+      console.log('Successfully deleted creator subscription')
+    }
 
     // Remove from subscriptions table
-    const { error: deleteError } = await supabase
+    const { error: deleteBasicError } = await supabase
       .from('subscriptions')
       .delete()
-      .eq('user_id', canceledSub.user_id)
-      .eq('creator_id', canceledSub.creator_id)
+      .eq('user_id', subToDelete.user_id)
+      .eq('creator_id', subToDelete.creator_id)
     
-    if (deleteError) {
-      console.error('Error removing canceled subscription:', deleteError)
+    if (deleteBasicError) {
+      console.error('Error removing basic subscription:', deleteBasicError)
     } else {
-      console.log('Removed canceled subscription from subscriptions table')
+      console.log('Removed subscription from subscriptions table')
     }
   } catch (error) {
     console.error('Error in handleSubscriptionDeleted:', error)
