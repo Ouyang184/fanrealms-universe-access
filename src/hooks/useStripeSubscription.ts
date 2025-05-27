@@ -1,17 +1,17 @@
 
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import type { StripeSubscription, CreatorEarnings } from '@/types';
 
 export const useStripeSubscription = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Get user's subscriptions with more frequent updates
+  // Fetch user's active subscriptions with very aggressive refresh
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userSubscriptions', user?.id],
     queryFn: async () => {
@@ -19,150 +19,162 @@ export const useStripeSubscription = () => {
       
       console.log('Fetching user subscriptions for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('creator_subscriptions')
-        .select(`
-          *,
-          creator:creators(
-            id,
-            display_name,
-            bio,
-            profile_image_url,
-            banner_url,
-            users!creators_user_id_fkey(
-              username,
-              profile_picture
+      // Query both tables to ensure we get all subscriptions
+      const [creatorSubsResult, subsResult] = await Promise.all([
+        supabase
+          .from('creator_subscriptions')
+          .select(`
+            *,
+            creator:creators (
+              id,
+              user_id,
+              display_name,
+              bio,
+              profile_image_url,
+              banner_url,
+              follower_count,
+              tags,
+              users (
+                id,
+                username,
+                email,
+                profile_picture
+              )
+            ),
+            tier:membership_tiers (
+              id,
+              title,
+              description,
+              price
             )
-          ),
-          tier:membership_tiers(
-            id,
-            title,
-            price,
-            description
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active'),
+        
+        supabase
+          .from('subscriptions')
+          .select(`
+            *,
+            creator:creators (
+              id,
+              user_id,
+              display_name,
+              bio,
+              profile_image_url,
+              banner_url,
+              follower_count,
+              tags,
+              users (
+                id,
+                username,
+                email,
+                profile_picture
+              )
+            ),
+            tier:membership_tiers (
+              id,
+              title,
+              description,
+              price
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('is_paid', true)
+      ]);
 
-      if (error) {
-        console.error('Error fetching user subscriptions:', error);
-        throw error;
-      }
+      let subscriptions = creatorSubsResult.data || [];
       
-      console.log('Fetched user subscriptions:', data);
-      return data;
+      // If no active subscriptions in creator_subscriptions, check subscriptions table
+      if (subscriptions.length === 0 && subsResult.data && subsResult.data.length > 0) {
+        console.log('No active creator subscriptions found, checking subscriptions table');
+        // Map subscriptions table data to creator_subscriptions format
+        subscriptions = subsResult.data.map((sub: any) => ({
+          id: sub.id,
+          user_id: sub.user_id,
+          creator_id: sub.creator_id,
+          tier_id: sub.tier_id,
+          stripe_subscription_id: '',
+          stripe_customer_id: '',
+          status: 'active',
+          current_period_start: null,
+          current_period_end: null,
+          amount_paid: sub.tier?.price || 0,
+          platform_fee: null,
+          creator_earnings: null,
+          created_at: sub.created_at,
+          updated_at: sub.created_at,
+          creator: sub.creator,
+          tier: sub.tier
+        }));
+      }
+
+      if (creatorSubsResult.error) {
+        console.error('Error fetching creator subscriptions:', creatorSubsResult.error);
+      }
+      if (subsResult.error) {
+        console.error('Error fetching subscriptions:', subsResult.error);
+      }
+
+      console.log('Fetched user subscriptions:', subscriptions);
+      return subscriptions;
     },
     enabled: !!user?.id,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
+    refetchInterval: 2000, // Refetch every 2 seconds
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
-  // Create subscription
-  const { mutateAsync: createSubscription } = useMutation({
-    mutationFn: async ({ tierId, creatorId }: { tierId: string, creatorId: string }) => {
-      console.log('Creating subscription via Supabase function...', { tierId, creatorId });
-      
+  // Create subscription mutation
+  const createSubscriptionMutation = useMutation({
+    mutationFn: async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
-        body: { action: 'create_subscription', tierId, creatorId }
+        body: {
+          action: 'create_subscription',
+          tierId,
+          creatorId
+        }
       });
 
-      console.log('Supabase function response:', { data, error });
-
-      if (error) {
-        console.error('Supabase function error:', error);
-        throw new Error(error.message || 'Failed to create subscription');
-      }
-      
-      if (!data) {
-        console.error('No data returned from subscription function');
-        throw new Error('No response data received');
-      }
-
+      if (error) throw error;
       return data;
     },
-    onSuccess: async (data, variables) => {
-      console.log('Subscription creation successful, invalidating queries and triggering immediate refresh');
-      
-      // Invalidate all subscription-related queries immediately
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['active-subscribers'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        queryClient.invalidateQueries({ queryKey: ['tiers'] }),
-      ]);
+    onSuccess: () => {
+      // Immediately invalidate and refetch subscription data
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] });
+      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
       
       // Force immediate refetch
-      await refetchSubscriptions();
-      
-      // Dispatch custom events for other components to listen to
-      window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-        detail: { creatorId: variables.creatorId, tierId: variables.tierId }
-      }));
-      
-      // Additional delayed refreshes to ensure consistency
-      setTimeout(async () => {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        ]);
-        await refetchSubscriptions();
-      }, 2000);
-      
-      setTimeout(async () => {
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        ]);
-        await refetchSubscriptions();
-      }, 5000);
+      setTimeout(() => {
+        refetchSubscriptions();
+      }, 1000);
     },
-    onError: (error) => {
-      console.error('Mutation error:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
-        variant: "destructive"
-      });
-    }
   });
 
-  // Cancel subscription
-  const { mutate: cancelSubscription } = useMutation({
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: string) => {
-      console.log('Cancelling subscription:', subscriptionId);
-      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
-        body: { action: 'cancel_subscription', subscriptionId }
+        body: {
+          action: 'cancel_subscription',
+          subscriptionId
+        }
       });
 
-      if (error) {
-        console.error('Error cancelling subscription:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
-    onSuccess: async () => {
-      console.log('Subscription cancelled successfully, refreshing data');
-      
-      // Invalidate all subscription-related queries
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['active-subscribers'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-        queryClient.invalidateQueries({ queryKey: ['tiers'] }),
-      ]);
+    onSuccess: () => {
+      // Immediately invalidate and refetch subscription data
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] });
+      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
       
       // Force immediate refetch
-      await refetchSubscriptions();
-      
-      // Dispatch custom event for unsubscribe
-      window.dispatchEvent(new CustomEvent('subscriptionCanceled'));
+      setTimeout(() => {
+        refetchSubscriptions();
+      }, 1000);
       
       toast({
         title: "Success",
@@ -170,14 +182,49 @@ export const useStripeSubscription = () => {
       });
     },
     onError: (error) => {
-      console.error('Error canceling subscription:', error);
       toast({
         title: "Error",
         description: "Failed to cancel subscription. Please try again.",
         variant: "destructive"
       });
-    }
+    },
   });
+
+  const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+    setIsProcessing(true);
+    try {
+      const result = await createSubscriptionMutation.mutateAsync({ tierId, creatorId });
+      return result;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [createSubscriptionMutation]);
+
+  const cancelSubscription = useCallback(async (subscriptionId: string) => {
+    try {
+      await cancelSubscriptionMutation.mutateAsync(subscriptionId);
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+    }
+  }, [cancelSubscriptionMutation]);
+
+  // Manual refresh function that forces immediate data refresh
+  const forceRefreshSubscriptions = useCallback(async () => {
+    console.log('Force refreshing subscription data...');
+    
+    // Invalidate all subscription-related queries
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+    ]);
+    
+    // Force immediate refetch
+    await refetchSubscriptions();
+    
+    return true;
+  }, [queryClient, refetchSubscriptions]);
 
   return {
     userSubscriptions,
@@ -186,6 +233,6 @@ export const useStripeSubscription = () => {
     cancelSubscription,
     isProcessing,
     setIsProcessing,
-    refetchSubscriptions
+    refetchSubscriptions: forceRefreshSubscriptions,
   };
 };

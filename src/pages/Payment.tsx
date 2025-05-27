@@ -90,9 +90,8 @@ function CheckoutForm() {
           description: `You've successfully subscribed to ${tierName}`,
         });
 
-        // Give some time for webhooks to process
-        setTimeout(() => {
-          // Dispatch events for UI updates
+        // Dispatch events for UI updates with more aggressive timing
+        const dispatchEvents = () => {
           window.dispatchEvent(new CustomEvent('paymentSuccess', {
             detail: { creatorId, tierId, paymentIntent: result.paymentIntent }
           }));
@@ -100,10 +99,19 @@ function CheckoutForm() {
           window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
             detail: { creatorId, tierId }
           }));
-          
-          // Navigate back to creator page
+        };
+
+        // Dispatch immediately
+        dispatchEvents();
+        
+        // Dispatch again after a short delay to ensure all components are listening
+        setTimeout(dispatchEvents, 500);
+        setTimeout(dispatchEvents, 2000);
+        
+        // Navigate back to creator page after a brief delay
+        setTimeout(() => {
           navigate(`/creator/${creatorId}`, { replace: true });
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);

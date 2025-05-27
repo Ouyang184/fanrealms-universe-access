@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,9 +54,9 @@ export default function SubscriptionsPage() {
     console.log('Subscriptions page loaded, refreshing data...');
     refetchSubscriptions();
 
-    const handleSubscriptionUpdate = () => {
+    const handleSubscriptionUpdate = async () => {
       console.log('Subscription update event detected on subscriptions page');
-      refetchSubscriptions();
+      await refetchSubscriptions();
     };
 
     // Listen for subscription events
@@ -65,10 +64,21 @@ export default function SubscriptionsPage() {
     window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
     window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
     
+    // Also listen for page visibility changes to refresh when user returns
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing subscriptions...');
+        refetchSubscriptions();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
       window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
       window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [refetchSubscriptions]);
 
