@@ -1,138 +1,99 @@
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
+
+interface SubscriptionData {
+  id: string;
+  user_id: string;
+  creator_id: string;
+  tier_id: string;
+  status: string;
+  stripe_subscription_id: string;
+  current_period_end: string;
+}
+
+interface SubscriptionCheckResult {
+  isSubscribed: boolean;
+  data: SubscriptionData | null;
+}
 
 export const useSubscriptionCheck = (tierId: string, creatorId: string) => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
-  const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery({
+  const { data: subscriptionStatus, isLoading, refetch } = useQuery({
     queryKey: ['enhancedSubscriptionCheck', user?.id, tierId, creatorId],
-    queryFn: async () => {
-      if (!user?.id) return { isSubscribed: false, source: 'no-user' };
+    queryFn: async (): Promise<SubscriptionCheckResult> => {
+      if (!user?.id) {
+        return { isSubscribed: false, data: null };
+      }
       
       console.log('Enhanced subscription check for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
       
-      // Check creator_subscriptions table first - look for ANY active subscription to this creator
-      const { data: creatorSubs, error: creatorSubError } = await supabase
+      // Check creator_subscriptions table first (most reliable)
+      const { data: creatorSubs, error: creatorSubsError } = await supabase
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .in('status', ['active', 'cancelling']); // Include cancelling status
+        .eq('tier_id', tierId)
+        .in('status', ['active', 'trialing'])
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-      if (creatorSubError && creatorSubError.code !== 'PGRST116') {
-        console.error('Error checking creator_subscriptions:', creatorSubError);
+      if (creatorSubsError) {
+        console.error('Error checking creator subscriptions:', creatorSubsError);
+        return { isSubscribed: false, data: null };
       }
 
       if (creatorSubs && creatorSubs.length > 0) {
-        console.log('Found active subscriptions in creator_subscriptions:', creatorSubs.length);
-        // Check if any subscription matches the specific tier
-        const tierSpecificSub = creatorSubs.find(sub => sub.tier_id === tierId);
-        if (tierSpecificSub) {
-          console.log('Found tier-specific subscription:', tierSpecificSub);
-          
-          // Check if subscription is still active (not past cancel_at date)
-          const isStillActive = !tierSpecificSub.cancel_at || new Date() < new Date(tierSpecificSub.cancel_at);
-          
-          return { 
-            isSubscribed: isStillActive, 
-            source: 'creator_subscriptions', 
-            data: tierSpecificSub,
-            isCancelling: tierSpecificSub.status === 'cancelling',
-            cancelAt: tierSpecificSub.cancel_at
-          };
-        }
-        // If no tier-specific sub found, user is subscribed to creator but different tier
-        console.log('User subscribed to creator but different tier');
-        const firstSub = creatorSubs[0];
-        const isStillActive = !firstSub.cancel_at || new Date() < new Date(firstSub.cancel_at);
-        
-        return { 
-          isSubscribed: isStillActive, 
-          source: 'creator_subscriptions', 
-          data: firstSub,
-          isCancelling: firstSub.status === 'cancelling',
-          cancelAt: firstSub.cancel_at
-        };
+        console.log('Active subscription found:', creatorSubs[0]);
+        return { isSubscribed: true, data: creatorSubs[0] };
       }
 
-      // Check subscriptions table as fallback
-      const { data: regularSub, error: regularSubError } = await supabase
+      // Also check regular subscriptions table as fallback
+      const { data: regularSubs, error: regularSubsError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
         .eq('is_paid', true);
 
-      if (regularSubError && regularSubError.code !== 'PGRST116') {
-        console.error('Error checking subscriptions:', regularSubError);
+      if (regularSubsError) {
+        console.error('Error checking regular subscriptions:', regularSubsError);
       }
 
-      if (regularSub && regularSub.length > 0) {
-        console.log('Found subscription in subscriptions table:', regularSub);
-        const tierSpecificSub = regularSub.find(sub => sub.tier_id === tierId);
-        if (tierSpecificSub) {
-          return { isSubscribed: true, source: 'subscriptions', data: tierSpecificSub };
-        }
-        return { isSubscribed: true, source: 'subscriptions', data: regularSub[0] };
+      if (regularSubs && regularSubs.length > 0) {
+        console.log('Regular subscription found:', regularSubs[0]);
+        // Convert to creator subscription format
+        return { 
+          isSubscribed: true, 
+          data: {
+            id: regularSubs[0].id,
+            user_id: regularSubs[0].user_id,
+            creator_id: regularSubs[0].creator_id,
+            tier_id: regularSubs[0].tier_id,
+            status: 'active',
+            stripe_subscription_id: '',
+            current_period_end: ''
+          }
+        };
       }
 
       console.log('No active subscription found');
-      return { isSubscribed: false, source: 'none' };
+      return { isSubscribed: false, data: null };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 0,
-    refetchInterval: 3000,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 2000, // Refetch every 2 seconds
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
-  // Listen for subscription events
-  useEffect(() => {
-    const handleSubscriptionUpdate = async (event: CustomEvent) => {
-      console.log('useSubscriptionCheck: Received subscription event:', event.type, event.detail);
-      
-      if ((event.type === 'paymentSuccess' || event.type === 'subscriptionSuccess') && 
-          event.detail?.creatorId === creatorId) {
-        
-        console.log('useSubscriptionCheck: Payment successful, updating subscription status');
-        
-        setTimeout(async () => {
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
-            queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-            queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-          ]);
-          
-          await refetchSubscriptionStatus();
-        }, 1000);
-      } else if (event.type === 'subscriptionCanceled') {
-        console.log('useSubscriptionCheck: Subscription canceled, updating subscription status');
-        
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
-          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        ]);
-        
-        await refetchSubscriptionStatus();
-      }
-    };
-
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate as EventListener);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate as EventListener);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate as EventListener);
-    
-    return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate as EventListener);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate as EventListener);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate as EventListener);
-    };
-  }, [queryClient, refetchSubscriptionStatus, tierId, creatorId]);
-
   return {
-    subscriptionStatus,
-    refetchSubscriptionStatus
+    subscriptionStatus: subscriptionStatus || { isSubscribed: false, data: null },
+    isLoading,
+    refetch
   };
 };

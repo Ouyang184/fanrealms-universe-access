@@ -46,22 +46,36 @@ export function ActiveSubscribeButton({
       if (result?.error) {
         console.error('ActiveSubscribeButton: Server returned error:', result.error);
         
-        // Show the specific error message from the server
-        toast({
-          title: "Subscription Error",
-          description: result.error,
-          variant: "destructive"
-        });
-        
-        // If it's an existing subscription error, refresh the data
+        // Check if it's an existing subscription error
         if (result.error.includes('already have an active subscription') || 
             result.error.includes('existing subscription')) {
+          
+          // Refresh all subscription-related data immediately
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
             queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
             queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
             queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
+            queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
           ]);
+
+          toast({
+            title: "Already Subscribed",
+            description: "You already have an active subscription to this creator. The page will refresh to show your current subscription status.",
+          });
+          
+          // Force a page refresh after a short delay to ensure UI updates
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+          
+        } else {
+          // Show other error messages normally
+          toast({
+            title: "Subscription Error",
+            description: result.error,
+            variant: "destructive"
+          });
         }
         return;
       }

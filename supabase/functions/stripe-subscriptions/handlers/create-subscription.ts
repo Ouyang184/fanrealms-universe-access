@@ -18,7 +18,7 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check for existing active subscriptions to this creator with more detailed logging
+  // Check for existing active subscriptions with enhanced verification
   console.log('Checking for existing subscriptions to creator:', creatorId, 'for user:', user.id);
   
   const { data: existingCreatorSubs, error: existingCreatorError } = await supabaseService
@@ -26,7 +26,7 @@ export async function handleCreateSubscription(
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .in('status', ['active', 'pending']);
+    .in('status', ['active', 'pending', 'trialing']);
 
   if (existingCreatorError) {
     console.error('Error checking creator_subscriptions:', existingCreatorError);
@@ -34,20 +34,7 @@ export async function handleCreateSubscription(
     console.log('Found creator_subscriptions:', existingCreatorSubs?.length || 0, existingCreatorSubs);
   }
 
-  const { data: existingBasicSubs, error: existingBasicError } = await supabaseService
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .eq('is_paid', true);
-
-  if (existingBasicError) {
-    console.error('Error checking subscriptions:', existingBasicError);
-  } else {
-    console.log('Found basic subscriptions:', existingBasicSubs?.length || 0, existingBasicSubs);
-  }
-
-  // If there are existing subscriptions, verify their status with Stripe and clean up if needed
+  // If there are existing subscriptions, verify their status with Stripe
   if (existingCreatorSubs && existingCreatorSubs.length > 0) {
     console.log('Found existing creator subscriptions, verifying with Stripe...');
     
@@ -59,46 +46,68 @@ export async function handleCreateSubscription(
           const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
           console.log('Stripe subscription status for', sub.id, ':', stripeSubscription.status);
           
-          if (stripeSubscription.status === 'active' || stripeSubscription.status === 'trialing') {
+          if (stripeSubscription.status === 'active' || 
+              stripeSubscription.status === 'trialing' ||
+              stripeSubscription.status === 'past_due') {
             hasValidActiveSubscription = true;
             console.log('User has valid active subscription');
             break;
-          } else {
-            // Clean up inactive subscription
-            console.log('Cleaning up inactive subscription:', sub.id);
+          } else if (stripeSubscription.status === 'canceled' || 
+                    stripeSubscription.status === 'incomplete_expired') {
+            // Clean up canceled subscription
+            console.log('Cleaning up canceled subscription:', sub.id);
+            await supabaseService
+              .from('creator_subscriptions')
+              .update({ status: 'canceled' })
+              .eq('id', sub.id);
+          }
+        } catch (stripeError) {
+          console.error('Error checking Stripe subscription:', stripeError);
+          // If subscription doesn't exist in Stripe, clean it up
+          if (stripeError.code === 'resource_missing') {
+            console.log('Cleaning up subscription that no longer exists in Stripe:', sub.id);
             await supabaseService
               .from('creator_subscriptions')
               .delete()
               .eq('id', sub.id);
           }
-        } catch (stripeError) {
-          console.error('Error checking Stripe subscription:', stripeError);
-          // Clean up unverifiable subscription
-          console.log('Cleaning up unverifiable subscription:', sub.id);
+        }
+      } else if (sub.status === 'pending') {
+        // Check if pending subscription is old (more than 1 hour)
+        const createdAt = new Date(sub.created_at);
+        const now = new Date();
+        const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursDiff > 1) {
+          console.log('Cleaning up old pending subscription:', sub.id);
           await supabaseService
             .from('creator_subscriptions')
             .delete()
             .eq('id', sub.id);
+        } else {
+          // Recent pending subscription
+          hasValidActiveSubscription = true;
+          console.log('User has recent pending subscription');
         }
-      } else {
-        // No Stripe subscription ID, clean up
-        console.log('Cleaning up subscription without Stripe ID:', sub.id);
-        await supabaseService
-          .from('creator_subscriptions')
-          .delete()
-          .eq('id', sub.id);
       }
     }
     
     if (hasValidActiveSubscription) {
       console.log('User already has active subscription to this creator');
       return createJsonResponse({ 
-        error: 'You already have an active subscription to this creator. Please visit the Subscriptions page to manage your existing subscription.' 
+        error: 'You already have an active subscription to this creator. Please visit your Subscriptions page to manage it, or refresh the page to see your current status.' 
       }, 400);
     }
   }
 
   // Clean up any stale basic subscriptions
+  const { data: existingBasicSubs } = await supabaseService
+    .from('subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId)
+    .eq('is_paid', true);
+
   if (existingBasicSubs && existingBasicSubs.length > 0) {
     console.log('Cleaning up basic subscriptions...');
     await supabaseService
