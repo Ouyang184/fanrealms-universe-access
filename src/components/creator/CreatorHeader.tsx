@@ -13,6 +13,7 @@ interface CreatorHeaderProps {
   onFollow: () => void;
   onUnfollow: () => void;
   isOwnProfile?: boolean;
+  onNavigateToAbout?: () => void;
 }
 
 export function CreatorHeader({ 
@@ -20,8 +21,21 @@ export function CreatorHeader({
   isFollowing, 
   onFollow, 
   onUnfollow,
-  isOwnProfile = false 
+  isOwnProfile = false,
+  onNavigateToAbout 
 }: CreatorHeaderProps) {
+  const MAX_BIO_LENGTH = 150;
+  const shouldTruncateBio = creator.bio && creator.bio.length > MAX_BIO_LENGTH;
+  const truncatedBio = shouldTruncateBio 
+    ? creator.bio!.substring(0, MAX_BIO_LENGTH).trim() + "…"
+    : creator.bio;
+
+  const handleMoreClick = () => {
+    if (onNavigateToAbout) {
+      onNavigateToAbout();
+    }
+  };
+
   return (
     <div className="relative">
       {/* Banner Image */}
@@ -112,7 +126,17 @@ export function CreatorHeader({
           <div className="mt-8 pt-6 border-t border-border">
             <div className="max-w-3xl">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">About</h3>
-              <p className="text-foreground leading-relaxed">{creator.bio}</p>
+              <div className="text-foreground leading-relaxed">
+                {truncatedBio}
+                {shouldTruncateBio && (
+                  <button
+                    onClick={handleMoreClick}
+                    className="ml-1 text-primary hover:text-primary/80 font-medium cursor-pointer"
+                  >
+                    more
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

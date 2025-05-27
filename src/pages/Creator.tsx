@@ -70,6 +70,17 @@ const CreatorPage: React.FC = () => {
       await unfollowCreator(creator.id);
     }
   };
+
+  const handleNavigateToAbout = () => {
+    setActiveTab("about");
+    // Scroll to the tabs section after a short delay to ensure the tab content is rendered
+    setTimeout(() => {
+      const tabsElement = document.querySelector('[role="tablist"]');
+      if (tabsElement) {
+        tabsElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
   
   console.log('Creator Page:', { identifier, creator, isLoading: isLoadingCreator });
   
@@ -108,6 +119,7 @@ const CreatorPage: React.FC = () => {
           isFollowing={isFollowing}
           onFollow={handleFollow}
           onUnfollow={handleUnfollow}
+          onNavigateToAbout={handleNavigateToAbout}
         />
         
         {/* Tab Navigation - properly spaced below header */}
