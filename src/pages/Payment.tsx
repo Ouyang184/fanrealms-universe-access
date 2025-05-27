@@ -7,29 +7,71 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Lock } from 'lucide-react';
+import { Loader2, ArrowLeft, Lock, AlertCircle } from 'lucide-react';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+// Initialize Stripe with proper error handling
+const getStripePromise = () => {
+  const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+  
+  if (!publishableKey) {
+    console.error('Stripe publishable key is not set in environment variables');
+    return null;
+  }
+  
+  console.log('Initializing Stripe with key:', publishableKey.substring(0, 20) + '...');
+  return loadStripe(publishableKey);
+};
+
+const stripePromise = getStripePromise();
 
 function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
+  // Check Stripe initialization
+  useEffect(() => {
+    if (!stripePromise) {
+      setStripeError('Stripe is not properly configured. Please check the publishable key.');
+      return;
+    }
+
+    const checkStripeReady = async () => {
+      try {
+        const stripeInstance = await stripePromise;
+        if (!stripeInstance) {
+          setStripeError('Failed to initialize Stripe. Please refresh the page.');
+        }
+      } catch (error) {
+        console.error('Stripe initialization error:', error);
+        setStripeError('Error initializing payment system. Please try again.');
+      }
+    };
+
+    checkStripeReady();
+  }, []);
+
+  // Handle PaymentElement ready state
   useEffect(() => {
     if (!stripe || !elements) {
       return;
     }
     
-    // Check if PaymentElement is ready
-    const paymentElement = elements.getElement(PaymentElement);
-    if (paymentElement) {
-      setPaymentElementReady(true);
+    try {
+      const paymentElement = elements.getElement(PaymentElement);
+      if (paymentElement) {
+        console.log('PaymentElement is ready');
+        setPaymentElementReady(true);
+      }
+    } catch (error) {
+      console.error('Error checking PaymentElement:', error);
+      setStripeError('Error loading payment methods. Please refresh the page.');
     }
   }, [stripe, elements]);
 
@@ -117,6 +159,27 @@ function CheckoutForm() {
     );
   }
 
+  if (stripeError) {
+    return (
+      <MainLayout>
+        <div className="max-w-2xl mx-auto py-20 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Payment System Error</h2>
+          <p className="text-muted-foreground mb-6">{stripeError}</p>
+          <div className="space-x-4">
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Refresh Page
+            </Button>
+            <Button onClick={() => navigate(-1)} variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   const monthlyAmount = (amount / 100).toFixed(2);
   const salesTax = (amount * 0.08 / 100).toFixed(2); // 8% tax
   const totalAmount = (amount * 1.08 / 100).toFixed(2);
@@ -171,19 +234,37 @@ function CheckoutForm() {
                 {/* Payment Method */}
                 <div>
                   <h3 className="text-lg font-semibold mb-4">Payment method</h3>
-                  <div className="border rounded-lg p-6 bg-white">
-                    {stripe && elements ? (
+                  <div className="border rounded-lg p-6 bg-white min-h-[200px]">
+                    {stripe && elements && !stripeError ? (
                       <PaymentElement 
                         options={{
                           layout: "tabs",
                           paymentMethodOrder: ['card', 'klarna', 'paypal'],
+                          fields: {
+                            billingDetails: {
+                              address: {
+                                country: 'never'
+                              }
+                            }
+                          }
                         }}
-                        onReady={() => setPaymentElementReady(true)}
+                        onReady={() => {
+                          console.log('PaymentElement onReady triggered');
+                          setPaymentElementReady(true);
+                        }}
+                        onLoadError={(error) => {
+                          console.error('PaymentElement load error:', error);
+                          setStripeError('Failed to load payment methods. Please refresh the page.');
+                        }}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-32">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <span className="ml-2">Loading payment methods...</span>
+                        <div className="text-center">
+                          <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                          <span className="text-sm text-muted-foreground">
+                            {stripeError ? 'Error loading payment methods' : 'Loading payment methods...'}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -205,7 +286,7 @@ function CheckoutForm() {
                 <form onSubmit={handleSubmit}>
                   <Button 
                     type="submit" 
-                    disabled={!stripe || !paymentElementReady || isLoading}
+                    disabled={!stripe || !paymentElementReady || isLoading || stripeError !== null}
                     className="w-full"
                     size="lg"
                   >
@@ -289,6 +370,24 @@ export default function Payment() {
           <h2 className="text-2xl font-bold mb-4">Payment Session Required</h2>
           <p className="text-muted-foreground mb-6">
             Please start the subscription process from a creator's page.
+          </p>
+          <Button onClick={() => window.history.back()} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!stripePromise) {
+    return (
+      <MainLayout>
+        <div className="max-w-2xl mx-auto py-20 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Configuration Error</h2>
+          <p className="text-muted-foreground mb-6">
+            Stripe is not properly configured. Please contact support.
           </p>
           <Button onClick={() => window.history.back()} variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
