@@ -92,30 +92,24 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
   };
 
   const saveLinks = async () => {
-    // Validate links before saving
-    const invalidLinks = links.filter(link => 
-      !link.url.trim() || !isValidUrl(link.url)
-    );
-    
-    if (invalidLinks.length > 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please provide valid URLs for all links",
-        variant: "destructive",
-      });
-      return;
+    // Validate links before saving (only if there are links)
+    if (links.length > 0) {
+      const invalidLinks = links.filter(link => 
+        !link.url.trim() || !isValidUrl(link.url)
+      );
+      
+      if (invalidLinks.length > 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please provide valid URLs for all links",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSaving(true);
     try {
-      // Fix for GitHub issue: First, remove the isNew property from all links
-      // and ensure all links have creator_id set correctly
-      const linksToSave = links.map(({ isNew, ...link }) => ({
-        ...link,
-        creator_id: creatorId,
-        // Important: Don't include id for new links, let the database generate it
-      }));
-
       // Handle deletions (links that were in DB but removed from state)
       const { data: existingLinks, error: fetchError } = await supabase
         .from("creator_links")
@@ -139,24 +133,35 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
         if (deleteError) throw deleteError;
       }
 
-      // First, insert new links (without IDs)
-      const newLinks = linksToSave.filter(link => !link.id);
-      if (newLinks.length > 0) {
-        const { error: insertError } = await supabase
-          .from("creator_links")
-          .insert(newLinks);
-          
-        if (insertError) throw insertError;
-      }
-      
-      // Then, update existing links
-      const existingLinksToUpdate = linksToSave.filter(link => link.id);
-      if (existingLinksToUpdate.length > 0) {
-        const { error: updateError } = await supabase
-          .from("creator_links")
-          .upsert(existingLinksToUpdate);
-          
-        if (updateError) throw updateError;
+      // Only process links if there are any to save
+      if (links.length > 0) {
+        // Fix for GitHub issue: First, remove the isNew property from all links
+        // and ensure all links have creator_id set correctly
+        const linksToSave = links.map(({ isNew, ...link }) => ({
+          ...link,
+          creator_id: creatorId,
+          // Important: Don't include id for new links, let the database generate it
+        }));
+
+        // First, insert new links (without IDs)
+        const newLinks = linksToSave.filter(link => !link.id);
+        if (newLinks.length > 0) {
+          const { error: insertError } = await supabase
+            .from("creator_links")
+            .insert(newLinks);
+            
+          if (insertError) throw insertError;
+        }
+        
+        // Then, update existing links
+        const existingLinksToUpdate = linksToSave.filter(link => link.id);
+        if (existingLinksToUpdate.length > 0) {
+          const { error: updateError } = await supabase
+            .from("creator_links")
+            .upsert(existingLinksToUpdate);
+            
+          if (updateError) throw updateError;
+        }
       }
 
       toast({
@@ -244,17 +249,15 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
               >
                 <Plus className="h-4 w-4" /> Add Link
               </Button>
-              {links.length > 0 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={saveLinks}
-                  disabled={isSaving}
-                  className={isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}
-                >
-                  {isSaving ? "Saving..." : "Save Links"}
-                </Button>
-              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={saveLinks}
+                disabled={isSaving}
+                className={isSaving ? "opacity-70 pointer-events-none bg-primary/90" : ""}
+              >
+                {isSaving ? "Saving..." : "Save Links"}
+              </Button>
             </div>
           </div>
         )}
