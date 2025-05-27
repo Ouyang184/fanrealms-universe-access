@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -78,8 +79,8 @@ export default function ExplorePage() {
     let creatorFilter = popularCreators;
     let postsFilter = posts;
     
-    // Filter by category if present
-    if (categoryFilter) {
+    // Filter by category if present (but not if category is "all" or undefined)
+    if (categoryFilter && categoryFilter !== "all") {
       creatorFilter = popularCreators.filter(creator => 
         creatorMatchesCategory(creator, categoryFilter)
       );
@@ -129,14 +130,14 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
-        {/* Featured Creators - Only display real creators from the database */}
+        {/* Featured Creators - Display all creators when no category filter or "all" is selected */}
         <FeaturedCreators 
           creators={filteredCreators}
           isLoading={isLoadingCreators || isLoadingPopular}
-          categoryFilter={categoryFilter}
+          categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
 
-        {/* Content Tabs - Only display real content from the database */}
+        {/* Content Tabs - Display all content when no category filter or "all" is selected */}
         <ContentTabs
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
