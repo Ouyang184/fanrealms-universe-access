@@ -33,12 +33,15 @@ export function SubscribeButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>({});
 
   // Check if user is subscribed to this specific tier with aggressive refresh
   const { data: userSubscription, refetch: refetchUserSubscription } = useQuery({
     queryKey: ['userTierSubscription', user?.id, tierId],
     queryFn: async () => {
       if (!user?.id) return null;
+      
+      console.log('SubscribeButton: Checking subscription for user:', user.id, 'tier:', tierId);
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
@@ -50,40 +53,45 @@ export function SubscribeButton({
 
       if (error) {
         console.error('SubscribeButton: Error checking subscription:', error);
+        setDebugInfo(prev => ({ ...prev, subscriptionError: error.message }));
         return null;
       }
+      
+      console.log('SubscribeButton: Subscription data:', data);
+      setDebugInfo(prev => ({ ...prev, subscriptionData: data, lastChecked: new Date().toISOString() }));
       
       return data;
     },
     enabled: !!user?.id && !!tierId,
     staleTime: 0,
-    refetchInterval: 1000,
+    refetchInterval: 3000, // Check every 3 seconds
   });
 
-  // Listen for subscription events - only update on successful payment
+  // Listen for subscription events
   useEffect(() => {
     const handleSubscriptionUpdate = async (event: CustomEvent) => {
       console.log('SubscribeButton: Received subscription event:', event.type, event.detail);
+      setDebugInfo(prev => ({ ...prev, lastEvent: { type: event.type, detail: event.detail, time: new Date().toISOString() } }));
       
-      // Only trigger optimistic updates for successful payments, not subscription attempts
       if ((event.type === 'paymentSuccess' || event.type === 'subscriptionSuccess') && 
           event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
         
         console.log('SubscribeButton: Payment successful, updating button state');
         
-        // Trigger optimistic update for successful payment
         if (onOptimisticUpdate) {
           onOptimisticUpdate(true);
         }
         
-        // Refresh queries
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
-          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        ]);
-        
-        await refetchUserSubscription();
+        // Force immediate refresh of subscription data
+        setTimeout(async () => {
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+            queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+          ]);
+          
+          await refetchUserSubscription();
+        }, 1000);
         
         if (onSubscriptionSuccess) {
           onSubscriptionSuccess();
@@ -93,12 +101,10 @@ export function SubscribeButton({
         
         console.log('SubscribeButton: Subscription canceled, updating button state');
         
-        // Trigger optimistic update for cancellation
         if (onOptimisticUpdate) {
           onOptimisticUpdate(false);
         }
         
-        // Refresh queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
           queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
@@ -163,20 +169,23 @@ export function SubscribeButton({
       return;
     }
 
-    // NO optimistic update here - wait for actual payment success
     setIsProcessing(true);
+    setDebugInfo(prev => ({ ...prev, subscriptionAttempt: new Date().toISOString() }));
 
     try {
+      console.log('SubscribeButton: Creating subscription for tier:', tierId, 'creator:', creatorId);
       const result = await createSubscription({ tierId, creatorId });
       
+      setDebugInfo(prev => ({ ...prev, createResult: result }));
+      
       if (result?.clientSecret) {
-        // Store subscription details for post-payment handling
         sessionStorage.setItem('pendingSubscription', JSON.stringify({
           tierId,
           creatorId,
           tierName
         }));
         
+        console.log('SubscribeButton: Navigating to payment with client secret');
         navigate('/payment', {
           state: {
             clientSecret: result.clientSecret,
@@ -187,6 +196,8 @@ export function SubscribeButton({
           }
         });
       } else {
+        console.error('SubscribeButton: No client secret received');
+        setDebugInfo(prev => ({ ...prev, error: 'No client secret received' }));
         toast({
           title: "Error",
           description: "Failed to initialize payment. Please try again.",
@@ -195,6 +206,7 @@ export function SubscribeButton({
       }
     } catch (error) {
       console.error('SubscribeButton: Subscription error:', error);
+      setDebugInfo(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
@@ -213,7 +225,6 @@ export function SubscribeButton({
     try {
       await cancelSubscription(userSubscription.id);
       
-      // Dispatch cancellation event
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
         detail: { creatorId, tierId }
       }));
@@ -238,7 +249,20 @@ export function SubscribeButton({
     }
   };
 
-  // Use actual subscription data, not optimistic updates for button state
+  // Manual refresh function for debugging
+  const handleManualRefresh = async () => {
+    console.log('SubscribeButton: Manual refresh triggered');
+    setDebugInfo(prev => ({ ...prev, manualRefresh: new Date().toISOString() }));
+    
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+    ]);
+    
+    await refetchUserSubscription();
+  };
+
   const isUserSubscribed = userSubscription !== null || isSubscribed;
 
   if (isUserSubscribed) {
@@ -264,6 +288,17 @@ export function SubscribeButton({
             'Cancel Subscription'
           )}
         </Button>
+        
+        {/* Debug info for troubleshooting */}
+        {process.env.NODE_ENV === 'development' && (
+          <details className="text-xs bg-muted p-2 rounded">
+            <summary>Debug Info (Dev Only)</summary>
+            <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+            <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
+              Refresh Status
+            </Button>
+          </details>
+        )}
       </div>
     );
   }
@@ -278,19 +313,32 @@ export function SubscribeButton({
   }
 
   return (
-    <Button 
-      onClick={handleSubscribe}
-      disabled={isProcessing}
-      className="w-full"
-    >
-      {isProcessing ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Processing...
-        </>
-      ) : (
-        `Subscribe to ${tierName} - $${price}/month`
+    <div className="space-y-2">
+      <Button 
+        onClick={handleSubscribe}
+        disabled={isProcessing}
+        className="w-full"
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          `Subscribe to ${tierName} - $${price}/month`
+        )}
+      </Button>
+      
+      {/* Debug info for troubleshooting */}
+      {process.env.NODE_ENV === 'development' && (
+        <details className="text-xs bg-muted p-2 rounded">
+          <summary>Debug Info (Dev Only)</summary>
+          <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
+          <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
+            Refresh Status
+          </Button>
+        </details>
       )}
-    </Button>
+    </div>
   );
 }

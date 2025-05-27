@@ -11,7 +11,6 @@ import { Loader2, ArrowLeft, Lock, AlertCircle } from 'lucide-react';
 
 // Get Stripe publishable key from environment variables
 const getStripePublishableKey = () => {
-  // Try multiple ways to get the key
   const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
              window.env?.VITE_STRIPE_PUBLISHABLE_KEY ||
              'pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL';
@@ -35,6 +34,7 @@ function CheckoutForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [elementError, setElementError] = useState<string | null>(null);
+  const [paymentDebugInfo, setPaymentDebugInfo] = useState<any>({});
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -42,14 +42,18 @@ function CheckoutForm() {
 
   // Debug Stripe initialization
   useEffect(() => {
-    console.log('Stripe initialization check:', {
+    const debugInfo = {
       stripePromise: !!stripePromise,
       stripe: !!stripe,
       elements: !!elements,
       clientSecret: !!clientSecret,
-      publishableKey: stripePublishableKey ? stripePublishableKey.substring(0, 20) + '...' : 'NOT SET'
-    });
-  }, [stripe, elements, clientSecret]);
+      publishableKey: stripePublishableKey ? stripePublishableKey.substring(0, 20) + '...' : 'NOT SET',
+      locationState: location.state
+    };
+    
+    console.log('Payment: Stripe initialization check:', debugInfo);
+    setPaymentDebugInfo(debugInfo);
+  }, [stripe, elements, clientSecret, location.state]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -64,10 +68,20 @@ function CheckoutForm() {
     }
 
     setIsLoading(true);
+    
+    const submitDebugInfo = {
+      startTime: new Date().toISOString(),
+      stripe: !!stripe,
+      elements: !!elements,
+      clientSecret: !!clientSecret,
+      tierId,
+      creatorId
+    };
+    
+    console.log('Payment: Starting payment confirmation...', submitDebugInfo);
+    setPaymentDebugInfo(prev => ({ ...prev, submission: submitDebugInfo }));
 
     try {
-      console.log('Starting payment confirmation...');
-      
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -75,6 +89,19 @@ function CheckoutForm() {
         },
         redirect: 'if_required'
       });
+
+      const resultDebugInfo = {
+        success: !result.error,
+        error: result.error?.message,
+        paymentIntent: result.paymentIntent ? {
+          id: result.paymentIntent.id,
+          status: result.paymentIntent.status
+        } : null,
+        endTime: new Date().toISOString()
+      };
+      
+      console.log('Payment: Confirmation result:', resultDebugInfo);
+      setPaymentDebugInfo(prev => ({ ...prev, result: resultDebugInfo }));
 
       if (result.error) {
         console.error('Payment error:', result.error);
@@ -91,31 +118,41 @@ function CheckoutForm() {
           description: `You've successfully subscribed to ${tierName}`,
         });
 
-        // Dispatch events for UI updates with more aggressive timing
+        // Dispatch events for UI updates with more details
         const dispatchEvents = () => {
+          const eventDetail = { 
+            creatorId, 
+            tierId, 
+            paymentIntent: result.paymentIntent,
+            timestamp: new Date().toISOString()
+          };
+          
+          console.log('Payment: Dispatching success events with detail:', eventDetail);
+          
           window.dispatchEvent(new CustomEvent('paymentSuccess', {
-            detail: { creatorId, tierId, paymentIntent: result.paymentIntent }
+            detail: eventDetail
           }));
           
           window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-            detail: { creatorId, tierId }
+            detail: eventDetail
           }));
         };
 
-        // Dispatch immediately
+        // Dispatch immediately and with delays to ensure all components catch it
         dispatchEvents();
-        
-        // Dispatch again after a short delay to ensure all components are listening
         setTimeout(dispatchEvents, 500);
         setTimeout(dispatchEvents, 2000);
+        setTimeout(dispatchEvents, 5000);
         
         // Navigate back to creator page after a brief delay
         setTimeout(() => {
+          console.log('Payment: Navigating back to creator page');
           navigate(`/creator/${creatorId}`, { replace: true });
         }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);
+      setPaymentDebugInfo(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       toast({
         title: "Payment failed",
         description: "An unexpected error occurred. Please try again.",
@@ -167,7 +204,7 @@ function CheckoutForm() {
   }
 
   const monthlyAmount = (amount / 100).toFixed(2);
-  const salesTax = (amount * 0.08 / 100).toFixed(2); // 8% tax
+  const salesTax = (amount * 0.08 / 100).toFixed(2);
   const totalAmount = (amount * 1.08 / 100).toFixed(2);
 
   return (
@@ -293,6 +330,14 @@ function CheckoutForm() {
                     )}
                   </Button>
                 </form>
+                
+                {/* Debug info for troubleshooting (development only) */}
+                {process.env.NODE_ENV === 'development' && (
+                  <details className="text-xs bg-muted p-2 rounded">
+                    <summary>Payment Debug Info (Dev Only)</summary>
+                    <pre className="mt-2 whitespace-pre-wrap">{JSON.stringify(paymentDebugInfo, null, 2)}</pre>
+                  </details>
+                )}
               </CardContent>
             </Card>
           </div>
