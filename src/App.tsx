@@ -64,8 +64,8 @@ export default function App() {
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
                 <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
+                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
                 
                 {/* Auth routes */}
