@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
 import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
@@ -25,10 +25,40 @@ export function SubscribeButton({
   onSubscriptionSuccess,
   onOptimisticUpdate
 }: SubscribeButtonProps) {
-  const { subscriptionStatus } = useSubscriptionCheck(tierId, creatorId);
+  const { subscriptionStatus, refetch } = useSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
+  const [optimisticSubscribed, setOptimisticSubscribed] = useState<boolean | null>(null);
 
-  const isUserSubscribed = subscriptionStatus?.isSubscribed || isSubscribed;
+  // Listen for subscription events to refresh data
+  useEffect(() => {
+    const handleSubscriptionEvent = async () => {
+      console.log('SubscribeButton: Subscription event detected, refreshing...');
+      await refetch();
+      setOptimisticSubscribed(null); // Clear optimistic state
+    };
+
+    window.addEventListener('subscriptionCanceled', handleSubscriptionEvent);
+    window.addEventListener('subscriptionSuccess', handleSubscriptionEvent);
+    window.addEventListener('paymentSuccess', handleSubscriptionEvent);
+
+    return () => {
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionEvent);
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionEvent);
+      window.removeEventListener('paymentSuccess', handleSubscriptionEvent);
+    };
+  }, [refetch]);
+
+  const handleOptimisticUpdate = (subscribed: boolean) => {
+    setOptimisticSubscribed(subscribed);
+    if (onOptimisticUpdate) {
+      onOptimisticUpdate(subscribed);
+    }
+  };
+
+  // Use optimistic state if available, otherwise use actual subscription status
+  const isUserSubscribed = optimisticSubscribed !== null 
+    ? optimisticSubscribed 
+    : subscriptionStatus?.isSubscribed || isSubscribed;
 
   if (isUserSubscribed) {
     return (
@@ -37,7 +67,7 @@ export function SubscribeButton({
         subscriptionData={subscriptionStatus?.data}
         tierId={tierId}
         creatorId={creatorId}
-        onOptimisticUpdate={onOptimisticUpdate}
+        onOptimisticUpdate={handleOptimisticUpdate}
         onSubscriptionSuccess={onSubscriptionSuccess}
       />
     );

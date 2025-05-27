@@ -68,7 +68,7 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 3000, // Refetch every 3 seconds to catch updates quickly
+    refetchInterval: false, // Remove automatic polling to avoid conflicts
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
