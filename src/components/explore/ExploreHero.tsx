@@ -10,6 +10,12 @@ interface ExploreHeroProps {
 }
 
 export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: ExploreHeroProps) {
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search functionality is already handled by the searchQuery state in the parent component
+    console.log('Search submitted:', searchQuery);
+  };
+
   return (
     <section className="mb-10">
       <div className="relative rounded-xl overflow-hidden">
@@ -25,7 +31,7 @@ export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: Exp
               : 'Discover amazing creators and exclusive content across various categories'
             }
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-4 max-w-2xl">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -35,11 +41,11 @@ export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: Exp
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
               <Search className="h-4 w-4 mr-2" />
               Search
             </Button>
-          </div>
+          </form>
         </div>
       </div>
     </section>
