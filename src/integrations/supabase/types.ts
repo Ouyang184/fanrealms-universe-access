@@ -694,6 +694,33 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          category_id: number
+          category_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: number
+          category_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: number
+          category_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string

@@ -6,6 +6,7 @@ import AuthCallback from "./pages/AuthCallback";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import OnboardingPage from "./pages/Onboarding";
+import PreferencesPage from "./pages/Preferences";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/creator-studio/Dashboard";
 import LoadingPage from "./pages/Loading";

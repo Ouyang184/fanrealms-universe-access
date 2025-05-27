@@ -89,8 +89,8 @@ export const useAuthFunctions = () => {
             throw userError;
           }
           
-          // Navigate to onboarding after successful signup
-          navigate('/onboarding');
+          // Navigate to preferences page after successful signup
+          navigate('/preferences');
         }
 
         return {
