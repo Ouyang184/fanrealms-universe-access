@@ -38,73 +38,62 @@ export function ActiveSubscribeButton({
     }
 
     try {
-      console.log('ActiveSubscribeButton: Creating subscription for tier:', tierId, 'creator:', creatorId);
+      console.log('ActiveSubscribeButton: Starting subscription creation for tier:', tierId, 'creator:', creatorId);
+      
       const result = await createSubscription({ tierId, creatorId });
+      console.log('ActiveSubscribeButton: Subscription creation result:', result);
       
       if (result?.clientSecret) {
+        // Store subscription details for payment page
         sessionStorage.setItem('pendingSubscription', JSON.stringify({
           tierId,
           creatorId,
-          tierName
+          tierName,
+          price
         }));
         
-        console.log('ActiveSubscribeButton: Navigating to payment with client secret');
+        console.log('ActiveSubscribeButton: Navigating to payment page with client secret');
         navigate('/payment', {
           state: {
             clientSecret: result.clientSecret,
-            amount: price * 100,
+            amount: price * 100, // Convert to cents
             tierName,
             tierId,
             creatorId
           }
         });
       } else if (result?.subscriptionId) {
-        // Direct subscription success - refresh all data immediately
-        console.log('ActiveSubscribeButton: Direct subscription success, refreshing data');
+        // Direct subscription success (shouldn't happen with Stripe, but handle it)
+        console.log('ActiveSubscribeButton: Direct subscription success');
         
-        // Invalidate all subscription-related queries
+        // Refresh subscription data
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
           queryClient.invalidateQueries({ queryKey: ['enhancedUserSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-          queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
           queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
         ]);
-
-        // Force refetch with no cache
-        await Promise.all([
-          queryClient.refetchQueries({ queryKey: ['userActiveSubscriptions'] }),
-          queryClient.refetchQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
-        ]);
-
-        // Trigger global subscription events
-        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-          detail: { tierId, creatorId, tierName, subscriptionId: result.subscriptionId }
-        }));
 
         toast({
           title: "Subscription Successful!",
           description: `You are now subscribed to ${tierName}.`,
         });
       } else {
-        console.error('ActiveSubscribeButton: Unexpected result format');
+        console.error('ActiveSubscribeButton: Unexpected result format:', result);
         toast({
           title: "Error",
-          description: "Subscription creation completed but status is unclear. Please refresh the page.",
+          description: "Unable to create subscription. Please try again.",
           variant: "destructive"
         });
       }
     } catch (error) {
       console.error('ActiveSubscribeButton: Subscription error:', error);
       
-      // Check if it's the "already subscribed" error
       if (error instanceof Error && error.message.includes('already have an active subscription')) {
-        // Force refresh subscription data
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
-        ]);
-
+        // Refresh data to show current state
+        await queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] });
+        await queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] });
+        
         toast({
           title: "Already Subscribed",
           description: "You already have an active subscription to this creator.",
@@ -112,7 +101,7 @@ export function ActiveSubscribeButton({
         });
       } else {
         toast({
-          title: "Error",
+          title: "Subscription Failed",
           description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
           variant: "destructive"
         });
@@ -125,14 +114,15 @@ export function ActiveSubscribeButton({
       onClick={handleSubscribe}
       disabled={isProcessing}
       className="w-full"
+      size="lg"
     >
       {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Processing...
+          Creating subscription...
         </>
       ) : (
-        `Subscribe to ${tierName} - $${price}/month`
+        `Subscribe for $${price}/month`
       )}
     </Button>
   );

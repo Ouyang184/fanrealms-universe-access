@@ -10,12 +10,15 @@ export const useCreateSubscription = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
-    if (!user || isProcessing) return null;
+    if (!user || isProcessing) {
+      console.log('Cannot create subscription: user not authenticated or already processing');
+      return null;
+    }
 
     setIsProcessing(true);
+    console.log('useCreateSubscription: Starting subscription creation for:', { tierId, creatorId, userId: user.id });
+    
     try {
-      console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
-      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'create_subscription',
@@ -24,31 +27,37 @@ export const useCreateSubscription = () => {
         }
       });
 
+      console.log('useCreateSubscription: Edge function response:', { data, error });
+
       if (error) {
-        console.error('Error creating subscription:', error);
-        throw new Error(error.message || 'Failed to create subscription');
+        console.error('useCreateSubscription: Edge function error:', error);
+        throw new Error(error.message || 'Failed to invoke subscription function');
       }
 
       if (data?.error) {
-        console.error('Function returned error:', data.error);
+        console.error('useCreateSubscription: Function returned error:', data.error);
         throw new Error(data.error);
       }
 
-      console.log('Subscription created successfully:', data);
+      if (!data) {
+        console.error('useCreateSubscription: No data returned from function');
+        throw new Error('No response from subscription service');
+      }
+
+      console.log('useCreateSubscription: Subscription creation successful');
       return data;
 
     } catch (error) {
-      console.error('Failed to create subscription:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
-        variant: "destructive"
-      });
+      console.error('useCreateSubscription: Failed to create subscription:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create subscription';
+      
+      // Don't show toast here - let the component handle it for better UX
       throw error;
     } finally {
       setIsProcessing(false);
     }
-  }, [user, isProcessing, toast]);
+  }, [user, isProcessing]);
 
   return {
     createSubscription,
