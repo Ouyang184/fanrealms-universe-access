@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -60,8 +59,8 @@ serve(async (req) => {
       });
     }
 
-    const { action, tierId, creatorId } = requestBody;
-    console.log('Action:', action, 'TierID:', tierId, 'CreatorID:', creatorId);
+    const { action, tierId, creatorId, subscriptionId } = requestBody;
+    console.log('Action:', action, 'TierID:', tierId, 'CreatorID:', creatorId, 'SubscriptionID:', subscriptionId);
 
     if (!action) {
       console.log('ERROR: Missing action in request');
@@ -268,34 +267,65 @@ serve(async (req) => {
       })
 
     } else if (action === 'cancel_subscription') {
-      const { subscriptionId } = requestBody;
-
       console.log('Cancelling subscription:', subscriptionId);
 
-      // Verify user owns this subscription
-      const { data: subscription } = await supabase
+      if (!subscriptionId) {
+        console.log('ERROR: Missing subscriptionId');
+        return new Response(JSON.stringify({ error: 'Missing subscription ID' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Verify user owns this subscription and get Stripe subscription ID
+      const { data: subscription, error: subError } = await supabaseService
         .from('creator_subscriptions')
-        .select('stripe_subscription_id')
+        .select('stripe_subscription_id, id')
         .eq('user_id', user.id)
         .eq('id', subscriptionId)
+        .eq('status', 'active')
         .single()
 
-      if (!subscription) {
-        console.log('ERROR: Subscription not found for user');
-        return new Response(JSON.stringify({ error: 'Subscription not found' }), { 
+      if (subError || !subscription) {
+        console.log('ERROR: Subscription not found for user:', subError);
+        return new Response(JSON.stringify({ error: 'Subscription not found or already cancelled' }), { 
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
+      console.log('Found subscription:', subscription);
+
       // Cancel Stripe subscription
-      await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
+      try {
+        await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
+        console.log('Stripe subscription cancelled successfully');
 
-      console.log('Subscription cancelled successfully');
+        // Update database to mark subscription as cancelled
+        const { error: updateError } = await supabaseService
+          .from('creator_subscriptions')
+          .update({ 
+            status: 'cancelled',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', subscriptionId)
 
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+        if (updateError) {
+          console.error('Error updating subscription status in database:', updateError);
+        }
+
+        console.log('Subscription cancelled successfully');
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      } catch (stripeError) {
+        console.error('Error cancelling Stripe subscription:', stripeError);
+        return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     console.log('ERROR: Invalid action:', action);

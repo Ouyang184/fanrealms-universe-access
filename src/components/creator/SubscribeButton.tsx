@@ -117,9 +117,7 @@ export function SubscribeButton({
         if (onSubscriptionSuccess) {
           onSubscriptionSuccess();
         }
-      } else if (event.type === 'subscriptionCanceled' && 
-                 event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
-        
+      } else if (event.type === 'subscriptionCanceled') {
         console.log('SubscribeButton: Subscription canceled, updating button state');
         
         if (onOptimisticUpdate) {
@@ -239,17 +237,24 @@ export function SubscribeButton({
   };
 
   const handleUnsubscribe = async () => {
-    if (!subscriptionStatus?.data) return;
+    if (!subscriptionStatus?.data) {
+      console.log('No subscription data available for cancellation');
+      return;
+    }
 
     setIsUnsubscribing(true);
     
     try {
+      console.log('SubscribeButton: Cancelling subscription:', subscriptionStatus.data.id);
+      
       // Use the subscription ID from whichever table has the data
       const subscriptionId = subscriptionStatus.data.id;
       await cancelSubscription(subscriptionId);
       
+      console.log('SubscribeButton: Subscription cancelled, dispatching event');
+      
       window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
-        detail: { creatorId, tierId }
+        detail: { creatorId, tierId, subscriptionId }
       }));
       
       toast({
@@ -319,6 +324,7 @@ export function SubscribeButton({
             <div className="mt-2 space-y-1">
               <div>Source: {subscriptionStatus?.source}</div>
               <div>Is Subscribed: {subscriptionStatus?.isSubscribed ? 'Yes' : 'No'}</div>
+              <div>Subscription ID: {subscriptionStatus?.data?.id}</div>
               <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
             </div>
             <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">

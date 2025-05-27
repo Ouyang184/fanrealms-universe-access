@@ -155,6 +155,8 @@ export const useStripeSubscription = () => {
   // Cancel subscription mutation
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: string) => {
+      console.log('Cancelling subscription with ID:', subscriptionId);
+      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
@@ -162,14 +164,22 @@ export const useStripeSubscription = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Cancel subscription error:', error);
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
+      console.log('Subscription cancelled successfully');
+      
       // Immediately invalidate and refetch subscription data
       queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] });
       queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
       
       // Force immediate refetch
       setTimeout(() => {
@@ -182,6 +192,7 @@ export const useStripeSubscription = () => {
       });
     },
     onError: (error) => {
+      console.error('Cancel subscription mutation error:', error);
       toast({
         title: "Error",
         description: "Failed to cancel subscription. Please try again.",
@@ -202,9 +213,16 @@ export const useStripeSubscription = () => {
 
   const cancelSubscription = useCallback(async (subscriptionId: string) => {
     try {
+      console.log('useStripeSubscription: Cancelling subscription ID:', subscriptionId);
       await cancelSubscriptionMutation.mutateAsync(subscriptionId);
+      
+      // Dispatch custom event for other components to listen to
+      window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
+        detail: { subscriptionId }
+      }));
     } catch (error) {
-      console.error('Cancel subscription error:', error);
+      console.error('useStripeSubscription: Cancel subscription error:', error);
+      throw error;
     }
   }, [cancelSubscriptionMutation]);
 
@@ -218,6 +236,8 @@ export const useStripeSubscription = () => {
       queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
       queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] }),
+      queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
     ]);
     
     // Force immediate refetch
