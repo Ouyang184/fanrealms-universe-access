@@ -5,6 +5,7 @@ import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
 import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
+import { ManualCancelButton } from './buttons/ManualCancelButton';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -32,14 +33,17 @@ export function SubscribeButton({
 
   if (isUserSubscribed) {
     return (
-      <SubscribedButton
-        tierName={tierName}
-        subscriptionData={subscriptionStatus?.data}
-        tierId={tierId}
-        creatorId={creatorId}
-        onOptimisticUpdate={onOptimisticUpdate}
-        onSubscriptionSuccess={onSubscriptionSuccess}
-      />
+      <div className="space-y-2">
+        <SubscribedButton
+          tierName={tierName}
+          subscriptionData={subscriptionStatus?.data}
+          tierId={tierId}
+          creatorId={creatorId}
+          onOptimisticUpdate={onOptimisticUpdate}
+          onSubscriptionSuccess={onSubscriptionSuccess}
+        />
+        <ManualCancelButton creatorId={creatorId} />
+      </div>
     );
   }
 
@@ -48,11 +52,15 @@ export function SubscribeButton({
   }
 
   return (
-    <ActiveSubscribeButton
-      tierId={tierId}
-      creatorId={creatorId}
-      tierName={tierName}
-      price={price}
-    />
+    <div className="space-y-2">
+      <ActiveSubscribeButton
+        tierId={tierId}
+        creatorId={creatorId}
+        tierName={tierName}
+        price={price}
+      />
+      {/* Show manual cancel button for debugging if needed */}
+      <ManualCancelButton creatorId={creatorId} />
+    </div>
   );
 }
