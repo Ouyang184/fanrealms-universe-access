@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -158,7 +159,9 @@ export function CreatePostForm() {
       setAttachments([]);
       setIsOpen(false);
       
-      // Refresh posts list
+      // Refresh creator posts list with the correct query key
+      queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
+      // Also invalidate other related queries
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
 
