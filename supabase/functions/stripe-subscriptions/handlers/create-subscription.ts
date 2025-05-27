@@ -18,8 +18,8 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // First, clean up any stale or cancelled subscriptions
-  console.log('Cleaning up stale subscriptions...');
+  // First, get all subscription records for this user and creator
+  console.log('Fetching and cleaning up existing subscriptions...');
   
   const { data: allCreatorSubs, error: fetchError } = await supabaseService
     .from('creator_subscriptions')
@@ -35,26 +35,71 @@ export async function handleCreateSubscription(
     let hasValidActiveSubscription = false;
     
     for (const sub of allCreatorSubs) {
+      console.log('Checking subscription:', sub.id, 'Stripe ID:', sub.stripe_subscription_id, 'Status:', sub.status);
+      
       if (sub.stripe_subscription_id) {
         try {
           const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-          console.log('Stripe subscription status for', sub.id, ':', stripeSubscription.status);
+          console.log('Stripe subscription details:', {
+            id: stripeSubscription.id,
+            status: stripeSubscription.status,
+            cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+            current_period_end: stripeSubscription.current_period_end,
+            ended_at: stripeSubscription.ended_at,
+            canceled_at: stripeSubscription.canceled_at
+          });
           
-          if (stripeSubscription.status === 'active' || 
-              stripeSubscription.status === 'trialing' ||
-              stripeSubscription.status === 'past_due') {
+          // Check if subscription is truly active and not set to cancel
+          const isReallyActive = stripeSubscription.status === 'active' && 
+                               !stripeSubscription.cancel_at_period_end &&
+                               !stripeSubscription.ended_at &&
+                               !stripeSubscription.canceled_at;
+          
+          // Also check if it's a trialing subscription
+          const isTrialing = stripeSubscription.status === 'trialing';
+          
+          // Check if it's past due but still recoverable
+          const isPastDue = stripeSubscription.status === 'past_due';
+          
+          if (isReallyActive || isTrialing || isPastDue) {
+            console.log('Found valid active subscription:', {
+              status: stripeSubscription.status,
+              cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+              isReallyActive,
+              isTrialing,
+              isPastDue
+            });
             hasValidActiveSubscription = true;
-            console.log('User has valid active subscription');
             break;
-          } else if (stripeSubscription.status === 'canceled' || 
-                    stripeSubscription.status === 'incomplete_expired' ||
-                    stripeSubscription.status === 'incomplete') {
-            // Clean up canceled/failed subscription
-            console.log('Cleaning up canceled/failed subscription:', sub.id);
+          } else {
+            // Subscription is cancelled, incomplete, or set to cancel - clean it up
+            console.log('Cleaning up inactive/cancelled subscription:', {
+              id: sub.id,
+              stripe_status: stripeSubscription.status,
+              cancel_at_period_end: stripeSubscription.cancel_at_period_end,
+              ended_at: stripeSubscription.ended_at,
+              canceled_at: stripeSubscription.canceled_at
+            });
+            
+            // Update the status in our database to match Stripe
             await supabaseService
               .from('creator_subscriptions')
-              .delete()
+              .update({ 
+                status: stripeSubscription.status,
+                updated_at: new Date().toISOString()
+              })
               .eq('id', sub.id);
+              
+            // If it's completely cancelled/ended, we could also delete it
+            if (stripeSubscription.status === 'canceled' || 
+                stripeSubscription.ended_at || 
+                stripeSubscription.status === 'incomplete_expired') {
+              console.log('Deleting completely cancelled subscription from database:', sub.id);
+              await supabaseService
+                .from('creator_subscriptions')
+                .delete()
+                .eq('id', sub.id);
+            }
           }
         } catch (stripeError) {
           console.error('Error checking Stripe subscription:', stripeError);
@@ -74,29 +119,31 @@ export async function handleCreateSubscription(
         const hoursDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
         
         if (hoursDiff > 1) {
-          console.log('Cleaning up old pending subscription:', sub.id);
+          console.log('Cleaning up old pending subscription:', sub.id, 'Age:', hoursDiff, 'hours');
           await supabaseService
             .from('creator_subscriptions')
             .delete()
             .eq('id', sub.id);
         } else {
-          // Recent pending subscription
+          // Recent pending subscription - this might be a valid ongoing signup
+          console.log('Found recent pending subscription:', sub.id, 'Age:', hoursDiff, 'hours');
           hasValidActiveSubscription = true;
-          console.log('User has recent pending subscription');
         }
       }
     }
     
     if (hasValidActiveSubscription) {
-      console.log('User already has active subscription to this creator');
+      console.log('User has confirmed valid active subscription to this creator');
       return createJsonResponse({ 
         error: 'You already have an active subscription to this creator. Please refresh the page to see your current subscription status.',
         shouldRefresh: true
-      }, 409); // Use 409 Conflict instead of 400
+      }, 409);
+    } else {
+      console.log('No valid active subscriptions found after cleanup');
     }
   }
 
-  // Clean up any stale basic subscriptions
+  // Clean up any stale basic subscriptions as well
   const { data: existingBasicSubs } = await supabaseService
     .from('subscriptions')
     .select('*')
