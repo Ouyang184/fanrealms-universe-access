@@ -8,7 +8,7 @@ import { StripeConnectSection } from "@/components/creator-studio/StripeConnectS
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { Save, Loader } from "lucide-react";
 
 export default function CreatorStudioSettings() {
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
@@ -130,7 +130,11 @@ export default function CreatorStudioSettings() {
           disabled={!canSave}
           className="min-w-[120px]"
         >
-          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? (
+            <Loader className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
           {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
