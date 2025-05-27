@@ -68,6 +68,32 @@ export const useStripeSubscription = () => {
     refetchInterval: 2000, // Refresh every 2 seconds
   });
 
+  // Create subscription function
+  const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
+
+    const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      body: {
+        action: 'create_subscription',
+        tier_id: tierId,
+        creator_id: creatorId,
+        user_id: user.id
+      }
+    });
+
+    if (error) {
+      console.error('Error creating subscription:', error);
+      throw new Error(error.message || 'Failed to create subscription');
+    }
+
+    console.log('Subscription created successfully:', data);
+    return data;
+  }, [user]);
+
   // Function to trigger subscription success events
   const triggerSubscriptionEvents = useCallback((subscriptionData?: any) => {
     console.log('Triggering subscription success events with data:', subscriptionData);
@@ -113,15 +139,30 @@ export const useStripeSubscription = () => {
     }
   }, [queryClient, refetchSubscriptions, triggerSubscriptionEvents]);
 
-  // Cancel subscription function
+  // Cancel subscription function with proper error handling
   const cancelSubscription = useCallback(async (subscriptionId: string) => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
     setIsProcessing(true);
     try {
-      // Here you would typically call your cancel subscription endpoint
       console.log('Canceling subscription:', subscriptionId);
       
-      // For now, just refresh the data
-      await handleSubscriptionSuccess();
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'cancel_subscription',
+          subscriptionId: subscriptionId,
+          user_id: user.id
+        }
+      });
+
+      if (error) {
+        console.error('Error canceling subscription:', error);
+        throw new Error(error.message || 'Failed to cancel subscription');
+      }
+
+      console.log('Subscription canceled successfully:', data);
       
       // Trigger cancellation events
       const event = new CustomEvent('subscriptionCanceled', {
@@ -129,12 +170,17 @@ export const useStripeSubscription = () => {
       });
       window.dispatchEvent(event);
       
+      // Refresh subscription data
+      await handleSubscriptionSuccess();
+      
+      return data;
     } catch (error) {
       console.error('Error canceling subscription:', error);
+      throw error;
     } finally {
       setIsProcessing(false);
     }
-  }, [handleSubscriptionSuccess]);
+  }, [user, handleSubscriptionSuccess]);
 
   // Listen for subscription events from other parts of the app
   useEffect(() => {
@@ -184,8 +230,10 @@ export const useStripeSubscription = () => {
     userSubscriptions,
     subscriptionsLoading,
     isProcessing,
+    setIsProcessing,
     refetchSubscriptions,
     handleSubscriptionSuccess,
     cancelSubscription,
+    createSubscription,
   };
 };

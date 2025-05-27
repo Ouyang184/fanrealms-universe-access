@@ -33,7 +33,6 @@ export function SubscribeButton({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>({});
 
   // Enhanced subscription check that looks at both tables
   const { data: subscriptionStatus, refetch: refetchSubscriptionStatus } = useQuery({
@@ -92,7 +91,6 @@ export function SubscribeButton({
   useEffect(() => {
     const handleSubscriptionUpdate = async (event: CustomEvent) => {
       console.log('SubscribeButton: Received subscription event:', event.type, event.detail);
-      setDebugInfo(prev => ({ ...prev, lastEvent: { type: event.type, detail: event.detail, time: new Date().toISOString() } }));
       
       if ((event.type === 'paymentSuccess' || event.type === 'subscriptionSuccess') && 
           event.detail?.tierId === tierId && event.detail?.creatorId === creatorId) {
@@ -189,13 +187,10 @@ export function SubscribeButton({
     }
 
     setIsProcessing(true);
-    setDebugInfo(prev => ({ ...prev, subscriptionAttempt: new Date().toISOString() }));
 
     try {
       console.log('SubscribeButton: Creating subscription for tier:', tierId, 'creator:', creatorId);
       const result = await createSubscription({ tierId, creatorId });
-      
-      setDebugInfo(prev => ({ ...prev, createResult: result }));
       
       if (result?.clientSecret) {
         sessionStorage.setItem('pendingSubscription', JSON.stringify({
@@ -216,7 +211,6 @@ export function SubscribeButton({
         });
       } else {
         console.error('SubscribeButton: No client secret received');
-        setDebugInfo(prev => ({ ...prev, error: 'No client secret received' }));
         toast({
           title: "Error",
           description: "Failed to initialize payment. Please try again.",
@@ -225,7 +219,6 @@ export function SubscribeButton({
       }
     } catch (error) {
       console.error('SubscribeButton: Subscription error:', error);
-      setDebugInfo(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to create subscription. Please try again.",
@@ -277,20 +270,6 @@ export function SubscribeButton({
     }
   };
 
-  // Manual refresh function for debugging
-  const handleManualRefresh = async () => {
-    console.log('SubscribeButton: Manual refresh triggered');
-    setDebugInfo(prev => ({ ...prev, manualRefresh: new Date().toISOString() }));
-    
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
-      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-    ]);
-    
-    await refetchSubscriptionStatus();
-  };
-
   const isUserSubscribed = subscriptionStatus?.isSubscribed || isSubscribed;
 
   if (isUserSubscribed) {
@@ -316,22 +295,6 @@ export function SubscribeButton({
             'Cancel Subscription'
           )}
         </Button>
-        
-        {/* Debug info for troubleshooting */}
-        {process.env.NODE_ENV === 'development' && (
-          <details className="text-xs bg-muted p-2 rounded">
-            <summary>Debug Info (Dev Only)</summary>
-            <div className="mt-2 space-y-1">
-              <div>Source: {subscriptionStatus?.source}</div>
-              <div>Is Subscribed: {subscriptionStatus?.isSubscribed ? 'Yes' : 'No'}</div>
-              <div>Subscription ID: {subscriptionStatus?.data?.id}</div>
-              <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
-            </div>
-            <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
-              Refresh Status
-            </Button>
-          </details>
-        )}
       </div>
     );
   }
@@ -346,36 +309,19 @@ export function SubscribeButton({
   }
 
   return (
-    <div className="space-y-2">
-      <Button 
-        onClick={handleSubscribe}
-        disabled={isProcessing}
-        className="w-full"
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          `Subscribe to ${tierName} - $${price}/month`
-        )}
-      </Button>
-      
-      {/* Debug info for troubleshooting */}
-      {process.env.NODE_ENV === 'development' && (
-        <details className="text-xs bg-muted p-2 rounded">
-          <summary>Debug Info (Dev Only)</summary>
-          <div className="mt-2 space-y-1">
-            <div>Source: {subscriptionStatus?.source || 'none'}</div>
-            <div>Is Subscribed: {subscriptionStatus?.isSubscribed ? 'Yes' : 'No'}</div>
-            <pre className="whitespace-pre-wrap">{JSON.stringify(debugInfo, null, 2)}</pre>
-          </div>
-          <Button size="sm" variant="outline" onClick={handleManualRefresh} className="mt-2">
-            Refresh Status
-          </Button>
-        </details>
+    <Button 
+      onClick={handleSubscribe}
+      disabled={isProcessing}
+      className="w-full"
+    >
+      {isProcessing ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Processing...
+        </>
+      ) : (
+        `Subscribe to ${tierName} - $${price}/month`
       )}
-    </div>
+    </Button>
   );
 }
