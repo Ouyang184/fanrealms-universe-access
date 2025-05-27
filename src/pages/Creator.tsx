@@ -77,7 +77,11 @@ const CreatorPage: React.FC = () => {
   const handleUnfollow = async () => {
     if (creator?.id) {
       console.log("Unfollow button clicked");
-      await unfollowCreator(creator.id);
+      // Pass the current displayed follower count to avoid database fetch
+      const currentDisplayedCount = optimisticFollowerCount !== null 
+        ? optimisticFollowerCount 
+        : creator.follower_count || 0;
+      await unfollowCreator(creator.id, currentDisplayedCount);
     }
   };
 
