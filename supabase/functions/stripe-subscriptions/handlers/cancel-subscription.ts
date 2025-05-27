@@ -14,7 +14,7 @@ export async function handleCancelSubscription(
     return createJsonResponse({ error: 'Missing subscription ID' }, 400);
   }
 
-  // Find subscription in creator_subscriptions table using the internal ID
+  // First try to find subscription in creator_subscriptions table
   console.log('Looking for subscription in creator_subscriptions table...');
   const { data: creatorSubscription, error: creatorSubError } = await supabaseService
     .from('creator_subscriptions')
@@ -24,59 +24,103 @@ export async function handleCancelSubscription(
     .maybeSingle();
 
   if (creatorSubError) {
-    console.error('Error finding creator subscription:', creatorSubError);
-    return createJsonResponse({ error: 'Failed to find subscription' }, 500);
+    console.error('Error querying creator_subscriptions:', creatorSubError);
   }
 
+  // If not found in creator_subscriptions, try subscriptions table
+  let subscriptionData = creatorSubscription;
+  let isCreatorSubscription = true;
+
   if (!creatorSubscription) {
+    console.log('Not found in creator_subscriptions, checking subscriptions table...');
+    const { data: basicSubscription, error: basicSubError } = await supabaseService
+      .from('subscriptions')
+      .select('id, user_id, creator_id, tier_id, is_paid')
+      .eq('user_id', user.id)
+      .eq('id', subscriptionId)
+      .maybeSingle();
+
+    if (basicSubError) {
+      console.error('Error querying subscriptions:', basicSubError);
+    }
+
+    if (basicSubscription) {
+      subscriptionData = basicSubscription;
+      isCreatorSubscription = false;
+      console.log('Found subscription in subscriptions table:', subscriptionData);
+    }
+  }
+
+  if (!subscriptionData) {
     console.log('ERROR: Subscription not found for user:', user.id, 'subscription ID:', subscriptionId);
-    // Let's also try to find any subscription for this user to debug
+    
+    // Debug: Let's see what subscriptions this user has
     const { data: allUserSubs } = await supabaseService
       .from('creator_subscriptions')
       .select('id, status, stripe_subscription_id')
       .eq('user_id', user.id);
-    console.log('All user subscriptions:', allUserSubs);
+    console.log('All user creator_subscriptions:', allUserSubs);
+
+    const { data: allBasicSubs } = await supabaseService
+      .from('subscriptions')
+      .select('id, creator_id, tier_id, is_paid')
+      .eq('user_id', user.id);
+    console.log('All user subscriptions:', allBasicSubs);
     
     return createJsonResponse({ error: 'Subscription not found or already cancelled' }, 404);
   }
 
-  console.log('Found subscription:', creatorSubscription);
+  console.log('Found subscription:', subscriptionData);
 
-  // Cancel Stripe subscription if we have a stripe_subscription_id
-  if (creatorSubscription.stripe_subscription_id) {
+  // Cancel Stripe subscription if we have a stripe_subscription_id (only for creator_subscriptions)
+  if (isCreatorSubscription && subscriptionData.stripe_subscription_id) {
     try {
-      console.log('Cancelling Stripe subscription:', creatorSubscription.stripe_subscription_id);
-      await stripe.subscriptions.cancel(creatorSubscription.stripe_subscription_id);
+      console.log('Cancelling Stripe subscription:', subscriptionData.stripe_subscription_id);
+      await stripe.subscriptions.cancel(subscriptionData.stripe_subscription_id);
       console.log('Stripe subscription cancelled successfully');
     } catch (stripeError) {
       console.error('Error cancelling Stripe subscription:', stripeError);
       return createJsonResponse({ error: 'Failed to cancel subscription' }, 500);
     }
+
+    // Update creator_subscriptions table
+    const { error: updateError } = await supabaseService
+      .from('creator_subscriptions')
+      .update({ 
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', subscriptionId);
+
+    if (updateError) {
+      console.error('Error updating creator_subscriptions status:', updateError);
+      return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
+    }
   }
 
-  // Update database to mark subscription as cancelled
-  const { error: updateError } = await supabaseService
-    .from('creator_subscriptions')
-    .update({ 
-      status: 'cancelled',
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', subscriptionId);
+  // Remove/update subscription in basic subscriptions table
+  if (isCreatorSubscription) {
+    // Remove from subscriptions table if it exists there too
+    const { error: deleteError } = await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', subscriptionData.user_id)
+      .eq('creator_id', subscriptionData.creator_id);
 
-  if (updateError) {
-    console.error('Error updating subscription status in database:', updateError);
-    return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
-  }
+    if (deleteError) {
+      console.error('Error removing subscription from subscriptions table:', deleteError);
+    }
+  } else {
+    // Just remove from subscriptions table
+    const { error: deleteError } = await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('id', subscriptionId);
 
-  // Also remove from subscriptions table
-  const { error: deleteError } = await supabaseService
-    .from('subscriptions')
-    .delete()
-    .eq('user_id', creatorSubscription.user_id)
-    .eq('creator_id', creatorSubscription.creator_id);
-
-  if (deleteError) {
-    console.error('Error removing subscription from subscriptions table:', deleteError);
+    if (deleteError) {
+      console.error('Error removing subscription from subscriptions table:', deleteError);
+      return createJsonResponse({ error: 'Failed to remove subscription' }, 500);
+    }
   }
 
   console.log('Subscription cancelled successfully');
