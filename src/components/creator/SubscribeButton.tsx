@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useStripeSubscription } from '@/hooks/useStripeSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, AlertCircle, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 interface SubscribeButtonProps {
@@ -29,13 +29,17 @@ export function SubscribeButton({
   const { user } = useAuth();
   const { createSubscription, cancelSubscription, isProcessing, setIsProcessing } = useStripeSubscription();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isUnsubscribing, setIsUnsubscribing] = useState(false);
+  const [localSubscriptionState, setLocalSubscriptionState] = useState(isSubscribed);
 
-  // Check if user is subscribed to this specific tier
-  const { data: userSubscription } = useQuery({
+  // Check if user is subscribed to this specific tier with aggressive refresh
+  const { data: userSubscription, refetch: refetchUserSubscription } = useQuery({
     queryKey: ['userTierSubscription', user?.id, tierId],
     queryFn: async () => {
       if (!user?.id) return null;
+      
+      console.log('Checking subscription for user:', user.id, 'tier:', tierId);
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
@@ -50,10 +54,44 @@ export function SubscribeButton({
         return null;
       }
       
+      console.log('Subscription check result for tier', tierId, ':', data);
       return data;
     },
-    enabled: !!user?.id && !!tierId
+    enabled: !!user?.id && !!tierId,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 2000, // Very frequent updates
   });
+
+  // Update local state when subscription data changes
+  useEffect(() => {
+    const newSubscriptionState = userSubscription !== null || isSubscribed;
+    setLocalSubscriptionState(newSubscriptionState);
+    console.log('Updated local subscription state for tier', tierId, ':', newSubscriptionState);
+  }, [userSubscription, isSubscribed, tierId]);
+
+  // Listen for subscription events and force refresh
+  useEffect(() => {
+    const handleSubscriptionUpdate = async () => {
+      console.log('Subscription update event detected, refreshing tier subscription data...');
+      await queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] });
+      await refetchUserSubscription();
+      
+      // Trigger the callback if provided
+      if (onSubscriptionSuccess) {
+        onSubscriptionSuccess();
+      }
+    };
+
+    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    };
+  }, [queryClient, refetchUserSubscription, onSubscriptionSuccess]);
 
   // Check if creator has completed Stripe setup
   const { data: creatorStripeStatus } = useQuery({
@@ -150,6 +188,17 @@ export function SubscribeButton({
     try {
       await cancelSubscription(userSubscription.id);
       
+      // Force immediate state update
+      setLocalSubscriptionState(false);
+      
+      // Invalidate and refetch subscription data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+      ]);
+      await refetchUserSubscription();
+      
       toast({
         title: "Success",
         description: "Successfully unsubscribed from this tier.",
@@ -171,8 +220,8 @@ export function SubscribeButton({
     }
   };
 
-  // Check if user is subscribed to this tier
-  const isUserSubscribed = userSubscription !== null || isSubscribed;
+  // Use local state that gets updated more aggressively
+  const isUserSubscribed = localSubscriptionState;
 
   if (isUserSubscribed) {
     return (

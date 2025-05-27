@@ -68,10 +68,11 @@ export function useCreatorMembership(creatorId: string) {
       return tiersWithSubscribers;
     },
     enabled: !!creatorId,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 3000, // Refetch every 3 seconds
   });
 
-  // Check user's current subscriptions to this creator
+  // Check user's current subscriptions to this creator with more aggressive caching strategy
   const { data: userSubscriptions = [], refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -95,7 +96,8 @@ export function useCreatorMembership(creatorId: string) {
       return data;
     },
     enabled: !!user?.id && !!creatorId,
-    refetchInterval: 3000, // Refetch every 3 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 2000, // Very frequent updates for subscription status
   });
 
   const isSubscribedToTier = (tierId: string) => {
@@ -111,11 +113,16 @@ export function useCreatorMembership(creatorId: string) {
     refetchTiers();
     refetchSubscriptions();
     
-    // Additional refreshes at intervals
+    // Additional refreshes at intervals to ensure data consistency
     setTimeout(() => {
       refetchTiers();
       refetchSubscriptions();
-    }, 2000);
+    }, 1000);
+    
+    setTimeout(() => {
+      refetchTiers();
+      refetchSubscriptions();
+    }, 3000);
     
     setTimeout(() => {
       refetchTiers();
@@ -143,12 +150,19 @@ export function useCreatorMembership(creatorId: string) {
       handleSubscriptionSuccess();
     };
 
+    const handleSubscriptionCanceled = () => {
+      console.log('Subscription canceled, refreshing subscription data...');
+      handleSubscriptionSuccess();
+    };
+
     window.addEventListener('subscriptionSuccess', handleSubscriptionSuccessEvent as EventListener);
     window.addEventListener('paymentSuccess', handlePaymentSuccess);
+    window.addEventListener('subscriptionCanceled', handleSubscriptionCanceled);
     
     return () => {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccessEvent as EventListener);
       window.removeEventListener('paymentSuccess', handlePaymentSuccess);
+      window.removeEventListener('subscriptionCanceled', handleSubscriptionCanceled);
     };
   }, [creatorId]);
 
@@ -157,6 +171,8 @@ export function useCreatorMembership(creatorId: string) {
     isLoading,
     userSubscriptions,
     isSubscribedToTier,
-    handleSubscriptionSuccess
+    handleSubscriptionSuccess,
+    refetchTiers,
+    refetchSubscriptions
   };
 }

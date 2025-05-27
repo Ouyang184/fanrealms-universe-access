@@ -11,11 +11,13 @@ export const useStripeSubscription = () => {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Get user's subscriptions
-  const { data: userSubscriptions, isLoading: subscriptionsLoading } = useQuery({
+  // Get user's subscriptions with more frequent updates
+  const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['userSubscriptions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      
+      console.log('Fetching user subscriptions for user:', user.id);
       
       const { data, error } = await supabase
         .from('creator_subscriptions')
@@ -42,10 +44,17 @@ export const useStripeSubscription = () => {
         .eq('user_id', user.id)
         .eq('status', 'active');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user subscriptions:', error);
+        throw error;
+      }
+      
+      console.log('Fetched user subscriptions:', data);
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 3000, // Refetch every 3 seconds for real-time updates
   });
 
   // Create subscription
@@ -71,19 +80,45 @@ export const useStripeSubscription = () => {
 
       return data;
     },
-    onSuccess: (data, variables) => {
-      // Invalidate all subscription-related queries
-      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
-      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
-      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
-      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
+    onSuccess: async (data, variables) => {
+      console.log('Subscription creation successful, invalidating queries and triggering immediate refresh');
+      
+      // Invalidate all subscription-related queries immediately
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['active-subscribers'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+        queryClient.invalidateQueries({ queryKey: ['tiers'] }),
+      ]);
+      
+      // Force immediate refetch
+      await refetchSubscriptions();
       
       // Dispatch custom events for other components to listen to
       window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
         detail: { creatorId: variables.creatorId, tierId: variables.tierId }
       }));
       
-      console.log('Subscription creation successful, invalidated queries');
+      // Additional delayed refreshes to ensure consistency
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+        ]);
+        await refetchSubscriptions();
+      }, 2000);
+      
+      setTimeout(async () => {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+          queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+        ]);
+        await refetchSubscriptions();
+      }, 5000);
     },
     onError: (error) => {
       console.error('Mutation error:', error);
@@ -98,19 +133,33 @@ export const useStripeSubscription = () => {
   // Cancel subscription
   const { mutate: cancelSubscription } = useMutation({
     mutationFn: async (subscriptionId: string) => {
+      console.log('Cancelling subscription:', subscriptionId);
+      
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: { action: 'cancel_subscription', subscriptionId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error cancelling subscription:', error);
+        throw error;
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      console.log('Subscription cancelled successfully, refreshing data');
+      
       // Invalidate all subscription-related queries
-      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
-      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
-      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
-      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['active-subscribers'] }),
+        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
+        queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+        queryClient.invalidateQueries({ queryKey: ['userTierSubscription'] }),
+        queryClient.invalidateQueries({ queryKey: ['tiers'] }),
+      ]);
+      
+      // Force immediate refetch
+      await refetchSubscriptions();
       
       // Dispatch custom event for unsubscribe
       window.dispatchEvent(new CustomEvent('subscriptionCanceled'));
@@ -136,6 +185,7 @@ export const useStripeSubscription = () => {
     createSubscription,
     cancelSubscription,
     isProcessing,
-    setIsProcessing
+    setIsProcessing,
+    refetchSubscriptions
   };
 };
