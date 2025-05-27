@@ -277,55 +277,97 @@ serve(async (req) => {
         });
       }
 
-      // Verify user owns this subscription and get Stripe subscription ID
-      const { data: subscription, error: subError } = await supabaseService
+      // First, try to find in creator_subscriptions table
+      console.log('Looking for subscription in creator_subscriptions table...');
+      const { data: creatorSubscription, error: creatorSubError } = await supabaseService
         .from('creator_subscriptions')
         .select('stripe_subscription_id, id')
         .eq('user_id', user.id)
         .eq('id', subscriptionId)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
 
-      if (subError || !subscription) {
-        console.log('ERROR: Subscription not found for user:', subError);
+      let foundSubscription = null;
+      let tableSource = '';
+
+      if (creatorSubscription && !creatorSubError) {
+        foundSubscription = creatorSubscription;
+        tableSource = 'creator_subscriptions';
+        console.log('Found subscription in creator_subscriptions:', creatorSubscription);
+      } else {
+        // Fallback: try to find in regular subscriptions table
+        console.log('Not found in creator_subscriptions, checking subscriptions table...');
+        const { data: regularSubscription, error: regularSubError } = await supabaseService
+          .from('subscriptions')
+          .select('id, tier_id, creator_id')
+          .eq('user_id', user.id)
+          .eq('id', subscriptionId)
+          .eq('is_paid', true)
+          .maybeSingle()
+
+        if (regularSubscription && !regularSubError) {
+          // For subscriptions table, we need to handle this differently since it might not have Stripe subscription ID
+          foundSubscription = regularSubscription;
+          tableSource = 'subscriptions';
+          console.log('Found subscription in subscriptions table:', regularSubscription);
+        }
+      }
+
+      if (!foundSubscription) {
+        console.log('ERROR: Subscription not found in either table');
         return new Response(JSON.stringify({ error: 'Subscription not found or already cancelled' }), { 
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
-      console.log('Found subscription:', subscription);
+      // Cancel Stripe subscription if we have a stripe_subscription_id
+      if (tableSource === 'creator_subscriptions' && foundSubscription.stripe_subscription_id) {
+        try {
+          await stripe.subscriptions.cancel(foundSubscription.stripe_subscription_id)
+          console.log('Stripe subscription cancelled successfully');
 
-      // Cancel Stripe subscription
-      try {
-        await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
-        console.log('Stripe subscription cancelled successfully');
+          // Update database to mark subscription as cancelled
+          const { error: updateError } = await supabaseService
+            .from('creator_subscriptions')
+            .update({ 
+              status: 'cancelled',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', subscriptionId)
 
-        // Update database to mark subscription as cancelled
+          if (updateError) {
+            console.error('Error updating subscription status in database:', updateError);
+          }
+        } catch (stripeError) {
+          console.error('Error cancelling Stripe subscription:', stripeError);
+          return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      } else if (tableSource === 'subscriptions') {
+        // For subscriptions table, just mark as not paid
+        console.log('Marking subscription as unpaid in subscriptions table');
         const { error: updateError } = await supabaseService
-          .from('creator_subscriptions')
-          .update({ 
-            status: 'cancelled',
-            updated_at: new Date().toISOString()
-          })
+          .from('subscriptions')
+          .update({ is_paid: false })
           .eq('id', subscriptionId)
 
         if (updateError) {
-          console.error('Error updating subscription status in database:', updateError);
+          console.error('Error updating subscription in subscriptions table:', updateError);
+          return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
         }
-
-        console.log('Subscription cancelled successfully');
-
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      } catch (stripeError) {
-        console.error('Error cancelling Stripe subscription:', stripeError);
-        return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
       }
+
+      console.log('Subscription cancelled successfully');
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     console.log('ERROR: Invalid action:', action);
