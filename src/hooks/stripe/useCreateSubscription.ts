@@ -29,30 +29,13 @@ export const useCreateSubscription = () => {
 
       console.log('useCreateSubscription: Edge function response:', { data, error });
 
-      // Handle the case where the function returns an error but we need to check the actual response
       if (error) {
         console.error('useCreateSubscription: Edge function error:', error);
-        
-        // If it's a FunctionsHttpError, we need to handle it specially
-        if (error.name === 'FunctionsHttpError') {
-          // Try to get more details from the response
-          try {
-            // For 409 conflicts (existing subscription), this should be handled gracefully
-            return { 
-              error: 'You already have an active subscription to this creator. Please refresh the page to see your current subscription status.',
-              shouldRefresh: true
-            };
-          } catch (parseError) {
-            console.error('Could not parse error response:', parseError);
-          }
-        }
-        
         throw new Error(error.message || 'Failed to invoke subscription function');
       }
 
       if (data?.error) {
         console.error('useCreateSubscription: Function returned error:', data.error);
-        // Return the error so the component can handle it appropriately
         return { 
           error: data.error,
           shouldRefresh: data.shouldRefresh || false
@@ -69,10 +52,6 @@ export const useCreateSubscription = () => {
 
     } catch (error) {
       console.error('useCreateSubscription: Failed to create subscription:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create subscription';
-      
-      // Don't show toast here - let the component handle it for better UX
       throw error;
     } finally {
       setIsProcessing(false);

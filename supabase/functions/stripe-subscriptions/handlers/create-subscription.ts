@@ -18,10 +18,9 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Simple but thorough duplicate check
+  // Check for existing active subscriptions
   console.log('Checking for existing active subscriptions...');
   
-  // Check creator_subscriptions for active subscriptions
   const { data: existingCreatorSub, error: creatorSubError } = await supabaseService
     .from('creator_subscriptions')
     .select('*')
@@ -43,7 +42,6 @@ export async function handleCreateSubscription(
     }, 409);
   }
 
-  // Check basic subscriptions table
   const { data: existingBasicSub, error: basicSubError } = await supabaseService
     .from('subscriptions')
     .select('*')
@@ -65,7 +63,7 @@ export async function handleCreateSubscription(
     }, 409);
   }
 
-  // Clean up any truly old pending subscriptions (older than 1 hour)
+  // Clean up old pending subscriptions (older than 1 hour)
   console.log('Cleaning up old pending subscriptions...');
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   
@@ -156,7 +154,7 @@ export async function handleCreateSubscription(
     const stripePriceId = await getOrCreateStripePrice(stripe, supabaseService, tier, tierId);
     console.log('Stripe price ID:', stripePriceId);
 
-    // Create Stripe subscription
+    // Create Stripe subscription - ALWAYS requires payment
     console.log('Creating Stripe subscription...');
     const subscription = await stripe.subscriptions.create({
       customer: stripeCustomerId,
@@ -182,8 +180,8 @@ export async function handleCreateSubscription(
 
     console.log('Stripe subscription created:', subscription.id);
 
-    // Store subscription in database
-    console.log('Storing subscription in database...');
+    // Store subscription in database with PENDING status
+    console.log('Storing subscription in database with PENDING status...');
     const { data: createdSub, error: insertError } = await supabaseService
       .from('creator_subscriptions')
       .insert({
@@ -192,7 +190,7 @@ export async function handleCreateSubscription(
         tier_id: tierId,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: stripeCustomerId,
-        status: 'pending',
+        status: 'pending', // CRITICAL: Keep as pending until payment succeeds
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         amount_paid: tier.price,
