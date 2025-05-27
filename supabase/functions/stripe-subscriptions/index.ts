@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -108,19 +107,18 @@ serve(async (req) => {
 
       // Check if user already has an active subscription to this creator
       console.log('Checking for existing subscription...');
-      const { data: existingSub, error: existingError } = await supabaseService
+      const { data: existingSubs, error: existingError } = await supabaseService
         .from('creator_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('status', 'active')
-        .maybeSingle()
 
       if (existingError) {
         console.error('Error checking existing subscription:', existingError);
       }
 
-      if (existingSub) {
+      if (existingSubs && existingSubs.length > 0) {
         console.log('User already has active subscription to this creator');
         return new Response(JSON.stringify({ error: 'You already have an active subscription to this creator' }), {
           status: 400,
@@ -287,44 +285,26 @@ serve(async (req) => {
         });
       }
 
-      // First, try to find in creator_subscriptions table
+      // Find subscription in creator_subscriptions table using the internal ID
       console.log('Looking for subscription in creator_subscriptions table...');
       const { data: creatorSubscription, error: creatorSubError } = await supabaseService
         .from('creator_subscriptions')
-        .select('stripe_subscription_id, id')
+        .select('stripe_subscription_id, id, user_id, creator_id')
         .eq('user_id', user.id)
         .eq('id', subscriptionId)
         .eq('status', 'active')
         .maybeSingle()
 
-      let foundSubscription = null;
-      let tableSource = '';
-
-      if (creatorSubscription && !creatorSubError) {
-        foundSubscription = creatorSubscription;
-        tableSource = 'creator_subscriptions';
-        console.log('Found subscription in creator_subscriptions:', creatorSubscription);
-      } else {
-        // Fallback: try to find in regular subscriptions table
-        console.log('Not found in creator_subscriptions, checking subscriptions table...');
-        const { data: regularSubscription, error: regularSubError } = await supabaseService
-          .from('subscriptions')
-          .select('id, tier_id, creator_id')
-          .eq('user_id', user.id)
-          .eq('id', subscriptionId)
-          .eq('is_paid', true)
-          .maybeSingle()
-
-        if (regularSubscription && !regularSubError) {
-          // For subscriptions table, we need to handle this differently since it might not have Stripe subscription ID
-          foundSubscription = regularSubscription;
-          tableSource = 'subscriptions';
-          console.log('Found subscription in subscriptions table:', regularSubscription);
-        }
+      if (creatorSubError) {
+        console.error('Error finding creator subscription:', creatorSubError);
+        return new Response(JSON.stringify({ error: 'Failed to find subscription' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
 
-      if (!foundSubscription) {
-        console.log('ERROR: Subscription not found in either table');
+      if (!creatorSubscription) {
+        console.log('ERROR: Subscription not found');
         return new Response(JSON.stringify({ error: 'Subscription not found or already cancelled' }), { 
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -332,23 +312,10 @@ serve(async (req) => {
       }
 
       // Cancel Stripe subscription if we have a stripe_subscription_id
-      if (tableSource === 'creator_subscriptions' && foundSubscription.stripe_subscription_id) {
+      if (creatorSubscription.stripe_subscription_id) {
         try {
-          await stripe.subscriptions.cancel(foundSubscription.stripe_subscription_id)
+          await stripe.subscriptions.cancel(creatorSubscription.stripe_subscription_id)
           console.log('Stripe subscription cancelled successfully');
-
-          // Update database to mark subscription as cancelled
-          const { error: updateError } = await supabaseService
-            .from('creator_subscriptions')
-            .update({ 
-              status: 'cancelled',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', subscriptionId)
-
-          if (updateError) {
-            console.error('Error updating subscription status in database:', updateError);
-          }
         } catch (stripeError) {
           console.error('Error cancelling Stripe subscription:', stripeError);
           return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
@@ -356,21 +323,34 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
-      } else if (tableSource === 'subscriptions') {
-        // For subscriptions table, just mark as not paid
-        console.log('Marking subscription as unpaid in subscriptions table');
-        const { error: updateError } = await supabaseService
-          .from('subscriptions')
-          .update({ is_paid: false })
-          .eq('id', subscriptionId)
+      }
 
-        if (updateError) {
-          console.error('Error updating subscription in subscriptions table:', updateError);
-          return new Response(JSON.stringify({ error: 'Failed to cancel subscription' }), {
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        }
+      // Update database to mark subscription as cancelled
+      const { error: updateError } = await supabaseService
+        .from('creator_subscriptions')
+        .update({ 
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId)
+
+      if (updateError) {
+        console.error('Error updating subscription status in database:', updateError);
+        return new Response(JSON.stringify({ error: 'Failed to update subscription status' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Also remove from subscriptions table
+      const { error: deleteError } = await supabaseService
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', creatorSubscription.user_id)
+        .eq('creator_id', creatorSubscription.creator_id)
+
+      if (deleteError) {
+        console.error('Error removing subscription from subscriptions table:', deleteError);
       }
 
       console.log('Subscription cancelled successfully');

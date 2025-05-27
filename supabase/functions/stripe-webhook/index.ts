@@ -203,7 +203,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
 
     console.log('Looking for subscription record with stripe_subscription_id:', subscriptionId)
 
-    // Find the creator subscription record and update it to active immediately
+    // Find the creator subscription record and update it to active
     const { data: creatorSub, error: subError } = await supabase
       .from('creator_subscriptions')
       .select('*')
@@ -222,7 +222,7 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
 
     console.log('Found creator subscription:', creatorSub.id, 'updating to active')
 
-    // Update creator subscription to active
+    // Update creator subscription to active status
     const { error: updateError } = await supabase
       .from('creator_subscriptions')
       .update({ 
@@ -238,8 +238,8 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
 
     console.log('Successfully updated creator subscription to active')
 
-    // Also ensure entry in subscriptions table for counting
-    const { error: insertError } = await supabase
+    // Ensure entry in subscriptions table for backward compatibility
+    const { error: upsertError } = await supabase
       .from('subscriptions')
       .upsert({
         user_id: creatorSub.user_id,
@@ -252,8 +252,8 @@ async function handleCheckoutSessionCompleted(supabase: any, session: any) {
         ignoreDuplicates: false 
       })
 
-    if (insertError) {
-      console.error('Error upserting subscription:', insertError)
+    if (upsertError) {
+      console.error('Error upserting subscription:', upsertError)
     } else {
       console.log('Successfully upserted subscription record')
     }
@@ -460,7 +460,7 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
         updated_at: new Date().toISOString()
       })
       .eq('stripe_subscription_id', subscriptionId)
-      .select('creator_id, user_id, tier_id')
+      .select('creator_id, user_id, tier_id, id')
       .maybeSingle()
 
     if (subError) {
@@ -475,7 +475,7 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
 
     console.log('Updated subscription payment details for:', subscription)
 
-    // Also update the subscriptions table to ensure counting is correct
+    // Ensure the subscriptions table is updated for counting
     const { error: subscriptionsError } = await supabase
       .from('subscriptions')
       .upsert({
@@ -500,6 +500,7 @@ async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice
       .from('creator_earnings')
       .insert({
         creator_id: subscription.creator_id,
+        subscription_id: subscription.id,
         amount: amountPaid,
         platform_fee: platformFee,
         net_amount: creatorEarnings,
