@@ -39,7 +39,7 @@ export function CreatorHeader({
   };
 
   // Use optimistic count if available, otherwise use the creator's follower count
-  const displayFollowerCount = optimisticFollowerCount !== null 
+  const displayFollowerCount = optimisticFollowerCount !== null && optimisticFollowerCount !== undefined
     ? optimisticFollowerCount 
     : creator.follower_count || 0;
 

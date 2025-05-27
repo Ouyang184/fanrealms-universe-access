@@ -53,6 +53,7 @@ const CreatorPage: React.FC = () => {
   useEffect(() => {
     if (creator?.id) {
       checkFollowStatus(creator.id).then(status => {
+        console.log("Setting follow status to:", status);
         setIsFollowing(status);
       });
     }
@@ -68,12 +69,14 @@ const CreatorPage: React.FC = () => {
   
   const handleFollow = async () => {
     if (creator?.id) {
+      console.log("Follow button clicked");
       await followCreator(creator.id);
     }
   };
 
   const handleUnfollow = async () => {
     if (creator?.id) {
+      console.log("Unfollow button clicked");
       await unfollowCreator(creator.id);
     }
   };
