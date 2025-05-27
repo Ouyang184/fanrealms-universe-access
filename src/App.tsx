@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -38,6 +37,7 @@ import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
 import AllCreatorsPage from "./pages/AllCreators";
+import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -65,7 +65,7 @@ export default function App() {
                 <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
-                <Route path="/explore/all" element={<AllCreatorsPage />} />
+                <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
                 
                 {/* Auth routes */}
