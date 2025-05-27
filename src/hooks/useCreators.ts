@@ -22,14 +22,17 @@ export const useCreators = (searchTerm?: string) => {
         `)
         .order('created_at', { ascending: false });
 
-      // If search term is provided, filter by username or display_name
-      if (searchTerm && searchTerm.trim() !== '') {
+      // If search term is provided and has minimum length, filter results
+      if (searchTerm && searchTerm.trim().length >= 2) {
         const term = searchTerm.toLowerCase().trim();
-        // Search in both display_name and username fields
+        // Use ilike for case-insensitive search on both display_name and username
         query = query.or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%`);
+      } else if (searchTerm && searchTerm.trim().length < 2) {
+        // Return empty array for searches less than 2 characters
+        return [];
       }
       
-      const { data: creatorData, error } = await query;
+      const { data: creatorData, error } = await query.limit(10); // Limit results for performance
 
       if (error) {
         console.error('Error fetching creators:', error);
@@ -73,6 +76,7 @@ export const useCreators = (searchTerm?: string) => {
       console.log('Transformed creators for search:', transformedCreators);
       return transformedCreators;
     },
-    staleTime: 10000 // Reduced cache time for more frequent updates
+    staleTime: 30000, // Cache for 30 seconds
+    enabled: !searchTerm || searchTerm.trim().length >= 2 // Only run query if search term is empty or has 2+ characters
   });
 };
