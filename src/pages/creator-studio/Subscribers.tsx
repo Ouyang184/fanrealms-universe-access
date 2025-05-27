@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
@@ -152,6 +151,9 @@ export default function CreatorStudioSubscribers() {
           tier_id: sub.tier_id,
           status: 'active',
           amount_paid: sub.membership_tiers?.price || 0,
+          current_period_start: null,
+          current_period_end: null,
+          stripe_subscription_id: '',
           users: sub.users,
           membership_tiers: sub.membership_tiers
         }));
