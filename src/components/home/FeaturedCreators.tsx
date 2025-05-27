@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,12 +71,12 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
             
             return (
               <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-                <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900">
+                <div className="h-32 bg-gray-800">
                   {creator.banner_url && (
                     <img 
                       src={creator.banner_url} 
                       alt={displayName} 
-                      className="w-full h-full object-cover opacity-60"
+                      className="w-full h-full object-cover"
                     />
                   )}
                 </div>
