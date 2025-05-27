@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -70,6 +71,20 @@ export const useStripeSubscription = () => {
 
       return data;
     },
+    onSuccess: (data, variables) => {
+      // Invalidate all subscription-related queries
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
+      
+      // Dispatch custom events for other components to listen to
+      window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+        detail: { creatorId: variables.creatorId, tierId: variables.tierId }
+      }));
+      
+      console.log('Subscription creation successful, invalidated queries');
+    },
     onError: (error) => {
       console.error('Mutation error:', error);
       toast({
@@ -91,7 +106,15 @@ export const useStripeSubscription = () => {
       return data;
     },
     onSuccess: () => {
+      // Invalidate all subscription-related queries
       queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['active-subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] });
+      queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] });
+      
+      // Dispatch custom event
+      window.dispatchEvent(new CustomEvent('subscriptionCanceled'));
+      
       toast({
         title: "Success",
         description: "Subscription canceled successfully.",

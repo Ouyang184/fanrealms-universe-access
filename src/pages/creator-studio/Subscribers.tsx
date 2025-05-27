@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { SubscriberWithDetails } from "@/types/creator-studio";
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriberHeader } from "@/components/creator-studio/subscribers/SubscriberHeader";
@@ -11,13 +11,17 @@ import { SubscriberStatsCards } from "@/components/creator-studio/subscribers/Su
 import { SubscriberSearch } from "@/components/creator-studio/subscribers/SubscriberSearch";
 import { SubscribersTable } from "@/components/creator-studio/subscribers/SubscribersTable";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 export default function CreatorStudioSubscribers() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTier, setFilterTier] = useState<string>("all");
   const [subscribers, setSubscribers] = useState<SubscriberWithDetails[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch creator ID
   const { data: creatorData, isLoading: creatorLoading } = useQuery({
@@ -77,7 +81,7 @@ export default function CreatorStudioSubscribers() {
     enabled: !!creatorData?.id
   });
 
-  // Fetch subscribers from creator_subscriptions table only
+  // Fetch active subscribers with improved real-time updates
   const { isLoading: loadingSubscribers, refetch: refetchSubscribers } = useQuery({
     queryKey: ["active-subscribers", creatorData?.id],
     queryFn: async () => {
@@ -85,33 +89,76 @@ export default function CreatorStudioSubscribers() {
       
       console.log('Fetching active subscribers for creator:', creatorData.id);
       
-      const { data, error } = await supabase
-        .from("creator_subscriptions")
-        .select(`
-          id,
-          created_at,
-          tier_id,
-          status,
-          amount_paid,
-          current_period_start,
-          current_period_end,
-          users!creator_subscriptions_user_id_fkey(
+      // First, let's check both creator_subscriptions and subscriptions tables
+      const [creatorSubsResult, subsResult] = await Promise.all([
+        supabase
+          .from("creator_subscriptions")
+          .select(`
             id,
-            email,
-            username,
-            profile_picture
-          ),
-          membership_tiers!creator_subscriptions_tier_id_fkey(
-            id,
-            title,
-            price
-          )
-        `)
-        .eq("creator_id", creatorData.id)
-        .eq("status", "active");
+            created_at,
+            tier_id,
+            status,
+            amount_paid,
+            current_period_start,
+            current_period_end,
+            stripe_subscription_id,
+            users!creator_subscriptions_user_id_fkey(
+              id,
+              email,
+              username,
+              profile_picture
+            ),
+            membership_tiers!creator_subscriptions_tier_id_fkey(
+              id,
+              title,
+              price
+            )
+          `)
+          .eq("creator_id", creatorData.id)
+          .eq("status", "active"),
+        
+        supabase
+          .from("subscriptions")
+          .select(`
+            *,
+            users!subscriptions_user_id_fkey(
+              id,
+              email,
+              username,
+              profile_picture
+            ),
+            membership_tiers!subscriptions_tier_id_fkey(
+              id,
+              title,
+              price
+            )
+          `)
+          .eq("creator_id", creatorData.id)
+          .eq("is_paid", true)
+      ]);
       
-      if (error) {
-        console.error("Error fetching active subscribers:", error);
+      console.log('Creator subscriptions result:', creatorSubsResult);
+      console.log('Subscriptions result:', subsResult);
+      
+      // Use creator_subscriptions as primary source since it has more detailed payment info
+      let data = creatorSubsResult.data || [];
+      
+      // If no data in creator_subscriptions, fall back to subscriptions table
+      if (data.length === 0 && subsResult.data && subsResult.data.length > 0) {
+        console.log('No data in creator_subscriptions, using subscriptions table');
+        data = subsResult.data.map((sub: any) => ({
+          id: sub.id,
+          created_at: sub.created_at,
+          tier_id: sub.tier_id,
+          status: 'active',
+          amount_paid: sub.membership_tiers?.price || 0,
+          users: sub.users,
+          membership_tiers: sub.membership_tiers
+        }));
+      }
+      
+      if (creatorSubsResult.error && subsResult.error) {
+        console.error("Error fetching subscribers:", creatorSubsResult.error, subsResult.error);
         toast({
           title: "Error",
           description: "Could not fetch subscribers",
@@ -120,7 +167,7 @@ export default function CreatorStudioSubscribers() {
         return [];
       }
       
-      console.log('Fetched active subscribers:', data);
+      console.log('Final subscriber data:', data);
       
       // Transform the data to match SubscriberWithDetails format
       const formattedSubscribers: SubscriberWithDetails[] = data.map((sub: any) => ({
@@ -139,14 +186,78 @@ export default function CreatorStudioSubscribers() {
       return formattedSubscribers;
     },
     enabled: !!creatorData?.id,
-    refetchInterval: 10000 // Refetch every 10 seconds for real-time updates
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    staleTime: 0 // Always consider data stale to ensure fresh fetches
   });
 
-  // Auto-refresh when new subscriptions might be created
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate and refetch all related queries
+      await queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
+      await queryClient.invalidateQueries({ queryKey: ["creator-profile"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscriber-tiers"] });
+      await refetchSubscribers();
+      
+      toast({
+        title: "Refreshed",
+        description: "Subscriber data has been updated",
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Set up real-time subscription for creator_subscriptions table
+  useEffect(() => {
+    if (!creatorData?.id) return;
+
+    console.log('Setting up real-time subscription for creator:', creatorData.id);
+    
+    const channel = supabase
+      .channel('creator-subscriptions-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'creator_subscriptions',
+        filter: `creator_id=eq.${creatorData.id}`
+      }, (payload) => {
+        console.log('Real-time update received:', payload);
+        // Invalidate queries to refetch data
+        queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
+        refetchSubscribers();
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `creator_id=eq.${creatorData.id}`
+      }, (payload) => {
+        console.log('Real-time subscriptions update received:', payload);
+        queryClient.invalidateQueries({ queryKey: ["active-subscribers"] });
+        refetchSubscribers();
+      })
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [creatorData?.id, queryClient, refetchSubscribers]);
+
+  // Listen for custom subscription events from payment flow
   useEffect(() => {
     const handleSubscriptionUpdate = () => {
-      console.log('Subscription update detected, refreshing data...');
-      refetchSubscribers();
+      console.log('Subscription update event detected, refreshing data...');
+      handleManualRefresh();
     };
 
     // Listen for custom subscription events
@@ -157,7 +268,7 @@ export default function CreatorStudioSubscribers() {
       window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
       window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
     };
-  }, [refetchSubscribers]);
+  }, []);
 
   function formatDate(dateString: string) {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -194,7 +305,19 @@ export default function CreatorStudioSubscribers() {
   return (
     <CreatorCheck>
       <div className="max-w-7xl mx-auto space-y-6">
-        <SubscriberHeader />
+        <div className="flex items-center justify-between">
+          <SubscriberHeader />
+          <Button 
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </Button>
+        </div>
         
         <SubscriberStatsCards 
           subscribers={subscribers} 
