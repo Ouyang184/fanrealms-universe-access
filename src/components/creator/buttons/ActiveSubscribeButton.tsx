@@ -48,6 +48,8 @@ export function ActiveSubscribeButton({
         
         // Check if it's an existing subscription error with refresh flag
         if (result.shouldRefresh) {
+          console.log('ActiveSubscribeButton: Refreshing subscription data due to existing subscription');
+          
           // Immediately refresh all subscription-related data
           await Promise.all([
             queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
@@ -55,17 +57,23 @@ export function ActiveSubscribeButton({
             queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers', creatorId] }),
             queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
             queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
           ]);
 
           toast({
             title: "Already Subscribed",
-            description: result.error,
+            description: "You already have an active subscription to this tier. The page will refresh to show your current status.",
           });
+          
+          // Dispatch event to trigger UI updates
+          window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+            detail: { tierId, creatorId, tierName }
+          }));
           
           // Force a page refresh after a short delay to ensure UI updates
           setTimeout(() => {
             window.location.reload();
-          }, 1500);
+          }, 2000);
           
         } else {
           // Show other error messages normally
