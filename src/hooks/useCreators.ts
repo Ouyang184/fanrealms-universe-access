@@ -3,11 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { CreatorProfile } from "@/types";
 
-export const useCreators = (searchTerm?: string) => {
+interface SearchFilters {
+  followerSize?: string[];
+  engagementRate?: string[];
+  contentType?: string[];
+  platform?: string[];
+  sortBy?: string;
+}
+
+export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
   return useQuery({
-    queryKey: ["creators", searchTerm],
+    queryKey: ["creators", searchTerm, filters],
     queryFn: async () => {
-      console.log("useCreators - Searching creators with term:", searchTerm);
+      console.log("useCreators - Searching creators with term:", searchTerm, "and filters:", filters);
       
       let query = supabase
         .from('creators')
@@ -19,10 +27,9 @@ export const useCreators = (searchTerm?: string) => {
             email,
             profile_picture
           )
-        `)
-        .order('created_at', { ascending: false });
+        `);
 
-      // If search term is provided and has minimum length, filter results
+      // Apply search term filter
       if (searchTerm && searchTerm.trim().length >= 2) {
         const term = searchTerm.toLowerCase().trim();
         console.log("useCreators - Applying search filter for:", term);
@@ -34,8 +41,50 @@ export const useCreators = (searchTerm?: string) => {
         console.log("useCreators - Search term too short, returning empty array");
         return [];
       }
+
+      // Apply follower size filters
+      if (filters?.followerSize && filters.followerSize.length > 0) {
+        const followerConditions = filters.followerSize.map(size => {
+          switch (size) {
+            case 'micro': return 'follower_count.gte.1000,follower_count.lt.10000';
+            case 'mid': return 'follower_count.gte.10000,follower_count.lt.100000';
+            case 'macro': return 'follower_count.gte.100000,follower_count.lt.1000000';
+            case 'mega': return 'follower_count.gte.1000000';
+            default: return '';
+          }
+        }).filter(Boolean);
+        
+        if (followerConditions.length > 0) {
+          query = query.or(followerConditions.join(','));
+        }
+      }
+
+      // Apply content type filters (search in bio and tags)
+      if (filters?.contentType && filters.contentType.length > 0) {
+        const contentConditions = filters.contentType.map(type => {
+          return `bio.ilike.%${type}%,tags.cs.{${type}}`;
+        });
+        query = query.or(contentConditions.join(','));
+      }
+
+      // Apply sorting
+      const sortBy = filters?.sortBy || 'created_at';
+      switch (sortBy) {
+        case 'followers':
+          query = query.order('follower_count', { ascending: false });
+          break;
+        case 'engagement':
+          // For now, sort by follower count as engagement metrics aren't fully implemented
+          query = query.order('follower_count', { ascending: false });
+          break;
+        case 'recent':
+          query = query.order('created_at', { ascending: false });
+          break;
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
       
-      const { data: creatorData, error } = await query.limit(50); // Increase limit for search results
+      const { data: creatorData, error } = await query.limit(50);
 
       if (error) {
         console.error('useCreators - Error fetching creators:', error);
