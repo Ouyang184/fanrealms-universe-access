@@ -34,7 +34,7 @@ export function SubscribeButton({
     return (
       <SubscribedButton
         tierName={tierName}
-        subscriptionData={subscriptionStatus?.data}
+        subscriptionData={subscriptionStatus?.subscription}
         tierId={tierId}
         creatorId={creatorId}
         onOptimisticUpdate={onOptimisticUpdate}

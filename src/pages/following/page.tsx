@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,7 +84,7 @@ interface EnrichedCreatorProfile extends CreatorProfile {
 
 export default function FollowingPage() {
   const { data: creators = [], isLoading } = useCreators();
-  const { subscriptions } = useSubscriptions();
+  const { userSubscriptions } = useSubscriptions();
   const { followCreator, unfollowCreator } = useFollow();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("All");
@@ -91,7 +92,7 @@ export default function FollowingPage() {
 
   // Get list of followed creators using subscription data and creators list
   const followedCreators: EnrichedCreatorProfile[] = creators
-    .filter((creator) => subscriptions?.some((sub) => sub.creator_id === creator.id))
+    .filter((creator) => userSubscriptions?.some((sub) => sub.creator_id === creator.id))
     .map((creator) => {
       // Assign random categories and other metadata for demonstration
       const categories = ["Art", "Gaming", "Music", "Writing", "Photography", "Cooking", "Fitness"];
