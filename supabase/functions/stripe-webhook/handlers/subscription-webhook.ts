@@ -43,7 +43,7 @@ export async function handleSubscriptionWebhook(
 
     console.log('[WebhookHandler] Updating user_subscriptions with status:', dbStatus);
 
-    // Update or create subscription record in user_subscriptions
+    // ONLY update user_subscriptions table
     const { error: upsertError } = await supabaseService
       .from('user_subscriptions')
       .upsert({
@@ -84,7 +84,8 @@ export async function handleSubscriptionWebhook(
       }
     }
 
-    // Remove from legacy subscriptions table to avoid conflicts
+    // Clean up legacy subscriptions table completely
+    console.log('[WebhookHandler] Cleaning up legacy subscriptions table');
     const { error: legacyCleanupError } = await supabaseService
       .from('subscriptions')
       .delete()
@@ -100,7 +101,7 @@ export async function handleSubscriptionWebhook(
   if (event.type === 'customer.subscription.deleted') {
     console.log('[WebhookHandler] Processing subscription deletion:', subscription.id);
 
-    // Mark subscription as canceled in user_subscriptions
+    // Mark subscription as canceled in user_subscriptions ONLY
     const { error: deleteError } = await supabaseService
       .from('user_subscriptions')
       .update({ 
@@ -123,7 +124,7 @@ export async function handleSubscriptionWebhook(
     if (subscriptionId) {
       console.log('[WebhookHandler] Processing payment success for subscription:', subscriptionId);
 
-      // Ensure subscription is marked as active when payment succeeds
+      // Ensure subscription is marked as active when payment succeeds - ONLY in user_subscriptions
       const { error: activateError } = await supabaseService
         .from('user_subscriptions')
         .update({ 

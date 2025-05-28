@@ -18,11 +18,11 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check for existing active subscriptions
-  console.log('Checking for existing active subscriptions...');
+  // Check for existing active subscriptions ONLY in user_subscriptions table
+  console.log('Checking for existing active subscriptions in user_subscriptions...');
   
-  const { data: existingCreatorSub, error: creatorSubError } = await supabaseService
-    .from('creator_subscriptions')
+  const { data: existingUserSub, error: userSubError } = await supabaseService
+    .from('user_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
@@ -30,51 +30,39 @@ export async function handleCreateSubscription(
     .eq('status', 'active')
     .maybeSingle();
 
-  if (creatorSubError) {
-    console.error('Error checking creator subscriptions:', creatorSubError);
+  if (userSubError) {
+    console.error('Error checking user_subscriptions:', userSubError);
   }
 
-  if (existingCreatorSub) {
-    console.log('Found existing active creator subscription');
+  if (existingUserSub) {
+    console.log('Found existing active subscription in user_subscriptions');
     return createJsonResponse({ 
       error: 'You already have an active subscription to this tier.',
       shouldRefresh: true
-    }, 200); // Changed to 200 status code
+    }, 200);
   }
 
-  const { data: existingBasicSub, error: basicSubError } = await supabaseService
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .eq('tier_id', tierId)
-    .eq('is_paid', true)
-    .maybeSingle();
-
-  if (basicSubError) {
-    console.error('Error checking basic subscriptions:', basicSubError);
-  }
-
-  if (existingBasicSub) {
-    console.log('Found existing basic subscription');
-    return createJsonResponse({ 
-      error: 'You already have an active subscription to this tier.',
-      shouldRefresh: true
-    }, 200); // Changed to 200 status code
-  }
-
-  // Clean up old pending subscriptions (older than 1 hour)
-  console.log('Cleaning up old pending subscriptions...');
+  // Clean up old pending subscriptions (older than 1 hour) from user_subscriptions ONLY
+  console.log('Cleaning up old pending subscriptions from user_subscriptions...');
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   
   await supabaseService
-    .from('creator_subscriptions')
+    .from('user_subscriptions')
     .delete()
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
     .eq('tier_id', tierId)
     .eq('status', 'pending')
     .lt('created_at', oneHourAgo);
+
+  // Clean up ALL records from legacy subscriptions table
+  console.log('Cleaning up legacy subscriptions table...');
+  await supabaseService
+    .from('subscriptions')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId)
+    .eq('tier_id', tierId);
 
   // Get tier and creator details
   console.log('Fetching tier and creator details...');
@@ -123,9 +111,9 @@ export async function handleCreateSubscription(
       if (stripeSub.metadata?.tier_id === tierId && stripeSub.metadata?.creator_id === creatorId) {
         console.log('Found existing Stripe subscription for this tier');
         
-        // Ensure our database is in sync
+        // Ensure our database is in sync - store ONLY in user_subscriptions
         await supabaseService
-          .from('creator_subscriptions')
+          .from('user_subscriptions')
           .upsert({
             user_id: user.id,
             creator_id: creatorId,
@@ -135,7 +123,7 @@ export async function handleCreateSubscription(
             status: 'active',
             current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
             current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
-            amount_paid: tier.price,
+            amount: tier.price,
             updated_at: new Date().toISOString(),
           }, { 
             onConflict: 'user_id,creator_id,tier_id',
@@ -145,7 +133,7 @@ export async function handleCreateSubscription(
         return createJsonResponse({ 
           error: 'You already have an active subscription to this tier.',
           shouldRefresh: true
-        }, 200); // Changed to 200 status code
+        }, 200);
       }
     }
 
@@ -180,10 +168,10 @@ export async function handleCreateSubscription(
 
     console.log('Stripe subscription created:', subscription.id);
 
-    // Store subscription in database with PENDING status
-    console.log('Storing subscription in database with PENDING status...');
+    // Store subscription in user_subscriptions table ONLY with PENDING status
+    console.log('Storing subscription in user_subscriptions table with PENDING status...');
     const { data: createdSub, error: insertError } = await supabaseService
-      .from('creator_subscriptions')
+      .from('user_subscriptions')
       .insert({
         user_id: user.id,
         creator_id: creatorId,
@@ -193,7 +181,7 @@ export async function handleCreateSubscription(
         status: 'pending', // CRITICAL: Keep as pending until payment succeeds
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        amount_paid: tier.price,
+        amount: tier.price,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -201,7 +189,7 @@ export async function handleCreateSubscription(
       .single();
 
     if (insertError) {
-      console.error('Error storing subscription in database:', insertError);
+      console.error('Error storing subscription in user_subscriptions:', insertError);
       
       // Cancel the Stripe subscription if database insert failed
       try {
@@ -216,7 +204,7 @@ export async function handleCreateSubscription(
       }, 500);
     }
 
-    console.log('Subscription stored successfully:', createdSub.id);
+    console.log('Subscription stored successfully in user_subscriptions:', createdSub.id);
 
     // Get the client secret for payment
     const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;

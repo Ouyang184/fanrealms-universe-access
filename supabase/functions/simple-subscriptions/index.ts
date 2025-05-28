@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -36,7 +37,7 @@ serve(async (req) => {
     console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // Check for existing active subscriptions in user_subscriptions table
+      // Check for existing active subscriptions in user_subscriptions table ONLY
       console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
       
       const { data: existingSubs } = await supabase
@@ -56,7 +57,7 @@ serve(async (req) => {
         });
       }
 
-      // Clean up any non-active subscriptions for this user/creator combination
+      // Clean up any non-active subscriptions for this user/creator combination in user_subscriptions
       await supabase
         .from('user_subscriptions')
         .delete()
@@ -64,7 +65,8 @@ serve(async (req) => {
         .eq('creator_id', creatorId)
         .neq('status', 'active');
 
-      // Also clean up legacy subscriptions table
+      // Clean up ALL records from legacy subscriptions table for this user/creator
+      console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table');
       await supabase
         .from('subscriptions')
         .delete()
@@ -150,8 +152,9 @@ serve(async (req) => {
         }
       });
 
-      // Store pending subscription in user_subscriptions table only
-      await supabase
+      // Store pending subscription in user_subscriptions table ONLY
+      console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
+      const { error: insertError } = await supabase
         .from('user_subscriptions')
         .insert({
           user_id: user.id,
@@ -162,8 +165,15 @@ serve(async (req) => {
           status: 'pending',
           amount: tier.price,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
+
+      if (insertError) {
+        console.error('[SimpleSubscriptions] Error inserting subscription:', insertError);
+        throw new Error('Failed to create subscription record');
+      }
 
       const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
       
@@ -179,7 +189,7 @@ serve(async (req) => {
     } else if (action === 'cancel_subscription') {
       console.log('[SimpleSubscriptions] Cancelling subscription for tier:', tierId, 'creator:', creatorId);
       
-      // Find the active subscription in user_subscriptions table
+      // Find the active subscription in user_subscriptions table ONLY
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -196,7 +206,7 @@ serve(async (req) => {
       // Cancel in Stripe
       await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
 
-      // Update status in user_subscriptions table
+      // Update status in user_subscriptions table ONLY
       await supabase
         .from('user_subscriptions')
         .update({ 
@@ -218,6 +228,7 @@ serve(async (req) => {
     } else if (action === 'get_user_subscriptions') {
       console.log('[SimpleSubscriptions] Getting user subscriptions for user:', user.id);
       
+      // Get from user_subscriptions table ONLY
       const { data: subscriptions } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -236,6 +247,7 @@ serve(async (req) => {
     } else if (action === 'get_creator_subscribers') {
       console.log('[SimpleSubscriptions] Getting creator subscribers for creator:', creatorId);
       
+      // Get from user_subscriptions table ONLY
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
         .select(`
