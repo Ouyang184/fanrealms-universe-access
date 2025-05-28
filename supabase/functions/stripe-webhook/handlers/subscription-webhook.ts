@@ -63,44 +63,65 @@ export async function handleSubscriptionWebhook(
 
     console.log('[WebhookHandler] Updating user_subscriptions with status:', dbStatus);
 
-    // ONLY update user_subscriptions table
-    const { error: upsertError } = await supabaseService
+    // First, try to update existing record
+    const { data: existingRecord, error: findError } = await supabaseService
       .from('user_subscriptions')
-      .upsert({
-        user_id,
-        creator_id,
-        tier_id,
-        stripe_subscription_id: subscription.id,
-        stripe_customer_id: subscription.customer,
-        status: dbStatus,
-        current_period_start: currentPeriodStart,
-        current_period_end: currentPeriodEnd,
-        amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
-          subscription.items.data[0].price.unit_amount / 100 : 0,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'stripe_subscription_id'
-      });
+      .select('id')
+      .eq('user_id', user_id)
+      .eq('creator_id', creator_id)
+      .eq('tier_id', tier_id)
+      .maybeSingle();
 
-    if (upsertError) {
-      console.error('[WebhookHandler] Error upserting user_subscriptions:', upsertError);
-    } else {
-      console.log('[WebhookHandler] Successfully updated user_subscriptions:', subscription.id);
+    if (findError) {
+      console.error('[WebhookHandler] Error finding existing subscription:', findError);
     }
 
-    // Clean up any duplicate records for the same user/creator/tier combination
-    if (dbStatus === 'active') {
-      console.log('[WebhookHandler] Cleaning up duplicate subscriptions');
-      const { error: cleanupError } = await supabaseService
+    if (existingRecord) {
+      // Update existing record
+      console.log('[WebhookHandler] Updating existing subscription record:', existingRecord.id);
+      const { error: updateError } = await supabaseService
         .from('user_subscriptions')
-        .delete()
-        .eq('user_id', user_id)
-        .eq('creator_id', creator_id)
-        .eq('tier_id', tier_id)
-        .neq('stripe_subscription_id', subscription.id);
+        .update({
+          stripe_subscription_id: subscription.id,
+          stripe_customer_id: subscription.customer,
+          status: dbStatus,
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd,
+          amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
+            subscription.items.data[0].price.unit_amount / 100 : 0,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingRecord.id);
 
-      if (cleanupError) {
-        console.error('[WebhookHandler] Error cleaning up duplicates:', cleanupError);
+      if (updateError) {
+        console.error('[WebhookHandler] Error updating existing subscription:', updateError);
+      } else {
+        console.log('[WebhookHandler] Successfully updated existing subscription:', subscription.id);
+      }
+    } else {
+      // Insert new record
+      console.log('[WebhookHandler] Creating new subscription record');
+      const { error: insertError } = await supabaseService
+        .from('user_subscriptions')
+        .insert({
+          user_id,
+          creator_id,
+          tier_id,
+          stripe_subscription_id: subscription.id,
+          stripe_customer_id: subscription.customer,
+          status: dbStatus,
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd,
+          amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
+            subscription.items.data[0].price.unit_amount / 100 : 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        console.error('[WebhookHandler] Error inserting new subscription:', insertError);
+      } else {
+        console.log('[WebhookHandler] Successfully created new subscription:', subscription.id);
       }
     }
 
