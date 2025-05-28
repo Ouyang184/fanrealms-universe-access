@@ -36,6 +36,8 @@ function CheckoutForm() {
     setIsLoading(true);
 
     try {
+      console.log('Processing payment for subscription');
+      
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
@@ -45,17 +47,30 @@ function CheckoutForm() {
       });
 
       if (result.error) {
+        console.error('Payment error:', result.error);
         toast({
           title: "Payment failed",
           description: result.error.message,
           variant: "destructive"
         });
-      } else {
-        // Update subscription status to active
-        await supabase
+      } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+        console.log('Payment succeeded, activating subscription');
+        
+        // Activate the subscription in our database
+        const { error: updateError } = await supabase
           .from('user_subscriptions')
-          .update({ status: 'active' })
+          .update({ 
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+          })
           .eq('stripe_subscription_id', result.paymentIntent.id);
+
+        if (updateError) {
+          console.error('Error updating subscription status:', updateError);
+        } else {
+          console.log('Subscription activated successfully');
+        }
 
         toast({
           title: "Payment successful!",
@@ -63,7 +78,7 @@ function CheckoutForm() {
         });
 
         // Dispatch success events
-        const eventDetail = { creatorId, tierId, paymentIntent: result.paymentIntent };
+        const eventDetail = { creatorId, tierId, tierName, paymentIntent: result.paymentIntent };
         window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: eventDetail }));
         window.dispatchEvent(new CustomEvent('subscriptionSuccess', { detail: eventDetail }));
         

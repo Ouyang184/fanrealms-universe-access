@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
-import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions"
+import { useSubscriptions } from "@/hooks/useSubscriptions"
 import { useEffect, useState } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
@@ -13,18 +13,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 export default function SubscriptionsPage() {
-  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refreshSubscriptions } = useSimpleSubscriptions();
+  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useSubscriptions();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
   // Auto-refresh on page load and listen for subscription events
   useEffect(() => {
-    refreshSubscriptions();
+    console.log('Subscriptions page loaded, refreshing data...');
+    refetchSubscriptions();
 
     const handleSubscriptionUpdate = async () => {
+      console.log('Subscription event detected, refreshing...');
       setIsRefreshing(true);
       try {
-        await refreshSubscriptions();
+        await refetchSubscriptions();
         toast({
           title: "Updated",
           description: "Subscription data has been refreshed",
@@ -46,12 +48,12 @@ export default function SubscriptionsPage() {
         window.removeEventListener(eventType, handleSubscriptionUpdate);
       });
     };
-  }, [refreshSubscriptions, toast]);
+  }, [refetchSubscriptions, toast]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refreshSubscriptions();
+      await refetchSubscriptions();
       toast({
         title: "Refreshed",
         description: "Subscription data has been updated",
@@ -66,6 +68,8 @@ export default function SubscriptionsPage() {
       setIsRefreshing(false);
     }
   };
+
+  console.log('Rendering subscriptions page with data:', userSubscriptions);
 
   if (subscriptionsLoading && !isRefreshing) {
     return (

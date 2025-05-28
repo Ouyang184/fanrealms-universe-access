@@ -7,66 +7,37 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
   const { user } = useAuth();
 
   const { data: subscriptionStatus, isLoading, refetch } = useQuery({
-    queryKey: ['enhancedSubscriptionCheck', user?.id, tierId, creatorId],
+    queryKey: ['subscription-check', user?.id, tierId, creatorId],
     queryFn: async () => {
       if (!user?.id || !tierId || !creatorId) {
-        return { isSubscribed: false, data: null };
+        return { isSubscribed: false, subscription: null };
       }
 
-      console.log('useSubscriptionCheck: Checking subscription for:', { 
-        userId: user.id, 
-        tierId, 
-        creatorId 
-      });
+      console.log('Checking subscription for:', { userId: user.id, tierId, creatorId });
 
-      // Check user_subscriptions table
-      const { data: userSubs, error: userSubsError } = await supabase
+      const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('tier_id', tierId)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .maybeSingle();
 
-      if (userSubsError) {
-        console.error('Error checking user subscriptions:', userSubsError);
-        return { isSubscribed: false, data: null };
+      if (error) {
+        console.error('Subscription check error:', error);
+        return { isSubscribed: false, subscription: null };
       }
 
-      if (userSubs && userSubs.length > 0) {
-        const activeSub = userSubs[0];
-        
-        // If we have a stripe_subscription_id, we could verify with Stripe
-        // For now, just trust the database status
-        console.log('Active subscription found:', activeSub.id);
-        return { isSubscribed: true, data: activeSub };
-      }
+      console.log('Subscription check result:', { isSubscribed: !!data, subscription: data });
 
-      // Check basic subscriptions table as fallback
-      const { data: basicSubs, error: basicSubsError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('is_paid', true);
-
-      if (basicSubsError) {
-        console.error('Error checking basic subscriptions:', basicSubsError);
-      }
-
-      if (basicSubs && basicSubs.length > 0) {
-        console.log('Found basic subscription');
-        return { isSubscribed: true, data: basicSubs[0] };
-      }
-
-      console.log('No active subscription found');
-      return { isSubscribed: false, data: null };
+      return {
+        isSubscribed: !!data,
+        subscription: data
+      };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 30000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000
   });
 
   return {

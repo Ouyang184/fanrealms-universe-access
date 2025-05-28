@@ -1,39 +1,32 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSubscriptions = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: subscriptions, isLoading: loadingSubscriptions } = useQuery({
-    queryKey: ['subscriptions', user?.id],
+  // Get user's active subscriptions
+  const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch } = useQuery({
+    queryKey: ['user-subscriptions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('Fetching subscriptions for user:', user.id);
+      
       const { data, error } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select(`
-          id,
-          user_id,
-          creator_id,
-          tier_id,
-          created_at,
-          is_paid,
+          *,
           creator:creators (
             id,
-            user_id,
             display_name,
-            bio,
             profile_image_url,
-            banner_url,
-            follower_count,
-            tags,
             users (
-              id,
-              username,
-              email,
-              profile_picture
+              username
             )
           ),
           tier:membership_tiers (
@@ -43,20 +36,105 @@ export const useSubscriptions = () => {
             price
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching subscriptions:', error);
         throw error;
       }
 
+      console.log('Found subscriptions:', data?.length || 0);
       return data || [];
     },
     enabled: !!user?.id,
+    staleTime: 30000,
+    refetchInterval: 60000
+  });
+
+  // Create subscription mutation
+  const createSubscriptionMutation = useMutation({
+    mutationFn: async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+      console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
+      
+      const { data, error } = await supabase.functions.invoke('subscriptions', {
+        body: {
+          action: 'create_subscription',
+          tierId,
+          creatorId
+        }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return data;
+    },
+    onSuccess: () => {
+      // Refresh subscription data
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
+    },
+    onError: (error) => {
+      console.error('Create subscription error:', error);
+      toast({
+        title: "Subscription Failed",
+        description: error instanceof Error ? error.message : 'Failed to create subscription',
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Cancel subscription mutation
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: string) => {
+      console.log('Cancelling subscription:', subscriptionId);
+      
+      const { data, error } = await supabase.functions.invoke('subscriptions', {
+        body: {
+          action: 'cancel_subscription',
+          subscriptionId
+        }
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Subscription Cancelled",
+        description: "Your subscription has been cancelled successfully.",
+      });
+      
+      // Refresh data
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
+      
+      // Dispatch event
+      window.dispatchEvent(new CustomEvent('subscriptionCancelled'));
+    },
+    onError: (error) => {
+      console.error('Cancel subscription error:', error);
+      toast({
+        title: "Cancellation Failed",
+        description: error instanceof Error ? error.message : 'Failed to cancel subscription',
+        variant: "destructive"
+      });
+    }
   });
 
   return {
-    subscriptions,
-    loadingSubscriptions,
+    userSubscriptions,
+    subscriptionsLoading,
+    createSubscription: createSubscriptionMutation.mutate,
+    cancelSubscription: cancelSubscriptionMutation.mutate,
+    isCreating: createSubscriptionMutation.isPending,
+    isCancelling: cancelSubscriptionMutation.isPending,
+    refetchSubscriptions: refetch
   };
 };
