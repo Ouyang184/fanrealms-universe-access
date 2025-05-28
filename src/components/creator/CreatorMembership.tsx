@@ -2,7 +2,7 @@
 import React from "react";
 import { CreatorProfile } from "@/types";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useCreatorMembership } from "@/hooks/useCreatorMembership";
+import { useSimpleCreatorMembership } from "@/hooks/useSimpleCreatorMembership";
 import { MembershipTierCard } from "./MembershipTierCard";
 import { MembershipEmptyState } from "./MembershipEmptyState";
 
@@ -16,7 +16,7 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     isLoading,
     isSubscribedToTier,
     handleSubscriptionSuccess
-  } = useCreatorMembership(creator.id);
+  } = useSimpleCreatorMembership(creator.id);
 
   if (isLoading) {
     return (

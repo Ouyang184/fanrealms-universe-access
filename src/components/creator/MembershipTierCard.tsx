@@ -1,7 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SubscribeButton } from "./SubscribeButton";
+import { Check, Star } from "lucide-react";
+import { SimpleSubscribeButton } from "./buttons/SimpleSubscribeButton";
 
 interface MembershipTier {
   id: string;
@@ -16,88 +18,74 @@ interface MembershipTierCardProps {
   tier: MembershipTier;
   creatorId: string;
   isSubscribed: boolean;
-  onSubscriptionSuccess: () => void;
+  onSubscriptionSuccess?: () => void;
 }
 
 export function MembershipTierCard({ 
   tier, 
   creatorId, 
-  isSubscribed, 
+  isSubscribed,
   onSubscriptionSuccess 
 }: MembershipTierCardProps) {
-  const [localSubscriberCount, setLocalSubscriberCount] = useState(tier.subscriberCount);
-  const [localIsSubscribed, setLocalIsSubscribed] = useState(isSubscribed);
-
-  // Update local state when props change
-  useEffect(() => {
-    setLocalSubscriberCount(tier.subscriberCount);
-    setLocalIsSubscribed(isSubscribed);
-  }, [tier.subscriberCount, isSubscribed]);
-
-  // Handle optimistic updates only for successful payments, not subscription attempts
-  const handleOptimisticUpdate = (newIsSubscribed: boolean) => {
-    const wasSubscribed = localIsSubscribed;
-    setLocalIsSubscribed(newIsSubscribed);
-    
-    // Update subscriber count optimistically only after confirmed payment
-    if (newIsSubscribed && !wasSubscribed) {
-      // User just subscribed (after payment success)
-      setLocalSubscriberCount(prev => prev + 1);
-    } else if (!newIsSubscribed && wasSubscribed) {
-      // User just unsubscribed
-      setLocalSubscriberCount(prev => Math.max(0, prev - 1));
+  const getBadgeIcon = (tierName: string) => {
+    const name = tierName.toLowerCase();
+    if (name.includes('premium') || name.includes('pro')) {
+      return <Star className="h-3 w-3" />;
     }
-  };
-
-  // Handle subscription success with potential count correction
-  const handleSubscriptionSuccess = () => {
-    // Call parent callback to refresh data
-    onSubscriptionSuccess();
-    
-    // The real data will update via the parent refresh, so we don't need to do anything else here
+    return <Check className="h-3 w-3" />;
   };
 
   return (
-    <div 
-      className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
-        localIsSubscribed ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : ''
-      }`}
-    >
-      {localIsSubscribed && (
-        <Badge className="mb-2 bg-green-500">
-          Your Plan
-        </Badge>
+    <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+      {isSubscribed && (
+        <div className="absolute -top-2 -right-2">
+          <Badge variant="default" className="gap-1">
+            <Check className="h-3 w-3" />
+            Subscribed
+          </Badge>
+        </div>
       )}
-      <h4 className="font-medium text-lg">{tier.name}</h4>
-      <p className="text-2xl font-bold mt-2 text-primary">${Number(tier.price).toFixed(2)}/mo</p>
       
-      <Badge variant="secondary" className="mt-2">
-        {localSubscriberCount} subscribers
-      </Badge>
-      
-      <div className="mt-4">
-        <p className="text-sm text-muted-foreground mb-3">{tier.description}</p>
-        <ul className="text-sm space-y-1">
-          {tier.features.map((feature, i) => (
-            <li key={i} className="flex items-start">
-              <span className="text-primary mr-2">•</span>
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="mt-4">
-        <SubscribeButton
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {getBadgeIcon(tier.name)}
+            <CardTitle className="text-xl">{tier.name}</CardTitle>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold">${tier.price}</div>
+            <div className="text-sm text-muted-foreground">/month</div>
+          </div>
+        </div>
+        <CardDescription>{tier.description}</CardDescription>
+      </CardHeader>
+
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Subscribers</span>
+            <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
+          </div>
+          
+          <ul className="space-y-2">
+            {tier.features.map((feature, index) => (
+              <li key={index} className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+
+      <CardFooter>
+        <SimpleSubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
-          isSubscribed={localIsSubscribed}
-          onSubscriptionSuccess={handleSubscriptionSuccess}
-          onOptimisticUpdate={handleOptimisticUpdate}
         />
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 }

@@ -1,94 +1,62 @@
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Filter, CreditCard, RefreshCw, RotateCcw } from "lucide-react"
+import { Filter, CreditCard, RefreshCw } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
-import { useStripeSubscription } from "@/hooks/useStripeSubscription"
+import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions"
 import { useEffect, useState } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
 import { SubscriptionSummary } from "@/components/subscriptions/SubscriptionSummary"
-import { SubscriptionCard } from "@/components/subscriptions/SubscriptionCard"
-import { BillingHistory } from "@/components/subscriptions/BillingHistory"
 import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscriptionsState"
-import { ForceCancelButton } from "@/components/creator/buttons/ForceCancelButton"
-import { supabase } from "@/lib/supabase"
-import { useAuth } from "@/contexts/AuthContext"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 export default function SubscriptionsPage() {
-  const { user } = useAuth();
-  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useStripeSubscription();
+  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refreshSubscriptions } = useSimpleSubscriptions();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
   const { toast } = useToast();
   
   // Auto-refresh on page load and listen for subscription events
   useEffect(() => {
-    console.log('Subscriptions page loaded, refreshing data...');
-    refetchSubscriptions();
+    refreshSubscriptions();
 
-    const handleSubscriptionUpdate = async (eventType: string) => {
-      console.log(`${eventType} event detected on subscriptions page`);
+    const handleSubscriptionUpdate = async () => {
       setIsRefreshing(true);
       try {
-        await refetchSubscriptions();
+        await refreshSubscriptions();
         toast({
           title: "Updated",
           description: "Subscription data has been refreshed",
         });
       } catch (error) {
-        console.error('Error refreshing on subscription update:', error);
+        console.error('Error refreshing:', error);
       } finally {
         setIsRefreshing(false);
       }
     };
 
-    // Listen for subscription events
-    const handleSubscriptionSuccess = () => handleSubscriptionUpdate('subscriptionSuccess');
-    const handlePaymentSuccess = () => handleSubscriptionUpdate('paymentSuccess');
-    const handleSubscriptionCanceled = () => handleSubscriptionUpdate('subscriptionCanceled');
-    
-    window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess);
-    window.addEventListener('paymentSuccess', handlePaymentSuccess);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionCanceled);
-    
-    // Listen for page visibility changes
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Page became visible, refreshing subscriptions...');
-        refetchSubscriptions();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Auto-refresh every 30 seconds
-    const intervalId = setInterval(() => {
-      console.log('Auto-refreshing subscriptions...');
-      refetchSubscriptions();
-    }, 30000);
+    const events = ['subscriptionSuccess', 'paymentSuccess', 'subscriptionCancelled'];
+    events.forEach(eventType => {
+      window.addEventListener(eventType, handleSubscriptionUpdate);
+    });
     
     return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
-      window.removeEventListener('paymentSuccess', handlePaymentSuccess);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionCanceled);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(intervalId);
+      events.forEach(eventType => {
+        window.removeEventListener(eventType, handleSubscriptionUpdate);
+      });
     };
-  }, [refetchSubscriptions, toast]);
+  }, [refreshSubscriptions, toast]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      console.log('Manual refresh triggered');
-      await refetchSubscriptions();
+      await refreshSubscriptions();
       toast({
         title: "Refreshed",
         description: "Subscription data has been updated",
       });
     } catch (error) {
-      console.error('Error refreshing subscriptions:', error);
       toast({
         title: "Error",
         description: "Failed to refresh subscription data",
@@ -96,83 +64,6 @@ export default function SubscriptionsPage() {
       });
     } finally {
       setIsRefreshing(false);
-    }
-  };
-
-  const handleSyncAll = async () => {
-    setIsSyncing(true);
-    try {
-      console.log('Full sync triggered');
-      
-      // Call the sync function
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
-        body: {
-          action: 'sync_all_subscriptions'
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('Sync result:', data);
-      
-      // Refresh the data after sync
-      await refetchSubscriptions();
-      
-      toast({
-        title: "Sync Complete",
-        description: data?.message || "All subscription data has been synchronized with Stripe",
-      });
-    } catch (error) {
-      console.error('Error syncing subscriptions:', error);
-      toast({
-        title: "Sync Error",
-        description: "Failed to synchronize subscription data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const handleDebugCheck = async () => {
-    if (!user?.id) return;
-    
-    try {
-      console.log('Running debug check for user:', user.id);
-      
-      // Check both subscription tables directly
-      const [creatorSubs, basicSubs] = await Promise.all([
-        supabase
-          .from('creator_subscriptions')
-          .select('*')
-          .eq('user_id', user.id),
-        supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-      ]);
-
-      const debugData = {
-        userId: user.id,
-        userEmail: user.email,
-        creatorSubscriptions: creatorSubs.data || [],
-        basicSubscriptions: basicSubs.data || [],
-        creatorSubsError: creatorSubs.error,
-        basicSubsError: basicSubs.error,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Debug data:', debugData);
-      setDebugInfo(debugData);
-
-      toast({
-        title: "Debug Complete",
-        description: "Check console for detailed subscription data",
-      });
-    } catch (error) {
-      console.error('Debug check failed:', error);
     }
   };
 
@@ -194,25 +85,6 @@ export default function SubscriptionsPage() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold">Your Subscriptions</h1>
           <div className="flex items-center gap-3">
-            <ForceCancelButton />
-            <Button 
-              onClick={handleDebugCheck}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              🐛 Debug
-            </Button>
-            <Button 
-              onClick={handleSyncAll}
-              disabled={isSyncing}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RotateCcw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing...' : 'Sync All'}
-            </Button>
             <Button 
               onClick={handleManualRefresh}
               disabled={isRefreshing}
@@ -233,15 +105,6 @@ export default function SubscriptionsPage() {
             </Button>
           </div>
         </div>
-
-        {debugInfo && (
-          <div className="mb-6 p-4 bg-gray-100 rounded-lg">
-            <h3 className="font-semibold mb-2">Debug Information:</h3>
-            <pre className="text-xs overflow-auto max-h-40">
-              {JSON.stringify(debugInfo, null, 2)}
-            </pre>
-          </div>
-        )}
 
         {!hasSubscriptions ? (
           <EmptySubscriptionsState 
@@ -265,17 +128,64 @@ export default function SubscriptionsPage() {
               <TabsContent value="subscriptions" className="mt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {userSubscriptions?.map((subscription) => (
-                    <SubscriptionCard
-                      key={subscription.id}
-                      subscription={subscription}
-                      onCancel={cancelSubscription}
-                    />
+                    <Card key={subscription.id}>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                              <span className="text-white text-sm font-bold">
+                                {subscription.creator?.display_name?.charAt(0) || 'C'}
+                              </span>
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">{subscription.creator?.display_name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">{subscription.tier?.title}</p>
+                            </div>
+                          </div>
+                          <Badge variant="default">Active</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Monthly Price</span>
+                            <span className="font-semibold">${subscription.amount}/month</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Next Billing</span>
+                            <span className="text-sm">
+                              {subscription.current_period_end 
+                                ? new Date(subscription.current_period_end).toLocaleDateString()
+                                : 'N/A'
+                              }
+                            </span>
+                          </div>
+                          <div className="pt-3">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => cancelSubscription(subscription.id)}
+                              className="w-full"
+                            >
+                              Cancel Subscription
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </TabsContent>
 
               <TabsContent value="billing" className="mt-6">
-                <BillingHistory subscriptions={userSubscriptions} />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Billing History</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">No billing history available yet.</p>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </>

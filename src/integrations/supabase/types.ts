@@ -160,13 +160,6 @@ export type Database = {
             referencedRelation: "creators"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "creator_earnings_subscription_id_fkey"
-            columns: ["subscription_id"]
-            isOneToOne: false
-            referencedRelation: "creator_subscriptions"
-            referencedColumns: ["id"]
-          },
         ]
       }
       creator_links: {
@@ -200,75 +193,6 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      creator_subscriptions: {
-        Row: {
-          amount_paid: number | null
-          cancel_at: string | null
-          created_at: string | null
-          creator_earnings: number | null
-          creator_id: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          platform_fee: number | null
-          status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          tier_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          amount_paid?: number | null
-          cancel_at?: string | null
-          created_at?: string | null
-          creator_earnings?: number | null
-          creator_id: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          platform_fee?: number | null
-          status?: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          tier_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          amount_paid?: number | null
-          cancel_at?: string | null
-          created_at?: string | null
-          creator_earnings?: number | null
-          creator_id?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          platform_fee?: number | null
-          status?: string
-          stripe_customer_id?: string
-          stripe_subscription_id?: string
-          tier_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "creator_subscriptions_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "creators"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "creator_subscriptions_tier_id_fkey"
-            columns: ["tier_id"]
-            isOneToOne: false
-            referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -723,6 +647,66 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          creator_id: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          creator_id: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {
