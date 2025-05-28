@@ -1,203 +1,195 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MainLayout } from '@/components/Layout/MainLayout';
-import { toast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Lock } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
-// Get Stripe publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
+const stripePromise = loadStripe('pk_test_51QXAmDFQ9K98Q7U0Cw8r6c2D6E4VqEYo4ULNO4qjWzXBzHQ6VFCAJ3R9hRSxgbPTjqOJ4jCPl9Pms4rSJQzU7GCh00UjONZjGy');
 
-function CheckoutForm() {
+function PaymentForm() {
   const stripe = useStripe();
   const elements = useElements();
-  const [isLoading, setIsLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentSucceeded, setPaymentSucceeded] = useState(false);
+
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
+  useEffect(() => {
+    if (!clientSecret) {
       toast({
-        title: "Payment system not ready",
-        description: "Please wait for the payment system to load.",
+        title: "Payment Error",
+        description: "No payment information found. Please try subscribing again.",
         variant: "destructive"
       });
+      navigate('/');
+    }
+  }, [clientSecret, navigate, toast]);
+
+  const handlePayment = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements || !clientSecret) {
       return;
     }
 
-    setIsLoading(true);
+    setIsProcessing(true);
 
     try {
-      console.log('Processing payment for subscription');
-      
-      const result = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/creator/${creatorId}`,
-        },
-        redirect: 'if_required'
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Card element not found');
+      }
+
+      console.log('Confirming payment with client secret:', clientSecret);
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        }
       });
 
-      if (result.error) {
-        console.error('Payment error:', result.error);
+      if (error) {
+        console.error('Payment failed:', error);
         toast({
-          title: "Payment failed",
-          description: result.error.message,
+          title: "Payment Failed",
+          description: error.message || 'Payment could not be processed',
           variant: "destructive"
         });
-      } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-        console.log('Payment succeeded, activating subscription');
+      } else if (paymentIntent?.status === 'succeeded') {
+        console.log('Payment succeeded:', paymentIntent.id);
+        setPaymentSucceeded(true);
         
-        // Activate the subscription in our database
-        const { error: updateError } = await supabase
-          .from('user_subscriptions')
-          .update({ 
-            status: 'active',
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
-          })
-          .eq('stripe_subscription_id', result.paymentIntent.id);
-
-        if (updateError) {
-          console.error('Error updating subscription status:', updateError);
-        } else {
-          console.log('Subscription activated successfully');
-        }
-
         toast({
-          title: "Payment successful!",
+          title: "Payment Successful!",
           description: `You've successfully subscribed to ${tierName}`,
         });
 
-        // Dispatch success events
-        const eventDetail = { creatorId, tierId, tierName, paymentIntent: result.paymentIntent };
-        window.dispatchEvent(new CustomEvent('paymentSuccess', { detail: eventDetail }));
-        window.dispatchEvent(new CustomEvent('subscriptionSuccess', { detail: eventDetail }));
-        
+        // Refresh all subscription-related data
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
+          queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
+          queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] })
+        ]);
+
+        // Dispatch success event
+        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+          detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
+        }));
+
+        // Redirect after a brief delay
         setTimeout(() => {
-          navigate(`/creator/${creatorId}`, { replace: true });
+          navigate('/subscriptions');
         }, 2000);
       }
     } catch (error) {
       console.error('Payment error:', error);
       toast({
-        title: "Payment failed",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Payment Error",
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
-  if (!clientSecret || !amount || !tierName) {
+  if (paymentSucceeded) {
     return (
-      <MainLayout>
-        <div className="max-w-2xl mx-auto py-20 text-center">
-          <h2 className="text-2xl font-bold mb-4">Invalid Payment Session</h2>
-          <p className="text-muted-foreground mb-6">
-            The payment session is invalid or has expired.
-          </p>
-          <Button onClick={() => navigate(-1)} variant="outline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Go Back
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const monthlyAmount = (amount / 100).toFixed(2);
-
-  return (
-    <MainLayout>
-      <div className="max-w-2xl mx-auto py-10">
-        <Button onClick={() => navigate(-1)} variant="ghost" className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
-        
+      <div className="max-w-md mx-auto p-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Complete Your Subscription</CardTitle>
-            <CardDescription>
-              Subscribe to {tierName} for ${monthlyAmount}/month
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="border rounded-lg p-6">
-              <PaymentElement />
+          <CardContent className="pt-6 text-center">
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
+              <p className="text-muted-foreground">
+                You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
+              </p>
             </div>
-
-            <form onSubmit={handleSubmit}>
-              <Button 
-                type="submit" 
-                disabled={!stripe || isLoading}
-                className="w-full"
-                size="lg"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing Payment...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="mr-2 h-4 w-4" />
-                    Subscribe for ${monthlyAmount}/month
-                  </>
-                )}
-              </Button>
-            </form>
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="max-w-md mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading payment information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto p-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Complete Your Subscription</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Subscribe to {tierName} for ${(amount / 100).toFixed(2)}/month
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePayment} className="space-y-4">
+            <div className="p-4 border rounded-md">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={!stripe || isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing Payment...
+                </>
+              ) : (
+                `Pay $${(amount / 100).toFixed(2)}`
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
 export default function Payment() {
-  const location = useLocation();
-  const { clientSecret } = location.state || {};
-
-  if (!clientSecret) {
-    return (
-      <MainLayout>
-        <div className="max-w-2xl mx-auto py-20 text-center">
-          <h2 className="text-2xl font-bold mb-4">Payment Session Required</h2>
-          <p className="text-muted-foreground mb-6">
-            Please start the subscription process from a creator's page.
-          </p>
-          <Button onClick={() => window.history.back()} variant="outline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Go Back
-          </Button>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  const options = {
-    clientSecret,
-    appearance: {
-      theme: 'stripe' as const,
-      variables: {
-        colorPrimary: '#000000',
-      },
-    },
-  };
-
   return (
-    <Elements options={options} stripe={stripePromise}>
-      <CheckoutForm />
+    <Elements stripe={stripePromise}>
+      <PaymentForm />
     </Elements>
   );
 }

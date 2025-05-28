@@ -38,7 +38,27 @@ export function ActiveSubscribeButton({
     try {
       console.log('Starting subscription creation for tier:', tierId, 'creator:', creatorId);
       
-      createSubscription({ tierId, creatorId });
+      createSubscription({ tierId, creatorId }, {
+        onSuccess: (data) => {
+          if (data?.clientSecret) {
+            console.log('Redirecting to payment page with client secret');
+            navigate('/payment', {
+              state: {
+                clientSecret: data.clientSecret,
+                amount: price * 100,
+                tierName,
+                tierId,
+                creatorId
+              }
+            });
+          } else if (data?.error) {
+            toast({
+              title: "Already Subscribed",
+              description: data.error,
+            });
+          }
+        }
+      });
     } catch (error) {
       console.error('Subscription error:', error);
     }

@@ -37,7 +37,8 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 30000
+    staleTime: 30000,
+    refetchOnWindowFocus: true
   });
 
   return {

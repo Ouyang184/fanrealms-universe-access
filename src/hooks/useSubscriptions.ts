@@ -58,7 +58,7 @@ export const useSubscriptions = () => {
     mutationFn: async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
       console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
       
-      const { data, error } = await supabase.functions.invoke('subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'create_subscription',
           tierId,
@@ -71,11 +71,15 @@ export const useSubscriptions = () => {
       
       return data;
     },
-    onSuccess: () => {
-      // Refresh subscription data
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
-      queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
+    onSuccess: (data) => {
+      if (data?.clientSecret) {
+        // Don't refresh here, let the payment page handle it
+        console.log('Subscription created, redirecting to payment');
+      } else if (data?.error) {
+        // Already subscribed case
+        refetch();
+        queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
+      }
     },
     onError: (error) => {
       console.error('Create subscription error:', error);
@@ -92,7 +96,7 @@ export const useSubscriptions = () => {
     mutationFn: async (subscriptionId: string) => {
       console.log('Cancelling subscription:', subscriptionId);
       
-      const { data, error } = await supabase.functions.invoke('subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'cancel_subscription',
           subscriptionId
@@ -112,8 +116,8 @@ export const useSubscriptions = () => {
       
       // Refresh data
       refetch();
-      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
       queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
+      queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] });
       
       // Dispatch event
       window.dispatchEvent(new CustomEvent('subscriptionCancelled'));
@@ -128,6 +132,16 @@ export const useSubscriptions = () => {
     }
   });
 
+  // Manual refresh function
+  const refreshSubscriptions = async () => {
+    console.log('Manually refreshing subscriptions...');
+    await Promise.all([
+      refetch(),
+      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
+      queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] })
+    ]);
+  };
+
   return {
     userSubscriptions,
     subscriptionsLoading,
@@ -135,6 +149,6 @@ export const useSubscriptions = () => {
     cancelSubscription: cancelSubscriptionMutation.mutate,
     isCreating: createSubscriptionMutation.isPending,
     isCancelling: cancelSubscriptionMutation.isPending,
-    refetchSubscriptions: refetch
+    refetchSubscriptions: refreshSubscriptions
   };
 };
