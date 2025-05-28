@@ -7,7 +7,7 @@ export const useCreators = (searchTerm?: string) => {
   return useQuery({
     queryKey: ["creators", searchTerm],
     queryFn: async () => {
-      console.log("Searching creators with term:", searchTerm);
+      console.log("useCreators - Searching creators with term:", searchTerm);
       
       let query = supabase
         .from('creators')
@@ -25,21 +25,24 @@ export const useCreators = (searchTerm?: string) => {
       // If search term is provided and has minimum length, filter results
       if (searchTerm && searchTerm.trim().length >= 2) {
         const term = searchTerm.toLowerCase().trim();
+        console.log("useCreators - Applying search filter for:", term);
+        
         // Use ilike for case-insensitive search on both display_name and username
-        query = query.or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%`);
+        query = query.or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%,bio.ilike.%${term}%`);
       } else if (searchTerm && searchTerm.trim().length < 2) {
         // Return empty array for searches less than 2 characters
+        console.log("useCreators - Search term too short, returning empty array");
         return [];
       }
       
-      const { data: creatorData, error } = await query.limit(10); // Limit results for performance
+      const { data: creatorData, error } = await query.limit(50); // Increase limit for search results
 
       if (error) {
-        console.error('Error fetching creators:', error);
+        console.error('useCreators - Error fetching creators:', error);
         throw error;
       }
 
-      console.log('Raw creator data from search:', creatorData);
+      console.log('useCreators - Raw creator data from search:', creatorData);
 
       // Transform the data to match our CreatorProfile type
       const transformedCreators: CreatorProfile[] = (creatorData || []).map((creator) => {
@@ -73,10 +76,11 @@ export const useCreators = (searchTerm?: string) => {
         };
       });
 
-      console.log('Transformed creators for search:', transformedCreators);
+      console.log('useCreators - Transformed creators for search:', transformedCreators);
       return transformedCreators;
     },
     staleTime: 30000, // Cache for 30 seconds
-    enabled: !searchTerm || searchTerm.trim().length >= 2 // Only run query if search term is empty or has 2+ characters
+    enabled: !searchTerm || searchTerm.trim().length >= 2, // Only run query if search term is empty or has 2+ characters
+    retry: 1 // Reduce retries for faster error feedback
   });
 };

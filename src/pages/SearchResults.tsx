@@ -15,7 +15,14 @@ export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get("q") || "";
   
-  const { data: creators = [], isLoading } = useCreators(searchQuery);
+  console.log("SearchResults - searchQuery:", searchQuery);
+  
+  // Always call the hook, but only search when there's a valid query
+  const { data: creators = [], isLoading, error } = useCreators(searchQuery.trim());
+
+  console.log("SearchResults - creators data:", creators);
+  console.log("SearchResults - isLoading:", isLoading);
+  console.log("SearchResults - error:", error);
 
   useEffect(() => {
     document.title = searchQuery ? `"${searchQuery}" - Search Results | FanRealms` : "Search Results | FanRealms";
@@ -63,7 +70,7 @@ export default function SearchResultsPage() {
             </h1>
           </div>
           
-          {searchQuery && (
+          {searchQuery && !isLoading && (
             <p className="text-gray-400">
               Found {creators.length} creator{creators.length !== 1 ? 's' : ''} matching your search
             </p>
@@ -99,6 +106,12 @@ export default function SearchResultsPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-400">
+            <Search className="h-16 w-16 mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold mb-2">Search Error</h3>
+            <p>There was an error searching for creators. Please try again.</p>
           </div>
         ) : creators.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
