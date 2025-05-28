@@ -51,8 +51,7 @@ export const useSubscriptions = () => {
     },
     enabled: !!user?.id,
     staleTime: 0,
-    gcTime: 0, // Don't cache results
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false, // Prevent auto-refresh on focus
     refetchOnMount: true
   });
 
@@ -134,20 +133,15 @@ export const useSubscriptions = () => {
     }
   });
 
-  // Manual refresh function with aggressive cache clearing
+  // Manual refresh function with controlled cache clearing
   const refreshSubscriptions = async () => {
-    console.log('Manually refreshing subscriptions with cache clearing...');
+    console.log('Manually refreshing subscriptions...');
     
-    // Clear all caches first
+    // Clear caches and refetch
     queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
     queryClient.removeQueries({ queryKey: ['subscription-check'] });
     
-    // Then refetch
-    await Promise.all([
-      refetch(),
-      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
-      queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] })
-    ]);
+    await refetch();
   };
 
   return {

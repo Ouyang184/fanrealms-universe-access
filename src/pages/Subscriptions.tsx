@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
 import { MainLayout } from "@/components/Layout/MainLayout"
 import { useSubscriptions } from "@/hooks/useSubscriptions"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
 import { SubscriptionSummary } from "@/components/subscriptions/SubscriptionSummary"
@@ -17,11 +17,19 @@ export default function SubscriptionsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   
-  // Auto-refresh on page load and listen for subscription events
-  useEffect(() => {
+  // Stable callback to avoid infinite loops
+  const stableRefetch = useCallback(async () => {
     console.log('Subscriptions page loaded, refreshing data...');
-    refetchSubscriptions();
+    await refetchSubscriptions();
+  }, [refetchSubscriptions]);
 
+  // Only refresh on mount, not on every render
+  useEffect(() => {
+    stableRefetch();
+  }, []); // Empty dependency array - only run on mount
+
+  // Listen for subscription events
+  useEffect(() => {
     const handleSubscriptionUpdate = async () => {
       console.log('Subscription event detected, refreshing...');
       setIsRefreshing(true);
@@ -110,29 +118,9 @@ export default function SubscriptionsPage() {
           </div>
         </div>
 
-        {/* Enhanced Debug info */}
-        <div className="mb-4 p-4 bg-gray-100 rounded text-sm space-y-2">
-          <div><strong>Debug Info:</strong></div>
-          <div>Found {userSubscriptions?.length || 0} subscriptions</div>
-          <div>Loading state: {subscriptionsLoading ? 'Loading' : 'Loaded'}</div>
-          <div>Refreshing: {isRefreshing ? 'Yes' : 'No'}</div>
-          {userSubscriptions?.length > 0 && (
-            <div className="mt-2 space-y-1">
-              <div className="font-medium">Subscription Details:</div>
-              {userSubscriptions.map((sub, index) => (
-                <div key={sub.id} className="text-xs bg-white p-2 rounded border">
-                  <div><strong>#{index + 1}</strong></div>
-                  <div>ID: {sub.id}</div>
-                  <div>Creator: {sub.creator?.display_name || 'Unknown'}</div>
-                  <div>Tier: {sub.tier?.title || 'Unknown'}</div>
-                  <div>Status: {sub.status}</div>
-                  <div>Amount: ${sub.amount}</div>
-                  <div>Created: {new Date(sub.created_at).toLocaleString()}</div>
-                  <div>Updated: {new Date(sub.updated_at).toLocaleString()}</div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Simplified Debug info */}
+        <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
+          <div><strong>Status:</strong> Found {userSubscriptions?.length || 0} subscriptions | Loading: {subscriptionsLoading ? 'Yes' : 'No'}</div>
         </div>
 
         {!hasSubscriptions ? (
