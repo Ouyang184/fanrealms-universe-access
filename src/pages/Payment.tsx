@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -65,13 +66,14 @@ function PaymentForm() {
     navigate(-1);
   };
 
-  const verifySubscriptionInDB = async (maxRetries = 15) => {
+  const verifySubscriptionInDB = async (maxRetries = 20, retryDelay = 3000) => {
     console.log('Verifying subscription in database...');
     
     for (let i = 0; i < maxRetries; i++) {
       try {
         console.log(`Verification attempt ${i + 1}/${maxRetries}`);
         
+        // Check both user_subscriptions table
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -87,7 +89,9 @@ function PaymentForm() {
           return true;
         }
         
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Longer delay for later attempts
+        const delay = i < 5 ? retryDelay : retryDelay * 2;
+        await new Promise(resolve => setTimeout(resolve, delay));
       } catch (error) {
         console.error('Error verifying subscription in DB:', error);
       }
@@ -137,8 +141,9 @@ function PaymentForm() {
           description: `Processing your subscription to ${tierName}...`,
         });
 
+        // Give more time for webhook processing
         console.log('Waiting for webhook processing...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         const verified = await verifySubscriptionInDB();
         
@@ -159,19 +164,33 @@ function PaymentForm() {
             title: "Subscription Active!",
             description: `You've successfully subscribed to ${tierName}`,
           });
+
+          setTimeout(() => {
+            navigate('/subscriptions');
+          }, 2000);
         } else {
           console.warn('Payment succeeded but subscription not found in database');
+          
+          // Still trigger events as payment succeeded
+          triggerSubscriptionSuccess({
+            tierId,
+            creatorId,
+            paymentIntentId: paymentIntent.id
+          });
+          
+          await invalidateAllSubscriptionQueries();
+          
           toast({
             title: "Payment Processed",
-            description: "Your payment was successful. If you don't see your subscription immediately, please refresh the page.",
+            description: "Your payment was successful. Your subscription should be active shortly. Please check your subscriptions page.",
           });
+
+          setTimeout(() => {
+            navigate('/subscriptions');
+          }, 3000);
         }
         
         setIsVerifying(false);
-        
-        setTimeout(() => {
-          navigate('/subscriptions');
-        }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -200,7 +219,7 @@ function PaymentForm() {
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-gray-400">Verifying your subscription...</p>
+                  <p className="text-gray-400">Activating your subscription...</p>
                 </div>
               ) : (
                 <p className="text-gray-400">

@@ -1,537 +1,197 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
-interface Database {
-  public: {
-    Tables: {
-      creators: {
-        Row: {
-          id: string
-          user_id: string
-          stripe_account_id: string | null
-          stripe_onboarding_complete: boolean | null
-          stripe_charges_enabled: boolean | null
-          stripe_payouts_enabled: boolean | null
-        }
-        Insert: {
-          stripe_account_id?: string | null
-          stripe_onboarding_complete?: boolean | null
-          stripe_charges_enabled?: boolean | null
-          stripe_payouts_enabled?: boolean | null
-        }
-        Update: {
-          stripe_account_id?: string | null
-          stripe_onboarding_complete?: boolean | null
-          stripe_charges_enabled?: boolean | null
-          stripe_payouts_enabled?: boolean | null
-        }
-      }
-      creator_subscriptions: {
-        Row: {
-          id: string
-          user_id: string
-          creator_id: string
-          tier_id: string
-          stripe_subscription_id: string
-          stripe_customer_id: string
-          status: string
-          current_period_start: string | null
-          current_period_end: string | null
-          amount_paid: number | null
-          platform_fee: number | null
-          creator_earnings: number | null
-        }
-        Insert: {
-          user_id: string
-          creator_id: string
-          tier_id: string
-          stripe_subscription_id: string
-          stripe_customer_id: string
-          status?: string
-          current_period_start?: string | null
-          current_period_end?: string | null
-          amount_paid?: number | null
-          platform_fee?: number | null
-          creator_earnings?: number | null
-        }
-        Update: {
-          status?: string
-          current_period_start?: string | null
-          current_period_end?: string | null
-          amount_paid?: number | null
-          platform_fee?: number | null
-          creator_earnings?: number | null
-        }
-      }
-      subscriptions: {
-        Row: {
-          id: string
-          user_id: string
-          creator_id: string
-          tier_id: string | null
-          is_paid: boolean
-          created_at: string
-        }
-        Insert: {
-          user_id: string
-          creator_id: string
-          tier_id?: string | null
-          is_paid?: boolean
-        }
-        Update: {
-          is_paid?: boolean
-          tier_id?: string | null
-        }
-      }
-      creator_earnings: {
-        Insert: {
-          creator_id: string
-          subscription_id?: string | null
-          amount: number
-          platform_fee: number
-          net_amount: number
-          stripe_transfer_id?: string | null
-        }
-      }
-    }
-  }
-}
+const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
+  Deno.env.get('STRIPE_SECRET_KEY') || ''
+);
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     console.log('=== WEBHOOK EVENT RECEIVED ===');
-    const body = await req.text()
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
 
-    if (!stripeSecretKey) {
-      console.error('Missing Stripe secret key')
-      return new Response('Configuration error', { status: 500 })
-    }
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Initialize Supabase client with service role key
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
+    const body = await req.text();
+    const signature = req.headers.get('stripe-signature')!;
 
-    // Parse the event
-    let event
+    let event;
     try {
-      event = JSON.parse(body)
-      console.log('Webhook event type:', event.type, 'ID:', event.id)
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      console.error('JSON parsing failed:', err)
-      return new Response('Invalid JSON', { status: 400 })
+      console.error('Webhook signature verification failed:', err);
+      return new Response('Webhook signature verification failed', { status: 400 });
     }
 
-    // Handle different event types
-    switch (event.type) {
-      case 'checkout.session.completed':
-        console.log('=== PROCESSING CHECKOUT SESSION COMPLETED ===');
-        await handleCheckoutSessionCompleted(supabase, event.data.object)
-        break
+    console.log('Webhook event type:', event.type, 'ID:', event.id);
+
+    if (event.type === 'invoice.payment_succeeded') {
+      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED ===');
       
-      case 'customer.subscription.created':
-        console.log('=== PROCESSING SUBSCRIPTION CREATED ===');
-        await handleSubscriptionCreatedOrUpdated(supabase, event.data.object)
-        break
+      const invoice = event.data.object as any;
+      console.log('Processing invoice payment succeeded:', invoice.id);
+
+      let subscriptionId = invoice.subscription;
       
-      case 'customer.subscription.updated':
-        console.log('=== PROCESSING SUBSCRIPTION UPDATED ===');
-        await handleSubscriptionCreatedOrUpdated(supabase, event.data.object)
-        break
+      // Try to get subscription ID from different sources
+      if (!subscriptionId && invoice.subscription_details?.metadata?.subscription_id) {
+        subscriptionId = invoice.subscription_details.metadata.subscription_id;
+        console.log('Found subscription ID in subscription_details metadata:', subscriptionId);
+      }
       
-      case 'customer.subscription.deleted':
-        console.log('=== PROCESSING SUBSCRIPTION DELETED ===');
-        await handleSubscriptionDeleted(supabase, event.data.object)
-        break
+      if (!subscriptionId && invoice.lines?.data?.[0]?.subscription) {
+        subscriptionId = invoice.lines.data[0].subscription;
+        console.log('Found subscription ID in line items:', subscriptionId);
+      }
+
+      if (subscriptionId) {
+        console.log('Found subscription ID:', subscriptionId);
+        
+        const amountPaid = invoice.amount_paid / 100;
+        const platformFee = amountPaid * 0.05;
+        const creatorEarnings = amountPaid - platformFee;
+        
+        console.log('Payment details:', { amountPaid, platformFee, creatorEarnings });
+
+        // CRITICAL: Update subscription status to 'active' when payment succeeds
+        const { error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({ 
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_subscription_id', subscriptionId);
+
+        if (updateError) {
+          console.error('Error updating subscription status to active:', updateError);
+        } else {
+          console.log('Successfully activated subscription:', subscriptionId);
+        }
+
+        // Record the payment in creator_earnings
+        const { error: earningsError } = await supabase
+          .from('creator_earnings')
+          .insert({
+            creator_id: invoice.metadata?.creator_id,
+            subscription_id: subscriptionId,
+            amount: amountPaid,
+            platform_fee: platformFee,
+            net_amount: creatorEarnings,
+            payment_date: new Date().toISOString()
+          });
+
+        if (earningsError) {
+          console.error('Error recording creator earnings:', earningsError);
+        }
+      } else {
+        console.error('No subscription ID found in invoice');
+      }
+    }
+
+    if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated') {
+      console.log('=== PROCESSING SUBSCRIPTION CREATED/UPDATED ===');
       
-      case 'invoice.payment_succeeded':
-        console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED ===');
-        const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
-        await handleInvoicePaymentSucceeded(supabase, stripe, event.data.object)
-        break
+      const subscription = event.data.object as any;
+      console.log('Processing subscription created/updated:', subscription.id, 'status:', subscription.status);
+
+      const currentPeriodStart = subscription.current_period_start ? 
+        new Date(subscription.current_period_start * 1000).toISOString() : null;
+      const currentPeriodEnd = subscription.current_period_end ? 
+        new Date(subscription.current_period_end * 1000).toISOString() : null;
+
+      console.log('Updating subscription periods:', { currentPeriodStart, currentPeriodEnd });
+
+      // Update subscription with period information
+      const { error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .update({
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd,
+          // Only set to active if the subscription status is active AND not incomplete
+          status: subscription.status === 'active' ? 'active' : 'pending',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (subscriptionError) {
+        console.error('Error updating subscription periods:', subscriptionError);
+      } else {
+        console.log('Successfully updated subscription periods for:', subscription.id);
+      }
+    }
+
+    if (event.type === 'payment_intent.succeeded') {
+      console.log('=== PROCESSING PAYMENT INTENT SUCCEEDED ===');
       
-      case 'payment_intent.succeeded':
-        console.log('=== PROCESSING PAYMENT INTENT SUCCEEDED ===');
-        await handlePaymentIntentSucceeded(supabase, event.data.object)
-        break
+      const paymentIntent = event.data.object as any;
+      console.log('Processing payment intent succeeded:', paymentIntent.id);
+      console.log('Payment intent succeeded for amount:', paymentIntent.amount / 100);
+
+      // Get the subscription from the invoice if it exists
+      if (paymentIntent.invoice) {
+        try {
+          const invoice = await stripe.invoices.retrieve(paymentIntent.invoice);
+          if (invoice.subscription) {
+            console.log('Activating subscription from payment intent:', invoice.subscription);
+            
+            // Ensure subscription is activated
+            const { error: activateError } = await supabase
+              .from('user_subscriptions')
+              .update({ 
+                status: 'active',
+                updated_at: new Date().toISOString()
+              })
+              .eq('stripe_subscription_id', invoice.subscription);
+
+            if (activateError) {
+              console.error('Error activating subscription from payment intent:', activateError);
+            } else {
+              console.log('Successfully activated subscription from payment intent');
+            }
+          }
+        } catch (invoiceError) {
+          console.error('Error retrieving invoice from payment intent:', invoiceError);
+        }
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      console.log('=== PROCESSING SUBSCRIPTION DELETED ===');
       
-      default:
-        console.log(`Unhandled event type: ${event.type}`)
+      const subscription = event.data.object as any;
+      console.log('Processing subscription deleted:', subscription.id);
+
+      // Remove subscription from database
+      const { error: deleteError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (deleteError) {
+        console.error('Error deleting subscription:', deleteError);
+      } else {
+        console.log('Successfully deleted subscription:', subscription.id);
+      }
     }
 
     console.log('=== WEBHOOK PROCESSING COMPLETE ===');
-    return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
+    return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('=== WEBHOOK ERROR ===', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    })
+    console.error('Webhook error:', error);
+    return new Response('Webhook error', { status: 500, headers: corsHeaders });
   }
-})
-
-async function handleCheckoutSessionCompleted(supabase: any, session: any) {
-  console.log('Processing checkout session completed:', session.id)
-  
-  if (session.mode !== 'subscription') {
-    console.log('Not a subscription checkout, skipping')
-    return
-  }
-
-  try {
-    const subscriptionId = session.subscription
-    if (!subscriptionId) {
-      console.error('No subscription ID in checkout session')
-      return
-    }
-
-    console.log('Looking for subscription record with stripe_subscription_id:', subscriptionId)
-
-    // Find the creator subscription record and update it to active
-    const { data: creatorSub, error: subError } = await supabase
-      .from('creator_subscriptions')
-      .select('*')
-      .eq('stripe_subscription_id', subscriptionId)
-      .single()
-
-    if (subError) {
-      console.error('Error finding creator subscription:', subError)
-      return
-    }
-
-    if (!creatorSub) {
-      console.error('Could not find creator subscription for stripe_subscription_id:', subscriptionId)
-      return
-    }
-
-    console.log('Found creator subscription:', creatorSub.id, 'updating to active')
-
-    // Update creator subscription to active status
-    const { error: updateError } = await supabase
-      .from('creator_subscriptions')
-      .update({ 
-        status: 'active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', subscriptionId)
-
-    if (updateError) {
-      console.error('Error updating creator subscription:', updateError)
-      return
-    }
-
-    console.log('Successfully updated creator subscription to active')
-
-    // Ensure entry in subscriptions table for backward compatibility
-    const { error: upsertError } = await supabase
-      .from('subscriptions')
-      .upsert({
-        user_id: creatorSub.user_id,
-        creator_id: creatorSub.creator_id,
-        tier_id: creatorSub.tier_id,
-        is_paid: true,
-        created_at: new Date().toISOString()
-      }, { 
-        onConflict: 'user_id,creator_id',
-        ignoreDuplicates: false 
-      })
-
-    if (upsertError) {
-      console.error('Error upserting subscription:', upsertError)
-    } else {
-      console.log('Successfully upserted subscription record')
-    }
-
-  } catch (error) {
-    console.error('Error in handleCheckoutSessionCompleted:', error)
-  }
-}
-
-async function handleSubscriptionCreatedOrUpdated(supabase: any, subscription: any) {
-  console.log('Processing subscription created/updated:', subscription.id, 'status:', subscription.status)
-  
-  try {
-    // Validate and convert timestamps
-    const currentPeriodStart = subscription.current_period_start ? 
-      new Date(subscription.current_period_start * 1000).toISOString() : null
-    const currentPeriodEnd = subscription.current_period_end ? 
-      new Date(subscription.current_period_end * 1000).toISOString() : null
-
-    console.log('Updating subscription periods:', { currentPeriodStart, currentPeriodEnd })
-
-    const updateData: any = {
-      status: subscription.status,
-      updated_at: new Date().toISOString()
-    }
-
-    if (currentPeriodStart) {
-      updateData.current_period_start = currentPeriodStart
-    }
-    if (currentPeriodEnd) {
-      updateData.current_period_end = currentPeriodEnd
-    }
-
-    const { data: updatedSub, error } = await supabase
-      .from('creator_subscriptions')
-      .update(updateData)
-      .eq('stripe_subscription_id', subscription.id)
-      .select('*')
-      .single()
-
-    if (error) {
-      console.error('Error updating creator subscription:', error)
-      return
-    }
-
-    if (!updatedSub) {
-      console.log('No creator subscription found for stripe_subscription_id:', subscription.id)
-      return
-    }
-
-    console.log('Successfully updated creator subscription:', subscription.id, 'to status:', subscription.status)
-
-    // Update the subscriptions table based on status
-    if (subscription.status === 'active') {
-      const { error: upsertError } = await supabase
-        .from('subscriptions')
-        .upsert({
-          user_id: updatedSub.user_id,
-          creator_id: updatedSub.creator_id,
-          tier_id: updatedSub.tier_id,
-          is_paid: true,
-          created_at: new Date().toISOString()
-        }, { onConflict: 'user_id,creator_id' })
-      
-      if (upsertError) {
-        console.error('Error upserting active subscription:', upsertError)
-      } else {
-        console.log('Updated subscriptions table for active subscription')
-      }
-    } else if (['canceled', 'cancelled', 'incomplete', 'past_due', 'unpaid'].includes(subscription.status)) {
-      // Remove from both tables for inactive statuses
-      console.log('Removing subscription records for inactive status:', subscription.status)
-      
-      const { error: deleteCreatorError } = await supabase
-        .from('creator_subscriptions')
-        .delete()
-        .eq('stripe_subscription_id', subscription.id)
-      
-      if (deleteCreatorError) {
-        console.error('Error removing creator subscription:', deleteCreatorError)
-      } else {
-        console.log('Removed creator subscription for inactive status')
-      }
-
-      const { error: deleteBasicError } = await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('user_id', updatedSub.user_id)
-        .eq('creator_id', updatedSub.creator_id)
-      
-      if (deleteBasicError) {
-        console.error('Error removing basic subscription:', deleteBasicError)
-      } else {
-        console.log('Removed basic subscription for inactive status')
-      }
-    }
-  } catch (error) {
-    console.error('Error in handleSubscriptionCreatedOrUpdated:', error)
-  }
-}
-
-async function handleSubscriptionDeleted(supabase: any, subscription: any) {
-  console.log('Processing subscription deleted:', subscription.id)
-  
-  try {
-    // Get subscription info before deleting
-    const { data: subToDelete, error: fetchError } = await supabase
-      .from('creator_subscriptions')
-      .select('user_id, creator_id')
-      .eq('stripe_subscription_id', subscription.id)
-      .single()
-
-    if (fetchError) {
-      console.error('Error fetching subscription to delete:', fetchError)
-      return
-    }
-
-    if (!subToDelete) {
-      console.log('No creator subscription found to delete for:', subscription.id)
-      return
-    }
-
-    // Delete from creator_subscriptions
-    const { error: deleteCreatorError } = await supabase
-      .from('creator_subscriptions')
-      .delete()
-      .eq('stripe_subscription_id', subscription.id)
-
-    if (deleteCreatorError) {
-      console.error('Error deleting creator subscription:', deleteCreatorError)
-    } else {
-      console.log('Successfully deleted creator subscription')
-    }
-
-    // Remove from subscriptions table
-    const { error: deleteBasicError } = await supabase
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', subToDelete.user_id)
-      .eq('creator_id', subToDelete.creator_id)
-    
-    if (deleteBasicError) {
-      console.error('Error removing basic subscription:', deleteBasicError)
-    } else {
-      console.log('Removed subscription from subscriptions table')
-    }
-  } catch (error) {
-    console.error('Error in handleSubscriptionDeleted:', error)
-  }
-}
-
-async function handlePaymentIntentSucceeded(supabase: any, paymentIntent: any) {
-  console.log('Processing payment intent succeeded:', paymentIntent.id)
-  
-  try {
-    // Check if this payment intent is related to a subscription
-    if (paymentIntent.invoice) {
-      console.log('Payment intent has invoice, will be handled by invoice.payment_succeeded')
-      return
-    }
-
-    // For subscription payments, we primarily rely on other events
-    console.log('Payment intent succeeded for amount:', paymentIntent.amount_received / 100)
-    
-  } catch (error) {
-    console.error('Error in handlePaymentIntentSucceeded:', error)
-  }
-}
-
-async function handleInvoicePaymentSucceeded(supabase: any, stripe: any, invoice: any) {
-  console.log('Processing invoice payment succeeded:', invoice.id)
-  
-  let subscriptionId = invoice.subscription
-  
-  // If subscription ID is not directly available, try to get it from other locations
-  if (!subscriptionId) {
-    // Check in parent.subscription_details.subscription
-    if (invoice.parent?.subscription_details?.subscription) {
-      subscriptionId = invoice.parent.subscription_details.subscription
-      console.log('Found subscription ID in parent.subscription_details:', subscriptionId)
-    }
-    // Also check line items as fallback
-    else if (invoice.lines && invoice.lines.data && invoice.lines.data.length > 0) {
-      const lineItem = invoice.lines.data[0]
-      if (lineItem.parent?.subscription_item_details?.subscription) {
-        subscriptionId = lineItem.parent.subscription_item_details.subscription
-        console.log('Found subscription ID in line item parent:', subscriptionId)
-      }
-    }
-  }
-  
-  if (!subscriptionId) {
-    console.error('No subscription ID found in invoice:', {
-      invoiceId: invoice.id,
-      subscription: invoice.subscription,
-      parent: invoice.parent,
-      lines: invoice.lines?.data?.map(line => ({ 
-        id: line.id, 
-        subscription: line.subscription,
-        parent: line.parent 
-      }))
-    })
-    return
-  }
-
-  console.log('Found subscription ID:', subscriptionId)
-
-  try {
-    const amountPaid = invoice.amount_paid / 100 // Convert from cents
-    const platformFee = amountPaid * 0.05 // 5% platform fee
-    const creatorEarnings = amountPaid - platformFee
-
-    console.log('Payment details:', { amountPaid, platformFee, creatorEarnings })
-
-    // Update subscription with payment details and ensure it's active
-    const { data: subscription, error: subError } = await supabase
-      .from('creator_subscriptions')
-      .update({
-        amount_paid: amountPaid,
-        platform_fee: platformFee,
-        creator_earnings: creatorEarnings,
-        status: 'active', // Ensure status is active on successful payment
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', subscriptionId)
-      .select('creator_id, user_id, tier_id, id')
-      .maybeSingle()
-
-    if (subError) {
-      console.error('Error updating subscription payment:', subError)
-      return
-    }
-
-    if (!subscription) {
-      console.log('No subscription found for stripe_subscription_id:', subscriptionId)
-      return
-    }
-
-    console.log('Updated subscription payment details for:', subscription)
-
-    // Ensure the subscriptions table is updated for counting
-    const { error: subscriptionsError } = await supabase
-      .from('subscriptions')
-      .upsert({
-        user_id: subscription.user_id,
-        creator_id: subscription.creator_id,
-        tier_id: subscription.tier_id,
-        is_paid: true,
-        created_at: new Date().toISOString()
-      }, { 
-        onConflict: 'user_id,creator_id',
-        ignoreDuplicates: false 
-      })
-
-    if (subscriptionsError) {
-      console.error('Error upserting subscription for counting:', subscriptionsError)
-    } else {
-      console.log('Successfully updated subscriptions table for counting')
-    }
-
-    // Record creator earnings
-    const { error: earningsError } = await supabase
-      .from('creator_earnings')
-      .insert({
-        creator_id: subscription.creator_id,
-        subscription_id: subscription.id,
-        amount: amountPaid,
-        platform_fee: platformFee,
-        net_amount: creatorEarnings,
-        created_at: new Date().toISOString()
-      })
-
-    if (earningsError) {
-      console.error('Error recording creator earnings:', earningsError)
-    } else {
-      console.log('Successfully recorded creator earnings')
-    }
-  } catch (error) {
-    console.error('Error in handleInvoicePaymentSucceeded:', error)
-  }
-}
+});
