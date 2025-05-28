@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -9,7 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-const stripePromise = loadStripe('pk_test_51QXAmDFQ9K98Q7U0Cw8r6c2D6E4VqEYo4ULNO4qjWzXBzHQ6VFCAJ3R9hRSxgbPTjqOJ4jCPl9Pms4rSJQzU7GCh00UjONZjGy');
+// Use the correct Stripe publishable key that matches your backend
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 function PaymentForm() {
   const stripe = useStripe();
