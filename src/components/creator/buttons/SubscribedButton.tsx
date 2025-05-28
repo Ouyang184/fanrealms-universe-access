@@ -43,26 +43,86 @@ export function SubscribedButton({
   };
 
   const handleUnsubscribe = async () => {
-    if (!subscriptionData || isCancelling) {
-      console.log('No subscription data available for cancellation or already cancelling');
-      toast({
-        title: "Error",
-        description: "No subscription found to cancel.",
-        variant: "destructive"
-      });
+    if (isCancelling) {
+      console.log('Already cancelling, ignoring click');
       return;
+    }
+
+    // Try different subscription ID formats
+    const subscriptionId = subscriptionData?.stripe_subscription_id || 
+                          subscriptionData?.id || 
+                          subscriptionData?.subscription_id;
+
+    if (!subscriptionId) {
+      console.log('No subscription ID found, trying to cancel via simple-subscriptions');
+      
+      // Try using the simple-subscriptions function with different parameters
+      try {
+        setIsCancelling(true);
+        
+        const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+          body: {
+            action: 'cancel_subscription',
+            tierId: tierId,
+            creatorId: creatorId
+          }
+        });
+
+        if (error) {
+          console.error('Error from simple-subscriptions:', error);
+          throw error;
+        }
+
+        if (data?.error) {
+          console.error('Server returned error:', data.error);
+          throw new Error(data.error);
+        }
+
+        console.log('Successfully cancelled subscription via simple-subscriptions');
+        
+        // Immediately update optimistic state
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(false);
+        }
+        
+        // Trigger subscription cancellation events
+        triggerSubscriptionCancellation({
+          creatorId, 
+          tierId, 
+          subscriptionId: 'unknown'
+        });
+        
+        toast({
+          title: "Subscription Cancelled",
+          description: `You've successfully unsubscribed from ${tierName}.`,
+        });
+        
+        // Invalidate all subscription-related queries
+        await invalidateAllSubscriptionQueries();
+        
+        if (onSubscriptionSuccess) {
+          onSubscriptionSuccess();
+        }
+        
+        return;
+      } catch (error) {
+        console.error('Error with simple-subscriptions:', error);
+        // Continue to try the stripe-subscriptions function
+      } finally {
+        setIsCancelling(false);
+      }
     }
 
     setIsCancelling(true);
     
     try {
-      console.log('SubscribedButton: Cancelling subscription:', subscriptionData.id);
+      console.log('SubscribedButton: Cancelling subscription:', subscriptionId);
       
       // Call the edge function to cancel subscription
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
-          subscriptionId: subscriptionData.stripe_subscription_id || subscriptionData.id
+          subscriptionId: subscriptionId
         }
       });
 
@@ -87,7 +147,7 @@ export function SubscribedButton({
       triggerSubscriptionCancellation({
         creatorId, 
         tierId, 
-        subscriptionId: subscriptionData.stripe_subscription_id || subscriptionData.id
+        subscriptionId: subscriptionId
       });
       
       toast({

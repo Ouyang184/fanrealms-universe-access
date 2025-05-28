@@ -31,6 +31,15 @@ export function SubscribeButton({
   // Use the passed isSubscribed prop or fallback to subscription check
   const isUserSubscribed = isSubscribed || subscriptionStatus?.isSubscribed || false;
 
+  console.log('SubscribeButton debug:', {
+    tierId,
+    creatorId,
+    isSubscribed,
+    subscriptionStatusFromHook: subscriptionStatus?.isSubscribed,
+    isUserSubscribed,
+    subscriptionData: subscriptionStatus?.subscription
+  });
+
   if (isLoading) {
     return (
       <div className="w-full h-10 bg-gray-200 animate-pulse rounded" />
