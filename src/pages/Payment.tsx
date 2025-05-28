@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -6,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CreditCard, ChevronDown } from 'lucide-react';
+import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -48,6 +47,23 @@ function PaymentForm() {
       setPaymentAmount((amount / 100).toFixed(2));
     }
   }, [clientSecret, amount, navigate, toast]);
+
+  const handleCancel = () => {
+    console.log('User cancelled payment, navigating back');
+    
+    // Clear any temporary state
+    setIsProcessing(false);
+    setPaymentSucceeded(false);
+    setIsVerifying(false);
+    
+    toast({
+      title: "Payment Cancelled",
+      description: "You can return anytime to complete your subscription.",
+    });
+    
+    // Navigate back to previous page or creator page
+    navigate(-1);
+  };
 
   const verifySubscriptionInDB = async (maxRetries = 15) => {
     console.log('Verifying subscription in database...');
@@ -304,25 +320,40 @@ function PaymentForm() {
                 </p>
               </div>
 
-              {/* Subscribe Button */}
-              <Button 
-                onClick={handlePayment}
-                disabled={!stripe || isProcessing}
-                className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
-                size="lg"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Lock className="mr-2 h-5 w-5" />
-                    Subscribe now
-                  </>
-                )}
-              </Button>
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {/* Subscribe Button */}
+                <Button 
+                  onClick={handlePayment}
+                  disabled={!stripe || isProcessing}
+                  className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="mr-2 h-5 w-5" />
+                      Subscribe now
+                    </>
+                  )}
+                </Button>
+
+                {/* Cancel Button */}
+                <Button 
+                  onClick={handleCancel}
+                  disabled={isProcessing}
+                  variant="outline"
+                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
+                  size="lg"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Cancel and go back
+                </Button>
+              </div>
             </div>
           </div>
 
