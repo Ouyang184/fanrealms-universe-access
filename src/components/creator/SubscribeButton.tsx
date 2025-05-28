@@ -28,18 +28,19 @@ export function SubscribeButton({
   const { subscriptionData, isLoading } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
-  // Use the passed isSubscribed prop first, then fall back to subscription check
+  // Use comprehensive subscription check: prop first, then hook data
   const isUserSubscribed = isSubscribed || subscriptionData?.isSubscribed || false;
 
-  console.log('SubscribeButton debug:', {
+  console.log('SubscribeButton comprehensive debug:', {
     tierId,
     creatorId,
     tierName,
     isSubscribedProp: isSubscribed,
-    subscriptionDataFromHook: subscriptionData?.isSubscribed,
+    subscriptionDataFromHook: subscriptionData,
+    hookIsSubscribed: subscriptionData?.isSubscribed,
     finalIsUserSubscribed: isUserSubscribed,
-    subscriptionData: subscriptionData,
-    isLoading
+    isLoading,
+    isCreatorStripeReady
   });
 
   if (isLoading) {
@@ -49,7 +50,7 @@ export function SubscribeButton({
   }
 
   if (isUserSubscribed) {
-    console.log('Showing SubscribedButton for tier:', tierId);
+    console.log('Showing SubscribedButton for tier:', tierId, 'with subscription data:', subscriptionData?.subscription);
     return (
       <SubscribedButton
         tierName={tierName}

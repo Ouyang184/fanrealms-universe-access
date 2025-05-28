@@ -32,7 +32,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
 
       if (tiersError) throw tiersError;
 
-      // Get subscriber counts for each tier
+      // Get subscriber counts for each tier from user_subscriptions table
       const tiersWithCounts = await Promise.all(
         tiersData.map(async (tier) => {
           const { count, error: countError } = await supabase
@@ -64,7 +64,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     refetchInterval: 30000,
   });
 
-  // Get user subscriptions for this creator with better error handling
+  // Get user subscriptions for this creator - using user_subscriptions table consistently
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['simpleUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -75,6 +75,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       
       console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
+      // Query user_subscriptions table with proper status check
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -107,7 +108,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to server data
+    // Fall back to server data from user_subscriptions table
     const isSubscribed = userSubscriptions?.some(sub => {
       console.log('Checking subscription:', sub, 'against tier:', tierId);
       return sub.tier_id === tierId && sub.status === 'active';
@@ -128,6 +129,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       queryClient.invalidateQueries({ queryKey: ['simpleCreatorMembershipTiers'] }),
       queryClient.invalidateQueries({ queryKey: ['simpleUserCreatorSubscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
+      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
     ]);
 
     // Force immediate refetch

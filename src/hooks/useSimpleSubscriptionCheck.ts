@@ -16,7 +16,7 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('Simple subscription check for:', { userId: user.id, tierId, creatorId });
 
-      // Check in user_subscriptions table
+      // Check in user_subscriptions table with proper status filtering
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')

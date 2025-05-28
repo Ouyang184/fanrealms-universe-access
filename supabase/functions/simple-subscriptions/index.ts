@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -37,51 +36,33 @@ serve(async (req) => {
     console.log('Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // First, clean up any stale or duplicate subscriptions for this user/creator combination
-      console.log('Cleaning up any existing subscriptions for user:', user.id, 'creator:', creatorId);
+      // First, check for existing active subscriptions to prevent duplicates
+      console.log('Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
       
       const { data: existingSubs } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('creator_id', creatorId);
+        .eq('creator_id', creatorId)
+        .eq('status', 'active');
 
       if (existingSubs && existingSubs.length > 0) {
-        console.log('Found existing subscriptions:', existingSubs.length);
-        
-        // Check if any are actually active in Stripe
-        let hasActiveStripeSubscription = false;
-        for (const sub of existingSubs) {
-          if (sub.stripe_subscription_id) {
-            try {
-              const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-              if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
-                hasActiveStripeSubscription = true;
-                break;
-              }
-            } catch (stripeError) {
-              console.log('Stripe subscription not found:', sub.stripe_subscription_id);
-            }
-          }
-        }
-
-        if (hasActiveStripeSubscription) {
-          return new Response(JSON.stringify({ 
-            error: 'You already have an active subscription to this creator.' 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          });
-        }
-
-        // Clean up stale records
-        console.log('Cleaning up stale subscription records');
-        await supabase
-          .from('user_subscriptions')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('creator_id', creatorId);
+        console.log('Found existing active subscription:', existingSubs[0]);
+        return new Response(JSON.stringify({ 
+          error: 'You already have an active subscription to this creator.' 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        });
       }
+
+      // Clean up any stale non-active subscriptions
+      await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .neq('status', 'active');
 
       // Get tier details
       const { data: tier, error: tierError } = await supabase
@@ -143,7 +124,7 @@ serve(async (req) => {
           .eq('id', tierId);
       }
 
-      // Create Stripe subscription
+      // Create Stripe subscription with proper metadata
       const subscription = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: stripePriceId }],
@@ -162,7 +143,7 @@ serve(async (req) => {
         }
       });
 
-      // Store pending subscription
+      // Store pending subscription in user_subscriptions table
       await supabase
         .from('user_subscriptions')
         .insert({
@@ -189,29 +170,35 @@ serve(async (req) => {
       });
 
     } else if (action === 'cancel_subscription') {
-      console.log('Cancelling subscription:', subscriptionId);
+      console.log('Cancelling subscription for tier:', tierId, 'creator:', creatorId);
       
+      // Find the active subscription
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('stripe_subscription_id, creator_id, tier_id')
-        .eq('id', subscriptionId)
+        .select('*')
         .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
+        .eq('status', 'active')
         .single();
 
       if (!subscription?.stripe_subscription_id) {
-        throw new Error('Subscription not found');
+        throw new Error('Active subscription not found');
       }
 
       // Cancel in Stripe
       await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
 
-      // Remove from database completely to ensure clean state
+      // Update status in database
       await supabase
         .from('user_subscriptions')
-        .delete()
-        .eq('id', subscriptionId);
+        .update({ 
+          status: 'canceled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscription.id);
 
-      console.log('Successfully cancelled and removed subscription');
+      console.log('Successfully cancelled subscription');
 
       return new Response(JSON.stringify({ 
         success: true,
@@ -235,36 +222,7 @@ serve(async (req) => {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      // Verify each subscription with Stripe to ensure they're actually active
-      const verifiedSubscriptions = [];
-      if (subscriptions) {
-        for (const sub of subscriptions) {
-          if (sub.stripe_subscription_id) {
-            try {
-              const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-              if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
-                verifiedSubscriptions.push(sub);
-              } else {
-                // Clean up stale record
-                console.log('Cleaning up stale subscription record:', sub.id);
-                await supabase
-                  .from('user_subscriptions')
-                  .delete()
-                  .eq('id', sub.id);
-              }
-            } catch (stripeError) {
-              // Subscription doesn't exist in Stripe, clean up
-              console.log('Cleaning up orphaned subscription record:', sub.id);
-              await supabase
-                .from('user_subscriptions')
-                .delete()
-                .eq('id', sub.id);
-            }
-          }
-        }
-      }
-
-      return new Response(JSON.stringify({ subscriptions: verifiedSubscriptions }), {
+      return new Response(JSON.stringify({ subscriptions: subscriptions || [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 
@@ -282,36 +240,7 @@ serve(async (req) => {
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
-      // Verify each subscription with Stripe
-      const verifiedSubscribers = [];
-      if (subscribers) {
-        for (const sub of subscribers) {
-          if (sub.stripe_subscription_id) {
-            try {
-              const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-              if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
-                verifiedSubscribers.push(sub);
-              } else {
-                // Clean up stale record
-                console.log('Cleaning up stale subscriber record:', sub.id);
-                await supabase
-                  .from('user_subscriptions')
-                  .delete()
-                  .eq('id', sub.id);
-              }
-            } catch (stripeError) {
-              // Subscription doesn't exist in Stripe, clean up
-              console.log('Cleaning up orphaned subscriber record:', sub.id);
-              await supabase
-                .from('user_subscriptions')
-                .delete()
-                .eq('id', sub.id);
-            }
-          }
-        }
-      }
-
-      return new Response(JSON.stringify({ subscribers: verifiedSubscribers }), {
+      return new Response(JSON.stringify({ subscribers: subscribers || [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
