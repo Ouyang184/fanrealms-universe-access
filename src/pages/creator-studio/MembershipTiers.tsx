@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -48,13 +49,13 @@ export default function CreatorStudioTiers() {
       
       console.log('Tiers data:', tiersData);
       
-      // Count active subscribers for each tier
+      // Count active subscribers for each tier using the new table
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         console.log('Counting subscribers for tier:', tier.id);
         
-        // Count from creator_subscriptions table with active status
+        // Count from user_subscriptions table with active status
         const { count, error: countError } = await supabase
-          .from('creator_subscriptions')
+          .from('user_subscriptions')
           .select('*', { count: 'exact', head: true })
           .eq('tier_id', tier.id)
           .eq('status', 'active');
@@ -103,18 +104,18 @@ export default function CreatorStudioTiers() {
     };
   }, [queryClient, refetch]);
   
-  // Set up real-time subscription for creator_subscriptions table
+  // Set up real-time subscription for user_subscriptions table
   useEffect(() => {
     if (!user) return;
 
     console.log('Setting up real-time subscription for subscription changes');
     
     const channel = supabase
-      .channel('creator-subscriptions-changes')
+      .channel('user-subscriptions-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'creator_subscriptions'
+        table: 'user_subscriptions'
       }, (payload) => {
         console.log('Real-time subscription update received:', payload);
         // Invalidate and refetch the tiers query when subscription changes occur
@@ -193,6 +194,7 @@ export default function CreatorStudioTiers() {
                     <Users className="h-4 w-4" />
                     <span>{tier.subscriberCount} subscribers</span>
                   </div>
+                  
                   <ul className="space-y-2">
                     {tier.features.map((feature, index) => (
                       <li key={index} className="flex items-start">

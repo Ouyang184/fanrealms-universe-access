@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
@@ -56,7 +55,7 @@ function CheckoutForm() {
         await supabase
           .from('user_subscriptions')
           .update({ status: 'active' })
-          .eq('stripe_subscription_id', result.paymentIntent.metadata?.subscription_id);
+          .eq('stripe_subscription_id', result.paymentIntent.id);
 
         toast({
           title: "Payment successful!",

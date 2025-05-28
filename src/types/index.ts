@@ -6,7 +6,7 @@ export type DbPost = Database['public']['Tables']['posts']['Row'];
 export type DbCreator = Database['public']['Tables']['creators']['Row'];
 export type DbSubscription = Database['public']['Tables']['subscriptions']['Row'];
 export type DbTier = Database['public']['Tables']['membership_tiers']['Row'];
-export type DbCreatorSubscription = Database['public']['Tables']['creator_subscriptions']['Row'];
+export type DbUserSubscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type DbCreatorEarnings = Database['public']['Tables']['creator_earnings']['Row'];
 
 export interface User {
@@ -74,20 +74,19 @@ export interface Subscription {
   tier?: Tier;
 }
 
-export interface StripeSubscription {
+export interface UserSubscription {
   id: string;
   user_id: string;
   creator_id: string;
   tier_id: string;
-  stripe_subscription_id: string;
-  stripe_customer_id: string;
+  stripe_subscription_id: string | null;
+  stripe_customer_id: string | null;
   status: string;
+  amount: number;
   current_period_start: string | null;
   current_period_end: string | null;
-  amount_paid: number | null;
-  platform_fee: number | null;
-  creator_earnings: number | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface CreatorEarnings {
