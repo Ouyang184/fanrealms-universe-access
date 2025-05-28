@@ -7,8 +7,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY') || ''
+// Import Stripe with crypto provider for Deno
+const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
+  Deno.env.get('STRIPE_SECRET_KEY') || '',
+  {
+    httpClient: stripe.createFetchHttpClient(),
+  }
 );
 
 import { handleSubscriptionWebhook } from './handlers/subscription-webhook.ts';
@@ -33,7 +37,9 @@ serve(async (req) => {
 
     let event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      // Use async webhook construction for Deno compatibility
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      console.log('Webhook signature verified successfully');
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return new Response('Webhook signature verification failed', { status: 400 });
@@ -43,11 +49,13 @@ serve(async (req) => {
 
     // Handle checkout session completed events
     if (event.type === 'checkout.session.completed') {
+      console.log('Processing checkout.session.completed');
       await handleCheckoutWebhook(event, supabase, stripe);
     }
 
     // Handle subscription-related webhooks
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
+      console.log('Processing subscription webhook:', event.type);
       await handleSubscriptionWebhook(event, supabase);
     }
 

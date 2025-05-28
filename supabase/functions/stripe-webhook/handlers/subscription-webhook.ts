@@ -7,17 +7,37 @@ export async function handleSubscriptionWebhook(
 ) {
   console.log('[WebhookHandler] Processing subscription webhook:', event.type, event.id);
 
-  const subscription = event.data.object;
-  console.log('[WebhookHandler] Subscription data:', {
-    id: subscription.id,
-    status: subscription.status,
-    customer: subscription.customer,
-    metadata: subscription.metadata
-  });
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object;
+    const subscriptionId = invoice.subscription;
+    
+    if (subscriptionId) {
+      console.log('[WebhookHandler] Processing payment success for subscription:', subscriptionId);
+
+      console.log('[WebhookHandler] BEFORE updating subscription status to active');
+      
+      // Ensure subscription is marked as active when payment succeeds - ONLY in user_subscriptions
+      const { data: updateData, error: activateError } = await supabaseService
+        .from('user_subscriptions')
+        .update({ 
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_subscription_id', subscriptionId)
+        .select();
+
+      if (activateError) {
+        console.error('[WebhookHandler] Error activating subscription after payment:', activateError);
+      } else {
+        console.log('[WebhookHandler] Successfully activated subscription after payment:', subscriptionId, 'Updated rows:', updateData?.length || 0);
+      }
+    }
+  }
 
   if (event.type === 'customer.subscription.created' || 
       event.type === 'customer.subscription.updated') {
     
+    const subscription = event.data.object;
     console.log('[WebhookHandler] Processing subscription created/updated:', subscription.id);
 
     // Extract metadata
@@ -99,6 +119,7 @@ export async function handleSubscriptionWebhook(
   }
 
   if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object;
     console.log('[WebhookHandler] Processing subscription deletion:', subscription.id);
 
     // Mark subscription as canceled in user_subscriptions ONLY
@@ -114,30 +135,6 @@ export async function handleSubscriptionWebhook(
       console.error('[WebhookHandler] Error canceling subscription:', deleteError);
     } else {
       console.log('[WebhookHandler] Successfully canceled subscription:', subscription.id);
-    }
-  }
-
-  if (event.type === 'invoice.payment_succeeded') {
-    const invoice = event.data.object;
-    const subscriptionId = invoice.subscription;
-    
-    if (subscriptionId) {
-      console.log('[WebhookHandler] Processing payment success for subscription:', subscriptionId);
-
-      // Ensure subscription is marked as active when payment succeeds - ONLY in user_subscriptions
-      const { error: activateError } = await supabaseService
-        .from('user_subscriptions')
-        .update({ 
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('stripe_subscription_id', subscriptionId);
-
-      if (activateError) {
-        console.error('[WebhookHandler] Error activating subscription after payment:', activateError);
-      } else {
-        console.log('[WebhookHandler] Successfully activated subscription after payment:', subscriptionId);
-      }
     }
   }
 
