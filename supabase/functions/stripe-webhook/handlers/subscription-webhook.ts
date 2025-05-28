@@ -1,4 +1,5 @@
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleSubscriptionWebhook(
@@ -106,7 +107,7 @@ export async function handleSubscriptionWebhook(
     // First, try to update existing record
     const { data: existingRecord, error: findError } = await supabaseService
       .from('user_subscriptions')
-      .select('id')
+      .select('id, status')
       .eq('user_id', user_id)
       .eq('creator_id', creator_id)
       .eq('tier_id', tier_id)
@@ -117,6 +118,12 @@ export async function handleSubscriptionWebhook(
     }
 
     if (existingRecord) {
+      // CRITICAL FIX: Don't overwrite active status with pending
+      if (existingRecord.status === 'active' && dbStatus === 'pending') {
+        console.log('[WebhookHandler] Preserving active status, skipping update to pending');
+        return;
+      }
+
       // Update existing record
       console.log('[WebhookHandler] Updating existing subscription record:', existingRecord.id);
       const { data: updatedData, error: updateError } = await supabaseService
@@ -205,3 +212,4 @@ export async function handleSubscriptionWebhook(
 
   console.log('[WebhookHandler] Subscription webhook processing complete');
 }
+
