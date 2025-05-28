@@ -65,7 +65,7 @@ function PaymentForm() {
     navigate(-1);
   };
 
-  const verifySubscriptionInDB = async (maxRetries = 20, retryDelay = 3000) => {
+  const verifySubscriptionInDB = async (maxRetries = 10, retryDelay = 1500) => {
     console.log('Verifying subscription in database...');
     
     for (let i = 0; i < maxRetries; i++) {
@@ -88,9 +88,8 @@ function PaymentForm() {
           return true;
         }
         
-        // Longer delay for later attempts
-        const delay = i < 5 ? retryDelay : retryDelay * 2;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        // Shorter delay and fewer retries for faster verification
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       } catch (error) {
         console.error('Error verifying subscription in DB:', error);
       }
@@ -140,9 +139,9 @@ function PaymentForm() {
           description: `Processing your subscription to ${tierName}...`,
         });
 
-        // Give more time for webhook processing
+        // Shorter wait time for webhook processing
         console.log('Waiting for webhook processing...');
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         const verified = await verifySubscriptionInDB();
         
@@ -166,7 +165,7 @@ function PaymentForm() {
 
           setTimeout(() => {
             navigate('/subscriptions');
-          }, 2000);
+          }, 1500);
         } else {
           console.warn('Payment succeeded but subscription not found in database');
           
@@ -186,7 +185,7 @@ function PaymentForm() {
 
           setTimeout(() => {
             navigate('/subscriptions');
-          }, 3000);
+          }, 2000);
         }
         
         setIsVerifying(false);
