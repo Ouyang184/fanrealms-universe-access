@@ -70,20 +70,37 @@ export function SearchBar() {
     }
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim().length >= 2) {
+      setIsOpen(false);
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit(e);
+    }
+  };
+
   return (
     <div className="relative flex-1 max-w-xl" ref={searchRef}>
-      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
-      <Input
-        placeholder="Search for creators..."
-        className="pl-10 pr-20"
-        value={searchTerm}
-        onChange={handleInputChange}
-        onFocus={handleInputFocus}
-      />
-      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-        <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
-        <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
-      </div>
+      <form onSubmit={handleSearchSubmit}>
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
+        <Input
+          placeholder="Search for creators..."
+          className="pl-10 pr-20"
+          value={searchTerm}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          onKeyDown={handleKeyDown}
+        />
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+          <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
+          <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
+        </div>
+      </form>
       
       {/* Search Results Dropdown */}
       {isOpen && (
@@ -98,15 +115,21 @@ export function SearchBar() {
               Type at least 2 characters to search...
             </div>
           ) : creators.length === 0 ? (
-            <div className="p-4 text-sm text-muted-foreground text-center">
-              No creators found for "{searchTerm}".
+            <div className="p-4 text-sm text-muted-foreground">
+              <div className="text-center mb-2">No creators found for "{searchTerm}".</div>
+              <button 
+                onClick={() => handleSearchSubmit({ preventDefault: () => {} } as React.FormEvent)}
+                className="w-full text-center text-primary hover:underline text-sm"
+              >
+                Search for "{searchTerm}" →
+              </button>
             </div>
           ) : (
             <div className="p-2">
               <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
                 Creators ({creators.length})
               </div>
-              {creators.map((creator) => (
+              {creators.slice(0, 5).map((creator) => (
                 <div
                   key={creator.id}
                   onClick={() => handleCreatorSelect(creator.id)}
@@ -126,6 +149,14 @@ export function SearchBar() {
                   </div>
                 </div>
               ))}
+              {creators.length > 5 && (
+                <button 
+                  onClick={() => handleSearchSubmit({ preventDefault: () => {} } as React.FormEvent)}
+                  className="w-full text-center text-primary hover:underline text-sm p-2"
+                >
+                  View all {creators.length} results →
+                </button>
+              )}
             </div>
           )}
         </Card>

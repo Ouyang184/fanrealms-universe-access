@@ -2,6 +2,7 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 interface ExploreHeroProps {
   categoryFilter: string | null;
@@ -10,10 +11,15 @@ interface ExploreHeroProps {
 }
 
 export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: ExploreHeroProps) {
+  const navigate = useNavigate();
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search functionality is already handled by the searchQuery state in the parent component
-    console.log('Search submitted:', searchQuery);
+    if (searchQuery.trim().length >= 2) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      console.log('Search query too short:', searchQuery);
+    }
   };
 
   return (

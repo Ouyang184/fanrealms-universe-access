@@ -60,6 +60,13 @@ export function SearchBar() {
     setSearchTerm(value);
   };
 
+  const handleSearchSubmit = () => {
+    if (searchTerm.trim().length >= 2) {
+      setOpen(false);
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
   return (
     <div className="relative w-full max-w-sm">
       <Button
@@ -79,6 +86,11 @@ export function SearchBar() {
           placeholder="Search by username or display name..." 
           onValueChange={handleSearchInput}
           value={searchTerm}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && searchTerm.trim().length >= 2) {
+              handleSearchSubmit();
+            }
+          }}
         />
         <CommandList>
           <CommandEmpty>
@@ -87,11 +99,25 @@ export function SearchBar() {
                 <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
                 <span>Searching...</span>
               </div>
-            : searchTerm.length === 0 ? "Start typing to search for creators..." : "No creators found."}
+            : searchTerm.length === 0 ? "Start typing to search for creators..." : (
+              <div className="py-6 text-center">
+                <div className="mb-2">No creators found.</div>
+                {searchTerm.length >= 2 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={handleSearchSubmit}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    Search for "{searchTerm}" →
+                  </Button>
+                )}
+              </div>
+            )}
           </CommandEmpty>
           {searchTerm.length > 0 && (
             <CommandGroup heading="Creators">
-              {creators.map((creator) => (
+              {creators.slice(0, 8).map((creator) => (
                 <CommandItem
                   key={creator.id}
                   onSelect={() => handleCreatorSelect(creator.id)}
@@ -111,6 +137,11 @@ export function SearchBar() {
                   </div>
                 </CommandItem>
               ))}
+              {creators.length > 8 && (
+                <CommandItem onSelect={handleSearchSubmit} className="justify-center text-primary">
+                  View all {creators.length} results →
+                </CommandItem>
+              )}
             </CommandGroup>
           )}
         </CommandList>

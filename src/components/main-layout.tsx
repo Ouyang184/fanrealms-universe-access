@@ -20,7 +20,7 @@ import {
   Rss,
   Users,
 } from "lucide-react";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +47,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
   const { signOut, profile, user } = useAuth();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -58,6 +60,19 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   // Determine Home route based on auth state
   const homeRoute = user ? "/home" : "/";
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim().length >= 2) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearchSubmit(e);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -323,15 +338,20 @@ export function MainLayout({ children }: MainLayoutProps) {
         <header className="border-b border-border bg-background z-10">
           <div className="flex items-center justify-between p-4">
             <div className="relative flex-1 max-w-xl">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search for creators, posts, or content..."
-                className="pl-10"
-              />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
-                <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
-              </div>
+              <form onSubmit={handleSearchSubmit}>
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search for creators, posts, or content..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
+                  <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
+                </div>
+              </form>
             </div>
 
             {/* Top Right Icons */}

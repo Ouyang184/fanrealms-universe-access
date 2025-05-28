@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -21,6 +22,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
 import ExploreCategoryPage from "./pages/ExploreCategory";
+import SearchResultsPage from "./pages/SearchResults";
 import Logout from "./pages/Logout";
 import LogoutLoading from "./pages/LogoutLoading";
 import MembershipTiersPage from "./pages/MembershipTiers";
