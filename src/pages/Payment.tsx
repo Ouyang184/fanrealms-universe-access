@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
-// Use the correct Stripe publishable key that matches your backend
 const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 function PaymentForm() {
@@ -23,6 +22,7 @@ function PaymentForm() {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
@@ -37,28 +37,50 @@ function PaymentForm() {
     }
   }, [clientSecret, navigate, toast]);
 
-  const updateSubscriptionStatus = async (paymentIntentId: string) => {
-    try {
-      console.log('Updating subscription status for payment:', paymentIntentId);
-      
-      // Call the edge function to update subscription status
-      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
-        body: {
-          action: 'update_subscription_status',
-          paymentIntentId,
-          tierId,
-          creatorId
-        }
-      });
+  const verifySubscriptionStatus = async (paymentIntentId: string, maxRetries = 5) => {
+    console.log('Verifying subscription status for payment:', paymentIntentId);
+    
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+          body: {
+            action: 'update_subscription_status',
+            paymentIntentId,
+            tierId,
+            creatorId
+          }
+        });
 
-      if (error) {
-        console.error('Error updating subscription status:', error);
-      } else {
-        console.log('Subscription status updated successfully');
+        if (!error && data?.success) {
+          console.log('Subscription status verified successfully');
+          return true;
+        }
+        
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        console.error('Error verifying subscription status:', error);
       }
-    } catch (error) {
-      console.error('Failed to update subscription status:', error);
     }
+    
+    return false;
+  };
+
+  const refreshAllData = async () => {
+    console.log('Refreshing all subscription data...');
+    
+    // Invalidate all subscription-related queries
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
+      queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] }),
+      queryClient.invalidateQueries({ queryKey: ['simple-user-subscriptions'] }),
+      queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
+      queryClient.refetchQueries({ queryKey: ['user-subscriptions'] }),
+      queryClient.refetchQueries({ queryKey: ['subscription-check', undefined, tierId, creatorId] })
+    ]);
+    
+    console.log('All subscription data refreshed');
   };
 
   const handlePayment = async (event: React.FormEvent) => {
@@ -94,35 +116,41 @@ function PaymentForm() {
       } else if (paymentIntent?.status === 'succeeded') {
         console.log('Payment succeeded:', paymentIntent.id);
         setPaymentSucceeded(true);
-        
-        // Update subscription status in the database
-        await updateSubscriptionStatus(paymentIntent.id);
+        setIsVerifying(true);
         
         toast({
           title: "Payment Successful!",
-          description: `You've successfully subscribed to ${tierName}`,
+          description: `Processing your subscription to ${tierName}...`,
         });
 
-        // Refresh all subscription-related data with a delay to ensure backend is updated
-        setTimeout(async () => {
-          await Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
-            queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
-            queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] }),
-            queryClient.invalidateQueries({ queryKey: ['simple-user-subscriptions'] }),
-            queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] })
-          ]);
-
-          // Dispatch success event
+        // Wait for webhook processing and verify subscription status
+        const verified = await verifySubscriptionStatus(paymentIntent.id);
+        
+        if (verified) {
+          // Refresh all subscription-related data
+          await refreshAllData();
+          
+          // Dispatch success events
           window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
             detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
           }));
-        }, 1000);
+          
+          window.dispatchEvent(new CustomEvent('paymentSuccess', {
+            detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
+          }));
 
-        // Redirect after a brief delay
+          toast({
+            title: "Subscription Active!",
+            description: `You've successfully subscribed to ${tierName}`,
+          });
+        }
+        
+        setIsVerifying(false);
+        
+        // Redirect after a longer delay to ensure data is refreshed
         setTimeout(() => {
           navigate('/subscriptions');
-        }, 3000);
+        }, 2000);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -148,9 +176,16 @@ function PaymentForm() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
-              <p className="text-muted-foreground">
-                You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
-              </p>
+              {isVerifying ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <p className="text-muted-foreground">Processing your subscription...</p>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

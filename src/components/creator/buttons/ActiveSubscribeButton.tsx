@@ -23,9 +23,32 @@ export function ActiveSubscribeButton({
 }: ActiveSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isCreating } = useSubscriptions();
-  const { subscriptionStatus, isLoading } = useSubscriptionCheck(tierId, creatorId);
+  const { subscriptionStatus, isLoading, refetch } = useSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Force refresh on mount and when user changes
+  React.useEffect(() => {
+    if (user?.id && tierId && creatorId) {
+      refetch();
+    }
+  }, [user?.id, tierId, creatorId, refetch]);
+
+  // Listen for subscription success events
+  React.useEffect(() => {
+    const handleSubscriptionSuccess = () => {
+      console.log('Subscription success event detected, refetching...');
+      refetch();
+    };
+
+    window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess);
+    window.addEventListener('paymentSuccess', handleSubscriptionSuccess);
+    
+    return () => {
+      window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
+      window.removeEventListener('paymentSuccess', handleSubscriptionSuccess);
+    };
+  }, [refetch]);
 
   // Don't show subscribe button if already subscribed
   if (subscriptionStatus?.isSubscribed) {
@@ -67,6 +90,8 @@ export function ActiveSubscribeButton({
               title: "Already Subscribed",
               description: data.error,
             });
+            // Refresh the subscription status
+            refetch();
           }
         }
       });

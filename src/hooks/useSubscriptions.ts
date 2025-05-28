@@ -49,8 +49,8 @@ export const useSubscriptions = () => {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 5000, // Reduced for faster updates
-    refetchInterval: 15000 // Check every 15 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: false // Disable automatic refetching
   });
 
   // Create subscription mutation
