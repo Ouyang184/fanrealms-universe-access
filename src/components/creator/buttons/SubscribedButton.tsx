@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
 
 interface SubscribedButtonProps {
   tierName: string;
@@ -24,9 +25,9 @@ export function SubscribedButton({
   onOptimisticUpdate,
   onSubscriptionSuccess 
 }: SubscribedButtonProps) {
-  // Use separate state for cancellation to avoid conflicts
   const [isCancelling, setIsCancelling] = useState(false);
   const queryClient = useQueryClient();
+  const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
   // Check if subscription is in cancelling state
   const isCancellingState = subscriptionData?.isCancelling || subscriptionData?.status === 'cancelling';
@@ -61,7 +62,7 @@ export function SubscribedButton({
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
-          subscriptionId: subscriptionData.id
+          subscriptionId: subscriptionData.stripe_subscription_id || subscriptionData.id
         }
       });
 
@@ -82,23 +83,20 @@ export function SubscribedButton({
         onOptimisticUpdate(false);
       }
       
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent('subscriptionCanceled', {
-        detail: { creatorId, tierId, subscriptionId: subscriptionData.id }
-      }));
+      // Trigger subscription cancellation events
+      triggerSubscriptionCancellation({
+        creatorId, 
+        tierId, 
+        subscriptionId: subscriptionData.stripe_subscription_id || subscriptionData.id
+      });
       
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled successfully.",
+        description: `You've successfully unsubscribed from ${tierName}.`,
       });
       
       // Invalidate all subscription-related queries
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['enhancedSubscriptionCheck'] }),
-        queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] }),
-        queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
-        queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
-      ]);
+      await invalidateAllSubscriptionQueries();
       
       if (onSubscriptionSuccess) {
         onSubscriptionSuccess();
@@ -151,10 +149,10 @@ export function SubscribedButton({
         {isCancelling ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Cancelling...
+            Unsubscribing...
           </>
         ) : (
-          'Cancel Subscription'
+          'Unsubscribe'
         )}
       </Button>
     </div>

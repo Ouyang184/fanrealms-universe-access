@@ -25,10 +25,17 @@ export function SubscribeButton({
   onSubscriptionSuccess,
   onOptimisticUpdate
 }: SubscribeButtonProps) {
-  const { subscriptionStatus } = useSubscriptionCheck(tierId, creatorId);
+  const { subscriptionStatus, isLoading } = useSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
-  const isUserSubscribed = subscriptionStatus?.isSubscribed || isSubscribed;
+  // Use the passed isSubscribed prop or fallback to subscription check
+  const isUserSubscribed = isSubscribed || subscriptionStatus?.isSubscribed || false;
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-10 bg-gray-200 animate-pulse rounded" />
+    );
+  }
 
   if (isUserSubscribed) {
     return (

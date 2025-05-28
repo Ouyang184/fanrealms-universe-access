@@ -2,8 +2,9 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star } from "lucide-react";
-import { SimpleSubscribeButton } from "./buttons/SimpleSubscribeButton";
+import { Button } from "@/components/ui/button";
+import { Check, Star, Loader2 } from "lucide-react";
+import { SubscribeButton } from "./SubscribeButton";
 
 interface MembershipTier {
   id: string;
@@ -41,7 +42,7 @@ export function MembershipTierCard({
         <div className="absolute -top-2 -right-2">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
-            Subscribed
+            You are subscribed
           </Badge>
         </div>
       )}
@@ -79,11 +80,13 @@ export function MembershipTierCard({
       </CardContent>
 
       <CardFooter>
-        <SimpleSubscribeButton
+        <SubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
+          isSubscribed={isSubscribed}
+          onSubscriptionSuccess={onSubscriptionSuccess}
         />
       </CardFooter>
     </Card>
