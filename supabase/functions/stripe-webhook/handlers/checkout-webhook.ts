@@ -51,7 +51,8 @@ export async function handleCheckoutWebhook(
         const amount = subscription.items?.data?.[0]?.price?.unit_amount ? 
           subscription.items.data[0].price.unit_amount / 100 : 0;
 
-        console.log('[CheckoutHandler] Preparing to insert into user_subscriptions with data:', {
+        console.log('[CheckoutHandler] BEFORE inserting into user_subscriptions');
+        console.log('[CheckoutHandler] Insert data:', {
           user_id,
           creator_id,
           tier_id,
@@ -78,13 +79,14 @@ export async function handleCheckoutWebhook(
             current_period_end: currentPeriodEnd,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
-          });
+          })
+          .select();
 
         if (error) {
-          console.error('[CheckoutHandler] Error inserting into user_subscriptions:', error);
+          console.error('[CheckoutHandler] ERROR inserting into user_subscriptions:', error);
           throw error;
         } else {
-          console.log('[CheckoutHandler] Successfully inserted subscription into user_subscriptions:', data);
+          console.log('[CheckoutHandler] SUCCESS: Inserted subscription into user_subscriptions:', data);
         }
 
       } catch (stripeError) {
