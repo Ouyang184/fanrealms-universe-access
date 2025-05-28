@@ -15,6 +15,25 @@ export async function handleSubscriptionWebhook(
       console.log('[WebhookHandler] Invoice status:', invoice.status, 'Amount paid:', invoice.amount_paid);
 
       // CRITICAL FIX: Ensure subscription is marked as active when payment succeeds
+      // First, check if the subscription exists in our database
+      const { data: existingSubscription, error: findError } = await supabaseService
+        .from('user_subscriptions')
+        .select('*')
+        .eq('stripe_subscription_id', subscriptionId)
+        .maybeSingle();
+
+      if (findError) {
+        console.error('[WebhookHandler] Error finding subscription for payment success:', findError);
+        return;
+      }
+
+      if (!existingSubscription) {
+        console.error('[WebhookHandler] No subscription found with stripe_subscription_id:', subscriptionId);
+        return;
+      }
+
+      console.log('[WebhookHandler] Found existing subscription to activate:', existingSubscription);
+
       const { data: updateData, error: activateError } = await supabaseService
         .from('user_subscriptions')
         .update({ 
@@ -57,18 +76,21 @@ export async function handleSubscriptionWebhook(
     const currentPeriodEnd = subscription.current_period_end ? 
       new Date(subscription.current_period_end * 1000).toISOString() : null;
 
-    // IMPROVED: Better status mapping
+    // IMPROVED: Better status mapping - only set to active if Stripe says it's truly active
     let dbStatus = 'pending';
     if (subscription.status === 'active') {
       dbStatus = 'active';
     } else if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
       dbStatus = 'canceled';
     } else if (subscription.status === 'incomplete') {
-      // Keep as pending until first payment succeeds
+      // Keep as pending until first payment succeeds (invoice.payment_succeeded will make it active)
       dbStatus = 'pending';
     } else if (subscription.status === 'trialing') {
       // Trial period should be considered active
       dbStatus = 'active';
+    } else {
+      // For any other status (past_due, unpaid, etc.), keep as pending
+      dbStatus = 'pending';
     }
 
     console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'to DB status:', dbStatus);
