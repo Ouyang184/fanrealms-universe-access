@@ -4,12 +4,15 @@ import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Globe } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreatorPostsProps {
   posts: Post[];
 }
 
 export function CreatorPosts({ posts }: CreatorPostsProps) {
+  const { user } = useAuth();
+
   if (posts.length === 0) {
     return (
       <div className="text-center py-12">
@@ -22,6 +25,13 @@ export function CreatorPosts({ posts }: CreatorPostsProps) {
   // Separate public and premium posts for better organization
   const publicPosts = posts.filter(post => !post.tier_id);
   const premiumPosts = posts.filter(post => post.tier_id);
+
+  console.log('CreatorPosts - Posts breakdown:', {
+    totalPosts: posts.length,
+    publicPosts: publicPosts.length,
+    premiumPosts: premiumPosts.length,
+    userId: user?.id
+  });
 
   return (
     <div className="space-y-8">

@@ -18,7 +18,8 @@ import {
   CalendarDays,
   CheckCircle2,
   MessageSquare,
-  Loader
+  Loader,
+  Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -306,7 +307,6 @@ function PostCard({ post }: { post: CreatorPost }) {
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to edit page (replace with actual edit route)
     console.log("Edit post:", post.id);
   };
 
@@ -342,7 +342,6 @@ function PostCard({ post }: { post: CreatorPost }) {
         description: "Your post has been published successfully.",
       });
 
-      // Refresh the posts list
       queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
     } catch (error: any) {
       console.error('Error publishing post:', error);
@@ -382,11 +381,14 @@ function PostCard({ post }: { post: CreatorPost }) {
   };
 
   return (
-    <Card>
+    <Card className={post.isLocked ? "border-amber-200 bg-amber-50/30" : ""}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle>{post.title}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              {post.isLocked && <Lock className="h-4 w-4 text-amber-600" />}
+              {post.title}
+            </CardTitle>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Badge variant="outline" className={getStatusBadgeStyles(post.status)}>
                 {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
@@ -405,7 +407,7 @@ function PostCard({ post }: { post: CreatorPost }) {
                 <>
                   <span>•</span>
                   <span className="flex items-center">
-                    <EyeOff className="h-3 w-3 mr-1" />
+                    <Lock className="h-3 w-3 mr-1" />
                     {post.availableTiers?.length ? post.availableTiers[0].name : 'Premium'}
                   </span>
                 </>
@@ -466,6 +468,14 @@ function PostCard({ post }: { post: CreatorPost }) {
         <p className="text-muted-foreground line-clamp-2">
           {post.content}
         </p>
+        {post.isLocked && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+            <p className="text-sm text-amber-800 flex items-center gap-2">
+              <Lock className="h-4 w-4" />
+              This is premium content. Subscribers with access to this tier can view the full post.
+            </p>
+          </div>
+        )}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {post.tags.map((tag, index) => (

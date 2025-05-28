@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +16,7 @@ export function useCreatorPosts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDrafts, setShowDrafts] = useState(true);
 
-  // Fetch creator's posts
+  // Fetch creator's posts with subscription and tier info
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['creator-posts', user?.id, filter, searchQuery, showDrafts],
     queryFn: async () => {
@@ -34,7 +33,8 @@ export function useCreatorPosts() {
           membership_tiers (
             id,
             title,
-            price
+            price,
+            creator_id
           )
         `)
         .eq('author_id', user.id)
@@ -56,24 +56,37 @@ export function useCreatorPosts() {
         });
         return [];
       }
+
+      // Get user's creator profile
+      const { data: creatorProfile } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      // Get user's active subscriptions for visibility check
+      const { data: userSubscriptions } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, creator_id')
+        .eq('user_id', user.id)
+        .eq('status', 'active');
+
+      console.log('User subscriptions:', userSubscriptions);
       
-      // Transform to CreatorPost format with mock data for fields we don't yet have
+      // Transform to CreatorPost format
       return data.map((post): CreatorPost => {
-        // Safely access user data with proper null handling
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
         
         // Determine post type based on tags or content keywords
         let postType: "article" | "image" | "video" | "audio" = "article";
         
-        // Check if post has tags and determine type from tags
         const tags = post.title
           ?.split(' ')
           .filter(word => word.length > 3)
           .slice(0, 3)
           .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
-        // Check for type keywords in tags first, then in title/content
         if (tags) {
           if (tags.some(tag => ['image', 'photo', 'picture', 'art', 'design'].includes(tag))) {
             postType = "image";
@@ -81,51 +94,44 @@ export function useCreatorPosts() {
             postType = "video";
           } else if (tags.some(tag => ['audio', 'podcast', 'song', 'music', 'sound'].includes(tag))) {
             postType = "audio";
-          } else if (tags.some(tag => ['article', 'blog', 'write', 'tutorial'].includes(tag))) {
-            postType = "article";
-          }
-        }
-        
-        // Fallback to checking title and content if no tags match
-        if (postType === "article") {
-          const typeKeywords: Record<string, string[]> = {
-            image: ["image", "photo", "picture", "art", "design"],
-            video: ["video", "tutorial", "stream", "recording"],
-            audio: ["audio", "podcast", "song", "music", "sound"],
-            article: ["blog", "article", "write", "tutorial"]
-          };
-          
-          for (const [type, keywords] of Object.entries(typeKeywords)) {
-            if (keywords.some(keyword => 
-              post.title?.toLowerCase().includes(keyword) || 
-              post.content?.toLowerCase().includes(keyword))
-            ) {
-              postType = type as any;
-              break;
-            }
           }
         }
 
-        // Create a proper format for tier display
+        // Check if user can see this post
+        const isOwnPost = creatorProfile?.id === post.creator_id;
+        const isSubscribedToTier = post.tier_id ? userSubscriptions?.some(sub => 
+          sub.tier_id === post.tier_id && sub.creator_id === post.creator_id
+        ) : true; // Public posts are always visible
+
+        const canViewPost = !post.tier_id || isOwnPost || isSubscribedToTier;
+
+        console.log('Post visibility check:', {
+          postId: post.id,
+          postTitle: post.title,
+          tierId: post.tier_id,
+          isOwnPost,
+          isSubscribedToTier,
+          canViewPost
+        });
+
+        // Create tier display info
         const availableTiers = post.membership_tiers ? [{
           id: post.membership_tiers.id,
           name: post.membership_tiers.title,
-          // Assign color based on price for visual distinction - Convert price to string before parsing
           color: determineColorByPrice(parseFloat(String(post.membership_tiers.price)))
         }] : [];
 
-        // Determine post status (in a real app would be from a status column)
+        // Determine post status
         const isScheduled = post.title?.toLowerCase().includes('scheduled');
         const isDraft = post.title?.toLowerCase().includes('draft');
         const status: PostStatus = isScheduled ? "scheduled" : isDraft ? "draft" : "published";
         
-        // Generate engagement metrics (would be real metrics in production)
         const randomEngagement = generateRandomEngagement(status);
           
         return {
           id: post.id,
-          title: post.title,
-          content: post.content,
+          title: canViewPost ? post.title : "🔒 Premium Content",
+          content: canViewPost ? post.content : "This content is available to premium subscribers only.",
           authorName: username,
           authorAvatar: profilePicture,
           createdAt: post.created_at,
@@ -137,7 +143,9 @@ export function useCreatorPosts() {
           availableTiers,
           scheduleDate: isScheduled ? generateFutureDate() : undefined,
           lastEdited: formatRelativeDate(post.created_at),
-          type: postType
+          type: postType,
+          canView: canViewPost,
+          isLocked: !canViewPost
         };
       });
     },
@@ -146,10 +154,10 @@ export function useCreatorPosts() {
 
   // Helper function to determine tier color based on price
   function determineColorByPrice(price: number): string {
-    if (price === 0) return "green"; // Free tier
-    if (price < 5) return "blue"; // Basic tier
-    if (price < 15) return "purple"; // Premium tier
-    return "indigo"; // VIP tier
+    if (price === 0) return "green";
+    if (price < 5) return "blue";
+    if (price < 15) return "purple";
+    return "indigo";
   }
 
   // Helper function to generate mock engagement data
@@ -157,7 +165,6 @@ export function useCreatorPosts() {
     if (status === "draft") return { views: 0, likes: 0, comments: 0 };
     if (status === "scheduled") return { views: 0, likes: 0, comments: 0 };
     
-    // For published posts, generate reasonable mock data
     return {
       views: Math.floor(Math.random() * 2000) + 200,
       likes: Math.floor(Math.random() * 150) + 10,
