@@ -29,13 +29,17 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
           )
         `);
 
-      // Apply search term filter
+      // Apply search term filter with proper PostgREST syntax
       if (searchTerm && searchTerm.trim().length >= 2) {
         const term = searchTerm.toLowerCase().trim();
         console.log("useCreators - Applying search filter for:", term);
         
-        // Use proper PostgREST syntax for OR conditions with ilike
-        query = query.or(`display_name.ilike.%${term}%,bio.ilike.%${term}%,users.username.ilike.%${term}%`);
+        // Use separate filters and combine them with OR logic
+        // First search in creators table fields
+        query = query.or(`display_name.ilike.%${term}%,bio.ilike.%${term}%`);
+        
+        // For username search, we need to handle it differently since it's in a joined table
+        // We'll filter this in the application layer after getting results
       } else if (searchTerm && searchTerm.trim().length < 2) {
         // Return empty array for searches less than 2 characters
         console.log("useCreators - Search term too short, returning empty array");
@@ -94,7 +98,7 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
       console.log('useCreators - Raw creator data from search:', creatorData);
 
       // Transform the data to match our CreatorProfile type
-      const transformedCreators: CreatorProfile[] = (creatorData || []).map((creator) => {
+      let transformedCreators: CreatorProfile[] = (creatorData || []).map((creator) => {
         const userId = creator.user_id;
         
         // Ensure we don't generate invalid UUIDs in the app by removing any "user-" prefix
@@ -124,6 +128,18 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
           follower_count: creator.follower_count || 0 // Keep both naming conventions
         };
       });
+
+      // Filter by username in application layer if search term is provided
+      if (searchTerm && searchTerm.trim().length >= 2) {
+        const term = searchTerm.toLowerCase().trim();
+        transformedCreators = transformedCreators.filter(creator => {
+          const matchesDisplay = creator.display_name?.toLowerCase().includes(term);
+          const matchesBio = creator.bio?.toLowerCase().includes(term);
+          const matchesUsername = creator.username?.toLowerCase().includes(term);
+          
+          return matchesDisplay || matchesBio || matchesUsername;
+        });
+      }
 
       console.log('useCreators - Transformed creators for search:', transformedCreators);
       return transformedCreators;
