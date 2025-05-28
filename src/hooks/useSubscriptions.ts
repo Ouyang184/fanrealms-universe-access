@@ -49,8 +49,8 @@ export const useSubscriptions = () => {
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 30000,
-    refetchInterval: 60000
+    staleTime: 5000, // Reduced for faster updates
+    refetchInterval: 15000 // Check every 15 seconds
   });
 
   // Create subscription mutation
@@ -73,7 +73,6 @@ export const useSubscriptions = () => {
     },
     onSuccess: (data) => {
       if (data?.clientSecret) {
-        // Don't refresh here, let the payment page handle it
         console.log('Subscription created, redirecting to payment');
       } else if (data?.error) {
         // Already subscribed case

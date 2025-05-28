@@ -33,7 +33,7 @@ serve(async (req) => {
       throw new Error('Authentication required');
     }
 
-    const { action, tierId, creatorId, subscriptionId } = await req.json();
+    const { action, tierId, creatorId, subscriptionId, paymentIntentId } = await req.json();
     console.log('Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
@@ -158,6 +158,30 @@ serve(async (req) => {
         amount: tier.price * 100,
         tierName: tier.title
       }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+    } else if (action === 'update_subscription_status') {
+      // Update subscription status after successful payment
+      console.log('Updating subscription status for payment:', paymentIntentId);
+      
+      // Get payment intent to find subscription
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const subscriptionId = paymentIntent.metadata?.subscription_id || 
+                           (paymentIntent.invoice && 
+                            await stripe.invoices.retrieve(paymentIntent.invoice as string).then(inv => inv.subscription));
+
+      if (subscriptionId) {
+        // Update subscription status to active
+        await supabase
+          .from('user_subscriptions')
+          .update({ status: 'active' })
+          .eq('stripe_subscription_id', subscriptionId);
+        
+        console.log('Updated subscription status to active for:', subscriptionId);
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 

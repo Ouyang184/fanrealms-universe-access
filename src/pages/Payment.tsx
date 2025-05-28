@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 // Use the correct Stripe publishable key that matches your backend
 const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
@@ -34,6 +36,30 @@ function PaymentForm() {
       navigate('/');
     }
   }, [clientSecret, navigate, toast]);
+
+  const updateSubscriptionStatus = async (paymentIntentId: string) => {
+    try {
+      console.log('Updating subscription status for payment:', paymentIntentId);
+      
+      // Call the edge function to update subscription status
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+        body: {
+          action: 'update_subscription_status',
+          paymentIntentId,
+          tierId,
+          creatorId
+        }
+      });
+
+      if (error) {
+        console.error('Error updating subscription status:', error);
+      } else {
+        console.log('Subscription status updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to update subscription status:', error);
+    }
+  };
 
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,27 +95,34 @@ function PaymentForm() {
         console.log('Payment succeeded:', paymentIntent.id);
         setPaymentSucceeded(true);
         
+        // Update subscription status in the database
+        await updateSubscriptionStatus(paymentIntent.id);
+        
         toast({
           title: "Payment Successful!",
           description: `You've successfully subscribed to ${tierName}`,
         });
 
-        // Refresh all subscription-related data
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
-          queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
-          queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] })
-        ]);
+        // Refresh all subscription-related data with a delay to ensure backend is updated
+        setTimeout(async () => {
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
+            queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] }),
+            queryClient.invalidateQueries({ queryKey: ['simple-user-subscriptions'] }),
+            queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] })
+          ]);
 
-        // Dispatch success event
-        window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-          detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
-        }));
+          // Dispatch success event
+          window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
+            detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
+          }));
+        }, 1000);
 
         // Redirect after a brief delay
         setTimeout(() => {
           navigate('/subscriptions');
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);

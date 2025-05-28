@@ -37,8 +37,9 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 30000,
-    refetchOnWindowFocus: true
+    staleTime: 5000, // Reduced to 5 seconds for faster updates
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000 // Check every 10 seconds
   });
 
   return {

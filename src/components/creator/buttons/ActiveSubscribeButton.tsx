@@ -6,6 +6,7 @@ import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -22,8 +23,18 @@ export function ActiveSubscribeButton({
 }: ActiveSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isCreating } = useSubscriptions();
+  const { subscriptionStatus, isLoading } = useSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Don't show subscribe button if already subscribed
+  if (subscriptionStatus?.isSubscribed) {
+    return (
+      <Button variant="outline" className="w-full" size="lg" disabled>
+        Already Subscribed to {tierName}
+      </Button>
+    );
+  }
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -63,6 +74,15 @@ export function ActiveSubscribeButton({
       console.error('Subscription error:', error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Button variant="outline" className="w-full" size="lg" disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Checking subscription...
+      </Button>
+    );
+  }
 
   return (
     <Button 
