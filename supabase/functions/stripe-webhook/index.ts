@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -11,6 +12,7 @@ const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
 );
 
 import { handleSubscriptionWebhook } from './handlers/subscription-webhook.ts';
+import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,6 +40,11 @@ serve(async (req) => {
     }
 
     console.log('Webhook event type:', event.type, 'ID:', event.id);
+
+    // Handle checkout session completed events
+    if (event.type === 'checkout.session.completed') {
+      await handleCheckoutWebhook(event, supabase, stripe);
+    }
 
     // Handle subscription-related webhooks
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
