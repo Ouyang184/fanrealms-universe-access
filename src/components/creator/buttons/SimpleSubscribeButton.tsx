@@ -23,7 +23,7 @@ export function SimpleSubscribeButton({
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isProcessing } = useSimpleSubscriptions();
-  const { subscriptionStatus } = useSimpleSubscriptionCheck(tierId, creatorId);
+  const { subscriptionData } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -60,7 +60,7 @@ export function SimpleSubscribeButton({
     }
   };
 
-  if (subscriptionStatus?.isSubscribed) {
+  if (subscriptionData?.isSubscribed) {
     return (
       <Button variant="outline" className="w-full" size="lg" disabled>
         Already Subscribed
