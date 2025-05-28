@@ -6,13 +6,17 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) => {
   const { user } = useAuth();
 
-  const { data: subscriptionStatus, isLoading, refetch } = useQuery({
+  const { data: subscriptionData, isLoading, refetch } = useQuery({
     queryKey: ['simple-subscription-check', user?.id, tierId, creatorId],
     queryFn: async () => {
       if (!user?.id || !tierId || !creatorId) {
+        console.log('Missing required data for subscription check:', { userId: user?.id, tierId, creatorId });
         return { isSubscribed: false, subscription: null };
       }
 
+      console.log('Simple subscription check for:', { userId: user.id, tierId, creatorId });
+
+      // Check in user_subscriptions table
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -23,9 +27,15 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         .maybeSingle();
 
       if (error) {
-        console.error('Subscription check error:', error);
+        console.error('Simple subscription check error:', error);
         return { isSubscribed: false, subscription: null };
       }
+
+      console.log('Simple subscription check result:', { 
+        isSubscribed: !!data, 
+        subscription: data,
+        rawData: data
+      });
 
       return {
         isSubscribed: !!data,
@@ -33,12 +43,14 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 30000,
-    refetchOnWindowFocus: true
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
 
   return {
-    subscriptionStatus,
+    subscriptionData,
     isLoading,
     refetch
   };

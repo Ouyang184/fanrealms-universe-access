@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
+import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
@@ -25,19 +25,21 @@ export function SubscribeButton({
   onSubscriptionSuccess,
   onOptimisticUpdate
 }: SubscribeButtonProps) {
-  const { subscriptionStatus, isLoading } = useSubscriptionCheck(tierId, creatorId);
+  const { subscriptionData, isLoading } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
-  // Use the passed isSubscribed prop or fallback to subscription check
-  const isUserSubscribed = isSubscribed || subscriptionStatus?.isSubscribed || false;
+  // Use the passed isSubscribed prop first, then fall back to subscription check
+  const isUserSubscribed = isSubscribed || subscriptionData?.isSubscribed || false;
 
   console.log('SubscribeButton debug:', {
     tierId,
     creatorId,
-    isSubscribed,
-    subscriptionStatusFromHook: subscriptionStatus?.isSubscribed,
-    isUserSubscribed,
-    subscriptionData: subscriptionStatus?.subscription
+    tierName,
+    isSubscribedProp: isSubscribed,
+    subscriptionDataFromHook: subscriptionData?.isSubscribed,
+    finalIsUserSubscribed: isUserSubscribed,
+    subscriptionData: subscriptionData,
+    isLoading
   });
 
   if (isLoading) {
@@ -50,7 +52,7 @@ export function SubscribeButton({
     return (
       <SubscribedButton
         tierName={tierName}
-        subscriptionData={subscriptionStatus?.subscription}
+        subscriptionData={subscriptionData?.subscription}
         tierId={tierId}
         creatorId={creatorId}
         onOptimisticUpdate={onOptimisticUpdate}

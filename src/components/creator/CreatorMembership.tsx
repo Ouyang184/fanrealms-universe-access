@@ -2,7 +2,7 @@
 import React from "react";
 import { CreatorProfile } from "@/types";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { useCreatorMembership } from "@/hooks/useCreatorMembership";
+import { useSimpleCreatorMembership } from "@/hooks/useSimpleCreatorMembership";
 import { MembershipTierCard } from "./MembershipTierCard";
 import { MembershipEmptyState } from "./MembershipEmptyState";
 
@@ -16,7 +16,14 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     isLoading,
     isSubscribedToTier,
     handleSubscriptionSuccess
-  } = useCreatorMembership(creator.id);
+  } = useSimpleCreatorMembership(creator.id);
+
+  console.log('CreatorMembership debug:', {
+    creatorId: creator.id,
+    tiersCount: tiers?.length || 0,
+    isLoading,
+    tiers: tiers?.map(t => ({ id: t.id, name: t.name, isSubscribed: isSubscribedToTier(t.id) }))
+  });
 
   if (isLoading) {
     return (
@@ -33,15 +40,20 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
       
       {tiers && tiers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {tiers.map(tier => (
-            <MembershipTierCard
-              key={tier.id}
-              tier={tier}
-              creatorId={creator.id}
-              isSubscribed={isSubscribedToTier(tier.id)}
-              onSubscriptionSuccess={handleSubscriptionSuccess}
-            />
-          ))}
+          {tiers.map(tier => {
+            const isSubscribed = isSubscribedToTier(tier.id);
+            console.log(`Tier ${tier.name} (${tier.id}) subscription status:`, isSubscribed);
+            
+            return (
+              <MembershipTierCard
+                key={tier.id}
+                tier={tier}
+                creatorId={creator.id}
+                isSubscribed={isSubscribed}
+                onSubscriptionSuccess={handleSubscriptionSuccess}
+              />
+            );
+          })}
         </div>
       ) : (
         <MembershipEmptyState />
