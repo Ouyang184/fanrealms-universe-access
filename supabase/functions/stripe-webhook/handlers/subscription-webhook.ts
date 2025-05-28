@@ -1,11 +1,13 @@
 
 
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleSubscriptionWebhook(
   event: any,
   supabaseService: any
 ) {
+  console.log('[WebhookHandler] Received event type:', event.type);
   console.log('[WebhookHandler] Processing subscription webhook:', event.type, event.id);
 
   if (event.type === 'invoice.payment_succeeded') {
@@ -58,6 +60,8 @@ export async function handleSubscriptionWebhook(
 
       if (updateError) {
         console.error('[WebhookHandler] Error updating subscription to active:', updateError);
+      } else if (!updatedSubscription) {
+        console.error('[WebhookHandler] No rows were updated — check if subscription ID exists in DB');
       } else {
         console.log('[WebhookHandler] Successfully activated subscription:', {
           subscription_id: subscriptionId,
