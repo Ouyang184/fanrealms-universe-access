@@ -15,6 +15,7 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       }
 
       console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
+      console.log('[SubscriptionCheck] Current authenticated user ID:', user.id);
 
       // Query user_subscriptions table with detailed logging
       const { data, error } = await supabase
@@ -30,6 +31,16 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       }
 
       console.log('[SubscriptionCheck] All subscription records found:', data);
+      console.log('[SubscriptionCheck] Raw query result length:', data?.length || 0);
+
+      // Also check if there are ANY records for this user (debugging)
+      const { data: allUserSubs, error: allError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id);
+
+      console.log('[SubscriptionCheck] ALL user subscriptions across all creators:', allUserSubs);
+      console.log('[SubscriptionCheck] Total subscription records for user:', allUserSubs?.length || 0);
 
       // Filter for active subscriptions only
       const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
