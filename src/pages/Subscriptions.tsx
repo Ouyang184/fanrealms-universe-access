@@ -110,14 +110,25 @@ export default function SubscriptionsPage() {
           </div>
         </div>
 
-        {/* Debug info */}
-        <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-          <strong>Debug Info:</strong> Found {userSubscriptions?.length || 0} subscriptions
+        {/* Enhanced Debug info */}
+        <div className="mb-4 p-4 bg-gray-100 rounded text-sm space-y-2">
+          <div><strong>Debug Info:</strong></div>
+          <div>Found {userSubscriptions?.length || 0} subscriptions</div>
+          <div>Loading state: {subscriptionsLoading ? 'Loading' : 'Loaded'}</div>
+          <div>Refreshing: {isRefreshing ? 'Yes' : 'No'}</div>
           {userSubscriptions?.length > 0 && (
-            <div className="mt-2">
+            <div className="mt-2 space-y-1">
+              <div className="font-medium">Subscription Details:</div>
               {userSubscriptions.map((sub, index) => (
-                <div key={sub.id} className="text-xs">
-                  {index + 1}. {sub.creator?.display_name} - {sub.tier?.title} - Status: {sub.status}
+                <div key={sub.id} className="text-xs bg-white p-2 rounded border">
+                  <div><strong>#{index + 1}</strong></div>
+                  <div>ID: {sub.id}</div>
+                  <div>Creator: {sub.creator?.display_name || 'Unknown'}</div>
+                  <div>Tier: {sub.tier?.title || 'Unknown'}</div>
+                  <div>Status: {sub.status}</div>
+                  <div>Amount: ${sub.amount}</div>
+                  <div>Created: {new Date(sub.created_at).toLocaleString()}</div>
+                  <div>Updated: {new Date(sub.updated_at).toLocaleString()}</div>
                 </div>
               ))}
             </div>

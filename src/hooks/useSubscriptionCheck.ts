@@ -29,7 +29,11 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
         return { isSubscribed: false, subscription: null };
       }
 
-      console.log('Subscription check result:', { isSubscribed: !!data, subscription: data });
+      console.log('Subscription check result:', { 
+        isSubscribed: !!data, 
+        subscription: data,
+        rawData: data
+      });
 
       return {
         isSubscribed: !!data,
@@ -38,6 +42,7 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
     staleTime: 0,
+    gcTime: 0, // Don't cache results
     refetchOnWindowFocus: true,
     refetchOnMount: true
   });

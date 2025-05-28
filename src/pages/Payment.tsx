@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -37,45 +36,52 @@ function PaymentForm() {
     }
   }, [clientSecret, navigate, toast]);
 
-  const verifySubscriptionStatus = async (paymentIntentId: string, maxRetries = 5) => {
-    console.log('Verifying subscription status for payment:', paymentIntentId);
+  const verifySubscriptionInDB = async (maxRetries = 10) => {
+    console.log('Verifying subscription in database...');
     
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
-          body: {
-            action: 'update_subscription_status',
-            paymentIntentId,
-            tierId,
-            creatorId
-          }
-        });
+        console.log(`Verification attempt ${i + 1}/${maxRetries}`);
+        
+        const { data, error } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('tier_id', tierId)
+          .eq('creator_id', creatorId)
+          .eq('status', 'active')
+          .maybeSingle();
 
-        if (!error && data?.success) {
-          console.log('Subscription status verified successfully');
+        if (error) {
+          console.error('DB verification error:', error);
+        } else if (data) {
+          console.log('Subscription found in database:', data);
           return true;
         }
         
         // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
-        console.error('Error verifying subscription status:', error);
+        console.error('Error verifying subscription in DB:', error);
       }
     }
     
+    console.log('Subscription not found in database after all retries');
     return false;
   };
 
   const refreshAllData = async () => {
-    console.log('Refreshing all subscription data...');
+    console.log('Refreshing all subscription data with aggressive cache clearing...');
     
-    // Invalidate all subscription-related queries
+    // Clear all caches completely
+    queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
+    queryClient.removeQueries({ queryKey: ['subscription-check'] });
+    queryClient.removeQueries({ queryKey: ['simple-creator-subscribers'] });
+    
+    // Invalidate and refetch
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
       queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] }),
-      queryClient.invalidateQueries({ queryKey: ['simple-user-subscriptions'] }),
-      queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
       queryClient.refetchQueries({ queryKey: ['user-subscriptions'] }),
       queryClient.refetchQueries({ queryKey: ['subscription-check', undefined, tierId, creatorId] })
     ]);
@@ -123,11 +129,17 @@ function PaymentForm() {
           description: `Processing your subscription to ${tierName}...`,
         });
 
-        // Wait for webhook processing and verify subscription status
-        const verified = await verifySubscriptionStatus(paymentIntent.id);
+        // First, wait for the webhook to process the payment
+        console.log('Waiting for webhook processing...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        // Then verify the subscription was created in our database
+        const verified = await verifySubscriptionInDB();
         
         if (verified) {
-          // Refresh all subscription-related data
+          console.log('Subscription verified in database');
+          
+          // Refresh all subscription-related data with aggressive cache clearing
           await refreshAllData();
           
           // Dispatch success events
@@ -143,6 +155,12 @@ function PaymentForm() {
             title: "Subscription Active!",
             description: `You've successfully subscribed to ${tierName}`,
           });
+        } else {
+          console.warn('Payment succeeded but subscription not found in database');
+          toast({
+            title: "Payment Processed",
+            description: "Your payment was successful. If you don't see your subscription immediately, please refresh the page.",
+          });
         }
         
         setIsVerifying(false);
@@ -150,7 +168,7 @@ function PaymentForm() {
         // Redirect after a longer delay to ensure data is refreshed
         setTimeout(() => {
           navigate('/subscriptions');
-        }, 2000);
+        }, 3000);
       }
     } catch (error) {
       console.error('Payment error:', error);
@@ -179,7 +197,7 @@ function PaymentForm() {
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-muted-foreground">Processing your subscription...</p>
+                  <p className="text-muted-foreground">Verifying your subscription...</p>
                 </div>
               ) : (
                 <p className="text-muted-foreground">

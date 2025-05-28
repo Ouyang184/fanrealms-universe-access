@@ -45,11 +45,13 @@ export const useSubscriptions = () => {
         return [];
       }
 
-      console.log('Found subscriptions:', data?.length || 0, data);
+      console.log('Raw subscription data from DB:', data);
+      console.log('Found subscriptions count:', data?.length || 0);
       return data || [];
     },
     enabled: !!user?.id,
     staleTime: 0,
+    gcTime: 0, // Don't cache results
     refetchOnWindowFocus: true,
     refetchOnMount: true
   });
@@ -132,9 +134,15 @@ export const useSubscriptions = () => {
     }
   });
 
-  // Manual refresh function
+  // Manual refresh function with aggressive cache clearing
   const refreshSubscriptions = async () => {
-    console.log('Manually refreshing subscriptions...');
+    console.log('Manually refreshing subscriptions with cache clearing...');
+    
+    // Clear all caches first
+    queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
+    queryClient.removeQueries({ queryKey: ['subscription-check'] });
+    
+    // Then refetch
     await Promise.all([
       refetch(),
       queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
