@@ -27,8 +27,8 @@ export const useCreators = (searchTerm?: string) => {
         const term = searchTerm.toLowerCase().trim();
         console.log("useCreators - Applying search filter for:", term);
         
-        // Use ilike for case-insensitive search on both display_name and username
-        query = query.or(`display_name.ilike.%${term}%,users.username.ilike.%${term}%,bio.ilike.%${term}%`);
+        // Use proper PostgREST syntax for OR conditions with ilike
+        query = query.or(`display_name.ilike.%${term}%,bio.ilike.%${term}%,users.username.ilike.%${term}%`);
       } else if (searchTerm && searchTerm.trim().length < 2) {
         // Return empty array for searches less than 2 characters
         console.log("useCreators - Search term too short, returning empty array");
