@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleSubscriptionWebhook(
@@ -12,46 +13,57 @@ export async function handleSubscriptionWebhook(
     
     if (subscriptionId) {
       console.log('[WebhookHandler] Processing payment success for subscription:', subscriptionId);
-      console.log('[WebhookHandler] Invoice status:', invoice.status, 'Amount paid:', invoice.amount_paid);
+      console.log('[WebhookHandler] Invoice details:', {
+        id: invoice.id,
+        status: invoice.status,
+        amount_paid: invoice.amount_paid,
+        customer: invoice.customer,
+        subscription: invoice.subscription
+      });
 
-      // CRITICAL FIX: Ensure subscription is marked as active when payment succeeds
-      // First, check if the subscription exists in our database
-      const { data: existingSubscription, error: findError } = await supabaseService
+      // CRITICAL FIX: Find and activate subscription when payment succeeds
+      const { data: subscriptionToUpdate, error: findError } = await supabaseService
         .from('user_subscriptions')
         .select('*')
         .eq('stripe_subscription_id', subscriptionId)
-        .maybeSingle();
+        .single();
 
       if (findError) {
-        console.error('[WebhookHandler] Error finding subscription for payment success:', findError);
+        console.error('[WebhookHandler] Error finding subscription:', findError);
         return;
       }
 
-      if (!existingSubscription) {
+      if (!subscriptionToUpdate) {
         console.error('[WebhookHandler] No subscription found with stripe_subscription_id:', subscriptionId);
         return;
       }
 
-      console.log('[WebhookHandler] Found existing subscription to activate:', existingSubscription);
+      console.log('[WebhookHandler] Found subscription to activate:', {
+        id: subscriptionToUpdate.id,
+        user_id: subscriptionToUpdate.user_id,
+        current_status: subscriptionToUpdate.status
+      });
 
-      const { data: updateData, error: activateError } = await supabaseService
+      // Update subscription to active status
+      const { data: updatedSubscription, error: updateError } = await supabaseService
         .from('user_subscriptions')
         .update({ 
           status: 'active',
           updated_at: new Date().toISOString()
         })
-        .eq('stripe_subscription_id', subscriptionId)
-        .select();
+        .eq('id', subscriptionToUpdate.id)
+        .select()
+        .single();
 
-      if (activateError) {
-        console.error('[WebhookHandler] Error activating subscription after payment:', activateError);
+      if (updateError) {
+        console.error('[WebhookHandler] Error updating subscription to active:', updateError);
       } else {
-        console.log('[WebhookHandler] Successfully activated subscription after payment:', subscriptionId, 'Updated rows:', updateData?.length || 0);
-        
-        // Log the updated subscription data for debugging
-        if (updateData && updateData.length > 0) {
-          console.log('[WebhookHandler] Updated subscription data:', updateData[0]);
-        }
+        console.log('[WebhookHandler] Successfully activated subscription:', {
+          subscription_id: subscriptionId,
+          database_id: updatedSubscription.id,
+          new_status: updatedSubscription.status,
+          user_id: updatedSubscription.user_id
+        });
       }
     }
   }
@@ -76,17 +88,13 @@ export async function handleSubscriptionWebhook(
     const currentPeriodEnd = subscription.current_period_end ? 
       new Date(subscription.current_period_end * 1000).toISOString() : null;
 
-    // IMPROVED: Better status mapping - only set to active if Stripe says it's truly active
+    // Better status mapping - be more conservative about setting to active
     let dbStatus = 'pending';
     if (subscription.status === 'active') {
       dbStatus = 'active';
     } else if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
       dbStatus = 'canceled';
-    } else if (subscription.status === 'incomplete') {
-      // Keep as pending until first payment succeeds (invoice.payment_succeeded will make it active)
-      dbStatus = 'pending';
     } else if (subscription.status === 'trialing') {
-      // Trial period should be considered active
       dbStatus = 'active';
     } else {
       // For any other status (past_due, unpaid, etc.), keep as pending
