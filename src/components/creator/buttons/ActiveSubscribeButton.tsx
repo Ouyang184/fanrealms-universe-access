@@ -66,13 +66,19 @@ export function ActiveSubscribeButton({
     );
   }
 
-  // Don't show subscribe button if already subscribed
+  // Show debug info if subscription exists but user thinks they can't subscribe
   if (subscriptionStatus?.isSubscribed) {
-    console.log('User is already subscribed to this tier');
+    console.log('User already has active subscription:', subscriptionStatus.subscription);
     return (
-      <Button variant="outline" className="w-full" size="lg" disabled>
-        Already Subscribed to {tierName}
-      </Button>
+      <div className="space-y-2">
+        <Button variant="outline" className="w-full" size="lg" disabled>
+          Already Subscribed to {tierName}
+        </Button>
+        <p className="text-xs text-center text-muted-foreground">
+          Active since {subscriptionStatus.subscription?.created_at ? 
+            new Date(subscriptionStatus.subscription.created_at).toLocaleDateString() : 'recently'}
+        </p>
+      </div>
     );
   }
 
@@ -115,12 +121,23 @@ export function ActiveSubscribeButton({
               }
             });
           } else if (data?.error) {
-            toast({
-              title: "Already Subscribed",
-              description: data.error,
-            });
-            // Refresh the subscription status
-            refetch();
+            console.log('Subscription creation returned error:', data.error);
+            
+            // If error mentions existing subscription, refresh data
+            if (data.error.toLowerCase().includes('already') || data.error.toLowerCase().includes('subscribed')) {
+              toast({
+                title: "Already Subscribed",
+                description: "You already have an active subscription to this tier.",
+              });
+              refetch();
+              invalidateAllSubscriptionQueries();
+            } else {
+              toast({
+                title: "Error",
+                description: data.error,
+                variant: "destructive"
+              });
+            }
           }
         }
       });

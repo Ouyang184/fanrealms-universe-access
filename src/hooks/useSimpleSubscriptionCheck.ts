@@ -16,31 +16,39 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
 
-      // Query user_subscriptions table with proper status filtering
+      // Query user_subscriptions table with detailed logging
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('status', 'active')
-        .maybeSingle();
+        .eq('tier_id', tierId);
 
       if (error) {
         console.error('[SubscriptionCheck] Database error:', error);
         return { isSubscribed: false, subscription: null };
       }
 
-      const isSubscribed = !!data;
-      console.log('[SubscriptionCheck] Result:', { 
+      console.log('[SubscriptionCheck] All subscription records found:', data);
+
+      // Filter for active subscriptions only
+      const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
+      console.log('[SubscriptionCheck] Active subscriptions:', activeSubscriptions);
+
+      const isSubscribed = activeSubscriptions.length > 0;
+      const subscription = activeSubscriptions.length > 0 ? activeSubscriptions[0] : null;
+
+      console.log('[SubscriptionCheck] Final result:', { 
         isSubscribed, 
-        subscription: data,
-        query: { userId: user.id, creatorId, tierId, status: 'active' }
+        subscription,
+        totalRecords: data?.length || 0,
+        activeRecords: activeSubscriptions.length,
+        query: { userId: user.id, creatorId, tierId }
       });
 
       return {
         isSubscribed,
-        subscription: data
+        subscription
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
