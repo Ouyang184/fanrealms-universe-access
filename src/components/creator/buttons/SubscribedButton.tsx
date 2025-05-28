@@ -48,7 +48,6 @@ export function SubscribedButton({
       return;
     }
 
-    // Try different subscription ID formats
     const subscriptionId = subscriptionData?.stripe_subscription_id || 
                           subscriptionData?.id || 
                           subscriptionData?.subscription_id;
@@ -56,7 +55,6 @@ export function SubscribedButton({
     if (!subscriptionId) {
       console.log('No subscription ID found, trying to cancel via simple-subscriptions');
       
-      // Try using the simple-subscriptions function with different parameters
       try {
         setIsCancelling(true);
         
@@ -107,10 +105,15 @@ export function SubscribedButton({
         return;
       } catch (error) {
         console.error('Error with simple-subscriptions:', error);
-        // Continue to try the stripe-subscriptions function
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
+          variant: "destructive"
+        });
       } finally {
         setIsCancelling(false);
       }
+      return;
     }
 
     setIsCancelling(true);

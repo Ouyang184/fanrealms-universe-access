@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -73,7 +72,7 @@ function PaymentForm() {
       try {
         console.log(`Verification attempt ${i + 1}/${maxRetries}`);
         
-        // Check both user_subscriptions table
+        // Check ONLY user_subscriptions table
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -85,7 +84,7 @@ function PaymentForm() {
         if (error) {
           console.error('DB verification error:', error);
         } else if (data) {
-          console.log('Subscription found in database:', data);
+          console.log('Subscription found in user_subscriptions table:', data);
           return true;
         }
         
