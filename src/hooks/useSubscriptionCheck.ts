@@ -37,9 +37,9 @@ export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: false // Disable automatic refetching to avoid conflicts
+    refetchOnMount: true
   });
 
   return {

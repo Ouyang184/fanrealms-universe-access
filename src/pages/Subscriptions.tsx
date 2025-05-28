@@ -110,6 +110,20 @@ export default function SubscriptionsPage() {
           </div>
         </div>
 
+        {/* Debug info */}
+        <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
+          <strong>Debug Info:</strong> Found {userSubscriptions?.length || 0} subscriptions
+          {userSubscriptions?.length > 0 && (
+            <div className="mt-2">
+              {userSubscriptions.map((sub, index) => (
+                <div key={sub.id} className="text-xs">
+                  {index + 1}. {sub.creator?.display_name} - {sub.tier?.title} - Status: {sub.status}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {!hasSubscriptions ? (
           <EmptySubscriptionsState 
             onRefresh={handleManualRefresh}

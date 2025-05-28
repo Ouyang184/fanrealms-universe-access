@@ -30,6 +30,7 @@ export function ActiveSubscribeButton({
   // Force refresh on mount and when user changes
   React.useEffect(() => {
     if (user?.id && tierId && creatorId) {
+      console.log('ActiveSubscribeButton: Checking subscription status on mount');
       refetch();
     }
   }, [user?.id, tierId, creatorId, refetch]);
@@ -50,8 +51,19 @@ export function ActiveSubscribeButton({
     };
   }, [refetch]);
 
+  // Show loading state while checking subscription
+  if (isLoading) {
+    return (
+      <Button variant="outline" className="w-full" size="lg" disabled>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Checking subscription...
+      </Button>
+    );
+  }
+
   // Don't show subscribe button if already subscribed
   if (subscriptionStatus?.isSubscribed) {
+    console.log('User is already subscribed to this tier');
     return (
       <Button variant="outline" className="w-full" size="lg" disabled>
         Already Subscribed to {tierName}
@@ -65,6 +77,18 @@ export function ActiveSubscribeButton({
         title: "Authentication required",
         description: "Please sign in to subscribe to creators.",
         variant: "destructive"
+      });
+      return;
+    }
+
+    // Double-check subscription status before proceeding
+    console.log('Double-checking subscription status before creating new subscription');
+    const freshStatus = await refetch();
+    if (freshStatus.data?.isSubscribed) {
+      console.log('User is already subscribed, preventing duplicate subscription');
+      toast({
+        title: "Already Subscribed",
+        description: "You already have an active subscription to this tier.",
       });
       return;
     }
@@ -99,15 +123,6 @@ export function ActiveSubscribeButton({
       console.error('Subscription error:', error);
     }
   };
-
-  if (isLoading) {
-    return (
-      <Button variant="outline" className="w-full" size="lg" disabled>
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Checking subscription...
-      </Button>
-    );
-  }
 
   return (
     <Button 

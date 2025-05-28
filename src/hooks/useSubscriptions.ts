@@ -42,15 +42,16 @@ export const useSubscriptions = () => {
 
       if (error) {
         console.error('Error fetching subscriptions:', error);
-        throw error;
+        return [];
       }
 
-      console.log('Found subscriptions:', data?.length || 0);
+      console.log('Found subscriptions:', data?.length || 0, data);
       return data || [];
     },
     enabled: !!user?.id,
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: false // Disable automatic refetching
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
 
   // Create subscription mutation
@@ -113,7 +114,7 @@ export const useSubscriptions = () => {
         description: "Your subscription has been cancelled successfully.",
       });
       
-      // Refresh data
+      // Refresh data immediately
       refetch();
       queryClient.invalidateQueries({ queryKey: ['subscription-check'] });
       queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] });
