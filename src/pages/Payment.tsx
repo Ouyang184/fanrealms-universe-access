@@ -4,7 +4,8 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, Lock, CreditCard, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -22,8 +23,14 @@ function PaymentForm() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
+
+  // Calculate pricing details
+  const monthlyAmount = amount ? amount / 100 : 30;
+  const salesTax = monthlyAmount * 0.046; // 4.6% tax example
+  const totalToday = monthlyAmount + salesTax;
 
   useEffect(() => {
     if (!clientSecret) {
@@ -34,7 +41,10 @@ function PaymentForm() {
       });
       navigate('/');
     }
-  }, [clientSecret, navigate, toast]);
+    if (amount) {
+      setPaymentAmount((amount / 100).toFixed(2));
+    }
+  }, [clientSecret, amount, navigate, toast]);
 
   const verifySubscriptionInDB = async (maxRetries = 10) => {
     console.log('Verifying subscription in database...');
@@ -58,7 +68,6 @@ function PaymentForm() {
           return true;
         }
         
-        // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
         console.error('Error verifying subscription in DB:', error);
@@ -72,12 +81,10 @@ function PaymentForm() {
   const refreshAllData = async () => {
     console.log('Refreshing all subscription data with aggressive cache clearing...');
     
-    // Clear all caches completely
     queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
     queryClient.removeQueries({ queryKey: ['subscription-check'] });
     queryClient.removeQueries({ queryKey: ['simple-creator-subscribers'] });
     
-    // Invalidate and refetch
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
@@ -129,20 +136,15 @@ function PaymentForm() {
           description: `Processing your subscription to ${tierName}...`,
         });
 
-        // First, wait for the webhook to process the payment
         console.log('Waiting for webhook processing...');
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // Then verify the subscription was created in our database
         const verified = await verifySubscriptionInDB();
         
         if (verified) {
           console.log('Subscription verified in database');
-          
-          // Refresh all subscription-related data with aggressive cache clearing
           await refreshAllData();
           
-          // Dispatch success events
           window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
             detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
           }));
@@ -165,7 +167,6 @@ function PaymentForm() {
         
         setIsVerifying(false);
         
-        // Redirect after a longer delay to ensure data is refreshed
         setTimeout(() => {
           navigate('/subscriptions');
         }, 3000);
@@ -184,8 +185,8 @@ function PaymentForm() {
 
   if (paymentSucceeded) {
     return (
-      <div className="max-w-md mx-auto p-6">
-        <Card>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <Card className="bg-gray-900 border-gray-800 max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <div className="mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -197,10 +198,10 @@ function PaymentForm() {
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-muted-foreground">Verifying your subscription...</p>
+                  <p className="text-gray-400">Verifying your subscription...</p>
                 </div>
               ) : (
-                <p className="text-muted-foreground">
+                <p className="text-gray-400">
                   You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
                 </p>
               )}
@@ -213,8 +214,8 @@ function PaymentForm() {
 
   if (!clientSecret) {
     return (
-      <div className="max-w-md mx-auto p-6">
-        <Card>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <Card className="bg-gray-900 border-gray-800 max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
             <p>Loading payment information...</p>
@@ -225,49 +226,171 @@ function PaymentForm() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Complete Your Subscription</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Subscribe to {tierName} for ${(amount / 100).toFixed(2)}/month
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePayment} className="space-y-4">
-            <div className="p-4 border rounded-md">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#424770',
-                      '::placeholder': {
-                        color: '#aab7c4',
-                      },
-                    },
-                  },
-                }}
-              />
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Payment Details */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
             </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={!stripe || isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Payment...
-                </>
-              ) : (
-                `Pay $${(amount / 100).toFixed(2)}`
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+
+            {/* Payment Amount Section */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
+                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
+                
+                <div className="space-y-3">
+                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-sm text-gray-400">Monthly payment</div>
+                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-gray-400 mr-2">$</span>
+                        <Input
+                          type="number"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                          className="w-20 bg-transparent border-gray-600 text-white text-right"
+                          step="0.01"
+                          min={monthlyAmount}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Method Section */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Payment method</h2>
+                
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">VISA</span>
+                      </div>
+                      <span className="text-sm">•••• •••• •••• ••••</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border border-gray-700 rounded-md p-3">
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#ffffff',
+                            fontFamily: 'system-ui, sans-serif',
+                            '::placeholder': {
+                              color: '#9ca3af',
+                            },
+                            backgroundColor: 'transparent',
+                          },
+                          invalid: {
+                            color: '#ef4444',
+                            iconColor: '#ef4444',
+                          },
+                        },
+                        hidePostalCode: false,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <button className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm">
+                  <span>Add new payment method</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Payment Terms */}
+              <div className="text-sm text-gray-400 space-y-2">
+                <p>
+                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                </p>
+                <p>
+                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                </p>
+              </div>
+
+              {/* Subscribe Button */}
+              <Button 
+                onClick={handlePayment}
+                disabled={!stripe || isProcessing}
+                className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+                size="lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-2 h-5 w-5" />
+                    Subscribe now
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Column - Order Summary */}
+          <div className="lg:pl-8">
+            <Card className="bg-gray-900 border-gray-800 sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-white">Order summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Creator Info */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {tierName?.charAt(0) || 'C'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">{tierName || 'Creator'}</div>
+                    <div className="text-gray-400 text-sm">ULTRA Gamer</div>
+                  </div>
+                </div>
+
+                {/* Pricing Breakdown */}
+                <div className="space-y-3 pt-4 border-t border-gray-700">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Monthly payment</span>
+                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">One-time credit</span>
+                    <span className="text-white">-$10.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Sales Tax</span>
+                    <span className="text-white">${salesTax.toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between pt-3 border-t border-gray-700">
+                    <span className="text-white font-semibold">Total due today</span>
+                    <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Help Section */}
+            <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
+              <button className="hover:text-white">Help Centre</button>
+              <span>$ USD</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
