@@ -22,7 +22,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
   const { data: tiers, isLoading: tiersLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['simpleCreatorMembershipTiers', creatorId],
     queryFn: async () => {
-      console.log('Fetching membership tiers for creator:', creatorId);
+      console.log('[CreatorMembership] Fetching tiers for creator:', creatorId);
       
       const { data: tiersData, error: tiersError } = await supabase
         .from('membership_tiers')
@@ -42,7 +42,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
             .eq('status', 'active');
 
           if (countError) {
-            console.error('Error counting subscribers for tier:', tier.id, countError);
+            console.error('[CreatorMembership] Error counting subscribers for tier:', tier.id, countError);
           }
 
           return {
@@ -56,7 +56,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         })
       );
 
-      console.log('Fetched tiers with subscriber counts:', tiersWithCounts);
+      console.log('[CreatorMembership] Fetched tiers with counts:', tiersWithCounts);
       return tiersWithCounts;
     },
     enabled: !!creatorId,
@@ -69,11 +69,11 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     queryKey: ['simpleUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
       if (!user?.id) {
-        console.log('No user ID available for subscription check');
+        console.log('[CreatorMembership] No user ID for subscription check');
         return [];
       }
       
-      console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
+      console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
       // Query user_subscriptions table with proper status check
       const { data, error } = await supabase
@@ -84,11 +84,11 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         .eq('status', 'active');
 
       if (error) {
-        console.error('Error fetching user subscriptions:', error);
+        console.error('[CreatorMembership] Error fetching subscriptions:', error);
         return [];
       }
 
-      console.log('User subscriptions found:', data?.length || 0, data);
+      console.log('[CreatorMembership] Found active subscriptions:', data?.length || 0, data);
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
@@ -100,36 +100,41 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
 
   // Check if user is subscribed to a specific tier with enhanced logging
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
-    console.log('isSubscribedToTier called with:', { tierId, userId: user?.id });
+    console.log('[CreatorMembership] isSubscribedToTier called:', { tierId, userId: user?.id });
     
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
-      console.log('Using local state for tier:', tierId, localSubscriptionStates[tierId]);
+      console.log('[CreatorMembership] Using local state for tier:', tierId, localSubscriptionStates[tierId]);
       return localSubscriptionStates[tierId];
     }
     
     // Fall back to server data from user_subscriptions table
     const isSubscribed = userSubscriptions?.some(sub => {
-      console.log('Checking subscription:', sub, 'against tier:', tierId);
-      return sub.tier_id === tierId && sub.status === 'active';
+      const matches = sub.tier_id === tierId && sub.status === 'active';
+      console.log('[CreatorMembership] Checking subscription:', {
+        subTierId: sub.tier_id,
+        targetTierId: tierId,
+        status: sub.status,
+        matches
+      });
+      return matches;
     }) || false;
     
-    console.log('isSubscribedToTier final result for tier:', tierId, 'result:', isSubscribed);
-    console.log('All user subscriptions:', userSubscriptions);
+    console.log('[CreatorMembership] Final result for tier:', tierId, 'isSubscribed:', isSubscribed);
+    console.log('[CreatorMembership] All subscriptions:', userSubscriptions);
     
     return isSubscribed;
   }, [userSubscriptions, localSubscriptionStates, user?.id]);
 
   // Handle subscription success
   const handleSubscriptionSuccess = useCallback(async () => {
-    console.log('Subscription success detected, refreshing data...');
+    console.log('[CreatorMembership] Subscription success - refreshing all data...');
     
     // Invalidate all related queries
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['simpleCreatorMembershipTiers'] }),
       queryClient.invalidateQueries({ queryKey: ['simpleUserCreatorSubscriptions'] }),
       queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
-      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
     ]);
 
     // Force immediate refetch
@@ -141,26 +146,26 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
 
   // Update local subscription state optimistically
   const updateLocalSubscriptionState = useCallback((tierId: string, isSubscribed: boolean) => {
-    console.log('Updating local subscription state for tier:', tierId, 'to:', isSubscribed);
+    console.log('[CreatorMembership] Updating local state for tier:', tierId, 'to:', isSubscribed);
     setLocalSubscriptionStates(prev => ({
       ...prev,
       [tierId]: isSubscribed
     }));
     
-    // Clear local state after a delay to let server data take over
+    // Clear local state after delay to let server data take over
     setTimeout(() => {
       setLocalSubscriptionStates(prev => {
         const newState = { ...prev };
         delete newState[tierId];
         return newState;
       });
-    }, 10000); // 10 seconds
+    }, 10000);
   }, []);
 
   // Listen for subscription events
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
-      console.log('Subscription event detected:', event.type, event.detail);
+      console.log('[CreatorMembership] Subscription event:', event.type, event.detail);
       
       if (event.detail?.creatorId === creatorId) {
         const { tierId } = event.detail;
@@ -190,14 +195,6 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       window.removeEventListener('subscriptionCanceled', handleSubscriptionEvent as EventListener);
     };
   }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
-
-  // Force refresh on component mount if user is available
-  useEffect(() => {
-    if (user?.id && creatorId) {
-      console.log('Force refreshing subscriptions on mount for user:', user.id, 'creator:', creatorId);
-      refetchSubscriptions();
-    }
-  }, [user?.id, creatorId, refetchSubscriptions]);
 
   return {
     tiers,

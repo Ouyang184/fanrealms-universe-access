@@ -33,11 +33,11 @@ serve(async (req) => {
     }
 
     const { action, tierId, creatorId, subscriptionId, paymentIntentId } = await req.json();
-    console.log('Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
+    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // First, check for existing active subscriptions to prevent duplicates
-      console.log('Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
+      // Check for existing active subscriptions in user_subscriptions table
+      console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
       
       const { data: existingSubs } = await supabase
         .from('user_subscriptions')
@@ -47,7 +47,7 @@ serve(async (req) => {
         .eq('status', 'active');
 
       if (existingSubs && existingSubs.length > 0) {
-        console.log('Found existing active subscription:', existingSubs[0]);
+        console.log('[SimpleSubscriptions] Found existing active subscription:', existingSubs[0]);
         return new Response(JSON.stringify({ 
           error: 'You already have an active subscription to this creator.' 
         }), {
@@ -56,13 +56,20 @@ serve(async (req) => {
         });
       }
 
-      // Clean up any stale non-active subscriptions
+      // Clean up any non-active subscriptions for this user/creator combination
       await supabase
         .from('user_subscriptions')
         .delete()
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .neq('status', 'active');
+
+      // Also clean up legacy subscriptions table
+      await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId);
 
       // Get tier details
       const { data: tier, error: tierError } = await supabase
@@ -143,7 +150,7 @@ serve(async (req) => {
         }
       });
 
-      // Store pending subscription in user_subscriptions table
+      // Store pending subscription in user_subscriptions table only
       await supabase
         .from('user_subscriptions')
         .insert({
@@ -170,9 +177,9 @@ serve(async (req) => {
       });
 
     } else if (action === 'cancel_subscription') {
-      console.log('Cancelling subscription for tier:', tierId, 'creator:', creatorId);
+      console.log('[SimpleSubscriptions] Cancelling subscription for tier:', tierId, 'creator:', creatorId);
       
-      // Find the active subscription
+      // Find the active subscription in user_subscriptions table
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -189,7 +196,7 @@ serve(async (req) => {
       // Cancel in Stripe
       await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
 
-      // Update status in database
+      // Update status in user_subscriptions table
       await supabase
         .from('user_subscriptions')
         .update({ 
@@ -198,7 +205,7 @@ serve(async (req) => {
         })
         .eq('id', subscription.id);
 
-      console.log('Successfully cancelled subscription');
+      console.log('[SimpleSubscriptions] Successfully cancelled subscription');
 
       return new Response(JSON.stringify({ 
         success: true,
@@ -209,7 +216,7 @@ serve(async (req) => {
       });
 
     } else if (action === 'get_user_subscriptions') {
-      console.log('Getting user subscriptions for user:', user.id);
+      console.log('[SimpleSubscriptions] Getting user subscriptions for user:', user.id);
       
       const { data: subscriptions } = await supabase
         .from('user_subscriptions')
@@ -227,7 +234,7 @@ serve(async (req) => {
       });
 
     } else if (action === 'get_creator_subscribers') {
-      console.log('Getting creator subscribers for creator:', creatorId);
+      console.log('[SimpleSubscriptions] Getting creator subscribers for creator:', creatorId);
       
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
@@ -248,7 +255,7 @@ serve(async (req) => {
     throw new Error('Invalid action');
 
   } catch (error) {
-    console.error('Subscription error:', error);
+    console.error('[SimpleSubscriptions] Error:', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Internal server error' 
     }), {

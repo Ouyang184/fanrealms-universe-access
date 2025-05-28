@@ -18,14 +18,15 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
     handleSubscriptionSuccess
   } = useSimpleCreatorMembership(creator.id);
 
-  console.log('CreatorMembership debug:', {
+  console.log('[CreatorMembership] Render state:', {
     creatorId: creator.id,
     tiersCount: tiers?.length || 0,
     isLoading,
     tiers: tiers?.map(t => ({ 
       id: t.id, 
       name: t.name, 
-      isSubscribed: isSubscribedToTier(t.id) 
+      isSubscribed: isSubscribedToTier(t.id),
+      subscriberCount: t.subscriberCount
     }))
   });
 
@@ -46,7 +47,10 @@ export function CreatorMembership({ creator }: CreatorMembershipProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {tiers.map(tier => {
             const isSubscribed = isSubscribedToTier(tier.id);
-            console.log(`CreatorMembership: Tier ${tier.name} (${tier.id}) subscription status:`, isSubscribed);
+            console.log(`[CreatorMembership] Tier ${tier.name} (${tier.id}):`, {
+              isSubscribed,
+              subscriberCount: tier.subscriberCount
+            });
             
             return (
               <MembershipTierCard

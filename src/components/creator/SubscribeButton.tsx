@@ -28,15 +28,15 @@ export function SubscribeButton({
   const { subscriptionData, isLoading } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
-  // Use comprehensive subscription check: prop first, then hook data
-  const isUserSubscribed = isSubscribed || subscriptionData?.isSubscribed || false;
+  // Use subscription check result with fallback to prop
+  const isUserSubscribed = subscriptionData?.isSubscribed ?? isSubscribed;
 
-  console.log('SubscribeButton comprehensive debug:', {
+  console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
     tierName,
     isSubscribedProp: isSubscribed,
-    subscriptionDataFromHook: subscriptionData,
+    subscriptionData,
     hookIsSubscribed: subscriptionData?.isSubscribed,
     finalIsUserSubscribed: isUserSubscribed,
     isLoading,
@@ -50,7 +50,7 @@ export function SubscribeButton({
   }
 
   if (isUserSubscribed) {
-    console.log('Showing SubscribedButton for tier:', tierId, 'with subscription data:', subscriptionData?.subscription);
+    console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
     return (
       <SubscribedButton
         tierName={tierName}
@@ -64,10 +64,11 @@ export function SubscribeButton({
   }
 
   if (!isCreatorStripeReady) {
+    console.log('[SubscribeButton] Showing PaymentUnavailableButton - Stripe not ready');
     return <PaymentUnavailableButton />;
   }
 
-  console.log('Showing ActiveSubscribeButton for tier:', tierId);
+  console.log('[SubscribeButton] Showing ActiveSubscribeButton - no active subscription');
   return (
     <ActiveSubscribeButton
       tierId={tierId}

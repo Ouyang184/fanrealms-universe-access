@@ -10,13 +10,13 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
     queryKey: ['simple-subscription-check', user?.id, tierId, creatorId],
     queryFn: async () => {
       if (!user?.id || !tierId || !creatorId) {
-        console.log('Missing required data for subscription check:', { userId: user?.id, tierId, creatorId });
+        console.log('[SubscriptionCheck] Missing required data:', { userId: user?.id, tierId, creatorId });
         return { isSubscribed: false, subscription: null };
       }
 
-      console.log('Simple subscription check for:', { userId: user.id, tierId, creatorId });
+      console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
 
-      // Check in user_subscriptions table with proper status filtering
+      // Query user_subscriptions table with proper status filtering
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -27,18 +27,19 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         .maybeSingle();
 
       if (error) {
-        console.error('Simple subscription check error:', error);
+        console.error('[SubscriptionCheck] Database error:', error);
         return { isSubscribed: false, subscription: null };
       }
 
-      console.log('Simple subscription check result:', { 
-        isSubscribed: !!data, 
+      const isSubscribed = !!data;
+      console.log('[SubscriptionCheck] Result:', { 
+        isSubscribed, 
         subscription: data,
-        rawData: data
+        query: { userId: user.id, creatorId, tierId, status: 'active' }
       });
 
       return {
-        isSubscribed: !!data,
+        isSubscribed,
         subscription: data
       };
     },

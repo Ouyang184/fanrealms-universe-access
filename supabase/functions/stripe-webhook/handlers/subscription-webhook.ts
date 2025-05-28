@@ -5,11 +5,10 @@ export async function handleSubscriptionWebhook(
   event: any,
   supabaseService: any
 ) {
-  console.log('=== PROCESSING SUBSCRIPTION WEBHOOK ===');
-  console.log('Event type:', event.type, 'ID:', event.id);
+  console.log('[WebhookHandler] Processing subscription webhook:', event.type, event.id);
 
   const subscription = event.data.object;
-  console.log('Subscription data:', {
+  console.log('[WebhookHandler] Subscription data:', {
     id: subscription.id,
     status: subscription.status,
     customer: subscription.customer,
@@ -19,13 +18,13 @@ export async function handleSubscriptionWebhook(
   if (event.type === 'customer.subscription.created' || 
       event.type === 'customer.subscription.updated') {
     
-    console.log('Processing subscription created/updated:', subscription.id);
+    console.log('[WebhookHandler] Processing subscription created/updated:', subscription.id);
 
     // Extract metadata
     const { user_id, creator_id, tier_id } = subscription.metadata || {};
     
     if (!user_id || !creator_id || !tier_id) {
-      console.error('Missing metadata in subscription:', subscription.metadata);
+      console.error('[WebhookHandler] Missing metadata:', subscription.metadata);
       return;
     }
 
@@ -42,7 +41,7 @@ export async function handleSubscriptionWebhook(
       dbStatus = 'canceled';
     }
 
-    console.log('Updating subscription with status:', dbStatus);
+    console.log('[WebhookHandler] Updating user_subscriptions with status:', dbStatus);
 
     // Update or create subscription record in user_subscriptions
     const { error: upsertError } = await supabaseService
@@ -64,13 +63,14 @@ export async function handleSubscriptionWebhook(
       });
 
     if (upsertError) {
-      console.error('Error upserting subscription:', upsertError);
+      console.error('[WebhookHandler] Error upserting user_subscriptions:', upsertError);
     } else {
-      console.log('Successfully updated subscription:', subscription.id);
+      console.log('[WebhookHandler] Successfully updated user_subscriptions:', subscription.id);
     }
 
-    // Clean up any old records for the same user/creator/tier combination
+    // Clean up any duplicate records for the same user/creator/tier combination
     if (dbStatus === 'active') {
+      console.log('[WebhookHandler] Cleaning up duplicate subscriptions');
       const { error: cleanupError } = await supabaseService
         .from('user_subscriptions')
         .delete()
@@ -80,15 +80,27 @@ export async function handleSubscriptionWebhook(
         .neq('stripe_subscription_id', subscription.id);
 
       if (cleanupError) {
-        console.error('Error cleaning up old subscriptions:', cleanupError);
+        console.error('[WebhookHandler] Error cleaning up duplicates:', cleanupError);
       }
+    }
+
+    // Remove from legacy subscriptions table to avoid conflicts
+    const { error: legacyCleanupError } = await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user_id)
+      .eq('creator_id', creator_id)
+      .eq('tier_id', tier_id);
+
+    if (legacyCleanupError) {
+      console.error('[WebhookHandler] Error cleaning legacy subscriptions:', legacyCleanupError);
     }
   }
 
   if (event.type === 'customer.subscription.deleted') {
-    console.log('Processing subscription deleted:', subscription.id);
+    console.log('[WebhookHandler] Processing subscription deletion:', subscription.id);
 
-    // Update subscription status to canceled
+    // Mark subscription as canceled in user_subscriptions
     const { error: deleteError } = await supabaseService
       .from('user_subscriptions')
       .update({ 
@@ -98,30 +110,35 @@ export async function handleSubscriptionWebhook(
       .eq('stripe_subscription_id', subscription.id);
 
     if (deleteError) {
-      console.error('Error updating canceled subscription:', deleteError);
+      console.error('[WebhookHandler] Error canceling subscription:', deleteError);
     } else {
-      console.log('Successfully marked subscription as canceled:', subscription.id);
+      console.log('[WebhookHandler] Successfully canceled subscription:', subscription.id);
     }
   }
 
   if (event.type === 'invoice.payment_succeeded') {
-    console.log('Processing payment succeeded for subscription:', subscription.id);
+    const invoice = event.data.object;
+    const subscriptionId = invoice.subscription;
+    
+    if (subscriptionId) {
+      console.log('[WebhookHandler] Processing payment success for subscription:', subscriptionId);
 
-    // Ensure subscription is marked as active when payment succeeds
-    const { error: activateError } = await supabaseService
-      .from('user_subscriptions')
-      .update({ 
-        status: 'active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('stripe_subscription_id', subscription.id);
+      // Ensure subscription is marked as active when payment succeeds
+      const { error: activateError } = await supabaseService
+        .from('user_subscriptions')
+        .update({ 
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('stripe_subscription_id', subscriptionId);
 
-    if (activateError) {
-      console.error('Error activating subscription after payment:', activateError);
-    } else {
-      console.log('Successfully activated subscription after payment:', subscription.id);
+      if (activateError) {
+        console.error('[WebhookHandler] Error activating subscription after payment:', activateError);
+      } else {
+        console.log('[WebhookHandler] Successfully activated subscription after payment:', subscriptionId);
+      }
     }
   }
 
-  console.log('=== SUBSCRIPTION WEBHOOK PROCESSING COMPLETE ===');
+  console.log('[WebhookHandler] Subscription webhook processing complete');
 }
