@@ -11,11 +11,13 @@ import { SubscriptionSummary } from "@/components/subscriptions/SubscriptionSumm
 import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscriptionsState"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useSubscriptionEventManager } from "@/hooks/useSubscriptionEventManager"
 
 export default function SubscriptionsPage() {
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useSubscriptions();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
   
   // Stable callback to avoid infinite loops
   const stableRefetch = useCallback(async () => {
@@ -28,13 +30,13 @@ export default function SubscriptionsPage() {
     stableRefetch();
   }, []); // Empty dependency array - only run on mount
 
-  // Listen for subscription events
+  // Listen for subscription events using the event manager
   useEffect(() => {
     const handleSubscriptionUpdate = async () => {
       console.log('Subscription event detected, refreshing...');
       setIsRefreshing(true);
       try {
-        await refetchSubscriptions();
+        await invalidateAllSubscriptionQueries();
         toast({
           title: "Updated",
           description: "Subscription data has been refreshed",
@@ -56,12 +58,12 @@ export default function SubscriptionsPage() {
         window.removeEventListener(eventType, handleSubscriptionUpdate);
       });
     };
-  }, [refetchSubscriptions, toast]);
+  }, [invalidateAllSubscriptionQueries, toast]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetchSubscriptions();
+      await invalidateAllSubscriptionQueries();
       toast({
         title: "Refreshed",
         description: "Subscription data has been updated",
@@ -74,6 +76,20 @@ export default function SubscriptionsPage() {
       });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleCancelSubscription = async (subscriptionId: string) => {
+    try {
+      await cancelSubscription(subscriptionId);
+      
+      // Trigger cancellation event
+      triggerSubscriptionCancellation({ subscriptionId });
+      
+      // Force refresh
+      await invalidateAllSubscriptionQueries();
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
     }
   };
 
@@ -181,7 +197,7 @@ export default function SubscriptionsPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              onClick={() => cancelSubscription(subscription.id)}
+                              onClick={() => handleCancelSubscription(subscription.id)}
                               className="w-full"
                             >
                               Cancel Subscription

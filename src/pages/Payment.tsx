@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -9,6 +10,7 @@ import { Loader2, Lock, CreditCard, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
 
 const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
@@ -19,6 +21,7 @@ function PaymentForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { triggerSubscriptionSuccess, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
@@ -46,7 +49,7 @@ function PaymentForm() {
     }
   }, [clientSecret, amount, navigate, toast]);
 
-  const verifySubscriptionInDB = async (maxRetries = 10) => {
+  const verifySubscriptionInDB = async (maxRetries = 15) => {
     console.log('Verifying subscription in database...');
     
     for (let i = 0; i < maxRetries; i++) {
@@ -76,24 +79,6 @@ function PaymentForm() {
     
     console.log('Subscription not found in database after all retries');
     return false;
-  };
-
-  const refreshAllData = async () => {
-    console.log('Refreshing all subscription data with aggressive cache clearing...');
-    
-    queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
-    queryClient.removeQueries({ queryKey: ['subscription-check'] });
-    queryClient.removeQueries({ queryKey: ['simple-creator-subscribers'] });
-    
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] }),
-      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
-      queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] }),
-      queryClient.refetchQueries({ queryKey: ['user-subscriptions'] }),
-      queryClient.refetchQueries({ queryKey: ['subscription-check', undefined, tierId, creatorId] })
-    ]);
-    
-    console.log('All subscription data refreshed');
   };
 
   const handlePayment = async (event: React.FormEvent) => {
@@ -143,16 +128,17 @@ function PaymentForm() {
         
         if (verified) {
           console.log('Subscription verified in database');
-          await refreshAllData();
           
-          window.dispatchEvent(new CustomEvent('subscriptionSuccess', {
-            detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
-          }));
+          // Trigger comprehensive subscription success events
+          triggerSubscriptionSuccess({
+            tierId,
+            creatorId,
+            paymentIntentId: paymentIntent.id
+          });
           
-          window.dispatchEvent(new CustomEvent('paymentSuccess', {
-            detail: { tierId, creatorId, paymentIntentId: paymentIntent.id }
-          }));
-
+          // Force refresh all subscription data
+          await invalidateAllSubscriptionQueries();
+          
           toast({
             title: "Subscription Active!",
             description: `You've successfully subscribed to ${tierName}`,

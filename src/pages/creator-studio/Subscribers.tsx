@@ -11,11 +11,13 @@ import { RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCreatorSubscribers } from "@/hooks/useCreatorSubscribers";
+import { useSubscriptionEventManager } from "@/hooks/useSubscriptionEventManager";
 
 export default function CreatorStudioSubscribers() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
   // Get creator ID
   const { data: creatorData } = useQuery({
@@ -35,13 +37,16 @@ export default function CreatorStudioSubscribers() {
     enabled: !!user
   });
 
-  // Get subscribers using the new hook
+  // Get subscribers using the hook
   const { subscribers, isLoading: loadingSubscribers, refetch } = useCreatorSubscribers(creatorData?.id || '');
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([
+        refetch(),
+        invalidateAllSubscriptionQueries()
+      ]);
       toast({
         title: "Refreshed",
         description: "Subscriber data has been updated",
@@ -57,10 +62,18 @@ export default function CreatorStudioSubscribers() {
     }
   };
 
-  // Listen for subscription events
+  // Listen for subscription events and refresh data
   useEffect(() => {
     const handleSubscriptionUpdate = async () => {
-      await refetch();
+      console.log('Creator subscribers: Subscription event detected, refreshing...');
+      try {
+        await Promise.all([
+          refetch(),
+          invalidateAllSubscriptionQueries()
+        ]);
+      } catch (error) {
+        console.error('Error refreshing subscriber data:', error);
+      }
     };
 
     const events = ['subscriptionSuccess', 'paymentSuccess', 'subscriptionCancelled'];
@@ -73,7 +86,7 @@ export default function CreatorStudioSubscribers() {
         window.removeEventListener(eventType, handleSubscriptionUpdate);
       });
     };
-  }, [refetch]);
+  }, [refetch, invalidateAllSubscriptionQueries]);
 
   const totalSubscribers = subscribers?.length || 0;
   const totalRevenue = subscribers?.reduce((sum, sub) => sum + (sub.amount || 0), 0) || 0;

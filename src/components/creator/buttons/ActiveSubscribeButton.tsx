@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
+import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -26,6 +27,7 @@ export function ActiveSubscribeButton({
   const { subscriptionStatus, isLoading, refetch } = useSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
   // Force refresh on mount and when user changes
   React.useEffect(() => {
@@ -37,9 +39,12 @@ export function ActiveSubscribeButton({
 
   // Listen for subscription success events
   React.useEffect(() => {
-    const handleSubscriptionSuccess = () => {
+    const handleSubscriptionSuccess = async () => {
       console.log('Subscription success event detected, refetching...');
-      refetch();
+      await Promise.all([
+        refetch(),
+        invalidateAllSubscriptionQueries()
+      ]);
     };
 
     window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess);
@@ -49,7 +54,7 @@ export function ActiveSubscribeButton({
       window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
       window.removeEventListener('paymentSuccess', handleSubscriptionSuccess);
     };
-  }, [refetch]);
+  }, [refetch, invalidateAllSubscriptionQueries]);
 
   // Show loading state while checking subscription
   if (isLoading) {
