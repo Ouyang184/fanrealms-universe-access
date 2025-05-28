@@ -60,15 +60,18 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 0,
+    refetchInterval: 30000,
   });
 
-  // Get user subscriptions for this creator
+  // Get user subscriptions for this creator with better error handling
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['simpleUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('No user ID available for subscription check');
+        return [];
+      }
       
       console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
@@ -84,18 +87,20 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         return [];
       }
 
-      console.log('User subscriptions found:', data?.length || 0);
+      console.log('User subscriptions found:', data?.length || 0, data);
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 0,
+    refetchInterval: 30000,
   });
 
   const isLoading = tiersLoading || subscriptionsLoading;
 
-  // Check if user is subscribed to a specific tier
+  // Check if user is subscribed to a specific tier with enhanced logging
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
+    console.log('isSubscribedToTier called with:', { tierId, userId: user?.id });
+    
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
       console.log('Using local state for tier:', tierId, localSubscriptionStates[tierId]);
@@ -103,13 +108,16 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     }
     
     // Fall back to server data
-    const isSubscribed = userSubscriptions?.some(sub => 
-      sub.tier_id === tierId && sub.status === 'active'
-    ) || false;
+    const isSubscribed = userSubscriptions?.some(sub => {
+      console.log('Checking subscription:', sub, 'against tier:', tierId);
+      return sub.tier_id === tierId && sub.status === 'active';
+    }) || false;
     
-    console.log('isSubscribedToTier check for tier:', tierId, 'result:', isSubscribed);
+    console.log('isSubscribedToTier final result for tier:', tierId, 'result:', isSubscribed);
+    console.log('All user subscriptions:', userSubscriptions);
+    
     return isSubscribed;
-  }, [userSubscriptions, localSubscriptionStates]);
+  }, [userSubscriptions, localSubscriptionStates, user?.id]);
 
   // Handle subscription success
   const handleSubscriptionSuccess = useCallback(async () => {
@@ -119,7 +127,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['simpleCreatorMembershipTiers'] }),
       queryClient.invalidateQueries({ queryKey: ['simpleUserCreatorSubscriptions'] }),
-      queryClient.invalidateQueries({ queryKey: ['subscription-check'] }),
+      queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
     ]);
 
     // Force immediate refetch
@@ -144,7 +152,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         delete newState[tierId];
         return newState;
       });
-    }, 5000); // 5 seconds
+    }, 10000); // 10 seconds
   }, []);
 
   // Listen for subscription events
@@ -180,6 +188,14 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       window.removeEventListener('subscriptionCanceled', handleSubscriptionEvent as EventListener);
     };
   }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
+
+  // Force refresh on component mount if user is available
+  useEffect(() => {
+    if (user?.id && creatorId) {
+      console.log('Force refreshing subscriptions on mount for user:', user.id, 'creator:', creatorId);
+      refetchSubscriptions();
+    }
+  }, [user?.id, creatorId, refetchSubscriptions]);
 
   return {
     tiers,

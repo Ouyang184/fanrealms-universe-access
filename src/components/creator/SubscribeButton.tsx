@@ -49,6 +49,7 @@ export function SubscribeButton({
   }
 
   if (isUserSubscribed) {
+    console.log('Showing SubscribedButton for tier:', tierId);
     return (
       <SubscribedButton
         tierName={tierName}
@@ -65,6 +66,7 @@ export function SubscribeButton({
     return <PaymentUnavailableButton />;
   }
 
+  console.log('Showing ActiveSubscribeButton for tier:', tierId);
   return (
     <ActiveSubscribeButton
       tierId={tierId}
