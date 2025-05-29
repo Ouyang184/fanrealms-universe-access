@@ -38,21 +38,6 @@ export function SubscribeButton({
   // Use subscription check result with fallback to prop
   const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
-  // Helper function to format date
-  const formatCancelDate = (dateString: string | number) => {
-    let date;
-    if (typeof dateString === 'number') {
-      date = new Date(dateString);
-    } else {
-      date = new Date(dateString);
-    }
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
   console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
@@ -71,40 +56,24 @@ export function SubscribeButton({
     );
   }
 
-  // Enhanced subscription logic with proper cancellation handling
+  // CRITICAL FIX: Check subscription status properly
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
   
-  if (subscription) {
-    const isActive = subscription.status === 'active';
-    // Use the enhanced cancellation check from our subscription data
-    const isScheduledToCancel = subscription.isScheduledToCancel || 
-                              (subscription.cancel_at_period_end === true &&
-                               subscription.current_period_end && 
-                               new Date(subscription.current_period_end) > new Date());
-
-    console.log('[SubscribeButton] Enhanced subscription check:', {
-      isActive,
-      isScheduledToCancel,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      current_period_end: subscription.current_period_end,
-      enhancedFlag: subscription.isScheduledToCancel
-    });
-
-    if (isActive) {
-      console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
-      return (
-        <SubscribedButton
-          tierName={tierName}
-          subscriptionData={subscription}
-          tierId={tierId}
-          creatorId={creatorId}
-          onOptimisticUpdate={onOptimisticUpdate}
-          onSubscriptionSuccess={onSubscriptionSuccess}
-        />
-      );
-    }
+  if (subscription && subscription.status === 'active') {
+    console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
+    return (
+      <SubscribedButton
+        tierName={tierName}
+        subscriptionData={subscription}
+        tierId={tierId}
+        creatorId={creatorId}
+        onOptimisticUpdate={onOptimisticUpdate}
+        onSubscriptionSuccess={onSubscriptionSuccess}
+      />
+    );
   }
 
+  // Fallback check for isUserSubscribed
   if (isUserSubscribed) {
     console.log('[SubscribeButton] Showing SubscribedButton - fallback for subscribed user');
     return (

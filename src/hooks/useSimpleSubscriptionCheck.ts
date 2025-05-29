@@ -83,7 +83,8 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         cancel_at_period_end: subscription.cancel_at_period_end
       };
 
-      // Return isSubscribed as true for active subscriptions, regardless of cancellation status
+      // CRITICAL FIX: Return isSubscribed as true for active subscriptions, regardless of cancellation status
+      // The UI components will handle showing the cancellation state based on the subscription data
       return {
         isSubscribed: isActive,
         subscription: subscriptionWithCancelInfo
@@ -94,7 +95,7 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
     gcTime: 300000, // 5 minutes cache time
     refetchOnWindowFocus: false, // Disable refetch on window focus
     refetchOnMount: true,
-    // Removed refetchInterval - no automatic refresh
+    // No automatic refresh interval to prevent overriding cancellation state
   });
 
   return {
