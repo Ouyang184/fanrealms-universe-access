@@ -60,8 +60,8 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 60000, // Increased from 30000
-    refetchInterval: 120000, // Increased from 60000 to 2 minutes
+    staleTime: 300000, // 5 minutes - much longer since we're not auto-refreshing
+    // Removed refetchInterval - no automatic refresh
   });
 
   // Get user subscriptions for this creator - with enhanced cancellation handling
@@ -127,8 +127,8 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return processedSubscriptions;
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 30000, // Increased from 5000
-    refetchInterval: 60000, // Kept at 60 seconds but will reduce aggressive refreshing
+    staleTime: 300000, // 5 minutes - much longer
+    // Removed refetchInterval - no automatic refresh
     refetchOnWindowFocus: false, // Disable refetch on window focus
   });
 
@@ -180,9 +180,12 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     return userSubscriptions?.find(sub => sub.tier_id === tierId && sub.status === 'active') || null;
   }, [userSubscriptions, localSubscriptionStates]);
 
-  // Handle subscription success
-  const handleSubscriptionSuccess = useCallback(async () => {
-    console.log('[CreatorMembership] Subscription success - refreshing all data...');
+  // Manual refresh function with delay
+  const handleSubscriptionSuccess = useCallback(async (delayMs: number = 5000) => {
+    console.log('[CreatorMembership] Manual refresh triggered with delay:', delayMs);
+    
+    // Wait for the specified delay to allow webhook processing
+    await new Promise(resolve => setTimeout(resolve, delayMs));
     
     // Invalidate all related queries
     await Promise.all([
@@ -196,6 +199,8 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       refetchTiers(),
       refetchSubscriptions(),
     ]);
+    
+    console.log('[CreatorMembership] Manual refresh completed');
   }, [queryClient, refetchTiers, refetchSubscriptions]);
 
   // Update local subscription state optimistically
@@ -213,7 +218,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         delete newState[tierId];
         return newState;
       });
-    }, 120000); // Increased timeout to 2 minutes to allow more time for webhook processing
+    }, 300000); // 5 minutes timeout to allow webhook processing
   }, []);
 
   // Listen for subscription events
@@ -228,6 +233,8 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
           if (tierId) {
             updateLocalSubscriptionState(tierId, { isSubscribed: true, subscription: null });
           }
+          // Manual refresh after successful subscription with short delay
+          await handleSubscriptionSuccess(3000); // 3 seconds for subscription success
         } else if (event.type === 'subscriptionCanceled') {
           if (tierId) {
             // For cancellation, maintain the subscription but mark as scheduled to cancel
@@ -241,12 +248,9 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
               }
             });
           }
+          // Manual refresh after cancellation with longer delay
+          await handleSubscriptionSuccess(10000); // 10 seconds for cancellation to allow webhook processing
         }
-        
-        // Delay full refresh to allow webhook processing
-        setTimeout(() => {
-          handleSubscriptionSuccess();
-        }, 5000); // Increased delay to 5 seconds
       }
     };
 

@@ -90,11 +90,11 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 30000, // Increased from 5000 to reduce aggressive refreshing
-    gcTime: 60000, // Increased cache time
-    refetchOnWindowFocus: false, // Disable refetch on window focus to prevent unwanted refreshes
+    staleTime: 300000, // 5 minutes - much longer since we're not auto-refreshing
+    gcTime: 300000, // 5 minutes cache time
+    refetchOnWindowFocus: false, // Disable refetch on window focus
     refetchOnMount: true,
-    refetchInterval: 60000, // Increased from 15000 to 60000 (1 minute) to reduce polling frequency
+    // Removed refetchInterval - no automatic refresh
   });
 
   return {
