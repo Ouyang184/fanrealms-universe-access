@@ -16,7 +16,7 @@ interface MembershipTier {
 export const useSimpleCreatorMembership = (creatorId: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, boolean>>({});
+  const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, any>>({});
 
   // Fetch membership tiers
   const { data: tiers, isLoading: tiersLoading, refetch: refetchTiers } = useQuery({
@@ -60,11 +60,11 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 0,
-    refetchInterval: 30000,
+    staleTime: 30000,
+    refetchInterval: 60000,
   });
 
-  // Get user subscriptions for this creator - using user_subscriptions table consistently
+  // Get user subscriptions for this creator - with enhanced cancellation handling
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useQuery({
     queryKey: ['simpleUserCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -75,7 +75,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       
       console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
-      // Query user_subscriptions table with proper status check using improved logic
+      // Query user_subscriptions table with proper status check
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -89,31 +89,53 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       }
 
       console.log('[CreatorMembership] Found active subscriptions:', data?.length || 0, data);
-      return data || [];
+      
+      // Process each subscription to ensure correct cancellation state
+      const processedSubscriptions = data?.map(sub => {
+        let isScheduledToCancel = false;
+        let currentPeriodEnd = null;
+
+        if (sub.cancel_at_period_end === true && sub.current_period_end) {
+          // Handle both string and number timestamps
+          if (typeof sub.current_period_end === 'string') {
+            currentPeriodEnd = new Date(sub.current_period_end);
+          } else {
+            currentPeriodEnd = new Date(sub.current_period_end * 1000);
+          }
+          
+          isScheduledToCancel = currentPeriodEnd > new Date();
+        }
+
+        return {
+          ...sub,
+          isScheduledToCancel,
+          current_period_end: currentPeriodEnd ? currentPeriodEnd.toISOString() : sub.current_period_end
+        };
+      }) || [];
+
+      return processedSubscriptions;
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 0,
-    refetchInterval: 30000,
+    staleTime: 5000,
+    refetchInterval: 15000, // Check more frequently to catch webhook updates
   });
 
   const isLoading = tiersLoading || subscriptionsLoading;
 
-  // Check if user is subscribed to a specific tier using improved logic
+  // Enhanced subscription check that respects local state and cancellation status
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     console.log('[CreatorMembership] isSubscribedToTier called:', { tierId, userId: user?.id });
     
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
       console.log('[CreatorMembership] Using local state for tier:', tierId, localSubscriptionStates[tierId]);
-      return localSubscriptionStates[tierId];
+      return localSubscriptionStates[tierId].isSubscribed || false;
     }
     
-    // Fall back to server data using improved subscription logic
+    // Fall back to server data with enhanced logic
     const isSubscribed = userSubscriptions?.some(sub => {
       const isActive = sub.status === 'active';
-      const isScheduledToCancel = sub.cancel_at_period_end === true &&
-                                 sub.current_period_end && 
-                                 new Date(sub.current_period_end) > new Date();
+      const isScheduledToCancel = sub.isScheduledToCancel;
       
       // Consider subscribed if active, regardless of cancellation schedule
       const matches = sub.tier_id === tierId && isActive;
@@ -132,10 +154,20 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     }) || false;
     
     console.log('[CreatorMembership] Final result for tier:', tierId, 'isSubscribed:', isSubscribed);
-    console.log('[CreatorMembership] All subscriptions:', userSubscriptions);
     
     return isSubscribed;
   }, [userSubscriptions, localSubscriptionStates, user?.id]);
+
+  // Get subscription data for a specific tier
+  const getSubscriptionData = useCallback((tierId: string) => {
+    // Check local state first
+    if (localSubscriptionStates[tierId] !== undefined) {
+      return localSubscriptionStates[tierId].subscription;
+    }
+    
+    // Fall back to server data
+    return userSubscriptions?.find(sub => sub.tier_id === tierId && sub.status === 'active') || null;
+  }, [userSubscriptions, localSubscriptionStates]);
 
   // Handle subscription success
   const handleSubscriptionSuccess = useCallback(async () => {
@@ -156,11 +188,11 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
   }, [queryClient, refetchTiers, refetchSubscriptions]);
 
   // Update local subscription state optimistically
-  const updateLocalSubscriptionState = useCallback((tierId: string, isSubscribed: boolean) => {
-    console.log('[CreatorMembership] Updating local state for tier:', tierId, 'to:', isSubscribed);
+  const updateLocalSubscriptionState = useCallback((tierId: string, subscriptionData: any) => {
+    console.log('[CreatorMembership] Updating local state for tier:', tierId, 'with data:', subscriptionData);
     setLocalSubscriptionStates(prev => ({
       ...prev,
-      [tierId]: isSubscribed
+      [tierId]: subscriptionData
     }));
     
     // Clear local state after delay to let server data take over
@@ -170,7 +202,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         delete newState[tierId];
         return newState;
       });
-    }, 10000);
+    }, 20000); // Increased timeout to allow more time for webhook processing
   }, []);
 
   // Listen for subscription events
@@ -183,16 +215,27 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         
         if (event.type === 'subscriptionSuccess' || event.type === 'paymentSuccess') {
           if (tierId) {
-            updateLocalSubscriptionState(tierId, true);
+            updateLocalSubscriptionState(tierId, { isSubscribed: true, subscription: null });
           }
         } else if (event.type === 'subscriptionCanceled') {
           if (tierId) {
-            updateLocalSubscriptionState(tierId, false);
+            // For cancellation, maintain the subscription but mark as scheduled to cancel
+            const existingSubscription = getSubscriptionData(tierId);
+            updateLocalSubscriptionState(tierId, { 
+              isSubscribed: true, 
+              subscription: {
+                ...existingSubscription,
+                cancel_at_period_end: true,
+                isScheduledToCancel: true
+              }
+            });
           }
         }
         
-        // Always perform full refresh
-        await handleSubscriptionSuccess();
+        // Always perform full refresh after a short delay
+        setTimeout(() => {
+          handleSubscriptionSuccess();
+        }, 2000);
       }
     };
 
@@ -205,12 +248,13 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       window.removeEventListener('paymentSuccess', handleSubscriptionEvent as EventListener);
       window.removeEventListener('subscriptionCanceled', handleSubscriptionEvent as EventListener);
     };
-  }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
+  }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState, getSubscriptionData]);
 
   return {
     tiers,
     isLoading,
     isSubscribedToTier,
+    getSubscriptionData,
     handleSubscriptionSuccess,
   };
 };

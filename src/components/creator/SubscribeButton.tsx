@@ -71,45 +71,24 @@ export function SubscribeButton({
     );
   }
 
-  // Enhanced subscription cancellation logic
+  // Enhanced subscription logic with proper cancellation handling
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
   
   if (subscription) {
     const isActive = subscription.status === 'active';
-    const isScheduledToCancel = subscription.cancel_at_period_end === true &&
-                              subscription.current_period_end && 
-                              new Date(subscription.current_period_end) > new Date();
+    // Use the enhanced cancellation check from our subscription data
+    const isScheduledToCancel = subscription.isScheduledToCancel || 
+                              (subscription.cancel_at_period_end === true &&
+                               subscription.current_period_end && 
+                               new Date(subscription.current_period_end) > new Date());
 
-    // Check if subscription has ended (cancellation date has passed)
-    if (isScheduledToCancel) {
-      const cancelDate = new Date(subscription.current_period_end);
-      const currentDate = new Date();
-      
-      if (currentDate >= cancelDate) {
-        // Subscription has ended, show regular subscribe button
-        console.log('[SubscribeButton] Subscription has ended, showing ActiveSubscribeButton');
-        if (!isCreatorStripeReady) {
-          return <PaymentUnavailableButton />;
-        }
-        return (
-          <ActiveSubscribeButton
-            tierId={tierId}
-            creatorId={creatorId}
-            tierName={tierName}
-            price={price}
-          />
-        );
-      } else {
-        // Subscription is scheduled to cancel but still active - show warning
-        console.log('[SubscribeButton] Subscription scheduled to cancel, showing warning');
-        return (
-          <div className="text-yellow-400 text-center p-4 border border-yellow-200 rounded-lg bg-yellow-50">
-            <Calendar className="mx-auto mb-2 h-5 w-5" />
-            Subscription will end on {formatCancelDate(subscription.current_period_end)}
-          </div>
-        );
-      }
-    }
+    console.log('[SubscribeButton] Enhanced subscription check:', {
+      isActive,
+      isScheduledToCancel,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      current_period_end: subscription.current_period_end,
+      enhancedFlag: subscription.isScheduledToCancel
+    });
 
     if (isActive) {
       console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
