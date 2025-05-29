@@ -24,7 +24,7 @@ export async function handleSubscriptionWebhook(
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
   }
 
-  // Map Stripe status to our valid statuses (removed 'cancelling')
+  // Map Stripe status to our valid statuses (active, canceled, incomplete, incomplete_expired)
   let dbStatus = 'active';
   if (subscription.status === 'active') {
     // For active subscriptions that are set to cancel, we mark them as canceled immediately
