@@ -51,17 +51,23 @@ const PostCard: React.FC<PostCardProps> = ({
   // Check if this is the author's own post
   const isOwnPost = user?.id === authorId;
   
-  // FIXED LOGIC: Determine access based on subscription status
+  // ENHANCED ACCESS LOGIC - More explicit checks
   const isPremiumPost = !!tier_id;
-  const isSubscribedToTier = subscriptionData?.isSubscribed || false;
-  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribedToTier;
+  const isSubscribedToTier = subscriptionData?.isSubscribed === true;
+  const hasActiveSubscription = subscriptionData?.subscription?.isActive === true;
+  
+  // User has full access if:
+  // 1. It's not a premium post (public post)
+  // 2. It's their own post
+  // 3. They have an active subscription to the tier
+  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribedToTier || hasActiveSubscription;
   
   // Use real metadata - avoid showing "Unknown"
   const displayAuthorName = authorName || users?.username || "Creator";
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - FIXED Access check:', {
+  console.log('PostCard - ENHANCED Access check:', {
     postId: id,
     postTitle: title,
     tierId: tier_id,
@@ -69,10 +75,11 @@ const PostCard: React.FC<PostCardProps> = ({
     userId: user?.id,
     isPremiumPost,
     isSubscribedToTier,
+    hasActiveSubscription,
     subscriptionData: subscriptionData,
     isOwnPost,
     hasFullAccess,
-    finalDecision: hasFullAccess ? 'FULL_ACCESS' : 'RESTRICTED'
+    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
   // Content display logic
@@ -114,8 +121,8 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="space-y-3">
           <PostCardContent title={displayContent.title} content={displayContent.content} />
           
-          {/* Premium content access indicator */}
-          {isPremiumPost && hasFullAccess && (
+          {/* Premium content access indicator for subscribers */}
+          {isPremiumPost && hasFullAccess && !isOwnPost && (
             <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2 text-green-800">
                 <Crown className="h-4 w-4 text-green-600" />

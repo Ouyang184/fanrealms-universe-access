@@ -41,10 +41,10 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       const subscription = activeSubscriptions[0];
       
-      // Enhanced subscription validation
+      // Enhanced subscription validation - FIXED LOGIC
       let isCurrentlyActive = subscription.status === 'active';
       
-      // Check if subscription is scheduled to cancel
+      // Check if subscription is scheduled to cancel but still active
       if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
         const periodEndDate = new Date(subscription.current_period_end);
         const now = new Date();
@@ -62,11 +62,14 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         });
       }
 
-      console.log('[SubscriptionCheck] Final validation result:', {
+      console.log('[SubscriptionCheck] FINAL RESULT - User has access:', {
         subscriptionId: subscription.id,
         status: subscription.status,
         isCurrentlyActive,
-        hasAccess: isCurrentlyActive
+        hasAccess: isCurrentlyActive,
+        userId: user.id,
+        tierId,
+        creatorId
       });
 
       return {
@@ -78,8 +81,8 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 10000, // 10 seconds - shorter cache for real-time updates
-    gcTime: 30000,
+    staleTime: 5000, // 5 seconds - shorter cache for real-time updates
+    gcTime: 15000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });
