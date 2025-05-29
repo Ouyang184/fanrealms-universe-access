@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -29,13 +30,15 @@ export function SubscribedButton({
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
-  // Check if subscription is in cancelling state - updated logic
+  // Check if subscription is in cancelling state - check multiple fields
   const isCancellingState = subscriptionData?.status === 'cancelling' || 
                            subscriptionData?.cancel_at_period_end === true ||
-                           subscriptionData?.cancel_at_period_end;
+                           subscriptionData?.cancel_at_period_end ||
+                           (subscriptionData?.subscription && subscriptionData.subscription.cancel_at_period_end === true);
   
   const cancelAt = subscriptionData?.cancel_at || 
                   subscriptionData?.current_period_end ||
+                  subscriptionData?.subscription?.current_period_end ||
                   (subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null);
 
   const formatCancelDate = (dateString: string | number) => {
@@ -61,7 +64,8 @@ export function SubscribedButton({
 
     const subscriptionId = subscriptionData?.stripe_subscription_id || 
                           subscriptionData?.id || 
-                          subscriptionData?.subscription_id;
+                          subscriptionData?.subscription_id ||
+                          subscriptionData?.subscription?.id;
 
     if (!subscriptionId) {
       toast({
@@ -128,7 +132,8 @@ export function SubscribedButton({
 
     const subscriptionId = subscriptionData?.stripe_subscription_id || 
                           subscriptionData?.id || 
-                          subscriptionData?.subscription_id;
+                          subscriptionData?.subscription_id ||
+                          subscriptionData?.subscription?.id;
 
     if (!subscriptionId) {
       console.log('No subscription ID found, trying to cancel via simple-subscriptions');
@@ -156,24 +161,12 @@ export function SubscribedButton({
 
         console.log('Successfully set subscription to cancel at period end via simple-subscriptions');
         
-        // Update optimistic state to show cancelling
-        if (onOptimisticUpdate) {
-          onOptimisticUpdate(false);
-        }
-        
-        // Trigger subscription cancellation events
-        triggerSubscriptionCancellation({
-          creatorId, 
-          tierId, 
-          subscriptionId: 'unknown'
-        });
-        
         toast({
           title: "Subscription Will End",
           description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
         });
         
-        // Invalidate all subscription-related queries
+        // Invalidate all subscription-related queries to refresh the UI
         await invalidateAllSubscriptionQueries();
         
         if (onSubscriptionSuccess) {
@@ -231,7 +224,7 @@ export function SubscribedButton({
         description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
       });
       
-      // Invalidate all subscription-related queries
+      // Invalidate all subscription-related queries to refresh the UI immediately
       await invalidateAllSubscriptionQueries();
       
       if (onSubscriptionSuccess) {
@@ -249,6 +242,7 @@ export function SubscribedButton({
     }
   };
 
+  // Show cancelling state UI when subscription is scheduled to cancel
   if (isCancellingState && cancelAt) {
     return (
       <div className="space-y-3">
@@ -291,6 +285,7 @@ export function SubscribedButton({
     );
   }
 
+  // Show normal subscribed state with cancel button
   return (
     <div className="space-y-2">
       <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
