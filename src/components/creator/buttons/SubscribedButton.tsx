@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -158,8 +159,8 @@ export function SubscribedButton({
         });
         
         toast({
-          title: "Subscription Will Cancel",
-          description: `Your subscription to ${tierName} will end at the end of your billing period.`,
+          title: "Subscription Will End",
+          description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
         });
         
         // Invalidate all subscription-related queries
@@ -216,8 +217,8 @@ export function SubscribedButton({
       });
       
       toast({
-        title: "Subscription Will Cancel",
-        description: `Your subscription to ${tierName} will end at the end of your billing period.`,
+        title: "Subscription Will End",
+        description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
       });
       
       // Invalidate all subscription-related queries
