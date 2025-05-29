@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -30,12 +29,23 @@ export function SubscribedButton({
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
-  // Check if subscription is in cancelling state
-  const isCancellingState = subscriptionData?.status === 'cancelling';
-  const cancelAt = subscriptionData?.cancel_at || subscriptionData?.current_period_end;
+  // Check if subscription is in cancelling state - updated logic
+  const isCancellingState = subscriptionData?.status === 'cancelling' || 
+                           subscriptionData?.cancel_at_period_end === true ||
+                           subscriptionData?.cancel_at_period_end;
+  
+  const cancelAt = subscriptionData?.cancel_at || 
+                  subscriptionData?.current_period_end ||
+                  (subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null);
 
-  const formatCancelDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatCancelDate = (dateString: string | number) => {
+    let date;
+    if (typeof dateString === 'number') {
+      // Handle UNIX timestamp
+      date = new Date(dateString * 1000);
+    } else {
+      date = new Date(dateString);
+    }
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -245,12 +255,8 @@ export function SubscribedButton({
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-center mb-2">
             <AlertCircle className="mr-2 h-5 w-5 text-yellow-600" />
-            <span className="font-medium text-yellow-800">Subscription Ending Soon</span>
+            <span className="font-medium text-yellow-800">Subscription will end on {formatCancelDate(cancelAt)}</span>
           </div>
-          <p className="text-yellow-700 text-sm mb-3">
-            Your subscription to <strong>{tierName}</strong> will end on{' '}
-            <strong>{formatCancelDate(cancelAt)}</strong>
-          </p>
           <div className="text-center">
             <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
               <Calendar className="mr-1 h-3 w-3" />
@@ -273,7 +279,7 @@ export function SubscribedButton({
           ) : (
             <>
               <RotateCcw className="mr-2 h-4 w-4" />
-              Undo Cancellation
+              Reactivate before this date
             </>
           )}
         </Button>

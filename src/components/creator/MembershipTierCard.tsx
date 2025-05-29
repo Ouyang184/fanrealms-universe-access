@@ -38,12 +38,23 @@ export function MembershipTierCard({
     return <Check className="h-3 w-3" />;
   };
 
-  // Check if subscription is scheduled to cancel
-  const isCancellingState = subscriptionData?.status === 'cancelling' || subscriptionData?.cancel_at_period_end;
-  const cancelAt = subscriptionData?.cancel_at || subscriptionData?.current_period_end;
+  // Check if subscription is scheduled to cancel - improved detection
+  const isCancellingState = subscriptionData?.status === 'cancelling' || 
+                           subscriptionData?.cancel_at_period_end === true ||
+                           subscriptionData?.cancel_at_period_end;
+  
+  const cancelAt = subscriptionData?.cancel_at || 
+                  subscriptionData?.current_period_end ||
+                  (subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null);
 
-  const formatCancelDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatCancelDate = (dateString: string | number) => {
+    let date;
+    if (typeof dateString === 'number') {
+      // Handle UNIX timestamp
+      date = new Date(dateString * 1000);
+    } else {
+      date = new Date(dateString);
+    }
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
