@@ -34,7 +34,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
           console.log(`[useCreatorSubscribers] Subscriber ${index + 1}:`, {
             id: sub.id,
             user_id: sub.user_id,
-            creator_id: sub.creator_id, // This should match the creatorId parameter
+            creator_id: sub.creator_id,
             tier_id: sub.tier_id,
             status: sub.status,
             stripe_subscription_id: sub.stripe_subscription_id,

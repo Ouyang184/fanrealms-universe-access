@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -45,7 +46,7 @@ serve(async (req) => {
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
         .eq('tier_id', tierId)
-        .in('status', ['active', 'trialing']);
+        .in('status', ['active']); // Removed 'trialing' as we're not using it
 
       if (activeSubsError) {
         console.error('[SimpleSubscriptions] Error checking active subscriptions:', activeSubsError);
@@ -211,7 +212,7 @@ serve(async (req) => {
           tier_id: tierId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
-          status: 'pending',
+          status: 'incomplete', // Start with incomplete instead of pending
           amount: tier.price,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -252,16 +253,13 @@ serve(async (req) => {
         throw new Error('Active subscription not found');
       }
 
-      // Set subscription to cancel at period end in Stripe
-      const updatedSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-        cancel_at_period_end: true
-      });
+      // Cancel the subscription immediately in Stripe
+      const canceledSubscription = await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
 
-      // Update status to cancelling in user_subscriptions table ONLY and store cancellation info
+      // Update status to canceled in user_subscriptions table ONLY
       const updateData = { 
-        status: 'cancelling' as const,
-        cancel_at_period_end: true,
-        cancel_at: updatedSubscription.cancel_at ? new Date(updatedSubscription.cancel_at * 1000).toISOString() : null,
+        status: 'canceled' as const,
+        cancel_at_period_end: false,
         updated_at: new Date().toISOString()
       };
 
@@ -272,13 +270,12 @@ serve(async (req) => {
         .update(updateData)
         .eq('id', subscription.id);
 
-      console.log('[SimpleSubscriptions] Successfully set subscription to cancel at period end');
+      console.log('[SimpleSubscriptions] Successfully canceled subscription');
 
       return new Response(JSON.stringify({ 
         success: true,
         creatorId: subscription.creator_id,
-        tierId: subscription.tier_id,
-        cancelAt: updatedSubscription.cancel_at ? new Date(updatedSubscription.cancel_at * 1000).toISOString() : null
+        tierId: subscription.tier_id
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -286,7 +283,7 @@ serve(async (req) => {
     } else if (action === 'get_user_subscriptions') {
       console.log('[SimpleSubscriptions] Getting user subscriptions for user:', user.id);
       
-      // Get from user_subscriptions table ONLY - include cancelling subscriptions too
+      // Get from user_subscriptions table ONLY - only include active subscriptions
       const { data: subscriptions } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -295,7 +292,7 @@ serve(async (req) => {
           tier:membership_tiers(id, title, description, price)
         `)
         .eq('user_id', user.id)
-        .in('status', ['active', 'cancelling']) // Include both active and cancelling
+        .eq('status', 'active') // Only active subscriptions
         .order('created_at', { ascending: false });
 
       return new Response(JSON.stringify({ subscriptions: subscriptions || [] }), {
@@ -387,8 +384,8 @@ serve(async (req) => {
             
             console.log('[SimpleSubscriptions] Found user:', userData.id, 'for subscription:', stripeSub.id);
             
-            // For active subscriptions, determine the correct status
-            const dbStatus = stripeSub.cancel_at_period_end ? 'cancelling' : 'active';
+            // For active subscriptions, determine the correct status (removed cancelling)
+            const dbStatus = 'active'; // Always active for active Stripe subscriptions
             
             console.log('[SimpleSubscriptions] Mapped status:', stripeSub.status, '->', dbStatus);
             
@@ -427,7 +424,7 @@ serve(async (req) => {
         }
       }
       
-      // Now get the synced data from user_subscriptions table - FIXED: Use creator_id instead of user_id
+      // Now get the synced data from user_subscriptions table - only active subscriptions
       console.log('[SimpleSubscriptions] Fetching final results from user_subscriptions table');
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
@@ -436,8 +433,8 @@ serve(async (req) => {
           user:users(id, username, email, profile_picture),
           tier:membership_tiers(id, title, price)
         `)
-        .eq('creator_id', creatorId) // FIXED: This was the bug - use creator_id not user_id
-        .in('status', ['active', 'cancelling']) // Include both active and cancelling
+        .eq('creator_id', creatorId)
+        .eq('status', 'active') // Only active subscriptions
         .order('created_at', { ascending: false });
 
       console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);

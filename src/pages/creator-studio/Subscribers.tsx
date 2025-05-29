@@ -115,13 +115,13 @@ export default function CreatorStudioSubscribers() {
     return counts;
   }, {} as Record<string, number>) || {};
 
-  // Filter active subscribers for accurate counts
+  // Filter active subscribers for accurate counts (only active now)
   const activeSubscribers = subscribers?.filter(sub => 
-    sub.status === 'active' || sub.status === 'cancelling'
+    sub.status === 'active'
   ) || [];
 
-  const pendingSubscribers = subscribers?.filter(sub => 
-    sub.status === 'pending'
+  const incompleteSubscribers = subscribers?.filter(sub => 
+    sub.status === 'incomplete' || sub.status === 'incomplete_expired'
   ) || [];
 
   return (
@@ -145,12 +145,12 @@ export default function CreatorStudioSubscribers() {
         </div>
 
         {/* Sync Status Alert */}
-        {pendingSubscribers.length > 0 && (
+        {incompleteSubscribers.length > 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              {pendingSubscribers.length} subscription(s) are pending payment confirmation. 
-              They will appear as active once payment is processed by Stripe.
+              {incompleteSubscribers.length} subscription(s) are incomplete or expired. 
+              They will appear as active once payment is completed.
             </AlertDescription>
           </Alert>
         )}
@@ -206,10 +206,8 @@ export default function CreatorStudioSubscribers() {
                         <p className="font-medium">{subscriber.tier?.title}</p>
                         <p className="text-sm text-muted-foreground">${subscriber.amount}/month</p>
                       </div>
-                      <Badge 
-                        variant={subscriber.status === 'cancelling' ? 'destructive' : 'default'}
-                      >
-                        {subscriber.status === 'cancelling' ? 'Cancelling' : 'Active'}
+                      <Badge variant="default">
+                        Active
                       </Badge>
                     </div>
                   </div>
@@ -226,18 +224,18 @@ export default function CreatorStudioSubscribers() {
           </CardContent>
         </Card>
 
-        {/* Pending Subscriptions Section */}
-        {pendingSubscribers.length > 0 && (
+        {/* Incomplete Subscriptions Section */}
+        {incompleteSubscribers.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Pending Subscriptions</span>
-                <Badge variant="outline">{pendingSubscribers.length} pending</Badge>
+                <span>Incomplete Subscriptions</span>
+                <Badge variant="outline">{incompleteSubscribers.length} incomplete</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {pendingSubscribers.map((subscriber) => (
+                {incompleteSubscribers.map((subscriber) => (
                   <div key={subscriber.id} className="flex items-center justify-between p-4 border rounded-lg bg-yellow-50">
                     <div className="flex items-center space-x-3">
                       <Avatar>
@@ -256,7 +254,9 @@ export default function CreatorStudioSubscribers() {
                         <p className="font-medium">{subscriber.tier?.title}</p>
                         <p className="text-sm text-muted-foreground">${subscriber.amount}/month</p>
                       </div>
-                      <Badge variant="outline">Pending Payment</Badge>
+                      <Badge variant="outline">
+                        {subscriber.status === 'incomplete_expired' ? 'Expired' : 'Incomplete'}
+                      </Badge>
                     </div>
                   </div>
                 ))}
