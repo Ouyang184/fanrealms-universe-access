@@ -38,17 +38,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Parse request body once
+    const body = await req.json();
+    console.log('Stripe subscriptions action:', body.action);
+
     // Authenticate user (except for sync-all which is internal)
     let user = null;
-    const { action } = await req.json().catch(() => ({ action: null }));
-    
-    if (action !== 'sync_all_subscriptions') {
+    if (body.action !== 'sync_all_subscriptions') {
       user = await authenticateUser(req, supabaseService);
     }
-
-    // Parse request body again for action routing
-    const body = await req.clone().json();
-    console.log('Stripe subscriptions action:', body.action);
 
     // Route to appropriate handler
     switch (body.action) {

@@ -1,44 +1,42 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-export async function authenticateUser(authHeader: string | null, supabaseUrl: string, supabaseAnonKey: string) {
+export async function authenticateUser(req: Request, supabaseService: any) {
   console.log('=== AUTHENTICATION START ===');
   
-  if (!authHeader) {
-    console.log('ERROR: Missing authorization header');
-    throw new Error('Missing authorization header');
+  const authHeader = req.headers.get('Authorization');
+  console.log('Auth header present:', !!authHeader);
+  
+  if (!authHeader || typeof authHeader !== 'string') {
+    console.error('No valid authorization header provided');
+    throw new Error('Authorization header required');
   }
 
-  console.log('Authorization header format:', authHeader.substring(0, 20) + '...');
+  if (!authHeader.startsWith('Bearer ')) {
+    console.error('Invalid authorization header format');
+    throw new Error('Invalid authorization header format');
+  }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } }
-  });
-
-  console.log('Supabase client created for authentication');
+  const token = authHeader.substring(7); // Remove "Bearer " prefix
+  console.log('Token extracted, length:', token.length);
 
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error } = await supabaseService.auth.getUser(token);
     
-    console.log('Auth getUser response:', {
-      user: user ? { id: user.id, email: user.email } : null,
-      error: userError
-    });
-    
-    if (userError) {
-      console.log('ERROR: User authentication failed:', userError);
-      throw new Error('Authentication failed: ' + userError.message);
+    if (error) {
+      console.error('Auth error:', error);
+      throw new Error(`Authentication failed: ${error.message}`);
     }
     
     if (!user) {
-      console.log('ERROR: No user returned from authentication');
-      throw new Error('No user found');
+      console.error('No user found');
+      throw new Error('User not found');
     }
 
-    console.log('User authenticated successfully:', { id: user.id, email: user.email });
+    console.log('User authenticated successfully:', user.id);
     return user;
-  } catch (authError) {
-    console.log('ERROR: Exception during authentication:', authError);
-    throw authError;
+  } catch (error) {
+    console.error('Authentication error:', error);
+    throw error;
   }
 }
