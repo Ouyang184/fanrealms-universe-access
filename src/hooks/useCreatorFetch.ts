@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -92,7 +91,7 @@ export function useCreatorFetch(identifier?: string) {
         return [];
       }
       
-      console.log(`Fetching posts for creator user ID: ${creatorUserId}`);
+      console.log(`[useCreatorFetch] Fetching ALL posts for creator user ID: ${creatorUserId}`);
       
       // Fetch ALL posts for this creator, including tier-restricted ones
       const { data: postsData, error } = await supabase
@@ -112,8 +111,18 @@ export function useCreatorFetch(identifier?: string) {
         .eq('author_id', creatorUserId)
         .order('created_at', { ascending: false });
       
+      console.log(`[useCreatorFetch] Raw posts query result:`, { 
+        postsCount: postsData?.length, 
+        error,
+        samplePosts: postsData?.slice(0, 2).map(p => ({ 
+          id: p.id, 
+          title: p.title, 
+          tier_id: p.tier_id 
+        }))
+      });
+      
       if (error) {
-        console.error('Error fetching posts:', error);
+        console.error('[useCreatorFetch] Error fetching posts:', error);
         toast({
           title: "Error",
           description: "Failed to load posts",
@@ -121,6 +130,20 @@ export function useCreatorFetch(identifier?: string) {
         });
         return [];
       }
+      
+      if (!postsData) {
+        console.log('[useCreatorFetch] No posts data returned');
+        return [];
+      }
+
+      // Log tier distribution for this creator
+      const tierStats = postsData.reduce((acc, post) => {
+        const tierType = post.tier_id ? 'premium' : 'public';
+        acc[tierType] = (acc[tierType] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      console.log(`[useCreatorFetch] Creator ${creatorUserId} post tier distribution:`, tierStats);
       
       return postsData.map((post: any) => ({
         ...post,
