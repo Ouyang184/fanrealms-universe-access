@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -131,6 +132,15 @@ export function CreatePostForm() {
         });
       }
 
+      console.log('Creating post with data:', {
+        title,
+        content,
+        author_id: user.id,
+        creator_id: creatorProfile?.id || null,
+        tier_id: selectedTierId,
+        attachments: uploadedAttachments
+      });
+
       const { error } = await supabase
         .from('posts')
         .insert([
@@ -138,8 +148,8 @@ export function CreatePostForm() {
             title,
             content,
             author_id: user.id,
-            creator_id: creatorProfile?.id || null, // Set creator_id for notifications
-            tier_id: selectedTierId,
+            creator_id: creatorProfile?.id || null,
+            tier_id: selectedTierId, // This should properly set the tier_id
             attachments: uploadedAttachments
           }
         ]);
@@ -163,8 +173,10 @@ export function CreatePostForm() {
       // Refresh posts list
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
 
     } catch (error: any) {
+      console.error('Error creating post:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create post. Please try again.",
@@ -243,6 +255,12 @@ export function CreatePostForm() {
               value={selectedTierId}
               disabled={isLoading}
             />
+            {selectedTierId && (
+              <div className="text-sm text-muted-foreground bg-amber-50 p-2 rounded border">
+                <Lock className="inline h-3 w-3 mr-1" />
+                This post will only be visible to subscribers of the selected membership tier.
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t">
