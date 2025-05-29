@@ -75,13 +75,13 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       
       console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
-      // Query user_subscriptions table with proper status check
+      // Query user_subscriptions table with proper status check using improved logic
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('status', 'active');
+        .eq('status', 'active'); // Only get active subscriptions
 
       if (error) {
         console.error('[CreatorMembership] Error fetching subscriptions:', error);
@@ -98,7 +98,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
 
   const isLoading = tiersLoading || subscriptionsLoading;
 
-  // Check if user is subscribed to a specific tier with enhanced logging
+  // Check if user is subscribed to a specific tier using improved logic
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     console.log('[CreatorMembership] isSubscribedToTier called:', { tierId, userId: user?.id });
     
@@ -108,13 +108,24 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to server data from user_subscriptions table
+    // Fall back to server data using improved subscription logic
     const isSubscribed = userSubscriptions?.some(sub => {
-      const matches = sub.tier_id === tierId && sub.status === 'active';
+      const isActive = sub.status === 'active';
+      const isScheduledToCancel = sub.cancel_at_period_end === true &&
+                                 sub.current_period_end && 
+                                 new Date(sub.current_period_end) > new Date();
+      
+      // Consider subscribed if active, regardless of cancellation schedule
+      const matches = sub.tier_id === tierId && isActive;
+      
       console.log('[CreatorMembership] Checking subscription:', {
         subTierId: sub.tier_id,
         targetTierId: tierId,
         status: sub.status,
+        isActive,
+        isScheduledToCancel,
+        cancel_at_period_end: sub.cancel_at_period_end,
+        current_period_end: sub.current_period_end,
         matches
       });
       return matches;

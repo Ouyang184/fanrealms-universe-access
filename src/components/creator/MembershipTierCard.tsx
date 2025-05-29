@@ -38,24 +38,14 @@ export function MembershipTierCard({
     return <Check className="h-3 w-3" />;
   };
 
-  // Check if subscription is scheduled to cancel - improved detection
-  const isCancellingState = subscriptionData?.status === 'cancelling' || 
-                           subscriptionData?.cancel_at_period_end === true ||
-                           subscriptionData?.cancel_at_period_end;
-  
-  const cancelAt = subscriptionData?.cancel_at || 
-                  subscriptionData?.current_period_end ||
-                  (subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null);
+  // Use the improved subscription logic
+  const isActive = subscriptionData?.status === 'active';
+  const isScheduledToCancel = subscriptionData?.cancel_at_period_end === true &&
+                             subscriptionData?.current_period_end && 
+                             new Date(subscriptionData.current_period_end * 1000) > new Date();
 
-  const formatCancelDate = (dateString: string | number) => {
-    let date;
-    if (typeof dateString === 'number') {
-      // Handle UNIX timestamp
-      date = new Date(dateString * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
@@ -64,7 +54,7 @@ export function MembershipTierCard({
 
   return (
     <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-      {isSubscribed && !isCancellingState && (
+      {isActive && !isScheduledToCancel && (
         <div className="absolute -top-2 -right-2">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
@@ -73,7 +63,7 @@ export function MembershipTierCard({
         </div>
       )}
 
-      {isSubscribed && isCancellingState && (
+      {isActive && isScheduledToCancel && (
         <div className="absolute -top-2 -right-2">
           <Badge variant="destructive" className="gap-1">
             <AlertTriangle className="h-3 w-3" />
@@ -103,17 +93,19 @@ export function MembershipTierCard({
             <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
           </div>
 
-          {/* Show cancellation warning if subscription is scheduled to end */}
-          {isSubscribed && isCancellingState && cancelAt && (
+          {/* Show subscription status using improved logic */}
+          {isActive && isScheduledToCancel && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
-                <span className="font-medium text-yellow-800 text-sm">Subscription will end on {formatCancelDate(cancelAt)}</span>
+                <span className="font-medium text-yellow-800 text-sm">
+                  Subscription will end on {formatDate(subscriptionData.current_period_end)}
+                </span>
               </div>
               <div className="text-center">
                 <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
                   <Calendar className="mr-1 h-3 w-3" />
-                  Active until {formatCancelDate(cancelAt)}
+                  Active until {formatDate(subscriptionData.current_period_end)}
                 </Badge>
               </div>
             </div>

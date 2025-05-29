@@ -24,9 +24,11 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
   const tier = subscription.tier;
   const user = creator?.users;
   
-  // Check if subscription is cancelling
-  const isCancelling = subscription.status === 'cancelling';
-  const cancelAt = subscription.cancel_at || subscription.current_period_end;
+  // Use the improved subscription logic
+  const isActive = subscription.status === 'active';
+  const isScheduledToCancel = subscription.cancel_at_period_end === true &&
+                             subscription.current_period_end && 
+                             new Date(subscription.current_period_end * 1000) > new Date();
   
   // Format subscription date
   const createdDate = new Date(subscription.created_at);
@@ -37,7 +39,7 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
   
   // Calculate next billing date based on current period end
   const nextBillingDate = subscription.current_period_end ? 
-    new Date(subscription.current_period_end) : 
+    new Date(subscription.current_period_end * 1000) : 
     new Date(createdDate.getTime() + 30 * 24 * 60 * 60 * 1000); // fallback to 30 days from creation
   
   const nextBilling = nextBillingDate.toLocaleDateString('en-US', {
@@ -46,8 +48,8 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
     year: 'numeric'
   });
 
-  const formatCancelDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatCancelDate = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -83,14 +85,15 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
         </h3>
         <p className="text-muted-foreground text-sm mt-1">{creator?.bio || "No bio available"}</p>
 
-        {isCancelling && cancelAt && (
+        {/* Use improved subscription status logic */}
+        {isActive && isScheduledToCancel && (
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-center mb-1">
               <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
               <span className="font-medium text-yellow-800 text-sm">Ending Soon</span>
             </div>
             <p className="text-yellow-700 text-xs">
-              Subscription ends on {formatCancelDate(cancelAt)}
+              Subscription will end on {formatCancelDate(subscription.current_period_end)}
             </p>
           </div>
         )}
@@ -108,10 +111,10 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
           )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
-              {isCancelling ? 'Ends On' : 'Next Billing Date'}
+              {isActive && isScheduledToCancel ? 'Ends On' : 'Next Billing Date'}
             </span>
             <span className="font-medium">
-              {isCancelling && cancelAt ? formatCancelDate(cancelAt) : nextBilling}
+              {isActive && isScheduledToCancel ? formatCancelDate(subscription.current_period_end) : nextBilling}
             </span>
           </div>
           <div className="flex justify-between text-sm">
@@ -121,9 +124,11 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Status</span>
             <span className={`font-medium capitalize ${
-              isCancelling ? 'text-yellow-600' : 'text-green-600'
+              isActive && isScheduledToCancel ? 'text-yellow-600' : 
+              isActive ? 'text-green-600' : 'text-gray-600'
             }`}>
-              {isCancelling ? 'Ending Soon' : subscription.status}
+              {isActive && isScheduledToCancel ? 'Ending Soon' : 
+               isActive ? 'Active' : subscription.status}
             </span>
           </div>
         </div>
@@ -149,10 +154,10 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {!isCancelling && <DropdownMenuItem>Change Tier</DropdownMenuItem>}
+              {!(isActive && isScheduledToCancel) && <DropdownMenuItem>Change Tier</DropdownMenuItem>}
               <DropdownMenuItem>Message Creator</DropdownMenuItem>
               <DropdownMenuSeparator />
-              {!isCancelling ? (
+              {!(isActive && isScheduledToCancel) ? (
                 <DropdownMenuItem 
                   className="text-destructive"
                   onClick={() => onCancel(subscription.id)}
