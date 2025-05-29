@@ -42,9 +42,9 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       console.log('[SubscriptionCheck] ALL user subscriptions across all creators:', allUserSubs);
       console.log('[SubscriptionCheck] Total subscription records for user:', allUserSubs?.length || 0);
 
-      // Filter for active subscriptions only
-      const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
-      console.log('[SubscriptionCheck] Active subscriptions:', activeSubscriptions);
+      // Filter for active OR cancelling subscriptions
+      const activeSubscriptions = data?.filter(sub => sub.status === 'active' || sub.status === 'cancelling') || [];
+      console.log('[SubscriptionCheck] Active/Cancelling subscriptions:', activeSubscriptions);
 
       const isSubscribed = activeSubscriptions.length > 0;
       const subscription = activeSubscriptions.length > 0 ? activeSubscriptions[0] : null;

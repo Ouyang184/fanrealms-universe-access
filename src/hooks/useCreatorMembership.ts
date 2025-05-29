@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -84,7 +83,7 @@ export const useCreatorMembership = (creatorId: string) => {
       
       console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
-      // Query user_subscriptions table directly
+      // Query user_subscriptions table directly - include both active and cancelling
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -97,6 +96,7 @@ export const useCreatorMembership = (creatorId: string) => {
       }
 
       console.log('User subscriptions to creator found:', data?.length || 0);
+      console.log('User subscription details:', data);
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
@@ -120,7 +120,7 @@ export const useCreatorMembership = (creatorId: string) => {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to server data from user_subscriptions
+    // Fall back to server data from user_subscriptions - include cancelling status
     const isSubscribed = userCreatorSubscriptions?.some(sub => 
       sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
     ) || false;
@@ -129,11 +129,13 @@ export const useCreatorMembership = (creatorId: string) => {
     return isSubscribed;
   }, [userCreatorSubscriptions, localSubscriptionStates]);
 
-  // Get subscription data for a specific tier
+  // Get subscription data for a specific tier - include cancelling subscriptions
   const getSubscriptionData = useCallback((tierId: string) => {
-    return userCreatorSubscriptions?.find(sub => 
+    const subscription = userCreatorSubscriptions?.find(sub => 
       sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
     );
+    console.log('getSubscriptionData for tier:', tierId, 'found:', subscription);
+    return subscription;
   }, [userCreatorSubscriptions]);
 
   // Handle subscription success with full sync
