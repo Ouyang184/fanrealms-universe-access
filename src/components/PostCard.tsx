@@ -47,32 +47,35 @@ const PostCard: React.FC<PostCardProps> = ({
   
   // Check if user is subscribed to this tier
   const { subscriptionData } = useSimpleSubscriptionCheck(tier_id || undefined, authorId);
-  const isSubscribed = subscriptionData?.isSubscribed || false;
   
   // Check if this is the author's own post
   const isOwnPost = user?.id === authorId;
   
-  // NEW LOGIC: Everyone can see the post card, but content access varies
+  // FIXED LOGIC: Determine access based on subscription status
   const isPremiumPost = !!tier_id;
-  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribed;
+  const isSubscribedToTier = subscriptionData?.isSubscribed || false;
+  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribedToTier;
   
   // Use real metadata - avoid showing "Unknown"
   const displayAuthorName = authorName || users?.username || "Creator";
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - Access check:', {
+  console.log('PostCard - FIXED Access check:', {
     postId: id,
+    postTitle: title,
     tierId: tier_id,
     authorId,
     userId: user?.id,
     isPremiumPost,
-    isSubscribed,
+    isSubscribedToTier,
+    subscriptionData: subscriptionData,
     isOwnPost,
-    hasFullAccess
+    hasFullAccess,
+    finalDecision: hasFullAccess ? 'FULL_ACCESS' : 'RESTRICTED'
   });
 
-  // Content preview logic
+  // Content display logic
   const getDisplayContent = () => {
     if (hasFullAccess) {
       return {
@@ -81,7 +84,7 @@ const PostCard: React.FC<PostCardProps> = ({
         showFullMedia: true
       };
     } else {
-      // Show preview for premium posts
+      // Show preview for premium posts when not subscribed
       const previewContent = content.length > 150 
         ? content.substring(0, 150) + "..." 
         : content;
@@ -111,7 +114,20 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="space-y-3">
           <PostCardContent title={displayContent.title} content={displayContent.content} />
           
-          {/* Premium content preview/lock indicator */}
+          {/* Premium content access indicator */}
+          {isPremiumPost && hasFullAccess && (
+            <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <Crown className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">✓ Premium Content Unlocked</span>
+                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                  Subscribed
+                </Badge>
+              </div>
+            </div>
+          )}
+          
+          {/* Premium content preview/lock indicator for non-subscribers */}
           {isPremiumPost && !hasFullAccess && (
             <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
               <div className="flex items-center gap-2 text-amber-800 mb-3">

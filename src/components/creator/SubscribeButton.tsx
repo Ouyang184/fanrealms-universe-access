@@ -5,8 +5,6 @@ import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
 import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
-import { Button } from '@/components/ui/button';
-import { Calendar, Lock } from 'lucide-react';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -35,10 +33,10 @@ export function SubscribeButton({
   // Use external subscription data if provided, otherwise use hook data
   const finalSubscriptionData = externalSubscriptionData || subscriptionData;
   
-  // Use subscription check result with fallback to prop
+  // FIXED: Use subscription check result with proper validation
   const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
-  console.log('[SubscribeButton] Render state:', {
+  console.log('[SubscribeButton] FIXED Render state:', {
     tierId,
     creatorId,
     tierName,
@@ -56,10 +54,11 @@ export function SubscribeButton({
     );
   }
 
-  // CRITICAL FIX: Check subscription status properly
+  // FIXED: Check subscription status properly
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
   
-  if (subscription && subscription.status === 'active') {
+  // Check if user has an active subscription (including those scheduled to cancel but still in period)
+  if (subscription && (subscription.status === 'active' || subscription.isActive)) {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
     return (
       <SubscribedButton
