@@ -8,6 +8,7 @@ export const usePosts = () => {
   return useQuery({
     queryKey: ["posts", "recent"],
     queryFn: async () => {
+      // Fetch ALL posts including tier-restricted ones
       const { data: posts, error } = await supabase
         .from('posts')
         .select(`
@@ -15,6 +16,11 @@ export const usePosts = () => {
           users!posts_author_id_fkey (
             username,
             profile_picture
+          ),
+          membership_tiers (
+            id,
+            title,
+            price
           )
         `)
         .order('created_at', { ascending: false })
@@ -24,16 +30,18 @@ export const usePosts = () => {
         throw error;
       }
 
+      console.log('usePosts - Fetched all posts:', posts?.length || 0, 'including tier-restricted posts');
+
       return posts.map((post): Post => ({
         id: post.id,
         title: post.title,
         content: post.content,
-        authorId: post.author_id, // Now properly mapped from author_id
+        authorId: post.author_id,
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
         createdAt: post.created_at,
         date: formatRelativeDate(post.created_at),
-        tier_id: post.tier_id,
+        tier_id: post.tier_id, // Include tier_id for access control
         attachments: post.attachments
       }));
     }
