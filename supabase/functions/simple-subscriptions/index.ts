@@ -395,7 +395,7 @@ serve(async (req) => {
             // Upsert subscription in user_subscriptions table
             const subscriptionData = {
               user_id: userData.id,
-              creator_id: creatorId,
+              creator_id: creatorId, // CRITICAL: Use the creatorId parameter, not from metadata
               tier_id: tier.id,
               stripe_subscription_id: stripeSub.id,
               stripe_customer_id: stripeSub.customer,
@@ -427,7 +427,7 @@ serve(async (req) => {
         }
       }
       
-      // Now get the synced data from user_subscriptions table
+      // Now get the synced data from user_subscriptions table - FIXED: Use creator_id instead of user_id
       console.log('[SimpleSubscriptions] Fetching final results from user_subscriptions table');
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
@@ -436,7 +436,7 @@ serve(async (req) => {
           user:users(id, username, email, profile_picture),
           tier:membership_tiers(id, title, price)
         `)
-        .eq('creator_id', creatorId)
+        .eq('creator_id', creatorId) // FIXED: This was the bug - use creator_id not user_id
         .in('status', ['active', 'cancelling']) // Include both active and cancelling
         .order('created_at', { ascending: false });
 
