@@ -195,6 +195,11 @@ export function SubscribedButton({
           description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
         });
         
+        // Trigger optimistic update to set cancelling state
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(false);
+        }
+        
         // Invalidate all subscription-related queries to refresh the UI
         await invalidateAllSubscriptionQueries();
         
@@ -255,6 +260,11 @@ export function SubscribedButton({
         title: "Subscription Will End",
         description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
       });
+      
+      // Trigger optimistic update to set cancelling state
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(false);
+      }
       
       // Invalidate all subscription-related queries to refresh the UI immediately
       await invalidateAllSubscriptionQueries();

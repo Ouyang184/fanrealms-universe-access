@@ -5,6 +5,8 @@ import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
 import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
+import { Button } from '@/components/ui/button';
+import { Calendar, Lock } from 'lucide-react';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -48,10 +50,70 @@ export function SubscribeButton({
     isCreatorStripeReady
   });
 
+  // Helper function to format date
+  const formatCancelDate = (dateString: string | number) => {
+    let date;
+    if (typeof dateString === 'number') {
+      // Handle UNIX timestamp
+      date = new Date(dateString * 1000);
+    } else {
+      date = new Date(dateString);
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  // Check if subscription is in cancelling state but still active
+  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
+  const isCancellingState = subscription?.status === 'cancelling' || 
+                           subscription?.cancel_at_period_end === true ||
+                           subscription?.cancel_at_period_end;
+  
+  const cancelAt = subscription?.cancel_at || 
+                  subscription?.current_period_end ||
+                  (subscription?.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null);
+
   if (isLoading) {
     return (
       <div className="w-full h-10 bg-gray-200 animate-pulse rounded" />
     );
+  }
+
+  // Check if subscription is cancelled and the cancellation date has passed
+  if (isCancellingState && cancelAt) {
+    const cancelDate = new Date(typeof cancelAt === 'number' ? cancelAt * 1000 : cancelAt);
+    const currentDate = new Date();
+    
+    if (currentDate >= cancelDate) {
+      // Subscription has ended, show regular subscribe button
+      console.log('[SubscribeButton] Subscription has ended, showing ActiveSubscribeButton');
+      if (!isCreatorStripeReady) {
+        return <PaymentUnavailableButton />;
+      }
+      return (
+        <ActiveSubscribeButton
+          tierId={tierId}
+          creatorId={creatorId}
+          tierName={tierName}
+          price={price}
+        />
+      );
+    } else {
+      // Subscription is scheduled to cancel but still active - show "Can Subscribe again" button
+      console.log('[SubscribeButton] Subscription scheduled to cancel, showing disabled button');
+      return (
+        <Button 
+          disabled 
+          className="w-full bg-gray-300 text-gray-600 cursor-not-allowed"
+        >
+          <Lock className="mr-2 h-4 w-4" />
+          Can Subscribe again on {formatCancelDate(cancelAt)}
+        </Button>
+      );
+    }
   }
 
   if (isUserSubscribed) {
