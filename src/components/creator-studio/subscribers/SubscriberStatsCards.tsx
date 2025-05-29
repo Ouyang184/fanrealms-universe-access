@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { UserCheck, DollarSign } from "lucide-react";
+import { UserCheck, DollarSign, TrendingUp } from "lucide-react";
 import { SubscriberWithDetails } from "@/types/creator-studio";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
@@ -17,7 +17,7 @@ interface SubscriberStatsCardsProps {
 const getTierColorClasses = (index: number) => {
   const colorClasses = [
     "bg-primary/10 text-primary",
-    "bg-secondary/20 text-secondary-foreground",
+    "bg-secondary/20 text-secondary-foreground", 
     "bg-purple-500/10 text-purple-500",
     "bg-blue-500/10 text-blue-500",
     "bg-amber-500/10 text-amber-500"
@@ -33,8 +33,8 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[1, 2, 3].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="p-6">
             <div className="flex items-center gap-4">
               <Skeleton className="h-12 w-12 rounded-full" />
@@ -49,13 +49,25 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
     );
   }
 
-  // Calculate actual monthly revenue from amount_paid (what users actually spent)
-  const actualRevenue = subscribers.reduce((total, sub) => {
-    return total + (sub.tierPrice || 0);
+  // Calculate active subscribers (only those with active or cancelling status)
+  const activeSubscribers = subscribers.filter(sub => 
+    sub.status === 'active' || sub.status === 'cancelling'
+  );
+
+  // Calculate actual monthly revenue from Stripe subscription amounts
+  const monthlyRevenue = activeSubscribers.reduce((total, sub) => {
+    return total + (sub.amount || 0);
   }, 0);
 
+  // Calculate average revenue per subscriber
+  const averageRevenue = activeSubscribers.length > 0 ? monthlyRevenue / activeSubscribers.length : 0;
+
+  // Get the most popular tier
+  const mostPopularTier = Object.entries(tierCounts)
+    .sort((a, b) => b[1] - a[1])[0];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {/* Total Active Subscribers Card */}
       <Card className="p-6">
         <div className="flex items-center gap-4">
@@ -64,12 +76,17 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Active Subscribers</p>
-            <h3 className="text-2xl font-bold">{subscribers.length}</h3>
+            <h3 className="text-2xl font-bold">{activeSubscribers.length}</h3>
+            <p className="text-xs text-muted-foreground">
+              {subscribers.length - activeSubscribers.length > 0 && 
+                `${subscribers.length - activeSubscribers.length} inactive`
+              }
+            </p>
           </div>
         </div>
       </Card>
       
-      {/* Actual Monthly Revenue Card - Links to Payouts Page */}
+      {/* Monthly Recurring Revenue Card - Links to Payouts Page */}
       <Link to="/creator-studio/payouts">
         <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer">
           <div className="flex items-center gap-4">
@@ -77,47 +94,55 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
               <DollarSign className="h-6 w-6 text-green-500" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Monthly Revenue</p>
-              <h3 className="text-2xl font-bold">${actualRevenue.toFixed(2)}</h3>
+              <p className="text-sm text-muted-foreground">Monthly Revenue (MRR)</p>
+              <h3 className="text-2xl font-bold">${monthlyRevenue.toFixed(2)}</h3>
+              <p className="text-xs text-muted-foreground">From active subscriptions</p>
             </div>
           </div>
         </Card>
       </Link>
       
-      {/* Dynamic Tier Card - Show top tier or fewer if not enough tiers */}
-      {tiers && tiers.length > 0 ? (
-        // If we have actual tiers from the database, show the top tier
-        tiers.slice(0, 1).map((tier, index) => (
-          <Card key={tier.id} className="p-6">
-            <div className="flex items-center gap-4">
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index)}`}>
-                <UserCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{tier.name} Subscribers</p>
-                <h3 className="text-2xl font-bold">{tierCounts[tier.name] || 0}</h3>
-              </div>
+      {/* Average Revenue Per User */}
+      <Card className="p-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+            <TrendingUp className="h-6 w-6 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Average Revenue</p>
+            <h3 className="text-2xl font-bold">${averageRevenue.toFixed(2)}</h3>
+            <p className="text-xs text-muted-foreground">Per subscriber/month</p>
+          </div>
+        </div>
+      </Card>
+      
+      {/* Most Popular Tier or Dynamic Tier Card */}
+      {mostPopularTier ? (
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(0)}`}>
+              <UserCheck className="h-6 w-6" />
             </div>
-          </Card>
-        ))
+            <div>
+              <p className="text-sm text-muted-foreground">{mostPopularTier[0]} Tier</p>
+              <h3 className="text-2xl font-bold">{mostPopularTier[1]}</h3>
+              <p className="text-xs text-muted-foreground">Most popular</p>
+            </div>
+          </div>
+        </Card>
       ) : (
-        // Fallback to show the most populated tier from active subscribers
-        Object.entries(tierCounts)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 1)
-          .map(([tierName, count], index) => (
-            <Card key={tierName} className="p-6">
-              <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(index + 1)}`}>
-                  <UserCheck className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{tierName} Subscribers</p>
-                  <h3 className="text-2xl font-bold">{count}</h3>
-                </div>
-              </div>
-            </Card>
-          ))
+        <Card className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+              <UserCheck className="h-6 w-6 text-gray-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">No Tiers</p>
+              <h3 className="text-2xl font-bold">0</h3>
+              <p className="text-xs text-muted-foreground">Create tiers first</p>
+            </div>
+          </div>
+        </Card>
       )}
     </div>
   );

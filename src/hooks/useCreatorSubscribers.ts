@@ -11,6 +11,8 @@ export const useCreatorSubscribers = (creatorId: string) => {
     queryFn: async () => {
       if (!creatorId) return [];
 
+      console.log('[useCreatorSubscribers] Fetching subscribers for creator:', creatorId);
+
       const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'get_creator_subscribers',
@@ -19,15 +21,27 @@ export const useCreatorSubscribers = (creatorId: string) => {
       });
 
       if (error) {
-        console.error('Get subscribers error:', error);
+        console.error('[useCreatorSubscribers] Get subscribers error:', error);
         return [];
       }
+
+      console.log('[useCreatorSubscribers] Subscribers data received:', data?.subscribers?.length || 0, 'subscribers');
+      
+      // Log status breakdown for debugging
+      const statusBreakdown = data?.subscribers?.reduce((counts: any, sub: any) => {
+        counts[sub.status] = (counts[sub.status] || 0) + 1;
+        return counts;
+      }, {}) || {};
+      
+      console.log('[useCreatorSubscribers] Status breakdown:', statusBreakdown);
 
       return data?.subscribers || [];
     },
     enabled: !!creatorId && !!user,
-    staleTime: 30000,
-    refetchInterval: 60000
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute to stay synced with Stripe
+    refetchOnWindowFocus: true, // Refetch when user returns to the page
+    retry: 3 // Retry failed requests
   });
 
   return {
