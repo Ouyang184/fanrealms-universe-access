@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -92,9 +91,17 @@ export function CreatePostForm() {
     return videoUrlPatterns.some(pattern => pattern.test(url));
   };
 
+  const handleTierSelect = (tierId: string | null) => {
+    console.log('[Creator Studio] Tier selected:', tierId);
+    setSelectedTierId(tierId);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    
+    console.log('[Creator Studio] Form submission started with selectedTierId:', selectedTierId);
+    console.log('[Creator Studio] selectedTierId type:', typeof selectedTierId, 'value:', selectedTierId);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -132,18 +139,25 @@ export function CreatePostForm() {
         });
       }
 
-      const { error } = await supabase
+      const postData = {
+        title,
+        content,
+        author_id: user.id,
+        creator_id: creatorProfile?.id || null,
+        tier_id: selectedTierId, // This should properly set the tier_id
+        attachments: uploadedAttachments
+      };
+
+      console.log('[Creator Studio] Creating post with data:', postData);
+
+      const { data: insertedPost, error } = await supabase
         .from('posts')
-        .insert({
-          title,
-          content,
-          author_id: user.id,
-          creator_id: creatorProfile?.id || null,
-          tier_id: selectedTierId,
-          attachments: uploadedAttachments
-        });
+        .insert([postData])
+        .select('*');
 
       if (error) throw error;
+
+      console.log('[Creator Studio] Post created successfully:', insertedPost);
 
       const postType = selectedTierId ? "premium" : "public";
       toast({
@@ -166,6 +180,7 @@ export function CreatePostForm() {
       queryClient.invalidateQueries({ queryKey: ['posts'] });
 
     } catch (error: any) {
+      console.error('[Creator Studio] Error creating post:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create post. Please try again.",
@@ -240,10 +255,17 @@ export function CreatePostForm() {
           <div className="space-y-2">
             <Label>Post Visibility</Label>
             <TierSelect
-              onSelect={setSelectedTierId}
+              onSelect={handleTierSelect}
               value={selectedTierId}
               disabled={isLoading}
             />
+            {selectedTierId && (
+              <div className="text-sm text-muted-foreground bg-amber-50 p-2 rounded border">
+                <Lock className="inline h-3 w-3 mr-1" />
+                This post will only be visible to subscribers of the selected membership tier.
+                <div className="mt-1 text-xs">Selected tier ID: {selectedTierId}</div>
+              </div>
+            )}
           </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t">

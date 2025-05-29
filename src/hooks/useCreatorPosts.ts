@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -57,7 +58,7 @@ export function useCreatorPosts() {
         return [];
       }
 
-      console.log('Creator posts raw data:', data);
+      console.log('[useCreatorPosts] Creator posts raw data:', data);
       
       // Transform to CreatorPost format
       return data.map((post): CreatorPost => {
@@ -85,9 +86,9 @@ export function useCreatorPosts() {
 
         // Since this is the creator's own posts, they can always view everything
         const canViewPost = true;
-        const isLocked = false;
+        const isLocked = !!post.tier_id; // Post is locked if it has a tier_id
 
-        console.log('Creator post visibility:', {
+        console.log('[useCreatorPosts] Creator post visibility check:', {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
