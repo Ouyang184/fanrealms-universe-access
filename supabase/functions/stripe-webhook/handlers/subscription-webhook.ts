@@ -1,6 +1,4 @@
 
-
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleSubscriptionWebhook(
@@ -25,11 +23,19 @@ export async function handleSubscriptionWebhook(
       });
 
       // CRITICAL FIX: Find and activate subscription when payment succeeds
+      console.log('[WebhookHandler] Searching for subscription with stripe_subscription_id:', subscriptionId);
+      
       const { data: subscriptionToUpdate, error: findError } = await supabaseService
         .from('user_subscriptions')
         .select('*')
         .eq('stripe_subscription_id', subscriptionId)
         .single();
+
+      console.log('[WebhookHandler] Query result for finding subscription:', {
+        data: subscriptionToUpdate,
+        error: findError,
+        searchedId: subscriptionId
+      });
 
       if (findError) {
         console.error('[WebhookHandler] Error finding subscription:', findError);
@@ -44,19 +50,30 @@ export async function handleSubscriptionWebhook(
       console.log('[WebhookHandler] Found subscription to activate:', {
         id: subscriptionToUpdate.id,
         user_id: subscriptionToUpdate.user_id,
-        current_status: subscriptionToUpdate.status
+        current_status: subscriptionToUpdate.status,
+        stripe_subscription_id: subscriptionToUpdate.stripe_subscription_id
       });
 
       // Update subscription to active status
+      const updateData = { 
+        status: 'active',
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[WebhookHandler] Updating subscription with data:', updateData);
+
       const { data: updatedSubscription, error: updateError } = await supabaseService
         .from('user_subscriptions')
-        .update({ 
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', subscriptionToUpdate.id)
         .select()
         .single();
+
+      console.log('[WebhookHandler] Update query result:', {
+        data: updatedSubscription,
+        error: updateError,
+        updatedId: subscriptionToUpdate.id
+      });
 
       if (updateError) {
         console.error('[WebhookHandler] Error updating subscription to active:', updateError);
@@ -67,7 +84,8 @@ export async function handleSubscriptionWebhook(
           subscription_id: subscriptionId,
           database_id: updatedSubscription.id,
           new_status: updatedSubscription.status,
-          user_id: updatedSubscription.user_id
+          user_id: updatedSubscription.user_id,
+          previous_status: subscriptionToUpdate.status
         });
       }
     }
@@ -108,7 +126,7 @@ export async function handleSubscriptionWebhook(
 
     console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'to DB status:', dbStatus);
 
-    // First, try to update existing record
+    // First, try to find existing record
     const { data: existingRecord, error: findError } = await supabaseService
       .from('user_subscriptions')
       .select('id, status')
@@ -124,59 +142,80 @@ export async function handleSubscriptionWebhook(
     if (existingRecord) {
       // CRITICAL FIX: Don't overwrite active status with pending
       if (existingRecord.status === 'active' && dbStatus === 'pending') {
-        console.log('[WebhookHandler] Preserving active status, skipping update to pending');
+        console.log('[WebhookHandler] Preserving active status, skipping overwrite of active status with pending');
+        console.log('[WebhookHandler] Existing record status:', existingRecord.status, 'New status would be:', dbStatus);
         return;
       }
 
       // Update existing record
-      console.log('[WebhookHandler] Updating existing subscription record:', existingRecord.id);
+      console.log('[WebhookHandler] Updating existing subscription record:', {
+        id: existingRecord.id,
+        currentStatus: existingRecord.status,
+        newStatus: dbStatus,
+        stripeSubscriptionId: subscription.id
+      });
+
+      const updateData = {
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer,
+        status: dbStatus,
+        current_period_start: currentPeriodStart,
+        current_period_end: currentPeriodEnd,
+        amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
+          subscription.items.data[0].price.unit_amount / 100 : 0,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[WebhookHandler] Update data being applied:', updateData);
+
       const { data: updatedData, error: updateError } = await supabaseService
         .from('user_subscriptions')
-        .update({
-          stripe_subscription_id: subscription.id,
-          stripe_customer_id: subscription.customer,
-          status: dbStatus,
-          current_period_start: currentPeriodStart,
-          current_period_end: currentPeriodEnd,
-          amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
-            subscription.items.data[0].price.unit_amount / 100 : 0,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existingRecord.id)
         .select();
 
       if (updateError) {
         console.error('[WebhookHandler] Error updating existing subscription:', updateError);
       } else {
-        console.log('[WebhookHandler] Successfully updated existing subscription:', subscription.id);
-        console.log('[WebhookHandler] Updated subscription data:', updatedData?.[0]);
+        console.log('[WebhookHandler] Successfully updated existing subscription:', {
+          subscriptionId: subscription.id,
+          recordId: existingRecord.id,
+          updatedData: updatedData?.[0]
+        });
       }
     } else {
       // Insert new record
       console.log('[WebhookHandler] Creating new subscription record');
+      
+      const insertData = {
+        user_id,
+        creator_id,
+        tier_id,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer,
+        status: dbStatus,
+        current_period_start: currentPeriodStart,
+        current_period_end: currentPeriodEnd,
+        amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
+          subscription.items.data[0].price.unit_amount / 100 : 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[WebhookHandler] Insert data being applied:', insertData);
+
       const { data: insertedData, error: insertError } = await supabaseService
         .from('user_subscriptions')
-        .insert({
-          user_id,
-          creator_id,
-          tier_id,
-          stripe_subscription_id: subscription.id,
-          stripe_customer_id: subscription.customer,
-          status: dbStatus,
-          current_period_start: currentPeriodStart,
-          current_period_end: currentPeriodEnd,
-          amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
-            subscription.items.data[0].price.unit_amount / 100 : 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(insertData)
         .select();
 
       if (insertError) {
         console.error('[WebhookHandler] Error inserting new subscription:', insertError);
       } else {
-        console.log('[WebhookHandler] Successfully created new subscription:', subscription.id);
-        console.log('[WebhookHandler] Inserted subscription data:', insertedData?.[0]);
+        console.log('[WebhookHandler] Successfully created new subscription:', {
+          subscriptionId: subscription.id,
+          insertedData: insertedData?.[0]
+        });
       }
     }
 
@@ -216,4 +255,3 @@ export async function handleSubscriptionWebhook(
 
   console.log('[WebhookHandler] Subscription webhook processing complete');
 }
-
