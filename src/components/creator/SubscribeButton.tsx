@@ -56,13 +56,13 @@ export function SubscribeButton({
 
   if (isUserSubscribed) {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
-    // Pass the raw subscription data from the database, not the wrapped object
-    const rawSubscriptionData = finalSubscriptionData?.subscription || externalSubscriptionData;
+    // Pass the actual subscription object directly, ensuring it has all the status information
+    const subscriptionWithData = finalSubscriptionData?.subscription || finalSubscriptionData;
     
     return (
       <SubscribedButton
         tierName={tierName}
-        subscriptionData={rawSubscriptionData}
+        subscriptionData={subscriptionWithData}
         tierId={tierId}
         creatorId={creatorId}
         onOptimisticUpdate={onOptimisticUpdate}
