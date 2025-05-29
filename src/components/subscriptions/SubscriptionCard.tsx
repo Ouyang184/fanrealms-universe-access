@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Clock, MoreHorizontal } from "lucide-react";
+import { Clock, MoreHorizontal, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getTierColor } from "@/utils/tierColors";
 
@@ -23,6 +23,10 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
   const creator = subscription.creator;
   const tier = subscription.tier;
   const user = creator?.users;
+  
+  // Check if subscription is cancelling
+  const isCancelling = subscription.status === 'cancelling';
+  const cancelAt = subscription.cancel_at || subscription.current_period_end;
   
   // Format subscription date
   const createdDate = new Date(subscription.created_at);
@@ -41,6 +45,15 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
     day: 'numeric',
     year: 'numeric'
   });
+
+  const formatCancelDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -70,6 +83,18 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
         </h3>
         <p className="text-muted-foreground text-sm mt-1">{creator?.bio || "No bio available"}</p>
 
+        {isCancelling && cancelAt && (
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center mb-1">
+              <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
+              <span className="font-medium text-yellow-800 text-sm">Ending Soon</span>
+            </div>
+            <p className="text-yellow-700 text-xs">
+              Subscription ends on {formatCancelDate(cancelAt)}
+            </p>
+          </div>
+        )}
+
         <div className="mt-4 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Membership Level</span>
@@ -82,8 +107,12 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Next Billing Date</span>
-            <span className="font-medium">{nextBilling}</span>
+            <span className="text-muted-foreground">
+              {isCancelling ? 'Ends On' : 'Next Billing Date'}
+            </span>
+            <span className="font-medium">
+              {isCancelling && cancelAt ? formatCancelDate(cancelAt) : nextBilling}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Member Since</span>
@@ -91,7 +120,11 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Status</span>
-            <span className="font-medium capitalize text-green-600">{subscription.status}</span>
+            <span className={`font-medium capitalize ${
+              isCancelling ? 'text-yellow-600' : 'text-green-600'
+            }`}>
+              {isCancelling ? 'Ending Soon' : subscription.status}
+            </span>
           </div>
         </div>
 
@@ -116,15 +149,21 @@ export function SubscriptionCard({ subscription, onCancel }: SubscriptionCardPro
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem>Change Tier</DropdownMenuItem>
+              {!isCancelling && <DropdownMenuItem>Change Tier</DropdownMenuItem>}
               <DropdownMenuItem>Message Creator</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive"
-                onClick={() => onCancel(subscription.id)}
-              >
-                Cancel Subscription
-              </DropdownMenuItem>
+              {!isCancelling ? (
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => onCancel(subscription.id)}
+                >
+                  Cancel Subscription
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem className="text-green-600">
+                  Reactivate Subscription
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

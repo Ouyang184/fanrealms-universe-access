@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, Calendar, AlertCircle } from 'lucide-react';
+import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +25,7 @@ export function SubscribedButton({
   onSubscriptionSuccess 
 }: SubscribedButtonProps) {
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
@@ -40,6 +40,73 @@ export function SubscribedButton({
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const handleReactivate = async () => {
+    if (isReactivating) {
+      console.log('Already reactivating, ignoring click');
+      return;
+    }
+
+    const subscriptionId = subscriptionData?.stripe_subscription_id || 
+                          subscriptionData?.id || 
+                          subscriptionData?.subscription_id;
+
+    if (!subscriptionId) {
+      toast({
+        title: "Error",
+        description: "No subscription ID found. Please contact support.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsReactivating(true);
+    
+    try {
+      console.log('Reactivating subscription:', subscriptionId);
+      
+      // Call the edge function to reactivate subscription
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'reactivate_subscription',
+          subscriptionId: subscriptionId
+        }
+      });
+
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Server returned error:', data.error);
+        throw new Error(data.error);
+      }
+      
+      console.log('Subscription reactivated successfully:', data);
+      
+      toast({
+        title: "Subscription Reactivated",
+        description: `Your subscription to ${tierName} has been reactivated and will continue.`,
+      });
+      
+      // Invalidate all subscription-related queries
+      await invalidateAllSubscriptionQueries();
+      
+      if (onSubscriptionSuccess) {
+        onSubscriptionSuccess();
+      }
+    } catch (error) {
+      console.error('Reactivate subscription error:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to reactivate subscription. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsReactivating(false);
+    }
   };
 
   const handleUnsubscribe = async () => {
@@ -173,19 +240,45 @@ export function SubscribedButton({
 
   if (isCancellingState && cancelAt) {
     return (
-      <div className="space-y-2">
-        <Button variant="outline" disabled className="w-full">
-          <AlertCircle className="mr-2 h-4 w-4 text-orange-500" />
-          Cancelling at Period End
-        </Button>
-        <div className="text-center">
-          <Badge variant="outline" className="text-xs">
-            <Calendar className="mr-1 h-3 w-3" />
-            Active until {formatCancelDate(cancelAt)}
-          </Badge>
+      <div className="space-y-3">
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center mb-2">
+            <AlertCircle className="mr-2 h-5 w-5 text-yellow-600" />
+            <span className="font-medium text-yellow-800">Subscription Ending Soon</span>
+          </div>
+          <p className="text-yellow-700 text-sm mb-3">
+            Your subscription to <strong>{tierName}</strong> will end on{' '}
+            <strong>{formatCancelDate(cancelAt)}</strong>
+          </p>
+          <div className="text-center">
+            <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
+              <Calendar className="mr-1 h-3 w-3" />
+              Active until {formatCancelDate(cancelAt)}
+            </Badge>
+          </div>
         </div>
+        
+        <Button 
+          variant="default" 
+          className="w-full bg-green-600 hover:bg-green-700"
+          onClick={handleReactivate}
+          disabled={isReactivating}
+        >
+          {isReactivating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Reactivating...
+            </>
+          ) : (
+            <>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Undo Cancellation
+            </>
+          )}
+        </Button>
+        
         <p className="text-xs text-muted-foreground text-center">
-          You'll retain access to {tierName} until your billing period ends.
+          Reactivate your subscription to continue enjoying {tierName} benefits beyond {formatCancelDate(cancelAt)}.
         </p>
       </div>
     );
@@ -193,14 +286,16 @@ export function SubscribedButton({
 
   return (
     <div className="space-y-2">
-      <Button variant="outline" disabled className="w-full">
-        <Check className="mr-2 h-4 w-4 text-green-500" />
-        Subscribed to {tierName}
-      </Button>
+      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center justify-center">
+          <Check className="mr-2 h-4 w-4 text-green-600" />
+          <span className="text-green-800 font-medium">Subscribed to {tierName}</span>
+        </div>
+      </div>
       <Button 
-        variant="destructive" 
+        variant="outline" 
         size="sm" 
-        className="w-full"
+        className="w-full border-red-200 text-red-600 hover:bg-red-50"
         onClick={handleUnsubscribe}
         disabled={isCancelling}
       >
