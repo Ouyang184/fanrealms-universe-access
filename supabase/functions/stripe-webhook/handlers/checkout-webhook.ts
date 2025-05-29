@@ -19,11 +19,24 @@ export async function handleCheckoutWebhook(
   if (event.type === 'checkout.session.completed') {
     console.log('[CheckoutHandler] Processing checkout session completed:', session.id);
 
-    // Extract metadata from session - this is the key fix
-    const metadata = session.metadata || {};
+    // Extract metadata - try multiple sources
+    let metadata = session.metadata || {};
+    
+    // If no metadata in session, try to get it from subscription
+    if ((!metadata.user_id || !metadata.creator_id || !metadata.tier_id) && session.subscription) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(session.subscription);
+        if (subscription.metadata) {
+          metadata = { ...metadata, ...subscription.metadata };
+        }
+      } catch (error) {
+        console.error('[CheckoutHandler] Error retrieving subscription metadata:', error);
+      }
+    }
+
     const { user_id, creator_id, tier_id } = metadata;
     
-    console.log('[CheckoutHandler] Extracted metadata from session:', { user_id, creator_id, tier_id });
+    console.log('[CheckoutHandler] Extracted metadata:', { user_id, creator_id, tier_id });
 
     if (!user_id || !creator_id || !tier_id) {
       console.error('[CheckoutHandler] Missing required metadata. Session:', session.id);
@@ -91,7 +104,7 @@ async function processSubscription(session: any, metadata: any, supabaseService:
 
       const subscriptionData = {
         user_id,
-        creator_id, // CRITICAL: Ensure creator_id is included from session metadata
+        creator_id, // ENSURE creator_id is included
         tier_id,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: session.customer,
@@ -103,8 +116,8 @@ async function processSubscription(session: any, metadata: any, supabaseService:
         updated_at: new Date().toISOString(),
       };
 
-      console.log('[CheckoutHandler] CRITICAL: About to insert/update user_subscriptions with creator_id');
-      console.log('[CheckoutHandler] Insert data with creator_id:', subscriptionData);
+      console.log('[CheckoutHandler] BEFORE inserting into user_subscriptions');
+      console.log('[CheckoutHandler] Insert data:', subscriptionData);
 
       // First check if record already exists to avoid duplicates
       const { data: existingRecord } = await supabaseService
@@ -116,7 +129,7 @@ async function processSubscription(session: any, metadata: any, supabaseService:
         .maybeSingle();
 
       if (existingRecord) {
-        console.log('[CheckoutHandler] Updating existing subscription record with creator_id');
+        console.log('[CheckoutHandler] Updating existing subscription record');
         // Update existing record
         const { data, error } = await supabaseService
           .from('user_subscriptions')
@@ -139,10 +152,10 @@ async function processSubscription(session: any, metadata: any, supabaseService:
           console.error('[CheckoutHandler] ERROR updating user_subscriptions:', error);
           throw error;
         } else {
-          console.log('[CheckoutHandler] SUCCESS: Updated subscription in user_subscriptions with creator_id:', data);
+          console.log('[CheckoutHandler] SUCCESS: Updated subscription in user_subscriptions:', data);
         }
       } else {
-        console.log('[CheckoutHandler] Creating new subscription record with creator_id');
+        console.log('[CheckoutHandler] Creating new subscription record');
         // Insert new record
         const { data, error } = await supabaseService
           .from('user_subscriptions')
@@ -156,7 +169,7 @@ async function processSubscription(session: any, metadata: any, supabaseService:
           console.error('[CheckoutHandler] ERROR inserting into user_subscriptions:', error);
           throw error;
         } else {
-          console.log('[CheckoutHandler] SUCCESS: Inserted subscription into user_subscriptions with creator_id:', data);
+          console.log('[CheckoutHandler] SUCCESS: Inserted subscription into user_subscriptions:', data);
         }
       }
 

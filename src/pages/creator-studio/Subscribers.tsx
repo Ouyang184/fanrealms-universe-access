@@ -63,18 +63,15 @@ export default function CreatorStudioSubscribers() {
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      console.log('Manually refreshing subscriber data...');
       await Promise.all([
         refetch(),
         invalidateAllSubscriptionQueries()
       ]);
-      console.log('Subscriber data refreshed successfully');
       toast({
         title: "Refreshed",
         description: "Subscriber data has been updated from Stripe",
       });
     } catch (error) {
-      console.error('Error refreshing subscriber data:', error);
       toast({
         title: "Error",
         description: "Failed to refresh data",
@@ -111,16 +108,6 @@ export default function CreatorStudioSubscribers() {
     };
   }, [refetch, invalidateAllSubscriptionQueries]);
 
-  // Log subscribers data for debugging
-  useEffect(() => {
-    if (subscribers) {
-      console.log('Current subscribers data:', { 
-        count: subscribers.length,
-        data: subscribers
-      });
-    }
-  }, [subscribers]);
-
   // Calculate tier counts for stats
   const tierCounts = subscribers?.reduce((counts, subscriber) => {
     const tierName = subscriber.tier?.title || 'Unknown';
@@ -156,17 +143,6 @@ export default function CreatorStudioSubscribers() {
             Sync with Stripe
           </Button>
         </div>
-
-        {/* Debug Info */}
-        <Alert className="bg-blue-50 border-blue-200">
-          <AlertCircle className="h-4 w-4 text-blue-500" />
-          <AlertDescription className="text-xs">
-            Creator ID: {creatorData?.id || 'Not loaded'} | 
-            Subscribers: {subscribers?.length || 0} | 
-            Active/Cancelling: {activeSubscribers.length || 0} | 
-            Pending: {pendingSubscribers.length || 0}
-          </AlertDescription>
-        </Alert>
 
         {/* Sync Status Alert */}
         {pendingSubscribers.length > 0 && (
@@ -256,7 +232,7 @@ export default function CreatorStudioSubscribers() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Pending Subscriptions</span>
-                <Badge variant="secondary">{pendingSubscribers.length} pending</Badge>
+                <Badge variant="outline">{pendingSubscribers.length} pending</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -280,7 +256,7 @@ export default function CreatorStudioSubscribers() {
                         <p className="font-medium">{subscriber.tier?.title}</p>
                         <p className="text-sm text-muted-foreground">${subscriber.amount}/month</p>
                       </div>
-                      <Badge variant="secondary">Pending Payment</Badge>
+                      <Badge variant="outline">Pending Payment</Badge>
                     </div>
                   </div>
                 ))}
