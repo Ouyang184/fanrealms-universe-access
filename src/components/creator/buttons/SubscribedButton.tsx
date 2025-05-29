@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -41,18 +42,16 @@ export function SubscribedButton({
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
-  // Direct subscription data - could be the raw subscription object or wrapped
   const subscription = subscriptionData;
   
-  // Enhanced cancellation logic using the new field
+  // Check if subscription is active or scheduled to cancel
   const isActive = subscription?.status === 'active';
   const isScheduledToCancel = subscription?.cancel_at_period_end === true &&
                             subscription?.current_period_end && 
                             new Date(subscription.current_period_end) > new Date();
 
-  console.log('SubscribedButton - Enhanced cancellation check:', {
+  console.log('SubscribedButton - Status check:', {
     subscription,
-    subscriptionData,
     isActive,
     isScheduledToCancel,
     status: subscription?.status,
@@ -63,7 +62,6 @@ export function SubscribedButton({
   const formatCancelDate = (dateString: string | number) => {
     let date;
     if (typeof dateString === 'number') {
-      // Handle UNIX timestamp
       date = new Date(dateString * 1000);
     } else {
       date = new Date(dateString);
@@ -75,7 +73,6 @@ export function SubscribedButton({
     });
   };
 
-  // Calculate next billing date (approximately one month from now)
   const getNextBillingDate = () => {
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -106,7 +103,6 @@ export function SubscribedButton({
     try {
       console.log('Reactivating subscription:', subscriptionId);
       
-      // Call the edge function to reactivate subscription
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'reactivate_subscription',
@@ -131,7 +127,6 @@ export function SubscribedButton({
         description: `Your subscription to ${tierName} has been reactivated and will continue.`,
       });
       
-      // Invalidate all subscription-related queries
       await invalidateAllSubscriptionQueries();
       
       if (onSubscriptionSuccess) {
@@ -192,12 +187,10 @@ export function SubscribedButton({
           description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
         });
         
-        // Trigger optimistic update to set cancelling state
         if (onOptimisticUpdate) {
           onOptimisticUpdate(false);
         }
         
-        // Invalidate all subscription-related queries to refresh the UI
         await invalidateAllSubscriptionQueries();
         
         if (onSubscriptionSuccess) {
@@ -224,7 +217,6 @@ export function SubscribedButton({
     try {
       console.log('SubscribedButton: Setting subscription to cancel at period end:', subscriptionId);
       
-      // Call the edge function to set subscription to cancel at period end
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
@@ -244,7 +236,6 @@ export function SubscribedButton({
       
       console.log('SubscribedButton: Subscription set to cancel at period end successfully:', data);
       
-      // Trigger subscription cancellation events
       triggerSubscriptionCancellation({
         creatorId, 
         tierId, 
@@ -258,12 +249,10 @@ export function SubscribedButton({
         description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
       });
       
-      // Trigger optimistic update to set cancelling state
       if (onOptimisticUpdate) {
         onOptimisticUpdate(false);
       }
       
-      // Invalidate all subscription-related queries to refresh the UI immediately
       await invalidateAllSubscriptionQueries();
       
       if (onSubscriptionSuccess) {
@@ -282,7 +271,7 @@ export function SubscribedButton({
     }
   };
 
-  // Show cancelling state UI when subscription is scheduled to cancel
+  // Show UI for subscriptions scheduled to cancel
   if (isActive && isScheduledToCancel) {
     const cancelDate = subscription.current_period_end;
     return (
