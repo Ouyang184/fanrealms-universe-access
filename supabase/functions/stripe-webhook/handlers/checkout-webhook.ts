@@ -70,6 +70,8 @@ export async function handleCheckoutWebhook(
 async function processSubscription(session: any, metadata: any, supabaseService: any, stripe: any) {
   const { user_id, creator_id, tier_id } = metadata;
   
+  console.log('[CheckoutHandler] Processing subscription with metadata:', { user_id, creator_id, tier_id });
+  
   if (session.subscription) {
     console.log('[CheckoutHandler] Retrieving subscription details from Stripe:', session.subscription);
     
@@ -92,18 +94,30 @@ async function processSubscription(session: any, metadata: any, supabaseService:
       const amount = subscription.items?.data?.[0]?.price?.unit_amount ? 
         subscription.items.data[0].price.unit_amount / 100 : 0;
 
-      console.log('[CheckoutHandler] BEFORE inserting into user_subscriptions');
-      console.log('[CheckoutHandler] Insert data:', {
+      // Map Stripe status to our valid statuses
+      let dbStatus = 'pending';
+      if (subscription.status === 'active') {
+        dbStatus = subscription.cancel_at_period_end ? 'cancelling' : 'active';
+      } else if (subscription.status === 'trialing') {
+        dbStatus = 'active'; // Treat trialing as active
+      }
+
+      const subscriptionData = {
         user_id,
-        creator_id,
+        creator_id, // ENSURE creator_id is included
         tier_id,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: session.customer,
-        status: subscription.status === 'active' ? 'active' : 'pending',
+        status: dbStatus,
         amount,
         current_period_start: currentPeriodStart,
-        current_period_end: currentPeriodEnd
-      });
+        current_period_end: currentPeriodEnd,
+        cancel_at_period_end: subscription.cancel_at_period_end || false,
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('[CheckoutHandler] BEFORE inserting into user_subscriptions');
+      console.log('[CheckoutHandler] Insert data:', subscriptionData);
 
       // First check if record already exists to avoid duplicates
       const { data: existingRecord } = await supabaseService
@@ -122,10 +136,11 @@ async function processSubscription(session: any, metadata: any, supabaseService:
           .update({
             stripe_subscription_id: subscription.id,
             stripe_customer_id: session.customer,
-            status: subscription.status === 'active' ? 'active' : 'pending',
+            status: dbStatus,
             amount,
             current_period_start: currentPeriodStart,
             current_period_end: currentPeriodEnd,
+            cancel_at_period_end: subscription.cancel_at_period_end || false,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', user_id)
@@ -145,17 +160,8 @@ async function processSubscription(session: any, metadata: any, supabaseService:
         const { data, error } = await supabaseService
           .from('user_subscriptions')
           .insert({
-            user_id,
-            creator_id,
-            tier_id,
-            stripe_subscription_id: subscription.id,
-            stripe_customer_id: session.customer,
-            status: subscription.status === 'active' ? 'active' : 'pending',
-            amount,
-            current_period_start: currentPeriodStart,
-            current_period_end: currentPeriodEnd,
+            ...subscriptionData,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
           })
           .select();
 

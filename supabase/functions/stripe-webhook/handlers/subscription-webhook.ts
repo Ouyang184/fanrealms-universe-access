@@ -1,4 +1,5 @@
-export async function handleSubscriptionWebhook(stripe: any, supabaseService: any, event: any) {
+
+export async function handleSubscriptionWebhook(event: any, supabaseService: any) {
   console.log(`[WebhookHandler] Processing subscription webhook: ${event.type} ${event.id}`);
   
   try {
@@ -11,18 +12,41 @@ export async function handleSubscriptionWebhook(stripe: any, supabaseService: an
     const cancelAtPeriodEnd = subscription.cancel_at_period_end;
     const cancelAt = subscription.cancel_at;
     
-    console.log(`[WebhookHandler] Processing subscription created/updated: ${subscriptionId}`);
+    console.log(`[WebhookHandler] Processing subscription: ${subscriptionId}`);
     console.log(`[WebhookHandler] Stripe subscription status: ${status}`);
     console.log(`[WebhookHandler] Cancel at period end: ${cancelAtPeriodEnd}`);
-    console.log(`[WebhookHandler] Cancel at: ${cancelAt}`);
+    console.log(`[WebhookHandler] Subscription metadata:`, subscription.metadata);
+
+    // Extract creator_id and other metadata from subscription
+    const metadata = subscription.metadata || {};
+    const { creator_id, tier_id, user_id } = metadata;
+    
+    console.log(`[WebhookHandler] Extracted metadata:`, { creator_id, tier_id, user_id });
 
     // Map Stripe status to our database status
-    let dbStatus = status;
-    if (status === 'active' && cancelAtPeriodEnd) {
-      // Keep as active but mark for cancellation
-      dbStatus = 'active';
-      console.log(`[WebhookHandler] Mapping Stripe status ${status} with cancel_at_period_end: ${cancelAtPeriodEnd} to DB status: ${dbStatus}`);
+    let dbStatus = 'pending';
+    if (status === 'active') {
+      dbStatus = cancelAtPeriodEnd ? 'cancelling' : 'active';
+    } else if (status === 'trialing') {
+      dbStatus = 'active'; // Treat trialing as active
+    } else if (['canceled', 'incomplete_expired', 'unpaid'].includes(status)) {
+      // For these statuses, we should remove the subscription
+      console.log(`[WebhookHandler] Subscription ${subscriptionId} has status ${status}, removing from database`);
+      
+      const { error: deleteError } = await supabaseService
+        .from('user_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscriptionId);
+        
+      if (deleteError) {
+        console.error(`[WebhookHandler] Error deleting subscription:`, deleteError);
+      } else {
+        console.log(`[WebhookHandler] Successfully removed subscription ${subscriptionId} from database`);
+      }
+      return { success: true };
     }
+
+    console.log(`[WebhookHandler] Mapping Stripe status ${status} with cancel_at_period_end: ${cancelAtPeriodEnd} to DB status: ${dbStatus}`);
 
     // Check if this subscription already exists in our database
     const { data: existingSubscription, error: findError } = await supabaseService
@@ -47,12 +71,24 @@ export async function handleSubscriptionWebhook(stripe: any, supabaseService: an
       updated_at: new Date().toISOString()
     };
 
+    // If we have metadata, include creator_id and other fields
+    if (creator_id) {
+      updateData.creator_id = creator_id;
+    }
+    if (tier_id) {
+      updateData.tier_id = tier_id;
+    }
+    if (user_id) {
+      updateData.user_id = user_id;
+    }
+
     if (existingSubscription) {
       console.log(`[WebhookHandler] Updating existing subscription record: {
         id: "${existingSubscription.id}",
         currentStatus: "${existingSubscription.status}",
         newStatus: "${dbStatus}",
-        stripeSubscriptionId: "${subscriptionId}"
+        stripeSubscriptionId: "${subscriptionId}",
+        creatorId: "${creator_id || existingSubscription.creator_id}"
       }`);
       
       console.log(`[WebhookHandler] Update data being applied:`, updateData);
@@ -69,13 +105,31 @@ export async function handleSubscriptionWebhook(stripe: any, supabaseService: an
     } else {
       console.log(`[WebhookHandler] No existing subscription found for Stripe ID: ${subscriptionId}`);
       // We don't create new subscriptions from webhooks, they should be created during checkout
+      // But if we have all the required metadata, we could create it
+      if (creator_id && tier_id && user_id) {
+        console.log(`[WebhookHandler] Creating new subscription from webhook with complete metadata`);
+        const { error: insertError } = await supabaseService
+          .from('user_subscriptions')
+          .insert({
+            ...updateData,
+            user_id,
+            creator_id,
+            tier_id,
+            created_at: new Date().toISOString()
+          });
+          
+        if (insertError) {
+          console.error(`[WebhookHandler] Error creating subscription from webhook:`, insertError);
+          throw insertError;
+        }
+      }
     }
 
     // Clean up legacy subscriptions table
     console.log(`[WebhookHandler] Cleaning up legacy subscriptions table`);
-    if (status === 'active' && !cancelAtPeriodEnd) {
+    if (dbStatus === 'active' && !cancelAtPeriodEnd) {
       // Ensure there's a record in the legacy subscriptions table for active subscriptions
-      if (existingSubscription) {
+      if (existingSubscription && existingSubscription.creator_id) {
         await supabaseService
           .from('subscriptions')
           .upsert({
@@ -96,8 +150,7 @@ export async function handleSubscriptionWebhook(stripe: any, supabaseService: an
           .from('subscriptions')
           .delete()
           .eq('user_id', existingSubscription.user_id)
-          .eq('creator_id', existingSubscription.creator_id)
-          .eq('tier_id', existingSubscription.tier_id);
+          .eq('creator_id', existingSubscription.creator_id);
       }
     }
 
