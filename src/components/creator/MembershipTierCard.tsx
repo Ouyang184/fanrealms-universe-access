@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Star, Loader2 } from "lucide-react";
+import { Check, Star, Loader2, AlertTriangle, Calendar, RotateCcw } from "lucide-react";
 import { SubscribeButton } from "./SubscribeButton";
 
 interface MembershipTier {
@@ -19,6 +19,7 @@ interface MembershipTierCardProps {
   tier: MembershipTier;
   creatorId: string;
   isSubscribed: boolean;
+  subscriptionData?: any;
   onSubscriptionSuccess?: () => void;
 }
 
@@ -26,6 +27,7 @@ export function MembershipTierCard({
   tier, 
   creatorId, 
   isSubscribed,
+  subscriptionData,
   onSubscriptionSuccess 
 }: MembershipTierCardProps) {
   const getBadgeIcon = (tierName: string) => {
@@ -34,6 +36,19 @@ export function MembershipTierCard({
       return <Star className="h-3 w-3" />;
     }
     return <Check className="h-3 w-3" />;
+  };
+
+  // Check if subscription is scheduled to cancel
+  const isCancellingState = subscriptionData?.status === 'cancelling' || subscriptionData?.cancel_at_period_end;
+  const cancelAt = subscriptionData?.cancel_at || subscriptionData?.current_period_end;
+
+  const formatCancelDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   return (
@@ -68,6 +83,25 @@ export function MembershipTierCard({
             <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
           </div>
           
+          {/* Show cancellation warning if subscription is scheduled to end */}
+          {isSubscribed && isCancellingState && cancelAt && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center mb-2">
+                <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
+                <span className="font-medium text-yellow-800 text-sm">Subscription Ending Soon</span>
+              </div>
+              <p className="text-yellow-700 text-xs mb-2">
+                Your subscription will end on <strong>{formatCancelDate(cancelAt)}</strong>
+              </p>
+              <div className="text-center">
+                <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
+                  <Calendar className="mr-1 h-3 w-3" />
+                  Active until {formatCancelDate(cancelAt)}
+                </Badge>
+              </div>
+            </div>
+          )}
+          
           <ul className="space-y-2">
             {tier.features.map((feature, index) => (
               <li key={index} className="flex items-start gap-2">
@@ -86,6 +120,7 @@ export function MembershipTierCard({
           tierName={tier.name}
           price={tier.price}
           isSubscribed={isSubscribed}
+          subscriptionData={subscriptionData}
           onSubscriptionSuccess={onSubscriptionSuccess}
         />
       </CardFooter>

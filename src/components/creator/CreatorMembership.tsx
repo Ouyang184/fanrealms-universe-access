@@ -1,71 +1,58 @@
 
 import React from "react";
-import { CreatorProfile } from "@/types";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { useSimpleCreatorMembership } from "@/hooks/useSimpleCreatorMembership";
 import { MembershipTierCard } from "./MembershipTierCard";
 import { MembershipEmptyState } from "./MembershipEmptyState";
+import { useCreatorMembership } from "@/hooks/useCreatorMembership";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface CreatorMembershipProps {
-  creator: CreatorProfile;
+  creatorId: string;
 }
 
-export function CreatorMembership({ creator }: CreatorMembershipProps) {
-  const {
-    tiers,
-    isLoading,
-    isSubscribedToTier,
-    handleSubscriptionSuccess
-  } = useSimpleCreatorMembership(creator.id);
-
-  console.log('[CreatorMembership] Render state:', {
-    creatorId: creator.id,
-    tiersCount: tiers?.length || 0,
-    isLoading,
-    tiers: tiers?.map(t => ({ 
-      id: t.id, 
-      name: t.name, 
-      isSubscribed: isSubscribedToTier(t.id),
-      subscriberCount: t.subscriberCount
-    }))
-  });
+export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
+  const { 
+    tiers, 
+    isLoading, 
+    isSubscribedToTier, 
+    handleSubscriptionSuccess 
+  } = useCreatorMembership(creatorId);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center py-8">
         <LoadingSpinner />
       </div>
     );
   }
 
+  if (!tiers || tiers.length === 0) {
+    return <MembershipEmptyState />;
+  }
+
   return (
-    <div className="text-center p-8">
-      <h3 className="text-xl font-semibold mb-2">Membership Tiers</h3>
-      <p className="text-muted-foreground mb-6">Join this creator's community to unlock exclusive content and perks.</p>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">Membership Tiers</h2>
+        <p className="text-muted-foreground">
+          Join this creator's community to unlock exclusive content and perks.
+        </p>
+      </div>
       
-      {tiers && tiers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {tiers.map(tier => {
-            const isSubscribed = isSubscribedToTier(tier.id);
-            console.log(`[CreatorMembership] Tier ${tier.name} (${tier.id}):`, {
-              isSubscribed,
-              subscriberCount: tier.subscriberCount
-            });
-            
-            return (
-              <MembershipTierCard
-                key={tier.id}
-                tier={tier}
-                creatorId={creator.id}
-                isSubscribed={isSubscribed}
-                onSubscriptionSuccess={handleSubscriptionSuccess}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <MembershipEmptyState />
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tiers.map((tier) => {
+          const isSubscribed = isSubscribedToTier(tier.id);
+          
+          return (
+            <MembershipTierCard
+              key={tier.id}
+              tier={tier}
+              creatorId={creatorId}
+              isSubscribed={isSubscribed}
+              onSubscriptionSuccess={handleSubscriptionSuccess}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

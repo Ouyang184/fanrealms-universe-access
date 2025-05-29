@@ -12,6 +12,7 @@ interface SubscribeButtonProps {
   tierName: string;
   price: number;
   isSubscribed?: boolean;
+  subscriptionData?: any;
   onSubscriptionSuccess?: () => void;
   onOptimisticUpdate?: (isSubscribed: boolean) => void;
 }
@@ -22,21 +23,25 @@ export function SubscribeButton({
   tierName, 
   price, 
   isSubscribed = false,
+  subscriptionData: externalSubscriptionData,
   onSubscriptionSuccess,
   onOptimisticUpdate
 }: SubscribeButtonProps) {
   const { subscriptionData, isLoading } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { isCreatorStripeReady } = useCreatorStripeStatus(creatorId);
 
+  // Use external subscription data if provided, otherwise use hook data
+  const finalSubscriptionData = externalSubscriptionData || subscriptionData;
+  
   // Use subscription check result with fallback to prop
-  const isUserSubscribed = subscriptionData?.isSubscribed ?? isSubscribed;
+  const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
   console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
     tierName,
     isSubscribedProp: isSubscribed,
-    subscriptionData,
+    subscriptionData: finalSubscriptionData,
     hookIsSubscribed: subscriptionData?.isSubscribed,
     finalIsUserSubscribed: isUserSubscribed,
     isLoading,
@@ -54,7 +59,7 @@ export function SubscribeButton({
     return (
       <SubscribedButton
         tierName={tierName}
-        subscriptionData={subscriptionData?.subscription}
+        subscriptionData={finalSubscriptionData?.subscription}
         tierId={tierId}
         creatorId={creatorId}
         onOptimisticUpdate={onOptimisticUpdate}
