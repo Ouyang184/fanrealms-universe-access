@@ -46,28 +46,18 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       let isScheduledToCancel = false;
       let currentPeriodEnd = null;
 
-      // Always check the cancel_at_period_end flag first
-      if (subscription.cancel_at_period_end === true) {
-        isScheduledToCancel = true;
+      if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
+        // Handle both string and number timestamps more carefully
+        if (typeof subscription.current_period_end === 'string') {
+          currentPeriodEnd = new Date(subscription.current_period_end);
+        } else if (typeof subscription.current_period_end === 'number') {
+          // If it's a Unix timestamp, convert it
+          currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+        }
         
-        // Handle period end timestamp conversion
-        if (subscription.current_period_end) {
-          if (typeof subscription.current_period_end === 'string') {
-            currentPeriodEnd = new Date(subscription.current_period_end);
-          } else if (typeof subscription.current_period_end === 'number') {
-            currentPeriodEnd = new Date(subscription.current_period_end * 1000);
-          }
-          
-          // Double-check that the end date is still in the future
-          if (currentPeriodEnd && !isNaN(currentPeriodEnd.getTime())) {
-            const now = new Date();
-            if (currentPeriodEnd <= now) {
-              // Period has already ended, subscription should be considered inactive
-              isScheduledToCancel = false;
-              console.log('[SubscriptionCheck] Subscription period has ended, considering inactive');
-              return { isSubscribed: false, subscription: null };
-            }
-          }
+        // Only consider it scheduled to cancel if the end date is in the future
+        if (currentPeriodEnd && !isNaN(currentPeriodEnd.getTime())) {
+          isScheduledToCancel = currentPeriodEnd > new Date();
         }
       }
 
@@ -89,12 +79,11 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         isScheduledToCancel,
         // Ensure we have the correct period end format
         current_period_end: currentPeriodEnd ? currentPeriodEnd.toISOString() : subscription.current_period_end,
-        // Preserve the original cancellation flag - this is critical
+        // Preserve the original cancellation flag
         cancel_at_period_end: subscription.cancel_at_period_end
       };
 
       // Return isSubscribed as true for active subscriptions, regardless of cancellation status
-      // The UI will handle showing the "ending soon" state based on isScheduledToCancel
       return {
         isSubscribed: isActive,
         subscription: subscriptionWithCancelInfo

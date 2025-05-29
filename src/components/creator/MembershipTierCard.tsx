@@ -38,32 +38,19 @@ export function MembershipTierCard({
     return <Check className="h-3 w-3" />;
   };
 
-  // Use the subscription data to determine active and cancellation status
+  // Use the improved subscription logic
   const isActive = subscriptionData?.status === 'active';
-  const isScheduledToCancel = subscriptionData?.cancel_at_period_end === true || subscriptionData?.isScheduledToCancel === true;
+  const isScheduledToCancel = subscriptionData?.cancel_at_period_end === true &&
+                             subscriptionData?.current_period_end && 
+                             new Date(subscriptionData.current_period_end * 1000) > new Date();
 
-  const formatDate = (dateString: string | number) => {
-    let date;
-    if (typeof dateString === 'number') {
-      date = new Date(dateString * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
     });
   };
-
-  console.log('[MembershipTierCard] Render state:', {
-    tierId: tier.id,
-    isSubscribed,
-    subscriptionData,
-    isActive,
-    isScheduledToCancel,
-    cancelAtPeriodEnd: subscriptionData?.cancel_at_period_end
-  });
 
   return (
     <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
@@ -106,8 +93,8 @@ export function MembershipTierCard({
             <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
           </div>
 
-          {/* Show subscription status - prioritize cancellation state */}
-          {isActive && isScheduledToCancel && subscriptionData?.current_period_end && (
+          {/* Show subscription status using improved logic */}
+          {isActive && isScheduledToCancel && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
