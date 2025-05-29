@@ -7,6 +7,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SubscribedButtonProps {
   tierName: string;
@@ -27,6 +38,7 @@ export function SubscribedButton({
 }: SubscribedButtonProps) {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
@@ -64,6 +76,13 @@ export function SubscribedButton({
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Calculate next billing date (approximately one month from now)
+  const getNextBillingDate = () => {
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    return formatCancelDate(nextMonth.toISOString());
   };
 
   const handleReactivate = async () => {
@@ -169,9 +188,11 @@ export function SubscribedButton({
 
         console.log('Successfully set subscription to cancel at period end via simple-subscriptions');
         
+        const nextBillingDate = getNextBillingDate();
+        
         toast({
           title: "Subscription Will End",
-          description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
+          description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
         });
         
         // Invalidate all subscription-related queries to refresh the UI
@@ -191,6 +212,7 @@ export function SubscribedButton({
         });
       } finally {
         setIsCancelling(false);
+        setShowCancelDialog(false);
       }
       return;
     }
@@ -227,9 +249,11 @@ export function SubscribedButton({
         subscriptionId: subscriptionId
       });
       
+      const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
+      
       toast({
         title: "Subscription Will End",
-        description: `Your subscription to ${tierName} will end on your next billing date. You'll continue to have access until then.`,
+        description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
       });
       
       // Invalidate all subscription-related queries to refresh the UI immediately
@@ -247,6 +271,7 @@ export function SubscribedButton({
       });
     } finally {
       setIsCancelling(false);
+      setShowCancelDialog(false);
     }
   };
 
@@ -302,22 +327,54 @@ export function SubscribedButton({
           <span className="text-green-800 font-medium">Subscribed to {tierName}</span>
         </div>
       </div>
-      <Button 
-        variant="outline" 
-        size="sm" 
-        className="w-full border-red-200 text-red-600 hover:bg-red-50"
-        onClick={handleUnsubscribe}
-        disabled={isCancelling}
-      >
-        {isCancelling ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          'Cancel Subscription'
-        )}
-      </Button>
+      
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full border-red-200 text-red-600 hover:bg-red-50"
+            disabled={isCancelling}
+          >
+            {isCancelling ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Cancel Subscription'
+            )}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your subscription to <strong>{tierName}</strong>? 
+              <br /><br />
+              Your subscription will automatically end on <strong>{getNextBillingDate()}</strong>. 
+              You'll continue to have access to all {tierName} benefits until then.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleUnsubscribe}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isCancelling}
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                'Cancel Subscription'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
