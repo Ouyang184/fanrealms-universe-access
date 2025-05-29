@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -92,9 +91,16 @@ export function CreatePostForm() {
     return videoUrlPatterns.some(pattern => pattern.test(url));
   };
 
+  const handleTierSelect = (tierId: string | null) => {
+    console.log('Tier selected in CreatePostForm:', tierId);
+    setSelectedTierId(tierId);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    
+    console.log('Form submission started with selectedTierId:', selectedTierId);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -132,29 +138,26 @@ export function CreatePostForm() {
         });
       }
 
-      console.log('Creating post with data:', {
+      const postData = {
         title,
         content,
         author_id: user.id,
         creator_id: creatorProfile?.id || null,
-        tier_id: selectedTierId,
+        tier_id: selectedTierId, // This should properly set the tier_id
         attachments: uploadedAttachments
-      });
+      };
 
-      const { error } = await supabase
+      console.log('Creating post with data:', postData);
+      console.log('selectedTierId value type:', typeof selectedTierId, 'value:', selectedTierId);
+
+      const { data: insertedPost, error } = await supabase
         .from('posts')
-        .insert([
-          { 
-            title,
-            content,
-            author_id: user.id,
-            creator_id: creatorProfile?.id || null,
-            tier_id: selectedTierId, // This should properly set the tier_id
-            attachments: uploadedAttachments
-          }
-        ]);
+        .insert([postData])
+        .select('*');
 
       if (error) throw error;
+
+      console.log('Post created successfully:', insertedPost);
 
       const postType = selectedTierId ? "premium" : "public";
       toast({
@@ -251,7 +254,7 @@ export function CreatePostForm() {
           <div className="space-y-2">
             <Label>Post Visibility</Label>
             <TierSelect
-              onSelect={setSelectedTierId}
+              onSelect={handleTierSelect}
               value={selectedTierId}
               disabled={isLoading}
             />
@@ -259,6 +262,7 @@ export function CreatePostForm() {
               <div className="text-sm text-muted-foreground bg-amber-50 p-2 rounded border">
                 <Lock className="inline h-3 w-3 mr-1" />
                 This post will only be visible to subscribers of the selected membership tier.
+                <div className="mt-1 text-xs">Selected tier ID: {selectedTierId}</div>
               </div>
             )}
           </div>
