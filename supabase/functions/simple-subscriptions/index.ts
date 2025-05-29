@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -305,7 +306,107 @@ serve(async (req) => {
     } else if (action === 'get_creator_subscribers') {
       console.log('[SimpleSubscriptions] Getting creator subscribers for creator:', creatorId);
       
-      // Get from user_subscriptions table ONLY - include cancelling subscriptions too
+      // First, let's sync with Stripe to ensure we have the latest data
+      console.log('[SimpleSubscriptions] Starting Stripe sync for creator:', creatorId);
+      
+      // Get all Stripe subscriptions for this creator's tiers
+      const { data: tiers } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('creator_id', creatorId);
+      
+      console.log('[SimpleSubscriptions] Found tiers:', tiers?.length || 0);
+      
+      if (tiers && tiers.length > 0) {
+        for (const tier of tiers) {
+          if (tier.stripe_price_id) {
+            console.log('[SimpleSubscriptions] Checking Stripe for tier:', tier.title, 'price_id:', tier.stripe_price_id);
+            
+            try {
+              // Get all subscriptions for this price from Stripe
+              const stripeSubscriptions = await stripe.subscriptions.list({
+                price: tier.stripe_price_id,
+                status: 'all',
+                limit: 100,
+              });
+              
+              console.log('[SimpleSubscriptions] Found', stripeSubscriptions.data.length, 'Stripe subscriptions for tier:', tier.title);
+              
+              for (const stripeSub of stripeSubscriptions.data) {
+                console.log('[SimpleSubscriptions] Processing Stripe subscription:', stripeSub.id, 'status:', stripeSub.status);
+                
+                // Get customer details
+                const customer = await stripe.customers.retrieve(stripeSub.customer as string);
+                
+                if (customer.deleted) {
+                  console.log('[SimpleSubscriptions] Customer deleted, skipping');
+                  continue;
+                }
+                
+                console.log('[SimpleSubscriptions] Customer email:', customer.email);
+                
+                // Find user by email
+                const { data: userData } = await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('email', customer.email)
+                  .single();
+                
+                if (!userData) {
+                  console.log('[SimpleSubscriptions] No user found for email:', customer.email);
+                  continue;
+                }
+                
+                console.log('[SimpleSubscriptions] Found user:', userData.id, 'for subscription:', stripeSub.id);
+                
+                // Determine status
+                let dbStatus = 'inactive';
+                if (stripeSub.status === 'active') {
+                  dbStatus = stripeSub.cancel_at_period_end ? 'cancelling' : 'active';
+                } else if (stripeSub.status === 'trialing') {
+                  dbStatus = 'active';
+                }
+                
+                console.log('[SimpleSubscriptions] Mapped status:', stripeSub.status, '->', dbStatus);
+                
+                // Upsert subscription in user_subscriptions table
+                const subscriptionData = {
+                  user_id: userData.id,
+                  creator_id: creatorId,
+                  tier_id: tier.id,
+                  stripe_subscription_id: stripeSub.id,
+                  stripe_customer_id: stripeSub.customer,
+                  status: dbStatus,
+                  amount: tier.price,
+                  current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
+                  current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
+                  cancel_at_period_end: stripeSub.cancel_at_period_end || false,
+                  updated_at: new Date().toISOString()
+                };
+                
+                console.log('[SimpleSubscriptions] Upserting subscription data:', subscriptionData);
+                
+                const { error: upsertError } = await supabase
+                  .from('user_subscriptions')
+                  .upsert(subscriptionData, { 
+                    onConflict: 'user_id,creator_id,tier_id',
+                    ignoreDuplicates: false 
+                  });
+                
+                if (upsertError) {
+                  console.error('[SimpleSubscriptions] Error upserting subscription:', upsertError);
+                } else {
+                  console.log('[SimpleSubscriptions] Successfully upserted subscription for user:', userData.id);
+                }
+              }
+            } catch (error) {
+              console.error('[SimpleSubscriptions] Error fetching Stripe subscriptions for tier:', tier.title, error);
+            }
+          }
+        }
+      }
+      
+      // Now get the synced data from user_subscriptions table
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -317,6 +418,8 @@ serve(async (req) => {
         .in('status', ['active', 'cancelling']) // Include both active and cancelling
         .order('created_at', { ascending: false });
 
+      console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
+      
       return new Response(JSON.stringify({ subscribers: subscribers || [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

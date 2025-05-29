@@ -25,7 +25,23 @@ export const useCreatorSubscribers = (creatorId: string) => {
         return [];
       }
 
+      console.log('[useCreatorSubscribers] Raw response data:', data);
       console.log('[useCreatorSubscribers] Subscribers data received:', data?.subscribers?.length || 0, 'subscribers');
+      
+      // Log each subscriber for debugging
+      if (data?.subscribers) {
+        data.subscribers.forEach((sub: any, index: number) => {
+          console.log(`[useCreatorSubscribers] Subscriber ${index + 1}:`, {
+            id: sub.id,
+            user_id: sub.user_id,
+            tier_id: sub.tier_id,
+            status: sub.status,
+            stripe_subscription_id: sub.stripe_subscription_id,
+            amount: sub.amount,
+            tier_title: sub.tier?.title
+          });
+        });
+      }
       
       // Log status breakdown for debugging
       const statusBreakdown = data?.subscribers?.reduce((counts: any, sub: any) => {
@@ -38,10 +54,10 @@ export const useCreatorSubscribers = (creatorId: string) => {
       return data?.subscribers || [];
     },
     enabled: !!creatorId && !!user,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every minute to stay synced with Stripe
-    refetchOnWindowFocus: true, // Refetch when user returns to the page
-    retry: 3 // Retry failed requests
+    staleTime: 0, // Always fetch fresh data to debug the issue
+    refetchInterval: false, // Disable auto-refetch for now to avoid spam
+    refetchOnWindowFocus: true,
+    retry: 3
   });
 
   return {
