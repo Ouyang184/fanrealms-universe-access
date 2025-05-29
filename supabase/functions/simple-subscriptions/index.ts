@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -424,7 +423,7 @@ serve(async (req) => {
         }
       }
       
-      // Now get the synced data from user_subscriptions table - only active subscriptions
+      // CRITICAL FIX: Now get the synced data from user_subscriptions table - only filter by status = 'active'
       console.log('[SimpleSubscriptions] Fetching final results from user_subscriptions table');
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
@@ -434,7 +433,7 @@ serve(async (req) => {
           tier:membership_tiers(id, title, price)
         `)
         .eq('creator_id', creatorId)
-        .eq('status', 'active') // Only active subscriptions
+        .eq('status', 'active') // ONLY filter by active status - include all active subscriptions regardless of cancellation status
         .order('created_at', { ascending: false });
 
       console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
@@ -446,6 +445,7 @@ serve(async (req) => {
             user_email: sub.user?.email,
             tier_title: sub.tier?.title,
             status: sub.status,
+            cancel_at_period_end: sub.cancel_at_period_end,
             amount: sub.amount,
             stripe_subscription_id: sub.stripe_subscription_id
           });
