@@ -158,7 +158,7 @@ export default function CreatorStudioSubscribers() {
         </div>
 
         {/* Debug Info */}
-        <Alert variant="outline" className="bg-blue-50 border-blue-200">
+        <Alert className="bg-blue-50 border-blue-200">
           <AlertCircle className="h-4 w-4 text-blue-500" />
           <AlertDescription className="text-xs">
             Creator ID: {creatorData?.id || 'Not loaded'} | 
@@ -256,7 +256,7 @@ export default function CreatorStudioSubscribers() {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Pending Subscriptions</span>
-                <Badge variant="outline">{pendingSubscribers.length} pending</Badge>
+                <Badge variant="secondary">{pendingSubscribers.length} pending</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -280,7 +280,7 @@ export default function CreatorStudioSubscribers() {
                         <p className="font-medium">{subscriber.tier?.title}</p>
                         <p className="text-sm text-muted-foreground">${subscriber.amount}/month</p>
                       </div>
-                      <Badge variant="outline">Pending Payment</Badge>
+                      <Badge variant="secondary">Pending Payment</Badge>
                     </div>
                   </div>
                 ))}
