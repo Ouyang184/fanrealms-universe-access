@@ -257,13 +257,19 @@ serve(async (req) => {
         cancel_at_period_end: true
       });
 
-      // Update status to cancelling in user_subscriptions table ONLY
+      // Update status to cancelling in user_subscriptions table ONLY and store cancellation info
+      const updateData = { 
+        status: 'cancelling' as const,
+        cancel_at_period_end: true,
+        cancel_at: updatedSubscription.cancel_at ? new Date(updatedSubscription.cancel_at * 1000).toISOString() : null,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[SimpleSubscriptions] Updating subscription with data:', updateData);
+
       await supabase
         .from('user_subscriptions')
-        .update({ 
-          status: 'cancelling',
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', subscription.id);
 
       console.log('[SimpleSubscriptions] Successfully set subscription to cancel at period end');

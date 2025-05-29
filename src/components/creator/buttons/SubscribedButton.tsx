@@ -30,16 +30,27 @@ export function SubscribedButton({
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
-  // Check if subscription is in cancelling state - check multiple fields
-  const isCancellingState = subscriptionData?.status === 'cancelling' || 
-                           subscriptionData?.cancel_at_period_end === true ||
-                           subscriptionData?.cancel_at_period_end ||
-                           (subscriptionData?.subscription && subscriptionData.subscription.cancel_at_period_end === true);
+  // Check if subscription is in cancelling state - look for status 'cancelling' or cancel_at_period_end flag
+  const subscription = subscriptionData?.subscription || subscriptionData;
+  const isCancellingState = subscription?.status === 'cancelling' || 
+                           subscription?.cancel_at_period_end === true ||
+                           subscription?.cancel_at_period_end ||
+                           subscriptionData?.status === 'cancelling';
   
-  const cancelAt = subscriptionData?.cancel_at || 
+  const cancelAt = subscription?.cancel_at || 
+                  subscription?.current_period_end ||
+                  subscriptionData?.cancel_at ||
                   subscriptionData?.current_period_end ||
-                  subscriptionData?.subscription?.current_period_end ||
-                  (subscriptionData?.current_period_end ? new Date(subscriptionData.current_period_end * 1000).toISOString() : null);
+                  (subscription?.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null);
+
+  console.log('SubscribedButton - Cancellation check:', {
+    subscription,
+    subscriptionData,
+    isCancellingState,
+    cancelAt,
+    status: subscription?.status,
+    cancel_at_period_end: subscription?.cancel_at_period_end
+  });
 
   const formatCancelDate = (dateString: string | number) => {
     let date;
@@ -62,10 +73,11 @@ export function SubscribedButton({
       return;
     }
 
-    const subscriptionId = subscriptionData?.stripe_subscription_id || 
-                          subscriptionData?.id || 
-                          subscriptionData?.subscription_id ||
-                          subscriptionData?.subscription?.id;
+    const subscriptionId = subscription?.stripe_subscription_id || 
+                          subscription?.id || 
+                          subscription?.subscription_id ||
+                          subscriptionData?.stripe_subscription_id ||
+                          subscriptionData?.id;
 
     if (!subscriptionId) {
       toast({
@@ -130,10 +142,11 @@ export function SubscribedButton({
       return;
     }
 
-    const subscriptionId = subscriptionData?.stripe_subscription_id || 
-                          subscriptionData?.id || 
-                          subscriptionData?.subscription_id ||
-                          subscriptionData?.subscription?.id;
+    const subscriptionId = subscription?.stripe_subscription_id || 
+                          subscription?.id || 
+                          subscription?.subscription_id ||
+                          subscriptionData?.stripe_subscription_id ||
+                          subscriptionData?.id;
 
     if (!subscriptionId) {
       console.log('No subscription ID found, trying to cancel via simple-subscriptions');
