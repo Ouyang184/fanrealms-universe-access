@@ -89,8 +89,7 @@ export const useCreatorMembership = (creatorId: string) => {
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('status', 'active');
+        .eq('creator_id', creatorId);
 
       if (error) {
         console.error('Error fetching user subscriptions:', error);
@@ -107,9 +106,10 @@ export const useCreatorMembership = (creatorId: string) => {
 
   // Check if user is subscribed to ANY tier of this creator
   const isSubscribedToCreator = useCallback((): boolean => {
-    const hasSubscriptions = userCreatorSubscriptions ? userCreatorSubscriptions.length > 0 : false;
-    console.log('isSubscribedToCreator check:', hasSubscriptions, userCreatorSubscriptions);
-    return hasSubscriptions;
+    const hasActiveSubscriptions = userCreatorSubscriptions ? 
+      userCreatorSubscriptions.some(sub => sub.status === 'active' || sub.status === 'cancelling') : false;
+    console.log('isSubscribedToCreator check:', hasActiveSubscriptions, userCreatorSubscriptions);
+    return hasActiveSubscriptions;
   }, [userCreatorSubscriptions]);
 
   // Check if user is subscribed to a specific tier
@@ -122,12 +122,19 @@ export const useCreatorMembership = (creatorId: string) => {
     
     // Fall back to server data from user_subscriptions
     const isSubscribed = userCreatorSubscriptions?.some(sub => 
-      sub.tier_id === tierId && sub.status === 'active'
+      sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
     ) || false;
     
     console.log('isSubscribedToTier check for tier:', tierId, 'result:', isSubscribed);
     return isSubscribed;
   }, [userCreatorSubscriptions, localSubscriptionStates]);
+
+  // Get subscription data for a specific tier
+  const getSubscriptionData = useCallback((tierId: string) => {
+    return userCreatorSubscriptions?.find(sub => 
+      sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
+    );
+  }, [userCreatorSubscriptions]);
 
   // Handle subscription success with full sync
   const handleSubscriptionSuccess = useCallback(async () => {
@@ -232,6 +239,7 @@ export const useCreatorMembership = (creatorId: string) => {
     isLoading,
     isSubscribedToTier,
     isSubscribedToCreator,
+    getSubscriptionData,
     handleSubscriptionSuccess,
     updateLocalSubscriptionState,
   };

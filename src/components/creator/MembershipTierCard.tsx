@@ -83,25 +83,6 @@ export function MembershipTierCard({
             <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
           </div>
           
-          {/* Show cancellation warning if subscription is scheduled to end */}
-          {isSubscribed && isCancellingState && cancelAt && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center mb-2">
-                <AlertTriangle className="mr-2 h-4 w-4 text-yellow-600" />
-                <span className="font-medium text-yellow-800 text-sm">Subscription Ending Soon</span>
-              </div>
-              <p className="text-yellow-700 text-xs mb-2">
-                Your subscription will end on <strong>{formatCancelDate(cancelAt)}</strong>
-              </p>
-              <div className="text-center">
-                <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
-                  <Calendar className="mr-1 h-3 w-3" />
-                  Active until {formatCancelDate(cancelAt)}
-                </Badge>
-              </div>
-            </div>
-          )}
-          
           <ul className="space-y-2">
             {tier.features.map((feature, index) => (
               <li key={index} className="flex items-start gap-2">

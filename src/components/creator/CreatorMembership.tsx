@@ -14,6 +14,7 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
     tiers, 
     isLoading, 
     isSubscribedToTier, 
+    getSubscriptionData,
     handleSubscriptionSuccess 
   } = useCreatorMembership(creatorId);
 
@@ -41,6 +42,7 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tiers.map((tier) => {
           const isSubscribed = isSubscribedToTier(tier.id);
+          const subscriptionData = getSubscriptionData(tier.id);
           
           return (
             <MembershipTierCard
@@ -48,6 +50,7 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
               tier={tier}
               creatorId={creatorId}
               isSubscribed={isSubscribed}
+              subscriptionData={subscriptionData}
               onSubscriptionSuccess={handleSubscriptionSuccess}
             />
           );
