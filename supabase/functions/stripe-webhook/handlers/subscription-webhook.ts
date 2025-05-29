@@ -1,4 +1,3 @@
-
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleSubscriptionWebhook(
@@ -27,8 +26,9 @@ export async function handleSubscriptionWebhook(
   // Map Stripe status to our valid statuses (active, canceled, incomplete, incomplete_expired)
   let dbStatus = 'active';
   if (subscription.status === 'active') {
-    // For active subscriptions that are set to cancel, we mark them as canceled immediately
-    dbStatus = subscription.cancel_at_period_end ? 'canceled' : 'active';
+    // Keep status as active even if cancel_at_period_end is true
+    // The subscription is still active until the period ends
+    dbStatus = 'active';
   } else if (subscription.status === 'canceled') {
     dbStatus = 'canceled';
   } else if (subscription.status === 'incomplete') {
@@ -108,7 +108,7 @@ export async function handleSubscriptionWebhook(
       }
     }
 
-    // Handle canceled subscriptions - remove from database if fully canceled
+    // Handle canceled subscriptions - remove from database only if fully canceled (not just scheduled to cancel)
     if (event.type === 'customer.subscription.deleted' || 
         (subscription.status === 'canceled' && !subscription.cancel_at_period_end)) {
       console.log('[WebhookHandler] Subscription', subscription.id, 'has status', subscription.status, ', removing from database');
