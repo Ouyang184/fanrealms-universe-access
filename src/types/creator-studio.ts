@@ -28,8 +28,16 @@ export interface CreatorPost {
 }
 
 export interface CreatorSettings {
-  display_name: string;
-  bio: string;
+  id: string;
+  user_id: string;
+  username?: string;
+  email?: string;
+  display_name?: string;
+  bio?: string;
+  avatar_url?: string;
+  profile_image_url?: string;
+  banner_url?: string;
+  tags?: string[];
   website_url?: string;
   twitter_url?: string;
   instagram_url?: string;
@@ -37,6 +45,7 @@ export interface CreatorSettings {
   linkedin_url?: string;
   github_url?: string;
   banner_image?: string;
+  created_at?: string;
 }
 
 export interface SubscriberWithDetails {
@@ -49,6 +58,14 @@ export interface SubscriberWithDetails {
   updated_at: string;
   current_period_end?: string;
   stripe_subscription_id?: string;
+  // Additional properties that components expect
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  tier: string;
+  tierPrice: number;
+  subscriptionDate: string;
+  amount?: number;
   users: {
     username: string;
     email: string;
@@ -57,5 +74,10 @@ export interface SubscriberWithDetails {
   membership_tiers: {
     title: string;
     price: number;
+  };
+  user?: {
+    username: string;
+    email: string;
+    profile_picture?: string;
   };
 }

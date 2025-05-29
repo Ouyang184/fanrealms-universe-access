@@ -63,7 +63,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={settings.avatar_url || undefined} alt={displayName} />
+              <AvatarImage src={settings.avatar_url || settings.profile_image_url || undefined} alt={displayName} />
               <AvatarFallback>{displayName?.charAt(0) || 'C'}</AvatarFallback>
             </Avatar>
             <Button 
