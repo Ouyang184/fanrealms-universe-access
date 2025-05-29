@@ -82,6 +82,18 @@ const PostCard: React.FC<PostCardProps> = ({
     finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
+  // DEBUGGING: Log subscription mismatch details for premium posts
+  if (isPremiumPost && !hasFullAccess && !isOwnPost) {
+    console.warn('🚨 SUBSCRIPTION MISMATCH DETECTED:', {
+      postId: id,
+      tierIdFromPost: tier_id,
+      authorIdFromPost: authorId,
+      currentUserId: user?.id,
+      subscriptionCheckResult: subscriptionData,
+      expectedAccess: 'SHOULD_HAVE_ACCESS_IF_SUBSCRIBED'
+    });
+  }
+
   // Content display logic
   const getDisplayContent = () => {
     if (hasFullAccess) {
@@ -147,6 +159,14 @@ const PostCard: React.FC<PostCardProps> = ({
               <p className="text-sm text-amber-700 mb-3">
                 This content is available to premium subscribers. Subscribe to unlock the full post and exclusive content from this creator.
               </p>
+              
+              {/* DEBUGGING INFO - Remove this in production */}
+              <div className="text-xs bg-red-50 border border-red-200 p-2 rounded mb-3 text-red-700">
+                <strong>Debug Info:</strong> Post tier_id: {tier_id}, Author ID: {authorId}, 
+                Subscription check: {subscriptionData ? 'Found data' : 'No data'}, 
+                Is subscribed: {isSubscribedToTier ? 'Yes' : 'No'}
+              </div>
+              
               <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
                 <Lock className="h-4 w-4 mr-2" />
                 Subscribe to Unlock

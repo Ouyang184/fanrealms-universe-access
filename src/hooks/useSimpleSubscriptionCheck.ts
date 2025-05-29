@@ -16,12 +16,53 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
 
-      // Query user_subscriptions table with detailed logging
+      // ENHANCED: First, let's check if creatorId is actually a user_id and get the creator profile ID
+      let actualCreatorId = creatorId;
+      
+      // Try to find creator by user_id if the provided creatorId might be a user_id
+      const { data: creatorByUserId, error: creatorError } = await supabase
+        .from('creators')
+        .select('id, user_id, display_name')
+        .eq('user_id', creatorId)
+        .single();
+
+      if (creatorByUserId && !creatorError) {
+        actualCreatorId = creatorByUserId.id;
+        console.log('[SubscriptionCheck] Found creator by user_id:', {
+          inputCreatorId: creatorId,
+          actualCreatorId: actualCreatorId,
+          creatorDisplayName: creatorByUserId.display_name
+        });
+      } else {
+        // If not found by user_id, check if it's already a creator profile ID
+        const { data: creatorById } = await supabase
+          .from('creators')
+          .select('id, user_id, display_name')
+          .eq('id', creatorId)
+          .single();
+          
+        if (creatorById) {
+          console.log('[SubscriptionCheck] Creator found by profile ID:', {
+            creatorId: creatorById.id,
+            userId: creatorById.user_id,
+            displayName: creatorById.display_name
+          });
+        }
+      }
+
+      // Query user_subscriptions table with both original and resolved creator IDs
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .select('*')
+        .select(`
+          *,
+          membership_tiers (
+            id,
+            title,
+            creator_id
+          )
+        `)
         .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
+        .in('creator_id', [creatorId, actualCreatorId])
         .eq('tier_id', tierId);
 
       if (error) {
@@ -31,11 +72,28 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('[SubscriptionCheck] All subscription records found:', data);
 
+      // Also check for any subscriptions by this user to this creator (regardless of tier)
+      const { data: allUserSubs } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          membership_tiers (
+            id,
+            title,
+            creator_id
+          )
+        `)
+        .eq('user_id', user.id)
+        .in('creator_id', [creatorId, actualCreatorId]);
+
+      console.log('[SubscriptionCheck] All user subscriptions to this creator:', allUserSubs);
+
       // Filter for active subscriptions only
       const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
-      console.log('[SubscriptionCheck] Active subscriptions:', activeSubscriptions);
+      console.log('[SubscriptionCheck] Active subscriptions for tier:', activeSubscriptions);
 
       if (activeSubscriptions.length === 0) {
+        console.log('[SubscriptionCheck] No active subscriptions found');
         return { isSubscribed: false, subscription: null };
       }
 
@@ -69,7 +127,9 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         hasAccess: isCurrentlyActive,
         userId: user.id,
         tierId,
-        creatorId
+        originalCreatorId: creatorId,
+        resolvedCreatorId: actualCreatorId,
+        tierInfo: subscription.membership_tiers
       });
 
       return {
