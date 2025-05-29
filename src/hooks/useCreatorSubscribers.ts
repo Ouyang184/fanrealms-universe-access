@@ -7,7 +7,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
   const { user } = useAuth();
 
   const { data: subscribers, isLoading, refetch } = useQuery({
-    queryKey: ['simple-creator-subscribers', creatorId],
+    queryKey: ['creator-subscribers', creatorId],
     queryFn: async () => {
       if (!creatorId) return [];
 
@@ -55,8 +55,8 @@ export const useCreatorSubscribers = (creatorId: string) => {
       return data?.subscribers || [];
     },
     enabled: !!creatorId && !!user,
-    staleTime: 0, // Always fetch fresh data to debug the issue
-    refetchInterval: false, // Disable auto-refetch for now to avoid spam
+    staleTime: 30000, // 30 seconds cache 
+    refetchInterval: false, 
     refetchOnWindowFocus: true,
     retry: 3
   });
