@@ -423,9 +423,21 @@ serve(async (req) => {
         }
       }
       
-      // CRITICAL FIX: Now get the synced data from user_subscriptions table - only filter by status = 'active'
+      // CRITICAL FIX: Now get the synced data from user_subscriptions table with better error handling
       console.log('[SimpleSubscriptions] Fetching final results from user_subscriptions table');
-      const { data: subscribers } = await supabase
+      
+      // First, let's check what's actually in the user_subscriptions table
+      const { data: allUserSubs, error: allSubsError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('creator_id', creatorId)
+        .eq('status', 'active');
+
+      console.log('[SimpleSubscriptions] Raw user_subscriptions data:', allUserSubs);
+      console.log('[SimpleSubscriptions] Raw user_subscriptions error:', allSubsError);
+
+      // Now try the full query with LEFT JOINs to avoid missing data issues
+      const { data: subscribers, error: subscribersError } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
@@ -436,6 +448,7 @@ serve(async (req) => {
         .eq('status', 'active') // ONLY filter by active status - include all active subscriptions regardless of cancellation status
         .order('created_at', { ascending: false });
 
+      console.log('[SimpleSubscriptions] Subscribers query error:', subscribersError);
       console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
       
       // Log each subscriber for debugging
@@ -447,9 +460,27 @@ serve(async (req) => {
             status: sub.status,
             cancel_at_period_end: sub.cancel_at_period_end,
             amount: sub.amount,
-            stripe_subscription_id: sub.stripe_subscription_id
+            stripe_subscription_id: sub.stripe_subscription_id,
+            user_data_exists: !!sub.user,
+            tier_data_exists: !!sub.tier
           });
         });
+      } else {
+        console.log('[SimpleSubscriptions] No subscribers found in final query, but raw data shows:', allUserSubs?.length || 0, 'records');
+        
+        // If we have raw data but no joined data, return the raw data with null relationships
+        if (allUserSubs && allUserSubs.length > 0) {
+          console.log('[SimpleSubscriptions] Returning raw subscription data without user/tier details');
+          const rawSubscribers = allUserSubs.map(sub => ({
+            ...sub,
+            user: null,
+            tier: null
+          }));
+          
+          return new Response(JSON.stringify({ subscribers: rawSubscribers }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
       }
       
       return new Response(JSON.stringify({ subscribers: subscribers || [] }), {
