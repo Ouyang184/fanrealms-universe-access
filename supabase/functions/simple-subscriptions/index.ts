@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -359,12 +358,28 @@ serve(async (req) => {
                 
                 console.log('[SimpleSubscriptions] Found user:', userData.id, 'for subscription:', stripeSub.id);
                 
-                // Determine status
-                let dbStatus = 'inactive';
+                // Determine status - only use valid database statuses
+                let dbStatus = 'pending'; // Default fallback
                 if (stripeSub.status === 'active') {
                   dbStatus = stripeSub.cancel_at_period_end ? 'cancelling' : 'active';
                 } else if (stripeSub.status === 'trialing') {
-                  dbStatus = 'active';
+                  dbStatus = 'active'; // Treat trialing as active
+                } else if (stripeSub.status === 'past_due') {
+                  dbStatus = 'active'; // Keep as active for now, could be recovered
+                } else {
+                  // For all other statuses (canceled, incomplete, incomplete_expired, unpaid), 
+                  // we'll delete the record instead of storing as inactive
+                  console.log('[SimpleSubscriptions] Subscription status', stripeSub.status, 'will result in deletion');
+                  
+                  // Delete any existing record for this user/creator/tier
+                  await supabase
+                    .from('user_subscriptions')
+                    .delete()
+                    .eq('user_id', userData.id)
+                    .eq('creator_id', creatorId)
+                    .eq('tier_id', tier.id);
+                  
+                  continue; // Skip to next subscription
                 }
                 
                 console.log('[SimpleSubscriptions] Mapped status:', stripeSub.status, '->', dbStatus);
