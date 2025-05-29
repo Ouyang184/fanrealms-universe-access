@@ -97,6 +97,8 @@ export async function handleSubscriptionWebhook(
     const subscription = event.data.object;
     console.log('[WebhookHandler] Processing subscription created/updated:', subscription.id);
     console.log('[WebhookHandler] Stripe subscription status:', subscription.status);
+    console.log('[WebhookHandler] Cancel at period end:', subscription.cancel_at_period_end);
+    console.log('[WebhookHandler] Cancel at:', subscription.cancel_at);
 
     // Extract metadata
     const { user_id, creator_id, tier_id } = subscription.metadata || {};
@@ -111,10 +113,15 @@ export async function handleSubscriptionWebhook(
     const currentPeriodEnd = subscription.current_period_end ? 
       new Date(subscription.current_period_end * 1000).toISOString() : null;
 
-    // Better status mapping - be more conservative about setting to active
+    // Better status mapping - handle cancelling status
     let dbStatus = 'pending';
     if (subscription.status === 'active') {
-      dbStatus = 'active';
+      // Check if it's set to cancel at period end
+      if (subscription.cancel_at_period_end) {
+        dbStatus = 'cancelling';
+      } else {
+        dbStatus = 'active';
+      }
     } else if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
       dbStatus = 'canceled';
     } else if (subscription.status === 'trialing') {
@@ -124,7 +131,7 @@ export async function handleSubscriptionWebhook(
       dbStatus = 'pending';
     }
 
-    console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'to DB status:', dbStatus);
+    console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'with cancel_at_period_end:', subscription.cancel_at_period_end, 'to DB status:', dbStatus);
 
     // First, try to find existing record
     const { data: existingRecord, error: findError } = await supabaseService

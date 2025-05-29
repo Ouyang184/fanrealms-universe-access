@@ -30,8 +30,8 @@ export function SubscribedButton({
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
   // Check if subscription is in cancelling state
-  const isCancellingState = subscriptionData?.isCancelling || subscriptionData?.status === 'cancelling';
-  const cancelAt = subscriptionData?.cancelAt || subscriptionData?.cancel_at;
+  const isCancellingState = subscriptionData?.status === 'cancelling';
+  const cancelAt = subscriptionData?.cancel_at || subscriptionData?.current_period_end;
 
   const formatCancelDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -76,9 +76,9 @@ export function SubscribedButton({
           throw new Error(data.error);
         }
 
-        console.log('Successfully cancelled subscription via simple-subscriptions');
+        console.log('Successfully set subscription to cancel at period end via simple-subscriptions');
         
-        // Immediately update optimistic state
+        // Update optimistic state to show cancelling
         if (onOptimisticUpdate) {
           onOptimisticUpdate(false);
         }
@@ -91,8 +91,8 @@ export function SubscribedButton({
         });
         
         toast({
-          title: "Subscription Cancelled",
-          description: `You've successfully unsubscribed from ${tierName}.`,
+          title: "Subscription Will Cancel",
+          description: `Your subscription to ${tierName} will end at the end of your billing period.`,
         });
         
         // Invalidate all subscription-related queries
@@ -107,7 +107,7 @@ export function SubscribedButton({
         console.error('Error with simple-subscriptions:', error);
         toast({
           title: "Error",
-          description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
+          description: error instanceof Error ? error.message : "Failed to cancel subscription. Please try again.",
           variant: "destructive"
         });
       } finally {
@@ -119,9 +119,9 @@ export function SubscribedButton({
     setIsCancelling(true);
     
     try {
-      console.log('SubscribedButton: Cancelling subscription:', subscriptionId);
+      console.log('SubscribedButton: Setting subscription to cancel at period end:', subscriptionId);
       
-      // Call the edge function to cancel subscription
+      // Call the edge function to set subscription to cancel at period end
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
@@ -139,12 +139,7 @@ export function SubscribedButton({
         throw new Error(data.error);
       }
       
-      console.log('SubscribedButton: Subscription cancelled successfully');
-      
-      // Immediately update optimistic state
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(false);
-      }
+      console.log('SubscribedButton: Subscription set to cancel at period end successfully:', data);
       
       // Trigger subscription cancellation events
       triggerSubscriptionCancellation({
@@ -154,8 +149,8 @@ export function SubscribedButton({
       });
       
       toast({
-        title: "Subscription Cancelled",
-        description: `You've successfully unsubscribed from ${tierName}.`,
+        title: "Subscription Will Cancel",
+        description: `Your subscription to ${tierName} will end at the end of your billing period.`,
       });
       
       // Invalidate all subscription-related queries
@@ -165,10 +160,10 @@ export function SubscribedButton({
         onSubscriptionSuccess();
       }
     } catch (error) {
-      console.error('SubscribedButton: Unsubscribe error:', error);
+      console.error('SubscribedButton: Cancel subscription error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to unsubscribe. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to cancel subscription. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -212,10 +207,10 @@ export function SubscribedButton({
         {isCancelling ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Unsubscribing...
+            Processing...
           </>
         ) : (
-          'Unsubscribe'
+          'Cancel Subscription'
         )}
       </Button>
     </div>

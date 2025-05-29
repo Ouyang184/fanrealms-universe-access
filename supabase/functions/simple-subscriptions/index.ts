@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -253,24 +252,27 @@ serve(async (req) => {
         throw new Error('Active subscription not found');
       }
 
-      // Cancel in Stripe
-      await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+      // Set subscription to cancel at period end in Stripe
+      const updatedSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+        cancel_at_period_end: true
+      });
 
-      // Update status in user_subscriptions table ONLY
+      // Update status to cancelling in user_subscriptions table ONLY
       await supabase
         .from('user_subscriptions')
         .update({ 
-          status: 'canceled',
+          status: 'cancelling',
           updated_at: new Date().toISOString()
         })
         .eq('id', subscription.id);
 
-      console.log('[SimpleSubscriptions] Successfully cancelled subscription');
+      console.log('[SimpleSubscriptions] Successfully set subscription to cancel at period end');
 
       return new Response(JSON.stringify({ 
         success: true,
         creatorId: subscription.creator_id,
-        tierId: subscription.tier_id
+        tierId: subscription.tier_id,
+        cancelAt: updatedSubscription.cancel_at ? new Date(updatedSubscription.cancel_at * 1000).toISOString() : null
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -278,7 +280,7 @@ serve(async (req) => {
     } else if (action === 'get_user_subscriptions') {
       console.log('[SimpleSubscriptions] Getting user subscriptions for user:', user.id);
       
-      // Get from user_subscriptions table ONLY
+      // Get from user_subscriptions table ONLY - include cancelling subscriptions too
       const { data: subscriptions } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -287,7 +289,7 @@ serve(async (req) => {
           tier:membership_tiers(id, title, description, price)
         `)
         .eq('user_id', user.id)
-        .eq('status', 'active')
+        .in('status', ['active', 'cancelling']) // Include both active and cancelling
         .order('created_at', { ascending: false });
 
       return new Response(JSON.stringify({ subscriptions: subscriptions || [] }), {
@@ -297,7 +299,7 @@ serve(async (req) => {
     } else if (action === 'get_creator_subscribers') {
       console.log('[SimpleSubscriptions] Getting creator subscribers for creator:', creatorId);
       
-      // Get from user_subscriptions table ONLY
+      // Get from user_subscriptions table ONLY - include cancelling subscriptions too
       const { data: subscribers } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -306,7 +308,7 @@ serve(async (req) => {
           tier:membership_tiers(id, title, price)
         `)
         .eq('creator_id', creatorId)
-        .eq('status', 'active')
+        .in('status', ['active', 'cancelling']) // Include both active and cancelling
         .order('created_at', { ascending: false });
 
       return new Response(JSON.stringify({ subscribers: subscribers || [] }), {
