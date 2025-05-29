@@ -18,29 +18,30 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // Check for existing active subscriptions ONLY in user_subscriptions table
-  console.log('Checking for existing active subscriptions in user_subscriptions...');
-  
-  const { data: existingUserSub, error: userSubError } = await supabaseService
+  // CRITICAL: Check for existing active subscriptions FIRST
+  console.log('Checking for existing active subscriptions...');
+  const { data: existingSubscriptions, error: checkError } = await supabaseService
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
     .eq('tier_id', tierId)
-    .eq('status', 'active')
-    .maybeSingle();
+    .in('status', ['active', 'trialing']);
 
-  if (userSubError) {
-    console.error('Error checking user_subscriptions:', userSubError);
+  if (checkError) {
+    console.error('Error checking existing subscriptions:', checkError);
+    return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
   }
 
-  if (existingUserSub) {
-    console.log('Found existing active subscription in user_subscriptions');
+  if (existingSubscriptions && existingSubscriptions.length > 0) {
+    console.log('Found existing active subscription:', existingSubscriptions[0]);
     return createJsonResponse({ 
       error: 'You already have an active subscription to this tier.',
       shouldRefresh: true
     }, 200);
   }
+
+  console.log('No existing active subscriptions found, proceeding with creation...');
 
   // Clean up old pending subscriptions (older than 1 hour) from user_subscriptions ONLY
   console.log('Cleaning up old pending subscriptions from user_subscriptions...');
