@@ -10,7 +10,8 @@ import { PostCardContent } from './post/PostCardContent';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from './ui/badge';
-import { Lock } from 'lucide-react';
+import { Lock, Crown } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface PostCardProps {
   id: string;
@@ -51,61 +52,100 @@ const PostCard: React.FC<PostCardProps> = ({
   // Check if this is the author's own post
   const isOwnPost = user?.id === authorId;
   
-  // Determine if user can view the full content
-  const canViewContent = !tier_id || isOwnPost || isSubscribed;
+  // NEW LOGIC: Everyone can see the post card, but content access varies
+  const isPremiumPost = !!tier_id;
+  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribed;
   
   // Use real metadata - avoid showing "Unknown"
   const displayAuthorName = authorName || users?.username || "Creator";
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
-  const isPremium = !!tier_id;
 
-  console.log('PostCard - Subscription check:', {
+  console.log('PostCard - Access check:', {
     postId: id,
     tierId: tier_id,
     authorId,
     userId: user?.id,
+    isPremiumPost,
     isSubscribed,
     isOwnPost,
-    canViewContent
+    hasFullAccess
   });
 
-  // Show locked content preview for premium posts user can't access
-  const displayTitle = canViewContent ? title : `🔒 ${title}`;
-  const displayContent = canViewContent ? content : "This content is available to premium subscribers only. Subscribe to unlock access.";
+  // Content preview logic
+  const getDisplayContent = () => {
+    if (hasFullAccess) {
+      return {
+        title: title,
+        content: content,
+        showFullMedia: true
+      };
+    } else {
+      // Show preview for premium posts
+      const previewContent = content.length > 150 
+        ? content.substring(0, 150) + "..." 
+        : content;
+      
+      return {
+        title: title,
+        content: previewContent,
+        showFullMedia: false
+      };
+    }
+  };
+
+  const displayContent = getDisplayContent();
 
   return (
-    <Card className={`w-full ${!canViewContent ? 'border-amber-200 bg-amber-50/20' : ''}`}>
+    <Card className={`w-full ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
       <CardHeader className="pb-3">
         <PostCardHeader
           authorName={displayAuthorName}
           authorAvatar={displayAvatar}
           displayDate={displayDate}
-          isPremium={isPremium}
+          isPremium={isPremiumPost}
           users={users}
         />
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         <div className="space-y-3">
-          <PostCardContent title={displayTitle} content={displayContent} />
+          <PostCardContent title={displayContent.title} content={displayContent.content} />
           
-          {!canViewContent && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800 mb-2">
-                <Lock className="h-4 w-4" />
-                <span className="font-medium">Premium Content</span>
+          {/* Premium content preview/lock indicator */}
+          {isPremiumPost && !hasFullAccess && (
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800 mb-3">
+                <Crown className="h-5 w-5 text-purple-600" />
+                <span className="font-semibold">Premium Content</span>
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                  Tier Exclusive
+                </Badge>
               </div>
-              <p className="text-sm text-amber-700">
-                This post is available to premium subscribers. Subscribe to unlock full access to this creator's content.
+              <p className="text-sm text-amber-700 mb-3">
+                This content is available to premium subscribers. Subscribe to unlock the full post and exclusive content from this creator.
               </p>
+              <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
+                <Lock className="h-4 w-4 mr-2" />
+                Subscribe to Unlock
+              </Button>
             </div>
           )}
           
-          {canViewContent && (
+          {/* Show media/attachments based on access level */}
+          {hasFullAccess ? (
             <>
               <PostCardMedia attachments={attachments} />
               <PostAttachments attachments={parsedAttachments} />
             </>
+          ) : isPremiumPost && (
+            <div className="relative">
+              <PostCardMedia attachments={attachments} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-lg flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-4">
+                  <Lock className="h-8 w-8 text-white" />
+                </div>
+              </div>
+            </div>
           )}
         </div>
         

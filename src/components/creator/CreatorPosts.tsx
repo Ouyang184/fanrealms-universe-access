@@ -3,7 +3,7 @@ import React from "react";
 import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Globe } from "lucide-react";
+import { Lock, Globe, Crown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface CreatorPostsProps {
@@ -22,11 +22,11 @@ export function CreatorPosts({ posts }: CreatorPostsProps) {
     );
   }
 
-  // Separate public and premium posts for better organization
+  // NEW: Show ALL posts, but organize them by access level
   const publicPosts = posts.filter(post => !post.tier_id);
   const premiumPosts = posts.filter(post => post.tier_id);
 
-  console.log('CreatorPosts - Posts breakdown:', {
+  console.log('CreatorPosts - All posts visible:', {
     totalPosts: posts.length,
     publicPosts: publicPosts.length,
     premiumPosts: premiumPosts.length,
@@ -65,14 +65,15 @@ export function CreatorPosts({ posts }: CreatorPostsProps) {
         </div>
       )}
 
-      {/* Premium Posts Section */}
+      {/* Premium Posts Section - NOW VISIBLE TO ALL */}
       {premiumPosts.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <Lock className="h-5 w-5 text-purple-600" />
+            <Crown className="h-5 w-5 text-purple-600" />
             <h3 className="text-lg font-semibold">Premium Content</h3>
-            <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-              Members Only
+            <Badge variant="secondary" className="bg-gradient-to-r from-purple-50 to-amber-50 text-purple-700 border-purple-200">
+              <Lock className="h-3 w-3 mr-1" />
+              Subscription Required
             </Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

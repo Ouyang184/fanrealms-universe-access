@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -84,7 +83,7 @@ export function useCreatorPosts() {
           }
         }
 
-        // Since this is the creator's own posts, they can always view everything
+        // CREATOR ALWAYS HAS FULL ACCESS to their own posts
         const canViewPost = true;
         const isLocked = !!post.tier_id; // Post is locked if it has a tier_id
 
