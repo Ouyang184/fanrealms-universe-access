@@ -78,7 +78,7 @@ export function useCreatorFetch(identifier?: string) {
     refetchOnWindowFocus: false
   });
   
-  // Fetch ALL creator's posts (public and tier-restricted)
+  // Fetch creator's posts (public and accessible ones)
   const {
     data: posts = [],
     isLoading: isLoadingPosts,
@@ -92,9 +92,9 @@ export function useCreatorFetch(identifier?: string) {
         return [];
       }
       
-      console.log(`Fetching ALL posts for creator user ID: ${creatorUserId}`);
+      console.log(`Fetching posts for creator user ID: ${creatorUserId}`);
       
-      // Fetch ALL posts for this creator (no filtering by tier)
+      // Fetch all posts for this creator
       const { data: postsData, error } = await supabase
         .from('posts')
         .select(`
@@ -121,8 +121,6 @@ export function useCreatorFetch(identifier?: string) {
         });
         return [];
       }
-      
-      console.log(`Fetched ${postsData?.length || 0} posts for creator (including tier-restricted)`);
       
       return postsData.map((post: any) => ({
         ...post,
