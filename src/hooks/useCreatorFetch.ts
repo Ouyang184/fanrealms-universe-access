@@ -94,7 +94,7 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log(`Fetching posts for creator user ID: ${creatorUserId}`);
       
-      // Fetch all posts for this creator
+      // Fetch ALL posts for this creator, including tier-restricted ones
       const { data: postsData, error } = await supabase
         .from('posts')
         .select(`
