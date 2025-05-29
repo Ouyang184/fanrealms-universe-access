@@ -57,21 +57,7 @@ export function useCreatorPosts() {
         return [];
       }
 
-      // Get user's creator profile
-      const { data: creatorProfile } = await supabase
-        .from('creators')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      // Get user's active subscriptions for visibility check
-      const { data: userSubscriptions } = await supabase
-        .from('user_subscriptions')
-        .select('tier_id, creator_id')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      console.log('User subscriptions:', userSubscriptions);
+      console.log('Creator posts raw data:', data);
       
       // Transform to CreatorPost format
       return data.map((post): CreatorPost => {
@@ -97,21 +83,17 @@ export function useCreatorPosts() {
           }
         }
 
-        // Check if user can see this post
-        const isOwnPost = creatorProfile?.id === post.creator_id;
-        const isSubscribedToTier = post.tier_id ? userSubscriptions?.some(sub => 
-          sub.tier_id === post.tier_id && sub.creator_id === post.creator_id
-        ) : true; // Public posts are always visible
+        // Since this is the creator's own posts, they can always view everything
+        const canViewPost = true;
+        const isLocked = false;
 
-        const canViewPost = !post.tier_id || isOwnPost || isSubscribedToTier;
-
-        console.log('Post visibility check:', {
+        console.log('Creator post visibility:', {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
-          isOwnPost,
-          isSubscribedToTier,
-          canViewPost
+          isCreatorOwnPost: true,
+          canViewPost,
+          isLocked
         });
 
         // Create tier display info
@@ -130,8 +112,8 @@ export function useCreatorPosts() {
           
         return {
           id: post.id,
-          title: canViewPost ? post.title : "🔒 Premium Content",
-          content: canViewPost ? post.content : "This content is available to premium subscribers only.",
+          title: post.title,
+          content: post.content,
           authorName: username,
           authorAvatar: profilePicture,
           createdAt: post.created_at,
@@ -145,7 +127,7 @@ export function useCreatorPosts() {
           lastEdited: formatRelativeDate(post.created_at),
           type: postType,
           canView: canViewPost,
-          isLocked: !canViewPost
+          isLocked: isLocked
         };
       });
     },
