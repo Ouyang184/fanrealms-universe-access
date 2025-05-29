@@ -1,154 +1,65 @@
+import { corsHeaders } from '../utils/cors.ts';
 
-import { createJsonResponse } from '../utils/cors.ts';
-
-export async function handleCancelSubscription(
-  stripe: any,
-  supabaseService: any,
-  user: any,
-  subscriptionId: string
-) {
+export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string) {
   console.log('Cancelling subscription:', subscriptionId);
-
-  if (!subscriptionId) {
-    console.log('ERROR: Missing subscriptionId');
-    return createJsonResponse({ error: 'Missing subscription ID' }, 400);
-  }
-
-  // Handle force cancel all case
-  if (subscriptionId === 'force_cancel_all') {
-    console.log('Force cancelling all subscriptions for user:', user.id);
-
-    // Get all active subscriptions for this user from user_subscriptions table
-    const { data: userSubs, error: userSubError } = await supabaseService
+  
+  try {
+    // Find the subscription in our database first
+    const { data: userSubscription, error: findError } = await supabaseService
       .from('user_subscriptions')
       .select('*')
+      .eq('stripe_subscription_id', subscriptionId)
       .eq('user_id', user.id)
-      .eq('status', 'active');
+      .single();
 
-    if (userSubError) {
-      console.error('Error querying user subscriptions:', userSubError);
+    if (findError) {
+      console.error('Error finding user subscription:', findError);
+      throw new Error('Subscription not found');
     }
 
-    console.log('Found subscriptions to cancel:', {
-      userSubs: userSubs?.length || 0
-    });
+    console.log('Found user subscription to cancel:', userSubscription.id);
 
-    // Cancel all user subscriptions
-    if (userSubs && userSubs.length > 0) {
-      for (const subscription of userSubs) {
-        if (subscription.stripe_subscription_id) {
-          try {
-            console.log('Setting Stripe subscription to cancel at period end:', subscription.stripe_subscription_id);
-            await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-              cancel_at_period_end: true
-            });
-            console.log('Stripe subscription set to cancel at period end successfully');
-          } catch (stripeError) {
-            console.error('Error setting Stripe subscription to cancel:', stripeError);
-          }
-        }
-
-        // Update database to cancelling status
-        console.log('Updating user subscription to cancelling status:', subscription.id);
-        const { error: updateError } = await supabaseService
-          .from('user_subscriptions')
-          .update({ 
-            status: 'cancelling',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', subscription.id);
-
-        if (updateError) {
-          console.error('Error updating user subscription status:', updateError);
-        }
-      }
-    }
-
-    // Clean up any legacy basic subscriptions
-    const { error: basicDeleteError } = await supabaseService
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', user.id);
-
-    if (basicDeleteError) {
-      console.error('Error deleting basic subscriptions:', basicDeleteError);
-    }
-
-    console.log('All subscriptions set to cancel at period end successfully');
-
-    return createJsonResponse({ 
-      success: true,
-      message: 'All active subscriptions have been set to cancel at the end of their billing periods'
-    });
-  }
-
-  // Handle single subscription cancellation by stripe_subscription_id
-  console.log('Cancelling single subscription by stripe_subscription_id:', subscriptionId);
-
-  // Find the subscription in user_subscriptions table by stripe_subscription_id
-  const { data: userSubscription, error: userSubError } = await supabaseService
-    .from('user_subscriptions')
-    .select('*')
-    .eq('stripe_subscription_id', subscriptionId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (userSubError) {
-    console.error('Error querying user_subscriptions:', userSubError);
-    return createJsonResponse({ error: 'Failed to find subscription' }, 500);
-  }
-
-  if (!userSubscription) {
-    console.error('Subscription not found');
-    return createJsonResponse({ error: 'Subscription not found' }, 404);
-  }
-
-  console.log('Found user subscription to cancel:', userSubscription.id);
-
-  // Set subscription to cancel at period end in Stripe
-  try {
+    // Set the Stripe subscription to cancel at period end
     console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+    const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true
     });
+
     console.log('Stripe subscription set to cancel at period end successfully');
-    
-    // Update database to reflect cancelling status
+
+    // Update our database - keep status as 'active' but add cancel info
     const { error: updateError } = await supabaseService
       .from('user_subscriptions')
-      .update({ 
-        status: 'cancelling',
+      .update({
+        // Keep status as active since subscription is still active until period end
+        current_period_end: new Date(cancelledSubscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('id', userSubscription.id);
 
     if (updateError) {
       console.error('Error updating user subscription status:', updateError);
-      return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
+      throw updateError;
     }
 
-    console.log('User subscription updated to cancelling status successfully');
-
-    // Clean up any corresponding basic subscription
-    if (userSubscription.creator_id && userSubscription.tier_id) {
-      await supabaseService
-        .from('subscriptions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('creator_id', userSubscription.creator_id)
-        .eq('tier_id', userSubscription.tier_id);
-      
-      console.log('Cleaned up corresponding basic subscription');
-    }
-
-    return createJsonResponse({ 
+    console.log('User subscription updated successfully');
+    
+    return new Response(JSON.stringify({ 
       success: true,
-      message: 'Subscription has been set to cancel at the end of the billing period',
-      cancelAt: updatedSubscription.cancel_at ? new Date(updatedSubscription.cancel_at * 1000).toISOString() : null
+      cancelAt: cancelledSubscription.current_period_end * 1000, // Return as milliseconds
+      message: 'Subscription will cancel at period end'
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
     });
 
-  } catch (stripeError) {
-    console.error('Error setting Stripe subscription to cancel:', stripeError);
-    return createJsonResponse({ error: 'Failed to cancel subscription' }, 500);
+  } catch (error) {
+    console.error('Cancel subscription error:', error);
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'Failed to cancel subscription' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 }

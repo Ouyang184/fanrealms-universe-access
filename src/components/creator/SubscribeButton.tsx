@@ -38,6 +38,21 @@ export function SubscribeButton({
   // Use subscription check result with fallback to prop
   const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
+  // Helper function to format date
+  const formatCancelDate = (dateString: string | number) => {
+    let date;
+    if (typeof dateString === 'number') {
+      date = new Date(dateString);
+    } else {
+      date = new Date(dateString);
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
@@ -50,41 +65,20 @@ export function SubscribeButton({
     isCreatorStripeReady
   });
 
-  // Helper function to format date
-  const formatCancelDate = (dateString: string | number) => {
-    let date;
-    if (typeof dateString === 'number') {
-      // Handle UNIX timestamp
-      date = new Date(dateString * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
-  // Check if subscription is in cancelling state but still active
-  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
-  const isCancellingState = subscription?.status === 'cancelling' || 
-                           subscription?.cancel_at_period_end === true ||
-                           subscription?.cancel_at_period_end;
-  
-  const cancelAt = subscription?.cancel_at || 
-                  subscription?.current_period_end ||
-                  (subscription?.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null);
-
   if (isLoading) {
     return (
       <div className="w-full h-10 bg-gray-200 animate-pulse rounded" />
     );
   }
 
-  // Check if subscription is cancelled and the cancellation date has passed
+  // Check if subscription is cancelled and ready for resubscription
+  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
+  const isCancellingState = subscription?.cancel_at_period_end === true;
+  const cancelAt = subscription?.cancel_at || subscription?.current_period_end;
+
+  // Check if subscription has ended (cancellation date has passed)
   if (isCancellingState && cancelAt) {
-    const cancelDate = new Date(typeof cancelAt === 'number' ? cancelAt * 1000 : cancelAt);
+    const cancelDate = new Date(cancelAt);
     const currentDate = new Date();
     
     if (currentDate >= cancelDate) {
@@ -118,13 +112,10 @@ export function SubscribeButton({
 
   if (isUserSubscribed) {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
-    // Pass the actual subscription object directly, ensuring it has all the status information
-    const subscriptionWithData = finalSubscriptionData?.subscription || finalSubscriptionData;
-    
     return (
       <SubscribedButton
         tierName={tierName}
-        subscriptionData={subscriptionWithData}
+        subscriptionData={subscription}
         tierId={tierId}
         creatorId={creatorId}
         onOptimisticUpdate={onOptimisticUpdate}

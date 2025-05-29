@@ -15,7 +15,6 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       }
 
       console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
-      console.log('[SubscriptionCheck] Current authenticated user ID:', user.id);
 
       // Query user_subscriptions table with detailed logging
       const { data, error } = await supabase
@@ -31,35 +30,40 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       }
 
       console.log('[SubscriptionCheck] All subscription records found:', data);
-      console.log('[SubscriptionCheck] Raw query result length:', data?.length || 0);
 
-      // Also check if there are ANY records for this user (debugging)
-      const { data: allUserSubs, error: allError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id);
+      // Filter for active subscriptions only
+      const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
+      console.log('[SubscriptionCheck] Active subscriptions:', activeSubscriptions);
 
-      console.log('[SubscriptionCheck] ALL user subscriptions across all creators:', allUserSubs);
-      console.log('[SubscriptionCheck] Total subscription records for user:', allUserSubs?.length || 0);
+      if (activeSubscriptions.length === 0) {
+        return { isSubscribed: false, subscription: null };
+      }
 
-      // Filter for active OR cancelling subscriptions
-      const activeSubscriptions = data?.filter(sub => sub.status === 'active' || sub.status === 'cancelling') || [];
-      console.log('[SubscriptionCheck] Active/Cancelling subscriptions:', activeSubscriptions);
+      const subscription = activeSubscriptions[0];
+      
+      // Check if this active subscription is scheduled to cancel
+      // We need to check the Stripe subscription directly for cancel_at_period_end flag
+      const isScheduledToCancel = subscription.current_period_end && 
+        new Date(subscription.current_period_end) > new Date();
 
-      const isSubscribed = activeSubscriptions.length > 0;
-      const subscription = activeSubscriptions.length > 0 ? activeSubscriptions[0] : null;
-
-      console.log('[SubscriptionCheck] Final result:', { 
-        isSubscribed, 
-        subscription,
-        totalRecords: data?.length || 0,
-        activeRecords: activeSubscriptions.length,
-        query: { userId: user.id, creatorId, tierId }
+      console.log('[SubscriptionCheck] Subscription analysis:', {
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        currentPeriodEnd: subscription.current_period_end,
+        isScheduledToCancel
       });
 
+      // Return subscription data with cancelling info if applicable
+      const subscriptionWithCancelInfo = {
+        ...subscription,
+        // Mark as cancelling if we have a future period end date (indicates cancel_at_period_end was set)
+        cancel_at_period_end: isScheduledToCancel,
+        cancel_at: subscription.current_period_end
+      };
+
       return {
-        isSubscribed,
-        subscription
+        isSubscribed: true,
+        subscription: subscriptionWithCancelInfo
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
