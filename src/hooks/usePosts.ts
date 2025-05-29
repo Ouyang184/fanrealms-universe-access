@@ -43,17 +43,18 @@ export const usePosts = () => {
       }, {} as Record<string, number>);
       
       console.log('[usePosts] Post tier distribution:', tierStats);
-      console.log('[usePosts] Sample posts with tiers:', posts.slice(0, 3).map(p => ({ 
+      console.log('[usePosts] Sample posts with author IDs:', posts.slice(0, 3).map(p => ({ 
         id: p.id, 
         title: p.title, 
-        tier_id: p.tier_id 
+        tier_id: p.tier_id,
+        author_id: p.author_id // Log raw author_id
       })));
 
       return posts.map((post): Post => ({
         id: post.id,
         title: post.title,
         content: post.content,
-        authorId: post.author_id,
+        authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
         authorName: post.users?.username || 'Unknown',
         authorAvatar: post.users?.profile_picture || null,
         createdAt: post.created_at,

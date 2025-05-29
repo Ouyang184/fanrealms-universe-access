@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/hooks/use-toast";
@@ -117,7 +118,8 @@ export function useCreatorFetch(identifier?: string) {
         samplePosts: postsData?.slice(0, 2).map(p => ({ 
           id: p.id, 
           title: p.title, 
-          tier_id: p.tier_id 
+          tier_id: p.tier_id,
+          author_id: p.author_id // Log the raw author_id from database
         }))
       });
       
@@ -145,8 +147,10 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log(`[useCreatorFetch] Creator ${creatorUserId} post tier distribution:`, tierStats);
       
+      // FIXED: Properly map author_id to authorId for frontend compatibility
       return postsData.map((post: any) => ({
         ...post,
+        authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
         authorName: creator.display_name || post.users?.username || 'Unknown', 
         authorAvatar: post.users?.profile_picture,
         date: formatRelativeDate(post.created_at),
