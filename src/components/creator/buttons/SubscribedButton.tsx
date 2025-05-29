@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -45,22 +44,20 @@ export function SubscribedButton({
   // Direct subscription data - could be the raw subscription object or wrapped
   const subscription = subscriptionData;
   
-  // Check for cancelling state - look for status 'cancelling' or cancel_at_period_end flag
-  const isCancellingState = subscription?.status === 'cancelling' || 
-                           subscription?.cancel_at_period_end === true ||
-                           subscription?.cancel_at_period_end;
-  
-  const cancelAt = subscription?.cancel_at || 
-                  subscription?.current_period_end ||
-                  (subscription?.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null);
+  // Enhanced cancellation logic using the new field
+  const isActive = subscription?.status === 'active';
+  const isScheduledToCancel = subscription?.cancel_at_period_end === true &&
+                            subscription?.current_period_end && 
+                            new Date(subscription.current_period_end) > new Date();
 
-  console.log('SubscribedButton - Cancellation check:', {
+  console.log('SubscribedButton - Enhanced cancellation check:', {
     subscription,
     subscriptionData,
-    isCancellingState,
-    cancelAt,
+    isActive,
+    isScheduledToCancel,
     status: subscription?.status,
-    cancel_at_period_end: subscription?.cancel_at_period_end
+    cancel_at_period_end: subscription?.cancel_at_period_end,
+    current_period_end: subscription?.current_period_end
   });
 
   const formatCancelDate = (dateString: string | number) => {
@@ -286,18 +283,19 @@ export function SubscribedButton({
   };
 
   // Show cancelling state UI when subscription is scheduled to cancel
-  if (isCancellingState && cancelAt) {
+  if (isActive && isScheduledToCancel) {
+    const cancelDate = subscription.current_period_end;
     return (
       <div className="space-y-3">
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <div className="flex items-center mb-2">
             <AlertCircle className="mr-2 h-5 w-5 text-yellow-600" />
-            <span className="font-medium text-yellow-800">Subscription will end on {formatCancelDate(cancelAt)}</span>
+            <span className="font-medium text-yellow-800">Subscription will end on {formatCancelDate(cancelDate)}</span>
           </div>
           <div className="text-center">
             <Badge variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
               <Calendar className="mr-1 h-3 w-3" />
-              Active until {formatCancelDate(cancelAt)}
+              Active until {formatCancelDate(cancelDate)}
             </Badge>
           </div>
         </div>
@@ -322,69 +320,78 @@ export function SubscribedButton({
         </Button>
         
         <p className="text-xs text-muted-foreground text-center">
-          Reactivate your subscription to continue enjoying {tierName} benefits beyond {formatCancelDate(cancelAt)}.
+          Reactivate your subscription to continue enjoying {tierName} benefits beyond {formatCancelDate(cancelDate)}.
         </p>
       </div>
     );
   }
 
   // Show normal subscribed state with cancel button
-  return (
-    <div className="space-y-2">
-      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-        <div className="flex items-center justify-center">
-          <Check className="mr-2 h-4 w-4 text-green-600" />
-          <span className="text-green-800 font-medium">Subscribed to {tierName}</span>
+  if (isActive) {
+    return (
+      <div className="space-y-2">
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center justify-center">
+            <Check className="mr-2 h-4 w-4 text-green-600" />
+            <span className="text-green-800 font-medium">Subscribed to {tierName}</span>
+          </div>
         </div>
-      </div>
-      
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full border-red-200 text-red-600 hover:bg-red-50"
-            disabled={isCancelling}
-          >
-            {isCancelling ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              'Cancel Subscription'
-            )}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel your subscription to <strong>{tierName}</strong>? 
-              <br /><br />
-              Your subscription will automatically end on <strong>{getNextBillingDate()}</strong>. 
-              You'll continue to have access to all {tierName} benefits until then.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleUnsubscribe}
-              className="bg-red-600 hover:bg-red-700"
+        
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full border-red-200 text-red-600 hover:bg-red-50"
               disabled={isCancelling}
             >
               {isCancelling ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Cancelling...
+                  Processing...
                 </>
               ) : (
                 'Cancel Subscription'
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel your subscription to <strong>{tierName}</strong>? 
+                <br /><br />
+                Your subscription will automatically end on <strong>{getNextBillingDate()}</strong>. 
+                You'll continue to have access to all {tierName} benefits until then.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleUnsubscribe}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  'Cancel Subscription'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Fallback for inactive subscriptions
+  return (
+    <div className="text-gray-500 text-center p-4">
+      Not subscribed
     </div>
   );
 }

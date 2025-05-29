@@ -71,47 +71,63 @@ export function SubscribeButton({
     );
   }
 
-  // Check if subscription is cancelled and ready for resubscription
+  // Enhanced subscription cancellation logic
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
-  const isCancellingState = subscription?.cancel_at_period_end === true;
-  const cancelAt = subscription?.cancel_at || subscription?.current_period_end;
+  
+  if (subscription) {
+    const isActive = subscription.status === 'active';
+    const isScheduledToCancel = subscription.cancel_at_period_end === true &&
+                              subscription.current_period_end && 
+                              new Date(subscription.current_period_end) > new Date();
 
-  // Check if subscription has ended (cancellation date has passed)
-  if (isCancellingState && cancelAt) {
-    const cancelDate = new Date(cancelAt);
-    const currentDate = new Date();
-    
-    if (currentDate >= cancelDate) {
-      // Subscription has ended, show regular subscribe button
-      console.log('[SubscribeButton] Subscription has ended, showing ActiveSubscribeButton');
-      if (!isCreatorStripeReady) {
-        return <PaymentUnavailableButton />;
+    // Check if subscription has ended (cancellation date has passed)
+    if (isScheduledToCancel) {
+      const cancelDate = new Date(subscription.current_period_end);
+      const currentDate = new Date();
+      
+      if (currentDate >= cancelDate) {
+        // Subscription has ended, show regular subscribe button
+        console.log('[SubscribeButton] Subscription has ended, showing ActiveSubscribeButton');
+        if (!isCreatorStripeReady) {
+          return <PaymentUnavailableButton />;
+        }
+        return (
+          <ActiveSubscribeButton
+            tierId={tierId}
+            creatorId={creatorId}
+            tierName={tierName}
+            price={price}
+          />
+        );
+      } else {
+        // Subscription is scheduled to cancel but still active - show warning
+        console.log('[SubscribeButton] Subscription scheduled to cancel, showing warning');
+        return (
+          <div className="text-yellow-400 text-center p-4 border border-yellow-200 rounded-lg bg-yellow-50">
+            <Calendar className="mx-auto mb-2 h-5 w-5" />
+            Subscription will end on {formatCancelDate(subscription.current_period_end)}
+          </div>
+        );
       }
+    }
+
+    if (isActive) {
+      console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
       return (
-        <ActiveSubscribeButton
+        <SubscribedButton
+          tierName={tierName}
+          subscriptionData={subscription}
           tierId={tierId}
           creatorId={creatorId}
-          tierName={tierName}
-          price={price}
+          onOptimisticUpdate={onOptimisticUpdate}
+          onSubscriptionSuccess={onSubscriptionSuccess}
         />
-      );
-    } else {
-      // Subscription is scheduled to cancel but still active - show "Can Subscribe again" button
-      console.log('[SubscribeButton] Subscription scheduled to cancel, showing disabled button');
-      return (
-        <Button 
-          disabled 
-          className="w-full bg-gray-300 text-gray-600 cursor-not-allowed"
-        >
-          <Lock className="mr-2 h-4 w-4" />
-          Can Subscribe again on {formatCancelDate(cancelAt)}
-        </Button>
       );
     }
   }
 
   if (isUserSubscribed) {
-    console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
+    console.log('[SubscribeButton] Showing SubscribedButton - fallback for subscribed user');
     return (
       <SubscribedButton
         tierName={tierName}

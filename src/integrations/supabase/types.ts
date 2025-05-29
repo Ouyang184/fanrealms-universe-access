@@ -651,6 +651,7 @@ export type Database = {
       user_subscriptions: {
         Row: {
           amount: number
+          cancel_at_period_end: boolean | null
           created_at: string
           creator_id: string
           current_period_end: string | null
@@ -665,6 +666,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          cancel_at_period_end?: boolean | null
           created_at?: string
           creator_id: string
           current_period_end?: string | null
@@ -679,6 +681,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cancel_at_period_end?: boolean | null
           created_at?: string
           creator_id?: string
           current_period_end?: string | null

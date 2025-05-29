@@ -41,28 +41,33 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       const subscription = activeSubscriptions[0];
       
-      // Check if this active subscription is scheduled to cancel
-      // We need to check the Stripe subscription directly for cancel_at_period_end flag
-      const isScheduledToCancel = subscription.current_period_end && 
-        new Date(subscription.current_period_end) > new Date();
+      // Check subscription cancellation status
+      const isActive = subscription.status === 'active';
+      const isScheduledToCancel = subscription.cancel_at_period_end === true &&
+                                subscription.current_period_end && 
+                                new Date(subscription.current_period_end) > new Date();
 
       console.log('[SubscriptionCheck] Subscription analysis:', {
         subscriptionId: subscription.id,
         status: subscription.status,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end,
         currentPeriodEnd: subscription.current_period_end,
+        isActive,
         isScheduledToCancel
       });
 
-      // Return subscription data with cancelling info if applicable
+      // Return subscription data with enhanced cancellation info
       const subscriptionWithCancelInfo = {
         ...subscription,
-        // Mark as cancelling if we have a future period end date (indicates cancel_at_period_end was set)
-        cancel_at_period_end: isScheduledToCancel,
+        isActive,
+        isScheduledToCancel,
+        // Legacy compatibility
+        cancel_at_period_end: subscription.cancel_at_period_end,
         cancel_at: subscription.current_period_end
       };
 
       return {
-        isSubscribed: true,
+        isSubscribed: isActive,
         subscription: subscriptionWithCancelInfo
       };
     },

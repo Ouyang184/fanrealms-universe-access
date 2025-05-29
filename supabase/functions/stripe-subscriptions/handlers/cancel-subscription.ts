@@ -32,6 +32,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       .from('user_subscriptions')
       .update({
         // Keep status as active since subscription is still active until period end
+        cancel_at_period_end: true,
         current_period_end: new Date(cancelledSubscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString()
       })
