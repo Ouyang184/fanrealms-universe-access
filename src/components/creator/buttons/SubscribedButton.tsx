@@ -30,17 +30,16 @@ export function SubscribedButton({
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
-  // Check if subscription is in cancelling state - look for status 'cancelling' or cancel_at_period_end flag
-  const subscription = subscriptionData?.subscription || subscriptionData;
+  // Direct subscription data - could be the raw subscription object or wrapped
+  const subscription = subscriptionData;
+  
+  // Check for cancelling state - look for status 'cancelling' or cancel_at_period_end flag
   const isCancellingState = subscription?.status === 'cancelling' || 
                            subscription?.cancel_at_period_end === true ||
-                           subscription?.cancel_at_period_end ||
-                           subscriptionData?.status === 'cancelling';
+                           subscription?.cancel_at_period_end;
   
   const cancelAt = subscription?.cancel_at || 
                   subscription?.current_period_end ||
-                  subscriptionData?.cancel_at ||
-                  subscriptionData?.current_period_end ||
                   (subscription?.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null);
 
   console.log('SubscribedButton - Cancellation check:', {
@@ -75,9 +74,7 @@ export function SubscribedButton({
 
     const subscriptionId = subscription?.stripe_subscription_id || 
                           subscription?.id || 
-                          subscription?.subscription_id ||
-                          subscriptionData?.stripe_subscription_id ||
-                          subscriptionData?.id;
+                          subscription?.subscription_id;
 
     if (!subscriptionId) {
       toast({
@@ -144,9 +141,7 @@ export function SubscribedButton({
 
     const subscriptionId = subscription?.stripe_subscription_id || 
                           subscription?.id || 
-                          subscription?.subscription_id ||
-                          subscriptionData?.stripe_subscription_id ||
-                          subscriptionData?.id;
+                          subscription?.subscription_id;
 
     if (!subscriptionId) {
       console.log('No subscription ID found, trying to cancel via simple-subscriptions');
