@@ -60,8 +60,8 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 60000, // Increased from 30000
+    refetchInterval: 120000, // Increased from 60000 to 2 minutes
   });
 
   // Get user subscriptions for this creator - with enhanced cancellation handling
@@ -96,15 +96,26 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         let currentPeriodEnd = null;
 
         if (sub.cancel_at_period_end === true && sub.current_period_end) {
-          // Handle both string and number timestamps
+          // Handle both string and number timestamps more carefully
           if (typeof sub.current_period_end === 'string') {
             currentPeriodEnd = new Date(sub.current_period_end);
-          } else {
+          } else if (typeof sub.current_period_end === 'number') {
             currentPeriodEnd = new Date(sub.current_period_end * 1000);
           }
           
-          isScheduledToCancel = currentPeriodEnd > new Date();
+          if (currentPeriodEnd && !isNaN(currentPeriodEnd.getTime())) {
+            isScheduledToCancel = currentPeriodEnd > new Date();
+          }
         }
+
+        console.log('[CreatorMembership] Processing subscription:', {
+          id: sub.id,
+          tierId: sub.tier_id,
+          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          currentPeriodEnd: sub.current_period_end,
+          isScheduledToCancel,
+          processedPeriodEnd: currentPeriodEnd?.toISOString()
+        });
 
         return {
           ...sub,
@@ -116,8 +127,9 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       return processedSubscriptions;
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 5000,
-    refetchInterval: 15000, // Check more frequently to catch webhook updates
+    staleTime: 30000, // Increased from 5000
+    refetchInterval: 60000, // Kept at 60 seconds but will reduce aggressive refreshing
+    refetchOnWindowFocus: false, // Disable refetch on window focus
   });
 
   const isLoading = tiersLoading || subscriptionsLoading;
@@ -128,16 +140,15 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
-      console.log('[CreatorMembership] Using local state for tier:', tierId, localSubscriptionStates[tierId]);
-      return localSubscriptionStates[tierId].isSubscribed || false;
+      const localState = localSubscriptionStates[tierId];
+      console.log('[CreatorMembership] Using local state for tier:', tierId, localState);
+      // If local state indicates cancellation, return true to show "ending soon" state
+      return localState.isSubscribed || false;
     }
     
     // Fall back to server data with enhanced logic
     const isSubscribed = userSubscriptions?.some(sub => {
       const isActive = sub.status === 'active';
-      const isScheduledToCancel = sub.isScheduledToCancel;
-      
-      // Consider subscribed if active, regardless of cancellation schedule
       const matches = sub.tier_id === tierId && isActive;
       
       console.log('[CreatorMembership] Checking subscription:', {
@@ -145,7 +156,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
         targetTierId: tierId,
         status: sub.status,
         isActive,
-        isScheduledToCancel,
+        isScheduledToCancel: sub.isScheduledToCancel,
         cancel_at_period_end: sub.cancel_at_period_end,
         current_period_end: sub.current_period_end,
         matches
@@ -195,14 +206,14 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       [tierId]: subscriptionData
     }));
     
-    // Clear local state after delay to let server data take over
+    // Clear local state after longer delay to let server data take over
     setTimeout(() => {
       setLocalSubscriptionStates(prev => {
         const newState = { ...prev };
         delete newState[tierId];
         return newState;
       });
-    }, 20000); // Increased timeout to allow more time for webhook processing
+    }, 120000); // Increased timeout to 2 minutes to allow more time for webhook processing
   }, []);
 
   // Listen for subscription events
@@ -232,10 +243,10 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
           }
         }
         
-        // Always perform full refresh after a short delay
+        // Delay full refresh to allow webhook processing
         setTimeout(() => {
           handleSubscriptionSuccess();
-        }, 2000);
+        }, 5000); // Increased delay to 5 seconds
       }
     };
 

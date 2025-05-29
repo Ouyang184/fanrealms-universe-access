@@ -41,32 +41,35 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       const subscription = activeSubscriptions[0];
       
-      // Check subscription cancellation status with improved timestamp handling
+      // Enhanced cancellation check with proper timestamp handling
       const isActive = subscription.status === 'active';
       let isScheduledToCancel = false;
       let currentPeriodEnd = null;
 
       if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
-        // Handle both string and number timestamps
+        // Handle both string and number timestamps more carefully
         if (typeof subscription.current_period_end === 'string') {
           currentPeriodEnd = new Date(subscription.current_period_end);
-        } else {
-          // If it's a number (Unix timestamp), convert it
+        } else if (typeof subscription.current_period_end === 'number') {
+          // If it's a Unix timestamp, convert it
           currentPeriodEnd = new Date(subscription.current_period_end * 1000);
         }
         
         // Only consider it scheduled to cancel if the end date is in the future
-        isScheduledToCancel = currentPeriodEnd > new Date();
+        if (currentPeriodEnd && !isNaN(currentPeriodEnd.getTime())) {
+          isScheduledToCancel = currentPeriodEnd > new Date();
+        }
       }
 
-      console.log('[SubscriptionCheck] Subscription analysis:', {
+      console.log('[SubscriptionCheck] Enhanced cancellation analysis:', {
         subscriptionId: subscription.id,
         status: subscription.status,
         cancelAtPeriodEnd: subscription.cancel_at_period_end,
         currentPeriodEnd: subscription.current_period_end,
         currentPeriodEndDate: currentPeriodEnd?.toISOString(),
         isActive,
-        isScheduledToCancel
+        isScheduledToCancel,
+        nowDate: new Date().toISOString()
       });
 
       // Return subscription data with enhanced cancellation info
@@ -76,22 +79,22 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
         isScheduledToCancel,
         // Ensure we have the correct period end format
         current_period_end: currentPeriodEnd ? currentPeriodEnd.toISOString() : subscription.current_period_end,
-        // Legacy compatibility
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        cancel_at: currentPeriodEnd ? currentPeriodEnd.toISOString() : subscription.current_period_end
+        // Preserve the original cancellation flag
+        cancel_at_period_end: subscription.cancel_at_period_end
       };
 
+      // Return isSubscribed as true for active subscriptions, regardless of cancellation status
       return {
         isSubscribed: isActive,
         subscription: subscriptionWithCancelInfo
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 5000, // Reduced from 0 to prevent too frequent refetches
-    gcTime: 10000, // Reduced cache time
-    refetchOnWindowFocus: true,
+    staleTime: 30000, // Increased from 5000 to reduce aggressive refreshing
+    gcTime: 60000, // Increased cache time
+    refetchOnWindowFocus: false, // Disable refetch on window focus to prevent unwanted refreshes
     refetchOnMount: true,
-    refetchInterval: 15000, // Reduced from 30000 to check more frequently
+    refetchInterval: 60000, // Increased from 15000 to 60000 (1 minute) to reduce polling frequency
   });
 
   return {
