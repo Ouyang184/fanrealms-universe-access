@@ -155,7 +155,7 @@ const CreatorPage: React.FC = () => {
               
               <TabsContent value="membership" className="pt-6 px-0">
                 <div className="px-6">
-                  <CreatorMembership creator={creator} />
+                  <CreatorMembership creatorId={creator.id} />
                 </div>
               </TabsContent>
               
