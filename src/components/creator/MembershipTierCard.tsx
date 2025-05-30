@@ -2,8 +2,9 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Star, AlertTriangle, Calendar } from "lucide-react";
-import { SimpleSubscribeButton } from "./buttons/SimpleSubscribeButton";
+import { Button } from "@/components/ui/button";
+import { Check, Star, Loader2, AlertTriangle, Calendar, RotateCcw } from "lucide-react";
+import { SubscribeButton } from "./SubscribeButton";
 
 interface MembershipTier {
   id: string;
@@ -19,7 +20,6 @@ interface MembershipTierCardProps {
   creatorId: string;
   isSubscribed: boolean;
   subscriptionData?: any;
-  currentSubscription?: any;
   onSubscriptionSuccess?: () => void;
 }
 
@@ -28,7 +28,6 @@ export function MembershipTierCard({
   creatorId, 
   isSubscribed,
   subscriptionData,
-  currentSubscription,
   onSubscriptionSuccess 
 }: MembershipTierCardProps) {
   const getBadgeIcon = (tierName: string) => {
@@ -124,12 +123,14 @@ export function MembershipTierCard({
       </CardContent>
 
       <CardFooter>
-        <SimpleSubscribeButton
+        <SubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
-          currentSubscription={currentSubscription}
+          isSubscribed={isSubscribed}
+          subscriptionData={subscriptionData}
+          onSubscriptionSuccess={onSubscriptionSuccess}
         />
       </CardFooter>
     </Card>

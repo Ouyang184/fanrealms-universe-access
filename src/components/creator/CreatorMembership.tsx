@@ -1,11 +1,8 @@
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MembershipTierCard } from "./MembershipTierCard";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions";
+import { MembershipEmptyState } from "./MembershipEmptyState";
+import { useCreatorMembership } from "@/hooks/useCreatorMembership";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface CreatorMembershipProps {
@@ -13,54 +10,15 @@ interface CreatorMembershipProps {
 }
 
 export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
-  const { user } = useAuth();
-  const { userSubscriptions, refreshSubscriptions } = useSimpleSubscriptions();
+  const { 
+    tiers, 
+    isLoading, 
+    isSubscribedToTier, 
+    getSubscriptionData,
+    handleSubscriptionSuccess 
+  } = useCreatorMembership(creatorId);
 
-  // Get creator's membership tiers
-  const { data: tiers, isLoading: tiersLoading } = useQuery({
-    queryKey: ['membership-tiers', creatorId],
-    queryFn: async () => {
-      if (!creatorId) return [];
-      
-      const { data, error } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('creator_id', creatorId)
-        .order('price', { ascending: true });
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!creatorId
-  });
-
-  // Get subscriber counts for each tier
-  const { data: subscriberCounts } = useQuery({
-    queryKey: ['tier-subscriber-counts', creatorId],
-    queryFn: async () => {
-      if (!creatorId || !tiers) return {};
-      
-      const counts: Record<string, number> = {};
-      
-      for (const tier of tiers) {
-        const { data } = await supabase
-          .from('user_subscriptions')
-          .select('id', { count: 'exact' })
-          .eq('tier_id', tier.id)
-          .eq('status', 'active');
-          
-        counts[tier.id] = data?.length || 0;
-      }
-      
-      return counts;
-    },
-    enabled: !!creatorId && !!tiers
-  });
-
-  // Find user's current subscription to this creator
-  const currentSubscription = userSubscriptions?.find(sub => sub.creator_id === creatorId);
-
-  if (tiersLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-8">
         <LoadingSpinner />
@@ -69,53 +27,30 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
   }
 
   if (!tiers || tiers.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Membership Tiers</CardTitle>
-          <CardDescription>
-            This creator hasn't set up any membership tiers yet.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
+    return <MembershipEmptyState />;
   }
-
-  const handleSubscriptionSuccess = () => {
-    refreshSubscriptions();
-  };
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Membership Tiers</h2>
         <p className="text-muted-foreground">
-          Choose a membership tier to support this creator and unlock exclusive content.
+          Join this creator's community to unlock exclusive content and perks.
         </p>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tiers.map((tier) => {
-          const tierData = {
-            id: tier.id,
-            name: tier.title,
-            price: tier.price,
-            description: tier.description || '',
-            features: tier.description ? [tier.description] : [],
-            subscriberCount: subscriberCounts?.[tier.id] || 0
-          };
-
-          const isSubscribed = currentSubscription?.tier_id === tier.id;
-          const subscriptionData = isSubscribed ? currentSubscription : null;
-
+          const isSubscribed = isSubscribedToTier(tier.id);
+          const subscriptionData = getSubscriptionData(tier.id);
+          
           return (
             <MembershipTierCard
               key={tier.id}
-              tier={tierData}
+              tier={tier}
               creatorId={creatorId}
               isSubscribed={isSubscribed}
               subscriptionData={subscriptionData}
-              currentSubscription={currentSubscription}
               onSubscriptionSuccess={handleSubscriptionSuccess}
             />
           );
