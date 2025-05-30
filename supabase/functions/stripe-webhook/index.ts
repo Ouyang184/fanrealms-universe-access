@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -54,10 +53,10 @@ serve(async (req) => {
       await handleCheckoutWebhook(event, supabase, stripe);
     }
 
-    // Handle subscription-related webhooks
+    // Handle subscription-related webhooks - pass the stripe instance
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
       console.log('Processing subscription webhook:', event.type);
-      await handleSubscriptionWebhook(event, supabase);
+      await handleSubscriptionWebhook(event, supabase, stripe);
     }
 
     // Keep existing invoice payment handling for earnings
