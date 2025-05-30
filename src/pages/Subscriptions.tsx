@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
@@ -12,6 +11,7 @@ import { EmptySubscriptionsState } from "@/components/subscriptions/EmptySubscri
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useSubscriptionEventManager } from "@/hooks/useSubscriptionEventManager"
+import { ChangeTierButton } from "@/components/subscriptions/ChangeTierButton"
 
 export default function SubscriptionsPage() {
   const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useSubscriptions();
@@ -193,12 +193,17 @@ export default function SubscriptionsPage() {
                               }
                             </span>
                           </div>
-                          <div className="pt-3">
+                          <div className="pt-3 flex gap-2">
+                            <ChangeTierButton
+                              subscription={subscription}
+                              onSuccess={handleManualRefresh}
+                              className="flex-1"
+                            />
                             <Button 
                               variant="outline" 
                               size="sm" 
                               onClick={() => handleCancelSubscription(subscription.id)}
-                              className="w-full"
+                              className="flex-1"
                             >
                               Cancel Subscription
                             </Button>
