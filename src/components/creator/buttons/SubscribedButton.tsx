@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -46,9 +45,8 @@ export function SubscribedButton({
   
   // Check if subscription is active or scheduled to cancel
   const isActive = subscription?.status === 'active';
-  const isScheduledToCancel = subscription?.cancel_at_period_end === true &&
-                            subscription?.current_period_end && 
-                            new Date(subscription.current_period_end) > new Date();
+  // Fix: Only check cancel_at_period_end, don't require current_period_end
+  const isScheduledToCancel = subscription?.cancel_at_period_end === true;
 
   console.log('SubscribedButton - Status check:', {
     subscription,
@@ -273,7 +271,7 @@ export function SubscribedButton({
 
   // Show UI for subscriptions scheduled to cancel
   if (isActive && isScheduledToCancel) {
-    const cancelDate = subscription.current_period_end;
+    const cancelDate = subscription.current_period_end || getNextBillingDate();
     return (
       <div className="space-y-3">
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
