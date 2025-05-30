@@ -1,6 +1,5 @@
 
 import React from "react";
-import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
-export function CreatorMembership() {
-  const { creatorId } = useParams();
+interface CreatorMembershipProps {
+  creatorId: string;
+}
+
+export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
   const { user } = useAuth();
   const { userSubscriptions, refreshSubscriptions } = useSimpleSubscriptions();
 
@@ -110,7 +112,7 @@ export function CreatorMembership() {
             <MembershipTierCard
               key={tier.id}
               tier={tierData}
-              creatorId={creatorId!}
+              creatorId={creatorId}
               isSubscribed={isSubscribed}
               subscriptionData={subscriptionData}
               currentSubscription={currentSubscription}
