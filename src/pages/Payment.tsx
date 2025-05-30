@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -101,12 +102,20 @@ function PaymentForm() {
 
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
+    console.log('Payment form submitted');
 
     if (!stripe || !elements || !clientSecret) {
+      console.error('Stripe not ready:', { stripe: !!stripe, elements: !!elements, clientSecret: !!clientSecret });
+      toast({
+        title: "Payment Error",
+        description: "Payment system is not ready. Please refresh the page and try again.",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsProcessing(true);
+    console.log('Starting payment processing...');
 
     try {
       const cardElement = elements.getElement(CardElement);
@@ -247,183 +256,186 @@ function PaymentForm() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-6xl mx-auto p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Payment Details */}
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
-            </div>
-
-            {/* Payment Amount Section */}
-            <div className="space-y-4">
+        <form onSubmit={handlePayment}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column - Payment Details */}
+            <div className="space-y-6">
               <div>
-                <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
-                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
-                
-                <div className="space-y-3">
-                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <div className="text-sm text-gray-400">Monthly payment</div>
-                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="text-gray-400 mr-2">$</span>
-                        <Input
-                          type="number"
-                          value={paymentAmount}
-                          onChange={(e) => setPaymentAmount(e.target.value)}
-                          className="w-20 bg-transparent border-gray-600 text-white text-right"
-                          step="0.01"
-                          min={monthlyAmount}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <h1 className="text-3xl font-bold mb-2">Payment details</h1>
               </div>
 
-              {/* Payment Method Section */}
+              {/* Payment Amount Section */}
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Payment method</h2>
-                
-                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
-                        <span className="text-xs text-white font-bold">VISA</span>
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
+                  <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
+                  
+                  <div className="space-y-3">
+                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="text-sm text-gray-400">Monthly payment</div>
+                          <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-gray-400 mr-2">$</span>
+                          <Input
+                            type="number"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                            className="w-20 bg-transparent border-gray-600 text-white text-right"
+                            step="0.01"
+                            min={monthlyAmount}
+                          />
+                        </div>
                       </div>
-                      <span className="text-sm">•••• •••• •••• ••••</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Payment Method Section */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold">Payment method</h2>
                   
-                  <div className="border border-gray-700 rounded-md p-3">
-                    <CardElement
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: '16px',
-                            color: '#ffffff',
-                            fontFamily: 'system-ui, sans-serif',
-                            '::placeholder': {
-                              color: '#9ca3af',
+                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
+                          <span className="text-xs text-white font-bold">VISA</span>
+                        </div>
+                        <span className="text-sm">•••• •••• •••• ••••</span>
+                      </div>
+                    </div>
+                    
+                    <div className="border border-gray-700 rounded-md p-3">
+                      <CardElement
+                        options={{
+                          style: {
+                            base: {
+                              fontSize: '16px',
+                              color: '#ffffff',
+                              fontFamily: 'system-ui, sans-serif',
+                              '::placeholder': {
+                                color: '#9ca3af',
+                              },
+                              backgroundColor: 'transparent',
                             },
-                            backgroundColor: 'transparent',
+                            invalid: {
+                              color: '#ef4444',
+                              iconColor: '#ef4444',
+                            },
                           },
-                          invalid: {
-                            color: '#ef4444',
-                            iconColor: '#ef4444',
-                          },
-                        },
-                        hidePostalCode: false,
-                      }}
-                    />
+                          hidePostalCode: false,
+                        }}
+                      />
+                    </div>
                   </div>
+
+                  <button type="button" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm">
+                    <span>Add new payment method</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
                 </div>
 
-                <button className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm">
-                  <span>Add new payment method</span>
-                  <ChevronDown className="h-4 w-4" />
-                </button>
+                {/* Payment Terms */}
+                <div className="text-sm text-gray-400 space-y-2">
+                  <p>
+                    You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                  </p>
+                  <p>
+                    By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  {/* Subscribe Button */}
+                  <Button 
+                    type="submit"
+                    disabled={!stripe || isProcessing}
+                    className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+                    size="lg"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="mr-2 h-5 w-5" />
+                        Subscribe now
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Cancel Button */}
+                  <Button 
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={isProcessing}
+                    variant="outline"
+                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
+                    size="lg"
+                  >
+                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    Cancel and go back
+                  </Button>
+                </div>
               </div>
+            </div>
 
-              {/* Payment Terms */}
-              <div className="text-sm text-gray-400 space-y-2">
-                <p>
-                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
-                </p>
-                <p>
-                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
-                </p>
-              </div>
+            {/* Right Column - Order Summary */}
+            <div className="lg:pl-8">
+              <Card className="bg-gray-900 border-gray-800 sticky top-6">
+                <CardHeader>
+                  <CardTitle className="text-white">Order summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Creator Info */}
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {tierName?.charAt(0) || 'C'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-white font-medium">{tierName || 'Creator'}</div>
+                      <div className="text-gray-400 text-sm">ULTRA Gamer</div>
+                    </div>
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                {/* Subscribe Button */}
-                <Button 
-                  onClick={handlePayment}
-                  disabled={!stripe || isProcessing}
-                  className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-5 w-5" />
-                      Subscribe now
-                    </>
-                  )}
-                </Button>
+                  {/* Pricing Breakdown */}
+                  <div className="space-y-3 pt-4 border-t border-gray-700">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Monthly payment</span>
+                      <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">One-time credit</span>
+                      <span className="text-white">-$10.00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Sales Tax</span>
+                      <span className="text-white">${salesTax.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between pt-3 border-t border-gray-700">
+                      <span className="text-white font-semibold">Total due today</span>
+                      <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* Cancel Button */}
-                <Button 
-                  onClick={handleCancel}
-                  disabled={isProcessing}
-                  variant="outline"
-                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
-                  size="lg"
-                >
-                  <ArrowLeft className="mr-2 h-5 w-5" />
-                  Cancel and go back
-                </Button>
+              {/* Help Section */}
+              <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
+                <button type="button" className="hover:text-white">Help Centre</button>
+                <span>$ USD</span>
               </div>
             </div>
           </div>
-
-          {/* Right Column - Order Summary */}
-          <div className="lg:pl-8">
-            <Card className="bg-gray-900 border-gray-800 sticky top-6">
-              <CardHeader>
-                <CardTitle className="text-white">Order summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Creator Info */}
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">
-                      {tierName?.charAt(0) || 'C'}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="text-white font-medium">{tierName || 'Creator'}</div>
-                    <div className="text-gray-400 text-sm">ULTRA Gamer</div>
-                  </div>
-                </div>
-
-                {/* Pricing Breakdown */}
-                <div className="space-y-3 pt-4 border-t border-gray-700">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Monthly payment</span>
-                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">One-time credit</span>
-                    <span className="text-white">-$10.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Sales Tax</span>
-                    <span className="text-white">${salesTax.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="flex justify-between pt-3 border-t border-gray-700">
-                    <span className="text-white font-semibold">Total due today</span>
-                    <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Help Section */}
-            <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
-              <button className="hover:text-white">Help Centre</button>
-              <span>$ USD</span>
-            </div>
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   );
