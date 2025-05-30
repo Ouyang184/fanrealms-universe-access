@@ -5,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -26,9 +26,8 @@ function PaymentForm() {
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [isRefreshingPayment, setIsRefreshingPayment] = useState(false);
 
-  let { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
+  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
   // Calculate pricing details
   const monthlyAmount = amount ? amount / 100 : 30;
@@ -48,67 +47,6 @@ function PaymentForm() {
       setPaymentAmount((amount / 100).toFixed(2));
     }
   }, [clientSecret, amount, navigate, toast]);
-
-  const refreshPaymentIntent = async () => {
-    if (!tierId || !creatorId) {
-      toast({
-        title: "Error",
-        description: "Missing subscription information. Please try again.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsRefreshingPayment(true);
-    console.log('Refreshing payment intent for subscription...');
-
-    try {
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
-        body: {
-          action: 'create_subscription',
-          tier_id: tierId,
-          creator_id: creatorId
-        }
-      });
-
-      if (error) {
-        console.error('Error refreshing payment intent:', error);
-        throw error;
-      }
-
-      if (data?.client_secret) {
-        // Update the client secret in location state
-        const newLocationState = {
-          ...location.state,
-          clientSecret: data.client_secret
-        };
-        
-        // Replace the current history state
-        window.history.replaceState(newLocationState, '', location.pathname);
-        
-        // Update local variable
-        clientSecret = data.client_secret;
-        
-        toast({
-          title: "Payment Updated",
-          description: "Please try your payment again.",
-        });
-        
-        console.log('Payment intent refreshed successfully');
-      } else {
-        throw new Error('No client secret received');
-      }
-    } catch (error) {
-      console.error('Failed to refresh payment intent:', error);
-      toast({
-        title: "Refresh Failed",
-        description: "Could not refresh payment. Please go back and try subscribing again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshingPayment(false);
-    }
-  };
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
@@ -163,20 +101,12 @@ function PaymentForm() {
 
   const handlePayment = async (event: React.FormEvent) => {
     event.preventDefault();
-    console.log('Payment form submitted');
 
     if (!stripe || !elements || !clientSecret) {
-      console.error('Stripe not ready:', { stripe: !!stripe, elements: !!elements, clientSecret: !!clientSecret });
-      toast({
-        title: "Payment Error",
-        description: "Payment system is not ready. Please refresh the page and try again.",
-        variant: "destructive"
-      });
       return;
     }
 
     setIsProcessing(true);
-    console.log('Starting payment processing...');
 
     try {
       const cardElement = elements.getElement(CardElement);
@@ -194,22 +124,11 @@ function PaymentForm() {
 
       if (error) {
         console.error('Payment failed:', error);
-        
-        // Check if it's a stale payment intent error
-        if (error.code === 'payment_intent_unexpected_state' || 
-            error.payment_intent?.status === 'canceled') {
-          toast({
-            title: "Payment Session Expired",
-            description: "The payment session has expired. Please refresh and try again.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Payment Failed",
-            description: error.message || 'Payment could not be processed',
-            variant: "destructive"
-          });
-        }
+        toast({
+          title: "Payment Failed",
+          description: error.message || 'Payment could not be processed',
+          variant: "destructive"
+        });
       } else if (paymentIntent?.status === 'succeeded') {
         console.log('Payment succeeded:', paymentIntent.id);
         setPaymentSucceeded(true);
@@ -368,113 +287,89 @@ function PaymentForm() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Payment method</h2>
                 
-                <form onSubmit={handlePayment}>
-                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
-                          <span className="text-xs text-white font-bold">VISA</span>
-                        </div>
-                        <span className="text-sm">•••• •••• •••• ••••</span>
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">VISA</span>
                       </div>
+                      <span className="text-sm">•••• •••• •••• ••••</span>
                     </div>
-                    
-                    <div className="border border-gray-700 rounded-md p-3">
-                      <CardElement
-                        options={{
-                          style: {
-                            base: {
-                              fontSize: '16px',
-                              color: '#ffffff',
-                              fontFamily: 'system-ui, sans-serif',
-                              '::placeholder': {
-                                color: '#9ca3af',
-                              },
-                              backgroundColor: 'transparent',
+                  </div>
+                  
+                  <div className="border border-gray-700 rounded-md p-3">
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#ffffff',
+                            fontFamily: 'system-ui, sans-serif',
+                            '::placeholder': {
+                              color: '#9ca3af',
                             },
-                            invalid: {
-                              color: '#ef4444',
-                              iconColor: '#ef4444',
-                            },
+                            backgroundColor: 'transparent',
                           },
-                          hidePostalCode: false,
-                        }}
-                      />
-                    </div>
+                          invalid: {
+                            color: '#ef4444',
+                            iconColor: '#ef4444',
+                          },
+                        },
+                        hidePostalCode: false,
+                      }}
+                    />
                   </div>
+                </div>
 
-                  <button type="button" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm mt-4">
-                    <span>Add new payment method</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
+                <button className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm">
+                  <span>Add new payment method</span>
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
 
-                  {/* Payment Terms */}
-                  <div className="text-sm text-gray-400 space-y-2 mt-6">
-                    <p>
-                      You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
-                    </p>
-                    <p>
-                      By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
-                    </p>
-                  </div>
+              {/* Payment Terms */}
+              <div className="text-sm text-gray-400 space-y-2">
+                <p>
+                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                </p>
+                <p>
+                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                </p>
+              </div>
 
-                  {/* Action Buttons */}
-                  <div className="space-y-3 mt-6">
-                    {/* Subscribe Button */}
-                    <Button 
-                      type="submit"
-                      disabled={!stripe || isProcessing || isRefreshingPayment}
-                      className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
-                      size="lg"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="mr-2 h-5 w-5" />
-                          Subscribe now
-                        </>
-                      )}
-                    </Button>
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                {/* Subscribe Button */}
+                <Button 
+                  onClick={handlePayment}
+                  disabled={!stripe || isProcessing}
+                  className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="mr-2 h-5 w-5" />
+                      Subscribe now
+                    </>
+                  )}
+                </Button>
 
-                    {/* Refresh Payment Button */}
-                    <Button 
-                      type="button"
-                      onClick={refreshPaymentIntent}
-                      disabled={isProcessing || isRefreshingPayment}
-                      variant="outline"
-                      className="w-full border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white text-sm py-3 rounded-lg"
-                    >
-                      {isRefreshingPayment ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Refreshing...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Refresh Payment
-                        </>
-                      )}
-                    </Button>
-
-                    {/* Cancel Button */}
-                    <Button 
-                      type="button"
-                      onClick={handleCancel}
-                      disabled={isProcessing || isRefreshingPayment}
-                      variant="outline"
-                      className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
-                      size="lg"
-                    >
-                      <ArrowLeft className="mr-2 h-5 w-5" />
-                      Cancel and go back
-                    </Button>
-                  </div>
-                </form>
+                {/* Cancel Button */}
+                <Button 
+                  onClick={handleCancel}
+                  disabled={isProcessing}
+                  variant="outline"
+                  className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
+                  size="lg"
+                >
+                  <ArrowLeft className="mr-2 h-5 w-5" />
+                  Cancel and go back
+                </Button>
               </div>
             </div>
           </div>
@@ -524,7 +419,7 @@ function PaymentForm() {
 
             {/* Help Section */}
             <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
-              <button type="button" className="hover:text-white">Help Centre</button>
+              <button className="hover:text-white">Help Centre</button>
               <span>$ USD</span>
             </div>
           </div>
