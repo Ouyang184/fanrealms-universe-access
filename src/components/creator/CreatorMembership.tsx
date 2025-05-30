@@ -1,9 +1,7 @@
-
-import React from "react";
-import { MembershipTierCard } from "./MembershipTierCard";
-import { MembershipEmptyState } from "./MembershipEmptyState";
+import React, { useCallback } from 'react';
 import { useCreatorMembership } from "@/hooks/useCreatorMembership";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { MembershipTierCard } from "./MembershipTierCard";
+import { Button } from "@/components/ui/button";
 
 interface CreatorMembershipProps {
   creatorId: string;
@@ -14,48 +12,72 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
     tiers, 
     isLoading, 
     isSubscribedToTier, 
-    getSubscriptionData,
+    getSubscriptionData, 
     handleSubscriptionSuccess 
   } = useCreatorMembership(creatorId);
 
+  const handleSubscribe = (tierId: string) => {
+    console.log('Subscribing to tier:', tierId);
+    // Implement your subscribe logic here
+  };
+
+  const handleSwitchSuccess = useCallback(() => {
+    console.log('Tier switch successful, refreshing membership data...');
+    handleSubscriptionSuccess();
+  }, [handleSubscriptionSuccess]);
+
   if (isLoading) {
+    return <div>Loading membership tiers...</div>;
+  }
+
+  if (!tiers || tiers.length === 0) {
     return (
-      <div className="flex justify-center py-8">
-        <LoadingSpinner />
+      <div>
+        <h2 className="text-2xl font-bold mb-2">No Membership Tiers Yet</h2>
+        <p className="text-muted-foreground">
+          This creator has not set up any membership tiers. Check back later!
+        </p>
       </div>
     );
   }
 
-  if (!tiers || tiers.length === 0) {
-    return <MembershipEmptyState />;
-  }
-
   return (
     <div className="space-y-6">
-      <div className="text-center">
+      <div>
         <h2 className="text-2xl font-bold mb-2">Membership Tiers</h2>
         <p className="text-muted-foreground">
-          Join this creator's community to unlock exclusive content and perks.
+          Choose a membership tier to support this creator and unlock exclusive content.
         </p>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tiers.map((tier) => {
-          const isSubscribed = isSubscribedToTier(tier.id);
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {tiers?.map((tier) => {
           const subscriptionData = getSubscriptionData(tier.id);
+          const isSubscribedToThisTier = isSubscribedToTier(tier.id);
           
           return (
             <MembershipTierCard
               key={tier.id}
               tier={tier}
+              isSubscribed={isSubscribedToThisTier}
+              currentSubscription={subscriptionData}
               creatorId={creatorId}
-              isSubscribed={isSubscribed}
-              subscriptionData={subscriptionData}
-              onSubscriptionSuccess={handleSubscriptionSuccess}
+              onSubscribe={handleSubscribe}
+              onSwitchSuccess={handleSwitchSuccess}
             />
           );
         })}
       </div>
+
+      {/* Conditional rendering for no tiers */}
+      {tiers && tiers.length === 0 && (
+        <div>
+          <h2 className="text-2xl font-bold mb-2">No Membership Tiers Yet</h2>
+          <p className="text-muted-foreground">
+            This creator has not set up any membership tiers. Check back later!
+          </p>
+        </div>
+      )}
     </div>
   );
 }
