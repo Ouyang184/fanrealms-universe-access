@@ -38,11 +38,14 @@ export function MembershipTierCard({
     return <Check className="h-3 w-3" />;
   };
 
-  // Use the improved subscription logic
+  // FIXED: Improved subscription status logic
   const isActive = subscriptionData?.status === 'active';
   const isScheduledToCancel = subscriptionData?.cancel_at_period_end === true &&
                              subscriptionData?.current_period_end && 
                              new Date(subscriptionData.current_period_end * 1000) > new Date();
+  
+  // The user is truly subscribed only if active AND not scheduled to cancel
+  const isTrulySubscribed = isActive && !isScheduledToCancel;
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -53,12 +56,12 @@ export function MembershipTierCard({
   };
 
   return (
-    <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-      {isActive && !isScheduledToCancel && (
+    <Card className={`relative ${isTrulySubscribed ? 'ring-2 ring-primary' : ''}`}>
+      {isTrulySubscribed && (
         <div className="absolute -top-2 -right-2">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
-            You are subscribed
+            Subscribed
           </Badge>
         </div>
       )}
@@ -67,7 +70,7 @@ export function MembershipTierCard({
         <div className="absolute -top-2 -right-2">
           <Badge variant="destructive" className="gap-1">
             <AlertTriangle className="h-3 w-3" />
-            Ending soon
+            Ending Soon
           </Badge>
         </div>
       )}
@@ -128,7 +131,7 @@ export function MembershipTierCard({
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
-          isSubscribed={isSubscribed}
+          isSubscribed={isTrulySubscribed}
           subscriptionData={subscriptionData}
           onSubscriptionSuccess={onSubscriptionSuccess}
         />
