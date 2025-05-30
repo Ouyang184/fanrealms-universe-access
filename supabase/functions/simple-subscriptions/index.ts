@@ -36,24 +36,25 @@ serve(async (req) => {
     console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // CRITICAL: Check for existing active subscriptions FIRST
-      console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId, 'tier:', tierId);
+      // Check for existing active subscriptions for this creator
+      console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
       
       const { data: existingActiveSubs, error: activeSubsError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .in('status', ['active']); // Removed 'trialing' as we're not using it
+        .eq('status', 'active');
 
       if (activeSubsError) {
         console.error('[SimpleSubscriptions] Error checking active subscriptions:', activeSubsError);
         throw new Error('Failed to check existing subscriptions');
       }
 
-      if (existingActiveSubs && existingActiveSubs.length > 0) {
-        console.log('[SimpleSubscriptions] Found existing active subscription:', existingActiveSubs[0]);
+      // Check if user is trying to subscribe to the same tier they already have
+      const existingSameTier = existingActiveSubs?.find(sub => sub.tier_id === tierId);
+      if (existingSameTier) {
+        console.log('[SimpleSubscriptions] Found existing subscription to same tier:', existingSameTier);
         return new Response(JSON.stringify({ 
           error: 'You already have an active subscription to this tier.' 
         }), {
@@ -62,9 +63,20 @@ serve(async (req) => {
         });
       }
 
-      console.log('[SimpleSubscriptions] No existing active subscriptions found, proceeding...');
+      // Check if user has subscription to different tier for the same creator
+      const existingDifferentTier = existingActiveSubs?.find(sub => sub.tier_id !== tierId);
+      let isUpgrade = false;
+      let existingSubscription = null;
 
-      // Clean up any non-active subscriptions for this user/creator/tier combination in user_subscriptions
+      if (existingDifferentTier) {
+        console.log('[SimpleSubscriptions] Found existing subscription to different tier, will handle as upgrade/downgrade');
+        isUpgrade = true;
+        existingSubscription = existingDifferentTier;
+      }
+
+      console.log('[SimpleSubscriptions] No existing subscription to same tier found, proceeding...');
+
+      // Clean up any non-active subscriptions for this user/creator/tier combination
       await supabase
         .from('user_subscriptions')
         .delete()
@@ -124,47 +136,6 @@ serve(async (req) => {
           });
       }
 
-      // Check if customer already has an active subscription to this tier in Stripe
-      console.log('[SimpleSubscriptions] Checking Stripe for existing subscriptions...');
-      const stripeSubscriptions = await stripe.subscriptions.list({
-        customer: stripeCustomerId,
-        status: 'active',
-        limit: 100,
-      });
-
-      // Check if any active subscription matches our tier
-      for (const stripeSub of stripeSubscriptions.data) {
-        if (stripeSub.metadata?.tier_id === tierId && stripeSub.metadata?.creator_id === creatorId) {
-          console.log('[SimpleSubscriptions] Found existing Stripe subscription for this tier');
-          
-          // Ensure our database is in sync
-          await supabase
-            .from('user_subscriptions')
-            .upsert({
-              user_id: user.id,
-              creator_id: creatorId,
-              tier_id: tierId,
-              stripe_subscription_id: stripeSub.id,
-              stripe_customer_id: stripeCustomerId,
-              status: 'active',
-              current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
-              amount: tier.price,
-              updated_at: new Date().toISOString(),
-            }, { 
-              onConflict: 'user_id,creator_id,tier_id',
-              ignoreDuplicates: false 
-            });
-
-          return new Response(JSON.stringify({ 
-            error: 'You already have an active subscription to this tier.' 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          });
-        }
-      }
-
       // Create Stripe price if needed
       let stripePriceId = tier.stripe_price_id;
       if (!stripePriceId) {
@@ -182,7 +153,75 @@ serve(async (req) => {
           .eq('id', tierId);
       }
 
-      // Create Stripe subscription with proper metadata
+      // If this is an upgrade/downgrade, handle it differently
+      if (isUpgrade && existingSubscription) {
+        console.log('[SimpleSubscriptions] Handling tier switch with proration');
+        
+        // Get the existing Stripe subscription
+        const existingStripeSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id);
+        
+        // Update the existing subscription with proration
+        const updatedSubscription = await stripe.subscriptions.update(existingSubscription.stripe_subscription_id, {
+          items: [{
+            id: existingStripeSubscription.items.data[0].id,
+            price: stripePriceId,
+          }],
+          proration_behavior: 'create_prorations',
+          payment_behavior: 'pending_if_incomplete',
+          expand: ['latest_invoice.payment_intent'],
+        });
+
+        // Get the latest invoice to see if payment is needed
+        const invoice = updatedSubscription.latest_invoice;
+        
+        if (invoice && invoice.payment_intent && invoice.payment_intent.status === 'requires_payment_method') {
+          // Payment is required, return client secret for payment page
+          const clientSecret = invoice.payment_intent.client_secret;
+          
+          // Update the subscription record with new tier info but keep status as active
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              tier_id: tierId,
+              amount: tier.price,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSubscription.id);
+
+          return new Response(JSON.stringify({
+            clientSecret,
+            subscriptionId: updatedSubscription.id,
+            amount: invoice.amount_due,
+            tierName: tier.title,
+            isUpgrade: true,
+            existingTierCredit: Math.abs(invoice.amount_due - (tier.price * 100))
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } else {
+          // No additional payment needed (downgrade case)
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              tier_id: tierId,
+              amount: tier.price,
+              current_period_start: new Date(updatedSubscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSubscription.id);
+
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Tier switched successfully',
+            tierName: tier.title
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      // Regular new subscription flow
       const subscription = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: stripePriceId }],
@@ -201,8 +240,8 @@ serve(async (req) => {
         }
       });
 
-      // Store pending subscription in user_subscriptions table ONLY
-      console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
+      // Store pending subscription in user_subscriptions table
+      console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table');
       const { error: insertError } = await supabase
         .from('user_subscriptions')
         .insert({
@@ -211,7 +250,7 @@ serve(async (req) => {
           tier_id: tierId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
-          status: 'incomplete', // Start with incomplete instead of pending
+          status: 'incomplete',
           amount: tier.price,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -275,83 +314,6 @@ serve(async (req) => {
         success: true,
         creatorId: subscription.creator_id,
         tierId: subscription.tier_id
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-
-    } else if (action === 'change_tier') {
-      console.log('[SimpleSubscriptions] Changing tier for subscription:', subscriptionId, 'to tier:', tierId);
-      
-      // Find the current subscription
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('id', subscriptionId)
-        .eq('status', 'active')
-        .single();
-
-      if (!subscription?.stripe_subscription_id) {
-        throw new Error('Active subscription not found');
-      }
-
-      // Get the new tier details
-      const { data: newTier, error: tierError } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('id', tierId)
-        .single();
-
-      if (tierError || !newTier) {
-        throw new Error('New tier not found');
-      }
-
-      // Create Stripe price if needed
-      let stripePriceId = newTier.stripe_price_id;
-      if (!stripePriceId) {
-        const price = await stripe.prices.create({
-          unit_amount: Math.round(newTier.price * 100),
-          currency: 'usd',
-          recurring: { interval: 'month' },
-          product_data: { name: newTier.title }
-        });
-        stripePriceId = price.id;
-
-        await supabase
-          .from('membership_tiers')
-          .update({ stripe_price_id: stripePriceId })
-          .eq('id', tierId);
-      }
-
-      // Update the Stripe subscription
-      const updatedSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
-        items: [{
-          id: (await stripe.subscriptions.retrieve(subscription.stripe_subscription_id)).items.data[0].id,
-          price: stripePriceId,
-        }],
-        proration_behavior: 'create_prorations',
-        cancel_at_period_end: false,
-      });
-
-      // Update the user_subscriptions table
-      await supabase
-        .from('user_subscriptions')
-        .update({
-          tier_id: tierId,
-          amount: newTier.price,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscription.id);
-
-      console.log('[SimpleSubscriptions] Successfully changed tier');
-
-      return new Response(JSON.stringify({ 
-        success: true,
-        newTier: {
-          id: newTier.id,
-          title: newTier.title,
-          price: newTier.price
-        }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -460,7 +422,7 @@ serve(async (req) => {
             
             console.log('[SimpleSubscriptions] Found user:', userData.id, 'for subscription:', stripeSub.id);
             
-            // For active subscriptions, determine the correct status (removed cancelling)
+            // For active subscriptions, determine the correct status
             const dbStatus = 'active'; // Always active for active Stripe subscriptions
             
             console.log('[SimpleSubscriptions] Mapped status:', stripeSub.status, '->', dbStatus);

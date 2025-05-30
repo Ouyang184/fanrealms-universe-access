@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowUpRight } from 'lucide-react';
 import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,19 +13,31 @@ interface SimpleSubscribeButtonProps {
   creatorId: string;
   tierName: string;
   price: number;
+  userSubscriptions?: any[];
 }
 
 export function SimpleSubscribeButton({ 
   tierId, 
   creatorId, 
   tierName, 
-  price 
+  price,
+  userSubscriptions = []
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isProcessing } = useSimpleSubscriptions();
   const { subscriptionData } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if user has subscription to this specific tier
+  const currentTierSubscription = userSubscriptions.find(sub => 
+    sub.tier_id === tierId && sub.creator_id === creatorId && sub.status === 'active'
+  );
+
+  // Check if user has subscription to any other tier for this creator
+  const otherTierSubscription = userSubscriptions.find(sub => 
+    sub.tier_id !== tierId && sub.creator_id === creatorId && sub.status === 'active'
+  );
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -48,11 +60,19 @@ export function SimpleSubscribeButton({
         navigate('/payment', {
           state: {
             clientSecret: result.clientSecret,
-            amount: price * 100,
+            amount: result.amount || price * 100,
             tierName,
             tierId,
-            creatorId
+            creatorId,
+            isUpgrade: result.isUpgrade,
+            existingTierCredit: result.existingTierCredit
           }
+        });
+      } else if (result?.success) {
+        // Downgrade case - no payment needed
+        toast({
+          title: "Tier Changed Successfully",
+          description: `You've successfully switched to ${tierName}`,
         });
       }
     } catch (error) {
@@ -60,12 +80,25 @@ export function SimpleSubscribeButton({
     }
   };
 
-  if (subscriptionData?.isSubscribed) {
+  // If user is subscribed to this exact tier
+  if (currentTierSubscription || subscriptionData?.isSubscribed) {
     return (
       <Button variant="outline" className="w-full" size="lg" disabled>
-        Already Subscribed
+        Current Plan
       </Button>
     );
+  }
+
+  // Determine button text and styling based on subscription status
+  let buttonText = `Subscribe for $${price}/month`;
+  let buttonVariant: "default" | "outline" = "default";
+  let buttonIcon = null;
+
+  if (otherTierSubscription) {
+    const isUpgrade = price > otherTierSubscription.amount;
+    buttonText = isUpgrade ? `Upgrade to ${tierName}` : `Switch to ${tierName}`;
+    buttonVariant = isUpgrade ? "default" : "outline";
+    buttonIcon = isUpgrade ? <ArrowUpRight className="ml-2 h-4 w-4" /> : null;
   }
 
   return (
@@ -74,14 +107,18 @@ export function SimpleSubscribeButton({
       disabled={isProcessing}
       className="w-full"
       size="lg"
+      variant={buttonVariant}
     >
       {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Starting payment...
+          {otherTierSubscription ? 'Switching tier...' : 'Starting payment...'}
         </>
       ) : (
-        `Subscribe for $${price}/month`
+        <>
+          {buttonText}
+          {buttonIcon}
+        </>
       )}
     </Button>
   );

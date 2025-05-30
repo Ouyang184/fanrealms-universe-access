@@ -3,6 +3,7 @@ import React from "react";
 import { MembershipTierCard } from "./MembershipTierCard";
 import { MembershipEmptyState } from "./MembershipEmptyState";
 import { useCreatorMembership } from "@/hooks/useCreatorMembership";
+import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface CreatorMembershipProps {
@@ -17,6 +18,8 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
     getSubscriptionData,
     handleSubscriptionSuccess 
   } = useCreatorMembership(creatorId);
+
+  const { userSubscriptions } = useSimpleSubscriptions();
 
   if (isLoading) {
     return (
@@ -52,6 +55,7 @@ export function CreatorMembership({ creatorId }: CreatorMembershipProps) {
               isSubscribed={isSubscribed}
               subscriptionData={subscriptionData}
               onSubscriptionSuccess={handleSubscriptionSuccess}
+              userSubscriptions={userSubscriptions}
             />
           );
         })}

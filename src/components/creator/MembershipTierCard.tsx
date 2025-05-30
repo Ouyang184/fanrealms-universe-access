@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check, Star, Loader2, AlertTriangle, Calendar, RotateCcw } from "lucide-react";
-import { SubscribeButton } from "./SubscribeButton";
+import { SimpleSubscribeButton } from "./buttons/SimpleSubscribeButton";
 
 interface MembershipTier {
   id: string;
@@ -21,6 +21,7 @@ interface MembershipTierCardProps {
   isSubscribed: boolean;
   subscriptionData?: any;
   onSubscriptionSuccess?: () => void;
+  userSubscriptions?: any[];
 }
 
 export function MembershipTierCard({ 
@@ -28,7 +29,8 @@ export function MembershipTierCard({
   creatorId, 
   isSubscribed,
   subscriptionData,
-  onSubscriptionSuccess 
+  onSubscriptionSuccess,
+  userSubscriptions = []
 }: MembershipTierCardProps) {
   const getBadgeIcon = (tierName: string) => {
     const name = tierName.toLowerCase();
@@ -44,6 +46,11 @@ export function MembershipTierCard({
                              subscriptionData?.current_period_end && 
                              new Date(subscriptionData.current_period_end * 1000) > new Date();
 
+  // Check if this is the user's current tier
+  const currentTierSubscription = userSubscriptions.find(sub => 
+    sub.tier_id === tier.id && sub.creator_id === creatorId && sub.status === 'active'
+  );
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('en-US', {
       month: 'long',
@@ -53,12 +60,12 @@ export function MembershipTierCard({
   };
 
   return (
-    <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
-      {isActive && !isScheduledToCancel && (
+    <Card className={`relative ${currentTierSubscription ? 'ring-2 ring-primary' : ''}`}>
+      {currentTierSubscription && !isScheduledToCancel && (
         <div className="absolute -top-2 -right-2">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
-            You are subscribed
+            Current Plan
           </Badge>
         </div>
       )}
@@ -123,14 +130,12 @@ export function MembershipTierCard({
       </CardContent>
 
       <CardFooter>
-        <SubscribeButton
+        <SimpleSubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
           tierName={tier.name}
           price={tier.price}
-          isSubscribed={isSubscribed}
-          subscriptionData={subscriptionData}
-          onSubscriptionSuccess={onSubscriptionSuccess}
+          userSubscriptions={userSubscriptions}
         />
       </CardFooter>
     </Card>
