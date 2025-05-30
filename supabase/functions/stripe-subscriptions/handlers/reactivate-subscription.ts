@@ -42,11 +42,12 @@ export async function handleReactivateSubscription(
     });
     console.log('Stripe subscription reactivated successfully');
     
-    // Update database to reflect active status
+    // Update database to reflect active status and remove cancellation flag
     const { error: updateError } = await supabaseService
       .from('user_subscriptions')
       .update({ 
         status: 'active',
+        cancel_at_period_end: false,
         updated_at: new Date().toISOString()
       })
       .eq('id', userSubscription.id);

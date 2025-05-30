@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -71,6 +72,9 @@ export function SubscribedButton({
   };
 
   const getNextBillingDate = () => {
+    if (subscription?.current_period_end) {
+      return formatCancelDate(subscription.current_period_end);
+    }
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     return formatCancelDate(nextMonth.toISOString());
