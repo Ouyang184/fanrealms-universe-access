@@ -279,6 +279,83 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
 
+    } else if (action === 'change_tier') {
+      console.log('[SimpleSubscriptions] Changing tier for subscription:', subscriptionId, 'to tier:', tierId);
+      
+      // Find the current subscription
+      const { data: subscription } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('id', subscriptionId)
+        .eq('status', 'active')
+        .single();
+
+      if (!subscription?.stripe_subscription_id) {
+        throw new Error('Active subscription not found');
+      }
+
+      // Get the new tier details
+      const { data: newTier, error: tierError } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('id', tierId)
+        .single();
+
+      if (tierError || !newTier) {
+        throw new Error('New tier not found');
+      }
+
+      // Create Stripe price if needed
+      let stripePriceId = newTier.stripe_price_id;
+      if (!stripePriceId) {
+        const price = await stripe.prices.create({
+          unit_amount: Math.round(newTier.price * 100),
+          currency: 'usd',
+          recurring: { interval: 'month' },
+          product_data: { name: newTier.title }
+        });
+        stripePriceId = price.id;
+
+        await supabase
+          .from('membership_tiers')
+          .update({ stripe_price_id: stripePriceId })
+          .eq('id', tierId);
+      }
+
+      // Update the Stripe subscription
+      const updatedSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+        items: [{
+          id: (await stripe.subscriptions.retrieve(subscription.stripe_subscription_id)).items.data[0].id,
+          price: stripePriceId,
+        }],
+        proration_behavior: 'create_prorations',
+        cancel_at_period_end: false,
+      });
+
+      // Update the user_subscriptions table
+      await supabase
+        .from('user_subscriptions')
+        .update({
+          tier_id: tierId,
+          amount: newTier.price,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', subscription.id);
+
+      console.log('[SimpleSubscriptions] Successfully changed tier');
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        newTier: {
+          id: newTier.id,
+          title: newTier.title,
+          price: newTier.price
+        }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
     } else if (action === 'get_user_subscriptions') {
       console.log('[SimpleSubscriptions] Getting user subscriptions for user:', user.id);
       
