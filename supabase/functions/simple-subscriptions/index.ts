@@ -36,35 +36,149 @@ serve(async (req) => {
     console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // CRITICAL: Check for existing active subscriptions FIRST
-      console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId, 'tier:', tierId);
+      // Check for existing active subscriptions for this creator
+      console.log('[SimpleSubscriptions] Checking for existing active subscriptions for user:', user.id, 'creator:', creatorId);
       
       const { data: existingActiveSubs, error: activeSubsError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .in('status', ['active']); // Removed 'trialing' as we're not using it
+        .eq('status', 'active');
 
       if (activeSubsError) {
         console.error('[SimpleSubscriptions] Error checking active subscriptions:', activeSubsError);
         throw new Error('Failed to check existing subscriptions');
       }
 
+      // If user has an active subscription to this creator but different tier, initiate tier switch
       if (existingActiveSubs && existingActiveSubs.length > 0) {
-        console.log('[SimpleSubscriptions] Found existing active subscription:', existingActiveSubs[0]);
-        return new Response(JSON.stringify({ 
-          error: 'You already have an active subscription to this tier.' 
+        const currentSub = existingActiveSubs[0];
+        
+        // If trying to subscribe to the same tier, return error
+        if (currentSub.tier_id === tierId) {
+          console.log('[SimpleSubscriptions] User already subscribed to this tier');
+          return new Response(JSON.stringify({ 
+            error: 'You already have an active subscription to this tier.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          });
+        }
+
+        // Different tier - initiate tier switch via Stripe Checkout
+        console.log('[SimpleSubscriptions] Initiating tier switch from', currentSub.tier_id, 'to', tierId);
+        
+        // Get new tier details
+        const { data: newTier, error: tierError } = await supabase
+          .from('membership_tiers')
+          .select(`
+            *,
+            creators!inner(stripe_account_id, display_name)
+          `)
+          .eq('id', tierId)
+          .single();
+
+        if (tierError || !newTier) {
+          throw new Error('New tier not found');
+        }
+
+        if (!newTier.creators.stripe_account_id) {
+          throw new Error('Creator payments not set up');
+        }
+
+        // Get or create Stripe customer
+        let stripeCustomerId: string;
+        const { data: existingCustomer } = await supabase
+          .from('stripe_customers')
+          .select('stripe_customer_id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (existingCustomer) {
+          stripeCustomerId = existingCustomer.stripe_customer_id;
+        } else {
+          const customer = await stripe.customers.create({
+            email: user.email!,
+            metadata: { user_id: user.id }
+          });
+          stripeCustomerId = customer.id;
+
+          await supabase
+            .from('stripe_customers')
+            .insert({
+              user_id: user.id,
+              stripe_customer_id: stripeCustomerId
+            });
+        }
+
+        // Create or get Stripe price
+        let stripePriceId = newTier.stripe_price_id;
+        if (!stripePriceId) {
+          const price = await stripe.prices.create({
+            unit_amount: Math.round(newTier.price * 100),
+            currency: 'usd',
+            recurring: { interval: 'month' },
+            product_data: { name: newTier.title }
+          });
+          stripePriceId = price.id;
+
+          await supabase
+            .from('membership_tiers')
+            .update({ stripe_price_id: stripePriceId })
+            .eq('id', tierId);
+        }
+
+        // Create Stripe Checkout session with proration for tier switch
+        const checkoutSession = await stripe.checkout.sessions.create({
+          customer: stripeCustomerId,
+          mode: 'subscription',
+          line_items: [{
+            price: stripePriceId,
+            quantity: 1,
+          }],
+          subscription_data: {
+            proration_behavior: 'create_prorations',
+            application_fee_percent: 5,
+            transfer_data: { destination: newTier.creators.stripe_account_id },
+            metadata: {
+              user_id: user.id,
+              creator_id: creatorId,
+              tier_id: tierId,
+              tier_name: newTier.title,
+              creator_name: newTier.creators.display_name,
+              previous_subscription_id: currentSub.stripe_subscription_id,
+              switch_type: 'tier_change'
+            }
+          },
+          success_url: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${req.headers.get('origin')}/creator/${creatorId}`,
+          metadata: {
+            user_id: user.id,
+            creator_id: creatorId,
+            tier_id: tierId,
+            previous_subscription_id: currentSub.stripe_subscription_id,
+            switch_type: 'tier_change'
+          }
+        });
+
+        console.log('[SimpleSubscriptions] Created checkout session for tier switch:', checkoutSession.id);
+
+        return new Response(JSON.stringify({
+          checkoutUrl: checkoutSession.url,
+          sessionId: checkoutSession.id,
+          switchType: 'tier_change',
+          newTierName: newTier.title,
+          newPrice: newTier.price
         }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
-      console.log('[SimpleSubscriptions] No existing active subscriptions found, proceeding...');
+      // No existing subscription - proceed with regular subscription creation
+      console.log('[SimpleSubscriptions] No existing active subscriptions found, proceeding with new subscription...');
 
-      // Clean up any non-active subscriptions for this user/creator/tier combination in user_subscriptions
+      // Clean up any non-active subscriptions for this user/creator/tier combination
       await supabase
         .from('user_subscriptions')
         .delete()
@@ -73,7 +187,7 @@ serve(async (req) => {
         .eq('tier_id', tierId)
         .neq('status', 'active');
 
-      // Clean up ALL records from legacy subscriptions table for this user/creator
+      // Clean up ALL records from legacy subscriptions table
       console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table');
       await supabase
         .from('subscriptions')
@@ -211,7 +325,7 @@ serve(async (req) => {
           tier_id: tierId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
-          status: 'incomplete', // Start with incomplete instead of pending
+          status: 'incomplete',
           amount: tier.price,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -368,7 +482,7 @@ serve(async (req) => {
           tier:membership_tiers(id, title, description, price)
         `)
         .eq('user_id', user.id)
-        .eq('status', 'active') // Only active subscriptions
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       return new Response(JSON.stringify({ subscriptions: subscriptions || [] }), {
