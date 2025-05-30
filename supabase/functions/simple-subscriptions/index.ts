@@ -36,69 +36,62 @@ serve(async (req) => {
     console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
     if (action === 'create_subscription') {
-      // CRITICAL: Check for existing active subscriptions to the same creator (any tier)
-      console.log('[SimpleSubscriptions] Checking for existing active subscriptions to creator:', creatorId);
+      // CRITICAL: Check for ALL existing subscriptions to the same creator
+      console.log('[SimpleSubscriptions] Checking for ALL existing subscriptions to creator:', creatorId);
       
       const { data: existingCreatorSubs, error: creatorSubsError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .in('status', ['active']);
+        .eq('creator_id', creatorId);
 
       if (creatorSubsError) {
         console.error('[SimpleSubscriptions] Error checking creator subscriptions:', creatorSubsError);
         throw new Error('Failed to check existing subscriptions');
       }
 
-      // If user has an active subscription to this creator, handle tier change
+      // Handle existing subscriptions to this creator
       if (existingCreatorSubs && existingCreatorSubs.length > 0) {
-        const existingSubscription = existingCreatorSubs[0];
-        console.log('[SimpleSubscriptions] Found existing subscription to creator:', existingSubscription);
+        console.log('[SimpleSubscriptions] Found existing subscriptions to creator:', existingCreatorSubs.length);
         
-        // If it's the same tier, return error
-        if (existingSubscription.tier_id === tierId) {
-          console.log('[SimpleSubscriptions] User already subscribed to this tier');
-          return new Response(JSON.stringify({ 
-            error: 'You already have an active subscription to this tier.' 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          });
-        }
-
-        // Cancel existing Stripe subscription
-        if (existingSubscription.stripe_subscription_id) {
-          console.log('[SimpleSubscriptions] Canceling existing Stripe subscription:', existingSubscription.stripe_subscription_id);
-          try {
-            await stripe.subscriptions.cancel(existingSubscription.stripe_subscription_id);
-          } catch (stripeError) {
-            console.error('[SimpleSubscriptions] Error canceling existing subscription:', stripeError);
-            // Continue with tier change even if cancellation fails
+        for (const existingSubscription of existingCreatorSubs) {
+          console.log('[SimpleSubscriptions] Processing existing subscription:', existingSubscription);
+          
+          // If it's the same tier and active, return error
+          if (existingSubscription.tier_id === tierId && existingSubscription.status === 'active') {
+            console.log('[SimpleSubscriptions] User already subscribed to this tier');
+            return new Response(JSON.stringify({ 
+              error: 'You already have an active subscription to this tier.' 
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            });
           }
+
+          // Cancel existing Stripe subscription if it exists
+          if (existingSubscription.stripe_subscription_id) {
+            console.log('[SimpleSubscriptions] Canceling existing Stripe subscription:', existingSubscription.stripe_subscription_id);
+            try {
+              await stripe.subscriptions.cancel(existingSubscription.stripe_subscription_id);
+              console.log('[SimpleSubscriptions] Successfully canceled Stripe subscription');
+            } catch (stripeError) {
+              console.error('[SimpleSubscriptions] Error canceling existing subscription:', stripeError);
+              // Continue with deletion even if cancellation fails
+            }
+          }
+
+          // Delete the existing subscription from database
+          console.log('[SimpleSubscriptions] Deleting existing subscription from database:', existingSubscription.id);
+          await supabase
+            .from('user_subscriptions')
+            .delete()
+            .eq('id', existingSubscription.id);
+
+          console.log('[SimpleSubscriptions] Successfully removed existing subscription');
         }
-
-        // Update the existing subscription record to canceled status
-        await supabase
-          .from('user_subscriptions')
-          .update({ 
-            status: 'canceled',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSubscription.id);
-
-        console.log('[SimpleSubscriptions] Updated existing subscription to canceled, proceeding with new tier');
       }
 
       console.log('[SimpleSubscriptions] No conflicting active subscriptions found, proceeding with creation...');
-
-      // Clean up any non-active subscriptions for this user/creator combination
-      await supabase
-        .from('user_subscriptions')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .neq('status', 'active');
 
       // Clean up ALL records from legacy subscriptions table for this user/creator
       console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table');
@@ -369,7 +362,7 @@ serve(async (req) => {
             
             console.log('[SimpleSubscriptions] Found user:', userData.id, 'for subscription:', stripeSub.id);
             
-            // For active subscriptions, determine the correct status (removed cancelling)
+            // For active subscriptions, determine the correct status
             const dbStatus = 'active'; // Always active for active Stripe subscriptions
             
             console.log('[SimpleSubscriptions] Mapped status:', stripeSub.status, '->', dbStatus);
