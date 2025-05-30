@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -28,14 +27,12 @@ function PaymentForm() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  const { clientSecret, amount, tierName, tierId, creatorId, isUpgrade, existingTierCredit } = location.state || {};
+  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
   // Calculate pricing details
-  const baseAmount = amount ? amount / 100 : 30;
-  const creditAmount = isUpgrade && existingTierCredit ? existingTierCredit / 100 : 0;
-  const netAmount = baseAmount - creditAmount;
-  const salesTax = netAmount * 0.046; // 4.6% tax example
-  const totalToday = netAmount + salesTax;
+  const monthlyAmount = amount ? amount / 100 : 30;
+  const salesTax = monthlyAmount * 0.046; // 4.6% tax example
+  const totalToday = monthlyAmount + salesTax;
 
   useEffect(() => {
     if (!clientSecret) {
@@ -47,9 +44,9 @@ function PaymentForm() {
       navigate('/');
     }
     if (amount) {
-      setPaymentAmount((totalToday).toFixed(2));
+      setPaymentAmount((amount / 100).toFixed(2));
     }
-  }, [clientSecret, amount, navigate, toast, totalToday]);
+  }, [clientSecret, amount, navigate, toast]);
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
@@ -137,10 +134,9 @@ function PaymentForm() {
         setPaymentSucceeded(true);
         setIsVerifying(true);
         
-        const actionText = isUpgrade ? `Switching to ${tierName}` : `Processing your subscription to ${tierName}`;
         toast({
           title: "Payment Successful!",
-          description: `${actionText}...`,
+          description: `Processing your subscription to ${tierName}...`,
         });
 
         // Shorter wait time for webhook processing
@@ -162,10 +158,9 @@ function PaymentForm() {
           // Force refresh all subscription data
           await invalidateAllSubscriptionQueries();
           
-          const successMessage = isUpgrade ? `Successfully switched to ${tierName}` : `You've successfully subscribed to ${tierName}`;
           toast({
-            title: isUpgrade ? "Tier Switched!" : "Subscription Active!",
-            description: successMessage,
+            title: "Subscription Active!",
+            description: `You've successfully subscribed to ${tierName}`,
           });
 
           setTimeout(() => {
@@ -222,13 +217,11 @@ function PaymentForm() {
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-gray-400">
-                    {isUpgrade ? `Switching to ${tierName}...` : 'Activating your subscription...'}
-                  </p>
+                  <p className="text-gray-400">Activating your subscription...</p>
                 </div>
               ) : (
                 <p className="text-gray-400">
-                  {isUpgrade ? `Successfully switched to ${tierName}` : `You've successfully subscribed to ${tierName}`}. Redirecting to your subscriptions...
+                  You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
                 </p>
               )}
             </div>
@@ -259,27 +252,20 @@ function PaymentForm() {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">Payment details</h1>
-              {isUpgrade && (
-                <p className="text-blue-400 text-sm">You're switching to a {baseAmount > creditAmount ? 'higher' : 'lower'} tier. Only the difference will be charged.</p>
-              )}
             </div>
 
             {/* Payment Amount Section */}
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
-                <p className="text-gray-400 text-sm mb-4">
-                  {isUpgrade ? 'Pay the difference for your tier upgrade.' : 'Pay the set price or you can choose to pay more.'}
-                </p>
+                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
                 
                 <div className="space-y-3">
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="text-sm text-gray-400">
-                          {isUpgrade ? 'Tier upgrade payment' : 'Monthly payment'}
-                        </div>
-                        <div className="text-sm text-gray-400">${baseAmount.toFixed(2)}/month</div>
+                        <div className="text-sm text-gray-400">Monthly payment</div>
+                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
                       </div>
                       <div className="flex items-center">
                         <span className="text-gray-400 mr-2">$</span>
@@ -289,8 +275,7 @@ function PaymentForm() {
                           onChange={(e) => setPaymentAmount(e.target.value)}
                           className="w-20 bg-transparent border-gray-600 text-white text-right"
                           step="0.01"
-                          min={totalToday.toFixed(2)}
-                          disabled={isUpgrade}
+                          min={monthlyAmount}
                         />
                       </div>
                     </div>
@@ -345,10 +330,10 @@ function PaymentForm() {
               {/* Payment Terms */}
               <div className="text-sm text-gray-400 space-y-2">
                 <p>
-                  You'll pay ${totalToday.toFixed(2)} today{!isUpgrade && `, and then $${baseAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.`}
+                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
                 </p>
                 <p>
-                  By clicking {isUpgrade ? 'Upgrade now' : 'Subscribe now'}, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
                 </p>
               </div>
 
@@ -369,7 +354,7 @@ function PaymentForm() {
                   ) : (
                     <>
                       <Lock className="mr-2 h-5 w-5" />
-                      {isUpgrade ? 'Upgrade now' : 'Subscribe now'}
+                      Subscribe now
                     </>
                   )}
                 </Button>
@@ -405,9 +390,7 @@ function PaymentForm() {
                   </div>
                   <div>
                     <div className="text-white font-medium">{tierName || 'Creator'}</div>
-                    <div className="text-gray-400 text-sm">
-                      {isUpgrade ? 'Tier Upgrade' : 'New Subscription'}
-                    </div>
+                    <div className="text-gray-400 text-sm">ULTRA Gamer</div>
                   </div>
                 </div>
 
@@ -415,16 +398,12 @@ function PaymentForm() {
                 <div className="space-y-3 pt-4 border-t border-gray-700">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Monthly payment</span>
-                    <span className="text-white">${baseAmount.toFixed(2)}</span>
+                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
                   </div>
-                  
-                  {isUpgrade && creditAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">One-time credit</span>
-                      <span className="text-green-400">-${creditAmount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">One-time credit</span>
+                    <span className="text-white">-$10.00</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Sales Tax</span>
                     <span className="text-white">${salesTax.toFixed(2)}</span>
@@ -434,12 +413,6 @@ function PaymentForm() {
                     <span className="text-white font-semibold">Total due today</span>
                     <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
                   </div>
-                  
-                  {isUpgrade && (
-                    <div className="text-xs text-gray-500 mt-2">
-                      * Reflects prorated amount for tier change
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
