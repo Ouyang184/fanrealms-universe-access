@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -6,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -27,8 +26,9 @@ function PaymentForm() {
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [isRefreshingPayment, setIsRefreshingPayment] = useState(false);
 
-  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
+  let { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
   // Calculate pricing details
   const monthlyAmount = amount ? amount / 100 : 30;
@@ -48,6 +48,67 @@ function PaymentForm() {
       setPaymentAmount((amount / 100).toFixed(2));
     }
   }, [clientSecret, amount, navigate, toast]);
+
+  const refreshPaymentIntent = async () => {
+    if (!tierId || !creatorId) {
+      toast({
+        title: "Error",
+        description: "Missing subscription information. Please try again.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsRefreshingPayment(true);
+    console.log('Refreshing payment intent for subscription...');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'create_subscription',
+          tier_id: tierId,
+          creator_id: creatorId
+        }
+      });
+
+      if (error) {
+        console.error('Error refreshing payment intent:', error);
+        throw error;
+      }
+
+      if (data?.client_secret) {
+        // Update the client secret in location state
+        const newLocationState = {
+          ...location.state,
+          clientSecret: data.client_secret
+        };
+        
+        // Replace the current history state
+        window.history.replaceState(newLocationState, '', location.pathname);
+        
+        // Update local variable
+        clientSecret = data.client_secret;
+        
+        toast({
+          title: "Payment Updated",
+          description: "Please try your payment again.",
+        });
+        
+        console.log('Payment intent refreshed successfully');
+      } else {
+        throw new Error('No client secret received');
+      }
+    } catch (error) {
+      console.error('Failed to refresh payment intent:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Could not refresh payment. Please go back and try subscribing again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshingPayment(false);
+    }
+  };
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
@@ -133,11 +194,22 @@ function PaymentForm() {
 
       if (error) {
         console.error('Payment failed:', error);
-        toast({
-          title: "Payment Failed",
-          description: error.message || 'Payment could not be processed',
-          variant: "destructive"
-        });
+        
+        // Check if it's a stale payment intent error
+        if (error.code === 'payment_intent_unexpected_state' || 
+            error.payment_intent?.status === 'canceled') {
+          toast({
+            title: "Payment Session Expired",
+            description: "The payment session has expired. Please refresh and try again.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Payment Failed",
+            description: error.message || 'Payment could not be processed',
+            variant: "destructive"
+          });
+        }
       } else if (paymentIntent?.status === 'succeeded') {
         console.log('Payment succeeded:', paymentIntent.id);
         setPaymentSucceeded(true);
@@ -256,47 +328,47 @@ function PaymentForm() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="max-w-6xl mx-auto p-6">
-        <form onSubmit={handlePayment}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Payment Details */}
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Payment details</h1>
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Payment Details */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
+            </div>
 
-              {/* Payment Amount Section */}
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
-                  <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
-                  
-                  <div className="space-y-3">
-                    <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="text-sm text-gray-400">Monthly payment</div>
-                          <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-gray-400 mr-2">$</span>
-                          <Input
-                            type="number"
-                            value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(e.target.value)}
-                            className="w-20 bg-transparent border-gray-600 text-white text-right"
-                            step="0.01"
-                            min={monthlyAmount}
-                          />
-                        </div>
+            {/* Payment Amount Section */}
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
+                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
+                
+                <div className="space-y-3">
+                  <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-sm text-gray-400">Monthly payment</div>
+                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-gray-400 mr-2">$</span>
+                        <Input
+                          type="number"
+                          value={paymentAmount}
+                          onChange={(e) => setPaymentAmount(e.target.value)}
+                          className="w-20 bg-transparent border-gray-600 text-white text-right"
+                          step="0.01"
+                          min={monthlyAmount}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Payment Method Section */}
-                <div className="space-y-4">
-                  <h2 className="text-xl font-semibold">Payment method</h2>
-                  
+              {/* Payment Method Section */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Payment method</h2>
+                
+                <form onSubmit={handlePayment}>
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
@@ -331,111 +403,132 @@ function PaymentForm() {
                     </div>
                   </div>
 
-                  <button type="button" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm">
+                  <button type="button" className="flex items-center space-x-2 text-blue-400 hover:text-blue-300 text-sm mt-4">
                     <span>Add new payment method</span>
                     <ChevronDown className="h-4 w-4" />
                   </button>
-                </div>
 
-                {/* Payment Terms */}
-                <div className="text-sm text-gray-400 space-y-2">
-                  <p>
-                    You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
-                  </p>
-                  <p>
-                    By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                  {/* Subscribe Button */}
-                  <Button 
-                    type="submit"
-                    disabled={!stripe || isProcessing}
-                    className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
-                    size="lg"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="mr-2 h-5 w-5" />
-                        Subscribe now
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Cancel Button */}
-                  <Button 
-                    type="button"
-                    onClick={handleCancel}
-                    disabled={isProcessing}
-                    variant="outline"
-                    className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
-                    size="lg"
-                  >
-                    <ArrowLeft className="mr-2 h-5 w-5" />
-                    Cancel and go back
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Order Summary */}
-            <div className="lg:pl-8">
-              <Card className="bg-gray-900 border-gray-800 sticky top-6">
-                <CardHeader>
-                  <CardTitle className="text-white">Order summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Creator Info */}
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {tierName?.charAt(0) || 'C'}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-white font-medium">{tierName || 'Creator'}</div>
-                      <div className="text-gray-400 text-sm">ULTRA Gamer</div>
-                    </div>
+                  {/* Payment Terms */}
+                  <div className="text-sm text-gray-400 space-y-2 mt-6">
+                    <p>
+                      You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                    </p>
+                    <p>
+                      By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                    </p>
                   </div>
 
-                  {/* Pricing Breakdown */}
-                  <div className="space-y-3 pt-4 border-t border-gray-700">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Monthly payment</span>
-                      <span className="text-white">${monthlyAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">One-time credit</span>
-                      <span className="text-white">-$10.00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Sales Tax</span>
-                      <span className="text-white">${salesTax.toFixed(2)}</span>
-                    </div>
-                    
-                    <div className="flex justify-between pt-3 border-t border-gray-700">
-                      <span className="text-white font-semibold">Total due today</span>
-                      <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  {/* Action Buttons */}
+                  <div className="space-y-3 mt-6">
+                    {/* Subscribe Button */}
+                    <Button 
+                      type="submit"
+                      disabled={!stripe || isProcessing || isRefreshingPayment}
+                      className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+                      size="lg"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="mr-2 h-5 w-5" />
+                          Subscribe now
+                        </>
+                      )}
+                    </Button>
 
-              {/* Help Section */}
-              <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
-                <button type="button" className="hover:text-white">Help Centre</button>
-                <span>$ USD</span>
+                    {/* Refresh Payment Button */}
+                    <Button 
+                      type="button"
+                      onClick={refreshPaymentIntent}
+                      disabled={isProcessing || isRefreshingPayment}
+                      variant="outline"
+                      className="w-full border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white text-sm py-3 rounded-lg"
+                    >
+                      {isRefreshingPayment ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Refreshing...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Refresh Payment
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Cancel Button */}
+                    <Button 
+                      type="button"
+                      onClick={handleCancel}
+                      disabled={isProcessing || isRefreshingPayment}
+                      variant="outline"
+                      className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
+                      size="lg"
+                    >
+                      <ArrowLeft className="mr-2 h-5 w-5" />
+                      Cancel and go back
+                    </Button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
-        </form>
+
+          {/* Right Column - Order Summary */}
+          <div className="lg:pl-8">
+            <Card className="bg-gray-900 border-gray-800 sticky top-6">
+              <CardHeader>
+                <CardTitle className="text-white">Order summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Creator Info */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {tierName?.charAt(0) || 'C'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-white font-medium">{tierName || 'Creator'}</div>
+                    <div className="text-gray-400 text-sm">ULTRA Gamer</div>
+                  </div>
+                </div>
+
+                {/* Pricing Breakdown */}
+                <div className="space-y-3 pt-4 border-t border-gray-700">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Monthly payment</span>
+                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">One-time credit</span>
+                    <span className="text-white">-$10.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Sales Tax</span>
+                    <span className="text-white">${salesTax.toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="flex justify-between pt-3 border-t border-gray-700">
+                    <span className="text-white font-semibold">Total due today</span>
+                    <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Help Section */}
+            <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
+              <button type="button" className="hover:text-white">Help Centre</button>
+              <span>$ USD</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
