@@ -43,15 +43,14 @@ export function SubscribedButton({
 
   const subscription = subscriptionData;
   
-  // Check if subscription is active or scheduled to cancel
+  // Simplified logic - just check if subscription is active
   const isActive = subscription?.status === 'active';
-  // Fix: Only check cancel_at_period_end, don't require current_period_end
-  const isScheduledToCancel = subscription?.cancel_at_period_end === true;
+  const willCancel = subscription?.cancel_at_period_end === true;
 
   console.log('SubscribedButton - Status check:', {
     subscription,
     isActive,
-    isScheduledToCancel,
+    willCancel,
     status: subscription?.status,
     cancel_at_period_end: subscription?.cancel_at_period_end,
     current_period_end: subscription?.current_period_end
@@ -269,8 +268,8 @@ export function SubscribedButton({
     }
   };
 
-  // Show UI for subscriptions scheduled to cancel
-  if (isActive && isScheduledToCancel) {
+  // Show UI for subscriptions that will cancel
+  if (isActive && willCancel) {
     const cancelDate = subscription.current_period_end || getNextBillingDate();
     return (
       <div className="space-y-3">
