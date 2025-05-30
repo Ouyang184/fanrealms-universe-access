@@ -18,14 +18,13 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
 
-  // CRITICAL: Check for existing active subscriptions FIRST
-  console.log('Checking for existing active subscriptions...');
+  // CRITICAL: Check for existing active subscriptions to the same creator
+  console.log('Checking for existing active subscriptions to creator:', creatorId);
   const { data: existingSubscriptions, error: checkError } = await supabaseService
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .eq('tier_id', tierId)
     .in('status', ['active', 'trialing']);
 
   if (checkError) {
@@ -33,18 +32,103 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
   }
 
+  // If user has existing active subscription to this creator, update the tier instead
   if (existingSubscriptions && existingSubscriptions.length > 0) {
-    console.log('Found existing active subscription:', existingSubscriptions[0]);
-    return createJsonResponse({ 
-      error: 'You already have an active subscription to this tier.',
-      shouldRefresh: true
-    }, 200);
+    const existingSubscription = existingSubscriptions[0];
+    console.log('Found existing active subscription:', existingSubscription);
+    
+    // If it's the same tier, return error
+    if (existingSubscription.tier_id === tierId) {
+      console.log('User already subscribed to this tier');
+      return createJsonResponse({ 
+        error: 'You already have an active subscription to this tier.',
+        shouldRefresh: true
+      }, 200);
+    }
+
+    // Different tier - update existing subscription
+    console.log('Updating existing subscription to new tier');
+    
+    // Get new tier details
+    const { data: newTier, error: tierError } = await supabase
+      .from('membership_tiers')
+      .select(`
+        *,
+        creators!inner(
+          stripe_account_id,
+          display_name
+        )
+      `)
+      .eq('id', tierId)
+      .single();
+
+    if (tierError || !newTier) {
+      console.log('ERROR: New tier not found:', tierError);
+      return createJsonResponse({ error: 'Membership tier not found' }, 404);
+    }
+
+    try {
+      // Get or create new price for the tier
+      const newStripePriceId = await getOrCreateStripePrice(stripe, supabaseService, newTier, tierId);
+      
+      // Update the existing Stripe subscription with proration
+      console.log('Updating Stripe subscription:', existingSubscription.stripe_subscription_id, 'to price:', newStripePriceId);
+      
+      const updatedSubscription = await stripe.subscriptions.update(
+        existingSubscription.stripe_subscription_id,
+        {
+          items: [{
+            id: (await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id)).items.data[0].id,
+            price: newStripePriceId,
+          }],
+          proration_behavior: 'always_invoice', // Apply proration automatically
+          metadata: {
+            user_id: user.id,
+            creator_id: creatorId,
+            tier_id: tierId,
+            tier_name: newTier.title,
+            creator_name: newTier.creators.display_name
+          }
+        }
+      );
+
+      console.log('Stripe subscription updated successfully:', updatedSubscription.id);
+
+      // Update the database record
+      const { error: updateError } = await supabaseService
+        .from('user_subscriptions')
+        .update({
+          tier_id: tierId,
+          amount: newTier.price,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingSubscription.id);
+
+      if (updateError) {
+        console.error('Error updating subscription in database:', updateError);
+        return createJsonResponse({ error: 'Failed to update subscription record' }, 500);
+      }
+
+      console.log('Subscription tier updated successfully');
+      return createJsonResponse({
+        success: true,
+        message: 'Subscription tier updated successfully',
+        subscriptionId: updatedSubscription.id,
+        shouldRefresh: true
+      });
+
+    } catch (error) {
+      console.error('Error updating subscription tier:', error);
+      return createJsonResponse({ 
+        error: 'Failed to update subscription tier. Please try again.' 
+      }, 500);
+    }
   }
 
   console.log('No existing active subscriptions found, proceeding with creation...');
 
-  // Clean up old pending subscriptions (older than 1 hour) from user_subscriptions ONLY
-  console.log('Cleaning up old pending subscriptions from user_subscriptions...');
+  // Clean up old pending/incomplete subscriptions from user_subscriptions ONLY
+  console.log('Cleaning up old pending/incomplete subscriptions from user_subscriptions...');
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   
   await supabaseService
@@ -52,8 +136,7 @@ export async function handleCreateSubscription(
     .delete()
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .eq('tier_id', tierId)
-    .eq('status', 'pending')
+    .in('status', ['pending', 'incomplete'])
     .lt('created_at', oneHourAgo);
 
   // Clean up ALL records from legacy subscriptions table
@@ -62,8 +145,7 @@ export async function handleCreateSubscription(
     .from('subscriptions')
     .delete()
     .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .eq('tier_id', tierId);
+    .eq('creator_id', creatorId);
 
   // Get tier and creator details
   console.log('Fetching tier and creator details...');
@@ -167,10 +249,27 @@ export async function handleCreateSubscription(
       },
     });
 
-    console.log('Stripe subscription created:', subscription.id);
+    console.log('Stripe subscription created:', subscription.id, 'Status:', subscription.status);
 
-    // Store subscription in user_subscriptions table ONLY with PENDING status
-    console.log('Storing subscription in user_subscriptions table with PENDING status...');
+    // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
+    if (subscription.status === 'incomplete') {
+      console.log('Subscription created with incomplete status, auto-deleting...');
+      
+      try {
+        await stripe.subscriptions.del(subscription.id);
+        console.log('Auto-deleted incomplete subscription:', subscription.id);
+        
+        return createJsonResponse({ 
+          error: 'Payment setup incomplete. Please try again with valid payment information.' 
+        }, 400);
+      } catch (deleteError) {
+        console.error('Error auto-deleting incomplete subscription:', deleteError);
+        // Continue with normal flow if deletion fails
+      }
+    }
+
+    // Store subscription in user_subscriptions table ONLY with appropriate status
+    console.log('Storing subscription in user_subscriptions table...');
     const { data: createdSub, error: insertError } = await supabaseService
       .from('user_subscriptions')
       .insert({
@@ -179,7 +278,7 @@ export async function handleCreateSubscription(
         tier_id: tierId,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: stripeCustomerId,
-        status: 'pending', // CRITICAL: Keep as pending until payment succeeds
+        status: subscription.status === 'incomplete' ? 'incomplete' : 'pending', // Set appropriate status
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         amount: tier.price,

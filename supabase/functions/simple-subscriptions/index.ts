@@ -67,27 +67,82 @@ serve(async (req) => {
           });
         }
 
-        // Cancel existing Stripe subscription
-        if (existingSubscription.stripe_subscription_id) {
-          console.log('[SimpleSubscriptions] Canceling existing Stripe subscription:', existingSubscription.stripe_subscription_id);
-          try {
-            await stripe.subscriptions.cancel(existingSubscription.stripe_subscription_id);
-          } catch (stripeError) {
-            console.error('[SimpleSubscriptions] Error canceling existing subscription:', stripeError);
-            // Continue with tier change even if cancellation fails
-          }
+        // Different tier - update existing subscription with proration
+        console.log('[SimpleSubscriptions] Updating existing subscription to new tier with proration');
+        
+        // Get new tier details
+        const { data: newTier, error: tierError } = await supabase
+          .from('membership_tiers')
+          .select(`
+            *,
+            creators!inner(stripe_account_id, display_name)
+          `)
+          .eq('id', tierId)
+          .single();
+
+        if (tierError || !newTier) {
+          throw new Error('New tier not found');
         }
 
-        // Update the existing subscription record to canceled status
-        await supabase
-          .from('user_subscriptions')
-          .update({ 
-            status: 'canceled',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSubscription.id);
+        // Create new price if needed
+        let newStripePriceId = newTier.stripe_price_id;
+        if (!newStripePriceId) {
+          const price = await stripe.prices.create({
+            unit_amount: Math.round(newTier.price * 100),
+            currency: 'usd',
+            recurring: { interval: 'month' },
+            product_data: { name: newTier.title }
+          });
+          newStripePriceId = price.id;
 
-        console.log('[SimpleSubscriptions] Updated existing subscription to canceled, proceeding with new tier');
+          await supabase
+            .from('membership_tiers')
+            .update({ stripe_price_id: newStripePriceId })
+            .eq('id', tierId);
+        }
+
+        // Update the existing Stripe subscription with proration
+        try {
+          const updatedSubscription = await stripe.subscriptions.update(
+            existingSubscription.stripe_subscription_id,
+            {
+              items: [{
+                id: (await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id)).items.data[0].id,
+                price: newStripePriceId,
+              }],
+              proration_behavior: 'always_invoice', // Apply proration automatically
+              metadata: {
+                user_id: user.id,
+                creator_id: creatorId,
+                tier_id: tierId
+              }
+            }
+          );
+
+          // Update database record
+          await supabase
+            .from('user_subscriptions')
+            .update({
+              tier_id: tierId,
+              amount: newTier.price,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSubscription.id);
+
+          console.log('[SimpleSubscriptions] Successfully updated subscription tier with proration');
+          
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Subscription tier updated successfully with proration applied',
+            subscriptionId: updatedSubscription.id
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+
+        } catch (updateError) {
+          console.error('[SimpleSubscriptions] Error updating subscription tier:', updateError);
+          throw new Error('Failed to update subscription tier');
+        }
       }
 
       console.log('[SimpleSubscriptions] No conflicting active subscriptions found, proceeding with creation...');
@@ -187,6 +242,26 @@ serve(async (req) => {
         }
       });
 
+      // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
+      if (subscription.status === 'incomplete') {
+        console.log('[SimpleSubscriptions] Subscription created with incomplete status, auto-deleting...');
+        
+        try {
+          await stripe.subscriptions.del(subscription.id);
+          console.log('[SimpleSubscriptions] Auto-deleted incomplete subscription:', subscription.id);
+          
+          return new Response(JSON.stringify({ 
+            error: 'Payment setup incomplete. Please try again with valid payment information.' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400
+          });
+        } catch (deleteError) {
+          console.error('[SimpleSubscriptions] Error auto-deleting incomplete subscription:', deleteError);
+          // Continue with normal flow if deletion fails
+        }
+      }
+
       // Store subscription in user_subscriptions table ONLY
       console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
       const { error: insertError } = await supabase
@@ -197,7 +272,7 @@ serve(async (req) => {
           tier_id: tierId,
           stripe_subscription_id: subscription.id,
           stripe_customer_id: stripeCustomerId,
-          status: 'incomplete',
+          status: subscription.status === 'incomplete' ? 'incomplete' : 'incomplete', // Set appropriate status
           amount: tier.price,
           current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
           current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),

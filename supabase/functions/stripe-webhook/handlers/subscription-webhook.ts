@@ -1,3 +1,4 @@
+
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleSubscriptionWebhook(
@@ -21,6 +22,34 @@ export async function handleSubscriptionWebhook(
   if (!user_id || !creator_id || !tier_id) {
     console.error('[WebhookHandler] Missing required metadata in subscription:', subscription.id);
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
+  }
+
+  // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
+  if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
+    console.log('[WebhookHandler] Subscription is incomplete, deleting from Stripe and database:', subscription.id);
+    
+    try {
+      // Delete from Stripe first
+      await stripe.subscriptions.del(subscription.id);
+      console.log('[WebhookHandler] Successfully deleted incomplete subscription from Stripe:', subscription.id);
+    } catch (stripeError) {
+      console.error('[WebhookHandler] Error deleting subscription from Stripe:', stripeError);
+      // Continue to clean up database even if Stripe deletion fails
+    }
+
+    try {
+      // Remove from database
+      await supabaseService
+        .from('user_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscription.id);
+      
+      console.log('[WebhookHandler] Successfully deleted incomplete subscription from database:', subscription.id);
+    } catch (dbError) {
+      console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
+    }
+
+    return createJsonResponse({ success: true });
   }
 
   // Map Stripe status to our valid statuses (active, canceled, incomplete, incomplete_expired)
