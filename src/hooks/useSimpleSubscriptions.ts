@@ -17,8 +17,11 @@ export const useSimpleSubscriptions = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
-        body: { action: 'get_user_subscriptions' }
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: { 
+          action: 'get_user_subscriptions',
+          userId: user.id 
+        }
       });
 
       if (error) throw error;
@@ -29,32 +32,42 @@ export const useSimpleSubscriptions = () => {
     refetchInterval: 60000
   });
 
-  // Create subscription
+  // Create subscription - now returns checkout URL for redirect
   const createSubscription = async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
     if (!user || isProcessing) return null;
 
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+      console.log('[useSimpleSubscriptions] Creating subscription for tier:', tierId, 'creator:', creatorId);
+      
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'create_subscription',
-          tierId,
-          creatorId
+          tier_id: tierId,
+          creator_id: creatorId
         }
       });
 
       if (error) throw error;
+      
+      console.log('[useSimpleSubscriptions] Response:', data);
+      
       if (data?.error) {
-        toast({
-          title: "Already Subscribed",
-          description: data.error,
-        });
+        if (data.shouldRefresh) {
+          // Refresh subscription data if user is already subscribed
+          await Promise.all([
+            refetchSubscriptions(),
+            queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] }),
+            queryClient.invalidateQueries({ queryKey: ['simple-creator-subscribers'] })
+          ]);
+        }
         return { error: data.error };
       }
 
+      // Return checkout URL for redirect
       return data;
     } catch (error) {
-      console.error('Create subscription error:', error);
+      console.error('[useSimpleSubscriptions] Create subscription error:', error);
       toast({
         title: "Subscription Failed",
         description: error instanceof Error ? error.message : 'Failed to create subscription',
@@ -71,7 +84,7 @@ export const useSimpleSubscriptions = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
           subscriptionId

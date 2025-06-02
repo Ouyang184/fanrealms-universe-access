@@ -1,13 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
 import { Loader2 } from 'lucide-react';
-import { useSubscriptions } from '@/hooks/useSubscriptions';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
-import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -22,141 +18,72 @@ export function ActiveSubscribeButton({
   tierName, 
   price 
 }: ActiveSubscribeButtonProps) {
-  const { user } = useAuth();
-  const { createSubscription, isCreating } = useSubscriptions();
-  const { subscriptionStatus, isLoading, refetch } = useSubscriptionCheck(tierId, creatorId);
+  const { createSubscription, isProcessing } = useSimpleSubscriptions();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const { invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
-
-  // Force refresh on mount and when user changes
-  React.useEffect(() => {
-    if (user?.id && tierId && creatorId) {
-      console.log('ActiveSubscribeButton: Checking subscription status on mount');
-      refetch();
-    }
-  }, [user?.id, tierId, creatorId, refetch]);
-
-  // Listen for subscription success events
-  React.useEffect(() => {
-    const handleSubscriptionSuccess = async () => {
-      console.log('Subscription success event detected, refetching...');
-      await Promise.all([
-        refetch(),
-        invalidateAllSubscriptionQueries()
-      ]);
-    };
-
-    window.addEventListener('subscriptionSuccess', handleSubscriptionSuccess);
-    window.addEventListener('paymentSuccess', handleSubscriptionSuccess);
-    
-    return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionSuccess);
-      window.removeEventListener('paymentSuccess', handleSubscriptionSuccess);
-    };
-  }, [refetch, invalidateAllSubscriptionQueries]);
-
-  // Show loading state while checking subscription
-  if (isLoading) {
-    return (
-      <Button variant="outline" className="w-full" size="lg" disabled>
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Checking subscription...
-      </Button>
-    );
-  }
-
-  // Show debug info if subscription exists but user thinks they can't subscribe
-  if (subscriptionStatus?.isSubscribed) {
-    console.log('User already has active subscription:', subscriptionStatus.subscription);
-    return (
-      <div className="space-y-2">
-        <Button variant="outline" className="w-full" size="lg" disabled>
-          Already Subscribed to {tierName}
-        </Button>
-        <p className="text-xs text-center text-muted-foreground">
-          Active since {subscriptionStatus.subscription?.created_at ? 
-            new Date(subscriptionStatus.subscription.created_at).toLocaleDateString() : 'recently'}
-        </p>
-      </div>
-    );
-  }
 
   const handleSubscribe = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to subscribe to creators.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (isProcessing || isRedirecting) return;
 
-    // Double-check subscription status before proceeding
-    console.log('Double-checking subscription status before creating new subscription');
-    const freshStatus = await refetch();
-    if (freshStatus.data?.isSubscribed) {
-      console.log('User is already subscribed, preventing duplicate subscription');
-      toast({
-        title: "Already Subscribed",
-        description: "You already have an active subscription to this tier.",
-      });
-      return;
-    }
+    setIsRedirecting(true);
+    console.log('[ActiveSubscribeButton] Starting subscription process for tier:', tierId);
 
     try {
-      console.log('Starting subscription creation for tier:', tierId, 'creator:', creatorId);
+      const result = await createSubscription({ tierId, creatorId });
       
-      createSubscription({ tierId, creatorId }, {
-        onSuccess: (data) => {
-          if (data?.clientSecret) {
-            console.log('Redirecting to payment page with client secret');
-            navigate('/payment', {
-              state: {
-                clientSecret: data.clientSecret,
-                amount: price * 100,
-                tierName,
-                tierId,
-                creatorId
-              }
-            });
-          } else if (data?.error) {
-            console.log('Subscription creation returned error:', data.error);
-            
-            // If error mentions existing subscription, refresh data
-            if (data.error.toLowerCase().includes('already') || data.error.toLowerCase().includes('subscribed')) {
-              toast({
-                title: "Already Subscribed",
-                description: "You already have an active subscription to this tier.",
-              });
-              refetch();
-              invalidateAllSubscriptionQueries();
-            } else {
-              toast({
-                title: "Error",
-                description: data.error,
-                variant: "destructive"
-              });
-            }
-          }
-        }
-      });
+      if (result?.error) {
+        console.log('[ActiveSubscribeButton] Subscription error:', result.error);
+        toast({
+          title: "Subscription Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        setIsRedirecting(false);
+        return;
+      }
+
+      if (result?.checkout_url) {
+        console.log('[ActiveSubscribeButton] Redirecting to Stripe Checkout:', result.checkout_url);
+        toast({
+          title: "Redirecting to Payment",
+          description: result.action === 'tier_change' 
+            ? "Taking you to checkout to change your subscription tier..."
+            : "Taking you to checkout to complete your subscription...",
+        });
+        
+        // Redirect to Stripe Checkout
+        window.location.href = result.checkout_url;
+      } else {
+        console.error('[ActiveSubscribeButton] No checkout URL received');
+        toast({
+          title: "Subscription Error",
+          description: "Failed to create checkout session. Please try again.",
+          variant: "destructive"
+        });
+        setIsRedirecting(false);
+      }
     } catch (error) {
-      console.error('Subscription error:', error);
+      console.error('[ActiveSubscribeButton] Error:', error);
+      toast({
+        title: "Subscription Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+      setIsRedirecting(false);
     }
   };
 
   return (
     <Button 
       onClick={handleSubscribe}
-      disabled={isCreating}
-      className="w-full"
+      disabled={isProcessing || isRedirecting}
+      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
       size="lg"
     >
-      {isCreating ? (
+      {isProcessing || isRedirecting ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Starting payment...
+          {isRedirecting ? 'Redirecting...' : 'Processing...'}
         </>
       ) : (
         `Subscribe for $${price}/month`

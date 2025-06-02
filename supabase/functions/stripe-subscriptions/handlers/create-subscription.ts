@@ -32,7 +32,7 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
   }
 
-  // If user has existing active subscription to this creator, update the tier instead
+  // If user has existing active subscription to this creator, handle tier change
   if (existingSubscriptions && existingSubscriptions.length > 0) {
     const existingSubscription = existingSubscriptions[0];
     console.log('Found existing active subscription:', existingSubscription);
@@ -46,8 +46,8 @@ export async function handleCreateSubscription(
       }, 200);
     }
 
-    // Different tier - update existing subscription
-    console.log('Updating existing subscription to new tier');
+    // Different tier - create Stripe Checkout session for tier change
+    console.log('Creating Stripe Checkout session for tier change');
     
     // Get new tier details
     const { data: newTier, error: tierError } = await supabase
@@ -71,61 +71,54 @@ export async function handleCreateSubscription(
       // Get or create new price for the tier
       const newStripePriceId = await getOrCreateStripePrice(stripe, supabaseService, newTier, tierId);
       
-      // Update the existing Stripe subscription with proration
-      console.log('Updating Stripe subscription:', existingSubscription.stripe_subscription_id, 'to price:', newStripePriceId);
+      // Create Stripe Checkout session for subscription update
+      console.log('Creating Stripe Checkout session for tier change');
       
-      const updatedSubscription = await stripe.subscriptions.update(
-        existingSubscription.stripe_subscription_id,
-        {
-          items: [{
-            id: (await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id)).items.data[0].id,
-            price: newStripePriceId,
-          }],
-          proration_behavior: 'always_invoice', // Apply proration automatically
+      const checkoutSession = await stripe.checkout.sessions.create({
+        customer: existingSubscription.stripe_customer_id,
+        mode: 'subscription',
+        line_items: [{
+          price: newStripePriceId,
+          quantity: 1,
+        }],
+        subscription_data: {
           metadata: {
             user_id: user.id,
             creator_id: creatorId,
             tier_id: tierId,
             tier_name: newTier.title,
-            creator_name: newTier.creators.display_name
-          }
-        }
-      );
+            creator_name: newTier.creators.display_name,
+            existing_subscription_id: existingSubscription.stripe_subscription_id,
+            action: 'tier_change'
+          },
+          proration_behavior: 'always_invoice'
+        },
+        application_fee_percent: 5,
+        success_url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5173'}/subscriptions?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5173'}/creator/${creatorId}`,
+        allow_promotion_codes: true,
+        billing_address_collection: 'auto',
+        payment_method_types: ['card'],
+      });
 
-      console.log('Stripe subscription updated successfully:', updatedSubscription.id);
+      console.log('Checkout session created for tier change:', checkoutSession.id);
 
-      // Update the database record
-      const { error: updateError } = await supabaseService
-        .from('user_subscriptions')
-        .update({
-          tier_id: tierId,
-          amount: newTier.price,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingSubscription.id);
-
-      if (updateError) {
-        console.error('Error updating subscription in database:', updateError);
-        return createJsonResponse({ error: 'Failed to update subscription record' }, 500);
-      }
-
-      console.log('Subscription tier updated successfully');
       return createJsonResponse({
-        success: true,
-        message: 'Subscription tier updated successfully',
-        subscriptionId: updatedSubscription.id,
-        shouldRefresh: true
+        checkout_url: checkoutSession.url,
+        session_id: checkoutSession.id,
+        action: 'tier_change',
+        message: 'Redirecting to checkout for tier change'
       });
 
     } catch (error) {
-      console.error('Error updating subscription tier:', error);
+      console.error('Error creating checkout session for tier change:', error);
       return createJsonResponse({ 
-        error: 'Failed to update subscription tier. Please try again.' 
+        error: 'Failed to create checkout session for tier change. Please try again.' 
       }, 500);
     }
   }
 
-  console.log('No existing active subscriptions found, proceeding with creation...');
+  console.log('No existing active subscriptions found, proceeding with new subscription creation...');
 
   // Clean up old pending/incomplete subscriptions from user_subscriptions ONLY
   console.log('Cleaning up old pending/incomplete subscriptions from user_subscriptions...');
@@ -181,147 +174,47 @@ export async function handleCreateSubscription(
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
 
-    // Check if customer already has an active subscription to this tier in Stripe
-    console.log('Checking Stripe for existing subscriptions...');
-    const stripeSubscriptions = await stripe.subscriptions.list({
-      customer: stripeCustomerId,
-      status: 'active',
-      limit: 100,
-    });
-
-    // Check if any active subscription matches our tier
-    for (const stripeSub of stripeSubscriptions.data) {
-      if (stripeSub.metadata?.tier_id === tierId && stripeSub.metadata?.creator_id === creatorId) {
-        console.log('Found existing Stripe subscription for this tier');
-        
-        // Ensure our database is in sync - store ONLY in user_subscriptions
-        await supabaseService
-          .from('user_subscriptions')
-          .upsert({
-            user_id: user.id,
-            creator_id: creatorId,
-            tier_id: tierId,
-            stripe_subscription_id: stripeSub.id,
-            stripe_customer_id: stripeCustomerId,
-            status: 'active',
-            current_period_start: new Date(stripeSub.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(stripeSub.current_period_end * 1000).toISOString(),
-            amount: tier.price,
-            updated_at: new Date().toISOString(),
-          }, { 
-            onConflict: 'user_id,creator_id,tier_id',
-            ignoreDuplicates: false 
-          });
-
-        return createJsonResponse({ 
-          error: 'You already have an active subscription to this tier.',
-          shouldRefresh: true
-        }, 200);
-      }
-    }
-
     // Create or get Stripe price
     console.log('Creating/getting Stripe price...');
     const stripePriceId = await getOrCreateStripePrice(stripe, supabaseService, tier, tierId);
     console.log('Stripe price ID:', stripePriceId);
 
-    // Create Stripe subscription - ALWAYS requires payment
-    console.log('Creating Stripe subscription...');
-    const subscription = await stripe.subscriptions.create({
+    // Create Stripe Checkout session for new subscription
+    console.log('Creating Stripe Checkout session for new subscription...');
+    const checkoutSession = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      items: [{ price: stripePriceId }],
-      application_fee_percent: 5,
-      transfer_data: {
-        destination: tier.creators.stripe_account_id,
+      mode: 'subscription',
+      line_items: [{
+        price: stripePriceId,
+        quantity: 1,
+      }],
+      subscription_data: {
+        application_fee_percent: 5,
+        transfer_data: {
+          destination: tier.creators.stripe_account_id,
+        },
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier_id: tierId,
+          tier_name: tier.title,
+          creator_name: tier.creators.display_name
+        }
       },
-      payment_behavior: 'default_incomplete',
-      payment_settings: { 
-        save_default_payment_method: 'on_subscription',
-        payment_method_types: ['card']
-      },
-      expand: ['latest_invoice.payment_intent'],
-      metadata: {
-        user_id: user.id,
-        creator_id: creatorId,
-        tier_id: tierId,
-        tier_name: tier.title,
-        creator_name: tier.creators.display_name
-      },
+      success_url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5173'}/subscriptions?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${Deno.env.get('FRONTEND_URL') || 'http://localhost:5173'}/creator/${creatorId}`,
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
+      payment_method_types: ['card'],
     });
 
-    console.log('Stripe subscription created:', subscription.id, 'Status:', subscription.status);
+    console.log('Checkout session created:', checkoutSession.id);
 
-    // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
-    if (subscription.status === 'incomplete') {
-      console.log('Subscription created with incomplete status, auto-deleting...');
-      
-      try {
-        await stripe.subscriptions.del(subscription.id);
-        console.log('Auto-deleted incomplete subscription:', subscription.id);
-        
-        return createJsonResponse({ 
-          error: 'Payment setup incomplete. Please try again with valid payment information.' 
-        }, 400);
-      } catch (deleteError) {
-        console.error('Error auto-deleting incomplete subscription:', deleteError);
-        // Continue with normal flow if deletion fails
-      }
-    }
-
-    // Store subscription in user_subscriptions table ONLY with appropriate status
-    console.log('Storing subscription in user_subscriptions table...');
-    const { data: createdSub, error: insertError } = await supabaseService
-      .from('user_subscriptions')
-      .insert({
-        user_id: user.id,
-        creator_id: creatorId,
-        tier_id: tierId,
-        stripe_subscription_id: subscription.id,
-        stripe_customer_id: stripeCustomerId,
-        status: subscription.status === 'incomplete' ? 'incomplete' : 'pending', // Set appropriate status
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        amount: tier.price,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select('*')
-      .single();
-
-    if (insertError) {
-      console.error('Error storing subscription in user_subscriptions:', insertError);
-      
-      // Cancel the Stripe subscription if database insert failed
-      try {
-        await stripe.subscriptions.cancel(subscription.id);
-        console.log('Cancelled Stripe subscription due to database error');
-      } catch (cancelError) {
-        console.error('Error canceling Stripe subscription:', cancelError);
-      }
-      
-      return createJsonResponse({ 
-        error: 'Failed to create subscription record. Please try again.' 
-      }, 500);
-    }
-
-    console.log('Subscription stored successfully in user_subscriptions:', createdSub.id);
-
-    // Get the client secret for payment
-    const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-    
-    if (!clientSecret) {
-      console.error('No client secret found in subscription');
-      return createJsonResponse({ 
-        error: 'Failed to initialize payment. Please try again.' 
-      }, 500);
-    }
-
-    console.log('Returning client secret for payment');
     return createJsonResponse({
-      subscriptionId: subscription.id,
-      clientSecret: clientSecret,
-      amount: tier.price * 100,
-      tierName: tier.title
+      checkout_url: checkoutSession.url,
+      session_id: checkoutSession.id,
+      action: 'new_subscription',
+      message: 'Redirecting to checkout for new subscription'
     });
 
   } catch (error) {

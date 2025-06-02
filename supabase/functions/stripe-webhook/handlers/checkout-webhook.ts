@@ -1,183 +1,102 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleCheckoutWebhook(
   event: any,
   supabaseService: any,
   stripe: any
 ) {
-  console.log('[CheckoutHandler] Processing checkout webhook:', event.type, event.id);
+  console.log('[CheckoutHandler] Processing checkout session completed:', event.id);
 
   const session = event.data.object;
-  console.log('[CheckoutHandler] Session data:', {
-    id: session.id,
-    customer: session.customer,
-    subscription: session.subscription,
-    metadata: session.metadata
-  });
+  console.log('[CheckoutHandler] Session ID:', session.id);
+  console.log('[CheckoutHandler] Customer ID:', session.customer);
+  console.log('[CheckoutHandler] Subscription ID:', session.subscription);
 
-  if (event.type === 'checkout.session.completed') {
-    console.log('[CheckoutHandler] Processing checkout session completed:', session.id);
-
-    // Extract metadata - try multiple sources
-    let metadata = session.metadata || {};
-    
-    // If no metadata in session, try to get it from subscription
-    if ((!metadata.user_id || !metadata.creator_id || !metadata.tier_id) && session.subscription) {
-      try {
-        const subscription = await stripe.subscriptions.retrieve(session.subscription);
-        if (subscription.metadata) {
-          metadata = { ...metadata, ...subscription.metadata };
-        }
-      } catch (error) {
-        console.error('[CheckoutHandler] Error retrieving subscription metadata:', error);
-      }
-    }
-
-    const { user_id, creator_id, tier_id } = metadata;
-    
-    console.log('[CheckoutHandler] Extracted metadata:', { user_id, creator_id, tier_id });
-
-    if (!user_id || !creator_id || !tier_id) {
-      console.error('[CheckoutHandler] Missing required metadata. Session:', session.id);
-      console.error('[CheckoutHandler] Available metadata:', metadata);
-      
-      // Try to extract from client_reference_id if available
-      if (session.client_reference_id) {
-        try {
-          const referenceData = JSON.parse(session.client_reference_id);
-          console.log('[CheckoutHandler] Trying client_reference_id:', referenceData);
-          if (referenceData.user_id && referenceData.creator_id && referenceData.tier_id) {
-            await processSubscription(session, referenceData, supabaseService, stripe);
-            return;
-          }
-        } catch (e) {
-          console.error('[CheckoutHandler] Failed to parse client_reference_id:', e);
-        }
-      }
-      
-      // If still no metadata, we can't process this webhook
-      console.error('[CheckoutHandler] Cannot process subscription without metadata');
-      return;
-    }
-
-    await processSubscription(session, { user_id, creator_id, tier_id }, supabaseService, stripe);
+  if (!session.subscription) {
+    console.log('[CheckoutHandler] No subscription in session, skipping');
+    return createJsonResponse({ success: true });
   }
 
-  console.log('[CheckoutHandler] Checkout webhook processing complete');
-}
+  try {
+    // Get the subscription from Stripe to access metadata
+    const subscription = await stripe.subscriptions.retrieve(session.subscription);
+    console.log('[CheckoutHandler] Retrieved subscription:', subscription.id);
+    console.log('[CheckoutHandler] Subscription metadata:', subscription.metadata);
 
-async function processSubscription(session: any, metadata: any, supabaseService: any, stripe: any) {
-  const { user_id, creator_id, tier_id } = metadata;
-  
-  console.log('[CheckoutHandler] Processing subscription with metadata:', { user_id, creator_id, tier_id });
-  
-  if (session.subscription) {
-    console.log('[CheckoutHandler] Retrieving subscription details from Stripe:', session.subscription);
-    
-    try {
-      // Retrieve full subscription details from Stripe
-      const subscription = await stripe.subscriptions.retrieve(session.subscription);
-      console.log('[CheckoutHandler] Retrieved subscription:', {
-        id: subscription.id,
-        status: subscription.status,
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end
-      });
+    const { user_id, creator_id, tier_id, existing_subscription_id, action } = subscription.metadata;
 
-      const currentPeriodStart = subscription.current_period_start ? 
-        new Date(subscription.current_period_start * 1000).toISOString() : null;
-      const currentPeriodEnd = subscription.current_period_end ? 
-        new Date(subscription.current_period_end * 1000).toISOString() : null;
-
-      // Calculate amount from the subscription
-      const amount = subscription.items?.data?.[0]?.price?.unit_amount ? 
-        subscription.items.data[0].price.unit_amount / 100 : 0;
-
-      // Map Stripe status to our valid statuses
-      let dbStatus = 'pending';
-      if (subscription.status === 'active') {
-        dbStatus = subscription.cancel_at_period_end ? 'cancelling' : 'active';
-      } else if (subscription.status === 'trialing') {
-        dbStatus = 'active'; // Treat trialing as active
-      }
-
-      const subscriptionData = {
-        user_id,
-        creator_id, // ENSURE creator_id is included
-        tier_id,
-        stripe_subscription_id: subscription.id,
-        stripe_customer_id: session.customer,
-        status: dbStatus,
-        amount,
-        current_period_start: currentPeriodStart,
-        current_period_end: currentPeriodEnd,
-        cancel_at_period_end: subscription.cancel_at_period_end || false,
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log('[CheckoutHandler] BEFORE inserting into user_subscriptions');
-      console.log('[CheckoutHandler] Insert data:', subscriptionData);
-
-      // First check if record already exists to avoid duplicates
-      const { data: existingRecord } = await supabaseService
-        .from('user_subscriptions')
-        .select('id')
-        .eq('user_id', user_id)
-        .eq('creator_id', creator_id)
-        .eq('tier_id', tier_id)
-        .maybeSingle();
-
-      if (existingRecord) {
-        console.log('[CheckoutHandler] Updating existing subscription record');
-        // Update existing record
-        const { data, error } = await supabaseService
-          .from('user_subscriptions')
-          .update({
-            stripe_subscription_id: subscription.id,
-            stripe_customer_id: session.customer,
-            status: dbStatus,
-            amount,
-            current_period_start: currentPeriodStart,
-            current_period_end: currentPeriodEnd,
-            cancel_at_period_end: subscription.cancel_at_period_end || false,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user_id)
-          .eq('creator_id', creator_id)
-          .eq('tier_id', tier_id)
-          .select();
-
-        if (error) {
-          console.error('[CheckoutHandler] ERROR updating user_subscriptions:', error);
-          throw error;
-        } else {
-          console.log('[CheckoutHandler] SUCCESS: Updated subscription in user_subscriptions:', data);
-        }
-      } else {
-        console.log('[CheckoutHandler] Creating new subscription record');
-        // Insert new record
-        const { data, error } = await supabaseService
-          .from('user_subscriptions')
-          .insert({
-            ...subscriptionData,
-            created_at: new Date().toISOString(),
-          })
-          .select();
-
-        if (error) {
-          console.error('[CheckoutHandler] ERROR inserting into user_subscriptions:', error);
-          throw error;
-        } else {
-          console.log('[CheckoutHandler] SUCCESS: Inserted subscription into user_subscriptions:', data);
-        }
-      }
-
-    } catch (stripeError) {
-      console.error('[CheckoutHandler] Error retrieving subscription from Stripe:', stripeError);
-      throw stripeError;
+    if (!user_id || !creator_id || !tier_id) {
+      console.error('[CheckoutHandler] Missing required metadata in subscription:', subscription.id);
+      return createJsonResponse({ error: 'Missing required metadata' }, 400);
     }
-  } else {
-    console.log('[CheckoutHandler] No subscription found in session, skipping subscription creation');
+
+    // Handle tier change (upgrade/downgrade)
+    if (action === 'tier_change' && existing_subscription_id) {
+      console.log('[CheckoutHandler] Processing tier change from subscription:', existing_subscription_id, 'to new subscription:', subscription.id);
+      
+      try {
+        // Cancel the old subscription
+        await stripe.subscriptions.cancel(existing_subscription_id);
+        console.log('[CheckoutHandler] Cancelled old subscription:', existing_subscription_id);
+
+        // Remove old subscription from database
+        await supabaseService
+          .from('user_subscriptions')
+          .delete()
+          .eq('stripe_subscription_id', existing_subscription_id);
+
+        console.log('[CheckoutHandler] Removed old subscription from database');
+      } catch (error) {
+        console.error('[CheckoutHandler] Error handling old subscription:', error);
+        // Continue with new subscription creation even if old cleanup fails
+      }
+    }
+
+    // Create/update subscription record in database
+    const subscriptionData = {
+      user_id,
+      creator_id,
+      tier_id,
+      stripe_subscription_id: subscription.id,
+      stripe_customer_id: subscription.customer,
+      status: 'active',
+      current_period_start: subscription.current_period_start ? 
+        new Date(subscription.current_period_start * 1000).toISOString() : null,
+      current_period_end: subscription.current_period_end ? 
+        new Date(subscription.current_period_end * 1000).toISOString() : null,
+      amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
+        subscription.items.data[0].price.unit_amount / 100 : 0,
+      cancel_at_period_end: subscription.cancel_at_period_end || false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    console.log('[CheckoutHandler] Creating subscription record:', subscriptionData);
+
+    const { error: insertError } = await supabaseService
+      .from('user_subscriptions')
+      .insert(subscriptionData);
+
+    if (insertError) {
+      console.error('[CheckoutHandler] Error creating subscription record:', insertError);
+      throw insertError;
+    }
+
+    console.log('[CheckoutHandler] Successfully created subscription record');
+
+    // Clean up legacy subscriptions table
+    await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user_id)
+      .eq('creator_id', creator_id);
+
+    console.log('[CheckoutHandler] Checkout webhook processing complete');
+    return createJsonResponse({ success: true });
+
+  } catch (error) {
+    console.error('[CheckoutHandler] Error processing checkout webhook:', error);
+    return createJsonResponse({ error: 'Failed to process checkout webhook' }, 500);
   }
 }
