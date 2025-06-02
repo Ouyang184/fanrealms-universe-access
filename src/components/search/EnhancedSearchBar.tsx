@@ -39,6 +39,7 @@ export function EnhancedSearchBar({
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const navigate = useNavigate();
   const searchRef = useRef<HTMLDivElement>(null);
   
@@ -50,6 +51,18 @@ export function EnhancedSearchBar({
     suggestion.toLowerCase().includes(searchTerm.toLowerCase()) &&
     searchTerm.length > 0
   ).slice(0, 5);
+
+  // Calculate dropdown position when showing suggestions
+  const updateDropdownPosition = () => {
+    if (searchRef.current) {
+      const rect = searchRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  };
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -63,10 +76,26 @@ export function EnhancedSearchBar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Show suggestions when there's input
+  // Show suggestions when there's input and update position
   useEffect(() => {
-    setShowSuggestions(searchTerm.length > 0);
+    const shouldShow = searchTerm.length > 0;
+    setShowSuggestions(shouldShow);
+    if (shouldShow) {
+      updateDropdownPosition();
+    }
   }, [searchTerm]);
+
+  // Update position on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (showSuggestions) {
+        updateDropdownPosition();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showSuggestions]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -75,6 +104,7 @@ export function EnhancedSearchBar({
   const handleInputFocus = () => {
     if (searchTerm.length > 0) {
       setShowSuggestions(true);
+      updateDropdownPosition();
     }
   };
 
@@ -118,39 +148,48 @@ export function EnhancedSearchBar({
   };
 
   return (
-    <div className={`relative ${className}`} ref={searchRef}>
-      <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
-          <Input
-            placeholder={placeholder}
-            className="pl-10 pr-4"
-            value={searchTerm}
-            onChange={handleInputChange}
-            onFocus={handleInputFocus}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSearchSubmit();
-              }
-            }}
-          />
-        </div>
-        
-        <Button type="submit" size="sm">
-          <Search className="h-4 w-4" />
-        </Button>
-        
-        {showFilters && (
-          <AdvancedSearchModal 
-            onSearch={handleAdvancedSearch}
-            initialQuery={searchTerm}
-          />
-        )}
-      </form>
-      
-      {/* Autosuggest Dropdown */}
+    <>
+      <div className={`relative ${className}`} ref={searchRef}>
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
+            <Input
+              placeholder={placeholder}
+              className="pl-10 pr-4"
+              value={searchTerm}
+              onChange={handleInputChange}
+              onFocus={handleInputFocus}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchSubmit();
+                }
+              }}
+            />
+          </div>
+          
+          <Button type="submit" size="sm">
+            <Search className="h-4 w-4" />
+          </Button>
+          
+          {showFilters && (
+            <AdvancedSearchModal 
+              onSearch={handleAdvancedSearch}
+              initialQuery={searchTerm}
+            />
+          )}
+        </form>
+      </div>
+
+      {/* Fixed positioned dropdown to appear above all content */}
       {showSuggestions && (
-        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-[99999] shadow-xl border bg-background">
+        <Card 
+          className="fixed max-h-96 overflow-y-auto z-[99999] shadow-xl border bg-background"
+          style={{
+            top: `${dropdownPosition.top + 4}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`
+          }}
+        >
           {isLoading ? (
             <div className="p-4 flex items-center justify-center">
               <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
@@ -231,6 +270,6 @@ export function EnhancedSearchBar({
           )}
         </Card>
       )}
-    </div>
+    </>
   );
 }
