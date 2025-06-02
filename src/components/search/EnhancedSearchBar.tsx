@@ -118,7 +118,7 @@ export function EnhancedSearchBar({
   };
 
   return (
-    <div className={`relative ${className}`} ref={searchRef} style={{ zIndex: 9999 }}>
+    <div className={`relative ${className}`} ref={searchRef}>
       <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4 z-10" />
@@ -150,10 +150,7 @@ export function EnhancedSearchBar({
       
       {/* Autosuggest Dropdown */}
       {showSuggestions && (
-        <Card 
-          className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto shadow-lg border bg-background"
-          style={{ zIndex: 10000, position: 'fixed' }}
-        >
+        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-[9999] shadow-lg border bg-background">
           {isLoading ? (
             <div className="p-4 flex items-center justify-center">
               <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
