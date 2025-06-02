@@ -150,7 +150,7 @@ export function EnhancedSearchBar({
       
       {/* Autosuggest Dropdown */}
       {showSuggestions && (
-        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-[9999] shadow-lg border bg-background">
+        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-[99999] shadow-xl border bg-background">
           {isLoading ? (
             <div className="p-4 flex items-center justify-center">
               <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
