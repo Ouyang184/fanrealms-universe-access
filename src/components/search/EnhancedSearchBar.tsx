@@ -148,9 +148,9 @@ export function EnhancedSearchBar({
         )}
       </form>
       
-      {/* Autosuggest Dropdown */}
+      {/* Autosuggest Dropdown with increased z-index */}
       {showSuggestions && (
-        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-50 shadow-lg border bg-background">
+        <Card className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto z-[9999] shadow-lg border bg-background">
           {isLoading ? (
             <div className="p-4 flex items-center justify-center">
               <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
