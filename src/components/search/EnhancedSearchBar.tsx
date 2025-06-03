@@ -178,22 +178,11 @@ export function EnhancedSearchBar({
             />
           )}
         </form>
-      </div>
 
-      {/* Portal-style dropdown positioned absolutely to body */}
-      {showSuggestions && (
-        <div 
-          className="fixed inset-0 z-[9999] pointer-events-none"
-          style={{ zIndex: 9999 }}
-        >
+        {/* Simplified dropdown positioned directly below the search bar */}
+        {showSuggestions && (
           <Card 
-            className="absolute max-h-96 overflow-y-auto shadow-2xl border bg-background pointer-events-auto"
-            style={{
-              top: `${dropdownPosition.top + 4}px`,
-              left: `${dropdownPosition.left}px`,
-              width: `${dropdownPosition.width}px`,
-              zIndex: 10000
-            }}
+            className="absolute top-full left-0 right-0 mt-1 max-h-96 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl z-50"
           >
             {isLoading ? (
               <div className="p-4 flex items-center justify-center">
@@ -274,8 +263,8 @@ export function EnhancedSearchBar({
               </div>
             )}
           </Card>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 }
