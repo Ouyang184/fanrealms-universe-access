@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Clock, Table as TableIcon, DollarSign, ExternalLink, TrendingUp, RefreshCw } from "lucide-react";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -116,8 +115,8 @@ export default function CreatorStudioPayouts() {
       {connectStatus?.stripe_account_id && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Webhook Status</AlertTitle>
           <AlertDescription>
+            <div className="font-semibold mb-1">Webhook Status</div>
             Your earnings are automatically synced via webhooks. If you notice missing data or status issues, 
             use the "Sync from Stripe" button above to manually refresh your account status and earnings.
           </AlertDescription>
@@ -234,8 +233,8 @@ export default function CreatorStudioPayouts() {
       {!connectStatus?.stripe_onboarding_complete && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Stripe Setup Required</AlertTitle>
           <AlertDescription>
+            <div className="font-semibold mb-1">Stripe Setup Required</div>
             To receive payouts, you need to complete your Stripe Connect onboarding. 
             Go to Settings → Payments to get started.
           </AlertDescription>
