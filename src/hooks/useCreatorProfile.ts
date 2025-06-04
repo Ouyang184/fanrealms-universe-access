@@ -34,7 +34,7 @@ export function useCreatorProfile() {
   });
 
   const createProfile = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (displayName?: string) => {
       if (!user?.id) throw new Error('User not authenticated');
       
       const { data, error } = await supabase
@@ -42,7 +42,8 @@ export function useCreatorProfile() {
         .insert([{
           user_id: user.id,
           bio: '',
-          profile_image_url: null
+          profile_image_url: null,
+          display_name: displayName || null
         }])
         .select()
         .single();

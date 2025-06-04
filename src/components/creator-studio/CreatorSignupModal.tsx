@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CreatorTermsModal } from "./CreatorTermsModal";
+import { CreatorNameModal } from "./CreatorNameModal";
 
 interface CreatorSignupModalProps {
   open: boolean;
@@ -13,6 +14,7 @@ interface CreatorSignupModalProps {
 export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalProps) {
   const { createProfile, isCreating } = useCreatorProfile();
   const [showTerms, setShowTerms] = useState(false);
+  const [showNameModal, setShowNameModal] = useState(false);
 
   const handleSignUpClick = () => {
     console.log("Sign up button clicked, showing terms modal");
@@ -20,10 +22,9 @@ export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalPro
   };
 
   const handleTermsAccept = () => {
-    console.log("Terms accepted, creating profile");
+    console.log("Terms accepted, showing name modal");
     setShowTerms(false);
-    onOpenChange(false); // Close the signup modal
-    createProfile();
+    setShowNameModal(true);
   };
 
   const handleTermsDecline = () => {
@@ -32,15 +33,25 @@ export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalPro
     // Keep the signup modal open so user can try again
   };
 
+  const handleNameComplete = (displayName: string) => {
+    console.log("Creator name set:", displayName);
+    setShowNameModal(false);
+    onOpenChange(false); // Close all modals
+    createProfile(displayName);
+  };
+
   const handleClose = () => {
     console.log("Signup modal closed");
-    setShowTerms(false); // Close terms modal if it's open
+    setShowTerms(false);
+    setShowNameModal(false);
     onOpenChange(false);
   };
 
+  const shouldShowSignupModal = open && !showTerms && !showNameModal;
+
   return (
     <>
-      <Dialog open={open && !showTerms} onOpenChange={onOpenChange}>
+      <Dialog open={shouldShowSignupModal} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">Become a Creator</DialogTitle>
@@ -75,6 +86,13 @@ export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalPro
         onOpenChange={setShowTerms}
         onAccept={handleTermsAccept}
         onDecline={handleTermsDecline}
+      />
+
+      <CreatorNameModal
+        open={showNameModal}
+        onOpenChange={setShowNameModal}
+        onComplete={handleNameComplete}
+        isCreating={isCreating}
       />
     </>
   );
