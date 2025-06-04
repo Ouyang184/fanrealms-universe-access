@@ -11,13 +11,15 @@ interface CreatorTermsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAccept: () => void;
+  onDecline?: () => void;
 }
 
-export function CreatorTermsModal({ open, onOpenChange, onAccept }: CreatorTermsModalProps) {
+export function CreatorTermsModal({ open, onOpenChange, onAccept, onDecline }: CreatorTermsModalProps) {
   const [hasAccepted, setHasAccepted] = useState(false);
   const [showError, setShowError] = useState(false);
 
   const handleAccept = () => {
+    console.log("Accept button clicked, hasAccepted:", hasAccepted);
     if (!hasAccepted) {
       setShowError(true);
       return;
@@ -28,12 +30,17 @@ export function CreatorTermsModal({ open, onOpenChange, onAccept }: CreatorTerms
   };
 
   const handleDecline = () => {
+    console.log("Decline button clicked");
     onOpenChange(false);
     setHasAccepted(false);
     setShowError(false);
+    if (onDecline) {
+      onDecline();
+    }
   };
 
   const handleCheckboxChange = (checked: boolean) => {
+    console.log("Checkbox changed:", checked);
     setHasAccepted(checked);
     if (checked) {
       setShowError(false);

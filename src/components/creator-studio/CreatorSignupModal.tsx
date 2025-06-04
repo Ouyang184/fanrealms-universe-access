@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,21 +15,32 @@ export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalPro
   const [showTerms, setShowTerms] = useState(false);
 
   const handleSignUpClick = () => {
+    console.log("Sign up button clicked, showing terms modal");
     setShowTerms(true);
   };
 
   const handleTermsAccept = () => {
+    console.log("Terms accepted, creating profile");
     setShowTerms(false);
+    onOpenChange(false); // Close the signup modal
     createProfile();
   };
 
+  const handleTermsDecline = () => {
+    console.log("Terms declined, closing modals");
+    setShowTerms(false);
+    // Keep the signup modal open so user can try again
+  };
+
   const handleClose = () => {
+    console.log("Signup modal closed");
+    setShowTerms(false); // Close terms modal if it's open
     onOpenChange(false);
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !showTerms} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-xl">Become a Creator</DialogTitle>
@@ -64,6 +74,7 @@ export function CreatorSignupModal({ open, onOpenChange }: CreatorSignupModalPro
         open={showTerms}
         onOpenChange={setShowTerms}
         onAccept={handleTermsAccept}
+        onDecline={handleTermsDecline}
       />
     </>
   );
