@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
@@ -87,14 +86,27 @@ export function HomeContent() {
 
   const handlePostClick = (post: Post) => {
     console.log('HomeContent: Post clicked, opening modal for:', post.title);
-    setSelectedPost(post);
-    setPostModalOpen(true);
+    
+    // Clear any existing modal state first
+    if (postModalOpen) {
+      setPostModalOpen(false);
+      setSelectedPost(null);
+    }
+    
+    // Small delay to ensure clean state before opening new modal
+    setTimeout(() => {
+      setSelectedPost(post);
+      setPostModalOpen(true);
+    }, 50);
   };
 
-  const handleModalClose = () => {
-    console.log('HomeContent: Closing post modal');
-    setPostModalOpen(false);
-    setSelectedPost(null);
+  const handleModalClose = (open: boolean) => {
+    console.log('HomeContent: Modal close triggered, open:', open);
+    setPostModalOpen(open);
+    if (!open) {
+      // Clear selected post when modal is closed
+      setTimeout(() => setSelectedPost(null), 200);
+    }
   };
 
   return (
@@ -114,12 +126,14 @@ export function HomeContent() {
       <HowItWorks />
       <HomeFooter />
 
-      {/* Single Post Preview Modal */}
-      <PostPreviewModal
-        open={postModalOpen}
-        onOpenChange={handleModalClose}
-        post={selectedPost}
-      />
+      {/* Single Post Preview Modal with proper state management */}
+      {selectedPost && (
+        <PostPreviewModal
+          open={postModalOpen}
+          onOpenChange={handleModalClose}
+          post={selectedPost}
+        />
+      )}
     </div>
   );
 }

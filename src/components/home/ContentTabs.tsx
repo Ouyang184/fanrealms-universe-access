@@ -46,7 +46,7 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
     }
 
     return posts.map((post) => (
-      <div key={post.id} onClick={() => onPostClick(post)}>
+      <div key={post.id} onClick={() => onPostClick(post)} className="cursor-pointer">
         <ContentItem post={post} type={type} />
       </div>
     ));
