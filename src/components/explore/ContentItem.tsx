@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download, FileImage, Lock } from "lucide-react";
 import { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
-import { useState } from "react";
-import { PostPreviewModal } from "./PostPreviewModal";
 
 interface ContentItemProps {
   post: Post;
@@ -15,8 +13,6 @@ interface ContentItemProps {
 }
 
 export function ContentItem({ post, type }: ContentItemProps) {
-  const [showPreview, setShowPreview] = useState(false);
-
   // Helper function to get the first media from attachments
   const getFirstMedia = (attachments: any) => {
     if (!attachments) return null;
@@ -122,164 +118,148 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
   return (
-    <>
-      <Card className="bg-gray-900 border-gray-800 overflow-hidden">
-        <div className="relative">
-          {/* Visual media thumbnail with proper aspect ratio */}
-          {hasVisualMedia && thumbnail && (
-            <div className="relative w-full h-40">
-              <img
-                src={thumbnail}
-                alt={post.title}
-                className="w-full h-full object-cover"
-                style={{ aspectRatio: '16/9' }}
-                onError={(e) => {
-                  // Hide broken images
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement?.classList.add('hidden');
-                }}
-              />
-              {/* Video play overlay */}
-              {firstMedia?.type === 'video' && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <div className="bg-black/70 rounded-full p-3">
-                    <Play className="h-6 w-6 text-white fill-white" />
-                  </div>
+    <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+      <div className="relative">
+        {/* Visual media thumbnail with proper aspect ratio */}
+        {hasVisualMedia && thumbnail && (
+          <div className="relative w-full h-40">
+            <img
+              src={thumbnail}
+              alt={post.title}
+              className="w-full h-full object-cover"
+              style={{ aspectRatio: '16/9' }}
+              onError={(e) => {
+                // Hide broken images
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('hidden');
+              }}
+            />
+            {/* Video play overlay */}
+            {firstMedia?.type === 'video' && (
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <div className="bg-black/70 rounded-full p-3">
+                  <Play className="h-6 w-6 text-white fill-white" />
                 </div>
-              )}
-              
-              {/* Premium lock overlay for visual media */}
-              {isPremium && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="bg-black/80 rounded-full p-3">
-                    <Lock className="h-8 w-8 text-white/70" />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* File attachment display with proper preview */}
-          {hasFileAttachment && !hasVisualMedia && (
-            <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
-              <div className="text-center">
-                {getFileIcon(firstMedia.type)}
-                <p className="text-sm text-gray-300 mt-2 px-4 truncate">
-                  {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
-                </p>
-                {fileTypeLabel && (
-                  <div className="flex items-center justify-center gap-1 mt-1">
-                    <span>{fileTypeLabel.icon}</span>
-                    <span className="text-xs text-gray-400">{fileTypeLabel.label}</span>
-                  </div>
-                )}
               </div>
-              
-              {/* Premium lock overlay for files */}
-              {isPremium && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="bg-black/80 rounded-full p-3">
-                    <Lock className="h-8 w-8 text-white/70" />
-                  </div>
+            )}
+            
+            {/* Premium lock overlay for visual media */}
+            {isPremium && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-3">
+                  <Lock className="h-8 w-8 text-white/70" />
                 </div>
-              )}
-            </div>
-          )}
-          
-          {/* Text-only post display */}
-          {!hasVisualMedia && !hasFileAttachment && (
-            <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/50 to-blue-900/50 flex items-center justify-center p-4">
-              <div className="text-center">
-                <p className="text-lg text-gray-200 line-clamp-4 font-medium">
-                  {post.title}
-                </p>
-                {post.content && post.content !== post.title && (
-                  <p className="text-sm text-gray-300 mt-2 line-clamp-2">
-                    {post.content}
-                  </p>
-                )}
               </div>
-              
-              {/* Premium lock overlay for text posts */}
-              {isPremium && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="bg-black/80 rounded-full p-3">
-                    <Lock className="h-8 w-8 text-white/70" />
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {/* Badges and metadata overlays */}
-          <div className="absolute top-2 right-2">
-            <Badge className={`flex items-center gap-1 ${type === 'trending' ? 'bg-orange-600' : 'bg-blue-600'}`}>
-              {type === 'trending' ? <TrendingUp className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-              {type === 'trending' ? 'Trending' : 'New'}
-            </Badge>
+            )}
           </div>
-          
-          {/* File type indicator - Always show when there are attachments */}
-          {firstMedia && (
-            <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
-              {fileTypeLabel && <span>{fileTypeLabel.icon}</span>}
-              {contentType === "video" && <Video className="h-3 w-3" />}
-              {(contentType === "image" || contentType === "file" || contentType === "pdf") && <FileText className="h-3 w-3" />}
-              <span>{fileTypeLabel?.label || contentType}</span>
+        )}
+        
+        {/* File attachment display with proper preview */}
+        {hasFileAttachment && !hasVisualMedia && (
+          <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
+            <div className="text-center">
+              {getFileIcon(firstMedia.type)}
+              <p className="text-sm text-gray-300 mt-2 px-4 truncate">
+                {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
+              </p>
+              {fileTypeLabel && (
+                <div className="flex items-center justify-center gap-1 mt-1">
+                  <span>{fileTypeLabel.icon}</span>
+                  <span className="text-xs text-gray-400">{fileTypeLabel.label}</span>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Download indicator for file attachments */}
-          {hasFileAttachment && (
-            <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
-              <Download className="h-3 w-3" />
-              Download
+            
+            {/* Premium lock overlay for files */}
+            {isPremium && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-3">
+                  <Lock className="h-8 w-8 text-white/70" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Text-only post display */}
+        {!hasVisualMedia && !hasFileAttachment && (
+          <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/50 to-blue-900/50 flex items-center justify-center p-4">
+            <div className="text-center">
+              <p className="text-lg text-gray-200 line-clamp-4 font-medium">
+                {post.title}
+              </p>
+              {post.content && post.content !== post.title && (
+                <p className="text-sm text-gray-300 mt-2 line-clamp-2">
+                  {post.content}
+                </p>
+              )}
             </div>
-          )}
+            
+            {/* Premium lock overlay for text posts */}
+            {isPremium && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-3">
+                  <Lock className="h-8 w-8 text-white/70" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Badges and metadata overlays */}
+        <div className="absolute top-2 right-2">
+          <Badge className={`flex items-center gap-1 ${type === 'trending' ? 'bg-orange-600' : 'bg-blue-600'}`}>
+            {type === 'trending' ? <TrendingUp className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+            {type === 'trending' ? 'Trending' : 'New'}
+          </Badge>
         </div>
         
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage 
-                src={post.authorAvatar || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
-                alt={authorName} 
-              />
-              <AvatarFallback className="text-xs">{authorName.substring(0, 1)}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-gray-400">{authorName}</span>
+        {/* File type indicator - Always show when there are attachments */}
+        {firstMedia && (
+          <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+            {fileTypeLabel && <span>{fileTypeLabel.icon}</span>}
+            {contentType === "video" && <Video className="h-3 w-3" />}
+            {(contentType === "image" || contentType === "file" || contentType === "pdf") && <FileText className="h-3 w-3" />}
+            <span>{fileTypeLabel?.label || contentType}</span>
           </div>
-          <h3 className="font-semibold line-clamp-2">{post.title}</h3>
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {displayDate}
-            </div>
-            <Badge className={`ml-auto ${isPremium ? 'bg-purple-600' : 'bg-green-600'}`}>
-              {isPremium ? "Premium" : "Free"}
-            </Badge>
-          </div>
-        </CardContent>
-        <CardFooter className="p-4 pt-0 flex justify-between">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-purple-400 p-0"
-            onClick={() => setShowPreview(true)}
-          >
-            Preview
-          </Button>
-          <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-            Subscribe
-          </Button>
-        </CardFooter>
-      </Card>
+        )}
 
-      <PostPreviewModal 
-        open={showPreview}
-        onOpenChange={setShowPreview}
-        post={post}
-      />
-    </>
+        {/* Download indicator for file attachments */}
+        {hasFileAttachment && (
+          <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
+            <Download className="h-3 w-3" />
+            Download
+          </div>
+        )}
+      </div>
+      
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage 
+              src={post.authorAvatar || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
+              alt={authorName} 
+            />
+            <AvatarFallback className="text-xs">{authorName.substring(0, 1)}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm text-gray-400">{authorName}</span>
+        </div>
+        <h3 className="font-semibold line-clamp-2">{post.title}</h3>
+        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {displayDate}
+          </div>
+          <Badge className={`ml-auto ${isPremium ? 'bg-purple-600' : 'bg-green-600'}`}>
+            {isPremium ? "Premium" : "Free"}
+          </Badge>
+        </div>
+      </CardContent>
+      <CardFooter className="p-4 pt-0 flex justify-end">
+        <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+          Subscribe
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }
