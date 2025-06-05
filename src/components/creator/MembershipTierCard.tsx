@@ -30,7 +30,9 @@ export function MembershipTierCard({
   subscriptionData,
   onSubscriptionSuccess 
 }: MembershipTierCardProps) {
-  const getBadgeIcon = (tierName: string) => {
+  const getBadgeIcon = (tierName: string | undefined | null) => {
+    if (!tierName) return <Check className="h-3 w-3" />;
+    
     const name = tierName.toLowerCase();
     if (name.includes('premium') || name.includes('pro')) {
       return <Star className="h-3 w-3" />;
@@ -76,7 +78,7 @@ export function MembershipTierCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {getBadgeIcon(tier.name)}
-            <CardTitle className="text-xl">{tier.name}</CardTitle>
+            <CardTitle className="text-xl">{tier.name || 'Unnamed Tier'}</CardTitle>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold">${tier.price}</div>
@@ -126,7 +128,7 @@ export function MembershipTierCard({
         <SubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
-          tierName={tier.name}
+          tierName={tier.name || 'Unnamed Tier'}
           price={tier.price}
           isSubscribed={isSubscribed}
           subscriptionData={subscriptionData}
