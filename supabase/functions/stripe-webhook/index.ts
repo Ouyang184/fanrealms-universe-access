@@ -18,6 +18,7 @@ const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
 
 import { handleSubscriptionWebhook } from './handlers/subscription-webhook.ts';
 import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
+import { handleProductWebhook } from './handlers/product-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -47,6 +48,12 @@ serve(async (req) => {
     }
 
     console.log('Webhook event type:', event.type, 'ID:', event.id);
+
+    // Handle product webhooks
+    if (event.type.startsWith('product.')) {
+      console.log('Processing product webhook:', event.type);
+      await handleProductWebhook(event, supabase);
+    }
 
     // Handle checkout session completed events FIRST
     if (event.type === 'checkout.session.completed') {

@@ -374,32 +374,38 @@ export type Database = {
       }
       membership_tiers: {
         Row: {
+          active: boolean
           created_at: string
           creator_id: string
           description: string
           id: string
           price: number
           stripe_price_id: string | null
+          stripe_product_id: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          active?: boolean
           created_at?: string
           creator_id: string
           description: string
           id?: string
           price: number
           stripe_price_id?: string | null
+          stripe_product_id?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          active?: boolean
           created_at?: string
           creator_id?: string
           description?: string
           id?: string
           price?: number
           stripe_price_id?: string | null
+          stripe_product_id?: string | null
           title?: string
           updated_at?: string | null
         }

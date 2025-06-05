@@ -87,6 +87,34 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
       
       const features = data.features.split("\n").filter(feature => feature.trim() !== "");
       
+      // Prepare tier data for Stripe
+      const tierData = {
+        name: data.name,
+        price: data.price,
+        features: features
+      };
+
+      console.log('Creating/updating Stripe product for tier:', tierData);
+
+      // Create or update Stripe product
+      const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+        body: { 
+          tierData,
+          tierId: editingTier?.id 
+        }
+      });
+
+      if (stripeError) {
+        console.error('Stripe product creation error:', stripeError);
+        throw new Error('Failed to sync with Stripe: ' + stripeError.message);
+      }
+
+      if (!stripeResult?.success) {
+        throw new Error('Failed to create Stripe product');
+      }
+
+      console.log('Stripe product created/updated:', stripeResult);
+
       if (editingTier) {
         // Update existing tier
         const { error: updateError } = await supabase
@@ -95,6 +123,8 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
             title: data.name,
             price: data.price,
             description: features.join("|"), // Store features as pipe-separated string
+            stripe_product_id: stripeResult.stripeProductId,
+            stripe_price_id: stripeResult.stripePriceId,
           })
           .eq("id", editingTier.id);
         
@@ -113,6 +143,8 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
             title: data.name,
             price: data.price,
             description: features.join("|"), // Store features as pipe-separated string
+            stripe_product_id: stripeResult.stripeProductId,
+            stripe_price_id: stripeResult.stripePriceId,
           });
         
         if (insertError) throw insertError;
@@ -130,6 +162,7 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
       onClose();
       form.reset();
     } catch (error: any) {
+      console.error('Tier creation/update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to save tier",
