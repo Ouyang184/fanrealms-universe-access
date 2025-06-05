@@ -115,7 +115,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
           tier: tierData?.title || 'Unknown Tier',
           tierPrice: Number(tierData?.price || sub.amount),
           subscriptionDate: sub.created_at,
-          // User data for compatibility
+          // User data for compatibility - fix the structure here
           user: userData ? {
             id: userData.id,
             username: userData.username,
@@ -132,7 +132,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
             email: '',
             profile_picture: null
           },
-          // Tier data for compatibility  
+          // Tier data for compatibility - fix the structure here
           membership_tiers: tierData ? {
             title: tierData.title,
             price: Number(tierData.price)
