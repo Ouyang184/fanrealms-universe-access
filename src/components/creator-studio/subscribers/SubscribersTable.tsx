@@ -94,8 +94,8 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
               </TableCell>
               <TableCell>{subscriber.email}</TableCell>
               <TableCell>
-                <Badge variant={getTierBadgeVariant(subscriber.tier)}>
-                  {subscriber.tier}
+                <Badge variant={getTierBadgeVariant(subscriber.tier.title)}>
+                  {subscriber.tier.title}
                 </Badge>
               </TableCell>
               <TableCell className="font-medium text-green-600">

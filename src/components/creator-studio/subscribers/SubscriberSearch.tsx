@@ -51,8 +51,8 @@ export const SubscriberSearch: React.FC<SubscriberSearchProps> = ({
             ))
           ) : (
             // Fallback to unique tiers from the sample data
-            [...new Set(subscribers.map(s => s.tier))].map(tier => (
-              <SelectItem key={tier} value={tier}>{tier}</SelectItem>
+            [...new Set(subscribers.map(s => s.tier.title))].map(tierTitle => (
+              <SelectItem key={tierTitle} value={tierTitle}>{tierTitle}</SelectItem>
             ))
           )}
         </SelectContent>
