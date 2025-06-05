@@ -27,7 +27,9 @@ export interface SubscriberWithDetails {
   name: string;
   email: string;
   avatarUrl?: string;
-  tier: string;
+  tier: {
+    title: string;
+  };
   tierPrice: number;
   subscriptionDate: string;
   amount?: number;
