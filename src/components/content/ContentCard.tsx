@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Video, FileIcon, Lock, FileImage, FileText, Play, Download } from "lucide-react";
+import { NSFWBadge } from "@/components/ui/nsfw-badge";
 
 interface ContentCardProps {
   content: {
@@ -20,6 +21,7 @@ interface ContentCardProps {
     preview: boolean;
     description?: string;
     attachments?: any;
+    is_nsfw?: boolean;
   };
   onClick: (content: any) => void;
 }
@@ -147,6 +149,13 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <span>{fileTypeLabel.label}</span>
         </div>
 
+        {/* NSFW Badge */}
+        {content.is_nsfw && (
+          <div className="absolute top-2 left-2">
+            <NSFWBadge variant="card" />
+          </div>
+        )}
+
         {/* Download indicator for file attachments */}
         {(content.type === 'download' || hasFileAttachment) && (
           <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
@@ -173,7 +182,10 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           </Avatar>
           <span className="text-sm text-gray-400">{content.creator.name}</span>
         </div>
-        <h3 className="font-semibold line-clamp-2">{content.title}</h3>
+        <div className="flex items-start gap-2 mb-2">
+          <h3 className="font-semibold line-clamp-2 flex-1">{content.title}</h3>
+          {content.is_nsfw && <NSFWBadge variant="card" />}
+        </div>
         <div className="flex items-center justify-between mt-2">
           <span className="text-xs text-gray-400">
             {content.date}

@@ -42,6 +42,9 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
       if (updatedSettings.tags !== undefined && JSON.stringify(updatedSettings.tags) !== JSON.stringify(settings?.tags)) {
         creatorUpdates.tags = updatedSettings.tags;
       }
+      if (updatedSettings.is_nsfw !== undefined && updatedSettings.is_nsfw !== settings?.is_nsfw) {
+        creatorUpdates.is_nsfw = updatedSettings.is_nsfw;
+      }
 
       console.log('Creator updates to apply:', creatorUpdates);
       

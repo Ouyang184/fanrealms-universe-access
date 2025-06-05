@@ -205,6 +205,7 @@ export type Database = {
           display_name: string | null
           follower_count: number
           id: string
+          is_nsfw: boolean
           profile_image_url: string | null
           stripe_account_id: string | null
           stripe_charges_enabled: boolean | null
@@ -222,6 +223,7 @@ export type Database = {
           display_name?: string | null
           follower_count?: number
           id?: string
+          is_nsfw?: boolean
           profile_image_url?: string | null
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean | null
@@ -239,6 +241,7 @@ export type Database = {
           display_name?: string | null
           follower_count?: number
           id?: string
+          is_nsfw?: boolean
           profile_image_url?: string | null
           stripe_account_id?: string | null
           stripe_charges_enabled?: boolean | null
@@ -498,6 +501,7 @@ export type Database = {
           created_at: string
           creator_id: string | null
           id: string
+          is_nsfw: boolean
           tier_id: string | null
           title: string
           updated_at: string | null
@@ -509,6 +513,7 @@ export type Database = {
           created_at?: string
           creator_id?: string | null
           id?: string
+          is_nsfw?: boolean
           tier_id?: string | null
           title: string
           updated_at?: string | null
@@ -520,6 +525,7 @@ export type Database = {
           created_at?: string
           creator_id?: string | null
           id?: string
+          is_nsfw?: boolean
           tier_id?: string | null
           title?: string
           updated_at?: string | null

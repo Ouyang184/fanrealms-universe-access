@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ArrowLeft } from "lucide-react";
+import { NSFWBadge } from "@/components/ui/nsfw-badge";
 import { CreatorProfile } from "@/types";
 
 export default function SearchResultsPage() {
@@ -133,6 +134,12 @@ export default function SearchResultsPage() {
                         className="w-full h-full object-cover mix-blend-overlay"
                       />
                     )}
+                    {/* NSFW Badge */}
+                    {creator.is_nsfw && (
+                      <div className="absolute top-2 left-2">
+                        <NSFWBadge variant="card" />
+                      </div>
+                    )}
                   </div>
                   <CardContent className="pt-0 -mt-12 p-6">
                     <div className="flex justify-between items-start">
@@ -143,7 +150,10 @@ export default function SearchResultsPage() {
                         </AvatarFallback>
                       </Avatar>
                     </div>
-                    <h3 className="text-xl font-bold mt-4">{displayName}</h3>
+                    <div className="flex items-center gap-2 mt-4">
+                      <h3 className="text-xl font-bold">{displayName}</h3>
+                      {creator.is_nsfw && <NSFWBadge variant="card" />}
+                    </div>
                     <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
                     <div className="flex flex-wrap gap-2 mt-3">
