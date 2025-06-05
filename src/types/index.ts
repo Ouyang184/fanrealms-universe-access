@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -32,25 +31,16 @@ export interface Post {
 export interface CreatorProfile {
   id: string;
   user_id: string;
-  display_name: string;
-  displayName: string;
-  username: string;
-  fullName: string;
-  email: string;
-  bio: string;
-  avatar_url: string;
-  profile_image_url: string;
-  banner_url: string;
-  website?: string;
-  follower_count?: number; // Use follower_count to match database
-  following_count?: number;
+  username?: string;
+  displayName?: string;
+  display_name?: string;
+  bio?: string;
+  profile_image_url?: string;
+  avatar_url?: string;
+  banner_url?: string;
+  follower_count?: number;
   tags?: string[];
-  created_at: string;
-  tiers?: Tier[];
-  stripe_account_id?: string | null;
-  stripe_onboarding_complete?: boolean | null;
-  stripe_charges_enabled?: boolean | null;
-  stripe_payouts_enabled?: boolean | null;
+  is_nsfw?: boolean;
 }
 
 export interface Tier {

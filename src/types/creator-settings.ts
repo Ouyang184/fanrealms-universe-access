@@ -11,6 +11,7 @@ export interface CreatorSettingsData {
   banner_url?: string;
   tags?: string[];
   is_nsfw?: boolean;
+  created_at?: string;
 }
 
 export interface CreatorUpdateData {
