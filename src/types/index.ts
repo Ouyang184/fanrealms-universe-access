@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -34,6 +35,8 @@ export interface CreatorProfile {
   username?: string;
   displayName?: string;
   display_name?: string;
+  fullName?: string;
+  email?: string;
   bio?: string;
   profile_image_url?: string;
   avatar_url?: string;
@@ -41,6 +44,13 @@ export interface CreatorProfile {
   follower_count?: number;
   tags?: string[];
   is_nsfw?: boolean;
+  created_at?: string;
+  tiers?: Tier[];
+  website?: string;
+  stripe_account_id?: string | null;
+  stripe_onboarding_complete?: boolean | null;
+  stripe_charges_enabled?: boolean | null;
+  stripe_payouts_enabled?: boolean | null;
 }
 
 export interface Tier {

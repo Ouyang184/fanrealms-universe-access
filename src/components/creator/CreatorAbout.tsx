@@ -7,7 +7,7 @@ interface CreatorAboutProps {
 }
 
 export function CreatorAbout({ creator }: CreatorAboutProps) {
-  const displayName = creator.fullName || creator.username || "Creator";
+  const displayName = creator.displayName || creator.display_name || creator.fullName || creator.username || "Creator";
   
   return (
     <div className="max-w-3xl mx-auto prose prose-sm">

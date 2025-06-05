@@ -72,7 +72,6 @@ export const usePopularCreators = (excludeAI = true) => {
           id: creator.id,
           user_id: creator.user_id,
           username: creator.users?.username || '',
-          email: creator.users?.email || '',
           fullName: creator.users?.username || '',
           bio: creator.bio || '',
           display_name: displayName,
@@ -82,6 +81,7 @@ export const usePopularCreators = (excludeAI = true) => {
           banner_url: creator.banner_url || '',
           created_at: creator.created_at,
           tags: creator.tags || [],
+          is_nsfw: creator.is_nsfw || false,
           tiers: creator.membership_tiers?.map((tier): Tier => ({
             id: tier.id,
             creator_id: creator.id,
