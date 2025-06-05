@@ -112,7 +112,9 @@ export const useCreatorSubscribers = (creatorId: string) => {
           name: userData?.username || 'Unknown User',
           email: userData?.email || '',
           avatarUrl: userData?.profile_picture || undefined,
-          tier: tierData?.title || 'Unknown Tier',
+          tier: {
+            title: tierData?.title || 'Unknown Tier'
+          },
           tierPrice: Number(tierData?.price || sub.amount),
           subscriptionDate: sub.created_at,
           // User data for compatibility - fix the structure here
