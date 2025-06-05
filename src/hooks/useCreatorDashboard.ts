@@ -99,96 +99,148 @@ export function useCreatorDashboard() {
     enabled: !!creatorProfile?.id
   });
   
-  // Fetch subscribers count (current and previous month)
-  const { data: subscriptionData = { current: 0, previous: 0 }, isLoading: isLoadingSubscribers } = useQuery({
-    queryKey: ['creator-subscribers-data', creatorProfile?.id],
+  // Fetch active subscriptions data from user_subscriptions table
+  const { data: subscriptionData = { current: 0, previous: 0, total: 0 }, isLoading: isLoadingSubscribers } = useQuery({
+    queryKey: ['creator-active-subscriptions', creatorProfile?.id],
     queryFn: async () => {
-      if (!creatorProfile?.id) return { current: 0, previous: 0 };
+      if (!creatorProfile?.id) return { current: 0, previous: 0, total: 0 };
+      
+      console.log('[Dashboard] Fetching active subscriptions for creator:', creatorProfile.id);
       
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const firstDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      const lastDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
       
-      // Current month subscribers
-      const { count: currentCount, error: currentError } = await supabase
-        .from('subscriptions')
-        .select('*', { count: 'exact', head: true })
+      // Get all active subscriptions (including those scheduled to cancel but still in period)
+      const { data: activeSubscriptions, error: activeError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
         .eq('creator_id', creatorProfile.id)
-        .gte('created_at', firstDayOfMonth);
+        .eq('status', 'active');
         
-      // Previous month subscribers
-      const { count: previousCount, error: previousError } = await supabase
-        .from('subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id)
-        .gte('created_at', firstDayOfPrevMonth)
-        .lt('created_at', firstDayOfMonth);
-        
-      // Total subscribers (all time)
-      const { count: totalCount, error: totalError } = await supabase
-        .from('subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id);
-        
-      if (currentError || previousError || totalError) {
-        console.error('Error fetching subscribers data:', { currentError, previousError, totalError });
+      if (activeError) {
+        console.error('Error fetching active subscriptions:', activeError);
         return { current: 0, previous: 0, total: 0 };
       }
       
-      return { 
-        current: currentCount || 0, 
+      console.log('[Dashboard] Found active subscriptions:', activeSubscriptions?.length || 0);
+      
+      // Filter out subscriptions that are scheduled to cancel and past their period end
+      const now_timestamp = new Date().getTime();
+      const trulyActiveSubscriptions = activeSubscriptions?.filter(sub => {
+        // If not scheduled to cancel, it's active
+        if (!sub.cancel_at_period_end) return true;
+        
+        // If scheduled to cancel, check if still within period
+        if (sub.current_period_end) {
+          const periodEnd = new Date(sub.current_period_end).getTime();
+          return periodEnd > now_timestamp;
+        }
+        
+        return true; // Keep if no period end data
+      }) || [];
+      
+      console.log('[Dashboard] Truly active subscriptions after filtering:', trulyActiveSubscriptions.length);
+      
+      // Current month subscribers (created this month and still active)
+      const currentMonthSubs = trulyActiveSubscriptions.filter(sub => 
+        new Date(sub.created_at) >= new Date(firstDayOfMonth)
+      );
+      
+      // Previous month subscribers (created last month)
+      const { count: previousCount, error: previousError } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('creator_id', creatorProfile.id)
+        .eq('status', 'active')
+        .gte('created_at', firstDayOfPrevMonth)
+        .lt('created_at', firstDayOfMonth);
+        
+      if (previousError) {
+        console.error('Error fetching previous month subscribers:', previousError);
+      }
+      
+      const result = {
+        current: currentMonthSubs.length,
         previous: previousCount || 0,
-        total: totalCount || 0
+        total: trulyActiveSubscriptions.length
       };
+      
+      console.log('[Dashboard] Subscription data calculated:', result);
+      return result;
     },
-    enabled: !!creatorProfile?.id
+    enabled: !!creatorProfile?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds for real-time updates
   });
   
-  // Calculate tier performance with subscriber counts
+  // Calculate tier performance with real subscriber counts and revenue
   const { data: tierPerformance = [], isLoading: isLoadingTierPerformance } = useQuery({
     queryKey: ['creator-tier-performance', creatorProfile?.id, tiers],
     queryFn: async () => {
       if (!creatorProfile?.id || !tiers.length) return [];
       
+      console.log('[Dashboard] Calculating tier performance for', tiers.length, 'tiers');
+      
       const tierPromises = tiers.map(async (tier) => {
-        // Current month subscribers for this tier
-        const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const firstDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-        
-        const { count: currentSubscribers, error: currentError } = await supabase
-          .from('subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('creator_id', creatorProfile.id)
-          .eq('tier_id', tier.id);
-          
-        const { count: prevMonthSubscribers, error: prevError } = await supabase
-          .from('subscriptions')
-          .select('*', { count: 'exact', head: true })
+        // Get active subscriptions for this tier
+        const { data: tierSubscriptions, error: tierError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
           .eq('creator_id', creatorProfile.id)
           .eq('tier_id', tier.id)
-          .lt('created_at', firstDayOfMonth);
+          .eq('status', 'active');
           
-        if (currentError || prevError) {
-          console.error('Error fetching tier subscribers:', { currentError, prevError });
+        if (tierError) {
+          console.error('Error fetching tier subscriptions:', tierError);
           return {
-            ...tier,
+            id: tier.id,
+            name: tier.title,
+            price: Number(tier.price),
             subscribers: 0,
-            percentage: 0,
-            revenue: 0,
             previousSubscribers: 0,
             growth: 0,
-            name: tier.title
+            percentage: 0,
+            revenue: 0,
+            revenueChange: 0
           };
         }
         
-        const subscribers = currentSubscribers || 0;
-        const previousSubscribers = prevMonthSubscribers || 0;
-        const subscribersTotal = subscriptionData.total || subscribers;
-        const percentage = subscribersTotal > 0 ? Math.round((subscribers / subscribersTotal) * 100) : 0;
-        const revenue = Number(tier.price) * subscribers;
-        const prevRevenue = Number(tier.price) * previousSubscribers;
+        // Filter out cancelled subscriptions that are past their period
+        const now_timestamp = new Date().getTime();
+        const activeTierSubs = tierSubscriptions?.filter(sub => {
+          if (!sub.cancel_at_period_end) return true;
+          if (sub.current_period_end) {
+            const periodEnd = new Date(sub.current_period_end).getTime();
+            return periodEnd > now_timestamp;
+          }
+          return true;
+        }) || [];
+        
+        console.log('[Dashboard] Tier', tier.title, 'has', activeTierSubs.length, 'active subscribers');
+        
+        // Calculate revenue from actual subscription amounts
+        const revenue = activeTierSubs.reduce((total, sub) => {
+          return total + (Number(sub.amount) || Number(tier.price));
+        }, 0);
+        
+        // Get previous month data for growth calculation
+        const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+        const { count: prevMonthCount, error: prevError } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('creator_id', creatorProfile.id)
+          .eq('tier_id', tier.id)
+          .eq('status', 'active')
+          .lt('created_at', firstDayOfMonth);
+          
+        const previousSubscribers = prevError ? 0 : (prevMonthCount || 0);
+        const subscribers = activeTierSubs.length;
+        const percentage = subscriptionData.total > 0 ? Math.round((subscribers / subscriptionData.total) * 100) : 0;
+        const growth = previousSubscribers > 0 
+          ? Math.round(((subscribers - previousSubscribers) / previousSubscribers) * 100)
+          : subscribers > 0 ? 100 : 0;
+          
+        const prevRevenue = previousSubscribers * Number(tier.price);
         const revenueChange = revenue - prevRevenue;
         
         return {
@@ -197,18 +249,19 @@ export function useCreatorDashboard() {
           price: Number(tier.price),
           subscribers,
           previousSubscribers,
-          growth: previousSubscribers > 0 
-            ? Math.round(((subscribers - previousSubscribers) / previousSubscribers) * 100)
-            : subscribers > 0 ? 100 : 0,
+          growth,
           percentage,
           revenue,
           revenueChange
         };
       });
       
-      return Promise.all(tierPromises);
+      const results = await Promise.all(tierPromises);
+      console.log('[Dashboard] Tier performance calculated:', results);
+      return results;
     },
-    enabled: !!creatorProfile?.id && !!tiers.length && !!subscriptionData
+    enabled: !!creatorProfile?.id && !!tiers.length && !!subscriptionData,
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   // Calculate actual stats based on real data
@@ -231,7 +284,7 @@ export function useCreatorDashboard() {
     subscribers: {
       total: subscriptionData.total || 0,
       change: subscriberChange,
-      percentage: subscriberPercentage,
+      percentage: Math.abs(subscriberPercentage),
       trend: subscriberChange >= 0 ? "up" : "down"
     },
     revenue: {
@@ -241,6 +294,8 @@ export function useCreatorDashboard() {
       trend: revenueChange >= 0 ? "up" : "down"
     }
   };
+
+  console.log('[Dashboard] Final stats calculated:', stats);
 
   const isLoading = isLoadingProfile || isLoadingPosts || isLoadingTiers || 
                     isLoadingSubscribers || isLoadingTierPerformance;
