@@ -62,11 +62,32 @@ export default function FeedPage() {
     });
   };
   
-  // Handle post preview
+  // Handle post preview with proper modal state management
   const handlePostPreview = (post: Post) => {
-    setSelectedPost(post);
-    setIsPreviewOpen(true);
-    markPostAsRead(post.id);
+    console.log('Feed: Opening preview for post:', post.title);
+    
+    // Close any existing modal first
+    if (isPreviewOpen) {
+      setIsPreviewOpen(false);
+      setSelectedPost(null);
+    }
+    
+    // Small delay to ensure previous modal is closed before opening new one
+    setTimeout(() => {
+      setSelectedPost(post);
+      setIsPreviewOpen(true);
+      markPostAsRead(post.id);
+    }, 50);
+  };
+
+  // Handle modal close with proper cleanup
+  const handleModalClose = (open: boolean) => {
+    console.log('Feed: Modal close triggered, open:', open);
+    setIsPreviewOpen(open);
+    if (!open) {
+      // Clear selected post when modal is closed
+      setTimeout(() => setSelectedPost(null), 200);
+    }
   };
   
   // If still loading followed creators or posts, show loading state
@@ -255,12 +276,14 @@ export default function FeedPage() {
         </div>
       </div>
       
-      {/* Post Preview Modal */}
-      <PostPreviewModal
-        open={isPreviewOpen}
-        onOpenChange={setIsPreviewOpen}
-        post={selectedPost}
-      />
+      {/* Single Post Preview Modal with proper state management */}
+      {selectedPost && (
+        <PostPreviewModal
+          open={isPreviewOpen}
+          onOpenChange={handleModalClose}
+          post={selectedPost}
+        />
+      )}
     </MainLayout>
   );
 }
