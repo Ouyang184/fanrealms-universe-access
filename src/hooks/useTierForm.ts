@@ -87,44 +87,58 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
       
       const features = data.features.split("\n").filter(feature => feature.trim() !== "");
       
-      // Prepare tier data for Stripe
-      const tierData = {
-        name: data.name,
-        price: data.price,
-        features: features
-      };
-
-      console.log('Creating/updating Stripe product for tier:', tierData);
-
-      // Create or update Stripe product
-      const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
-        body: { 
-          tierData,
-          tierId: editingTier?.id 
-        }
-      });
-
-      if (stripeError) {
-        console.error('Stripe product creation error:', stripeError);
-        throw new Error('Failed to sync with Stripe: ' + stripeError.message);
-      }
-
-      if (!stripeResult?.success) {
-        throw new Error('Failed to create Stripe product');
-      }
-
-      console.log('Stripe product created/updated:', stripeResult);
-
       if (editingTier) {
-        // Update existing tier
+        // Get the existing tier data from database to check for Stripe IDs
+        const { data: existingTierData, error: tierFetchError } = await supabase
+          .from("membership_tiers")
+          .select("stripe_product_id, stripe_price_id")
+          .eq("id", editingTier.id)
+          .single();
+
+        if (tierFetchError) {
+          throw new Error("Could not fetch existing tier data");
+        }
+
+        // Update existing tier with existing Stripe product/price IDs
+        const tierUpdateData = {
+          name: data.name,
+          price: data.price,
+          features: features,
+          existingStripeProductId: existingTierData?.stripe_product_id,
+          existingStripePriceId: existingTierData?.stripe_price_id
+        };
+
+        console.log('Updating existing Stripe product for tier:', tierUpdateData);
+
+        // Call edge function to update existing Stripe product
+        const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+          body: { 
+            tierData: tierUpdateData,
+            tierId: editingTier.id,
+            isUpdate: true // Flag to indicate this is an update operation
+          }
+        });
+
+        if (stripeError) {
+          console.error('Stripe product update error:', stripeError);
+          throw new Error('Failed to update Stripe product: ' + stripeError.message);
+        }
+
+        if (!stripeResult?.success) {
+          throw new Error('Failed to update Stripe product');
+        }
+
+        console.log('Stripe product updated successfully:', stripeResult);
+
+        // Update the tier in database
         const { error: updateError } = await supabase
           .from("membership_tiers")
           .update({
             title: data.name,
             price: data.price,
             description: features.join("|"), // Store features as pipe-separated string
-            stripe_product_id: stripeResult.stripeProductId,
-            stripe_price_id: stripeResult.stripePriceId,
+            stripe_product_id: stripeResult.stripeProductId || existingTierData?.stripe_product_id,
+            stripe_price_id: stripeResult.stripePriceId || existingTierData?.stripe_price_id,
           })
           .eq("id", editingTier.id);
         
@@ -135,6 +149,34 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
           description: "Membership tier updated successfully",
         });
       } else {
+        // Create new tier (existing logic)
+        const tierData = {
+          name: data.name,
+          price: data.price,
+          features: features
+        };
+
+        console.log('Creating new Stripe product for tier:', tierData);
+
+        // Create new Stripe product
+        const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+          body: { 
+            tierData,
+            isUpdate: false // Flag to indicate this is a create operation
+          }
+        });
+
+        if (stripeError) {
+          console.error('Stripe product creation error:', stripeError);
+          throw new Error('Failed to sync with Stripe: ' + stripeError.message);
+        }
+
+        if (!stripeResult?.success) {
+          throw new Error('Failed to create Stripe product');
+        }
+
+        console.log('Stripe product created:', stripeResult);
+
         // Create new tier
         const { error: insertError } = await supabase
           .from("membership_tiers")
