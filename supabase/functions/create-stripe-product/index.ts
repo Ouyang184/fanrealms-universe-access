@@ -68,7 +68,7 @@ serve(async (req) => {
     let stripePriceId = null;
 
     if (isUpdate && tierId && tierData.existingStripeProductId) {
-      // Update existing Stripe product
+      // Update existing Stripe product without creating a new price
       console.log('Updating existing Stripe product:', tierData.existingStripeProductId);
       
       const updatedProduct = await stripe.products.update(tierData.existingStripeProductId, {
@@ -81,29 +81,9 @@ serve(async (req) => {
       });
       
       stripeProductId = updatedProduct.id;
+      stripePriceId = tierData.existingStripePriceId; // Keep the existing price ID
 
-      // Create new price for updated tier (prices are immutable in Stripe)
-      const newPrice = await stripe.prices.create({
-        product: stripeProductId,
-        unit_amount: Math.round(tierData.price * 100), // Convert to cents
-        currency: 'usd',
-        recurring: {
-          interval: 'month'
-        },
-        metadata: {
-          creator_id: creatorData.id,
-          tier_id: tierId
-        }
-      });
-
-      stripePriceId = newPrice.id;
-
-      // Update product default price
-      await stripe.products.update(stripeProductId, {
-        default_price: stripePriceId
-      });
-
-      console.log('Updated Stripe product and created new price:', { stripeProductId, stripePriceId });
+      console.log('Updated Stripe product (no new price created):', { stripeProductId, stripePriceId });
     } else {
       // Create new Stripe product (for new tiers or when no existing product)
       const product = await stripe.products.create({

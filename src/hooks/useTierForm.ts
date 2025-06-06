@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -110,7 +109,7 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
 
         console.log('Updating existing Stripe product for tier:', tierUpdateData);
 
-        // Call edge function to update existing Stripe product
+        // Call edge function to update existing Stripe product (no new price will be created)
         const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
           body: { 
             tierData: tierUpdateData,
@@ -130,15 +129,14 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
 
         console.log('Stripe product updated successfully:', stripeResult);
 
-        // Update the tier in database
+        // Update the tier in database (keeping existing Stripe IDs since we're just updating the product details)
         const { error: updateError } = await supabase
           .from("membership_tiers")
           .update({
             title: data.name,
             price: data.price,
             description: features.join("|"), // Store features as pipe-separated string
-            stripe_product_id: stripeResult.stripeProductId || existingTierData?.stripe_product_id,
-            stripe_price_id: stripeResult.stripePriceId || existingTierData?.stripe_price_id,
+            // Keep the existing Stripe IDs - no changes needed since we only updated the product details
           })
           .eq("id", editingTier.id);
         
