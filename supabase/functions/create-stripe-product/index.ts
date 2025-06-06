@@ -43,8 +43,8 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Get request body
-    const { tierData, tierId } = await req.json();
-    console.log('Request data:', { tierData, tierId });
+    const { tierData, tierId, isUpdate } = await req.json();
+    console.log('Request data:', { tierData, tierId, isUpdate });
 
     // Get creator ID for this user
     const { data: creatorData, error: creatorError } = await supabaseService
@@ -67,90 +67,51 @@ serve(async (req) => {
     let stripeProductId = null;
     let stripePriceId = null;
 
-    // Create or update Stripe product
-    if (tierId) {
-      // Editing existing tier - check if it has a Stripe product
-      const { data: existingTier } = await supabaseService
-        .from('membership_tiers')
-        .select('stripe_product_id, stripe_price_id')
-        .eq('id', tierId)
-        .single();
+    if (isUpdate && tierId && tierData.existingStripeProductId) {
+      // Update existing Stripe product
+      console.log('Updating existing Stripe product:', tierData.existingStripeProductId);
+      
+      const updatedProduct = await stripe.products.update(tierData.existingStripeProductId, {
+        name: tierData.name,
+        description: tierData.features.join(' | '),
+        metadata: {
+          creator_id: creatorData.id,
+          tier_id: tierId
+        }
+      });
+      
+      stripeProductId = updatedProduct.id;
 
-      if (existingTier?.stripe_product_id) {
-        // Update existing Stripe product
-        console.log('Updating existing Stripe product:', existingTier.stripe_product_id);
-        
-        const updatedProduct = await stripe.products.update(existingTier.stripe_product_id, {
-          name: tierData.name,
-          description: tierData.features.join(' | '),
-          metadata: {
-            creator_id: creatorData.id,
-            tier_id: tierId
-          }
-        });
-        
-        stripeProductId = updatedProduct.id;
+      // Create new price for updated tier (prices are immutable in Stripe)
+      const newPrice = await stripe.prices.create({
+        product: stripeProductId,
+        unit_amount: Math.round(tierData.price * 100), // Convert to cents
+        currency: 'usd',
+        recurring: {
+          interval: 'month'
+        },
+        metadata: {
+          creator_id: creatorData.id,
+          tier_id: tierId
+        }
+      });
 
-        // Create new price for updated tier (prices are immutable in Stripe)
-        const newPrice = await stripe.prices.create({
-          product: stripeProductId,
-          unit_amount: Math.round(tierData.price * 100), // Convert to cents
-          currency: 'usd',
-          recurring: {
-            interval: 'month'
-          },
-          metadata: {
-            creator_id: creatorData.id,
-            tier_id: tierId
-          }
-        });
+      stripePriceId = newPrice.id;
 
-        stripePriceId = newPrice.id;
+      // Update product default price
+      await stripe.products.update(stripeProductId, {
+        default_price: stripePriceId
+      });
 
-        // Update product default price
-        await stripe.products.update(stripeProductId, {
-          default_price: stripePriceId
-        });
-
-        console.log('Updated Stripe product and created new price:', { stripeProductId, stripePriceId });
-      } else {
-        // Create new Stripe product for existing tier
-        const product = await stripe.products.create({
-          name: tierData.name,
-          description: tierData.features.join(' | '),
-          metadata: {
-            creator_id: creatorData.id,
-            tier_id: tierId
-          }
-        });
-
-        stripeProductId = product.id;
-
-        // Create price
-        const price = await stripe.prices.create({
-          product: stripeProductId,
-          unit_amount: Math.round(tierData.price * 100),
-          currency: 'usd',
-          recurring: {
-            interval: 'month'
-          },
-          metadata: {
-            creator_id: creatorData.id,
-            tier_id: tierId
-          }
-        });
-
-        stripePriceId = price.id;
-
-        console.log('Created new Stripe product and price for existing tier:', { stripeProductId, stripePriceId });
-      }
+      console.log('Updated Stripe product and created new price:', { stripeProductId, stripePriceId });
     } else {
-      // Creating new tier
+      // Create new Stripe product (for new tiers or when no existing product)
       const product = await stripe.products.create({
         name: tierData.name,
         description: tierData.features.join(' | '),
         metadata: {
-          creator_id: creatorData.id
+          creator_id: creatorData.id,
+          tier_id: tierId || 'new'
         }
       });
 
@@ -165,7 +126,8 @@ serve(async (req) => {
           interval: 'month'
         },
         metadata: {
-          creator_id: creatorData.id
+          creator_id: creatorData.id,
+          tier_id: tierId || 'new'
         }
       });
 
