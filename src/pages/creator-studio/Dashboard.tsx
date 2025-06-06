@@ -29,14 +29,70 @@ import {
 } from "lucide-react"
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck"
 import { useCreatorDashboard } from "@/hooks/useCreatorDashboard"
+import { useCreatorSubscribers } from "@/hooks/useCreatorSubscribers"
 import { Link } from "react-router-dom"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { formatRelativeDate } from "@/utils/auth-helpers"
 import { useCreatorPosts } from "@/hooks/useCreatorPosts"
+import { useQuery } from "@tanstack/react-query"
+import { supabase } from "@/lib/supabase"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function Dashboard() {
-  const { creatorProfile, posts, stats, tierPerformance, isLoading } = useCreatorDashboard();
+  const { user } = useAuth();
+  const { creatorProfile, posts, isLoading: dashboardLoading } = useCreatorDashboard();
   const { posts: creatorPosts, isLoading: isLoadingPosts } = useCreatorPosts();
+  
+  // Get real subscriber data
+  const { subscribers, isLoading: subscribersLoading } = useCreatorSubscribers(creatorProfile?.id || '');
+  
+  // Get membership tiers with real subscriber counts
+  const { data: tiersWithCounts = [], isLoading: tiersLoading } = useQuery({
+    queryKey: ['dashboard-tiers-with-counts', creatorProfile?.id],
+    queryFn: async () => {
+      if (!creatorProfile?.id) return [];
+      
+      // Get all membership tiers
+      const { data: tiers, error: tiersError } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('creator_id', creatorProfile.id)
+        .order('price', { ascending: true });
+        
+      if (tiersError) throw tiersError;
+      
+      // Get subscriber counts for each tier from real subscription data
+      const tiersWithRealCounts = tiers.map(tier => {
+        const tierSubscribers = subscribers?.filter(sub => 
+          sub.tier_id === tier.id && sub.status === 'active'
+        ) || [];
+        
+        const subscriberCount = tierSubscribers.length;
+        const revenue = subscriberCount * (tier.price || 0);
+        const totalActiveSubscribers = subscribers?.filter(sub => sub.status === 'active').length || 0;
+        const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
+        
+        return {
+          id: tier.id,
+          name: tier.title,
+          title: tier.title,
+          price: Number(tier.price),
+          subscribers: subscriberCount,
+          percentage,
+          revenue,
+          revenueChange: 0, // Could be calculated with historical data
+          previousSubscribers: 0, // Could be calculated with historical data
+          growth: 0, // Could be calculated with historical data
+        };
+      });
+      
+      return tiersWithRealCounts;
+    },
+    enabled: !!creatorProfile?.id && !!subscribers,
+    staleTime: 300000, // 5 minutes
+  });
+
+  const isLoading = dashboardLoading || subscribersLoading || tiersLoading;
 
   if (isLoading) {
     return (
@@ -46,32 +102,50 @@ export default function Dashboard() {
     );
   }
 
+  // Calculate real stats from subscriber data
+  const activeSubscribers = subscribers?.filter(sub => sub.status === 'active') || [];
+  const totalSubscribers = activeSubscribers.length;
+  const monthlyRevenue = activeSubscribers.reduce((total, sub) => total + (sub.amount || 0), 0);
+  
+  // Calculate stats with real data
+  const stats = {
+    subscribers: {
+      total: totalSubscribers,
+      change: 0, // Would need historical data to calculate
+      percentage: 0, // Would need historical data to calculate
+      trend: "up" as const
+    },
+    revenue: {
+      total: monthlyRevenue,
+      change: 0, // Would need historical data to calculate
+      percentage: 0, // Would need historical data to calculate
+      trend: "up" as const
+    }
+  };
+
   // Find scheduled and draft posts from the creator posts
   const scheduledPosts = creatorPosts
     .filter(post => post.status === "scheduled")
-    .slice(0, 3); // Limit to 3 scheduled posts
+    .slice(0, 3);
     
   const draftPosts = creatorPosts
     .filter(post => post.status === "draft")
-    .slice(0, 3); // Limit to 3 draft posts
+    .slice(0, 3);
     
   // Combine scheduled and draft posts for the content calendar
   const contentCalendar = [...scheduledPosts, ...draftPosts]
     .sort((a, b) => {
-      // Sort by scheduled date for scheduled posts
       if (a.scheduleDate && b.scheduleDate) {
         return new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime();
       }
-      // Put scheduled posts before drafts
       if (a.scheduleDate && !b.scheduleDate) return -1;
       if (!a.scheduleDate && b.scheduleDate) return 1;
       return 0;
     })
-    .slice(0, 3); // Limit to 3 items total
+    .slice(0, 3);
 
   // Helper function to get post thumbnail
   const getPostThumbnail = (post: any) => {
-    // Check if there are image attachments
     if (post.attachments && Array.isArray(post.attachments)) {
       const imageAttachment = post.attachments.find(
         (attachment: any) => attachment.type === 'image'
@@ -111,17 +185,9 @@ export default function Dashboard() {
                 </div>
                 <Badge
                   variant="outline"
-                  className={`${
-                    stats.subscribers.trend === "up"
-                      ? "bg-green-500/10 text-green-500 border-green-500/20"
-                      : "bg-destructive/10 text-destructive border-destructive/20"
-                  } flex items-center gap-1`}
+                  className="bg-green-500/10 text-green-500 border-green-500/20 flex items-center gap-1"
                 >
-                  {stats.subscribers.trend === "up" ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
+                  <ArrowUpRight className="h-3 w-3" />
                   {stats.subscribers.percentage}%
                 </Badge>
               </div>
@@ -130,8 +196,7 @@ export default function Dashboard() {
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-bold">{stats.subscribers.total.toLocaleString()}</span>
                   <span className="text-sm text-muted-foreground">
-                    {stats.subscribers.trend === "up" ? "+" : "-"}
-                    {Math.abs(stats.subscribers.change)} this month
+                    +{Math.abs(stats.subscribers.change)} this month
                   </span>
                 </div>
               </div>
@@ -146,27 +211,18 @@ export default function Dashboard() {
                 </div>
                 <Badge
                   variant="outline"
-                  className={`${
-                    stats.revenue.trend === "up"
-                      ? "bg-green-500/10 text-green-500 border-green-500/20"
-                      : "bg-destructive/10 text-destructive border-destructive/20"
-                  } flex items-center gap-1`}
+                  className="bg-green-500/10 text-green-500 border-green-500/20 flex items-center gap-1"
                 >
-                  {stats.revenue.trend === "up" ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
+                  <ArrowUpRight className="h-3 w-3" />
                   {stats.revenue.percentage}%
                 </Badge>
               </div>
               <div className="mt-4">
                 <h3 className="text-muted-foreground text-sm">Monthly Revenue</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">${stats.revenue.total.toLocaleString()}</span>
+                  <span className="text-3xl font-bold">${stats.revenue.total.toFixed(2)}</span>
                   <span className="text-sm text-muted-foreground">
-                    {stats.revenue.trend === "up" ? "+" : "-"}$
-                    {Math.abs(stats.revenue.change)} this month
+                    +${Math.abs(stats.revenue.change)} this month
                   </span>
                 </div>
               </div>
@@ -286,7 +342,6 @@ export default function Dashboard() {
                 {contentCalendar.length > 0 ? (
                   <div className="space-y-4">
                     {contentCalendar.map((item) => {
-                      // Get date components from scheduleDate or current date for drafts
                       const date = item.scheduleDate ? new Date(item.scheduleDate) : new Date();
                       const month = date.toLocaleString('default', { month: 'short' });
                       const day = date.getDate();
@@ -364,9 +419,9 @@ export default function Dashboard() {
                 <CardDescription>Performance of your membership tiers</CardDescription>
               </CardHeader>
               <CardContent>
-                {tierPerformance.length > 0 ? (
+                {tiersWithCounts.length > 0 ? (
                   <div className="space-y-4">
-                    {tierPerformance.map((tier) => (
+                    {tiersWithCounts.map((tier) => (
                       <div key={tier.name} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -388,7 +443,7 @@ export default function Dashboard() {
                         <Progress value={tier.percentage} className="h-2" />
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{tier.percentage}% of subscribers</span>
-                          <span>${tier.revenue.toLocaleString()} monthly revenue</span>
+                          <span>${tier.revenue.toFixed(2)} monthly revenue</span>
                         </div>
                       </div>
                     ))}
