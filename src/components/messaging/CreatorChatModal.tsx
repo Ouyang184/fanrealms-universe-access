@@ -53,7 +53,7 @@ const renderMessageWithLinks = (text: string) => {
   });
 };
 
-const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean, onDelete?: (id: string) => void) => {
+const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean) => {
   // Check if message contains an image
   if (messageText.startsWith('[IMAGE]')) {
     const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
@@ -62,7 +62,7 @@ const renderMessageContent = (messageText: string, messageId: string, isOwnMessa
         src={imageData} 
         alt="Shared image"
         canDelete={isOwnMessage}
-        onDelete={() => onDelete?.(messageId)}
+        onDelete={() => handleDeleteMessage(messageId)}
       />
     );
   }
@@ -234,6 +234,35 @@ export function CreatorChatModal({
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Only allow deleting own messages
+
+      if (error) throw error;
+
+      // Remove the message from local state immediately
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      toast({
+        title: "Success",
+        description: "Message deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -288,11 +317,7 @@ export function CreatorChatModal({
                     }`}
                   >
                     <div className="text-sm">
-                      {renderMessageContent(message.message_text, message.id, isOwnMessage, (messageId) => {
-                        // Handle delete for image messages in modal
-                        console.log('Delete message in modal:', messageId);
-                        // You could implement a delete function here if needed
-                      })}
+                      {renderMessageContent(message.message_text, message.id, isOwnMessage)}
                     </div>
                     <p className={`text-xs mt-1 ${
                       isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'

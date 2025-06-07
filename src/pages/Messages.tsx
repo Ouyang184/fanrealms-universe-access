@@ -166,6 +166,19 @@ export default function MessagesPage() {
     }
   };
 
+  const handleDeleteMessage = (messageId: string) => {
+    setMessageToDelete(messageId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteMessage = () => {
+    if (messageToDelete) {
+      deleteMessageMutation.mutate(messageToDelete);
+      setShowDeleteDialog(false);
+      setMessageToDelete(null);
+    }
+  };
+
   const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean) => {
     // Check if message contains an image
     if (messageText.startsWith('[IMAGE]')) {
@@ -207,19 +220,6 @@ export default function MessagesPage() {
 
   const selectedConvData = conversations.find(conv => conv.other_user_id === selectedConversation);
   const isSelectedUserBlocked = selectedConversation ? isUserBlocked(selectedConversation) : false;
-
-  const handleDeleteMessage = (messageId: string) => {
-    setMessageToDelete(messageId);
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDeleteMessage = () => {
-    if (messageToDelete) {
-      deleteMessageMutation.mutate(messageToDelete);
-      setShowDeleteDialog(false);
-      setMessageToDelete(null);
-    }
-  };
 
   if (conversationsLoading) {
     return (
