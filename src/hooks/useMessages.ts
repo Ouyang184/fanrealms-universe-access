@@ -27,6 +27,8 @@ export function useMessages(userId: string | undefined) {
     queryFn: async () => {
       if (!userId) return [];
 
+      console.log('useMessages: Fetching messages for user:', userId);
+
       // Fetch messages that are not deleted
       const { data: messagesData, error } = await supabase
         .from('messages')
@@ -46,6 +48,8 @@ export function useMessages(userId: string | undefined) {
         }
         return [];
       }
+
+      console.log('useMessages: Fetched messages count:', messagesData?.length || 0);
 
       // Get unique user IDs
       const userIds = new Set<string>();
@@ -117,6 +121,8 @@ export function useMessages(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
+    console.log('useMessages: Setting up realtime subscription for user:', userId);
+
     const channel = supabase
       .channel(`messages-${userId}`)
       .on('postgres_changes', 
@@ -126,7 +132,8 @@ export function useMessages(userId: string | undefined) {
           table: 'messages',
           filter: `receiver_id=eq.${userId}` 
         }, 
-        () => {
+        (payload) => {
+          console.log('useMessages: New message received via realtime:', payload);
           refetch();
         }
       )
@@ -137,13 +144,32 @@ export function useMessages(userId: string | undefined) {
           table: 'messages',
           filter: `receiver_id=eq.${userId}` 
         }, 
-        () => {
+        (payload) => {
+          console.log('useMessages: Message updated via realtime:', payload);
           refetch();
+        }
+      )
+      // Add subscription for deleted messages
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `sender_id=eq.${userId}` 
+        }, 
+        (payload) => {
+          console.log('useMessages: Sender message updated via realtime:', payload);
+          // Check if this is a delete operation (deleted_at was set)
+          if (payload.new && (payload.new as any).deleted_at) {
+            console.log('useMessages: Message was deleted, refreshing...');
+            refetch();
+          }
         }
       )
       .subscribe();
 
     return () => {
+      console.log('useMessages: Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [userId, refetch]);
