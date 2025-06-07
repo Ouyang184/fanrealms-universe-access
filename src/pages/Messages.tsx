@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,10 +168,22 @@ export default function MessagesPage() {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
+    console.log('handleDeleteMessage called with:', messageId);
     try {
       await deleteMessageMutation.mutateAsync(messageId);
+      console.log('Delete mutation completed successfully');
+      toast({
+        title: "Success",
+        description: "Message deleted successfully",
+      });
     } catch (error) {
       console.error('Failed to delete message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+      throw error; // Re-throw so MessageImage can handle the error
     }
   };
 

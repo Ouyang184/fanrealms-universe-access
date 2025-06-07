@@ -10,7 +10,7 @@ interface MessageImageProps {
   alt: string;
   className?: string;
   canDelete?: boolean;
-  onDelete?: () => void;
+  onDelete?: () => Promise<void>;
 }
 
 export function MessageImage({ src, alt, className = "", canDelete = false, onDelete }: MessageImageProps) {
@@ -29,12 +29,14 @@ export function MessageImage({ src, alt, className = "", canDelete = false, onDe
   const handleDelete = async () => {
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
-      console.log('Deleting image message...');
+      console.log('MessageImage: Starting delete process...');
       try {
         await onDelete();
+        console.log('MessageImage: Delete completed, closing dialog');
         setIsOpen(false);
       } catch (error) {
-        console.error('Error deleting image:', error);
+        console.error('MessageImage: Error deleting image:', error);
+        // Don't close dialog on error
       } finally {
         setIsDeleting(false);
       }
