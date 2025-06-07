@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Send, Paperclip, Check, CheckCheck, UserX, UserCheck } from "lucide-react";
+import { Search, MoreVertical, Send, Check, CheckCheck, UserX, UserCheck } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,7 +19,10 @@ import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDeleteMessage } from "@/hooks/useDeleteMessage";
 import { DeleteMessageDialog } from "@/components/messaging/DeleteMessageDialog";
+import { ImageUpload } from "@/components/messaging/ImageUpload";
+import { MessageImage } from "@/components/messaging/MessageImage";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 // Function to detect URLs and convert them to clickable links
 const renderMessageWithLinks = (text: string) => {
@@ -46,6 +50,7 @@ const renderMessageWithLinks = (text: string) => {
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const { conversations, isLoading: conversationsLoading, sendMessage, isSendingMessage } = useConversations();
   const { isUserBlocked, blockUser, unblockUser, isLoading: blockLoading } = useBlockedUsers();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -53,6 +58,7 @@ export default function MessagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const deleteMessageMutation = useDeleteMessage();
@@ -115,6 +121,66 @@ export default function MessagesPage() {
     } catch (error) {
       console.error("Error sending message:", error);
     }
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!selectedConversation || isUserBlocked(selectedConversation)) return;
+    
+    setIsUploadingImage(true);
+    
+    try {
+      // Convert image to base64 for simple storage in message text
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        
+        try {
+          await sendMessage({
+            receiverId: selectedConversation,
+            messageText: `[IMAGE]${base64String}`
+          });
+          
+          toast({
+            title: "Success",
+            description: "Image sent successfully!",
+          });
+        } catch (error) {
+          console.error("Error sending image:", error);
+          toast({
+            title: "Error",
+            description: "Failed to send image",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const renderMessageContent = (messageText: string) => {
+    // Check if message contains an image
+    if (messageText.startsWith('[IMAGE]')) {
+      const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
+      return (
+        <MessageImage 
+          src={imageData} 
+          alt="Shared image"
+        />
+      );
+    }
+    
+    // Regular text message with link support
+    return renderMessageWithLinks(messageText);
   };
 
   const handleConversationSelect = (conversationId: string) => {
@@ -397,7 +463,7 @@ export default function MessagesPage() {
                             }}
                             title={message.sender_id === user?.id ? "Click to delete message" : ""}
                           >
-                            <p>{renderMessageWithLinks(message.message_text)}</p>
+                            {renderMessageContent(message.message_text)}
                           </div>
                           <div
                             className={cn(
@@ -430,10 +496,10 @@ export default function MessagesPage() {
             {!isSelectedUserBlocked && (
               <div className="p-4 border-t border-gray-800">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                  <Button type="button" variant="ghost" size="icon" className="text-gray-400 hover:text-white">
-                    <Paperclip className="h-5 w-5" />
-                    <span className="sr-only">Attach file</span>
-                  </Button>
+                  <ImageUpload 
+                    onImageSelect={handleImageUpload}
+                    disabled={isSendingMessage || isUploadingImage}
+                  />
                   <div className="flex-1">
                     <Input
                       placeholder="Type a message..."
@@ -446,16 +512,20 @@ export default function MessagesPage() {
                           handleSendMessage(e);
                         }
                       }}
-                      disabled={isSendingMessage}
+                      disabled={isSendingMessage || isUploadingImage}
                     />
                   </div>
                   <Button
                     type="submit"
                     className="bg-purple-600 hover:bg-purple-700"
                     size="icon"
-                    disabled={!newMessage.trim() || isSendingMessage}
+                    disabled={!newMessage.trim() || isSendingMessage || isUploadingImage}
                   >
-                    <Send className="h-5 w-5" />
+                    {isSendingMessage || isUploadingImage ? (
+                      <LoadingSpinner className="h-5 w-5" />
+                    ) : (
+                      <Send className="h-5 w-5" />
+                    )}
                     <span className="sr-only">Send message</span>
                   </Button>
                 </form>

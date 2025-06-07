@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { ImageUpload } from "@/components/messaging/ImageUpload";
+import { MessageImage } from "@/components/messaging/MessageImage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface Message {
@@ -51,6 +54,22 @@ const renderMessageWithLinks = (text: string) => {
   });
 };
 
+const renderMessageContent = (messageText: string) => {
+  // Check if message contains an image
+  if (messageText.startsWith('[IMAGE]')) {
+    const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
+    return (
+      <MessageImage 
+        src={imageData} 
+        alt="Shared image"
+      />
+    );
+  }
+  
+  // Regular text message with link support
+  return renderMessageWithLinks(messageText);
+};
+
 export function CreatorChatModal({ 
   isOpen, 
   onClose, 
@@ -64,6 +83,7 @@ export function CreatorChatModal({
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -156,6 +176,56 @@ export function CreatorChatModal({
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!user) return;
+    
+    setIsUploadingImage(true);
+    
+    try {
+      // Convert image to base64 for simple storage in message text
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result as string;
+        
+        try {
+          const { error } = await supabase
+            .from('messages')
+            .insert({
+              sender_id: user.id,
+              receiver_id: creatorId,
+              message_text: `[IMAGE]${base64String}`,
+              is_read: false
+            });
+
+          if (error) throw error;
+          
+          toast({
+            title: "Success",
+            description: "Image sent successfully!",
+          });
+        } catch (error) {
+          console.error('Error sending image:', error);
+          toast({
+            title: "Error",
+            description: "Failed to send image",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -216,7 +286,7 @@ export function CreatorChatModal({
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm">{renderMessageWithLinks(message.message_text)}</p>
+                    <div className="text-sm">{renderMessageContent(message.message_text)}</div>
                     <p className={`text-xs mt-1 ${
                       isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>
@@ -232,22 +302,27 @@ export function CreatorChatModal({
 
         {/* Message Input */}
         <div className="p-4 border-t">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-end">
+            <ImageUpload 
+              onImageSelect={handleImageUpload}
+              disabled={isSending || isUploadingImage}
+            />
             <Textarea
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type a message..."
-              className="min-h-[40px] max-h-[100px] resize-none"
+              className="min-h-[40px] max-h-[100px] resize-none flex-1"
               rows={1}
+              disabled={isSending || isUploadingImage}
             />
             <Button 
               onClick={sendMessage} 
-              disabled={!newMessage.trim() || isSending}
+              disabled={!newMessage.trim() || isSending || isUploadingImage}
               size="sm"
               className="shrink-0"
             >
-              {isSending ? (
+              {isSending || isUploadingImage ? (
                 <LoadingSpinner className="h-4 w-4" />
               ) : (
                 <Send className="h-4 w-4" />
