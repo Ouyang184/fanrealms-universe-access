@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -167,7 +166,7 @@ export default function MessagesPage() {
     }
   };
 
-  const renderMessageContent = (messageText: string) => {
+  const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean) => {
     // Check if message contains an image
     if (messageText.startsWith('[IMAGE]')) {
       const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
@@ -175,6 +174,8 @@ export default function MessagesPage() {
         <MessageImage 
           src={imageData} 
           alt="Shared image"
+          canDelete={isOwnMessage}
+          onDelete={() => handleDeleteMessage(messageId)}
         />
       );
     }
@@ -199,7 +200,8 @@ export default function MessagesPage() {
 
   // Filter conversations based on search term
   const filteredConversations = conversations.filter(conv => {
-    const otherUserName = conv.creator_profile?.display_name || conv.other_user?.username || 'Unknown';
+    const otherUserName = conv.creator_profile?.display_name || 
+                          conv.other_user?.username || 'Unknown';
     return otherUserName.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -451,19 +453,20 @@ export default function MessagesPage() {
                         <div>
                           <div
                             className={cn(
-                              "rounded-lg p-3 cursor-pointer transition-colors",
+                              "rounded-lg p-3 transition-colors",
                               message.sender_id === user?.id
-                                ? "bg-purple-600 text-white rounded-tr-none hover:bg-purple-700"
+                                ? "bg-purple-600 text-white rounded-tr-none"
                                 : "bg-gray-800 text-white rounded-tl-none",
+                              !message.message_text.startsWith('[IMAGE]') && message.sender_id === user?.id && "cursor-pointer hover:bg-purple-700"
                             )}
                             onClick={() => {
-                              if (message.sender_id === user?.id) {
+                              if (message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]')) {
                                 handleDeleteMessage(message.id);
                               }
                             }}
-                            title={message.sender_id === user?.id ? "Click to delete message" : ""}
+                            title={message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]') ? "Click to delete message" : ""}
                           >
-                            {renderMessageContent(message.message_text)}
+                            {renderMessageContent(message.message_text, message.id, message.sender_id === user?.id)}
                           </div>
                           <div
                             className={cn(
@@ -487,7 +490,6 @@ export default function MessagesPage() {
                     </div>
                   ))
                 )}
-                {/* Invisible div to scroll to */}
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>

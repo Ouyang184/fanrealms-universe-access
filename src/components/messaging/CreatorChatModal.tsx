@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,7 @@ const renderMessageWithLinks = (text: string) => {
   });
 };
 
-const renderMessageContent = (messageText: string) => {
+const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean, onDelete?: (id: string) => void) => {
   // Check if message contains an image
   if (messageText.startsWith('[IMAGE]')) {
     const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
@@ -62,6 +61,8 @@ const renderMessageContent = (messageText: string) => {
       <MessageImage 
         src={imageData} 
         alt="Shared image"
+        canDelete={isOwnMessage}
+        onDelete={() => onDelete?.(messageId)}
       />
     );
   }
@@ -286,7 +287,13 @@ export function CreatorChatModal({
                         : 'bg-muted'
                     }`}
                   >
-                    <div className="text-sm">{renderMessageContent(message.message_text)}</div>
+                    <div className="text-sm">
+                      {renderMessageContent(message.message_text, message.id, isOwnMessage, (messageId) => {
+                        // Handle delete for image messages in modal
+                        console.log('Delete message in modal:', messageId);
+                        // You could implement a delete function here if needed
+                      })}
+                    </div>
                     <p className={`text-xs mt-1 ${
                       isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>

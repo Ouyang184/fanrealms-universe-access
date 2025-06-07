@@ -1,14 +1,18 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 interface MessageImageProps {
   src: string;
   alt: string;
   className?: string;
+  canDelete?: boolean;
+  onDelete?: () => void;
 }
 
-export function MessageImage({ src, alt, className = "" }: MessageImageProps) {
+export function MessageImage({ src, alt, className = "", canDelete = false, onDelete }: MessageImageProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -19,6 +23,13 @@ export function MessageImage({ src, alt, className = "" }: MessageImageProps) {
       </div>
     );
   }
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+      setIsOpen(false);
+    }
+  };
 
   return (
     <>
@@ -34,11 +45,26 @@ export function MessageImage({ src, alt, className = "" }: MessageImageProps) {
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
-          <img
-            src={src}
-            alt={alt}
-            className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
-          />
+          <div className="relative">
+            <img
+              src={src}
+              alt={alt}
+              className="w-full h-auto max-h-[90vh] object-contain rounded-lg"
+            />
+            {canDelete && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Image
+                </Button>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>
