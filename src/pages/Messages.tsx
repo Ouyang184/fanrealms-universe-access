@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,30 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useDeleteMessage } from "@/hooks/useDeleteMessage";
 import { DeleteMessageDialog } from "@/components/messaging/DeleteMessageDialog";
 import { cn } from "@/lib/utils";
+
+// Function to detect URLs and convert them to clickable links
+const renderMessageWithLinks = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
 export default function MessagesPage() {
   const { user } = useAuth();
@@ -374,7 +397,7 @@ export default function MessagesPage() {
                             }}
                             title={message.sender_id === user?.id ? "Click to delete message" : ""}
                           >
-                            <p>{message.message_text}</p>
+                            <p>{renderMessageWithLinks(message.message_text)}</p>
                           </div>
                           <div
                             className={cn(

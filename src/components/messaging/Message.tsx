@@ -10,6 +10,30 @@ interface MessageProps {
   onClick?: () => void;
 }
 
+// Function to detect URLs and convert them to clickable links
+const renderMessageWithLinks = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline"
+          onClick={(e) => e.stopPropagation()} // Prevent triggering the message onClick
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
+
 export function Message({ senderName, messageText, createdAt, isRead, onClick }: MessageProps) {
   return (
     <Card 
@@ -25,7 +49,9 @@ export function Message({ senderName, messageText, createdAt, isRead, onClick }:
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-0">
-        <p className="text-sm">{messageText}</p>
+        <p className="text-sm">
+          {renderMessageWithLinks(messageText)}
+        </p>
       </CardContent>
     </Card>
   );

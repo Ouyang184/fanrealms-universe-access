@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,30 @@ interface CreatorChatModalProps {
   creatorName: string;
   creatorAvatar?: string;
 }
+
+// Function to detect URLs and convert them to clickable links
+const renderMessageWithLinks = (text: string) => {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  
+  return parts.map((part, index) => {
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
 export function CreatorChatModal({ 
   isOpen, 
@@ -193,7 +216,7 @@ export function CreatorChatModal({
                         : 'bg-muted'
                     }`}
                   >
-                    <p className="text-sm">{message.message_text}</p>
+                    <p className="text-sm">{renderMessageWithLinks(message.message_text)}</p>
                     <p className={`text-xs mt-1 ${
                       isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}>
