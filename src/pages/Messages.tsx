@@ -166,9 +166,12 @@ export default function MessagesPage() {
     }
   };
 
-  const handleDeleteMessage = (messageId: string) => {
-    setMessageToDelete(messageId);
-    setShowDeleteDialog(true);
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteMessageMutation.mutateAsync(messageId);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+    }
   };
 
   const confirmDeleteMessage = () => {

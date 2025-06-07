@@ -16,6 +16,7 @@ interface MessageImageProps {
 export function MessageImage({ src, alt, className = "", canDelete = false, onDelete }: MessageImageProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (imageError) {
     return (
@@ -25,10 +26,18 @@ export function MessageImage({ src, alt, className = "", canDelete = false, onDe
     );
   }
 
-  const handleDelete = () => {
-    if (onDelete) {
-      onDelete();
-      setIsOpen(false);
+  const handleDelete = async () => {
+    if (onDelete && !isDeleting) {
+      setIsDeleting(true);
+      console.log('Deleting image message...');
+      try {
+        await onDelete();
+        setIsOpen(false);
+      } catch (error) {
+        console.error('Error deleting image:', error);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -62,10 +71,11 @@ export function MessageImage({ src, alt, className = "", canDelete = false, onDe
                   variant="destructive"
                   size="sm"
                   onClick={handleDelete}
+                  disabled={isDeleting}
                   className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete Image
+                  {isDeleting ? 'Deleting...' : 'Delete Image'}
                 </Button>
               </div>
             )}
