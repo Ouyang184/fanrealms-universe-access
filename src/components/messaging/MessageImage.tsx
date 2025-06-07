@@ -1,8 +1,9 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 interface MessageImageProps {
   src: string;
@@ -45,6 +46,10 @@ export function MessageImage({ src, alt, className = "", canDelete = false, onDe
       
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
+          <VisuallyHidden>
+            <DialogTitle>Image Viewer</DialogTitle>
+            <DialogDescription>Full size image view with delete option</DialogDescription>
+          </VisuallyHidden>
           <div className="relative">
             <img
               src={src}
