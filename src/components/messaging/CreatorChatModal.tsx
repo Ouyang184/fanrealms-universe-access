@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -53,24 +54,6 @@ const renderMessageWithLinks = (text: string) => {
   });
 };
 
-const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean) => {
-  // Check if message contains an image
-  if (messageText.startsWith('[IMAGE]')) {
-    const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
-    return (
-      <MessageImage 
-        src={imageData} 
-        alt="Shared image"
-        canDelete={isOwnMessage}
-        onDelete={() => handleDeleteMessage(messageId)}
-      />
-    );
-  }
-  
-  // Regular text message with link support
-  return renderMessageWithLinks(messageText);
-};
-
 export function CreatorChatModal({ 
   isOpen, 
   onClose, 
@@ -94,6 +77,53 @@ export function CreatorChatModal({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Only allow deleting own messages
+
+      if (error) throw error;
+
+      // Remove the message from local state immediately
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      toast({
+        title: "Success",
+        description: "Message deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const renderMessageContent = (messageText: string, messageId: string, isOwnMessage: boolean) => {
+    // Check if message contains an image
+    if (messageText.startsWith('[IMAGE]')) {
+      const imageData = messageText.substring(7); // Remove '[IMAGE]' prefix
+      return (
+        <MessageImage 
+          src={imageData} 
+          alt="Shared image"
+          canDelete={isOwnMessage}
+          onDelete={() => handleDeleteMessage(messageId)}
+        />
+      );
+    }
+    
+    // Regular text message with link support
+    return renderMessageWithLinks(messageText);
+  };
 
   // Load messages between user and creator
   useEffect(() => {
@@ -231,35 +261,6 @@ export function CreatorChatModal({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
-    }
-  };
-
-  const handleDeleteMessage = async (messageId: string) => {
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('id', messageId)
-        .eq('sender_id', user.id); // Only allow deleting own messages
-
-      if (error) throw error;
-
-      // Remove the message from local state immediately
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      
-      toast({
-        title: "Success",
-        description: "Message deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete message",
-        variant: "destructive",
-      });
     }
   };
 
