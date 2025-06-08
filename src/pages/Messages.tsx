@@ -166,30 +166,30 @@ export default function MessagesPage() {
     }
   };
 
-  const handleDeleteMessage = async (messageId: string) => {
-    console.log('Messages.tsx: handleDeleteMessage called with:', messageId);
-    try {
-      await deleteMessageMutation.mutateAsync(messageId);
-      console.log('Messages.tsx: Delete mutation completed successfully');
-    } catch (error) {
-      console.error('Messages.tsx: Failed to delete message:', error);
-      // Error handling is done in the mutation hook
-    }
+  const handleDeleteMessage = (messageId: string) => {
+    console.log('Messages.tsx: Setting message for deletion:', messageId);
+    setMessageToDelete(messageId);
+    setShowDeleteDialog(true);
   };
 
   const confirmDeleteMessage = async () => {
     if (messageToDelete) {
-      await handleDeleteMessage(messageToDelete);
+      console.log('Messages.tsx: Confirming deletion for message:', messageToDelete);
+      try {
+        await deleteMessageMutation.mutateAsync(messageToDelete);
+        console.log('Messages.tsx: Delete mutation completed successfully');
+      } catch (error) {
+        console.error('Messages.tsx: Failed to delete message:', error);
+      }
       setShowDeleteDialog(false);
       setMessageToDelete(null);
     }
   };
 
-  const handleTextMessageClick = (messageId: string, isOwnMessage: boolean) => {
+  const handleMessageClick = (messageId: string, isOwnMessage: boolean) => {
     if (isOwnMessage) {
-      console.log('Messages.tsx: Text message clicked for deletion:', messageId);
-      setMessageToDelete(messageId);
-      setShowDeleteDialog(true);
+      console.log('Messages.tsx: Message clicked for deletion:', messageId);
+      handleDeleteMessage(messageId);
     }
   };
 
@@ -471,14 +471,10 @@ export default function MessagesPage() {
                               message.sender_id === user?.id
                                 ? "bg-purple-600 text-white rounded-tr-none"
                                 : "bg-gray-800 text-white rounded-tl-none",
-                              !message.message_text.startsWith('[IMAGE]') && message.sender_id === user?.id && "cursor-pointer hover:bg-purple-700"
+                              message.sender_id === user?.id && "cursor-pointer hover:bg-purple-700"
                             )}
-                            onClick={() => {
-                              if (message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]')) {
-                                handleTextMessageClick(message.id, message.sender_id === user?.id);
-                              }
-                            }}
-                            title={message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]') ? "Click to delete message" : ""}
+                            onClick={() => handleMessageClick(message.id, message.sender_id === user?.id)}
+                            title={message.sender_id === user?.id ? "Click to delete message" : ""}
                           >
                             {renderMessageContent(message.message_text, message.id, message.sender_id === user?.id)}
                           </div>
