@@ -11,19 +11,6 @@ export function useDeleteMessage() {
     mutationFn: async (messageId: string) => {
       console.log('useDeleteMessage: Starting deletion for message ID:', messageId);
       
-      // First get the message to know both sender and receiver
-      const { data: message, error: fetchError } = await supabase
-        .from('messages')
-        .select('sender_id, receiver_id')
-        .eq('id', messageId)
-        .single();
-
-      if (fetchError) {
-        console.error('useDeleteMessage: Error fetching message:', fetchError);
-        throw fetchError;
-      }
-
-      // Mark message as deleted
       const { error } = await supabase
         .from('messages')
         .update({ deleted_at: new Date().toISOString() })
@@ -35,20 +22,17 @@ export function useDeleteMessage() {
       }
       
       console.log('useDeleteMessage: Message marked as deleted in database');
-      return { messageId, senderId: message.sender_id, receiverId: message.receiver_id };
+      return messageId;
     },
-    onSuccess: ({ senderId, receiverId }) => {
-      console.log('useDeleteMessage: Mutation succeeded, invalidating queries for both users');
+    onSuccess: (messageId) => {
+      console.log('useDeleteMessage: Mutation succeeded for message:', messageId);
       
-      // Invalidate message queries for both sender and receiver
-      queryClient.invalidateQueries({ queryKey: ['user-messages', senderId] });
-      queryClient.invalidateQueries({ queryKey: ['user-messages', receiverId] });
+      // Invalidate and refetch all message-related queries
+      queryClient.invalidateQueries({ queryKey: ['user-messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       
-      // Force immediate refetch for both users
-      queryClient.refetchQueries({ queryKey: ['user-messages', senderId] });
-      queryClient.refetchQueries({ queryKey: ['user-messages', receiverId] });
-      queryClient.refetchQueries({ queryKey: ['conversations'] });
+      // Force an immediate refetch to update the UI
+      queryClient.refetchQueries({ queryKey: ['user-messages'] });
       
       toast({
         title: "Message deleted",

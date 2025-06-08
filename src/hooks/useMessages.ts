@@ -29,14 +29,11 @@ export function useMessages(userId: string | undefined) {
 
       console.log('useMessages: Fetching messages for user:', userId);
 
-      // Fetch messages between current user and the selected user, excluding deleted ones
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) return [];
-
+      // Fetch messages that are not deleted
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUser.id})`)
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
         .is('deleted_at', null) // Only get non-deleted messages
         .order('created_at', { ascending: false });
 
@@ -126,64 +123,54 @@ export function useMessages(userId: string | undefined) {
 
     console.log('useMessages: Setting up realtime subscription for user:', userId);
 
-    // Create an async function inside useEffect
-    const setupSubscription = async () => {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) return;
-
-      const channel = supabase
-        .channel(`messages-${userId}-${currentUser.id}`)
-        .on('postgres_changes', 
-          { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages'
-          }, 
-          (payload) => {
-            console.log('useMessages: New message received via realtime:', payload);
-            const newMessage = payload.new as any;
-            // Only refetch if this message involves the current conversation
-            if ((newMessage.sender_id === currentUser.id && newMessage.receiver_id === userId) ||
-                (newMessage.sender_id === userId && newMessage.receiver_id === currentUser.id)) {
-              refetch();
-            }
+    const channel = supabase
+      .channel(`messages-${userId}`)
+      .on('postgres_changes', 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}` 
+        }, 
+        (payload) => {
+          console.log('useMessages: New message received via realtime:', payload);
+          refetch();
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `receiver_id=eq.${userId}` 
+        }, 
+        (payload) => {
+          console.log('useMessages: Message updated via realtime:', payload);
+          refetch();
+        }
+      )
+      // Add subscription for deleted messages
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `sender_id=eq.${userId}` 
+        }, 
+        (payload) => {
+          console.log('useMessages: Sender message updated via realtime:', payload);
+          // Check if this is a delete operation (deleted_at was set)
+          if (payload.new && (payload.new as any).deleted_at) {
+            console.log('useMessages: Message was deleted, refreshing...');
+            refetch();
           }
-        )
-        .on('postgres_changes', 
-          { 
-            event: 'UPDATE', 
-            schema: 'public', 
-            table: 'messages'
-          }, 
-          (payload) => {
-            console.log('useMessages: Message updated via realtime:', payload);
-            const updatedMessage = payload.new as any;
-            // Check if this is a delete operation (deleted_at was set) or involves current conversation
-            if ((updatedMessage.sender_id === currentUser.id && updatedMessage.receiver_id === userId) ||
-                (updatedMessage.sender_id === userId && updatedMessage.receiver_id === currentUser.id)) {
-              console.log('useMessages: Message was updated in current conversation, refreshing...');
-              refetch();
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        console.log('useMessages: Cleaning up realtime subscription');
-        supabase.removeChannel(channel);
-      };
-    };
-
-    // Call the async function and handle cleanup
-    let cleanup: (() => void) | undefined;
-    setupSubscription().then(cleanupFn => {
-      cleanup = cleanupFn;
-    });
+        }
+      )
+      .subscribe();
 
     return () => {
-      if (cleanup) {
-        cleanup();
-      }
+      console.log('useMessages: Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
     };
   }, [userId, refetch]);
 
