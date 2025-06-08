@@ -9,7 +9,7 @@ export function useDeleteMessage() {
 
   return useMutation({
     mutationFn: async (messageId: string) => {
-      console.log('useDeleteMessage: Deleting message with ID:', messageId);
+      console.log('useDeleteMessage: Starting deletion for message ID:', messageId);
       
       const { error } = await supabase
         .from('messages')
@@ -21,16 +21,17 @@ export function useDeleteMessage() {
         throw error;
       }
       
-      console.log('useDeleteMessage: Message deleted successfully in database');
+      console.log('useDeleteMessage: Message marked as deleted in database');
+      return messageId;
     },
-    onSuccess: (_, messageId) => {
-      console.log('useDeleteMessage: Mutation succeeded, invalidating queries');
+    onSuccess: (messageId) => {
+      console.log('useDeleteMessage: Mutation succeeded for message:', messageId);
       
-      // Invalidate and refetch queries immediately
+      // Invalidate and refetch all message-related queries
       queryClient.invalidateQueries({ queryKey: ['user-messages'] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       
-      // Force refetch to ensure UI updates immediately
+      // Force an immediate refetch to update the UI
       queryClient.refetchQueries({ queryKey: ['user-messages'] });
       
       toast({

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,30 +167,29 @@ export default function MessagesPage() {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    console.log('handleDeleteMessage called with:', messageId);
+    console.log('Messages.tsx: handleDeleteMessage called with:', messageId);
     try {
       await deleteMessageMutation.mutateAsync(messageId);
-      console.log('Delete mutation completed successfully');
-      toast({
-        title: "Success",
-        description: "Message deleted successfully",
-      });
+      console.log('Messages.tsx: Delete mutation completed successfully');
     } catch (error) {
-      console.error('Failed to delete message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete message",
-        variant: "destructive",
-      });
-      throw error; // Re-throw so MessageImage can handle the error
+      console.error('Messages.tsx: Failed to delete message:', error);
+      // Error handling is done in the mutation hook
     }
   };
 
-  const confirmDeleteMessage = () => {
+  const confirmDeleteMessage = async () => {
     if (messageToDelete) {
-      deleteMessageMutation.mutate(messageToDelete);
+      await handleDeleteMessage(messageToDelete);
       setShowDeleteDialog(false);
       setMessageToDelete(null);
+    }
+  };
+
+  const handleTextMessageClick = (messageId: string, isOwnMessage: boolean) => {
+    if (isOwnMessage) {
+      console.log('Messages.tsx: Text message clicked for deletion:', messageId);
+      setMessageToDelete(messageId);
+      setShowDeleteDialog(true);
     }
   };
 
@@ -477,7 +475,7 @@ export default function MessagesPage() {
                             )}
                             onClick={() => {
                               if (message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]')) {
-                                handleDeleteMessage(message.id);
+                                handleTextMessageClick(message.id, message.sender_id === user?.id);
                               }
                             }}
                             title={message.sender_id === user?.id && !message.message_text.startsWith('[IMAGE]') ? "Click to delete message" : ""}

@@ -32,7 +32,7 @@ export function MessageImage({ src, alt, className = "", canDelete = false, onDe
       console.log('MessageImage: Starting delete process...');
       try {
         await onDelete();
-        console.log('MessageImage: Delete completed, closing dialog');
+        console.log('MessageImage: Delete completed successfully, closing dialog');
         setIsOpen(false);
       } catch (error) {
         console.error('MessageImage: Error deleting image:', error);
