@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -120,9 +121,22 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
   const handleSubscribeClick = () => {
-    if (post.authorId) {
+    // Try multiple possible fields for the creator identifier
+    const creatorIdentifier = post.authorId || post.author_id || post.creator_id;
+    
+    console.log('Subscribe button clicked for post:', {
+      postId: post.id,
+      authorId: post.authorId,
+      author_id: post.author_id,
+      creator_id: post.creator_id,
+      selectedIdentifier: creatorIdentifier
+    });
+    
+    if (creatorIdentifier) {
       // Navigate to creator's profile with membership tab active
-      navigate(`/creator/${post.authorId}?tab=membership`);
+      navigate(`/creator/${creatorIdentifier}?tab=membership`);
+    } else {
+      console.error('No creator identifier found for post:', post);
     }
   };
 
