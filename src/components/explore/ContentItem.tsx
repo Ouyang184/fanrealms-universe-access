@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -120,12 +121,14 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
   const handleSubscribeClick = () => {
-    // Use only the authorId property that exists on the Post type
-    const creatorIdentifier = post.authorId;
+    // Try multiple possible fields for the creator identifier
+    const creatorIdentifier = post.authorId || post.author_id || post.creator_id;
     
     console.log('Subscribe button clicked for post:', {
       postId: post.id,
       authorId: post.authorId,
+      author_id: post.author_id,
+      creator_id: post.creator_id,
       selectedIdentifier: creatorIdentifier
     });
     
