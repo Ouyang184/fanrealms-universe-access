@@ -1,6 +1,5 @@
-
 import React, { useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +16,7 @@ const CreatorPage: React.FC = () => {
   // Get the identifier from the URL parameter
   const { id: identifier } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   useEffect(() => {
     console.log(`Creator page mounted with identifier param: "${identifier}"`);
@@ -39,6 +39,14 @@ const CreatorPage: React.FC = () => {
     isLoadingPosts,
     refreshCreatorData
   } = useCreatorPage(identifier);
+
+  // Check for tab query parameter and set active tab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['posts', 'membership', 'about'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, setActiveTab]);
 
   const { 
     isFollowing, 
@@ -155,7 +163,7 @@ const CreatorPage: React.FC = () => {
               
               <TabsContent value="membership" className="pt-6 px-0">
                 <div className="px-6">
-                  <CreatorMembership creatorId={creator.id} />
+                  <CreatorMembership creatorId={creator?.id || ''} />
                 </div>
               </TabsContent>
               

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download, FileImage, Lock } from "lucide-react";
 import { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { useNavigate } from "react-router-dom";
 
 interface ContentItemProps {
   post: Post;
@@ -13,6 +13,8 @@ interface ContentItemProps {
 }
 
 export function ContentItem({ post, type }: ContentItemProps) {
+  const navigate = useNavigate();
+
   // Helper function to get the first media from attachments
   const getFirstMedia = (attachments: any) => {
     if (!attachments) return null;
@@ -116,6 +118,13 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const authorName = post.authorName || "Creator";
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
+
+  const handleSubscribeClick = () => {
+    if (post.authorId) {
+      // Navigate to creator's profile with membership tab active
+      navigate(`/creator/${post.authorId}?tab=membership`);
+    }
+  };
 
   return (
     <Card className="bg-gray-900 border-gray-800 overflow-hidden">
@@ -256,7 +265,11 @@ export function ContentItem({ post, type }: ContentItemProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-end">
-        <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+        <Button 
+          size="sm" 
+          className="bg-purple-600 hover:bg-purple-700"
+          onClick={handleSubscribeClick}
+        >
           Subscribe
         </Button>
       </CardFooter>
