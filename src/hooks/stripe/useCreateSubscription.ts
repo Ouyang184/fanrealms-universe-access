@@ -3,10 +3,12 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export const useCreateSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
@@ -47,6 +49,28 @@ export const useCreateSubscription = () => {
         throw new Error('No response from subscription service');
       }
 
+      // Check if we should use custom payment page
+      if (data.useCustomPaymentPage && data.clientSecret) {
+        console.log('useCreateSubscription: Navigating to custom payment page');
+        navigate('/payment', {
+          state: {
+            clientSecret: data.clientSecret,
+            amount: data.amount,
+            tierName: data.tierName,
+            tierId: data.tierId,
+            creatorId: data.creatorId
+          }
+        });
+        return data;
+      }
+
+      // Fallback to checkout URL (shouldn't happen with new flow)
+      if (data.checkout_url) {
+        console.log('useCreateSubscription: Redirecting to Stripe Checkout');
+        window.location.href = data.checkout_url;
+        return data;
+      }
+
       console.log('useCreateSubscription: Subscription creation successful');
       return data;
 
@@ -56,7 +80,7 @@ export const useCreateSubscription = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user, isProcessing]);
+  }, [user, isProcessing, navigate]);
 
   return {
     createSubscription,
