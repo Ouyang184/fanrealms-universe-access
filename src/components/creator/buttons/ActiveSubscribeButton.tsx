@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -18,14 +20,23 @@ export function ActiveSubscribeButton({
   tierName, 
   price 
 }: ActiveSubscribeButtonProps) {
-  const { createSubscription, isProcessing } = useSimpleSubscriptions();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { createSubscription, isProcessing } = useCreateSubscription();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubscribe = async () => {
-    if (isProcessing || isRedirecting) return;
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to subscribe to creators.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    setIsRedirecting(true);
+    if (isProcessing) return;
+
     console.log('[ActiveSubscribeButton] Starting subscription process for tier:', tierId);
 
     try {
@@ -38,30 +49,24 @@ export function ActiveSubscribeButton({
           description: result.error,
           variant: "destructive"
         });
-        setIsRedirecting(false);
         return;
       }
 
-      if (result?.checkout_url) {
-        console.log('[ActiveSubscribeButton] Redirecting to Stripe Checkout:', result.checkout_url);
-        toast({
-          title: "Redirecting to Payment",
-          description: result.action === 'tier_change' 
-            ? "Taking you to checkout to change your subscription tier..."
-            : "Taking you to checkout to complete your subscription...",
+      // The createSubscription hook should navigate to /payment automatically
+      // But let's add a fallback just in case
+      if (result?.clientSecret) {
+        console.log('[ActiveSubscribeButton] Navigating to payment page');
+        navigate('/payment', {
+          state: {
+            clientSecret: result.clientSecret,
+            amount: Math.round(price * 100),
+            tierName: tierName,
+            tierId: tierId,
+            creatorId: creatorId
+          }
         });
-        
-        // Redirect to Stripe Checkout
-        window.location.href = result.checkout_url;
-      } else {
-        console.error('[ActiveSubscribeButton] No checkout URL received');
-        toast({
-          title: "Subscription Error",
-          description: "Failed to create checkout session. Please try again.",
-          variant: "destructive"
-        });
-        setIsRedirecting(false);
       }
+
     } catch (error) {
       console.error('[ActiveSubscribeButton] Error:', error);
       toast({
@@ -69,21 +74,20 @@ export function ActiveSubscribeButton({
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-      setIsRedirecting(false);
     }
   };
 
   return (
     <Button 
       onClick={handleSubscribe}
-      disabled={isProcessing || isRedirecting}
+      disabled={isProcessing}
       className="w-full bg-blue-600 hover:bg-blue-700 text-white"
       size="lg"
     >
-      {isProcessing || isRedirecting ? (
+      {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          {isRedirecting ? 'Redirecting...' : 'Processing...'}
+          Processing...
         </>
       ) : (
         `Subscribe for $${price}/month`

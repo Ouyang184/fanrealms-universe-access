@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ export function SimpleSubscribeButton({
   price 
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing } = useSimpleSubscriptions();
+  const { createSubscription, isProcessing } = useCreateSubscription();
   const { subscriptionData } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -38,7 +38,10 @@ export function SimpleSubscribeButton({
     }
 
     try {
-      const result = await createSubscription({ tierId, creatorId });
+      const result = await createSubscription({ 
+        tierId, 
+        creatorId 
+      });
       
       if (result?.error) {
         return; // Error already handled in hook

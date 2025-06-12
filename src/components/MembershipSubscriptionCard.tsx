@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionEvents } from "@/hooks/useSubscriptionEvents";
 import { useCreateSubscription } from "@/hooks/stripe/useCreateSubscription";
+import { useNavigate } from "react-router-dom";
 
 interface MembershipTier {
   id: string;
@@ -45,6 +46,7 @@ export function MembershipSubscriptionCard({
   const { toast } = useToast();
   const { triggerSubscriptionSuccess } = useSubscriptionEvents();
   const { createSubscription, isProcessing } = useCreateSubscription();
+  const navigate = useNavigate();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -64,10 +66,24 @@ export function MembershipSubscriptionCard({
         creatorId 
       });
 
+      if (result?.error) {
+        return; // Error already handled in hook
+      }
+
       if (result?.clientSecret) {
-        // Handle payment flow - navigate to payment page or show payment modal
+        // Navigate to payment page
+        navigate('/payment', {
+          state: {
+            clientSecret: result.clientSecret,
+            amount: Math.round(tier.price * 100),
+            tierName: tier.name,
+            tierId: tier.id,
+            creatorId
+          }
+        });
+        
         toast({
-          title: "Payment Required",
+          title: "Redirecting to Payment",
           description: "Please complete your payment to activate the subscription.",
         });
       } else if (result?.subscriptionId) {
