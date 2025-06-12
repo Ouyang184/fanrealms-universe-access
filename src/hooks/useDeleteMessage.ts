@@ -11,9 +11,10 @@ export function useDeleteMessage() {
     mutationFn: async (messageId: string) => {
       console.log('useDeleteMessage: Starting deletion for message ID:', messageId);
       
+      // Actually delete the message from the database instead of soft delete
       const { error } = await supabase
         .from('messages')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', messageId);
 
       if (error) {
@@ -21,7 +22,7 @@ export function useDeleteMessage() {
         throw error;
       }
       
-      console.log('useDeleteMessage: Message marked as deleted in database');
+      console.log('useDeleteMessage: Message deleted from database');
       return messageId;
     },
     onSuccess: (messageId) => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -82,9 +81,10 @@ export function CreatorChatModal({
     if (!user) return;
     
     try {
+      // Hard delete the message from the database
       const { error } = await supabase
         .from('messages')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', messageId)
         .eq('sender_id', user.id); // Only allow deleting own messages
 
@@ -170,6 +170,17 @@ export function CreatorChatModal({
         }, 
         (payload) => {
           setMessages(prev => [...prev, payload.new as Message]);
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'DELETE', 
+          schema: 'public', 
+          table: 'messages',
+          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${creatorId}),and(sender_id.eq.${creatorId},receiver_id.eq.${user.id}))` 
+        }, 
+        (payload) => {
+          setMessages(prev => prev.filter(msg => msg.id !== (payload.old as any).id));
         }
       )
       .subscribe();
@@ -313,9 +324,11 @@ export function CreatorChatModal({
                   <div
                     className={`max-w-[80%] rounded-lg px-3 py-2 ${
                       isOwnMessage
-                        ? 'bg-primary text-primary-foreground'
+                        ? 'bg-primary text-primary-foreground cursor-pointer hover:opacity-80'
                         : 'bg-muted'
                     }`}
+                    onClick={isOwnMessage ? () => handleDeleteMessage(message.id) : undefined}
+                    title={isOwnMessage ? "Click to delete message" : ""}
                   >
                     <div className="text-sm">
                       {renderMessageContent(message.message_text, message.id, isOwnMessage)}

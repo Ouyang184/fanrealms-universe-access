@@ -29,12 +29,11 @@ export function useMessages(userId: string | undefined) {
 
       console.log('useMessages: Fetching messages for user:', userId);
 
-      // Fetch messages that are not deleted
+      // Fetch all messages (no need to filter by deleted_at since we're doing hard deletes)
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
         .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .is('deleted_at', null) // Only get non-deleted messages
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -152,18 +151,14 @@ export function useMessages(userId: string | undefined) {
       // Add subscription for deleted messages
       .on('postgres_changes', 
         { 
-          event: 'UPDATE', 
+          event: 'DELETE', 
           schema: 'public', 
           table: 'messages',
           filter: `sender_id=eq.${userId}` 
         }, 
         (payload) => {
-          console.log('useMessages: Sender message updated via realtime:', payload);
-          // Check if this is a delete operation (deleted_at was set)
-          if (payload.new && (payload.new as any).deleted_at) {
-            console.log('useMessages: Message was deleted, refreshing...');
-            refetch();
-          }
+          console.log('useMessages: Message was deleted, refreshing...');
+          refetch();
         }
       )
       .subscribe();
