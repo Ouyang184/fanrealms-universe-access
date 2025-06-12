@@ -121,14 +121,12 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
   const handleSubscribeClick = () => {
-    // Try multiple possible fields for the creator identifier
-    const creatorIdentifier = post.authorId || post.author_id || post.creator_id;
+    // Use the correct property name from the Post type
+    const creatorIdentifier = post.authorId;
     
     console.log('Subscribe button clicked for post:', {
       postId: post.id,
       authorId: post.authorId,
-      author_id: post.author_id,
-      creator_id: post.creator_id,
       selectedIdentifier: creatorIdentifier
     });
     
