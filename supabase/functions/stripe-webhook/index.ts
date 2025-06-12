@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -19,6 +18,7 @@ const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
 import { handleSubscriptionWebhook } from './handlers/subscription-webhook.ts';
 import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
 import { handleProductWebhook } from './handlers/product-webhook.ts';
+import { handlePaymentIntentWebhook } from './handlers/payment-intent-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -49,6 +49,12 @@ serve(async (req) => {
 
     console.log('Webhook event type:', event.type, 'ID:', event.id);
 
+    // Handle payment intent webhooks for custom payment flow
+    if (event.type === 'payment_intent.succeeded') {
+      console.log('Processing payment_intent.succeeded');
+      await handlePaymentIntentWebhook(event, supabase, stripe);
+    }
+
     // Handle product webhooks
     if (event.type.startsWith('product.')) {
       console.log('Processing product webhook:', event.type);
@@ -64,7 +70,7 @@ serve(async (req) => {
     // Handle subscription-related webhooks
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
       console.log('Processing subscription webhook:', event.type);
-      await handleSubscriptionWebhook(event, supabase);
+      await handleSubscriptionWebhook(event, supabase, stripe);
     }
 
     // Keep existing invoice payment handling for earnings
