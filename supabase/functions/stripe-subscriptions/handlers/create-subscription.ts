@@ -6,17 +6,28 @@ import { createJsonResponse } from '../utils/cors.ts';
 export async function handleCreateSubscription(
   stripe: any,
   supabase: any,
-  supabaseService: any,
   user: any,
-  tierId: string,
-  creatorId: string
+  body: any
 ) {
-  console.log('Creating subscription for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
+  console.log('Creating subscription for user:', user.id);
+  console.log('Request body:', JSON.stringify(body, null, 2));
+
+  // Extract parameters from body - handle both formats
+  const tierId = body.tierId || body.tier_id;
+  const creatorId = body.creatorId || body.creator_id;
+
+  console.log('Extracted params:', { tierId, creatorId });
 
   if (!tierId || !creatorId) {
-    console.log('ERROR: Missing tierId or creatorId');
+    console.log('ERROR: Missing tierId or creatorId', { tierId, creatorId });
     return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
+
+  // Create service client for database operations
+  const supabaseService = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
   // CRITICAL: Check for existing active subscriptions to the same creator
   console.log('Checking for existing active subscriptions to creator:', creatorId);
@@ -160,11 +171,20 @@ export async function handleCreateSubscription(
   }
 
   console.log('Tier found:', tier.title, 'Price:', tier.price);
+  console.log('Creator stripe account:', tier.creators.stripe_account_id);
 
   if (!tier.creators.stripe_account_id) {
     console.log('ERROR: Creator not connected to Stripe');
     return createJsonResponse({ 
       error: 'This creator has not set up payments yet. Please try again later.' 
+    }, 400);
+  }
+
+  // Check if tier has stripe_price_id
+  if (!tier.stripe_price_id) {
+    console.log('ERROR: Tier missing stripe_price_id');
+    return createJsonResponse({ 
+      error: 'This membership tier is not properly configured. Please contact the creator.' 
     }, 400);
   }
 
@@ -174,10 +194,8 @@ export async function handleCreateSubscription(
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
 
-    // Create or get Stripe price
-    console.log('Creating/getting Stripe price...');
-    const stripePriceId = await getOrCreateStripePrice(stripe, supabaseService, tier, tierId);
-    console.log('Stripe price ID:', stripePriceId);
+    // Use existing stripe_price_id from tier
+    console.log('Using existing Stripe price ID:', tier.stripe_price_id);
 
     // Create Stripe Checkout session for new subscription
     console.log('Creating Stripe Checkout session for new subscription...');
@@ -185,7 +203,7 @@ export async function handleCreateSubscription(
       customer: stripeCustomerId,
       mode: 'subscription',
       line_items: [{
-        price: stripePriceId,
+        price: tier.stripe_price_id,
         quantity: 1,
       }],
       subscription_data: {
@@ -219,6 +237,7 @@ export async function handleCreateSubscription(
 
   } catch (error) {
     console.error('Error in create subscription:', error);
+    console.error('Full Stripe error details:', JSON.stringify(error, null, 2));
     return createJsonResponse({ 
       error: 'Failed to create subscription. Please try again later.' 
     }, 500);

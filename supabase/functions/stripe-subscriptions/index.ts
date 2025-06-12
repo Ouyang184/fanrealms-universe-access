@@ -41,6 +41,7 @@ serve(async (req) => {
     // Parse request body once
     const body = await req.json();
     console.log('Stripe subscriptions action:', body.action);
+    console.log('Request body received:', JSON.stringify(body, null, 2));
 
     // Authenticate user (except for sync-all which is internal)
     let user = null;
