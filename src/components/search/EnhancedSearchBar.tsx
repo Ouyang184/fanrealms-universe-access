@@ -58,8 +58,8 @@ export function EnhancedSearchBar({
     if (inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8, // Add 8px gap between input and dropdown
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 8, // Add 8px gap between input and dropdown
+        left: rect.left,
         width: rect.width
       });
     }
@@ -195,107 +195,107 @@ export function EnhancedSearchBar({
         </form>
       </div>
 
-      {/* Fixed positioned dropdown portal with maximum z-index */}
+      {/* Portal-style dropdown that renders outside the component hierarchy */}
       {showSuggestions && (
-        <>
-          {/* Backdrop to prevent clicks on underlying content */}
+        <div 
+          className="fixed inset-0 pointer-events-none"
+          style={{ zIndex: 1000 }}
+        >
+          {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-[99998]"
+            className="absolute inset-0 pointer-events-auto"
             onClick={() => setShowSuggestions(false)}
           />
           
-          {/* Dropdown container with maximum z-index */}
-          <div className="fixed inset-0 z-[99999] pointer-events-none">
-            <Card 
-              className="absolute max-h-96 overflow-y-auto shadow-xl border bg-background/95 backdrop-blur-sm pointer-events-auto"
-              style={{
-                top: `${dropdownPosition.top}px`,
-                left: `${dropdownPosition.left}px`,
-                width: `${dropdownPosition.width}px`,
-                minWidth: '300px' // Ensure minimum width for better appearance
-              }}
-            >
-              {isLoading ? (
-                <div className="p-4 flex items-center justify-center">
-                  <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
-                  <span>Searching...</span>
-                </div>
-              ) : (
-                <div className="p-2">
-                  {/* Creator Results */}
-                  {creators.length > 0 && (
-                    <div className="mb-2">
-                      <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
-                        Creators ({creators.length})
-                      </div>
-                      {creators.slice(0, 4).map((creator) => (
-                        <div
-                          key={creator.id}
-                          onClick={() => handleCreatorSelect(creator.id)}
-                          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm transition-colors"
-                        >
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                            <AvatarFallback>
-                              {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="font-medium text-sm truncate">
-                              {creator.display_name || creator.username || 'Unknown Creator'}
-                            </span>
-                            {creator.username && (
-                              <span className="text-xs text-muted-foreground truncate">@{creator.username}</span>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+          {/* Dropdown content */}
+          <Card 
+            className="absolute max-h-96 overflow-y-auto shadow-xl border bg-background/95 backdrop-blur-sm pointer-events-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${Math.max(dropdownPosition.width, 300)}px`,
+            }}
+          >
+            {isLoading ? (
+              <div className="p-4 flex items-center justify-center">
+                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
+                <span>Searching...</span>
+              </div>
+            ) : (
+              <div className="p-2">
+                {/* Creator Results */}
+                {creators.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
+                      Creators ({creators.length})
                     </div>
-                  )}
-
-                  {/* Popular Suggestions */}
-                  {filteredSuggestions.length > 0 && (
-                    <div>
-                      <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
-                        Popular Categories
-                      </div>
-                      {filteredSuggestions.map((suggestion) => (
-                        <div
-                          key={suggestion}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm transition-colors"
-                        >
-                          <Search className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{suggestion}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* No results */}
-                  {creators.length === 0 && filteredSuggestions.length === 0 && searchTerm.length >= 2 && (
-                    <div className="p-4 text-sm text-muted-foreground text-center">
-                      <div className="mb-2">No creators found for "{searchTerm}".</div>
-                      <button 
-                        onClick={() => handleSearchSubmit()}
-                        className="text-primary hover:underline text-sm"
+                    {creators.slice(0, 4).map((creator) => (
+                      <div
+                        key={creator.id}
+                        onClick={() => handleCreatorSelect(creator.id)}
+                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm transition-colors"
                       >
-                        Search for "{searchTerm}" →
-                      </button>
-                    </div>
-                  )}
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                          <AvatarFallback>
+                            {(creator.display_name || creator.username || 'C')[0]?.toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="font-medium text-sm truncate">
+                            {creator.display_name || creator.username || 'Unknown Creator'}
+                          </span>
+                          {creator.username && (
+                            <span className="text-xs text-muted-foreground truncate">@{creator.username}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                  {/* Minimum characters message */}
-                  {searchTerm.length > 0 && searchTerm.length < 2 && (
-                    <div className="p-4 text-sm text-muted-foreground text-center">
-                      Type at least 2 characters to search...
+                {/* Popular Suggestions */}
+                {filteredSuggestions.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1 mb-1">
+                      Popular Categories
                     </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          </div>
-        </>
+                    {filteredSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="flex items-center gap-2 p-2 cursor-pointer hover:bg-accent rounded-sm transition-colors"
+                      >
+                        <Search className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{suggestion}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* No results */}
+                {creators.length === 0 && filteredSuggestions.length === 0 && searchTerm.length >= 2 && (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    <div className="mb-2">No creators found for "{searchTerm}".</div>
+                    <button 
+                      onClick={() => handleSearchSubmit()}
+                      className="text-primary hover:underline text-sm"
+                    >
+                      Search for "{searchTerm}" →
+                    </button>
+                  </div>
+                )}
+
+                {/* Minimum characters message */}
+                {searchTerm.length > 0 && searchTerm.length < 2 && (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Type at least 2 characters to search...
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
       )}
     </>
   );
