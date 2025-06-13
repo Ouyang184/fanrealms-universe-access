@@ -99,7 +99,7 @@ export async function handleSubscriptionWebhook(
       user_id
     };
 
-    // For immediate cancellations, add cancel_at timestamp
+    // For immediate cancellations, add cancel_at timestamp and clear period end
     if (dbStatus === 'canceled' && !subscription.cancel_at_period_end) {
       updateData.cancel_at = new Date().toISOString();
       updateData.current_period_end = null;
