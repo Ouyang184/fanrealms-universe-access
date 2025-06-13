@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -19,6 +20,7 @@ import { handleSubscriptionWebhook } from './handlers/subscription-webhook.ts';
 import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
 import { handleProductWebhook } from './handlers/product-webhook.ts';
 import { handlePaymentIntentWebhook } from './handlers/payment-intent-webhook.ts';
+import { handlePriceWebhook } from './handlers/price-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -53,6 +55,12 @@ serve(async (req) => {
     if (event.type === 'payment_intent.succeeded') {
       console.log('Processing payment_intent.succeeded');
       await handlePaymentIntentWebhook(event, supabase, stripe);
+    }
+
+    // Handle price webhooks
+    if (event.type.startsWith('price.')) {
+      console.log('Processing price webhook:', event.type);
+      await handlePriceWebhook(event, supabase);
     }
 
     // Handle product webhooks

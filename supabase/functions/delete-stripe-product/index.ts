@@ -50,37 +50,11 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // First, get all prices for this product and delete them
-    try {
-      console.log('Fetching all prices for product:', productId);
-      const prices = await stripe.prices.list({
-        product: productId,
-        limit: 100, // Get all prices for this product
-      });
-
-      console.log(`Found ${prices.data.length} prices to delete`);
-
-      // Delete all prices associated with this product
-      for (const price of prices.data) {
-        try {
-          console.log('Deleting price:', price.id);
-          await stripe.prices.del(price.id);
-          console.log('Price deleted successfully:', price.id);
-        } catch (priceError) {
-          console.log('Error deleting price (continuing anyway):', priceError);
-          // Continue even if individual price deletion fails
-        }
-      }
-    } catch (pricesError) {
-      console.log('Error fetching/deleting prices (continuing anyway):', pricesError);
-      // Continue even if we can't delete prices
-    }
-
-    // Now delete the product completely
+    // Simply delete the product - Stripe should handle the cascading deletion
     try {
       console.log('Deleting Stripe product:', productId);
-      await stripe.products.del(productId);
-      console.log('Product deleted successfully:', productId);
+      const deletedProduct = await stripe.products.del(productId);
+      console.log('Product deleted successfully:', deletedProduct);
     } catch (productError) {
       console.error('Error deleting product:', productError);
       throw new Error(`Failed to delete Stripe product: ${productError.message}`);
@@ -89,7 +63,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Product and all associated prices deleted successfully',
+        message: 'Product deleted successfully',
         productId 
       }),
       {
