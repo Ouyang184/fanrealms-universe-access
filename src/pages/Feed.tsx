@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FeedFilters } from "@/components/feed/FeedFilters";
 import { FeedEmpty } from "@/components/feed/FeedEmpty";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
@@ -104,26 +105,7 @@ export default function FeedPage() {
   // Check if user has followed creators
   const hasFollowedCreators = followedCreators && followedCreators.length > 0;
 
-  // If user has no followed creators, show the empty feed state
-  if (!hasFollowedCreators) {
-    return (
-      <MainLayout>
-        <div className="flex-1">
-          <div className="max-w-4xl mx-auto px-4 py-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-              <div>
-                <h1 className="text-3xl font-bold">Your Feed</h1>
-                <p className="text-muted-foreground">Follow creators to see their posts here</p>
-              </div>
-            </div>
-            <EmptyFeed />
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
-
-  // Get the creator user IDs from followed creators (this is the key fix)
+  // Get the creator user IDs from followed creators
   const followedCreatorUserIds = followedCreators.map(creator => creator.user_id).filter(Boolean);
   
   console.log('Followed creators:', followedCreators);
@@ -151,128 +133,237 @@ export default function FeedPage() {
   // Check if there are any posts
   const hasPosts = followedPosts.length > 0;
 
-  // Otherwise, show the regular feed with posts
   return (
     <MainLayout>
-      <div className="flex-1">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          {/* Header and filters */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold">Your Feed</h1>
-              <p className="text-muted-foreground">Recent posts from creators you follow</p>
-            </div>
-            <FeedFilters />
+      <div className="flex min-h-screen">
+        {/* Left Sidebar - My Creators */}
+        <div className="w-80 bg-card border-r border-border p-4 overflow-y-auto">
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4 pb-2 border-b-2 border-primary">
+              MY CREATORS
+            </h2>
+            {hasFollowedCreators ? (
+              <div className="space-y-3">
+                {followedCreators.map((creator) => (
+                  <div key={creator.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                    <Avatar className="h-10 w-10 ring-2 ring-muted">
+                      <AvatarImage 
+                        src={creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
+                        alt={creator.username || "Creator"} 
+                      />
+                      <AvatarFallback className="text-sm">
+                        {(creator.username || "C").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-sm text-foreground truncate">
+                        {creator.username}
+                      </h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {creator.bio || "Creator"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                <Button 
+                  variant="link" 
+                  className="text-primary text-sm p-0 h-auto mt-4"
+                >
+                  Manage my subscriptions
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-4">
+                  No creators followed yet
+                </p>
+                <Button size="sm">Discover Creators</Button>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Feed Tabs */}
-          <Tabs defaultValue="all" className="mb-8">
-            <TabsList>
-              <TabsTrigger value="all">
-                All Posts
-              </TabsTrigger>
-              <TabsTrigger value="unread">
-                Unread
-                {unreadCount > 0 && (
-                  <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCount}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="saved">
-                Saved
-              </TabsTrigger>
-            </TabsList>
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-6 py-6">
+            {/* Navigation Tabs */}
+            <div className="mb-6">
+              <div className="flex items-center gap-8 border-b border-border">
+                <button className="pb-3 px-1 text-sm font-medium text-muted-foreground border-b-2 border-transparent hover:text-foreground hover:border-muted">
+                  MY CREATORS
+                </button>
+                <button className="pb-3 px-1 text-sm font-medium text-foreground border-b-2 border-primary">
+                  FEED
+                </button>
+                <button className="pb-3 px-1 text-sm font-medium text-muted-foreground border-b-2 border-transparent hover:text-foreground hover:border-muted">
+                  SERVICE NOTIFICATIONS
+                </button>
+              </div>
+            </div>
 
-            {/* All Posts Tab */}
-            <TabsContent value="all" className="mt-6 space-y-6">
-              {!hasPosts ? (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">No posts from creators you follow yet.</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Posts will appear here when creators you follow publish new content.
-                  </p>
+            {!hasFollowedCreators ? (
+              <EmptyFeed />
+            ) : (
+              <>
+                {/* Service Notification Banner */}
+                <div className="mb-6 p-4 bg-yellow-100 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-sm">!</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-800">
+                        It looks like you didn't pay for some of your subscriptions. Therefore, access to those subscriptions is temporarily restricted now. To resume payments and access the content, go to{" "}
+                        <button className="underline font-medium">Unpaid Subscriptions</button>
+                        {" "}and click "Extend Subscription".
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {followedPosts.map((post) => (
-                    <div key={post.id} className="relative">
-                      <PostCard 
-                        id={post.id}
-                        title={post.title}
-                        content={post.content}
-                        authorName={post.authorName}
-                        authorAvatar={post.authorAvatar}
-                        date={post.date}
-                        createdAt={post.createdAt}
-                        tier_id={post.tier_id}
-                        authorId={post.authorId}
-                      />
-                      <div className="absolute bottom-4 right-4">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePostPreview(post)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                          Preview
-                        </Button>
-                      </div>
-                      {!readPosts.has(post.id) && (
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-blue-500 text-white">New</Badge>
-                        </div>
+
+                {/* Feed Tabs */}
+                <Tabs defaultValue="all" className="mb-8">
+                  <TabsList className="bg-transparent border-b border-border rounded-none w-full justify-start p-0">
+                    <TabsTrigger 
+                      value="all"
+                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                    >
+                      All Posts
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="unread"
+                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                    >
+                      Unread
+                      {unreadCount > 0 && (
+                        <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCount}</Badge>
                       )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="saved"
+                      className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+                    >
+                      Saved
+                    </TabsTrigger>
+                  </TabsList>
 
-            {/* Unread Tab */}
-            <TabsContent value="unread" className="mt-6 space-y-6">
-              {unreadCount > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {unreadPosts.map((post) => (
-                    <div key={post.id} className="relative">
-                      <PostCard 
-                        id={post.id}
-                        title={post.title}
-                        content={post.content}
-                        authorName={post.authorName}
-                        authorAvatar={post.authorAvatar}
-                        date={post.date}
-                        createdAt={post.createdAt}
-                        tier_id={post.tier_id}
-                        authorId={post.authorId}
-                      />
-                      <div className="absolute bottom-4 right-4">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePostPreview(post)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                          Preview
-                        </Button>
+                  {/* All Posts Tab */}
+                  <TabsContent value="all" className="mt-6 space-y-6">
+                    {!hasPosts ? (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground">No posts from creators you follow yet.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Posts will appear here when creators you follow publish new content.
+                        </p>
                       </div>
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-blue-500 text-white">New</Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <p className="text-muted-foreground">No unread posts from creators you follow.</p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Check back later or explore new creators to follow.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
+                    ) : (
+                      <div className="space-y-6">
+                        {followedPosts.map((post) => (
+                          <div key={post.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                            {/* Post Header */}
+                            <div className="p-4 border-b border-border">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage 
+                                    src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
+                                    alt={post.authorName} 
+                                  />
+                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-primary">{post.authorName}</h3>
+                                    <span className="text-sm text-muted-foreground">{post.date}</span>
+                                  </div>
+                                </div>
+                                {!readPosts.has(post.id) && (
+                                  <Badge className="bg-blue-500 text-white">New</Badge>
+                                )}
+                              </div>
+                            </div>
 
-            {/* Saved Tab */}
-            <TabsContent value="saved" className="mt-6">
-              <FeedEmpty />
-            </TabsContent>
-          </Tabs>
+                            {/* Post Content */}
+                            <div className="p-4">
+                              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+                              <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
+                              
+                              <div className="flex justify-between items-center">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handlePostPreview(post)}
+                                >
+                                  Read More
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handlePostPreview(post)}
+                                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                                >
+                                  Accept or Decline
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Unread Tab */}
+                  <TabsContent value="unread" className="mt-6 space-y-6">
+                    {unreadCount > 0 ? (
+                      <div className="space-y-6">
+                        {unreadPosts.map((post) => (
+                          <div key={post.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                            <div className="p-4 border-b border-border">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage 
+                                    src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
+                                    alt={post.authorName} 
+                                  />
+                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-primary">{post.authorName}</h3>
+                                    <span className="text-sm text-muted-foreground">{post.date}</span>
+                                  </div>
+                                </div>
+                                <Badge className="bg-blue-500 text-white">New</Badge>
+                              </div>
+                            </div>
+                            <div className="p-4">
+                              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+                              <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
+                              <Button
+                                variant="outline"
+                                onClick={() => handlePostPreview(post)}
+                              >
+                                Read More
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground">No unread posts from creators you follow.</p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Check back later or explore new creators to follow.
+                        </p>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Saved Tab */}
+                  <TabsContent value="saved" className="mt-6">
+                    <FeedEmpty />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
+          </div>
         </div>
       </div>
       
