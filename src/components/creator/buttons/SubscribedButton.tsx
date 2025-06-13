@@ -18,6 +18,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface SubscribedButtonProps {
   tierName: string;
@@ -39,6 +41,7 @@ export function SubscribedButton({
   const [isCancelling, setIsCancelling] = useState(false);
   const [isReactivating, setIsReactivating] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationType, setCancellationType] = useState<'period_end' | 'immediate'>('period_end');
   const queryClient = useQueryClient();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
 
@@ -165,7 +168,8 @@ export function SubscribedButton({
           body: {
             action: 'cancel_subscription',
             tierId: tierId,
-            creatorId: creatorId
+            creatorId: creatorId,
+            immediate: cancellationType === 'immediate'
           }
         });
 
@@ -179,14 +183,20 @@ export function SubscribedButton({
           throw new Error(data.error);
         }
 
-        console.log('Successfully set subscription to cancel at period end via simple-subscriptions');
+        console.log('Successfully cancelled subscription via simple-subscriptions');
         
-        const nextBillingDate = getNextBillingDate();
-        
-        toast({
-          title: "Subscription Will End",
-          description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
-        });
+        if (cancellationType === 'immediate') {
+          toast({
+            title: "Subscription Cancelled",
+            description: `Your subscription to ${tierName} has been cancelled immediately. You no longer have access to this content.`,
+          });
+        } else {
+          const nextBillingDate = getNextBillingDate();
+          toast({
+            title: "Subscription Will End",
+            description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
+          });
+        }
         
         if (onOptimisticUpdate) {
           onOptimisticUpdate(false);
@@ -216,12 +226,13 @@ export function SubscribedButton({
     setIsCancelling(true);
     
     try {
-      console.log('SubscribedButton: Setting subscription to cancel at period end:', subscriptionId);
+      console.log('SubscribedButton: Cancelling subscription:', subscriptionId, 'Type:', cancellationType);
       
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
-          subscriptionId: subscriptionId
+          subscriptionId: subscriptionId,
+          immediate: cancellationType === 'immediate'
         }
       });
 
@@ -235,7 +246,7 @@ export function SubscribedButton({
         throw new Error(data.error);
       }
       
-      console.log('SubscribedButton: Subscription set to cancel at period end successfully:', data);
+      console.log('SubscribedButton: Subscription cancelled successfully:', data);
       
       triggerSubscriptionCancellation({
         creatorId, 
@@ -243,12 +254,18 @@ export function SubscribedButton({
         subscriptionId: subscriptionId
       });
       
-      const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
-      
-      toast({
-        title: "Subscription Will End",
-        description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
-      });
+      if (cancellationType === 'immediate') {
+        toast({
+          title: "Subscription Cancelled",
+          description: `Your subscription to ${tierName} has been cancelled immediately. You no longer have access to this content.`,
+        });
+      } else {
+        const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
+        toast({
+          title: "Subscription Will End",
+          description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
+        });
+      }
       
       if (onOptimisticUpdate) {
         onOptimisticUpdate(false);
@@ -348,18 +365,47 @@ export function SubscribedButton({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to cancel your subscription to <strong>{tierName}</strong>? 
-                <br /><br />
-                Your subscription will automatically end on <strong>{getNextBillingDate()}</strong>. 
-                You'll continue to have access to all {tierName} benefits until then.
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  <p>How would you like to cancel your subscription to <strong>{tierName}</strong>?</p>
+                  
+                  <RadioGroup value={cancellationType} onValueChange={(value: 'period_end' | 'immediate') => setCancellationType(value)}>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="period_end" id="period_end" className="mt-1" />
+                        <div className="flex-1">
+                          <Label htmlFor="period_end" className="font-medium cursor-pointer">
+                            Cancel at Period End
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Your subscription will end on <strong>{getNextBillingDate()}</strong>. 
+                            You'll continue to have access to all {tierName} benefits until then.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                        <RadioGroupItem value="immediate" id="immediate" className="mt-1" />
+                        <div className="flex-1">
+                          <Label htmlFor="immediate" className="font-medium cursor-pointer text-red-600">
+                            ✅ Cancel Immediately
+                          </Label>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Your subscription will be cancelled right away and you'll immediately lose access to {tierName} content. 
+                            <strong>This action cannot be undone.</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleUnsubscribe}
-                className="bg-red-600 hover:bg-red-700"
+                className={cancellationType === 'immediate' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}
                 disabled={isCancelling}
               >
                 {isCancelling ? (
@@ -368,7 +414,7 @@ export function SubscribedButton({
                     Cancelling...
                   </>
                 ) : (
-                  'Cancel Subscription'
+                  cancellationType === 'immediate' ? 'Cancel Immediately' : 'Cancel at Period End'
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>

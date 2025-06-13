@@ -32,8 +32,8 @@ serve(async (req) => {
       throw new Error('Authentication required');
     }
 
-    const { action, tierId, creatorId, subscriptionId, paymentIntentId } = await req.json();
-    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
+    const { action, tierId, creatorId, subscriptionId, paymentIntentId, immediate } = await req.json();
+    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate);
 
     if (action === 'create_subscription') {
       // CRITICAL: Check for existing active subscriptions to the same creator (any tier)
@@ -297,7 +297,7 @@ serve(async (req) => {
       });
 
     } else if (action === 'cancel_subscription') {
-      console.log('[SimpleSubscriptions] Cancelling subscription for tier:', tierId, 'creator:', creatorId);
+      console.log('[SimpleSubscriptions] Cancelling subscription for tier:', tierId, 'creator:', creatorId, 'immediate:', immediate);
       
       // Find the active subscription in user_subscriptions table ONLY
       const { data: subscription } = await supabase
@@ -313,15 +313,34 @@ serve(async (req) => {
         throw new Error('Active subscription not found');
       }
 
-      // Cancel the subscription immediately in Stripe
-      const canceledSubscription = await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+      let canceledSubscription;
+      let updateData;
 
-      // Update status to canceled in user_subscriptions table ONLY
-      const updateData = { 
-        status: 'canceled' as const,
-        cancel_at_period_end: false,
-        updated_at: new Date().toISOString()
-      };
+      if (immediate) {
+        // Cancel the subscription immediately in Stripe
+        canceledSubscription = await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+        
+        // Update status to canceled immediately
+        updateData = { 
+          status: 'canceled' as const,
+          cancel_at_period_end: false,
+          current_period_end: null,
+          cancel_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      } else {
+        // Set to cancel at period end
+        canceledSubscription = await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+          cancel_at_period_end: true
+        });
+        
+        // Update with cancel at period end info
+        updateData = { 
+          cancel_at_period_end: true,
+          current_period_end: new Date(canceledSubscription.current_period_end * 1000).toISOString(),
+          updated_at: new Date().toISOString()
+        };
+      }
 
       console.log('[SimpleSubscriptions] Updating subscription with data:', updateData);
 
@@ -330,12 +349,13 @@ serve(async (req) => {
         .update(updateData)
         .eq('id', subscription.id);
 
-      console.log('[SimpleSubscriptions] Successfully canceled subscription');
+      console.log('[SimpleSubscriptions] Successfully cancelled subscription');
 
       return new Response(JSON.stringify({ 
         success: true,
         creatorId: subscription.creator_id,
-        tierId: subscription.tier_id
+        tierId: subscription.tier_id,
+        immediate: immediate
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

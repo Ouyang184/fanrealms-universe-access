@@ -52,11 +52,9 @@ export async function handleSubscriptionWebhook(
     return createJsonResponse({ success: true });
   }
 
-  // Map Stripe status to our valid statuses (active, canceled, incomplete, incomplete_expired)
+  // Map Stripe status to our valid statuses
   let dbStatus = 'active';
   if (subscription.status === 'active') {
-    // Keep status as active even if cancel_at_period_end is true
-    // The subscription is still active until the period ends
     dbStatus = 'active';
   } else if (subscription.status === 'canceled') {
     dbStatus = 'canceled';
@@ -101,6 +99,12 @@ export async function handleSubscriptionWebhook(
       user_id
     };
 
+    // For immediate cancellations, add cancel_at timestamp
+    if (dbStatus === 'canceled' && !subscription.cancel_at_period_end) {
+      updateData.cancel_at = new Date().toISOString();
+      updateData.current_period_end = null;
+    }
+
     if (existingSubscription) {
       console.log('[WebhookHandler] Updating existing subscription record:', {
         id: existingSubscription.id,
@@ -137,7 +141,7 @@ export async function handleSubscriptionWebhook(
       }
     }
 
-    // Handle canceled subscriptions - remove from database only if fully canceled (not just scheduled to cancel)
+    // Handle canceled subscriptions - remove from database if fully canceled
     if (event.type === 'customer.subscription.deleted' || 
         (subscription.status === 'canceled' && !subscription.cancel_at_period_end)) {
       console.log('[WebhookHandler] Subscription', subscription.id, 'has status', subscription.status, ', removing from database');
