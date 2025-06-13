@@ -71,13 +71,13 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
 
   if (!firstMedia) return null;
 
-  // Check if this is a video URL that needs embedding
+  // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   if (firstMedia.type === 'video' && isVideoUrl(firstMedia.url)) {
     const videoInfo = parseVideoUrl(firstMedia.url);
     
     if (videoInfo && videoInfo.platform !== 'unknown') {
       return (
-        <div className="relative w-full">
+        <div className="relative w-full mb-4">
           <div className="aspect-video w-full rounded-lg overflow-hidden border">
             <iframe
               src={videoInfo.embedUrl}
@@ -98,7 +98,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative mb-4">
       {firstMedia.type === 'image' && (
         <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
           <img
@@ -117,25 +117,20 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && (
-        <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
-          <img
-            src={firstMedia.url}
-            alt={firstMedia.name || "Video thumbnail"}
-            className="w-full h-full object-cover"
-            style={{ aspectRatio: '1/1' }}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-            <div className="bg-black/70 rounded-full p-2">
-              <Play className="h-4 w-4 text-white fill-white" />
-            </div>
-          </div>
+      {/* Only show video player for actual video files (not URLs) */}
+      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size > 0 && (
+        <div className="relative w-full rounded-lg overflow-hidden border">
+          <video
+            controls
+            className="w-full max-h-80"
+            preload="metadata"
+          >
+            <source src={firstMedia.url} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
           <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
             <span>🎥</span>
-            <span>Video</span>
+            <span>Video File</span>
           </div>
         </div>
       )}
