@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -5,7 +6,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft, ArrowUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -27,12 +28,24 @@ function PaymentForm() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
+  const { 
+    clientSecret, 
+    amount, 
+    tierName, 
+    tierId, 
+    creatorId,
+    isUpgrade = false,
+    currentTier,
+    newTier,
+    proratedAmount,
+    billingEndDate
+  } = location.state || {};
 
-  // Calculate pricing details
-  const monthlyAmount = amount ? amount / 100 : 30;
-  const salesTax = monthlyAmount * 0.046; // 4.6% tax example
-  const totalToday = monthlyAmount + salesTax;
+  // Calculate pricing details based on upgrade or new subscription
+  const baseAmount = isUpgrade ? proratedAmount : (amount ? amount / 100 : 30);
+  const salesTax = baseAmount * 0.046; // 4.6% tax
+  const oneTimeCredit = isUpgrade ? 0 : 10; // Only for new subscriptions
+  const totalToday = baseAmount + salesTax - oneTimeCredit;
 
   useEffect(() => {
     if (!clientSecret) {
@@ -44,14 +57,13 @@ function PaymentForm() {
       navigate('/');
     }
     if (amount) {
-      setPaymentAmount((amount / 100).toFixed(2));
+      setPaymentAmount(isUpgrade ? proratedAmount.toFixed(2) : (amount / 100).toFixed(2));
     }
-  }, [clientSecret, amount, navigate, toast]);
+  }, [clientSecret, amount, isUpgrade, proratedAmount, navigate, toast]);
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
     
-    // Clear any temporary state
     setIsProcessing(false);
     setPaymentSucceeded(false);
     setIsVerifying(false);
@@ -61,7 +73,6 @@ function PaymentForm() {
       description: "You can return anytime to complete your subscription.",
     });
     
-    // Navigate back to previous page or creator page
     navigate(-1);
   };
 
@@ -72,7 +83,6 @@ function PaymentForm() {
       try {
         console.log(`Verification attempt ${i + 1}/${maxRetries}`);
         
-        // Check ONLY user_subscriptions table
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -88,7 +98,6 @@ function PaymentForm() {
           return true;
         }
         
-        // Shorter delay and fewer retries for faster verification
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       } catch (error) {
         console.error('Error verifying subscription in DB:', error);
@@ -134,12 +143,15 @@ function PaymentForm() {
         setPaymentSucceeded(true);
         setIsVerifying(true);
         
+        const successMessage = isUpgrade 
+          ? `Successfully upgraded to ${tierName}!`
+          : `Successfully subscribed to ${tierName}!`;
+        
         toast({
           title: "Payment Successful!",
-          description: `Processing your subscription to ${tierName}...`,
+          description: successMessage,
         });
 
-        // Shorter wait time for webhook processing
         console.log('Waiting for webhook processing...');
         await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -148,19 +160,21 @@ function PaymentForm() {
         if (verified) {
           console.log('Subscription verified in database');
           
-          // Trigger comprehensive subscription success events
           triggerSubscriptionSuccess({
             tierId,
             creatorId,
             paymentIntentId: paymentIntent.id
           });
           
-          // Force refresh all subscription data
           await invalidateAllSubscriptionQueries();
           
+          const finalMessage = isUpgrade 
+            ? `Tier upgraded successfully! You're now subscribed to ${tierName}`
+            : `Subscription active! You've successfully subscribed to ${tierName}`;
+          
           toast({
-            title: "Subscription Active!",
-            description: `You've successfully subscribed to ${tierName}`,
+            title: isUpgrade ? "Upgrade Complete!" : "Subscription Active!",
+            description: finalMessage,
           });
 
           setTimeout(() => {
@@ -169,7 +183,6 @@ function PaymentForm() {
         } else {
           console.warn('Payment succeeded but subscription not found in database');
           
-          // Still trigger events as payment succeeded
           triggerSubscriptionSuccess({
             tierId,
             creatorId,
@@ -217,11 +230,16 @@ function PaymentForm() {
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-gray-400">Activating your subscription...</p>
+                  <p className="text-gray-400">
+                    {isUpgrade ? 'Upgrading your subscription...' : 'Activating your subscription...'}
+                  </p>
                 </div>
               ) : (
                 <p className="text-gray-400">
-                  You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
+                  {isUpgrade 
+                    ? `You've successfully upgraded to ${tierName}. Redirecting to your subscriptions...`
+                    : `You've successfully subscribed to ${tierName}. Redirecting to your subscriptions...`
+                  }
                 </p>
               )}
             </div>
@@ -251,21 +269,41 @@ function PaymentForm() {
           {/* Left Column - Payment Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                {isUpgrade ? 'Upgrade your subscription' : 'Payment details'}
+              </h1>
+              {isUpgrade && (
+                <div className="flex items-center gap-2 text-blue-400 text-sm">
+                  <ArrowUp className="h-4 w-4" />
+                  <span>Upgrading from {currentTier?.name} to {newTier?.name}</span>
+                </div>
+              )}
             </div>
 
             {/* Payment Amount Section */}
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
-                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
+                {isUpgrade ? (
+                  <p className="text-gray-400 text-sm mb-4">
+                    Pay only the prorated difference for your tier upgrade.
+                  </p>
+                ) : (
+                  <p className="text-gray-400 text-sm mb-4">
+                    Pay the set price or you can choose to pay more.
+                  </p>
+                )}
                 
                 <div className="space-y-3">
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="text-sm text-gray-400">Monthly payment</div>
-                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
+                        <div className="text-sm text-gray-400">
+                          {isUpgrade ? 'Upgrade payment' : 'Monthly payment'}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          ${baseAmount.toFixed(2)}{isUpgrade ? ' (prorated)' : '/month'}
+                        </div>
                       </div>
                       <div className="flex items-center">
                         <span className="text-gray-400 mr-2">$</span>
@@ -275,7 +313,7 @@ function PaymentForm() {
                           onChange={(e) => setPaymentAmount(e.target.value)}
                           className="w-20 bg-transparent border-gray-600 text-white text-right"
                           step="0.01"
-                          min={monthlyAmount}
+                          min={baseAmount}
                         />
                       </div>
                     </div>
@@ -329,17 +367,22 @@ function PaymentForm() {
 
               {/* Payment Terms */}
               <div className="text-sm text-gray-400 space-y-2">
+                {isUpgrade ? (
+                  <p>
+                    You'll pay ${totalToday.toFixed(2)} today for the tier upgrade. Your next full charge will be ${newTier?.price?.toFixed(2)} on {billingEndDate ? new Date(billingEndDate).toLocaleDateString() : 'your next billing date'}.
+                  </p>
+                ) : (
+                  <p>
+                    You'll pay ${totalToday.toFixed(2)} today, and then ${baseAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                  </p>
+                )}
                 <p>
-                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
-                </p>
-                <p>
-                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                  By clicking {isUpgrade ? 'Upgrade now' : 'Subscribe now'}, you agree to FanRealms's Terms of Use and Privacy Policy. {!isUpgrade && 'This subscription automatically renews monthly, and you\'ll be notified in advance if the monthly amount increases.'} Cancel at any time in your membership settings.
                 </p>
               </div>
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {/* Subscribe Button */}
                 <Button 
                   onClick={handlePayment}
                   disabled={!stripe || isProcessing}
@@ -354,12 +397,11 @@ function PaymentForm() {
                   ) : (
                     <>
                       <Lock className="mr-2 h-5 w-5" />
-                      Subscribe now
+                      {isUpgrade ? 'Upgrade now' : 'Subscribe now'}
                     </>
                   )}
                 </Button>
 
-                {/* Cancel Button */}
                 <Button 
                   onClick={handleCancel}
                   disabled={isProcessing}
@@ -378,7 +420,9 @@ function PaymentForm() {
           <div className="lg:pl-8">
             <Card className="bg-gray-900 border-gray-800 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-white">Order summary</CardTitle>
+                <CardTitle className="text-white">
+                  {isUpgrade ? 'Upgrade summary' : 'Order summary'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Creator Info */}
@@ -394,16 +438,37 @@ function PaymentForm() {
                   </div>
                 </div>
 
+                {/* Upgrade Details */}
+                {isUpgrade && currentTier && newTier && (
+                  <div className="space-y-3 pt-4 border-t border-gray-700">
+                    <div className="text-sm text-gray-400">Tier upgrade</div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">From: {currentTier.name}</span>
+                      <span className="text-white">${currentTier.price?.toFixed(2)}/month</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">To: {newTier.name}</span>
+                      <span className="text-white">${newTier.price?.toFixed(2)}/month</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Pricing Breakdown */}
                 <div className="space-y-3 pt-4 border-t border-gray-700">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Monthly payment</span>
-                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                    <span className="text-gray-400">
+                      {isUpgrade ? 'Prorated upgrade charge' : 'Monthly payment'}
+                    </span>
+                    <span className="text-white">${baseAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">One-time credit</span>
-                    <span className="text-white">-$10.00</span>
-                  </div>
+                  
+                  {!isUpgrade && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">One-time credit</span>
+                      <span className="text-white">-${oneTimeCredit.toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-400">Sales Tax</span>
                     <span className="text-white">${salesTax.toFixed(2)}</span>
@@ -413,6 +478,15 @@ function PaymentForm() {
                     <span className="text-white font-semibold">Total due today</span>
                     <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
                   </div>
+
+                  {isUpgrade && billingEndDate && (
+                    <div className="pt-3 border-t border-gray-700">
+                      <div className="text-sm text-gray-400">
+                        Next billing: {new Date(billingEndDate).toLocaleDateString()} 
+                        <span className="block">Full ${newTier?.price?.toFixed(2)} charge</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
