@@ -33,6 +33,8 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
     setIsLoading(true);
     
     try {
+      console.log('Starting tier deletion process for tier:', tierId);
+
       // First, get the tier details including Stripe IDs
       const { data: tierData, error: tierFetchError } = await supabase
         .from("membership_tiers")
@@ -44,7 +46,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         throw new Error("Could not fetch tier details");
       }
 
-      console.log('Deleting tier:', tierData);
+      console.log('Tier data to delete:', tierData);
 
       // Check if there are active subscriptions for this tier
       const { data: activeSubscriptions, error: subscriptionsError } = await supabase
@@ -66,12 +68,12 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         return;
       }
 
-      // If there's a Stripe product, archive it instead of deleting
+      // Delete from Stripe first (completely, not just archive)
       if (tierData.stripe_product_id) {
         try {
-          console.log('Archiving Stripe product:', tierData.stripe_product_id);
+          console.log('Deleting Stripe product completely:', tierData.stripe_product_id);
           
-          const { error: stripeError } = await supabase.functions.invoke('archive-stripe-product', {
+          const { error: stripeError } = await supabase.functions.invoke('delete-stripe-product', {
             body: { 
               productId: tierData.stripe_product_id,
               priceId: tierData.stripe_price_id
@@ -79,35 +81,54 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
           });
 
           if (stripeError) {
-            console.error('Error archiving Stripe product:', stripeError);
-            // Continue with database deletion even if Stripe archiving fails
+            console.error('Error deleting Stripe product:', stripeError);
+            // Continue with database deletion even if Stripe deletion fails
             toast({
               title: "Warning",
-              description: "Tier deleted from database, but Stripe product could not be archived. You may need to manually archive it in Stripe.",
+              description: "Tier deleted from database, but Stripe product could not be completely removed. You may need to manually delete it in Stripe.",
               variant: "destructive",
             });
+          } else {
+            console.log('Stripe product deleted successfully');
           }
         } catch (stripeError) {
-          console.error('Error with Stripe cleanup:', stripeError);
+          console.error('Error with Stripe deletion:', stripeError);
           // Continue with database deletion
         }
       }
 
-      // Delete the tier from database
+      // Delete the tier from database completely
+      console.log('Deleting tier from database:', tierId);
       const { error: deleteError } = await supabase
         .from("membership_tiers")
         .delete()
         .eq("id", tierId);
       
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Database deletion error:', deleteError);
+        throw deleteError;
+      }
       
+      console.log('Tier deleted from database successfully');
+
       // Show success message
       toast({
-        description: `"${tierName}" tier has been deleted successfully.`,
+        description: `"${tierName}" tier has been completely deleted.`,
       });
       
-      // Refresh tiers data
-      queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      // Aggressively refresh all related data
+      console.log('Refreshing frontend data...');
+      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      await queryClient.refetchQueries({ queryKey: ["tiers"] });
+      
+      // Also invalidate any creator-related queries
+      await queryClient.invalidateQueries({ queryKey: ["creator-tiers"] });
+      await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      
+      // Force a small delay to ensure backend sync
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["tiers"] });
+      }, 1000);
       
       // Close the dialog
       onClose();
@@ -130,9 +151,9 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Membership Tier</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete the "{tierName}" tier? This action cannot be undone.
+            Are you sure you want to permanently delete the "{tierName}" tier? This action cannot be undone.
             <p className="mt-2 text-destructive font-medium">
-              Warning: This will also archive the associated Stripe product. Any active subscribers will lose access to their benefits.
+              Warning: This will completely remove the tier from both Stripe and your database. Any active subscribers will lose access to their benefits.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               If there are active subscriptions for this tier, you'll need to cancel them first before deleting.
@@ -155,7 +176,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
                 Deleting...
               </>
             ) : (
-              "Delete Tier"
+              "Delete Permanently"
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

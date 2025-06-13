@@ -25,6 +25,8 @@ export default function CreatorStudioTiers() {
     queryFn: async () => {
       if (!user) return [];
       
+      console.log('Fetching tiers for user:', user.id);
+      
       // First get the creator ID
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
@@ -79,13 +81,14 @@ export default function CreatorStudioTiers() {
       return tiersWithSubscribers;
     },
     enabled: !!user,
-    refetchInterval: 5000, // Refetch every 5 seconds to keep counts updated
+    refetchInterval: 3000, // Reduced to 3 seconds for faster updates
+    staleTime: 1000, // Consider data stale after 1 second
   });
 
-  // Listen for subscription events
+  // Listen for subscription events and tier deletion events
   useEffect(() => {
-    const handleSubscriptionUpdate = async () => {
-      console.log('MembershipTiers: Subscription event detected, refreshing data...');
+    const handleDataUpdate = async () => {
+      console.log('MembershipTiers: Data update event detected, refreshing...');
       
       // Invalidate and refetch queries immediately
       await queryClient.invalidateQueries({ queryKey: ["tiers"] });
@@ -93,25 +96,36 @@ export default function CreatorStudioTiers() {
     };
 
     // Listen for custom subscription events
-    window.addEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-    window.addEventListener('paymentSuccess', handleSubscriptionUpdate);
-    window.addEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+    window.addEventListener('subscriptionSuccess', handleDataUpdate);
+    window.addEventListener('paymentSuccess', handleDataUpdate);
+    window.addEventListener('subscriptionCanceled', handleDataUpdate);
+    window.addEventListener('tierDeleted', handleDataUpdate);
     
     return () => {
-      window.removeEventListener('subscriptionSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('paymentSuccess', handleSubscriptionUpdate);
-      window.removeEventListener('subscriptionCanceled', handleSubscriptionUpdate);
+      window.removeEventListener('subscriptionSuccess', handleDataUpdate);
+      window.removeEventListener('paymentSuccess', handleDataUpdate);
+      window.removeEventListener('subscriptionCanceled', handleDataUpdate);
+      window.removeEventListener('tierDeleted', handleDataUpdate);
     };
   }, [queryClient, refetch]);
   
-  // Set up real-time subscription for user_subscriptions table
+  // Set up real-time subscription for membership_tiers changes
   useEffect(() => {
     if (!user) return;
 
-    console.log('Setting up real-time subscription for subscription changes');
+    console.log('Setting up real-time subscription for tier changes');
     
     const channel = supabase
-      .channel('user-subscriptions-changes')
+      .channel('membership-tiers-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'membership_tiers'
+      }, (payload) => {
+        console.log('Real-time tier update received:', payload);
+        // Invalidate and refetch the tiers query when tier changes occur
+        queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -147,6 +161,15 @@ export default function CreatorStudioTiers() {
   const closeDeleteDialog = () => {
     setIsDeleteDialogOpen(false);
     setDeletingTier(null);
+    
+    // Trigger a custom event to notify other components
+    window.dispatchEvent(new CustomEvent('tierDeleted'));
+    
+    // Force refresh after closing dialog
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      refetch();
+    }, 500);
   };
   
   if (error) {
