@@ -67,25 +67,6 @@ export async function handleCreateSubscription(
 
   console.log('Subscription type:', isUpgrade ? 'UPGRADE' : 'NEW');
 
-  // Clean up old pending/incomplete subscriptions and payment intents
-  console.log('Cleaning up old pending subscriptions and payment intents...');
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  
-  await supabaseService
-    .from('user_subscriptions')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('creator_id', creatorId)
-    .in('status', ['pending', 'incomplete'])
-    .lt('created_at', oneHourAgo);
-
-  // Clean up ALL records from legacy subscriptions table
-  await supabaseService
-    .from('subscriptions')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('creator_id', creatorId);
-
   // Get tier and creator details
   console.log('Fetching tier and creator details...');
   const { data: tier, error: tierError } = await supabase
@@ -154,30 +135,91 @@ export async function handleCreateSubscription(
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
 
-    // Cancel any existing payment intents for this user/creator to avoid duplicates
-    console.log('Cancelling existing payment intents...');
+    // Check for existing pending payment intent for this user/creator/tier combination
+    console.log('Checking for existing payment intents...');
     const paymentIntents = await stripe.paymentIntents.list({
       customer: stripeCustomerId,
       limit: 10
     });
 
+    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
+    const targetAmount = Math.round(paymentAmount * 100); // Convert to cents
+
+    // Look for existing payment intent with same metadata that's still valid
+    let existingPaymentIntent = null;
+    for (const pi of paymentIntents.data) {
+      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
+        const metadata = pi.metadata || {};
+        if (metadata.creator_id === creatorId && 
+            metadata.user_id === user.id && 
+            metadata.tier_id === tierId &&
+            metadata.is_upgrade === (isUpgrade ? 'true' : 'false') &&
+            pi.amount === targetAmount) {
+          existingPaymentIntent = pi;
+          console.log('Found reusable payment intent:', pi.id);
+          break;
+        }
+      }
+    }
+
+    // If we found a reusable payment intent, return it
+    if (existingPaymentIntent) {
+      console.log('Reusing existing payment intent:', existingPaymentIntent.id);
+      
+      return createJsonResponse({
+        clientSecret: existingPaymentIntent.client_secret,
+        amount: existingPaymentIntent.amount,
+        tierName: tier.title,
+        tierId: tierId,
+        creatorId: creatorId,
+        paymentIntentId: existingPaymentIntent.id,
+        useCustomPaymentPage: true,
+        isUpgrade: isUpgrade,
+        currentTierName: existingSubscription?.membership_tiers?.title || null,
+        proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
+        fullTierPrice: Math.round(tier.price * 100),
+        currentPeriodEnd: existingSubscription?.current_period_end || null,
+        reusedSession: true
+      });
+    }
+
+    // Cancel any old pending payment intents to clean up
+    console.log('Cleaning up old payment intents...');
     for (const pi of paymentIntents.data) {
       if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
         const metadata = pi.metadata || {};
         if (metadata.creator_id === creatorId && metadata.user_id === user.id) {
-          console.log('Cancelling existing payment intent:', pi.id);
+          console.log('Cancelling old payment intent:', pi.id);
           await stripe.paymentIntents.cancel(pi.id);
         }
       }
     }
 
-    // Create Payment Intent - use prorated amount for upgrades, full amount for new subscriptions
-    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
-    console.log('Creating Payment Intent for amount:', paymentAmount);
+    // Clean up old pending/incomplete subscriptions
+    console.log('Cleaning up old pending subscriptions...');
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    
+    await supabaseService
+      .from('user_subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('creator_id', creatorId)
+      .in('status', ['pending', 'incomplete'])
+      .lt('created_at', oneHourAgo);
+
+    // Clean up ALL records from legacy subscriptions table
+    await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('creator_id', creatorId);
+
+    // Create new Payment Intent
+    console.log('Creating new Payment Intent for amount:', paymentAmount);
 
     const paymentIntent = await stripe.paymentIntents.create({
       customer: stripeCustomerId,
-      amount: Math.round(paymentAmount * 100), // Convert to cents
+      amount: targetAmount,
       currency: 'usd',
       payment_method_types: ['card'],
       metadata: {
@@ -201,7 +243,7 @@ export async function handleCreateSubscription(
 
     return createJsonResponse({
       clientSecret: paymentIntent.client_secret,
-      amount: Math.round(paymentAmount * 100),
+      amount: targetAmount,
       tierName: tier.title,
       tierId: tierId,
       creatorId: creatorId,
@@ -211,7 +253,8 @@ export async function handleCreateSubscription(
       currentTierName: existingSubscription?.membership_tiers?.title || null,
       proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
       fullTierPrice: Math.round(tier.price * 100),
-      currentPeriodEnd: existingSubscription?.current_period_end || null
+      currentPeriodEnd: existingSubscription?.current_period_end || null,
+      reusedSession: false
     });
 
   } catch (error) {

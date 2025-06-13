@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 
 interface UsePaymentProcessingProps {
   clientSecret: string;
@@ -25,6 +26,7 @@ export function usePaymentProcessing({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { triggerSubscriptionSuccess, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
+  const { clearSubscriptionCache } = useCreateSubscription();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
@@ -96,6 +98,9 @@ export function usePaymentProcessing({
         console.log('Payment succeeded:', paymentIntent.id);
         setPaymentSucceeded(true);
         setIsVerifying(true);
+        
+        // Clear the cache since payment succeeded
+        clearSubscriptionCache(tierId, creatorId);
         
         const successMessage = isUpgrade 
           ? `Successfully upgraded to ${tierName}!`
@@ -169,6 +174,9 @@ export function usePaymentProcessing({
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
+    
+    // Clear the cache when user cancels
+    clearSubscriptionCache(tierId, creatorId);
     
     setIsProcessing(false);
     setPaymentSucceeded(false);
