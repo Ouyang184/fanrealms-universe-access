@@ -13,10 +13,12 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
-import { ThumbsUp, ThumbsDown, MessageSquare, Lock } from "lucide-react";
+import { ThumbsDown, MessageSquare, Lock } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { PostLikes } from "@/components/post/PostLikes";
+import { PostComments } from "@/components/post/PostComments";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -397,37 +399,22 @@ export default function FeedPage() {
 
                               {/* Engagement Section */}
                               <div className="space-y-3">
-                                {/* Like/Dislike Bar */}
+                                {/* Like/Dislike Bar with real data */}
                                 <div className="flex items-center gap-4 py-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-green-50 hover:text-green-600"
-                                  >
-                                    <ThumbsUp className="h-4 w-4" />
-                                    <span className="text-sm">Like (11)</span>
-                                  </Button>
+                                  <PostLikes postId={post.id} />
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
                                   >
                                     <ThumbsDown className="h-4 w-4" />
-                                    <span className="text-sm">Dislike (0)</span>
+                                    <span className="text-sm">Dislike</span>
                                   </Button>
                                 </div>
 
-                                {/* Comments Section */}
+                                {/* Comments Section with real data */}
                                 <div className="border-t pt-3">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-                                    onClick={() => handlePostPreview(post)}
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span className="text-sm">Comments (5)</span>
-                                  </Button>
+                                  <PostComments postId={post.id} />
                                 </div>
                               </div>
                             </div>
@@ -473,37 +460,22 @@ export default function FeedPage() {
 
                               {/* Engagement Section */}
                               <div className="space-y-3">
-                                {/* Like/Dislike Bar */}
+                                {/* Like/Dislike Bar with real data */}
                                 <div className="flex items-center gap-4 py-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-green-50 hover:text-green-600"
-                                  >
-                                    <ThumbsUp className="h-4 w-4" />
-                                    <span className="text-sm">Like (11)</span>
-                                  </Button>
+                                  <PostLikes postId={post.id} />
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
                                   >
                                     <ThumbsDown className="h-4 w-4" />
-                                    <span className="text-sm">Dislike (0)</span>
+                                    <span className="text-sm">Dislike</span>
                                   </Button>
                                 </div>
 
-                                {/* Comments Section */}
+                                {/* Comments Section with real data */}
                                 <div className="border-t pt-3">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-                                    onClick={() => handlePostPreview(post)}
-                                  >
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span className="text-sm">Comments (5)</span>
-                                  </Button>
+                                  <PostComments postId={post.id} />
                                 </div>
                               </div>
                             </div>
