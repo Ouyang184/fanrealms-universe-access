@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +13,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
+import { ThumbsUp, ThumbsDown, MessageSquare, Lock } from "lucide-react";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -287,20 +287,63 @@ export default function FeedPage() {
                               <h2 className="text-xl font-bold mb-2">{post.title}</h2>
                               <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
                               
-                              <div className="flex justify-between items-center">
-                                <Button
-                                  variant="outline"
-                                  onClick={() => handlePostPreview(post)}
-                                >
-                                  Read More
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handlePostPreview(post)}
-                                  className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                                >
-                                  Accept or Decline
-                                </Button>
+                              {/* Tier Information for Premium Posts */}
+                              {post.tier_id && (
+                                <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-purple-800 mb-1">
+                                        Posted for $2, $5, $10, $20 tiers
+                                      </p>
+                                      <p className="text-xs text-purple-600">
+                                        Premium content available to subscribers
+                                      </p>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      className="bg-pink-500 hover:bg-pink-600 text-white"
+                                    >
+                                      <Lock className="h-4 w-4 mr-2" />
+                                      Unlock Tier
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Engagement Section */}
+                              <div className="space-y-3">
+                                {/* Like/Dislike Bar */}
+                                <div className="flex items-center gap-4 py-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-green-50 hover:text-green-600"
+                                  >
+                                    <ThumbsUp className="h-4 w-4" />
+                                    <span className="text-sm">Like (11)</span>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
+                                  >
+                                    <ThumbsDown className="h-4 w-4" />
+                                    <span className="text-sm">Dislike (0)</span>
+                                  </Button>
+                                </div>
+
+                                {/* Comments Section */}
+                                <div className="border-t pt-3">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
+                                    onClick={() => handlePostPreview(post)}
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="text-sm">Comments (5)</span>
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -336,12 +379,65 @@ export default function FeedPage() {
                             <div className="p-4">
                               <h2 className="text-xl font-bold mb-2">{post.title}</h2>
                               <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
-                              <Button
-                                variant="outline"
-                                onClick={() => handlePostPreview(post)}
-                              >
-                                Read More
-                              </Button>
+                              
+                              {/* Tier Information for Premium Posts */}
+                              {post.tier_id && (
+                                <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-purple-800 mb-1">
+                                        Posted for $2, $5, $10, $20 tiers
+                                      </p>
+                                      <p className="text-xs text-purple-600">
+                                        Premium content available to subscribers
+                                      </p>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      className="bg-pink-500 hover:bg-pink-600 text-white"
+                                    >
+                                      <Lock className="h-4 w-4 mr-2" />
+                                      Unlock Tier
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Engagement Section */}
+                              <div className="space-y-3">
+                                {/* Like/Dislike Bar */}
+                                <div className="flex items-center gap-4 py-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-green-50 hover:text-green-600"
+                                  >
+                                    <ThumbsUp className="h-4 w-4" />
+                                    <span className="text-sm">Like (11)</span>
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
+                                  >
+                                    <ThumbsDown className="h-4 w-4" />
+                                    <span className="text-sm">Dislike (0)</span>
+                                  </Button>
+                                </div>
+
+                                {/* Comments Section */}
+                                <div className="border-t pt-3">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
+                                    onClick={() => handlePostPreview(post)}
+                                  >
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span className="text-sm">Comments (5)</span>
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
