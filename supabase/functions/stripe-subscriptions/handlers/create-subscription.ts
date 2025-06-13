@@ -72,33 +72,29 @@ export async function handleCreateSubscription(
   const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
   console.log('Stripe customer ID:', stripeCustomerId);
 
-  // Helper function to cancel duplicate payment intents
-  const cancelDuplicatePaymentIntents = async (metadataToMatch: any, keepPaymentIntentId?: string) => {
-    console.log('Checking for duplicate payment intents to cancel...');
-    const existingPaymentIntents = await stripe.paymentIntents.list({
-      customer: stripeCustomerId,
-      limit: 100
-    });
+  // AGGRESSIVE cleanup: Cancel ALL pending payment intents for this customer and creator
+  console.log('Cancelling ALL pending payment intents for this customer and creator...');
+  const allPendingPaymentIntents = await stripe.paymentIntents.list({
+    customer: stripeCustomerId,
+    limit: 100
+  });
 
-    let cancelledCount = 0;
-    for (const pi of existingPaymentIntents.data) {
-      if (pi.status === 'requires_payment_method' &&
-          pi.id !== keepPaymentIntentId &&
-          pi.metadata.user_id === metadataToMatch.user_id &&
-          pi.metadata.creator_id === metadataToMatch.creator_id &&
-          pi.metadata.tier_id === metadataToMatch.tier_id &&
-          pi.metadata.type === metadataToMatch.type) {
-        try {
-          await stripe.paymentIntents.cancel(pi.id);
-          cancelledCount++;
-          console.log('Cancelled duplicate payment intent:', pi.id);
-        } catch (error) {
-          console.log('Could not cancel payment intent:', pi.id, error.message);
-        }
+  let cancelledCount = 0;
+  for (const pi of allPendingPaymentIntents.data) {
+    // Cancel any payment intent that matches this user and creator combination
+    if (pi.status === 'requires_payment_method' &&
+        pi.metadata.user_id === user.id &&
+        pi.metadata.creator_id === creatorId) {
+      try {
+        await stripe.paymentIntents.cancel(pi.id);
+        cancelledCount++;
+        console.log('Cancelled payment intent:', pi.id);
+      } catch (error) {
+        console.log('Could not cancel payment intent:', pi.id, error.message);
       }
     }
-    console.log(`Cancelled ${cancelledCount} duplicate payment intents`);
-  };
+  }
+  console.log(`Cancelled ${cancelledCount} existing payment intents for this user/creator combination`);
 
   // Handle tier upgrade scenario
   if (existingSubscriptions && existingSubscriptions.length > 0) {
@@ -151,80 +147,28 @@ export async function handleCreateSubscription(
     console.log('Calculated prorated upgrade amount:', proratedAmount);
 
     try {
-      // Define metadata for this upgrade
-      const metadataSearch = {
-        user_id: user.id,
-        creator_id: creatorId,
-        tier_id: tierId,
-        type: 'tier_upgrade',
-        existing_subscription_id: existingSubscription.stripe_subscription_id
-      };
-
-      // First cancel any duplicate payment intents
-      await cancelDuplicatePaymentIntents(metadataSearch);
-
-      // Now check for existing payment intent for this exact upgrade combination
-      console.log('Checking for existing payment intent for this upgrade...');
-      const existingPaymentIntents = await stripe.paymentIntents.list({
+      // Create new Payment Intent for tier upgrade with prorated amount
+      console.log('Creating new prorated Payment Intent for tier upgrade...');
+      const paymentIntent = await stripe.paymentIntents.create({
         customer: stripeCustomerId,
-        limit: 10 // Reduced limit since we cleaned up duplicates
+        amount: Math.round(proratedAmount * 100), // Convert to cents
+        currency: 'usd',
+        payment_method_types: ['card'],
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier_id: tierId,
+          type: 'tier_upgrade',
+          tier_name: newTier.title,
+          creator_name: newTier.creators.display_name,
+          current_period_end: existingSubscription.current_period_end,
+          original_tier_id: existingSubscription.tier_id,
+          existing_subscription_id: existingSubscription.stripe_subscription_id,
+          prorated_amount: proratedAmount.toString()
+        },
+        setup_future_usage: 'off_session',
       });
-
-      // Find existing payment intent for this exact upgrade
-      let existingPaymentIntent = null;
-      for (const pi of existingPaymentIntents.data) {
-        if (pi.status === 'requires_payment_method' &&
-            pi.metadata.user_id === user.id &&
-            pi.metadata.creator_id === creatorId &&
-            pi.metadata.tier_id === tierId &&
-            pi.metadata.type === 'tier_upgrade' &&
-            pi.metadata.existing_subscription_id === existingSubscription.stripe_subscription_id) {
-          existingPaymentIntent = pi;
-          console.log('Found existing payment intent for upgrade:', pi.id);
-          break;
-        }
-      }
-
-      let paymentIntent;
-      if (existingPaymentIntent) {
-        // Update existing payment intent if amount changed
-        if (existingPaymentIntent.amount !== Math.round(proratedAmount * 100)) {
-          paymentIntent = await stripe.paymentIntents.update(existingPaymentIntent.id, {
-            amount: Math.round(proratedAmount * 100),
-            metadata: {
-              ...metadataSearch,
-              tier_name: newTier.title,
-              creator_name: newTier.creators.display_name,
-              current_period_end: existingSubscription.current_period_end,
-              original_tier_id: existingSubscription.tier_id,
-              prorated_amount: proratedAmount.toString()
-            }
-          });
-          console.log('Updated existing payment intent amount:', paymentIntent.id);
-        } else {
-          paymentIntent = existingPaymentIntent;
-          console.log('Reusing existing payment intent:', paymentIntent.id);
-        }
-      } else {
-        // Create new Payment Intent for tier upgrade with prorated amount
-        console.log('Creating new prorated Payment Intent for tier upgrade...');
-        paymentIntent = await stripe.paymentIntents.create({
-          customer: stripeCustomerId,
-          amount: Math.round(proratedAmount * 100), // Convert to cents
-          currency: 'usd',
-          payment_method_types: ['card'],
-          metadata: {
-            ...metadataSearch,
-            tier_name: newTier.title,
-            creator_name: newTier.creators.display_name,
-            current_period_end: existingSubscription.current_period_end,
-            original_tier_id: existingSubscription.tier_id,
-            prorated_amount: proratedAmount.toString()
-          },
-          setup_future_usage: 'off_session',
-        });
-        console.log('New prorated Payment Intent created:', paymentIntent.id);
-      }
+      console.log('New prorated Payment Intent created:', paymentIntent.id);
 
       return createJsonResponse({
         clientSecret: paymentIntent.client_secret,
@@ -289,72 +233,24 @@ export async function handleCreateSubscription(
   }
 
   try {
-    // Define metadata for new subscription
-    const metadataSearch = {
-      user_id: user.id,
-      creator_id: creatorId,
-      tier_id: tierId,
-      type: 'subscription_setup'
-    };
-
-    // First cancel any duplicate payment intents for new subscription
-    await cancelDuplicatePaymentIntents(metadataSearch);
-
-    // Check for existing payment intent for new subscription with this exact combination
-    console.log('Checking for existing payment intent for new subscription...');
-    const existingPaymentIntents = await stripe.paymentIntents.list({
+    // Create Payment Intent for custom payment form
+    console.log('Creating new Stripe Payment Intent for custom payment form...');
+    const paymentIntent = await stripe.paymentIntents.create({
       customer: stripeCustomerId,
-      limit: 10 // Reduced limit since we cleaned up duplicates
+      amount: Math.round(newTier.price * 100), // Convert to cents
+      currency: 'usd',
+      payment_method_types: ['card'],
+      metadata: {
+        user_id: user.id,
+        creator_id: creatorId,
+        tier_id: tierId,
+        type: 'subscription_setup',
+        tier_name: newTier.title,
+        creator_name: newTier.creators.display_name
+      },
+      setup_future_usage: 'off_session', // For future subscription payments
     });
-
-    // Find existing payment intent for this exact subscription setup
-    let existingPaymentIntent = null;
-    for (const pi of existingPaymentIntents.data) {
-      if (pi.status === 'requires_payment_method' &&
-          pi.metadata.user_id === user.id &&
-          pi.metadata.creator_id === creatorId &&
-          pi.metadata.tier_id === tierId &&
-          pi.metadata.type === 'subscription_setup') {
-        existingPaymentIntent = pi;
-        console.log('Found existing payment intent for subscription setup:', pi.id);
-        break;
-      }
-    }
-
-    let paymentIntent;
-    if (existingPaymentIntent) {
-      // Update existing payment intent if amount changed
-      if (existingPaymentIntent.amount !== Math.round(newTier.price * 100)) {
-        paymentIntent = await stripe.paymentIntents.update(existingPaymentIntent.id, {
-          amount: Math.round(newTier.price * 100),
-          metadata: {
-            ...metadataSearch,
-            tier_name: newTier.title,
-            creator_name: newTier.creators.display_name
-          }
-        });
-        console.log('Updated existing payment intent amount:', paymentIntent.id);
-      } else {
-        paymentIntent = existingPaymentIntent;
-        console.log('Reusing existing payment intent:', paymentIntent.id);
-      }
-    } else {
-      // Create Payment Intent for custom payment form
-      console.log('Creating new Stripe Payment Intent for custom payment form...');
-      paymentIntent = await stripe.paymentIntents.create({
-        customer: stripeCustomerId,
-        amount: Math.round(newTier.price * 100), // Convert to cents
-        currency: 'usd',
-        payment_method_types: ['card'],
-        metadata: {
-          ...metadataSearch,
-          tier_name: newTier.title,
-          creator_name: newTier.creators.display_name
-        },
-        setup_future_usage: 'off_session', // For future subscription payments
-      });
-      console.log('New Payment Intent created:', paymentIntent.id);
-    }
+    console.log('New Payment Intent created:', paymentIntent.id);
 
     return createJsonResponse({
       clientSecret: paymentIntent.client_secret,
