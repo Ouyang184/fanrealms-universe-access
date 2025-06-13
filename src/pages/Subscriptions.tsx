@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
@@ -132,11 +131,6 @@ export default function SubscriptionsPage() {
               Payment Methods
             </Button>
           </div>
-        </div>
-
-        {/* Simplified Debug info */}
-        <div className="mb-4 p-3 bg-gray-50 rounded text-sm">
-          <div><strong>Status:</strong> Found {userSubscriptions?.length || 0} subscriptions | Loading: {subscriptionsLoading ? 'Yes' : 'No'}</div>
         </div>
 
         {!hasSubscriptions ? (
