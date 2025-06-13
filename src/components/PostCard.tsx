@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from './ui/badge';
 import { Lock, Crown } from 'lucide-react';
 import { Button } from './ui/button';
+import { isVideoUrl } from '@/utils/videoUtils';
 
 interface PostCardProps {
   id: string;
@@ -93,6 +94,33 @@ const PostCard: React.FC<PostCardProps> = ({
       expectedAccess: 'SHOULD_HAVE_ACCESS_IF_SUBSCRIBED'
     });
   }
+
+  // Check if PostCardMedia will handle video rendering
+  const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 
+    attachment.type === 'video' && isVideoUrl(attachment.url)
+  );
+
+  console.log('PostCard - Media handling check:', {
+    postId: id,
+    hasVideoAttachmentForMedia,
+    attachmentsCount: parsedAttachments.length,
+    attachmentTypes: parsedAttachments.map(a => ({ type: a.type, isVideoUrl: isVideoUrl(a.url || '') }))
+  });
+
+  // Filter out video attachments that will be handled by PostCardMedia
+  const attachmentsForPostAttachments = parsedAttachments.filter(attachment => {
+    if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
+      console.log('PostCard - Filtering out video attachment from PostAttachments:', attachment);
+      return false; // Exclude video URLs from PostAttachments
+    }
+    return true; // Include all other attachments
+  });
+
+  console.log('PostCard - Filtered attachments for PostAttachments:', {
+    original: parsedAttachments.length,
+    filtered: attachmentsForPostAttachments.length,
+    removedVideoUrls: parsedAttachments.length - attachmentsForPostAttachments.length
+  });
 
   // Content display logic
   const getDisplayContent = () => {
@@ -178,7 +206,7 @@ const PostCard: React.FC<PostCardProps> = ({
           {hasFullAccess ? (
             <>
               <PostCardMedia attachments={attachments} />
-              <PostAttachments attachments={parsedAttachments} />
+              <PostAttachments attachments={attachmentsForPostAttachments} />
             </>
           ) : isPremiumPost && (
             <div className="relative">
