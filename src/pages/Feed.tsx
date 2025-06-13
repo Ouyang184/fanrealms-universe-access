@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -312,22 +313,6 @@ export default function FeedPage() {
               <EmptyFeed />
             ) : (
               <>
-                {/* Service Notification Banner */}
-                <div className="mb-6 p-4 bg-yellow-100 border border-yellow-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white text-sm">!</span>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-800">
-                        It looks like you didn't pay for some of your subscriptions. Therefore, access to those subscriptions is temporarily restricted now. To resume payments and access the content, go to{" "}
-                        <button className="underline font-medium">Unpaid Subscriptions</button>
-                        {" "}and click "Extend Subscription".
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Feed Tabs */}
                 <Tabs defaultValue="all" className="mb-8">
                   <TabsList className="bg-transparent border-b border-border rounded-none w-full justify-start p-0">
