@@ -125,12 +125,17 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Updated video player logic - only render for actual video files with valid properties */}
+      {/* STRICT video player validation - only for actual uploaded video files */}
       {firstMedia.type === 'video' && 
        firstMedia.url &&
        !isVideoUrl(firstMedia.url) &&
        typeof firstMedia.size === 'number' &&
-       firstMedia.size > 0 && (
+       firstMedia.size > 0 &&
+       !firstMedia.url.includes('youtube') &&
+       !firstMedia.url.includes('youtu.be') &&
+       !firstMedia.url.includes('vimeo') &&
+       !firstMedia.url.includes('dailymotion') &&
+       !firstMedia.url.includes('twitch') && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls
