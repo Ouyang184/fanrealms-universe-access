@@ -50,7 +50,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // First, get all prices for this product and deactivate them
+    // First, get all prices for this product and delete them
     try {
       console.log('Fetching all prices for product:', productId);
       const prices = await stripe.prices.list({
@@ -58,26 +58,22 @@ serve(async (req) => {
         limit: 100, // Get all prices for this product
       });
 
-      console.log(`Found ${prices.data.length} prices to deactivate`);
+      console.log(`Found ${prices.data.length} prices to delete`);
 
-      // Deactivate all prices associated with this product
+      // Delete all prices associated with this product
       for (const price of prices.data) {
         try {
-          if (price.active) {
-            console.log('Deactivating price:', price.id);
-            await stripe.prices.update(price.id, {
-              active: false,
-            });
-            console.log('Price deactivated successfully:', price.id);
-          }
+          console.log('Deleting price:', price.id);
+          await stripe.prices.del(price.id);
+          console.log('Price deleted successfully:', price.id);
         } catch (priceError) {
-          console.log('Error deactivating price (continuing anyway):', priceError);
-          // Continue even if individual price deactivation fails
+          console.log('Error deleting price (continuing anyway):', priceError);
+          // Continue even if individual price deletion fails
         }
       }
     } catch (pricesError) {
-      console.log('Error fetching/deactivating prices (continuing anyway):', pricesError);
-      // Continue even if we can't deactivate prices
+      console.log('Error fetching/deleting prices (continuing anyway):', pricesError);
+      // Continue even if we can't delete prices
     }
 
     // Now delete the product completely
@@ -93,7 +89,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Product and all associated prices deactivated and product deleted successfully',
+        message: 'Product and all associated prices deleted successfully',
         productId 
       }),
       {
