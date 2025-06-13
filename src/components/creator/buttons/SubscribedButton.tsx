@@ -47,18 +47,29 @@ export function SubscribedButton({
 
   const subscription = subscriptionData;
   
-  // Simplified logic - just check if subscription is active
+  // Check subscription status - immediate cancellations should show as not subscribed
   const isActive = subscription?.status === 'active';
   const willCancel = subscription?.cancel_at_period_end === true;
+  const isCanceled = subscription?.status === 'canceled';
 
   console.log('SubscribedButton - Status check:', {
     subscription,
     isActive,
     willCancel,
+    isCanceled,
     status: subscription?.status,
     cancel_at_period_end: subscription?.cancel_at_period_end,
     current_period_end: subscription?.current_period_end
   });
+
+  // If subscription is canceled, don't show as subscribed
+  if (isCanceled) {
+    return (
+      <div className="text-gray-500 text-center p-4">
+        Subscription ended
+      </div>
+    );
+  }
 
   const formatCancelDate = (dateString: string | number) => {
     let date;
@@ -259,16 +270,17 @@ export function SubscribedButton({
           title: "Subscription Cancelled",
           description: `Your subscription to ${tierName} has been cancelled immediately. You no longer have access to this content.`,
         });
+        
+        // For immediate cancellations, optimistically update UI
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(false);
+        }
       } else {
         const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
         toast({
           title: "Subscription Will End",
           description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
         });
-      }
-      
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(false);
       }
       
       await invalidateAllSubscriptionQueries();
@@ -388,7 +400,7 @@ export function SubscribedButton({
                         <RadioGroupItem value="immediate" id="immediate" className="mt-1" />
                         <div className="flex-1">
                           <Label htmlFor="immediate" className="font-medium cursor-pointer text-red-600">
-                            ✅ Cancel Immediately
+                            Cancel Immediately
                           </Label>
                           <p className="text-sm text-muted-foreground mt-1">
                             Your subscription will be cancelled right away and you'll immediately lose access to {tierName} content. 
