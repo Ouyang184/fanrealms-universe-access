@@ -1,6 +1,5 @@
 
 import { useState } from 'react';
-import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,8 +21,6 @@ export function usePaymentProcessing({
   tierName,
   isUpgrade
 }: UsePaymentProcessingProps) {
-  const stripe = useStripe();
-  const elements = useElements();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -65,7 +62,7 @@ export function usePaymentProcessing({
     return false;
   };
 
-  const handlePayment = async (event: React.FormEvent) => {
+  const handlePayment = async (stripe: any, elements: any, event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements || !clientSecret) {
@@ -75,7 +72,7 @@ export function usePaymentProcessing({
     setIsProcessing(true);
 
     try {
-      const cardElement = elements.getElement(CardElement);
+      const cardElement = elements.getElement('card');
       if (!cardElement) {
         throw new Error('Card element not found');
       }

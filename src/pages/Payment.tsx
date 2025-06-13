@@ -23,11 +23,11 @@ export default function Payment() {
     paymentSucceeded,
     isVerifying
   } = usePaymentProcessing({
-    clientSecret,
-    tierId,
-    creatorId,
-    tierName,
-    isUpgrade
+    clientSecret: clientSecret || '',
+    tierId: tierId || '',
+    creatorId: creatorId || '',
+    tierName: tierName || '',
+    isUpgrade: isUpgrade || false
   });
 
   if (paymentSucceeded) {
@@ -40,8 +40,19 @@ export default function Payment() {
     );
   }
 
+  if (!clientSecret) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Payment Error</h1>
+          <p className="text-gray-400">No payment information found. Please try subscribing again.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
       <PaymentForm />
     </Elements>
   );

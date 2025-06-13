@@ -6,9 +6,10 @@ import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 interface PaymentButtonsProps {
   isUpgrade: boolean;
   isProcessing: boolean;
-  onPayment: (event: React.FormEvent) => void;
+  onPayment: (stripe: any, elements: any, event: React.FormEvent) => void;
   onCancel: () => void;
   stripe: any;
+  elements: any;
 }
 
 export function PaymentButtons({ 
@@ -16,12 +17,17 @@ export function PaymentButtons({
   isProcessing, 
   onPayment, 
   onCancel, 
-  stripe 
+  stripe,
+  elements
 }: PaymentButtonsProps) {
+  const handlePaymentClick = (event: React.FormEvent) => {
+    onPayment(stripe, elements, event);
+  };
+
   return (
     <div className="space-y-3">
       <Button 
-        onClick={onPayment}
+        onClick={handlePaymentClick}
         disabled={!stripe || isProcessing}
         className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
         size="lg"

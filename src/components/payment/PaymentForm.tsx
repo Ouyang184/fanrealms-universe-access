@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useStripe } from '@stripe/react-stripe-js';
+import { useStripe, useElements } from '@stripe/react-stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
 export function PaymentForm() {
   const stripe = useStripe();
+  const elements = useElements();
   const location = useLocation();
   const { toast } = useToast();
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -116,6 +117,7 @@ export function PaymentForm() {
               onPayment={handlePayment}
               onCancel={handleCancel}
               stripe={stripe}
+              elements={elements}
             />
           </div>
 
