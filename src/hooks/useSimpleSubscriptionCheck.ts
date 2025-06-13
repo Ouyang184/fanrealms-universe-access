@@ -90,7 +90,7 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       // Filter for active subscriptions only - exclude canceled subscriptions
       const activeSubscriptions = data?.filter(sub => 
-        sub.status === 'active' && sub.status !== 'canceled'
+        sub.status === 'active'
       ) || [];
       
       console.log('[SubscriptionCheck] Active subscriptions for tier:', activeSubscriptions);
@@ -102,8 +102,8 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       const subscription = activeSubscriptions[0];
       
-      // Enhanced subscription validation - FIXED LOGIC
-      let isCurrentlyActive = subscription.status === 'active' && subscription.status !== 'canceled';
+      // Enhanced subscription validation - check if subscription is currently active
+      let isCurrentlyActive = subscription.status === 'active';
       
       // Check if subscription is scheduled to cancel but still active
       if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
