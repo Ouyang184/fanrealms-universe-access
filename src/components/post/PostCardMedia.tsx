@@ -97,6 +97,9 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       );
     }
+
+    // ✅ Best-practice: block fallback rendering
+    return null;
   }
 
   // Handle non-URL media types (actual file attachments)
