@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation, useStripe } from '@stripe/react-stripe-js';
+import { useLocation } from 'react-router-dom';
+import { useStripe } from '@stripe/react-stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
