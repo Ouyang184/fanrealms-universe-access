@@ -14,6 +14,9 @@ import { usePosts } from "@/hooks/usePosts";
 import PostCard from "@/components/PostCard";
 import { Post } from "@/types";
 import { ThumbsUp, ThumbsDown, MessageSquare, Lock } from "lucide-react";
+import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -26,6 +29,108 @@ const getReadPostsFromStorage = (): Set<string> => {
     console.error('Error loading read posts from localStorage:', error);
   }
   return new Set();
+};
+
+// Component for dynamic tier access information
+const TierAccessInfo = ({ post }: { post: Post }) => {
+  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
+  
+  // Fetch the specific tier information for this post
+  const { data: tierInfo } = useQuery({
+    queryKey: ['tier-info', post.tier_id],
+    queryFn: async () => {
+      if (!post.tier_id) return null;
+      
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('id', post.tier_id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching tier info:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!post.tier_id,
+  });
+
+  // Fetch all tiers for this creator to show upgrade path
+  const { data: creatorTiers } = useQuery({
+    queryKey: ['creator-tiers', post.authorId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('creator_id', post.authorId)
+        .order('price', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching creator tiers:', error);
+        return [];
+      }
+      
+      return data;
+    },
+    enabled: !!post.authorId,
+  });
+
+  // Check if user has access to this tier
+  const hasAccess = subscriptionData?.isSubscribed || false;
+  
+  // If no tier required or user has access, don't show unlock section
+  if (!post.tier_id || hasAccess) {
+    return null;
+  }
+
+  // Find tiers that grant access (current tier and higher)
+  const accessTiers = creatorTiers?.filter(tier => 
+    tierInfo && tier.price >= tierInfo.price
+  ) || [];
+
+  // Get the lowest tier that grants access (should be the post's tier)
+  const lowestAccessTier = accessTiers.length > 0 ? accessTiers[0] : tierInfo;
+
+  if (!tierInfo) {
+    return null;
+  }
+
+  // Format tier prices for display
+  const tierPricesText = accessTiers.length > 1 
+    ? `$${accessTiers.map(tier => tier.price).join(', $')} tiers`
+    : `$${tierInfo.price} tier`;
+
+  const handleUnlockTier = () => {
+    // Navigate to creator page with tier focus
+    // You might want to implement this navigation logic
+    console.log(`Navigate to subscribe for tier: ${lowestAccessTier?.id}`);
+    window.location.href = `/creator/${post.authorId}?tier=${lowestAccessTier?.id}`;
+  };
+
+  return (
+    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-purple-800 mb-1">
+            Posted for {tierPricesText}
+          </p>
+          <p className="text-xs text-purple-600">
+            Premium content available to subscribers
+          </p>
+        </div>
+        <Button
+          size="sm"
+          className="bg-pink-500 hover:bg-pink-600 text-white"
+          onClick={handleUnlockTier}
+        >
+          <Lock className="h-4 w-4 mr-2" />
+          Unlock ${lowestAccessTier?.price || tierInfo.price}
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export default function FeedPage() {
@@ -287,28 +392,8 @@ export default function FeedPage() {
                               <h2 className="text-xl font-bold mb-2">{post.title}</h2>
                               <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
                               
-                              {/* Tier Information for Premium Posts */}
-                              {post.tier_id && (
-                                <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-sm font-medium text-purple-800 mb-1">
-                                        Posted for $2, $5, $10, $20 tiers
-                                      </p>
-                                      <p className="text-xs text-purple-600">
-                                        Premium content available to subscribers
-                                      </p>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      className="bg-pink-500 hover:bg-pink-600 text-white"
-                                    >
-                                      <Lock className="h-4 w-4 mr-2" />
-                                      Unlock Tier
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
+                              {/* Dynamic Tier Access Information */}
+                              <TierAccessInfo post={post} />
 
                               {/* Engagement Section */}
                               <div className="space-y-3">
@@ -358,6 +443,7 @@ export default function FeedPage() {
                       <div className="space-y-6">
                         {unreadPosts.map((post) => (
                           <div key={post.id} className="bg-card border border-border rounded-lg overflow-hidden">
+                            {/* Post Header */}
                             <div className="p-4 border-b border-border">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10">
@@ -376,32 +462,14 @@ export default function FeedPage() {
                                 <Badge className="bg-blue-500 text-white">New</Badge>
                               </div>
                             </div>
+
+                            {/* Post Content */}
                             <div className="p-4">
                               <h2 className="text-xl font-bold mb-2">{post.title}</h2>
                               <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
                               
-                              {/* Tier Information for Premium Posts */}
-                              {post.tier_id && (
-                                <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-sm font-medium text-purple-800 mb-1">
-                                        Posted for $2, $5, $10, $20 tiers
-                                      </p>
-                                      <p className="text-xs text-purple-600">
-                                        Premium content available to subscribers
-                                      </p>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      className="bg-pink-500 hover:bg-pink-600 text-white"
-                                    >
-                                      <Lock className="h-4 w-4 mr-2" />
-                                      Unlock Tier
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
+                              {/* Dynamic Tier Access Information for Unread Posts */}
+                              <TierAccessInfo post={post} />
 
                               {/* Engagement Section */}
                               <div className="space-y-3">
