@@ -72,6 +72,34 @@ export async function handleCreateSubscription(
   const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
   console.log('Stripe customer ID:', stripeCustomerId);
 
+  // Helper function to cancel duplicate payment intents
+  const cancelDuplicatePaymentIntents = async (metadataToMatch: any, keepPaymentIntentId?: string) => {
+    console.log('Checking for duplicate payment intents to cancel...');
+    const existingPaymentIntents = await stripe.paymentIntents.list({
+      customer: stripeCustomerId,
+      limit: 100
+    });
+
+    let cancelledCount = 0;
+    for (const pi of existingPaymentIntents.data) {
+      if (pi.status === 'requires_payment_method' &&
+          pi.id !== keepPaymentIntentId &&
+          pi.metadata.user_id === metadataToMatch.user_id &&
+          pi.metadata.creator_id === metadataToMatch.creator_id &&
+          pi.metadata.tier_id === metadataToMatch.tier_id &&
+          pi.metadata.type === metadataToMatch.type) {
+        try {
+          await stripe.paymentIntents.cancel(pi.id);
+          cancelledCount++;
+          console.log('Cancelled duplicate payment intent:', pi.id);
+        } catch (error) {
+          console.log('Could not cancel payment intent:', pi.id, error.message);
+        }
+      }
+    }
+    console.log(`Cancelled ${cancelledCount} duplicate payment intents`);
+  };
+
   // Handle tier upgrade scenario
   if (existingSubscriptions && existingSubscriptions.length > 0) {
     const existingSubscription = existingSubscriptions[0];
@@ -123,8 +151,7 @@ export async function handleCreateSubscription(
     console.log('Calculated prorated upgrade amount:', proratedAmount);
 
     try {
-      // Check for existing payment intent for this exact upgrade combination
-      console.log('Checking for existing payment intent for this upgrade...');
+      // Define metadata for this upgrade
       const metadataSearch = {
         user_id: user.id,
         creator_id: creatorId,
@@ -133,9 +160,14 @@ export async function handleCreateSubscription(
         existing_subscription_id: existingSubscription.stripe_subscription_id
       };
 
+      // First cancel any duplicate payment intents
+      await cancelDuplicatePaymentIntents(metadataSearch);
+
+      // Now check for existing payment intent for this exact upgrade combination
+      console.log('Checking for existing payment intent for this upgrade...');
       const existingPaymentIntents = await stripe.paymentIntents.list({
         customer: stripeCustomerId,
-        limit: 50 // Increase limit to check more thoroughly
+        limit: 10 // Reduced limit since we cleaned up duplicates
       });
 
       // Find existing payment intent for this exact upgrade
@@ -257,11 +289,22 @@ export async function handleCreateSubscription(
   }
 
   try {
+    // Define metadata for new subscription
+    const metadataSearch = {
+      user_id: user.id,
+      creator_id: creatorId,
+      tier_id: tierId,
+      type: 'subscription_setup'
+    };
+
+    // First cancel any duplicate payment intents for new subscription
+    await cancelDuplicatePaymentIntents(metadataSearch);
+
     // Check for existing payment intent for new subscription with this exact combination
     console.log('Checking for existing payment intent for new subscription...');
     const existingPaymentIntents = await stripe.paymentIntents.list({
       customer: stripeCustomerId,
-      limit: 50 // Increase limit to check more thoroughly
+      limit: 10 // Reduced limit since we cleaned up duplicates
     });
 
     // Find existing payment intent for this exact subscription setup
@@ -285,12 +328,9 @@ export async function handleCreateSubscription(
         paymentIntent = await stripe.paymentIntents.update(existingPaymentIntent.id, {
           amount: Math.round(newTier.price * 100),
           metadata: {
-            user_id: user.id,
-            creator_id: creatorId,
-            tier_id: tierId,
+            ...metadataSearch,
             tier_name: newTier.title,
-            creator_name: newTier.creators.display_name,
-            type: 'subscription_setup'
+            creator_name: newTier.creators.display_name
           }
         });
         console.log('Updated existing payment intent amount:', paymentIntent.id);
@@ -307,12 +347,9 @@ export async function handleCreateSubscription(
         currency: 'usd',
         payment_method_types: ['card'],
         metadata: {
-          user_id: user.id,
-          creator_id: creatorId,
-          tier_id: tierId,
+          ...metadataSearch,
           tier_name: newTier.title,
-          creator_name: newTier.creators.display_name,
-          type: 'subscription_setup'
+          creator_name: newTier.creators.display_name
         },
         setup_future_usage: 'off_session', // For future subscription payments
       });
