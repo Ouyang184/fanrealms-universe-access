@@ -1,4 +1,3 @@
-
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string, immediate: boolean = false) {
@@ -28,16 +27,29 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       console.log('Cancelling subscription immediately:', subscriptionId);
       cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
       
-      // Update our database to reflect immediate cancellation
-      updateData = {
-        status: 'canceled',
-        cancel_at_period_end: false,
-        current_period_end: null,
-        cancel_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
       console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
+      
+      // For immediate cancellation, delete from our database
+      const { error: deleteError } = await supabaseService
+        .from('user_subscriptions')
+        .delete()
+        .eq('id', userSubscription.id);
+
+      if (deleteError) {
+        console.error('Error deleting user subscription:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('User subscription deleted successfully for immediate cancellation');
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Subscription cancelled immediately',
+        immediate: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     } else {
       // Set the Stripe subscription to cancel at period end
       console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
@@ -54,34 +66,34 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       };
       
       console.log('Stripe subscription set to cancel at period end successfully');
+
+      const { error: updateError } = await supabaseService
+        .from('user_subscriptions')
+        .update(updateData)
+        .eq('id', userSubscription.id);
+
+      if (updateError) {
+        console.error('Error updating user subscription status:', updateError);
+        throw updateError;
+      }
+
+      console.log('User subscription updated successfully with status: active (cancel at period end)');
+      
+      const responseData = { 
+        success: true,
+        message: 'Subscription will cancel at period end',
+        immediate: false
+      };
+
+      if (cancelledSubscription.current_period_end) {
+        responseData.cancelAt = cancelledSubscription.current_period_end * 1000; // Return as milliseconds
+      }
+      
+      return new Response(JSON.stringify(responseData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     }
-
-    const { error: updateError } = await supabaseService
-      .from('user_subscriptions')
-      .update(updateData)
-      .eq('id', userSubscription.id);
-
-    if (updateError) {
-      console.error('Error updating user subscription status:', updateError);
-      throw updateError;
-    }
-
-    console.log('User subscription updated successfully with status:', immediate ? 'canceled' : 'active (cancel at period end)');
-    
-    const responseData = { 
-      success: true,
-      message: immediate ? 'Subscription cancelled immediately' : 'Subscription will cancel at period end',
-      immediate: immediate
-    };
-
-    if (!immediate && cancelledSubscription.current_period_end) {
-      responseData.cancelAt = cancelledSubscription.current_period_end * 1000; // Return as milliseconds
-    }
-    
-    return new Response(JSON.stringify(responseData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
 
   } catch (error) {
     console.error('Cancel subscription error:', error);

@@ -24,6 +24,38 @@ export async function handleSubscriptionWebhook(
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
   }
 
+  // Handle immediate cancellations (subscription deleted)
+  if (event.type === 'customer.subscription.deleted' || subscription.status === 'canceled') {
+    console.log('[WebhookHandler] Processing immediate cancellation:', subscription.id);
+    
+    try {
+      // Remove from database for immediate cancellations
+      const { error: deleteError } = await supabaseService
+        .from('user_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (deleteError) {
+        console.error('[WebhookHandler] Error deleting canceled subscription:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('[WebhookHandler] Successfully removed immediately canceled subscription from database:', subscription.id);
+      
+      // Clean up legacy subscriptions table
+      await supabaseService
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user_id)
+        .eq('creator_id', creator_id);
+
+      return createJsonResponse({ success: true });
+    } catch (error) {
+      console.error('[WebhookHandler] Error processing immediate cancellation:', error);
+      return createJsonResponse({ error: 'Failed to process immediate cancellation' }, 500);
+    }
+  }
+
   // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
   if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
     console.log('[WebhookHandler] Subscription is incomplete, deleting from Stripe and database:', subscription.id);
@@ -139,19 +171,6 @@ export async function handleSubscriptionWebhook(
         console.error('[WebhookHandler] Error inserting subscription:', insertError);
         throw insertError;
       }
-    }
-
-    // Handle canceled subscriptions - remove from database if fully canceled
-    if (event.type === 'customer.subscription.deleted' || 
-        (subscription.status === 'canceled' && !subscription.cancel_at_period_end)) {
-      console.log('[WebhookHandler] Subscription', subscription.id, 'has status', subscription.status, ', removing from database');
-      
-      await supabaseService
-        .from('user_subscriptions')
-        .delete()
-        .eq('stripe_subscription_id', subscription.id);
-
-      console.log('[WebhookHandler] Successfully removed subscription', subscription.id, 'from database');
     }
 
     // Clean up legacy subscriptions table
