@@ -97,6 +97,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
     }
   }
 
+  // Handle non-URL media types (actual file attachments)
   return (
     <div className="relative mb-4">
       {firstMedia.type === 'image' && (
@@ -117,8 +118,8 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Only show video player for actual video files (not URLs) */}
-      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size > 0 && (
+      {/* Only show video player for actual video files (not URLs) that have a valid size */}
+      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size && firstMedia.size > 0 && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls
