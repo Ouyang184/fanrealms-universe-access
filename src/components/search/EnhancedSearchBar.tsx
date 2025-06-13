@@ -195,17 +195,17 @@ export function EnhancedSearchBar({
         </form>
       </div>
 
-      {/* Fixed positioned dropdown portal */}
+      {/* Fixed positioned dropdown portal with higher z-index */}
       {showSuggestions && (
         <>
           {/* Backdrop to prevent clicks on underlying content */}
           <div 
-            className="fixed inset-0 z-[998]"
+            className="fixed inset-0 z-[9998]"
             onClick={() => setShowSuggestions(false)}
           />
           
-          {/* Dropdown container */}
-          <div className="fixed inset-0 z-[999] pointer-events-none">
+          {/* Dropdown container with very high z-index */}
+          <div className="fixed inset-0 z-[9999] pointer-events-none">
             <Card 
               className="absolute max-h-96 overflow-y-auto shadow-xl border bg-background/95 backdrop-blur-sm pointer-events-auto"
               style={{
