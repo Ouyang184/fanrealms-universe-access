@@ -57,23 +57,39 @@ export async function handlePaymentIntentWebhook(
       return createJsonResponse({ error: 'Tier not found' }, 404);
     }
 
-    // Create or get Stripe price for this tier
-    let stripePriceId = tier.stripe_price_id;
-    if (!stripePriceId) {
-      console.log('[PaymentIntentHandler] Creating Stripe price for tier:', tier.title);
+    // Create or get Stripe price for this tier - ALWAYS create a new one to avoid stale price issues
+    console.log('[PaymentIntentHandler] Creating new Stripe price for tier:', tier.title);
+    let stripePriceId;
+    
+    try {
       const price = await stripe.prices.create({
         unit_amount: Math.round(tier.price * 100),
         currency: 'usd',
         recurring: { interval: 'month' },
-        product_data: { name: tier.title }
+        product_data: { 
+          name: tier.title,
+          metadata: {
+            tier_id: tier_id,
+            creator_id: creator_id
+          }
+        }
       });
       stripePriceId = price.id;
+      console.log('[PaymentIntentHandler] Created new price:', stripePriceId);
 
-      // Update tier with stripe_price_id
+      // Update tier with the new stripe_price_id
       await supabaseService
         .from('membership_tiers')
-        .update({ stripe_price_id: stripePriceId })
+        .update({ 
+          stripe_price_id: stripePriceId,
+          stripe_product_id: price.product 
+        })
         .eq('id', tier_id);
+        
+      console.log('[PaymentIntentHandler] Updated tier with new price and product IDs');
+    } catch (priceError) {
+      console.error('[PaymentIntentHandler] Error creating price:', priceError);
+      throw new Error('Failed to create Stripe price');
     }
 
     // Create the subscription in Stripe
