@@ -118,7 +118,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Only show video player for actual video files (not URLs) that have a valid size */}
+      {/* Only show video player for actual video files (not URLs) that have valid content */}
       {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size && firstMedia.size > 0 && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
