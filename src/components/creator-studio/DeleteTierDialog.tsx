@@ -75,8 +75,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
           
           const { error: stripeError } = await supabase.functions.invoke('delete-stripe-product', {
             body: { 
-              productId: tierData.stripe_product_id,
-              priceId: tierData.stripe_price_id
+              productId: tierData.stripe_product_id
             }
           });
 

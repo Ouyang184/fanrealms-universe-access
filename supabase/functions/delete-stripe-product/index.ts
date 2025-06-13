@@ -38,8 +38,8 @@ serve(async (req) => {
     console.log('User authenticated:', user.id);
 
     // Get request body
-    const { productId, priceId } = await req.json();
-    console.log('Delete request:', { productId, priceId });
+    const { productId } = await req.json();
+    console.log('Delete request for product:', productId);
 
     if (!productId) {
       throw new Error('Product ID is required');
@@ -50,21 +50,33 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // First, deactivate the price if it exists
-    if (priceId) {
-      try {
-        console.log('Deactivating price:', priceId);
-        await stripe.prices.update(priceId, {
-          active: false,
-        });
-        console.log('Price deactivated successfully');
-      } catch (priceError) {
-        console.log('Error deactivating price (continuing anyway):', priceError);
-        // Continue even if price deactivation fails
+    // First, get all prices for this product and delete them
+    try {
+      console.log('Fetching all prices for product:', productId);
+      const prices = await stripe.prices.list({
+        product: productId,
+        limit: 100, // Get all prices for this product
+      });
+
+      console.log(`Found ${prices.data.length} prices to delete`);
+
+      // Delete all prices associated with this product
+      for (const price of prices.data) {
+        try {
+          console.log('Deleting price:', price.id);
+          await stripe.prices.del(price.id);
+          console.log('Price deleted successfully:', price.id);
+        } catch (priceError) {
+          console.log('Error deleting price (continuing anyway):', priceError);
+          // Continue even if individual price deletion fails
+        }
       }
+    } catch (pricesError) {
+      console.log('Error fetching/deleting prices (continuing anyway):', pricesError);
+      // Continue even if we can't delete prices
     }
 
-    // Delete the product completely
+    // Now delete the product completely
     try {
       console.log('Deleting Stripe product:', productId);
       await stripe.products.del(productId);
@@ -77,7 +89,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Product deleted successfully',
+        message: 'Product and all associated prices deleted successfully',
         productId 
       }),
       {
