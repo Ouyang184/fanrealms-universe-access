@@ -29,11 +29,11 @@ export async function handleCreateSubscription(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // CRITICAL: Check for existing active subscriptions to the same creator
+  // Check for existing active subscriptions to the same creator
   console.log('Checking for existing active subscriptions to creator:', creatorId);
   const { data: existingSubscriptions, error: checkError } = await supabaseService
     .from('user_subscriptions')
-    .select('*')
+    .select('*, membership_tiers!inner(title, price)')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
     .in('status', ['active', 'trialing']);
@@ -43,21 +43,32 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
   }
 
-  // If user has existing active subscription to this creator, return error
+  let isUpgrade = false;
+  let existingSubscription = null;
+  let proratedAmount = 0;
+
+  // If user has existing active subscription to this creator, check if it's an upgrade
   if (existingSubscriptions && existingSubscriptions.length > 0) {
-    const existingSubscription = existingSubscriptions[0];
+    existingSubscription = existingSubscriptions[0];
     console.log('Found existing active subscription:', existingSubscription);
     
-    return createJsonResponse({ 
-      error: 'You already have an active subscription to this creator.',
-      shouldRefresh: true
-    }, 200);
+    // Check if user is trying to subscribe to a different tier (upgrade/downgrade)
+    if (existingSubscription.tier_id !== tierId) {
+      isUpgrade = true;
+      console.log('Detected tier upgrade/change from:', existingSubscription.tier_id, 'to:', tierId);
+    } else {
+      // Same tier - return error
+      return createJsonResponse({ 
+        error: 'You already have an active subscription to this tier.',
+        shouldRefresh: true
+      }, 200);
+    }
   }
 
-  console.log('No existing active subscriptions found, proceeding with new subscription creation...');
+  console.log('Subscription type:', isUpgrade ? 'UPGRADE' : 'NEW');
 
-  // Clean up old pending/incomplete subscriptions
-  console.log('Cleaning up old pending/incomplete subscriptions...');
+  // Clean up old pending/incomplete subscriptions and payment intents
+  console.log('Cleaning up old pending subscriptions and payment intents...');
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   
   await supabaseService
@@ -69,7 +80,6 @@ export async function handleCreateSubscription(
     .lt('created_at', oneHourAgo);
 
   // Clean up ALL records from legacy subscriptions table
-  console.log('Cleaning up legacy subscriptions table...');
   await supabaseService
     .from('subscriptions')
     .delete()
@@ -96,7 +106,6 @@ export async function handleCreateSubscription(
   }
 
   console.log('Tier found:', tier.title, 'Price:', tier.price);
-  console.log('Creator stripe account:', tier.creators.stripe_account_id);
 
   if (!tier.creators.stripe_account_id) {
     console.log('ERROR: Creator not connected to Stripe');
@@ -105,12 +114,38 @@ export async function handleCreateSubscription(
     }, 400);
   }
 
-  // Check if tier has stripe_price_id
   if (!tier.stripe_price_id) {
     console.log('ERROR: Tier missing stripe_price_id');
     return createJsonResponse({ 
       error: 'This membership tier is not properly configured. Please contact the creator.' 
     }, 400);
+  }
+
+  // Calculate prorated amount for upgrades
+  if (isUpgrade && existingSubscription) {
+    const currentTierPrice = existingSubscription.membership_tiers.price;
+    const newTierPrice = tier.price;
+    proratedAmount = newTierPrice - currentTierPrice;
+    
+    console.log('Prorated calculation:', {
+      currentTierPrice,
+      newTierPrice,
+      proratedAmount
+    });
+
+    // Don't allow downgrades to negative amounts
+    if (proratedAmount < 0) {
+      return createJsonResponse({ 
+        error: 'Downgrades are not currently supported. Please contact support.' 
+      }, 400);
+    }
+
+    // Free upgrade case
+    if (proratedAmount === 0) {
+      return createJsonResponse({ 
+        error: 'This tier has the same price as your current subscription.' 
+      }, 400);
+    }
   }
 
   try {
@@ -119,11 +154,30 @@ export async function handleCreateSubscription(
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
 
-    // Create Payment Intent for custom payment form
-    console.log('Creating Stripe Payment Intent for custom payment form...');
+    // Cancel any existing payment intents for this user/creator to avoid duplicates
+    console.log('Cancelling existing payment intents...');
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: stripeCustomerId,
+      limit: 10
+    });
+
+    for (const pi of paymentIntents.data) {
+      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
+        const metadata = pi.metadata || {};
+        if (metadata.creator_id === creatorId && metadata.user_id === user.id) {
+          console.log('Cancelling existing payment intent:', pi.id);
+          await stripe.paymentIntents.cancel(pi.id);
+        }
+      }
+    }
+
+    // Create Payment Intent - use prorated amount for upgrades, full amount for new subscriptions
+    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
+    console.log('Creating Payment Intent for amount:', paymentAmount);
+
     const paymentIntent = await stripe.paymentIntents.create({
       customer: stripeCustomerId,
-      amount: Math.round(tier.price * 100), // Convert to cents
+      amount: Math.round(paymentAmount * 100), // Convert to cents
       currency: 'usd',
       payment_method_types: ['card'],
       metadata: {
@@ -132,26 +186,36 @@ export async function handleCreateSubscription(
         tier_id: tierId,
         tier_name: tier.title,
         creator_name: tier.creators.display_name,
-        type: 'subscription_setup'
+        type: 'subscription_setup',
+        is_upgrade: isUpgrade ? 'true' : 'false',
+        existing_subscription_id: existingSubscription?.stripe_subscription_id || '',
+        existing_tier_id: existingSubscription?.tier_id || '',
+        current_period_end: existingSubscription?.current_period_end || '',
+        full_tier_price: tier.price.toString(),
+        prorated_amount: isUpgrade ? proratedAmount.toString() : '0'
       },
-      setup_future_usage: 'off_session', // For future subscription payments
+      setup_future_usage: 'off_session',
     });
 
     console.log('Payment Intent created:', paymentIntent.id);
 
     return createJsonResponse({
       clientSecret: paymentIntent.client_secret,
-      amount: Math.round(tier.price * 100),
+      amount: Math.round(paymentAmount * 100),
       tierName: tier.title,
       tierId: tierId,
       creatorId: creatorId,
       paymentIntentId: paymentIntent.id,
-      useCustomPaymentPage: true
+      useCustomPaymentPage: true,
+      isUpgrade: isUpgrade,
+      currentTierName: existingSubscription?.membership_tiers?.title || null,
+      proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
+      fullTierPrice: Math.round(tier.price * 100),
+      currentPeriodEnd: existingSubscription?.current_period_end || null
     });
 
   } catch (error) {
     console.error('Error in create subscription:', error);
-    console.error('Full Stripe error details:', JSON.stringify(error, null, 2));
     return createJsonResponse({ 
       error: 'Failed to create subscription. Please try again later.' 
     }, 500);

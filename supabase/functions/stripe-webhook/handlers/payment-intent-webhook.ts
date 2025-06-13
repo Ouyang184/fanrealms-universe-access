@@ -25,21 +25,37 @@ export async function handlePaymentIntentWebhook(
     return createJsonResponse({ success: true });
   }
 
-  const { user_id, creator_id, tier_id, tier_name, creator_name } = paymentIntent.metadata;
+  const { 
+    user_id, 
+    creator_id, 
+    tier_id, 
+    tier_name, 
+    creator_name,
+    is_upgrade,
+    existing_subscription_id,
+    current_period_end
+  } = paymentIntent.metadata;
 
   if (!user_id || !creator_id || !tier_id) {
     console.error('[PaymentIntentHandler] Missing required metadata in payment intent:', paymentIntent.id);
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
   }
 
-  console.log('[PaymentIntentHandler] Processing subscription setup for:', { user_id, creator_id, tier_id });
+  const isUpgradeFlow = is_upgrade === 'true';
+  console.log('[PaymentIntentHandler] Processing subscription:', { 
+    user_id, 
+    creator_id, 
+    tier_id, 
+    isUpgradeFlow,
+    existing_subscription_id 
+  });
 
   try {
     // Get the payment method used in this payment intent
     const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
     console.log('[PaymentIntentHandler] Payment method retrieved:', paymentMethod.id);
 
-    // Get tier details for subscription creation
+    // Get tier details for subscription creation/update
     const { data: tier, error: tierError } = await supabaseService
       .from('membership_tiers')
       .select(`
@@ -57,102 +73,155 @@ export async function handlePaymentIntentWebhook(
       return createJsonResponse({ error: 'Tier not found' }, 404);
     }
 
-    // Use existing Stripe price ID or create one if it doesn't exist
-    let stripePriceId = tier.stripe_price_id;
-    
-    if (!stripePriceId) {
-      console.log('[PaymentIntentHandler] No existing price ID found, creating new Stripe price for tier:', tier.title);
+    if (isUpgradeFlow && existing_subscription_id) {
+      // Handle upgrade: Update existing Stripe subscription
+      console.log('[PaymentIntentHandler] Processing upgrade - updating existing subscription:', existing_subscription_id);
       
       try {
-        const price = await stripe.prices.create({
-          unit_amount: Math.round(tier.price * 100),
-          currency: 'usd',
-          recurring: { interval: 'month' },
-          product_data: { 
-            name: tier.title,
-            metadata: {
-              tier_id: tier_id,
-              creator_id: creator_id
-            }
+        // Update the existing subscription to the new tier
+        const updatedSubscription = await stripe.subscriptions.update(existing_subscription_id, {
+          items: [{
+            id: (await stripe.subscriptions.retrieve(existing_subscription_id)).items.data[0].id,
+            price: tier.stripe_price_id,
+          }],
+          default_payment_method: paymentMethod.id,
+          proration_behavior: 'none', // We handled proration with the payment intent
+          metadata: {
+            user_id,
+            creator_id,
+            tier_id,
+            tier_name,
+            creator_name
           }
         });
-        stripePriceId = price.id;
-        console.log('[PaymentIntentHandler] Created new price:', stripePriceId);
 
-        // Update tier with the new stripe_price_id
-        await supabaseService
-          .from('membership_tiers')
-          .update({ 
-            stripe_price_id: stripePriceId,
-            stripe_product_id: price.product 
-          })
-          .eq('id', tier_id);
-          
-        console.log('[PaymentIntentHandler] Updated tier with new price and product IDs');
-      } catch (priceError) {
-        console.error('[PaymentIntentHandler] Error creating price:', priceError);
-        throw new Error('Failed to create Stripe price');
+        console.log('[PaymentIntentHandler] Stripe subscription updated:', updatedSubscription.id);
+
+        // Update subscription record in database
+        const subscriptionData = {
+          tier_id,
+          amount: tier.price,
+          status: updatedSubscription.status === 'active' ? 'active' : updatedSubscription.status,
+          updated_at: new Date().toISOString(),
+        };
+
+        console.log('[PaymentIntentHandler] Updating subscription record:', subscriptionData);
+
+        const { error: updateError } = await supabaseService
+          .from('user_subscriptions')
+          .update(subscriptionData)
+          .eq('stripe_subscription_id', existing_subscription_id);
+
+        if (updateError) {
+          console.error('[PaymentIntentHandler] Error updating subscription record:', updateError);
+          throw updateError;
+        }
+
+        console.log('[PaymentIntentHandler] Successfully updated subscription record for upgrade');
+
+      } catch (error) {
+        console.error('[PaymentIntentHandler] Error processing upgrade:', error);
+        return createJsonResponse({ error: 'Failed to process subscription upgrade' }, 500);
       }
-    } else {
-      console.log('[PaymentIntentHandler] Using existing Stripe price ID:', stripePriceId);
-    }
 
-    // Create the subscription in Stripe
-    console.log('[PaymentIntentHandler] Creating Stripe subscription');
-    const subscription = await stripe.subscriptions.create({
-      customer: paymentIntent.customer,
-      items: [{ price: stripePriceId }],
-      default_payment_method: paymentMethod.id,
-      application_fee_percent: 5,
-      transfer_data: { destination: tier.creators.stripe_account_id },
-      metadata: {
+    } else {
+      // Handle new subscription: Create new Stripe subscription
+      console.log('[PaymentIntentHandler] Processing new subscription');
+
+      // Use existing Stripe price ID or create one if it doesn't exist
+      let stripePriceId = tier.stripe_price_id;
+      
+      if (!stripePriceId) {
+        console.log('[PaymentIntentHandler] Creating new Stripe price for tier:', tier.title);
+        
+        try {
+          const price = await stripe.prices.create({
+            unit_amount: Math.round(tier.price * 100),
+            currency: 'usd',
+            recurring: { interval: 'month' },
+            product_data: { 
+              name: tier.title,
+              metadata: {
+                tier_id: tier_id,
+                creator_id: creator_id
+              }
+            }
+          });
+          stripePriceId = price.id;
+          console.log('[PaymentIntentHandler] Created new price:', stripePriceId);
+
+          // Update tier with the new stripe_price_id
+          await supabaseService
+            .from('membership_tiers')
+            .update({ 
+              stripe_price_id: stripePriceId,
+              stripe_product_id: price.product 
+            })
+            .eq('id', tier_id);
+            
+          console.log('[PaymentIntentHandler] Updated tier with new price and product IDs');
+        } catch (priceError) {
+          console.error('[PaymentIntentHandler] Error creating price:', priceError);
+          throw new Error('Failed to create Stripe price');
+        }
+      }
+
+      // Create the subscription in Stripe
+      const subscription = await stripe.subscriptions.create({
+        customer: paymentIntent.customer,
+        items: [{ price: stripePriceId }],
+        default_payment_method: paymentMethod.id,
+        application_fee_percent: 5,
+        transfer_data: { destination: tier.creators.stripe_account_id },
+        metadata: {
+          user_id,
+          creator_id,
+          tier_id,
+          tier_name,
+          creator_name
+        }
+      });
+
+      console.log('[PaymentIntentHandler] Stripe subscription created:', subscription.id);
+
+      // Create subscription record in database
+      const subscriptionData = {
         user_id,
         creator_id,
         tier_id,
-        tier_name,
-        creator_name
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: subscription.customer,
+        status: subscription.status === 'active' ? 'active' : subscription.status,
+        amount: tier.price,
+        current_period_start: subscription.current_period_start ? 
+          new Date(subscription.current_period_start * 1000).toISOString() : null,
+        current_period_end: subscription.current_period_end ? 
+          new Date(subscription.current_period_end * 1000).toISOString() : null,
+        cancel_at_period_end: subscription.cancel_at_period_end || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('[PaymentIntentHandler] Creating subscription record:', subscriptionData);
+
+      const { error: insertError } = await supabaseService
+        .from('user_subscriptions')
+        .insert(subscriptionData);
+
+      if (insertError) {
+        console.error('[PaymentIntentHandler] Error creating subscription record:', insertError);
+        // If we can't create the record, cancel the Stripe subscription
+        try {
+          await stripe.subscriptions.cancel(subscription.id);
+          console.log('[PaymentIntentHandler] Cancelled Stripe subscription due to database error');
+        } catch (cancelError) {
+          console.error('[PaymentIntentHandler] Error cancelling subscription:', cancelError);
+        }
+        throw insertError;
       }
-    });
 
-    console.log('[PaymentIntentHandler] Stripe subscription created:', subscription.id);
-
-    // Create subscription record in database
-    const subscriptionData = {
-      user_id,
-      creator_id,
-      tier_id,
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: subscription.customer,
-      status: subscription.status === 'active' ? 'active' : subscription.status,
-      amount: tier.price,
-      current_period_start: subscription.current_period_start ? 
-        new Date(subscription.current_period_start * 1000).toISOString() : null,
-      current_period_end: subscription.current_period_end ? 
-        new Date(subscription.current_period_end * 1000).toISOString() : null,
-      cancel_at_period_end: subscription.cancel_at_period_end || false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log('[PaymentIntentHandler] Creating subscription record:', subscriptionData);
-
-    const { error: insertError } = await supabaseService
-      .from('user_subscriptions')
-      .insert(subscriptionData);
-
-    if (insertError) {
-      console.error('[PaymentIntentHandler] Error creating subscription record:', insertError);
-      // If we can't create the record, cancel the Stripe subscription
-      try {
-        await stripe.subscriptions.cancel(subscription.id);
-        console.log('[PaymentIntentHandler] Cancelled Stripe subscription due to database error');
-      } catch (cancelError) {
-        console.error('[PaymentIntentHandler] Error cancelling subscription:', cancelError);
-      }
-      throw insertError;
+      console.log('[PaymentIntentHandler] Successfully created subscription record');
     }
-
-    console.log('[PaymentIntentHandler] Successfully created subscription record');
 
     // Clean up legacy subscriptions table
     await supabaseService
