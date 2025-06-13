@@ -10,7 +10,7 @@ export function PostCardContent({ title, content }: PostCardContentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Define character limit for truncation
-  const CHARACTER_LIMIT = 200;
+  const CHARACTER_LIMIT = 400;
   
   // Check if content needs truncation
   const needsTruncation = content.length > CHARACTER_LIMIT;
