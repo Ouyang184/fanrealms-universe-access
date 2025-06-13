@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Play, FileText, File, FileImage, Video } from 'lucide-react';
 import { parseVideoUrl, isVideoUrl } from '@/utils/videoUtils';
@@ -125,17 +124,17 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* STRICT video player validation - only for actual uploaded video files */}
+      {/* Enhanced video player validation using your improved logic */}
       {firstMedia.type === 'video' && 
-       firstMedia.url &&
-       !isVideoUrl(firstMedia.url) &&
-       typeof firstMedia.size === 'number' &&
-       firstMedia.size > 0 &&
-       !firstMedia.url.includes('youtube') &&
-       !firstMedia.url.includes('youtu.be') &&
-       !firstMedia.url.includes('vimeo') &&
-       !firstMedia.url.includes('dailymotion') &&
-       !firstMedia.url.includes('twitch') && (
+       !isVideoUrl(firstMedia.url) && 
+       firstMedia.size && 
+       typeof firstMedia.size === 'number' && 
+       firstMedia.size > 0 && 
+       !firstMedia.url.includes('youtube.com') && 
+       !firstMedia.url.includes('youtu.be') && 
+       !firstMedia.url.includes('vimeo.com') && 
+       !firstMedia.url.includes('dailymotion.com') && 
+       !firstMedia.url.includes('twitch.tv') && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls
