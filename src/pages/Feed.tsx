@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
+import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -148,10 +148,18 @@ export default function FeedPage() {
   // Fetch posts
   const { data: posts, isLoading: loadingPosts } = usePosts();
   
+  // Get user's subscriptions to check for pending cancellations
+  const { userSubscriptions = [] } = useUserSubscriptions();
+  
   // Initialize read posts from localStorage synchronously to prevent flickering
   const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage());
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  // Check if user has subscriptions that are active but scheduled to cancel
+  const hasPendingCancellations = userSubscriptions.some(
+    subscription => subscription.status === 'active' && subscription.cancel_at_period_end === true
+  );
   
   // Save read posts to localStorage when it changes
   useEffect(() => {
@@ -313,6 +321,30 @@ export default function FeedPage() {
               <EmptyFeed />
             ) : (
               <>
+                {/* Service Notification Banner - Show only for pending cancellations */}
+                {hasPendingCancellations && (
+                  <div className="mb-6 p-4 bg-yellow-100 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-sm">!</span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-800">
+                          You have subscriptions that are scheduled to cancel at the end of your current billing period. 
+                          You'll continue to have access until then. To prevent cancellation, go to{" "}
+                          <button 
+                            className="underline font-medium"
+                            onClick={() => window.location.href = '/subscriptions'}
+                          >
+                            Your Subscriptions
+                          </button>
+                          {" "}and reactivate your subscriptions.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Feed Tabs */}
                 <Tabs defaultValue="all" className="mb-8">
                   <TabsList className="bg-transparent border-b border-border rounded-none w-full justify-start p-0">
