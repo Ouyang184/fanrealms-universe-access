@@ -72,7 +72,9 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   if (!firstMedia) return null;
 
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
-  if (firstMedia.type === 'video' && isVideoUrl(firstMedia.url)) {
+  const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
+  
+  if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
     
     if (videoInfo && videoInfo.platform !== 'unknown') {
@@ -118,7 +120,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Only show video player for actual video files (not URLs) that have valid content */}
+      {/* Only show video player for actual video files that are NOT URLs and have valid content */}
       {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size && firstMedia.size > 0 && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
