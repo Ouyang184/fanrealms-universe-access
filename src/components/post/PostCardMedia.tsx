@@ -79,16 +79,6 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
   
-  // Debug logging to help identify the issue
-  console.log('PostCardMedia Debug:', {
-    firstMedia,
-    isEmbeddableVideoUrl,
-    isVideoUrl: isVideoUrl(firstMedia.url),
-    hasSize: !!firstMedia.size,
-    sizeValue: firstMedia.size,
-    sizeType: typeof firstMedia.size
-  });
-  
   if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
     
@@ -135,17 +125,17 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* ONLY render video player for actual video files, NOT for embeddable URLs */}
+      {/* STRICT video player validation - only for actual uploaded video files */}
       {firstMedia.type === 'video' && 
-       !isVideoUrl(firstMedia.url) && 
-       firstMedia.size && 
-       typeof firstMedia.size === 'number' && 
-       firstMedia.size > 0 && 
-       !firstMedia.url.includes('youtube.com') && 
-       !firstMedia.url.includes('youtu.be') && 
-       !firstMedia.url.includes('vimeo.com') && 
-       !firstMedia.url.includes('dailymotion.com') && 
-       !firstMedia.url.includes('twitch.tv') && (
+       firstMedia.url &&
+       !isVideoUrl(firstMedia.url) &&
+       typeof firstMedia.size === 'number' &&
+       firstMedia.size > 0 &&
+       !firstMedia.url.includes('youtube') &&
+       !firstMedia.url.includes('youtu.be') &&
+       !firstMedia.url.includes('vimeo') &&
+       !firstMedia.url.includes('dailymotion') &&
+       !firstMedia.url.includes('twitch') && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls
