@@ -1,3 +1,4 @@
+
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string, immediate: boolean = false) {
@@ -36,7 +37,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         updated_at: new Date().toISOString()
       };
       
-      console.log('Stripe subscription cancelled immediately');
+      console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
     } else {
       // Set the Stripe subscription to cancel at period end
       console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
@@ -65,11 +66,12 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       throw updateError;
     }
 
-    console.log('User subscription updated successfully');
+    console.log('User subscription updated successfully with status:', immediate ? 'canceled' : 'active (cancel at period end)');
     
     const responseData = { 
       success: true,
-      message: immediate ? 'Subscription cancelled immediately' : 'Subscription will cancel at period end'
+      message: immediate ? 'Subscription cancelled immediately' : 'Subscription will cancel at period end',
+      immediate: immediate
     };
 
     if (!immediate && cancelledSubscription.current_period_end) {
