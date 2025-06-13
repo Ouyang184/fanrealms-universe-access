@@ -29,7 +29,7 @@ export async function handleCreateSubscription(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // UPDATED: Check for existing active subscriptions to the same creator
+  // Check for existing active subscriptions to the same creator
   console.log('Checking for existing active subscriptions to creator:', creatorId);
   const { data: existingSubscriptions, error: checkError } = await supabaseService
     .from('user_subscriptions')
@@ -66,6 +66,11 @@ export async function handleCreateSubscription(
   }
 
   console.log('New tier found:', newTier.title, 'Price:', newTier.price);
+
+  // Create or get Stripe customer first
+  console.log('Creating/getting Stripe customer...');
+  const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
+  console.log('Stripe customer ID:', stripeCustomerId);
 
   // Handle tier upgrade scenario
   if (existingSubscriptions && existingSubscriptions.length > 0) {
@@ -118,12 +123,7 @@ export async function handleCreateSubscription(
     console.log('Calculated prorated upgrade amount:', proratedAmount);
 
     try {
-      // Create or get Stripe customer
-      console.log('Creating/getting Stripe customer for upgrade...');
-      const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
-      console.log('Stripe customer ID:', stripeCustomerId);
-
-      // Check for existing payment intent for this upgrade
+      // Check for existing payment intent for this exact upgrade combination
       console.log('Checking for existing payment intent for this upgrade...');
       const metadataSearch = {
         user_id: user.id,
@@ -135,7 +135,7 @@ export async function handleCreateSubscription(
 
       const existingPaymentIntents = await stripe.paymentIntents.list({
         customer: stripeCustomerId,
-        limit: 10
+        limit: 50 // Increase limit to check more thoroughly
       });
 
       // Find existing payment intent for this exact upgrade
@@ -257,16 +257,11 @@ export async function handleCreateSubscription(
   }
 
   try {
-    // Create or get Stripe customer
-    console.log('Creating/getting Stripe customer...');
-    const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
-    console.log('Stripe customer ID:', stripeCustomerId);
-
-    // Check for existing payment intent for new subscription
+    // Check for existing payment intent for new subscription with this exact combination
     console.log('Checking for existing payment intent for new subscription...');
     const existingPaymentIntents = await stripe.paymentIntents.list({
       customer: stripeCustomerId,
-      limit: 10
+      limit: 50 // Increase limit to check more thoroughly
     });
 
     // Find existing payment intent for this exact subscription setup
