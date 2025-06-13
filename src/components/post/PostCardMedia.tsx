@@ -120,8 +120,17 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Only show video player for actual video files that are NOT URLs and have valid content */}
-      {firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && firstMedia.size && firstMedia.size > 0 && (
+      {/* Only show video player for actual video files that are NOT embeddable URLs and have valid file properties */}
+      {firstMedia.type === 'video' && 
+       !isVideoUrl(firstMedia.url) && 
+       firstMedia.size && 
+       firstMedia.size > 0 && 
+       firstMedia.url && 
+       !firstMedia.url.includes('youtube.com') && 
+       !firstMedia.url.includes('youtu.be') && 
+       !firstMedia.url.includes('vimeo.com') && 
+       !firstMedia.url.includes('dailymotion.com') && 
+       !firstMedia.url.includes('twitch.tv') && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls
