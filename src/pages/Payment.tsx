@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -41,10 +40,12 @@ function PaymentForm() {
     currentPeriodEnd
   } = location.state || {};
 
-  // Calculate pricing details
-  const monthlyAmount = amount ? amount / 100 : 30;
-  const salesTax = monthlyAmount * 0.046; // 4.6% tax example
-  const totalToday = monthlyAmount + salesTax;
+  // Calculate pricing details dynamically
+  const baseAmount = amount ? amount / 100 : 30;
+  const actualChargeAmount = isUpgrade ? (proratedAmount || baseAmount) : baseAmount;
+  const salesTax = actualChargeAmount * 0.046; // 4.6% tax example
+  const oneTimeCredit = isUpgrade ? 0 : 10; // Only apply credit for new subscriptions
+  const totalToday = actualChargeAmount + salesTax - oneTimeCredit;
 
   useEffect(() => {
     if (!clientSecret) {
@@ -56,9 +57,9 @@ function PaymentForm() {
       navigate('/');
     }
     if (amount) {
-      setPaymentAmount((amount / 100).toFixed(2));
+      setPaymentAmount(actualChargeAmount.toFixed(2));
     }
-  }, [clientSecret, amount, navigate, toast]);
+  }, [clientSecret, amount, navigate, toast, actualChargeAmount]);
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
@@ -291,13 +292,12 @@ function PaymentForm() {
             <div className="space-y-4">
               <div>
                 <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
-                {isUpgrade ? (
-                  <p className="text-gray-400 text-sm mb-4">
-                    You're upgrading your subscription. Only the prorated difference will be charged today.
-                  </p>
-                ) : (
-                  <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
-                )}
+                <p className="text-gray-400 text-sm mb-4">
+                  {isUpgrade 
+                    ? "You're upgrading your subscription. Only the prorated difference will be charged today."
+                    : "Pay the set price or you can choose to pay more."
+                  }
+                </p>
                 
                 <div className="space-y-3">
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
@@ -308,8 +308,8 @@ function PaymentForm() {
                         </div>
                         <div className="text-sm text-gray-400">
                           {isUpgrade 
-                            ? `$${proratedAmount || monthlyAmount} (difference from $${originalAmount}/month)`
-                            : `$${monthlyAmount}/month`
+                            ? `$${actualChargeAmount} (difference from $${originalAmount}/month)`
+                            : `$${baseAmount}/month`
                           }
                         </div>
                       </div>
@@ -321,7 +321,7 @@ function PaymentForm() {
                           onChange={(e) => setPaymentAmount(e.target.value)}
                           className="w-20 bg-transparent border-gray-600 text-white text-right"
                           step="0.01"
-                          min={monthlyAmount}
+                          min={actualChargeAmount}
                         />
                       </div>
                     </div>
@@ -381,7 +381,7 @@ function PaymentForm() {
                   </p>
                 ) : (
                   <p>
-                    You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                    You'll pay ${totalToday.toFixed(2)} today, and then ${baseAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
                   </p>
                 )}
                 <p>
@@ -426,7 +426,7 @@ function PaymentForm() {
             </div>
           </div>
 
-          {/* Right Column - Order Summary */}
+          {/* Right Column - Dynamic Order Summary */}
           <div className="lg:pl-8">
             <Card className="bg-gray-900 border-gray-800 sticky top-6">
               <CardHeader>
@@ -450,7 +450,7 @@ function PaymentForm() {
                   </div>
                 </div>
 
-                {/* Pricing Breakdown */}
+                {/* Dynamic Pricing Breakdown */}
                 <div className="space-y-3 pt-4 border-t border-gray-700">
                   {isUpgrade ? (
                     <>
@@ -464,18 +464,18 @@ function PaymentForm() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Prorated difference</span>
-                        <span className="text-white">${(proratedAmount || monthlyAmount).toFixed(2)}</span>
+                        <span className="text-white">${actualChargeAmount.toFixed(2)}</span>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Monthly payment</span>
-                        <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                        <span className="text-white">${baseAmount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">One-time credit</span>
-                        <span className="text-white">-$10.00</span>
+                        <span className="text-green-400">-${oneTimeCredit.toFixed(2)}</span>
                       </div>
                     </>
                   )}
@@ -485,15 +485,19 @@ function PaymentForm() {
                   </div>
                   
                   <div className="flex justify-between pt-3 border-t border-gray-700">
-                    <span className="text-white font-semibold">Total due today</span>
+                    <span className="text-white font-semibold">
+                      {isUpgrade ? 'Upgrade total today' : 'Total due today'}
+                    </span>
                     <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
                   </div>
                   
-                  {isUpgrade && currentPeriodEnd && (
-                    <div className="text-xs text-gray-500 mt-2">
-                      Next billing: {new Date(currentPeriodEnd).toLocaleDateString()} at ${originalAmount}/month
-                    </div>
-                  )}
+                  <div className="text-xs text-gray-500 mt-2">
+                    {isUpgrade && currentPeriodEnd ? (
+                      <>Next billing: {new Date(currentPeriodEnd).toLocaleDateString()} at ${originalAmount}/month</>
+                    ) : (
+                      <>Next billing: 1 June at ${baseAmount}/month</>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
