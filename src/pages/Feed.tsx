@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
+import { PostCardContent } from "@/components/post/PostCardContent";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
 
@@ -177,8 +178,8 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead }: {
 
       {/* Post Content */}
       <div className="p-4">
-        <h2 className="text-xl font-bold mb-2">{post.title}</h2>
-        <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
+        {/* Use PostCardContent component for proper read more functionality */}
+        <PostCardContent title={post.title} content={post.content} />
         
         {/* Dynamic Tier Access Information */}
         <TierAccessInfo post={post} />
