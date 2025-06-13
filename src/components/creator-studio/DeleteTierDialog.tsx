@@ -68,6 +68,33 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         return;
       }
 
+      // Check if there are posts associated with this tier
+      const { data: associatedPosts, error: postsError } = await supabase
+        .from("posts")
+        .select("id, title")
+        .eq("tier_id", tierId);
+
+      if (postsError) {
+        console.error('Error checking posts:', postsError);
+      }
+
+      // If there are posts, remove the tier association from them
+      if (associatedPosts && associatedPosts.length > 0) {
+        console.log(`Found ${associatedPosts.length} posts associated with this tier. Removing tier association...`);
+        
+        const { error: updatePostsError } = await supabase
+          .from("posts")
+          .update({ tier_id: null })
+          .eq("tier_id", tierId);
+
+        if (updatePostsError) {
+          console.error('Error updating posts:', updatePostsError);
+          throw new Error("Failed to remove tier association from posts");
+        }
+
+        console.log('Successfully removed tier association from posts');
+      }
+
       // Delete from Stripe first (completely, not just archive)
       if (tierData.stripe_product_id) {
         try {
@@ -152,7 +179,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
           <AlertDialogDescription>
             Are you sure you want to permanently delete the "{tierName}" tier? This action cannot be undone.
             <p className="mt-2 text-destructive font-medium">
-              Warning: This will completely remove the tier from both Stripe and your database. Any active subscribers will lose access to their benefits.
+              Warning: This will completely remove the tier from both Stripe and your database. Any posts associated with this tier will be made public.
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               If there are active subscriptions for this tier, you'll need to cancel them first before deleting.
