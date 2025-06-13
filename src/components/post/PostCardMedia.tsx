@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Play, FileText, File, FileImage, Video } from 'lucide-react';
 import { parseVideoUrl, isVideoUrl } from '@/utils/videoUtils';
@@ -78,6 +79,16 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
   
+  // Debug logging to help identify the issue
+  console.log('PostCardMedia Debug:', {
+    firstMedia,
+    isEmbeddableVideoUrl,
+    isVideoUrl: isVideoUrl(firstMedia.url),
+    hasSize: !!firstMedia.size,
+    sizeValue: firstMedia.size,
+    sizeType: typeof firstMedia.size
+  });
+  
   if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
     
@@ -124,7 +135,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       )}
       
-      {/* Enhanced video player validation using your improved logic */}
+      {/* ONLY render video player for actual video files, NOT for embeddable URLs */}
       {firstMedia.type === 'video' && 
        !isVideoUrl(firstMedia.url) && 
        firstMedia.size && 
