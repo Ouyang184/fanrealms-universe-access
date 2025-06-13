@@ -10,33 +10,47 @@ interface PostCardMediaProps {
 export function PostCardMedia({ attachments }: PostCardMediaProps) {
   // Parse attachments from JSON and get first media item
   const getFirstMedia = (attachments: any) => {
-    if (!attachments) return null;
+    console.log('PostCardMedia - Raw attachments input:', attachments);
+    
+    if (!attachments) {
+      console.log('PostCardMedia - No attachments provided');
+      return null;
+    }
     
     let parsedAttachments = [];
     if (typeof attachments === 'string' && attachments !== "undefined") {
       try {
         parsedAttachments = JSON.parse(attachments);
+        console.log('PostCardMedia - Parsed string attachments:', parsedAttachments);
       } catch {
+        console.log('PostCardMedia - Failed to parse string attachments');
         return null;
       }
     } else if (Array.isArray(attachments)) {
       parsedAttachments = attachments;
+      console.log('PostCardMedia - Using array attachments:', parsedAttachments);
     } else if (attachments && typeof attachments === 'object' && attachments.value) {
       if (typeof attachments.value === 'string' && attachments.value !== "undefined") {
         try {
           parsedAttachments = JSON.parse(attachments.value);
+          console.log('PostCardMedia - Parsed object.value attachments:', parsedAttachments);
         } catch {
+          console.log('PostCardMedia - Failed to parse object.value attachments');
           return null;
         }
       } else if (Array.isArray(attachments.value)) {
         parsedAttachments = attachments.value;
+        console.log('PostCardMedia - Using object.value array attachments:', parsedAttachments);
       }
     }
 
     if (Array.isArray(parsedAttachments) && parsedAttachments.length > 0) {
-      return parsedAttachments[0];
+      const firstMedia = parsedAttachments[0];
+      console.log('PostCardMedia - First media item:', firstMedia);
+      return firstMedia;
     }
     
+    console.log('PostCardMedia - No valid media found');
     return null;
   };
 
@@ -69,15 +83,33 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
 
   const firstMedia = getFirstMedia(attachments);
 
-  if (!firstMedia) return null;
+  if (!firstMedia) {
+    console.log('PostCardMedia - No media to render, returning null');
+    return null;
+  }
+
+  console.log('PostCardMedia - Processing media:', {
+    type: firstMedia.type,
+    url: firstMedia.url,
+    name: firstMedia.name,
+    size: firstMedia.size
+  });
 
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
   
+  console.log('PostCardMedia - Video URL check:', {
+    isVideoType: firstMedia.type === 'video',
+    isVideoUrl: isVideoUrl(firstMedia.url),
+    isEmbeddableVideoUrl
+  });
+  
   if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
+    console.log('PostCardMedia - Video parsing result:', videoInfo);
     
     if (videoInfo && videoInfo.platform !== 'unknown') {
+      console.log('PostCardMedia - Rendering embedded video iframe for platform:', videoInfo.platform);
       return (
         <div className="relative w-full mb-4">
           <div className="aspect-video w-full rounded-lg overflow-hidden border">
@@ -99,10 +131,13 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
     }
 
     // ✅ Best-practice: block fallback rendering
+    console.log('PostCardMedia - Video URL detected but platform unknown, blocking fallback');
     return null;
   }
 
   // Handle non-URL media types (actual file attachments)
+  console.log('PostCardMedia - Rendering file attachment for type:', firstMedia.type);
+  
   return (
     <div className="relative mb-4">
       {firstMedia.type === 'image' && (
@@ -113,6 +148,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
             className="w-full h-full object-cover"
             style={{ aspectRatio: '1/1' }}
             onError={(e) => {
+              console.log('PostCardMedia - Image failed to load:', firstMedia.url);
               e.currentTarget.style.display = 'none';
             }}
           />
@@ -130,20 +166,37 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
        firstMedia.size &&
        typeof firstMedia.size === 'number' &&
        firstMedia.size > 0 && (
-        <div className="relative w-full rounded-lg overflow-hidden border">
-          <video
-            controls
-            className="w-full max-h-80"
-            preload="metadata"
-          >
-            <source src={firstMedia.url} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
-            <span>🎥</span>
-            <span>Video File</span>
+        <>
+          {console.log('PostCardMedia - Rendering HTML5 video player for file:', {
+            url: firstMedia.url,
+            size: firstMedia.size,
+            name: firstMedia.name
+          })}
+          <div className="relative w-full rounded-lg overflow-hidden border">
+            <video
+              controls
+              className="w-full max-h-80"
+              preload="metadata"
+              onError={(e) => {
+                console.error('PostCardMedia - Video element error:', e);
+              }}
+              onLoadedMetadata={(e) => {
+                console.log('PostCardMedia - Video metadata loaded:', {
+                  duration: e.currentTarget.duration,
+                  videoWidth: e.currentTarget.videoWidth,
+                  videoHeight: e.currentTarget.videoHeight
+                });
+              }}
+            >
+              <source src={firstMedia.url} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
+              <span>🎥</span>
+              <span>Video File</span>
+            </div>
           </div>
-        </div>
+        </>
       )}
       
       {firstMedia.type !== 'image' && firstMedia.type !== 'video' && (
