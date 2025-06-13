@@ -44,7 +44,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         cancel_at_period_end: true
       });
 
-      // Update our database - keep status as active but add cancel info
+      // Update our database - keep status as 'active' but add cancel info
       updateData = {
         // Keep status as active since subscription is still active until period end
         cancel_at_period_end: true,

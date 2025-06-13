@@ -88,10 +88,8 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('[SubscriptionCheck] All user subscriptions to this creator:', allUserSubs);
 
-      // Filter for active subscriptions only - exclude canceled ones
-      const activeSubscriptions = data?.filter(sub => 
-        sub.status === 'active' && sub.status !== 'canceled'
-      ) || [];
+      // Filter for active subscriptions only
+      const activeSubscriptions = data?.filter(sub => sub.status === 'active') || [];
       console.log('[SubscriptionCheck] Active subscriptions for tier:', activeSubscriptions);
 
       if (activeSubscriptions.length === 0) {
@@ -104,11 +102,8 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       // Enhanced subscription validation - FIXED LOGIC
       let isCurrentlyActive = subscription.status === 'active';
       
-      // If subscription is canceled, it's not active
-      if (subscription.status === 'canceled') {
-        isCurrentlyActive = false;
-      } else if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
-        // Check if subscription is scheduled to cancel but still active
+      // Check if subscription is scheduled to cancel but still active
+      if (subscription.cancel_at_period_end === true && subscription.current_period_end) {
         const periodEndDate = new Date(subscription.current_period_end);
         const now = new Date();
         
