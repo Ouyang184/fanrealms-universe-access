@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +22,7 @@ import { PostComments } from "@/components/post/PostComments";
 import { PostCardContent } from "@/components/post/PostCardContent";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
+import { PostCardMedia } from "@/components/post/PostCardMedia";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -180,6 +180,9 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead }: {
       <div className="p-4">
         {/* Use PostCardContent component for proper read more functionality */}
         <PostCardContent title={post.title} content={post.content} />
+        
+        {/* Add PostCardMedia component to show YouTube embeds */}
+        <PostCardMedia attachments={post.attachments} />
         
         {/* Dynamic Tier Access Information */}
         <TierAccessInfo post={post} />
