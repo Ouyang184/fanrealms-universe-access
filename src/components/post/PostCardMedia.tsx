@@ -71,6 +71,11 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
 
   if (!firstMedia) return null;
 
+  // Early guard clause to prevent rendering broken video elements
+  if (firstMedia.type === 'video' && !firstMedia.url) {
+    return null;
+  }
+
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
   
@@ -122,15 +127,10 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
       
       {/* Only show video player for actual video files that are NOT embeddable URLs and have valid file properties */}
       {firstMedia.type === 'video' && 
-       !isVideoUrl(firstMedia.url) && 
-       firstMedia.size && 
-       firstMedia.size > 0 && 
-       firstMedia.url && 
-       !firstMedia.url.includes('youtube.com') && 
-       !firstMedia.url.includes('youtu.be') && 
-       !firstMedia.url.includes('vimeo.com') && 
-       !firstMedia.url.includes('dailymotion.com') && 
-       !firstMedia.url.includes('twitch.tv') && (
+       firstMedia.url &&
+       !isVideoUrl(firstMedia.url) &&
+       firstMedia.size &&
+       firstMedia.size > 0 && (
         <div className="relative w-full rounded-lg overflow-hidden border">
           <video
             controls

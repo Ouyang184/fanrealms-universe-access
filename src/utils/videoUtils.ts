@@ -66,6 +66,9 @@ export function parseVideoUrl(url: string): VideoInfo | null {
 }
 
 export function isVideoUrl(url: string): boolean {
-  const videoInfo = parseVideoUrl(url);
-  return videoInfo !== null && videoInfo.platform !== 'unknown';
+  if (!url) return false;
+  
+  // Check for video platform URLs using a comprehensive regex
+  const videoUrlRegex = /(?:youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|twitch\.tv)/i;
+  return videoUrlRegex.test(url);
 }
