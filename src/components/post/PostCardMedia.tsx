@@ -88,29 +88,34 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
     return null;
   }
 
-  console.log('PostCardMedia - Processing media:', {
+  console.log('PostCardMedia - DETAILED Processing media:', {
     type: firstMedia.type,
     url: firstMedia.url,
     name: firstMedia.name,
-    size: firstMedia.size
+    size: firstMedia.size,
+    sizeType: typeof firstMedia.size,
+    urlLength: firstMedia.url ? firstMedia.url.length : 0,
+    isVideoUrl: isVideoUrl(firstMedia.url),
+    isEmbeddableVideoUrl: firstMedia.type === 'video' && isVideoUrl(firstMedia.url)
   });
 
   // Check if this is a video URL that needs embedding (YouTube, Vimeo, etc.)
   const isEmbeddableVideoUrl = firstMedia.type === 'video' && isVideoUrl(firstMedia.url);
   
-  console.log('PostCardMedia - Video URL check:', {
+  console.log('PostCardMedia - DECISION POINT - Video URL check:', {
     isVideoType: firstMedia.type === 'video',
     isVideoUrl: isVideoUrl(firstMedia.url),
-    isEmbeddableVideoUrl
+    isEmbeddableVideoUrl,
+    willRenderEmbed: isEmbeddableVideoUrl
   });
   
   // FIRST PRIORITY: Handle embeddable video URLs (YouTube, Vimeo, etc.)
   if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
-    console.log('PostCardMedia - Video parsing result:', videoInfo);
+    console.log('PostCardMedia - EMBED PATH - Video parsing result:', videoInfo);
     
     if (videoInfo && videoInfo.platform !== 'unknown') {
-      console.log('PostCardMedia - Rendering embedded video iframe for platform:', videoInfo.platform);
+      console.log('PostCardMedia - RENDERING EMBEDDED VIDEO - Early return to prevent fallback');
       return (
         <div className="relative w-full mb-4">
           <div className="aspect-video w-full rounded-lg overflow-hidden border">
@@ -132,13 +137,15 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
     }
 
     // If we can't parse the video URL, don't render anything
-    console.log('PostCardMedia - Video URL detected but platform unknown, blocking fallback');
+    console.log('PostCardMedia - EMBED PATH FAILED - Video URL detected but platform unknown, returning null');
     return null;
   }
 
+  console.log('PostCardMedia - NOT EMBEDDABLE - Continuing to other checks');
+
   // SECOND PRIORITY: Handle image attachments
   if (firstMedia.type === 'image') {
-    console.log('PostCardMedia - Rendering image attachment');
+    console.log('PostCardMedia - RENDERING IMAGE');
     return (
       <div className="relative mb-4">
         <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
@@ -163,14 +170,25 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
 
   // THIRD PRIORITY: Handle uploaded video files (NOT URLs)
   // Only render HTML5 video player for actual uploaded video files with valid size
-  if (firstMedia.type === 'video' && 
-      !isVideoUrl(firstMedia.url) &&  // Must NOT be a URL
-      firstMedia.url &&
-      firstMedia.size &&
-      typeof firstMedia.size === 'number' &&
-      firstMedia.size > 0) {
-    
-    console.log('PostCardMedia - Rendering HTML5 video player for uploaded file:', {
+  const isUploadedVideoFile = firstMedia.type === 'video' && 
+                             !isVideoUrl(firstMedia.url) &&  // Must NOT be a URL
+                             firstMedia.url &&
+                             firstMedia.size &&
+                             typeof firstMedia.size === 'number' &&
+                             firstMedia.size > 0;
+
+  console.log('PostCardMedia - UPLOADED VIDEO CHECK:', {
+    isVideoType: firstMedia.type === 'video',
+    isNotVideoUrl: !isVideoUrl(firstMedia.url),
+    hasUrl: !!firstMedia.url,
+    hasSize: !!firstMedia.size,
+    sizeIsNumber: typeof firstMedia.size === 'number',
+    sizeGreaterThanZero: firstMedia.size > 0,
+    finalDecision: isUploadedVideoFile
+  });
+
+  if (isUploadedVideoFile) {
+    console.log('PostCardMedia - RENDERING HTML5 VIDEO PLAYER for uploaded file:', {
       url: firstMedia.url,
       size: firstMedia.size,
       name: firstMedia.name,
@@ -205,11 +223,25 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
         </div>
       </div>
     );
+  } else if (firstMedia.type === 'video') {
+    console.log('PostCardMedia - VIDEO TYPE BUT NOT QUALIFYING for HTML5 player:', {
+      type: firstMedia.type,
+      url: firstMedia.url,
+      urlLength: firstMedia.url ? firstMedia.url.length : 0,
+      isVideoUrl: isVideoUrl(firstMedia.url),
+      size: firstMedia.size,
+      sizeType: typeof firstMedia.size,
+      reason: !isVideoUrl(firstMedia.url) ? 'Not a URL' : 
+              !firstMedia.url ? 'No URL' :
+              !firstMedia.size ? 'No size' :
+              typeof firstMedia.size !== 'number' ? 'Size not number' :
+              firstMedia.size <= 0 ? 'Size zero or negative' : 'Unknown'
+    });
   }
 
   // FOURTH PRIORITY: Handle other file types (PDF, etc.)
   if (firstMedia.type !== 'image' && firstMedia.type !== 'video') {
-    console.log('PostCardMedia - Rendering file attachment for type:', firstMedia.type);
+    console.log('PostCardMedia - RENDERING FILE attachment for type:', firstMedia.type);
     return (
       <div className="relative mb-4">
         <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30 w-fit">
@@ -236,11 +268,12 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   }
 
   // If we get here, log what we couldn't handle
-  console.log('PostCardMedia - No matching handler for media:', {
+  console.log('PostCardMedia - NO HANDLER FOUND for media:', {
     type: firstMedia.type,
     isVideoUrl: isVideoUrl(firstMedia.url),
     hasSize: !!firstMedia.size,
-    size: firstMedia.size
+    size: firstMedia.size,
+    url: firstMedia.url
   });
   
   return null;
