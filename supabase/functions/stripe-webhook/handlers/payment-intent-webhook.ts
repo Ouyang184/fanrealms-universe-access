@@ -1,4 +1,3 @@
-
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handlePaymentIntentWebhook(
@@ -13,18 +12,18 @@ export async function handlePaymentIntentWebhook(
   console.log('[PaymentIntentHandler] Payment Intent status:', paymentIntent.status);
   console.log('[PaymentIntentHandler] Payment Intent metadata:', paymentIntent.metadata);
 
-  // Only process succeeded payment intents
+  // Only process succeeded payment intents for subscription setup
   if (paymentIntent.status !== 'succeeded') {
     console.log('[PaymentIntentHandler] Payment intent not succeeded, skipping');
     return createJsonResponse({ success: true });
   }
 
-  // Check if this is a subscription-related payment
+  // Check if this is a subscription setup payment or tier upgrade
   const isSubscriptionSetup = paymentIntent.metadata.type === 'subscription_setup';
   const isTierUpgrade = paymentIntent.metadata.type === 'tier_upgrade';
-
+  
   if (!isSubscriptionSetup && !isTierUpgrade) {
-    console.log('[PaymentIntentHandler] Not a subscription-related payment, skipping');
+    console.log('[PaymentIntentHandler] Not a subscription setup or tier upgrade payment, skipping');
     return createJsonResponse({ success: true });
   }
 
@@ -35,44 +34,48 @@ export async function handlePaymentIntentWebhook(
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
   }
 
-  console.log('[PaymentIntentHandler] Processing payment for:', { user_id, creator_id, tier_id, type: paymentIntent.metadata.type });
+  console.log('[PaymentIntentHandler] Processing subscription for:', { user_id, creator_id, tier_id, isTierUpgrade });
 
   try {
-    // Handle tier upgrade
+    // Handle tier upgrade scenario
     if (isTierUpgrade) {
       console.log('[PaymentIntentHandler] Processing tier upgrade');
       
-      const existingSubscriptionId = paymentIntent.metadata.existing_subscription_id;
-      if (!existingSubscriptionId) {
-        throw new Error('Missing existing subscription ID for upgrade');
+      const { 
+        existing_subscription_id, 
+        current_period_end, 
+        original_tier_id 
+      } = paymentIntent.metadata;
+
+      if (!existing_subscription_id || !current_period_end) {
+        console.error('[PaymentIntentHandler] Missing upgrade metadata');
+        return createJsonResponse({ error: 'Missing upgrade metadata' }, 400);
       }
 
-      // Get tier details for subscription update
-      const { data: tier, error: tierError } = await supabaseService
+      // Get the existing Stripe subscription
+      console.log('[PaymentIntentHandler] Retrieving existing Stripe subscription:', existing_subscription_id);
+      const existingStripeSubscription = await stripe.subscriptions.retrieve(existing_subscription_id);
+
+      // Get new tier details
+      const { data: newTier, error: tierError } = await supabaseService
         .from('membership_tiers')
-        .select(`
-          *,
-          creators!inner(
-            stripe_account_id,
-            display_name
-          )
-        `)
+        .select('*')
         .eq('id', tier_id)
         .single();
 
-      if (tierError || !tier) {
-        console.error('[PaymentIntentHandler] Tier not found:', tierError);
-        return createJsonResponse({ error: 'Tier not found' }, 404);
+      if (tierError || !newTier) {
+        console.error('[PaymentIntentHandler] New tier not found:', tierError);
+        return createJsonResponse({ error: 'New tier not found' }, 404);
       }
 
       // Update the existing Stripe subscription to the new tier
       console.log('[PaymentIntentHandler] Updating Stripe subscription to new tier');
-      const subscription = await stripe.subscriptions.update(existingSubscriptionId, {
+      const updatedSubscription = await stripe.subscriptions.update(existing_subscription_id, {
         items: [{
-          id: (await stripe.subscriptions.retrieve(existingSubscriptionId)).items.data[0].id,
-          price: tier.stripe_price_id,
+          id: existingStripeSubscription.items.data[0].id,
+          price: newTier.stripe_price_id,
         }],
-        proration_behavior: 'none', // We already charged the prorated amount
+        proration_behavior: 'none', // We already handled proration with the payment intent
         metadata: {
           user_id,
           creator_id,
@@ -82,33 +85,27 @@ export async function handlePaymentIntentWebhook(
         }
       });
 
-      console.log('[PaymentIntentHandler] Stripe subscription updated:', subscription.id);
+      console.log('[PaymentIntentHandler] Stripe subscription updated:', updatedSubscription.id);
 
-      // Update subscription record in database
-      const subscriptionData = {
-        tier_id,
-        amount: tier.price,
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log('[PaymentIntentHandler] Updating subscription record:', subscriptionData);
-
+      // Update the database record
+      console.log('[PaymentIntentHandler] Updating database subscription record');
       const { error: updateError } = await supabaseService
         .from('user_subscriptions')
-        .update(subscriptionData)
-        .eq('stripe_subscription_id', existingSubscriptionId);
+        .update({
+          tier_id: tier_id,
+          amount: newTier.price,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_subscription_id', existing_subscription_id);
 
       if (updateError) {
         console.error('[PaymentIntentHandler] Error updating subscription record:', updateError);
-        throw updateError;
+        return createJsonResponse({ error: 'Failed to update subscription record' }, 500);
       }
 
-      console.log('[PaymentIntentHandler] Successfully updated subscription to new tier');
+      console.log('[PaymentIntentHandler] Tier upgrade completed successfully');
       return createJsonResponse({ success: true });
     }
-
-    // Handle new subscription setup
-    console.log('[PaymentIntentHandler] Processing new subscription setup');
 
     // Get the payment method used in this payment intent
     const paymentMethod = await stripe.paymentMethods.retrieve(paymentIntent.payment_method);
