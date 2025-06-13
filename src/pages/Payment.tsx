@@ -277,9 +277,7 @@ function PaymentForm() {
           {/* Left Column - Payment Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {isUpgrade ? 'Upgrade Payment' : 'Payment details'}
-              </h1>
+              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
               {isUpgrade && (
                 <div className="flex items-center gap-2 text-blue-400 mb-4">
                   <TrendingUp className="h-5 w-5" />
@@ -308,7 +306,7 @@ function PaymentForm() {
                         </div>
                         <div className="text-sm text-gray-400">
                           {isUpgrade 
-                            ? `$${actualChargeAmount} (difference from $${originalAmount}/month)`
+                            ? `$${actualChargeAmount.toFixed(2)} (difference from $${originalAmount}/month)`
                             : `$${baseAmount}/month`
                           }
                         </div>
@@ -426,13 +424,11 @@ function PaymentForm() {
             </div>
           </div>
 
-          {/* Right Column - Dynamic Order Summary */}
+          {/* Right Column - Order Summary */}
           <div className="lg:pl-8">
             <Card className="bg-gray-900 border-gray-800 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-white">
-                  {isUpgrade ? 'Upgrade summary' : 'Order summary'}
-                </CardTitle>
+                <CardTitle className="text-white">Order summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Creator Info */}
@@ -444,14 +440,13 @@ function PaymentForm() {
                   </div>
                   <div>
                     <div className="text-white font-medium">{tierName || 'Creator'}</div>
-                    <div className="text-gray-400 text-sm">
-                      {isUpgrade ? `Upgrading from ${currentTier}` : 'ULTRA Gamer'}
-                    </div>
+                    <div className="text-gray-400 text-sm">ULTRA Gamer</div>
                   </div>
                 </div>
 
                 {/* Dynamic Pricing Breakdown */}
                 <div className="space-y-3 pt-4 border-t border-gray-700">
+                  {/* For Upgrades */}
                   {isUpgrade ? (
                     <>
                       <div className="flex justify-between">
@@ -468,6 +463,7 @@ function PaymentForm() {
                       </div>
                     </>
                   ) : (
+                    /* For New Subscriptions */
                     <>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Monthly payment</span>
@@ -479,15 +475,14 @@ function PaymentForm() {
                       </div>
                     </>
                   )}
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-400">Sales Tax</span>
                     <span className="text-white">${salesTax.toFixed(2)}</span>
                   </div>
                   
                   <div className="flex justify-between pt-3 border-t border-gray-700">
-                    <span className="text-white font-semibold">
-                      {isUpgrade ? 'Upgrade total today' : 'Total due today'}
-                    </span>
+                    <span className="text-white font-semibold">Total due today</span>
                     <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
                   </div>
                   
