@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -6,7 +5,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft, TrendingUp } from 'lucide-react';
+import { Loader2, Lock, CreditCard, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -28,25 +27,12 @@ function PaymentForm() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  const { 
-    clientSecret, 
-    amount, 
-    tierName, 
-    tierId, 
-    creatorId,
-    isUpgrade,
-    currentTierName,
-    currentTierPrice,
-    newTierPrice,
-    proratedAmount,
-    remainingDays
-  } = location.state || {};
+  const { clientSecret, amount, tierName, tierId, creatorId } = location.state || {};
 
-  // Calculate pricing details based on upgrade or new subscription
-  const monthlyAmount = isUpgrade ? (newTierPrice || 30) : (amount ? amount / 100 : 30);
-  const upgradeAmount = isUpgrade ? (proratedAmount || 0) : monthlyAmount;
-  const salesTax = upgradeAmount * 0.046; // 4.6% tax example
-  const totalToday = upgradeAmount + salesTax;
+  // Calculate pricing details
+  const monthlyAmount = amount ? amount / 100 : 30;
+  const salesTax = monthlyAmount * 0.046; // 4.6% tax example
+  const totalToday = monthlyAmount + salesTax;
 
   useEffect(() => {
     if (!clientSecret) {
@@ -57,12 +43,10 @@ function PaymentForm() {
       });
       navigate('/');
     }
-    if (isUpgrade && proratedAmount) {
-      setPaymentAmount(proratedAmount.toFixed(2));
-    } else if (amount) {
+    if (amount) {
       setPaymentAmount((amount / 100).toFixed(2));
     }
-  }, [clientSecret, amount, isUpgrade, proratedAmount, navigate, toast]);
+  }, [clientSecret, amount, navigate, toast]);
 
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
@@ -150,13 +134,9 @@ function PaymentForm() {
         setPaymentSucceeded(true);
         setIsVerifying(true);
         
-        const successMessage = isUpgrade 
-          ? `Tier upgrade successful! You've been upgraded to ${tierName}.`
-          : `Payment successful! You've subscribed to ${tierName}.`;
-        
         toast({
-          title: isUpgrade ? "Upgrade Successful!" : "Payment Successful!",
-          description: successMessage,
+          title: "Payment Successful!",
+          description: `Processing your subscription to ${tierName}...`,
         });
 
         // Shorter wait time for webhook processing
@@ -179,10 +159,8 @@ function PaymentForm() {
           await invalidateAllSubscriptionQueries();
           
           toast({
-            title: isUpgrade ? "Tier Upgraded!" : "Subscription Active!",
-            description: isUpgrade 
-              ? `You've successfully upgraded to ${tierName}`
-              : `You've successfully subscribed to ${tierName}`,
+            title: "Subscription Active!",
+            description: `You've successfully subscribed to ${tierName}`,
           });
 
           setTimeout(() => {
@@ -235,22 +213,15 @@ function PaymentForm() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-green-600 mb-2">
-                {isUpgrade ? 'Upgrade Successful!' : 'Payment Successful!'}
-              </h2>
+              <h2 className="text-2xl font-bold text-green-600 mb-2">Payment Successful!</h2>
               {isVerifying ? (
                 <div className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-gray-400">
-                    {isUpgrade ? 'Processing your tier upgrade...' : 'Activating your subscription...'}
-                  </p>
+                  <p className="text-gray-400">Activating your subscription...</p>
                 </div>
               ) : (
                 <p className="text-gray-400">
-                  {isUpgrade 
-                    ? `You've successfully upgraded to ${tierName}. Redirecting to your subscriptions...`
-                    : `You've successfully subscribed to ${tierName}. Redirecting to your subscriptions...`
-                  }
+                  You've successfully subscribed to {tierName}. Redirecting to your subscriptions...
                 </p>
               )}
             </div>
@@ -280,41 +251,21 @@ function PaymentForm() {
           {/* Left Column - Payment Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {isUpgrade ? 'Tier Upgrade' : 'Payment details'}
-              </h1>
-              {isUpgrade && (
-                <div className="flex items-center gap-2 text-blue-400 mb-4">
-                  <TrendingUp className="h-5 w-5" />
-                  <span>Upgrading from {currentTierName} to {tierName}</span>
-                </div>
-              )}
+              <h1 className="text-3xl font-bold mb-2">Payment details</h1>
             </div>
 
             {/* Payment Amount Section */}
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-semibold mb-2">
-                  {isUpgrade ? 'Upgrade amount' : 'Payment amount'}
-                </h2>
-                {isUpgrade ? (
-                  <p className="text-gray-400 text-sm mb-4">
-                    You'll only pay the prorated difference for the remaining {remainingDays} days of your current billing period.
-                  </p>
-                ) : (
-                  <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
-                )}
+                <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
+                <p className="text-gray-400 text-sm mb-4">Pay the set price or you can choose to pay more.</p>
                 
                 <div className="space-y-3">
                   <div className="bg-gray-900 border border-gray-700 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="text-sm text-gray-400">
-                          {isUpgrade ? 'Prorated upgrade charge' : 'Monthly payment'}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          ${isUpgrade ? upgradeAmount.toFixed(2) : `${monthlyAmount}/month`}
-                        </div>
+                        <div className="text-sm text-gray-400">Monthly payment</div>
+                        <div className="text-sm text-gray-400">${monthlyAmount}/month</div>
                       </div>
                       <div className="flex items-center">
                         <span className="text-gray-400 mr-2">$</span>
@@ -324,7 +275,7 @@ function PaymentForm() {
                           onChange={(e) => setPaymentAmount(e.target.value)}
                           className="w-20 bg-transparent border-gray-600 text-white text-right"
                           step="0.01"
-                          min={isUpgrade ? upgradeAmount : monthlyAmount}
+                          min={monthlyAmount}
                         />
                       </div>
                     </div>
@@ -378,24 +329,17 @@ function PaymentForm() {
 
               {/* Payment Terms */}
               <div className="text-sm text-gray-400 space-y-2">
-                {isUpgrade ? (
-                  <p>
-                    You'll pay ${totalToday.toFixed(2)} today for the tier upgrade. 
-                    Your next full billing cycle will be ${newTierPrice.toFixed(2)} monthly.
-                  </p>
-                ) : (
-                  <p>
-                    You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
-                  </p>
-                )}
                 <p>
-                  By clicking {isUpgrade ? 'Upgrade now' : 'Subscribe now'}, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
+                  You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. Your next charge will be on 1 June.
+                </p>
+                <p>
+                  By clicking Subscribe now, you agree to FanRealms's Terms of Use and Privacy Policy. This subscription automatically renews monthly, and you'll be notified in advance if the monthly amount increases. Cancel at any time in your membership settings.
                 </p>
               </div>
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                {/* Subscribe/Upgrade Button */}
+                {/* Subscribe Button */}
                 <Button 
                   onClick={handlePayment}
                   disabled={!stripe || isProcessing}
@@ -410,7 +354,7 @@ function PaymentForm() {
                   ) : (
                     <>
                       <Lock className="mr-2 h-5 w-5" />
-                      {isUpgrade ? 'Upgrade now' : 'Subscribe now'}
+                      Subscribe now
                     </>
                   )}
                 </Button>
@@ -434,9 +378,7 @@ function PaymentForm() {
           <div className="lg:pl-8">
             <Card className="bg-gray-900 border-gray-800 sticky top-6">
               <CardHeader>
-                <CardTitle className="text-white">
-                  {isUpgrade ? 'Upgrade summary' : 'Order summary'}
-                </CardTitle>
+                <CardTitle className="text-white">Order summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Creator Info */}
@@ -454,27 +396,14 @@ function PaymentForm() {
 
                 {/* Pricing Breakdown */}
                 <div className="space-y-3 pt-4 border-t border-gray-700">
-                  {isUpgrade ? (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Current tier ({currentTierName})</span>
-                        <span className="text-white">${currentTierPrice?.toFixed(2)}/month</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">New tier ({tierName})</span>
-                        <span className="text-white">${newTierPrice?.toFixed(2)}/month</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Prorated upgrade ({remainingDays} days)</span>
-                        <span className="text-white">${upgradeAmount.toFixed(2)}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Monthly payment</span>
-                      <span className="text-white">${monthlyAmount.toFixed(2)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Monthly payment</span>
+                    <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">One-time credit</span>
+                    <span className="text-white">-$10.00</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Sales Tax</span>
                     <span className="text-white">${salesTax.toFixed(2)}</span>
