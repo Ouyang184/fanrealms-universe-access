@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
+import { usePostVisibility } from "@/hooks/usePostVisibility";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -131,6 +133,76 @@ const TierAccessInfo = ({ post }: { post: Post }) => {
           <Lock className="h-4 w-4 mr-2" />
           Unlock ${lowestAccessTier?.price || tierInfo.price}
         </Button>
+      </div>
+    </div>
+  );
+};
+
+// Component for individual post with automatic visibility tracking
+const FeedPostItem = ({ post, readPosts, markPostAsRead }: { 
+  post: Post; 
+  readPosts: Set<string>; 
+  markPostAsRead: (postId: string) => void 
+}) => {
+  const postRef = usePostVisibility({
+    postId: post.id,
+    onPostSeen: markPostAsRead,
+    threshold: 0.5,
+    visibilityDuration: 2000
+  });
+
+  return (
+    <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
+      {/* Post Header */}
+      <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage 
+              src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
+              alt={post.authorName} 
+            />
+            <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-primary">{post.authorName}</h3>
+              <span className="text-sm text-muted-foreground">{post.date}</span>
+            </div>
+          </div>
+          {!readPosts.has(post.id) && (
+            <Badge className="bg-blue-500 text-white">New</Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Post Content */}
+      <div className="p-4">
+        <h2 className="text-xl font-bold mb-2">{post.title}</h2>
+        <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
+        
+        {/* Dynamic Tier Access Information */}
+        <TierAccessInfo post={post} />
+
+        {/* Engagement Section */}
+        <div className="space-y-3">
+          {/* Like/Dislike Bar with real data */}
+          <div className="flex items-center gap-4 py-2">
+            <PostLikes postId={post.id} />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
+            >
+              <ThumbsDown className="h-4 w-4" />
+              <span className="text-sm">Dislike</span>
+            </Button>
+          </div>
+
+          {/* Comments Section with real data */}
+          <div className="border-t pt-3">
+            <PostComments postId={post.id} />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -383,59 +455,12 @@ export default function FeedPage() {
                     ) : (
                       <div className="space-y-6">
                         {followedPosts.map((post) => (
-                          <div key={post.id} className="bg-card border border-border rounded-lg overflow-hidden">
-                            {/* Post Header */}
-                            <div className="p-4 border-b border-border">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage 
-                                    src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
-                                    alt={post.authorName} 
-                                  />
-                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-primary">{post.authorName}</h3>
-                                    <span className="text-sm text-muted-foreground">{post.date}</span>
-                                  </div>
-                                </div>
-                                {!readPosts.has(post.id) && (
-                                  <Badge className="bg-blue-500 text-white">New</Badge>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Post Content */}
-                            <div className="p-4">
-                              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
-                              <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
-                              
-                              {/* Dynamic Tier Access Information */}
-                              <TierAccessInfo post={post} />
-
-                              {/* Engagement Section */}
-                              <div className="space-y-3">
-                                {/* Like/Dislike Bar with real data */}
-                                <div className="flex items-center gap-4 py-2">
-                                  <PostLikes postId={post.id} />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
-                                  >
-                                    <ThumbsDown className="h-4 w-4" />
-                                    <span className="text-sm">Dislike</span>
-                                  </Button>
-                                </div>
-
-                                {/* Comments Section with real data */}
-                                <div className="border-t pt-3">
-                                  <PostComments postId={post.id} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <FeedPostItem
+                            key={post.id}
+                            post={post}
+                            readPosts={readPosts}
+                            markPostAsRead={markPostAsRead}
+                          />
                         ))}
                       </div>
                     )}
@@ -446,57 +471,12 @@ export default function FeedPage() {
                     {unreadCount > 0 ? (
                       <div className="space-y-6">
                         {unreadPosts.map((post) => (
-                          <div key={post.id} className="bg-card border border-border rounded-lg overflow-hidden">
-                            {/* Post Header */}
-                            <div className="p-4 border-b border-border">
-                              <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                  <AvatarImage 
-                                    src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
-                                    alt={post.authorName} 
-                                  />
-                                  <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-primary">{post.authorName}</h3>
-                                    <span className="text-sm text-muted-foreground">{post.date}</span>
-                                  </div>
-                                </div>
-                                <Badge className="bg-blue-500 text-white">New</Badge>
-                              </div>
-                            </div>
-
-                            {/* Post Content */}
-                            <div className="p-4">
-                              <h2 className="text-xl font-bold mb-2">{post.title}</h2>
-                              <p className="text-muted-foreground mb-4 line-clamp-3">{post.content}</p>
-                              
-                              {/* Dynamic Tier Access Information for Unread Posts */}
-                              <TierAccessInfo post={post} />
-
-                              {/* Engagement Section */}
-                              <div className="space-y-3">
-                                {/* Like/Dislike Bar with real data */}
-                                <div className="flex items-center gap-4 py-2">
-                                  <PostLikes postId={post.id} />
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
-                                  >
-                                    <ThumbsDown className="h-4 w-4" />
-                                    <span className="text-sm">Dislike</span>
-                                  </Button>
-                                </div>
-
-                                {/* Comments Section with real data */}
-                                <div className="border-t pt-3">
-                                  <PostComments postId={post.id} />
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                          <FeedPostItem
+                            key={post.id}
+                            post={post}
+                            readPosts={readPosts}
+                            markPostAsRead={markPostAsRead}
+                          />
                         ))}
                       </div>
                     ) : (
