@@ -104,6 +104,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
     isEmbeddableVideoUrl
   });
   
+  // FIRST PRIORITY: Handle embeddable video URLs (YouTube, Vimeo, etc.)
   if (isEmbeddableVideoUrl) {
     const videoInfo = parseVideoUrl(firstMedia.url);
     console.log('PostCardMedia - Video parsing result:', videoInfo);
@@ -130,17 +131,16 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
       );
     }
 
-    // ✅ Best-practice: block fallback rendering
+    // If we can't parse the video URL, don't render anything
     console.log('PostCardMedia - Video URL detected but platform unknown, blocking fallback');
     return null;
   }
 
-  // Handle non-URL media types (actual file attachments)
-  console.log('PostCardMedia - Rendering file attachment for type:', firstMedia.type);
-  
-  return (
-    <div className="relative mb-4">
-      {firstMedia.type === 'image' && (
+  // SECOND PRIORITY: Handle image attachments
+  if (firstMedia.type === 'image') {
+    console.log('PostCardMedia - Rendering image attachment');
+    return (
+      <div className="relative mb-4">
         <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
           <img
             src={firstMedia.url}
@@ -157,49 +157,61 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
             <span>Image</span>
           </div>
         </div>
-      )}
-      
-      {/* Enhanced validation for video files - only for actual uploaded video files */}
-      {firstMedia.type === 'video' && 
-       !isVideoUrl(firstMedia.url) &&
-       firstMedia.url &&
-       firstMedia.size &&
-       typeof firstMedia.size === 'number' &&
-       firstMedia.size > 0 && (
-        <>
-          {console.log('PostCardMedia - Rendering HTML5 video player for file:', {
-            url: firstMedia.url,
-            size: firstMedia.size,
-            name: firstMedia.name
-          })}
-          <div className="relative w-full rounded-lg overflow-hidden border">
-            <video
-              controls
-              className="w-full max-h-80"
-              preload="metadata"
-              onError={(e) => {
-                console.error('PostCardMedia - Video element error:', e);
-              }}
-              onLoadedMetadata={(e) => {
-                console.log('PostCardMedia - Video metadata loaded:', {
-                  duration: e.currentTarget.duration,
-                  videoWidth: e.currentTarget.videoWidth,
-                  videoHeight: e.currentTarget.videoHeight
-                });
-              }}
-            >
-              <source src={firstMedia.url} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
-              <span>🎥</span>
-              <span>Video File</span>
-            </div>
+      </div>
+    );
+  }
+
+  // THIRD PRIORITY: Handle uploaded video files (NOT URLs)
+  // Only render HTML5 video player for actual uploaded video files with valid size
+  if (firstMedia.type === 'video' && 
+      !isVideoUrl(firstMedia.url) &&  // Must NOT be a URL
+      firstMedia.url &&
+      firstMedia.size &&
+      typeof firstMedia.size === 'number' &&
+      firstMedia.size > 0) {
+    
+    console.log('PostCardMedia - Rendering HTML5 video player for uploaded file:', {
+      url: firstMedia.url,
+      size: firstMedia.size,
+      name: firstMedia.name,
+      isVideoUrl: isVideoUrl(firstMedia.url)
+    });
+    
+    return (
+      <div className="relative mb-4">
+        <div className="relative w-full rounded-lg overflow-hidden border">
+          <video
+            controls
+            className="w-full max-h-80"
+            preload="metadata"
+            onError={(e) => {
+              console.error('PostCardMedia - Video element error:', e);
+            }}
+            onLoadedMetadata={(e) => {
+              console.log('PostCardMedia - Video metadata loaded:', {
+                duration: e.currentTarget.duration,
+                videoWidth: e.currentTarget.videoWidth,
+                videoHeight: e.currentTarget.videoHeight
+              });
+            }}
+          >
+            <source src={firstMedia.url} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
+            <span>🎥</span>
+            <span>Video File</span>
           </div>
-        </>
-      )}
-      
-      {firstMedia.type !== 'image' && firstMedia.type !== 'video' && (
+        </div>
+      </div>
+    );
+  }
+
+  // FOURTH PRIORITY: Handle other file types (PDF, etc.)
+  if (firstMedia.type !== 'image' && firstMedia.type !== 'video') {
+    console.log('PostCardMedia - Rendering file attachment for type:', firstMedia.type);
+    return (
+      <div className="relative mb-4">
         <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30 w-fit">
           {getFileIcon(firstMedia.type)}
           <div className="flex flex-col">
@@ -219,7 +231,17 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  // If we get here, log what we couldn't handle
+  console.log('PostCardMedia - No matching handler for media:', {
+    type: firstMedia.type,
+    isVideoUrl: isVideoUrl(firstMedia.url),
+    hasSize: !!firstMedia.size,
+    size: firstMedia.size
+  });
+  
+  return null;
 }
