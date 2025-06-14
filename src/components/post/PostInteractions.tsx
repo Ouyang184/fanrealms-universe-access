@@ -30,7 +30,14 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   // Clean up the authorId comparison - ensure both are strings and handle undefined
   const isAuthor = user?.id && authorId && user.id === authorId;
 
-  console.log('PostInteractions - postId:', postId, 'authorId:', authorId, 'userId:', user?.id, 'isAuthor:', isAuthor);
+  console.log('PostInteractions - Access check:', {
+    postId,
+    authorId,
+    userId: user?.id,
+    isAuthor,
+    authorIdType: typeof authorId,
+    userIdType: typeof user?.id
+  });
 
   const handleShare = () => {
     // Copy post URL to clipboard

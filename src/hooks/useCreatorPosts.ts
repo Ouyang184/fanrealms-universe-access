@@ -92,6 +92,7 @@ export function useCreatorPosts() {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
+          authorId: post.author_id, // Log the authorId being set
           isCreatorOwnPost: true,
           canViewPost,
           isLocked
@@ -142,6 +143,7 @@ export function useCreatorPosts() {
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
+          authorId: post.author_id, // FIXED: Ensure authorId is properly set
           status,
           tags,
           engagement: randomEngagement,

@@ -33,21 +33,29 @@ export function CreatorPosts({ posts, isLoading = false }: CreatorPostsProps) {
   
   return (
     <div className="space-y-6">
-      {posts.map((post) => (
-        <PostCard 
-          key={post.id}
-          id={post.id}
-          title={post.title}
-          content={post.content}
-          authorName={post.authorName || 'Unknown'}
-          authorAvatar={post.authorAvatar}
-          createdAt={post.createdAt}
-          date={post.date || post.createdAt}
-          tier_id={post.tier_id}
-          attachments={post.attachments}
-          authorId={post.authorId}
-        />
-      ))}
+      {posts.map((post) => {
+        console.log('CreatorPosts - Post data:', {
+          postId: post.id,
+          authorId: post.authorId,
+          title: post.title
+        });
+        
+        return (
+          <PostCard 
+            key={post.id}
+            id={post.id}
+            title={post.title}
+            content={post.content}
+            authorName={post.authorName || 'Unknown'}
+            authorAvatar={post.authorAvatar}
+            createdAt={post.createdAt}
+            date={post.date || post.createdAt}
+            tier_id={post.tier_id}
+            attachments={post.attachments}
+            authorId={post.authorId}
+          />
+        );
+      })}
     </div>
   );
 }
