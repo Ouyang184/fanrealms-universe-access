@@ -111,8 +111,27 @@ export function useCreatorPosts() {
         
         const randomEngagement = generateRandomEngagement(status);
 
-        // Safely handle attachments - ensure it's an array
-        const attachments = Array.isArray(post.attachments) ? post.attachments : [];
+        // Safely handle attachments - ensure it's a properly typed array
+        const attachments: Array<{
+          url: string;
+          name: string;
+          type: string;
+          size: number;
+        }> = [];
+
+        if (post.attachments && Array.isArray(post.attachments)) {
+          // Type cast the Json array to our expected format
+          post.attachments.forEach((attachment: any) => {
+            if (attachment && typeof attachment === 'object' && attachment.url && attachment.name && attachment.type) {
+              attachments.push({
+                url: String(attachment.url),
+                name: String(attachment.name),
+                type: String(attachment.type),
+                size: Number(attachment.size) || 0
+              });
+            }
+          });
+        }
           
         return {
           id: post.id,
