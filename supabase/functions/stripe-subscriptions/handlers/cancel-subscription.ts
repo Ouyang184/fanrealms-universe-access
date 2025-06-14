@@ -1,3 +1,4 @@
+
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string, immediate: boolean = false) {
@@ -21,7 +22,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
 
     if (immediate) {
       // Cancel immediately - delete the subscription from Stripe completely
-      console.log('Cancelling subscription immediately in Stripe:', subscriptionId);
+      console.log('IMMEDIATE CANCELLATION: Cancelling subscription immediately in Stripe:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
       
       console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
@@ -50,7 +51,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       });
     } else {
       // Set the Stripe subscription to cancel at period end (NOT immediate cancellation)
-      console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
+      console.log('DELAYED CANCELLATION: Setting Stripe subscription to cancel at period end:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true
       });
