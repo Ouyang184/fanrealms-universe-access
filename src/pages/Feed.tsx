@@ -145,28 +145,6 @@ const TierAccessInfo = ({ post, creatorInfo }: { post: Post; creatorInfo?: any }
   );
 };
 
-// Component for blurred content display
-const BlurredContent = ({ title, content }: { title: string; content: string }) => {
-  return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold leading-tight">{title}</h3>
-      <div className="relative">
-        <div 
-          className="text-muted-foreground leading-relaxed select-none"
-          style={{ 
-            filter: 'blur(4px)',
-            WebkitFilter: 'blur(4px)',
-            pointerEvents: 'none'
-          }}
-        >
-          {content.length > 200 ? content.substring(0, 200) + "..." : content}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"></div>
-      </div>
-    </div>
-  );
-};
-
 // Component for individual post with automatic visibility tracking
 const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: { 
   post: Post; 
@@ -228,12 +206,13 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: {
 
       {/* Post Content */}
       <div className="p-4">
-        {/* Post content - use blurred component for restricted access */}
-        {hasAccess ? (
+        {/* Post content with conditional blur */}
+        <div className={hasAccess ? "" : "relative"}>
           <PostCardContent title={post.title} content={post.content} />
-        ) : (
-          <BlurredContent title={post.title} content={post.content} />
-        )}
+          {!hasAccess && (
+            <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
+          )}
+        </div>
         
         {/* Media with conditional blur */}
         <div className={hasAccess ? "" : "relative"}>
