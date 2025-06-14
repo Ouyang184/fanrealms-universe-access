@@ -1,7 +1,9 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Lock, ThumbsDown } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
 import { PostLikes } from "@/components/post/PostLikes";
