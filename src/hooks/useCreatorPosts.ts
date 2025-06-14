@@ -93,7 +93,8 @@ export function useCreatorPosts() {
           tierId: post.tier_id,
           isCreatorOwnPost: true,
           canViewPost,
-          isLocked
+          isLocked,
+          message: 'CREATOR_ALWAYS_HAS_ACCESS'
         });
 
         // Create tier display info
@@ -127,7 +128,8 @@ export function useCreatorPosts() {
           lastEdited: formatRelativeDate(post.created_at),
           type: postType,
           canView: canViewPost,
-          isLocked: isLocked
+          isLocked: isLocked,
+          attachments: post.attachments || []
         };
       });
     },
