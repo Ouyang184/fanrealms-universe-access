@@ -1,11 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Post } from "@/types";
+import { useCreateSubscription } from "@/hooks/stripe/useCreateSubscription";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface TierAccessInfoProps {
   post: Post;
@@ -13,6 +16,9 @@ interface TierAccessInfoProps {
 }
 
 export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInfo }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { createSubscription, isProcessing } = useCreateSubscription();
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
   // Fetch the specific tier information for this post
@@ -82,16 +88,43 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
     ? `$${accessTiers.map(tier => tier.price).join(', $')} tiers`
     : `$${tierInfo.price} tier`;
 
-  const handleUnlockTier = () => {
-    // Use the creator profile ID from creatorInfo, not the user ID
-    const creatorProfileId = creatorInfo?.id;
-    if (creatorProfileId) {
-      console.log(`Navigate to subscribe for creator: ${creatorProfileId}, tier: ${lowestAccessTier?.id}`);
-      window.location.href = `/creator/${creatorProfileId}?tab=membership&tier=${lowestAccessTier?.id}`;
-    } else {
-      console.error('Creator profile ID not found in creatorInfo');
-      // Fallback to explore page if creator info is not available
-      window.location.href = '/explore';
+  const handleUnlockTier = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to subscribe to creators.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('Creating subscription for tier:', lowestAccessTier?.id, 'creator:', creatorInfo?.id);
+      
+      const result = await createSubscription({ 
+        tierId: lowestAccessTier?.id || tierInfo.id, 
+        creatorId: creatorInfo?.id || post.authorId 
+      });
+      
+      if (result?.error) {
+        console.error('Subscription error:', result.error);
+        toast({
+          title: "Subscription Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // The createSubscription hook handles navigation to payment page
+      
+    } catch (error) {
+      console.error('Unlock tier error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start subscription process. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -110,9 +143,19 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
           size="sm"
           className="bg-pink-500 hover:bg-pink-600 text-white"
           onClick={handleUnlockTier}
+          disabled={isProcessing}
         >
-          <Lock className="h-4 w-4 mr-2" />
-          Unlock ${lowestAccessTier?.price || tierInfo.price}
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4 mr-2" />
+              Unlock ${lowestAccessTier?.price || tierInfo.price}
+            </>
+          )}
         </Button>
       </div>
     </div>
