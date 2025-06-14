@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -110,6 +111,16 @@ export function useCreatorPosts() {
         const status: PostStatus = isScheduled ? "scheduled" : isDraft ? "draft" : "published";
         
         const randomEngagement = generateRandomEngagement(status);
+
+        // Properly handle attachments - ensure it's an array
+        const attachments = Array.isArray(post.attachments) 
+          ? post.attachments as Array<{
+              url: string;
+              name: string;
+              type: string;
+              size: number;
+            }>
+          : [];
           
         return {
           id: post.id,
@@ -129,7 +140,7 @@ export function useCreatorPosts() {
           type: postType,
           canView: canViewPost,
           isLocked: isLocked,
-          attachments: post.attachments || []
+          attachments: attachments
         };
       });
     },
