@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -140,10 +141,11 @@ const TierAccessInfo = ({ post }: { post: Post }) => {
 };
 
 // Component for individual post with automatic visibility tracking
-const FeedPostItem = ({ post, readPosts, markPostAsRead }: { 
+const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: { 
   post: Post; 
   readPosts: Set<string>; 
-  markPostAsRead: (postId: string) => void 
+  markPostAsRead: (postId: string) => void;
+  creatorInfo?: any;
 }) => {
   const postRef = usePostVisibility({
     postId: post.id,
@@ -152,6 +154,23 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead }: {
     visibilityDuration: 2000
   });
 
+  // Get the proper creator name - prioritize display_name from creator info
+  const getCreatorDisplayName = () => {
+    if (creatorInfo?.display_name) {
+      return creatorInfo.display_name;
+    }
+    if (creatorInfo?.username) {
+      return creatorInfo.username;
+    }
+    if (post.authorName && post.authorName !== 'Unknown') {
+      return post.authorName;
+    }
+    return 'Creator';
+  };
+
+  const displayName = getCreatorDisplayName();
+  const avatarUrl = creatorInfo?.avatar_url || creatorInfo?.profile_image_url || post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png";
+
   return (
     <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Post Header */}
@@ -159,14 +178,14 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead }: {
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage 
-              src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
-              alt={post.authorName} 
+              src={avatarUrl} 
+              alt={displayName} 
             />
-            <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-primary">{post.authorName}</h3>
+              <h3 className="font-medium text-primary">{displayName}</h3>
               <span className="text-sm text-muted-foreground">{post.date}</span>
             </div>
           </div>
@@ -325,6 +344,14 @@ export default function FeedPage() {
   // Check if there are any posts
   const hasPosts = followedPosts.length > 0;
 
+  // Create a map of creator user_id to creator info for easy lookup
+  const creatorInfoMap = followedCreators.reduce((acc, creator) => {
+    if (creator.user_id) {
+      acc[creator.user_id] = creator;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+
   return (
     <MainLayout>
       <div className="flex min-h-screen">
@@ -464,6 +491,7 @@ export default function FeedPage() {
                             post={post}
                             readPosts={readPosts}
                             markPostAsRead={markPostAsRead}
+                            creatorInfo={creatorInfoMap[post.authorId]}
                           />
                         ))}
                       </div>
@@ -480,6 +508,7 @@ export default function FeedPage() {
                             post={post}
                             readPosts={readPosts}
                             markPostAsRead={markPostAsRead}
+                            creatorInfo={creatorInfoMap[post.authorId]}
                           />
                         ))}
                       </div>
