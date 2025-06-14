@@ -159,6 +159,10 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: {
     visibilityDuration: 2000
   });
 
+  // Check subscription status for this post's tier
+  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
+  const hasAccess = !post.tier_id || subscriptionData?.isSubscribed || false;
+
   // Get the proper creator name - prioritize display_name from creator info
   const getCreatorDisplayName = () => {
     if (creatorInfo?.display_name) {
@@ -202,11 +206,25 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: {
 
       {/* Post Content */}
       <div className="p-4">
-        {/* Use PostCardContent component for proper read more functionality */}
-        <PostCardContent title={post.title} content={post.content} />
+        {/* Post content with conditional blur */}
+        <div className={hasAccess ? "" : "relative"}>
+          <PostCardContent title={post.title} content={post.content} />
+          {!hasAccess && (
+            <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
+          )}
+        </div>
         
-        {/* Add PostCardMedia component to show YouTube embeds */}
-        <PostCardMedia attachments={post.attachments} />
+        {/* Media with conditional blur */}
+        <div className={hasAccess ? "" : "relative"}>
+          <PostCardMedia attachments={post.attachments} />
+          {!hasAccess && post.attachments && (
+            <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
+              <div className="bg-black/80 rounded-full p-3">
+                <Lock className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          )}
+        </div>
         
         {/* Dynamic Tier Access Information - pass creatorInfo */}
         <TierAccessInfo post={post} creatorInfo={creatorInfo} />
