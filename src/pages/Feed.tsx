@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +38,7 @@ const getReadPostsFromStorage = (): Set<string> => {
 };
 
 // Component for dynamic tier access information
-const TierAccessInfo = ({ post }: { post: Post }) => {
+const TierAccessInfo = ({ post, creatorInfo }: { post: Post; creatorInfo?: any }) => {
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
   // Fetch the specific tier information for this post
@@ -110,10 +109,16 @@ const TierAccessInfo = ({ post }: { post: Post }) => {
     : `$${tierInfo.price} tier`;
 
   const handleUnlockTier = () => {
-    // Navigate to creator page with tier focus
-    // You might want to implement this navigation logic
-    console.log(`Navigate to subscribe for tier: ${lowestAccessTier?.id}`);
-    window.location.href = `/creator/${post.authorId}?tier=${lowestAccessTier?.id}`;
+    // Use the creator profile ID from creatorInfo, not the user ID
+    const creatorProfileId = creatorInfo?.id;
+    if (creatorProfileId) {
+      console.log(`Navigate to subscribe for creator: ${creatorProfileId}, tier: ${lowestAccessTier?.id}`);
+      window.location.href = `/creator/${creatorProfileId}?tab=membership&tier=${lowestAccessTier?.id}`;
+    } else {
+      console.error('Creator profile ID not found in creatorInfo');
+      // Fallback to explore page if creator info is not available
+      window.location.href = '/explore';
+    }
   };
 
   return (
@@ -203,8 +208,8 @@ const FeedPostItem = ({ post, readPosts, markPostAsRead, creatorInfo }: {
         {/* Add PostCardMedia component to show YouTube embeds */}
         <PostCardMedia attachments={post.attachments} />
         
-        {/* Dynamic Tier Access Information */}
-        <TierAccessInfo post={post} />
+        {/* Dynamic Tier Access Information - pass creatorInfo */}
+        <TierAccessInfo post={post} creatorInfo={creatorInfo} />
 
         {/* Engagement Section */}
         <div className="space-y-3">
