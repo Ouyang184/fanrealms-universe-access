@@ -53,6 +53,7 @@ export interface CreatorPost {
   content: string;
   authorName: string;
   authorAvatar?: string | null;
+  authorId: string; // Added this required property
   createdAt: string;
   date: string;
   tier_id?: string | null;
