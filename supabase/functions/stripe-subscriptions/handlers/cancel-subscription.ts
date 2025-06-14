@@ -1,7 +1,10 @@
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string, immediate: boolean = false) {
-  console.log('Cancelling subscription:', subscriptionId, 'Immediate:', immediate);
+  console.log('=== CANCEL SUBSCRIPTION HANDLER START ===');
+  console.log('Cancelling subscription:', subscriptionId);
+  console.log('Immediate flag received:', immediate, 'type:', typeof immediate);
+  console.log('User ID:', user.id);
   
   try {
     // Find the subscription in our database first
@@ -18,15 +21,25 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
     }
 
     console.log('Found user subscription to cancel:', userSubscription.id);
+    console.log('Proceeding with immediate cancellation check. Immediate:', immediate);
 
+    // CRITICAL: Check for immediate cancellation with explicit boolean check
     if (immediate === true) {
+      console.log('=== EXECUTING IMMEDIATE CANCELLATION ===');
+      console.log('Calling stripe.subscriptions.cancel for:', subscriptionId);
+      
       // IMMEDIATE CANCELLATION - Cancel the subscription in Stripe completely
-      console.log('IMMEDIATE CANCELLATION: Cancelling subscription immediately in Stripe:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
       
-      console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
+      console.log('Stripe subscription cancelled immediately. Status:', cancelledSubscription.status);
+      console.log('Cancelled subscription details:', {
+        id: cancelledSubscription.id,
+        status: cancelledSubscription.status,
+        canceled_at: cancelledSubscription.canceled_at
+      });
       
       // For immediate cancellation, delete from our database completely
+      console.log('Deleting subscription record from database for immediate cancellation');
       const { error: deleteError } = await supabaseService
         .from('user_subscriptions')
         .delete()
@@ -39,21 +52,31 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
 
       console.log('User subscription deleted successfully for immediate cancellation');
       
-      return new Response(JSON.stringify({ 
+      const response = {
         success: true,
         message: 'Subscription cancelled immediately',
         immediate: true,
         status: 'canceled'
-      }), {
+      };
+      
+      console.log('Returning immediate cancellation response:', response);
+      
+      return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
+      
     } else {
+      console.log('=== EXECUTING DELAYED CANCELLATION ===');
+      console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
+      
       // DELAYED CANCELLATION - Set the Stripe subscription to cancel at period end
-      console.log('DELAYED CANCELLATION: Setting Stripe subscription to cancel at period end:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true
       });
+
+      console.log('Stripe subscription set to cancel at period end. Status:', cancelledSubscription.status);
+      console.log('Period end timestamp:', cancelledSubscription.current_period_end);
 
       // Update our database - keep status as 'active' but add cancel info
       const updateData = {
@@ -62,7 +85,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         updated_at: new Date().toISOString()
       };
       
-      console.log('Stripe subscription set to cancel at period end successfully');
+      console.log('Updating database with delayed cancellation data:', updateData);
 
       const { error: updateError } = await supabaseService
         .from('user_subscriptions')
@@ -74,7 +97,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         throw updateError;
       }
 
-      console.log('User subscription updated successfully with status: active (cancel at period end)');
+      console.log('User subscription updated successfully with delayed cancellation');
       
       const responseData = { 
         success: true,
@@ -86,6 +109,8 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       if (cancelledSubscription.current_period_end) {
         responseData.cancelAt = cancelledSubscription.current_period_end * 1000;
       }
+      
+      console.log('Returning delayed cancellation response:', responseData);
       
       return new Response(JSON.stringify(responseData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
