@@ -64,11 +64,14 @@ export const usePosts = () => {
           attachments: post.attachments
         };
         
-        console.log('[usePosts] Mapped post:', {
+        console.log('[usePosts] ENHANCED Mapped post:', {
           id: mappedPost.id,
           title: mappedPost.title,
           authorId: mappedPost.authorId,
-          tier_id: mappedPost.tier_id
+          authorIdType: typeof mappedPost.authorId,
+          authorIdValue: JSON.stringify(mappedPost.authorId),
+          tier_id: mappedPost.tier_id,
+          rawAuthorId: post.author_id
         });
         
         return mappedPost;

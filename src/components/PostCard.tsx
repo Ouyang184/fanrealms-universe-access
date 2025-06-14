@@ -46,24 +46,26 @@ const PostCard: React.FC<PostCardProps> = ({
   const { user } = useAuth();
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
   
-  // CRITICAL DEBUG: Log all the important values
-  console.log('PostCard - DETAILED DEBUG:', {
+  // ENHANCED DEBUG: Log all the important values with more detail
+  console.log('PostCard - ENHANCED DEBUG:', {
     postId: id,
     postTitle: title,
     authorId: authorId,
     authorIdType: typeof authorId,
+    authorIdValue: JSON.stringify(authorId),
     userId: user?.id,
     userIdType: typeof user?.id,
-    areEqual: user?.id === authorId,
-    strictEqual: user?.id === String(authorId),
+    userIdValue: JSON.stringify(user?.id),
+    bothDefined: !!(authorId && user?.id),
+    strictStringComparison: String(authorId || '') === String(user?.id || ''),
     tier_id: tier_id
   });
   
   // Check if user is subscribed to this tier
   const { subscriptionData } = useSimpleSubscriptionCheck(tier_id || undefined, authorId);
   
-  // FIXED: Check if this is the author's own post using authorId - ensure both are strings
-  const isOwnPost = user?.id && authorId && String(user.id) === String(authorId);
+  // FIXED: Ensure robust comparison - convert both to strings and handle undefined
+  const isOwnPost = !!(user?.id && authorId && String(user.id) === String(authorId));
   
   // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
   const isPremiumPost = !!tier_id;
@@ -81,7 +83,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - FINAL ACCESS DECISION:', {
+  console.log('PostCard - ENHANCED ACCESS DECISION:', {
     postId: id,
     postTitle: title,
     tierId: tier_id,
@@ -92,8 +94,21 @@ const PostCard: React.FC<PostCardProps> = ({
     isSubscribedToTier,
     hasActiveSubscription,
     hasFullAccess,
-    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
+    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED',
+    // Additional debug info
+    userObject: user,
+    subscriptionDataObject: subscriptionData
   });
+
+  // CRITICAL: If this is the creator's own post, force full access regardless of other conditions
+  if (isOwnPost && isPremiumPost) {
+    console.log('PostCard - CREATOR ACCESS OVERRIDE:', {
+      postId: id,
+      message: 'Creator viewing their own premium post - forcing full access',
+      authorId,
+      userId: user?.id
+    });
+  }
 
   // Check if PostCardMedia will handle video rendering
   const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 

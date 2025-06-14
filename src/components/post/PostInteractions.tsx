@@ -27,30 +27,32 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   const { user } = useAuth();
   const { deletePost, isDeleting } = useDeletePost();
   
-  // CRITICAL DEBUG: Log all the important values for troubleshooting
-  console.log('PostInteractions - DETAILED DEBUG:', {
+  // ENHANCED DEBUG: Log all the important values for troubleshooting
+  console.log('PostInteractions - ENHANCED DEBUG:', {
     postId,
     authorId: authorId,
     authorIdType: typeof authorId,
+    authorIdValue: JSON.stringify(authorId),
     userId: user?.id,
     userIdType: typeof user?.id,
-    authorIdValue: authorId,
-    userIdValue: user?.id,
-    areEqual: user?.id === authorId,
-    strictStringComparison: String(user?.id || '') === String(authorId || ''),
-    bothExist: !!(user?.id && authorId)
+    userIdValue: JSON.stringify(user?.id),
+    bothDefined: !!(authorId && user?.id),
+    strictStringComparison: String(authorId || '') === String(user?.id || ''),
+    userObject: user
   });
   
-  // Clean up the authorId comparison - ensure both are strings and handle undefined
-  const isAuthor = user?.id && authorId && String(user.id) === String(authorId);
+  // FIXED: Ensure robust comparison - handle undefined and convert to strings
+  const isAuthor = !!(user?.id && authorId && String(user.id) === String(authorId));
 
-  console.log('PostInteractions - FINAL AUTHOR CHECK:', {
+  console.log('PostInteractions - ENHANCED AUTHOR CHECK:', {
     postId,
     authorId,
     userId: user?.id,
     isAuthor,
     authorIdProvided: !!authorId,
-    userIdProvided: !!user?.id
+    userIdProvided: !!user?.id,
+    comparisonResult: String(user?.id || '') === String(authorId || ''),
+    message: isAuthor ? 'DELETE_BUTTON_SHOULD_SHOW' : 'DELETE_BUTTON_HIDDEN'
   });
 
   const handleShare = () => {
