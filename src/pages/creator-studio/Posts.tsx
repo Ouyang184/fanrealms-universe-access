@@ -36,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
+import { EditPostDialog } from "@/components/creator-studio/EditPostDialog";
 import { useDeletePost } from "@/hooks/useDeletePost";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -304,10 +305,11 @@ function PostCard({ post }: { post: CreatorPost }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Edit post:", post.id);
+    setIsEditDialogOpen(true);
   };
 
   const handleDeletePost = () => {
@@ -381,180 +383,188 @@ function PostCard({ post }: { post: CreatorPost }) {
   };
 
   return (
-    <Card className={post.isLocked ? "border-amber-200 bg-amber-50/30" : ""}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2">
-              {post.isLocked && <Lock className="h-4 w-4 text-amber-600" />}
-              {post.title}
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="outline" className={getStatusBadgeStyles(post.status)}>
-                {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
-              </Badge>
-              {post.status === "scheduled" ? (
-                <span>{post.scheduleDate ? format(new Date(post.scheduleDate), "MMMM d, yyyy") : "Scheduled"}</span>
-              ) : (
-                <span>{post.date}</span>
-              )}
-              <span>•</span>
-              <span className="flex items-center">
-                {getContentIcon()}
-                {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
-              </span>
-              {post.tier_id && (
-                <>
-                  <span>•</span>
-                  <span className="flex items-center">
-                    <Lock className="h-3 w-3 mr-1" />
-                    {post.availableTiers?.length ? post.availableTiers[0].name : 'Premium'}
-                  </span>
-                </>
-              )}
+    <>
+      <Card className={post.isLocked ? "border-amber-200 bg-amber-50/30" : ""}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                {post.isLocked && <Lock className="h-4 w-4 text-amber-600" />}
+                {post.title}
+              </CardTitle>
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <Badge variant="outline" className={getStatusBadgeStyles(post.status)}>
+                  {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+                </Badge>
+                {post.status === "scheduled" ? (
+                  <span>{post.scheduleDate ? format(new Date(post.scheduleDate), "MMMM d, yyyy") : "Scheduled"}</span>
+                ) : (
+                  <span>{post.date}</span>
+                )}
+                <span>•</span>
+                <span className="flex items-center">
+                  {getContentIcon()}
+                  {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
+                </span>
+                {post.tier_id && (
+                  <>
+                    <span>•</span>
+                    <span className="flex items-center">
+                      <Lock className="h-3 w-3 mr-1" />
+                      {post.availableTiers?.length ? post.availableTiers[0].name : 'Premium'}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <MoreHorizontal className="h-5 w-5" />
-                <span className="sr-only">More options</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="flex items-center gap-2" onClick={handleEditPost}>
-                <Edit className="h-4 w-4" /> Edit post
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <EyeOff className="h-4 w-4" /> Change visibility
-              </DropdownMenuItem>
-              <DropdownMenuItem className="flex items-center gap-2">
-                <Copy className="h-4 w-4" /> Duplicate
-              </DropdownMenuItem>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem 
-                    className="flex items-center gap-2 text-destructive focus:text-destructive"
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <Trash className="h-4 w-4" /> Delete
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your post
-                      and remove all associated comments and likes.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeletePost}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      disabled={isDeleting}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <MoreHorizontal className="h-5 w-5" />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="flex items-center gap-2" onClick={handleEditPost}>
+                  <Edit className="h-4 w-4" /> Edit post
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2">
+                  <EyeOff className="h-4 w-4" /> Change visibility
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem 
+                      className="flex items-center gap-2 text-destructive focus:text-destructive"
+                      onSelect={(e) => e.preventDefault()}
                     >
-                      {isDeleting ? 'Deleting...' : 'Delete Post'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent className="pb-3">
-        <p className="text-muted-foreground line-clamp-2">
-          {post.content}
-        </p>
-        {post.isLocked && (
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-            <p className="text-sm text-amber-800 flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              This is premium content. Subscribers with access to this tier can view the full post.
-            </p>
+                      <Trash className="h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your post
+                        and remove all associated comments and likes.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeletePost}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Deleting...' : 'Delete Post'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
-        {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {post.tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="hover:bg-secondary/80">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex items-center justify-between pt-0">
-        <div className="flex items-center text-sm text-muted-foreground">
-          {post.status === "published" && post.engagement && (
-            <>
-              <div className="flex items-center mr-4">
-                <EyeOff className="h-4 w-4 mr-1" />
-                <span>{post.engagement.views.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center mr-4">
-                <Star className="h-4 w-4 mr-1" />
-                <span>{post.engagement.likes.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span>{post.engagement.comments.toLocaleString()}</span>
-              </div>
-            </>
-          )}
-          {post.status === "scheduled" && (
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>Publishes on {post.scheduleDate ? format(new Date(post.scheduleDate), "MMM d") : "scheduled date"}</span>
+        </CardHeader>
+        <CardContent className="pb-3">
+          <p className="text-muted-foreground line-clamp-2">
+            {post.content}
+          </p>
+          {post.isLocked && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <p className="text-sm text-amber-800 flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                This is premium content. Subscribers with access to this tier can view the full post.
+              </p>
             </div>
           )}
-          {post.status === "draft" && (
-            <div className="flex items-center">
-              <Edit className="h-4 w-4 mr-1" />
-              <span>Last edited {post.lastEdited}</span>
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {post.tags.map((tag, index) => (
+                <Badge key={index} variant="secondary" className="hover:bg-secondary/80">
+                  {tag}
+                </Badge>
+              ))}
             </div>
           )}
-        </div>
-        {post.availableTiers && post.availableTiers.length > 0 ? (
-          <div className="flex items-center">
-            <div className="text-xs text-muted-foreground mr-2">Available to:</div>
-            {post.availableTiers.map((tier) => (
-              <Badge 
-                key={tier.id} 
-                className={`bg-${tier.color}-100 text-${tier.color}-800 dark:bg-${tier.color}-900/40 dark:text-${tier.color}-300 ml-1`}
-              >
-                {tier.name}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <Badge variant="secondary">Public</Badge>
-        )}
-      </CardFooter>
-      
-      {post.status === "draft" && (
-        <CardFooter className="pt-0">
-          <Button variant="outline" className="mr-2" onClick={handleEditPost}>
-            <Edit className="h-4 w-4 mr-2" />
-            Continue Editing
-          </Button>
-          <Button onClick={handlePublishPost} disabled={isPublishing}>
-            {isPublishing ? (
+        </CardContent>
+        <CardFooter className="flex items-center justify-between pt-0">
+          <div className="flex items-center text-sm text-muted-foreground">
+            {post.status === "published" && post.engagement && (
               <>
-                <Loader className="h-4 w-4 mr-2 animate-spin" />
-                Publishing...
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Publish
+                <div className="flex items-center mr-4">
+                  <EyeOff className="h-4 w-4 mr-1" />
+                  <span>{post.engagement.views.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center mr-4">
+                  <Star className="h-4 w-4 mr-1" />
+                  <span>{post.engagement.likes.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  <span>{post.engagement.comments.toLocaleString()}</span>
+                </div>
               </>
             )}
-          </Button>
+            {post.status === "scheduled" && (
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-1" />
+                <span>Publishes on {post.scheduleDate ? format(new Date(post.scheduleDate), "MMM d") : "scheduled date"}</span>
+              </div>
+            )}
+            {post.status === "draft" && (
+              <div className="flex items-center">
+                <Edit className="h-4 w-4 mr-1" />
+                <span>Last edited {post.lastEdited}</span>
+              </div>
+            )}
+          </div>
+          {post.availableTiers && post.availableTiers.length > 0 ? (
+            <div className="flex items-center">
+              <div className="text-xs text-muted-foreground mr-2">Available to:</div>
+              {post.availableTiers.map((tier) => (
+                <Badge 
+                  key={tier.id} 
+                  className={`bg-${tier.color}-100 text-${tier.color}-800 dark:bg-${tier.color}-900/40 dark:text-${tier.color}-300 ml-1`}
+                >
+                  {tier.name}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <Badge variant="secondary">Public</Badge>
+          )}
         </CardFooter>
-      )}
-    </Card>
+        
+        {post.status === "draft" && (
+          <CardFooter className="pt-0">
+            <Button variant="outline" className="mr-2" onClick={handleEditPost}>
+              <Edit className="h-4 w-4 mr-2" />
+              Continue Editing
+            </Button>
+            <Button onClick={handlePublishPost} disabled={isPublishing}>
+              {isPublishing ? (
+                <>
+                  <Loader className="h-4 w-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Publish
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        )}
+      </Card>
+      
+      <EditPostDialog 
+        post={post}
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
+    </>
   );
 }
