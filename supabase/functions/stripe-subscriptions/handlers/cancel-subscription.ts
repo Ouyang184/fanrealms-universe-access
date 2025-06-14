@@ -19,12 +19,10 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
 
     console.log('Found user subscription to cancel:', userSubscription.id);
 
-    let cancelledSubscription;
-
     if (immediate) {
-      // Cancel immediately - delete the subscription from Stripe
-      console.log('Cancelling subscription immediately:', subscriptionId);
-      cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
+      // Cancel immediately - delete the subscription from Stripe completely
+      console.log('Cancelling subscription immediately in Stripe:', subscriptionId);
+      const cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
       
       console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
       
@@ -51,9 +49,9 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         status: 200,
       });
     } else {
-      // Set the Stripe subscription to cancel at period end
+      // Set the Stripe subscription to cancel at period end (NOT immediate cancellation)
       console.log('Setting Stripe subscription to cancel at period end:', subscriptionId);
-      cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
+      const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true
       });
 
