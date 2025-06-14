@@ -49,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({
   // Check if user is subscribed to this tier
   const { subscriptionData } = useSimpleSubscriptionCheck(tier_id || undefined, authorId);
   
-  // Check if this is the author's own post
+  // FIXED: Check if this is the author's own post using authorId
   const isOwnPost = user?.id === authorId;
   
   // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
@@ -160,8 +160,8 @@ const PostCard: React.FC<PostCardProps> = ({
             </div>
           )}
           
-          {/* Premium content preview/lock indicator for non-subscribers */}
-          {isPremiumPost && !hasFullAccess && (
+          {/* Premium content preview/lock indicator for non-subscribers - ONLY for non-creators */}
+          {isPremiumPost && !hasFullAccess && !isOwnPost && (
             <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
               <div className="flex items-center gap-2 text-amber-800 mb-3">
                 <Crown className="h-5 w-5 text-purple-600" />
@@ -187,7 +187,7 @@ const PostCard: React.FC<PostCardProps> = ({
               <PostCardMedia attachments={attachments} />
               <PostAttachments attachments={attachmentsForPostAttachments} />
             </>
-          ) : isPremiumPost && (
+          ) : isPremiumPost && !isOwnPost && (
             <div className="relative">
               <PostCardMedia attachments={attachments} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-lg flex items-center justify-center">

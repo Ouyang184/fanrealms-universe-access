@@ -38,7 +38,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   // Check subscription status for this post's tier
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
-  // Check if this is the creator's own post
+  // FIXED: Check if this is the creator's own post using both authorId and user.id
   const isOwnPost = user?.id === post.authorId;
   
   // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
@@ -69,7 +69,8 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     userId: user?.id,
     isOwnPost,
     hasAccess,
-    subscriptionData
+    subscriptionData,
+    finalDecision: hasAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
   return (
@@ -131,8 +132,8 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
           )}
         </div>
         
-        {/* Dynamic Tier Access Information - only show for non-creators */}
-        {!isOwnPost && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
+        {/* Dynamic Tier Access Information - ONLY show for non-creators */}
+        {!isOwnPost && !hasAccess && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
 
         {/* Engagement Section */}
         <div className="space-y-3">
