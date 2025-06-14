@@ -3,7 +3,7 @@ import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, ThumbsDown } from "lucide-react";
+import { Lock, ThumbsDown, Crown } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
 import { PostLikes } from "@/components/post/PostLikes";
@@ -12,6 +12,7 @@ import { PostCardContent } from "@/components/post/PostCardContent";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { TierAccessInfo } from "./TierAccessInfo";
 import { Post } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface FeedPostItemProps {
   post: Post;
@@ -26,6 +27,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   markPostAsRead, 
   creatorInfo 
 }) => {
+  const { user } = useAuth();
   const postRef = usePostVisibility({
     postId: post.id,
     onPostSeen: markPostAsRead,
@@ -35,7 +37,12 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 
   // Check subscription status for this post's tier
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
-  const hasAccess = !post.tier_id || subscriptionData?.isSubscribed || false;
+  
+  // Check if this is the creator's own post
+  const isOwnPost = user?.id === post.authorId;
+  
+  // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
+  const hasAccess = !post.tier_id || isOwnPost || subscriptionData?.isSubscribed || false;
 
   // Get the proper creator name - prioritize display_name from creator info
   const getCreatorDisplayName = () => {
@@ -53,6 +60,17 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 
   const displayName = getCreatorDisplayName();
   const avatarUrl = creatorInfo?.avatar_url || creatorInfo?.profile_image_url || post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png";
+
+  console.log('FeedPostItem - Creator access check:', {
+    postId: post.id,
+    postTitle: post.title,
+    tierId: post.tier_id,
+    authorId: post.authorId,
+    userId: user?.id,
+    isOwnPost,
+    hasAccess,
+    subscriptionData
+  });
 
   return (
     <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
@@ -80,6 +98,19 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 
       {/* Post Content */}
       <div className="p-4">
+        {/* Creator's own premium content indicator */}
+        {post.tier_id && hasAccess && isOwnPost && (
+          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Crown className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium">Your Premium Content</span>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                Creator View
+              </Badge>
+            </div>
+          </div>
+        )}
+
         {/* Post content with conditional blur */}
         <div className={hasAccess ? "" : "relative"}>
           <PostCardContent title={post.title} content={post.content} />
@@ -100,8 +131,8 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
           )}
         </div>
         
-        {/* Dynamic Tier Access Information */}
-        <TierAccessInfo post={post} creatorInfo={creatorInfo} />
+        {/* Dynamic Tier Access Information - only show for non-creators */}
+        {!isOwnPost && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
 
         {/* Engagement Section */}
         <div className="space-y-3">

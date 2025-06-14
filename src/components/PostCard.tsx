@@ -52,14 +52,14 @@ const PostCard: React.FC<PostCardProps> = ({
   // Check if this is the author's own post
   const isOwnPost = user?.id === authorId;
   
-  // ENHANCED ACCESS LOGIC - More explicit checks
+  // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
   const isPremiumPost = !!tier_id;
   const isSubscribedToTier = subscriptionData?.isSubscribed === true;
   const hasActiveSubscription = subscriptionData?.subscription?.isActive === true;
   
   // User has full access if:
   // 1. It's not a premium post (public post)
-  // 2. It's their own post
+  // 2. It's their own post (CREATOR CAN ALWAYS SEE THEIR OWN POSTS)
   // 3. They have an active subscription to the tier
   const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribedToTier || hasActiveSubscription;
   
@@ -68,58 +68,31 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - ENHANCED Access check:', {
+  console.log('PostCard - Creator access check:', {
     postId: id,
     postTitle: title,
     tierId: tier_id,
     authorId,
     userId: user?.id,
     isPremiumPost,
+    isOwnPost,
     isSubscribedToTier,
     hasActiveSubscription,
-    subscriptionData: subscriptionData,
-    isOwnPost,
     hasFullAccess,
     finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
-
-  // DEBUGGING: Log subscription mismatch details for premium posts
-  if (isPremiumPost && !hasFullAccess && !isOwnPost) {
-    console.warn('🚨 SUBSCRIPTION MISMATCH DETECTED:', {
-      postId: id,
-      tierIdFromPost: tier_id,
-      authorIdFromPost: authorId,
-      currentUserId: user?.id,
-      subscriptionCheckResult: subscriptionData,
-      expectedAccess: 'SHOULD_HAVE_ACCESS_IF_SUBSCRIBED'
-    });
-  }
 
   // Check if PostCardMedia will handle video rendering
   const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 
     attachment.type === 'video' && isVideoUrl(attachment.url)
   );
 
-  console.log('PostCard - Media handling check:', {
-    postId: id,
-    hasVideoAttachmentForMedia,
-    attachmentsCount: parsedAttachments.length,
-    attachmentTypes: parsedAttachments.map(a => ({ type: a.type, isVideoUrl: isVideoUrl(a.url || '') }))
-  });
-
   // Filter out video attachments that will be handled by PostCardMedia
   const attachmentsForPostAttachments = parsedAttachments.filter(attachment => {
     if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
-      console.log('PostCard - Filtering out video attachment from PostAttachments:', attachment);
       return false; // Exclude video URLs from PostAttachments
     }
     return true; // Include all other attachments
-  });
-
-  console.log('PostCard - Filtered attachments for PostAttachments:', {
-    original: parsedAttachments.length,
-    filtered: attachmentsForPostAttachments.length,
-    removedVideoUrls: parsedAttachments.length - attachmentsForPostAttachments.length
   });
 
   // Content display logic
@@ -161,6 +134,19 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="space-y-3">
           <PostCardContent title={displayContent.title} content={displayContent.content} />
           
+          {/* Creator's own premium content indicator */}
+          {isPremiumPost && hasFullAccess && isOwnPost && (
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Crown className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Your Premium Content</span>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  Creator View
+                </Badge>
+              </div>
+            </div>
+          )}
+          
           {/* Premium content access indicator for subscribers */}
           {isPremiumPost && hasFullAccess && !isOwnPost && (
             <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
@@ -187,13 +173,6 @@ const PostCard: React.FC<PostCardProps> = ({
               <p className="text-sm text-amber-700 mb-3">
                 This content is available to premium subscribers. Subscribe to unlock the full post and exclusive content from this creator.
               </p>
-              
-              {/* DEBUGGING INFO - Remove this in production */}
-              <div className="text-xs bg-red-50 border border-red-200 p-2 rounded mb-3 text-red-700">
-                <strong>Debug Info:</strong> Post tier_id: {tier_id}, Author ID: {authorId}, 
-                Subscription check: {subscriptionData ? 'Found data' : 'No data'}, 
-                Is subscribed: {isSubscribedToTier ? 'Yes' : 'No'}
-              </div>
               
               <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
                 <Lock className="h-4 w-4 mr-2" />
