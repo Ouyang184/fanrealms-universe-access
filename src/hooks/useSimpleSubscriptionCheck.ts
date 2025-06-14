@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,41 +16,44 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
 
       console.log('[SubscriptionCheck] Checking subscription for:', { userId: user.id, tierId, creatorId });
 
-      // ENHANCED: First, let's check if creatorId is actually a user_id and get the creator profile ID
+      // FIXED: Check if creatorId is a creator profile ID first, then check if it's a user_id
       let actualCreatorId = creatorId;
       
-      // Try to find creator by user_id if the provided creatorId might be a user_id
-      const { data: creatorByUserId, error: creatorError } = await supabase
+      // First try to find creator by profile ID (most common case)
+      const { data: creatorById, error: creatorByIdError } = await supabase
         .from('creators')
         .select('id, user_id, display_name')
-        .eq('user_id', creatorId)
-        .single();
+        .eq('id', creatorId)
+        .maybeSingle();
 
-      if (creatorByUserId && !creatorError) {
-        actualCreatorId = creatorByUserId.id;
-        console.log('[SubscriptionCheck] Found creator by user_id:', {
-          inputCreatorId: creatorId,
-          actualCreatorId: actualCreatorId,
-          creatorDisplayName: creatorByUserId.display_name
+      if (creatorById && !creatorByIdError) {
+        actualCreatorId = creatorById.id;
+        console.log('[SubscriptionCheck] Creator found by profile ID:', {
+          creatorId: creatorById.id,
+          userId: creatorById.user_id,
+          displayName: creatorById.display_name
         });
       } else {
-        // If not found by user_id, check if it's already a creator profile ID
-        const { data: creatorById } = await supabase
+        // If not found by ID, try to find by user_id
+        const { data: creatorByUserId, error: creatorByUserIdError } = await supabase
           .from('creators')
           .select('id, user_id, display_name')
-          .eq('id', creatorId)
-          .single();
-          
-        if (creatorById) {
-          console.log('[SubscriptionCheck] Creator found by profile ID:', {
-            creatorId: creatorById.id,
-            userId: creatorById.user_id,
-            displayName: creatorById.display_name
+          .eq('user_id', creatorId)
+          .maybeSingle();
+
+        if (creatorByUserId && !creatorByUserIdError) {
+          actualCreatorId = creatorByUserId.id;
+          console.log('[SubscriptionCheck] Found creator by user_id:', {
+            inputCreatorId: creatorId,
+            actualCreatorId: actualCreatorId,
+            creatorDisplayName: creatorByUserId.display_name
           });
+        } else {
+          console.log('[SubscriptionCheck] Creator not found by ID or user_id:', creatorId);
         }
       }
 
-      // Query user_subscriptions table with both original and resolved creator IDs
+      // Query user_subscriptions table with resolved creator ID
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -61,7 +65,7 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
           )
         `)
         .eq('user_id', user.id)
-        .in('creator_id', [creatorId, actualCreatorId])
+        .eq('creator_id', actualCreatorId)
         .eq('tier_id', tierId);
 
       if (error) {
@@ -83,11 +87,11 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
           )
         `)
         .eq('user_id', user.id)
-        .in('creator_id', [creatorId, actualCreatorId]);
+        .eq('creator_id', actualCreatorId);
 
       console.log('[SubscriptionCheck] All user subscriptions to this creator:', allUserSubs);
 
-      // Filter for active subscriptions only - exclude canceled subscriptions
+      // Filter for active subscriptions only
       const activeSubscriptions = data?.filter(sub => 
         sub.status === 'active'
       ) || [];
