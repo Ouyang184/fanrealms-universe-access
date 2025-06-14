@@ -46,11 +46,24 @@ const PostCard: React.FC<PostCardProps> = ({
   const { user } = useAuth();
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
   
+  // CRITICAL DEBUG: Log all the important values
+  console.log('PostCard - DETAILED DEBUG:', {
+    postId: id,
+    postTitle: title,
+    authorId: authorId,
+    authorIdType: typeof authorId,
+    userId: user?.id,
+    userIdType: typeof user?.id,
+    areEqual: user?.id === authorId,
+    strictEqual: user?.id === String(authorId),
+    tier_id: tier_id
+  });
+  
   // Check if user is subscribed to this tier
   const { subscriptionData } = useSimpleSubscriptionCheck(tier_id || undefined, authorId);
   
-  // FIXED: Check if this is the author's own post using authorId
-  const isOwnPost = user?.id === authorId;
+  // FIXED: Check if this is the author's own post using authorId - ensure both are strings
+  const isOwnPost = user?.id && authorId && String(user.id) === String(authorId);
   
   // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
   const isPremiumPost = !!tier_id;
@@ -68,7 +81,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - Creator access check:', {
+  console.log('PostCard - FINAL ACCESS DECISION:', {
     postId: id,
     postTitle: title,
     tierId: tier_id,
@@ -185,7 +198,12 @@ const PostCard: React.FC<PostCardProps> = ({
           {hasFullAccess ? (
             <>
               <PostCardMedia attachments={attachments} />
-              <PostAttachments attachments={attachmentsForPostAttachments} />
+              <PostAttachments attachments={parsedAttachments.filter(attachment => {
+                if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
+                  return false; // Exclude video URLs from PostAttachments
+                }
+                return true; // Include all other attachments
+              })} />
             </>
           ) : isPremiumPost && !isOwnPost && (
             <div className="relative">

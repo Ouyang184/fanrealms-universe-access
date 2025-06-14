@@ -101,7 +101,7 @@ export function CreatePostForm() {
     if (!user) return;
     
     console.log('[Creator Studio] Form submission started with selectedTierId:', selectedTierId);
-    console.log('[Creator Studio] selectedTierId type:', typeof selectedTierId, 'value:', selectedTierId);
+    console.log('[Creator Studio] User ID for author_id:', user.id);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -142,13 +142,18 @@ export function CreatePostForm() {
       const postData = {
         title,
         content,
-        author_id: user.id,
+        author_id: user.id, // CRITICAL: Ensure author_id is set to user.id
         creator_id: creatorProfile?.id || null,
         tier_id: selectedTierId, // This should properly set the tier_id
         attachments: uploadedAttachments
       };
 
-      console.log('[Creator Studio] Creating post with data:', postData);
+      console.log('[Creator Studio] Creating post with AUTHOR_ID:', {
+        author_id: postData.author_id,
+        creator_id: postData.creator_id,
+        tier_id: postData.tier_id,
+        user_id: user.id
+      });
 
       const { data: insertedPost, error } = await supabase
         .from('posts')
@@ -157,7 +162,7 @@ export function CreatePostForm() {
 
       if (error) throw error;
 
-      console.log('[Creator Studio] Post created successfully:', insertedPost);
+      console.log('[Creator Studio] Post created successfully with author_id:', insertedPost[0]?.author_id);
 
       const postType = selectedTierId ? "premium" : "public";
       toast({

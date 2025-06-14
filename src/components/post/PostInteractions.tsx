@@ -27,16 +27,30 @@ export function PostInteractions({ postId, authorId }: PostInteractionsProps) {
   const { user } = useAuth();
   const { deletePost, isDeleting } = useDeletePost();
   
+  // CRITICAL DEBUG: Log all the important values for troubleshooting
+  console.log('PostInteractions - DETAILED DEBUG:', {
+    postId,
+    authorId: authorId,
+    authorIdType: typeof authorId,
+    userId: user?.id,
+    userIdType: typeof user?.id,
+    authorIdValue: authorId,
+    userIdValue: user?.id,
+    areEqual: user?.id === authorId,
+    strictStringComparison: String(user?.id || '') === String(authorId || ''),
+    bothExist: !!(user?.id && authorId)
+  });
+  
   // Clean up the authorId comparison - ensure both are strings and handle undefined
-  const isAuthor = user?.id && authorId && user.id === authorId;
+  const isAuthor = user?.id && authorId && String(user.id) === String(authorId);
 
-  console.log('PostInteractions - Access check:', {
+  console.log('PostInteractions - FINAL AUTHOR CHECK:', {
     postId,
     authorId,
     userId: user?.id,
     isAuthor,
-    authorIdType: typeof authorId,
-    userIdType: typeof user?.id
+    authorIdProvided: !!authorId,
+    userIdProvided: !!user?.id
   });
 
   const handleShare = () => {

@@ -50,18 +50,29 @@ export const usePosts = () => {
         author_id: p.author_id // Log raw author_id
       })));
 
-      return posts.map((post): Post => ({
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
-        authorName: post.users?.username || 'Unknown',
-        authorAvatar: post.users?.profile_picture || null,
-        createdAt: post.created_at,
-        date: formatRelativeDate(post.created_at),
-        tier_id: post.tier_id,
-        attachments: post.attachments
-      }));
+      return posts.map((post): Post => {
+        const mappedPost = {
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
+          authorName: post.users?.username || 'Unknown',
+          authorAvatar: post.users?.profile_picture || null,
+          createdAt: post.created_at,
+          date: formatRelativeDate(post.created_at),
+          tier_id: post.tier_id,
+          attachments: post.attachments
+        };
+        
+        console.log('[usePosts] Mapped post:', {
+          id: mappedPost.id,
+          title: mappedPost.title,
+          authorId: mappedPost.authorId,
+          tier_id: mappedPost.tier_id
+        });
+        
+        return mappedPost;
+      });
     }
   });
 };
