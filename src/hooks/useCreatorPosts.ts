@@ -23,6 +23,8 @@ export function useCreatorPosts() {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      console.log('[useCreatorPosts] Fetching posts for user:', user.id);
+      
       let query = supabase
         .from('posts')
         .select(`
@@ -64,6 +66,15 @@ export function useCreatorPosts() {
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
+        
+        console.log('[useCreatorPosts] CRITICAL - Processing post with author_id:', {
+          postId: post.id,
+          postTitle: post.title,
+          author_id: post.author_id,
+          authorIdType: typeof post.author_id,
+          userId: user.id,
+          userIdType: typeof user.id
+        });
         
         // Determine post type based on tags or content keywords
         let postType: "article" | "image" | "video" | "audio" = "article";
@@ -133,8 +144,8 @@ export function useCreatorPosts() {
             }
           });
         }
-          
-        return {
+
+        const transformedPost: CreatorPost = {
           id: post.id,
           title: post.title,
           content: post.content,
@@ -143,7 +154,7 @@ export function useCreatorPosts() {
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
-          authorId: post.author_id, // FIXED: Ensure authorId is properly set
+          authorId: post.author_id, // CRITICAL FIX: Ensure authorId is properly set from DB
           status,
           tags,
           engagement: randomEngagement,
@@ -155,6 +166,15 @@ export function useCreatorPosts() {
           isLocked: isLocked,
           attachments: attachments
         };
+
+        console.log('[useCreatorPosts] FINAL transformed post with authorId:', {
+          postId: transformedPost.id,
+          authorId: transformedPost.authorId,
+          authorIdType: typeof transformedPost.authorId,
+          authorIdValue: JSON.stringify(transformedPost.authorId)
+        });
+          
+        return transformedPost;
       });
     },
     enabled: !!user?.id
