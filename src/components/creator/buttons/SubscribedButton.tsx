@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
@@ -192,16 +191,17 @@ export function SubscribedButton({
             title: "Subscription Cancelled",
             description: `Your subscription to ${tierName} has been cancelled immediately. You no longer have access to this content.`,
           });
+          
+          // For immediate cancellation, optimistically update to not subscribed
+          if (onOptimisticUpdate) {
+            onOptimisticUpdate(false);
+          }
         } else {
           const nextBillingDate = getNextBillingDate();
           toast({
             title: "Subscription Will End",
             description: `Your subscription to ${tierName} will automatically end on ${nextBillingDate}. You'll continue to have access until then.`,
           });
-        }
-        
-        if (onOptimisticUpdate) {
-          onOptimisticUpdate(false);
         }
         
         await invalidateAllSubscriptionQueries();
@@ -261,16 +261,17 @@ export function SubscribedButton({
           title: "Subscription Cancelled",
           description: `Your subscription to ${tierName} has been cancelled immediately. You no longer have access to this content.`,
         });
+        
+        // For immediate cancellation, optimistically update to not subscribed
+        if (onOptimisticUpdate) {
+          onOptimisticUpdate(false);
+        }
       } else {
         const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
         toast({
           title: "Subscription Will End",
           description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
         });
-      }
-      
-      if (onOptimisticUpdate) {
-        onOptimisticUpdate(false);
       }
       
       await invalidateAllSubscriptionQueries();

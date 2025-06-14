@@ -20,7 +20,6 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
     console.log('Found user subscription to cancel:', userSubscription.id);
 
     let cancelledSubscription;
-    let updateData;
 
     if (immediate) {
       // Cancel immediately - delete the subscription from Stripe
@@ -29,7 +28,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       
       console.log('Stripe subscription cancelled immediately, status:', cancelledSubscription.status);
       
-      // For immediate cancellation, delete from our database
+      // For immediate cancellation, delete from our database completely
       const { error: deleteError } = await supabaseService
         .from('user_subscriptions')
         .delete()
@@ -45,7 +44,8 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       return new Response(JSON.stringify({ 
         success: true,
         message: 'Subscription cancelled immediately',
-        immediate: true
+        immediate: true,
+        status: 'canceled'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -58,7 +58,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       });
 
       // Update our database - keep status as 'active' but add cancel info
-      updateData = {
+      const updateData = {
         // Keep status as active since subscription is still active until period end
         cancel_at_period_end: true,
         current_period_end: new Date(cancelledSubscription.current_period_end * 1000).toISOString(),
@@ -82,7 +82,8 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       const responseData = { 
         success: true,
         message: 'Subscription will cancel at period end',
-        immediate: false
+        immediate: false,
+        status: 'active'
       };
 
       if (cancelledSubscription.current_period_end) {
