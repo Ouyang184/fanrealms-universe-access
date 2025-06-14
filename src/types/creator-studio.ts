@@ -73,4 +73,10 @@ export interface CreatorPost {
   type: "article" | "image" | "video" | "audio";
   canView?: boolean;
   isLocked?: boolean;
+  attachments?: Array<{
+    url: string;
+    name: string;
+    type: string;
+    size: number;
+  }>;
 }
