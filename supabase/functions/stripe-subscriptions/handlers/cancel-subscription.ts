@@ -1,4 +1,3 @@
-
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(stripe: any, supabaseService: any, user: any, subscriptionId: string, immediate: boolean = false) {
@@ -20,8 +19,8 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
 
     console.log('Found user subscription to cancel:', userSubscription.id);
 
-    if (immediate) {
-      // Cancel immediately - delete the subscription from Stripe completely
+    if (immediate === true) {
+      // IMMEDIATE CANCELLATION - Cancel the subscription in Stripe completely
       console.log('IMMEDIATE CANCELLATION: Cancelling subscription immediately in Stripe:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
       
@@ -50,7 +49,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
         status: 200,
       });
     } else {
-      // Set the Stripe subscription to cancel at period end (NOT immediate cancellation)
+      // DELAYED CANCELLATION - Set the Stripe subscription to cancel at period end
       console.log('DELAYED CANCELLATION: Setting Stripe subscription to cancel at period end:', subscriptionId);
       const cancelledSubscription = await stripe.subscriptions.update(subscriptionId, {
         cancel_at_period_end: true
@@ -58,7 +57,6 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
 
       // Update our database - keep status as 'active' but add cancel info
       const updateData = {
-        // Keep status as active since subscription is still active until period end
         cancel_at_period_end: true,
         current_period_end: new Date(cancelledSubscription.current_period_end * 1000).toISOString(),
         updated_at: new Date().toISOString()
@@ -86,7 +84,7 @@ export async function handleCancelSubscription(stripe: any, supabaseService: any
       };
 
       if (cancelledSubscription.current_period_end) {
-        responseData.cancelAt = cancelledSubscription.current_period_end * 1000; // Return as milliseconds
+        responseData.cancelAt = cancelledSubscription.current_period_end * 1000;
       }
       
       return new Response(JSON.stringify(responseData), {
