@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -241,18 +242,13 @@ export function ContentItem({ post, type }: ContentItemProps) {
           </div>
         )}
         
-        {/* Text-only post display */}
+        {/* Enhanced text-only post display with banner-style design */}
         {!hasVisualMedia && !hasFileAttachment && (
-          <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/50 to-blue-900/50 flex items-center justify-center p-4">
-            <div className="text-center">
-              <p className="text-lg text-gray-200 line-clamp-4 font-medium">
+          <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/80 to-blue-900/80 flex items-center justify-center p-6">
+            <div className="text-center w-full">
+              <h2 className="text-xl text-white font-bold line-clamp-3 leading-tight">
                 {post.title}
-              </p>
-              {post.content && post.content !== post.title && (
-                <p className="text-sm text-gray-300 mt-2 line-clamp-2">
-                  {post.content}
-                </p>
-              )}
+              </h2>
             </div>
             
             {/* Premium lock overlay for text posts - ONLY for non-creators */}
