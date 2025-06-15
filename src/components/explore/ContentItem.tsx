@@ -8,6 +8,8 @@ import { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { PostCardMedia } from "@/components/post/PostCardMedia";
+import { PostCardContent } from "@/components/post/PostCardContent";
 
 interface ContentItemProps {
   post: Post;
@@ -85,21 +87,6 @@ export function ContentItem({ post, type }: ContentItemProps) {
       return "post";
     }
   };
-  
-  // Generate thumbnail for post with proper sizing
-  const getPostThumbnail = (post: Post) => {
-    const firstMedia = getFirstMedia(post.attachments);
-    
-    if (firstMedia && firstMedia.url) {
-      // For images and videos, show the actual media
-      if (firstMedia.type === 'image' || firstMedia.type === 'video') {
-        return firstMedia.url;
-      }
-    }
-    
-    // For posts without visual media, return null to show text-only card
-    return null;
-  };
 
   // Get file icon for different file types
   const getFileIcon = (type: string) => {
@@ -131,7 +118,6 @@ export function ContentItem({ post, type }: ContentItemProps) {
 
   const contentType = determineContentType(post);
   const firstMedia = getFirstMedia(post.attachments);
-  const thumbnail = getPostThumbnail(post);
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
 
@@ -161,116 +147,92 @@ export function ContentItem({ post, type }: ContentItemProps) {
   return (
     <Card className="bg-gray-900 border-gray-800 overflow-hidden">
       <div className="relative">
-        {/* Visual media thumbnail with proper aspect ratio */}
-        {hasVisualMedia && thumbnail && (
-          <div className="relative w-full h-40">
-            <img
-              src={thumbnail}
-              alt={post.title}
-              className="w-full h-full object-cover"
-              style={{ aspectRatio: '16/9' }}
-              onError={(e) => {
-                // Hide broken images
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement?.classList.add('hidden');
-              }}
-            />
-            {/* Video play overlay */}
-            {firstMedia?.type === 'video' && (
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <div className="bg-black/70 rounded-full p-3">
-                  <Play className="h-6 w-6 text-white fill-white" />
-                </div>
-              </div>
-            )}
-            
-            {/* Premium lock overlay for visual media - ONLY for non-creators */}
-            {isPremium && !hasFullAccess && !isOwnPost && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="bg-black/80 rounded-full p-3">
-                  <Lock className="h-8 w-8 text-white/70" />
-                </div>
-              </div>
-            )}
-            
-            {/* Creator's own premium content indicator - ONLY top-left badge */}
-            {isPremium && hasFullAccess && isOwnPost && (
-              <div className="absolute top-2 left-2">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Your Premium
-                </Badge>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* File attachment display with proper preview */}
-        {hasFileAttachment && !hasVisualMedia && (
-          <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
-            <div className="text-center">
-              {getFileIcon(firstMedia.type)}
-              <p className="text-sm text-gray-300 mt-2 px-4 truncate">
-                {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
-              </p>
-              {fileTypeLabel && (
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  <span>{fileTypeLabel.icon}</span>
-                  <span className="text-xs text-gray-400">{fileTypeLabel.label}</span>
+        {/* Content banner area - always show content */}
+        <div className="relative w-full h-40">
+          {/* Show media if available */}
+          {hasVisualMedia && firstMedia && (
+            <>
+              {firstMedia.type === 'image' && (
+                <img
+                  src={firstMedia.url}
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement?.classList.add('hidden');
+                  }}
+                />
+              )}
+              {firstMedia.type === 'video' && (
+                <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                  <div className="text-center">
+                    <Video className="h-12 w-12 text-blue-600 mx-auto mb-2" />
+                    <p className="text-sm text-gray-300">{firstMedia.name || "Video File"}</p>
+                  </div>
                 </div>
               )}
-            </div>
-            
-            {/* Premium lock overlay for files - ONLY for non-creators */}
-            {isPremium && !hasFullAccess && !isOwnPost && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="bg-black/80 rounded-full p-3">
-                  <Lock className="h-8 w-8 text-white/70" />
+              {/* Video play overlay */}
+              {firstMedia?.type === 'video' && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <div className="bg-black/70 rounded-full p-3">
+                    <Play className="h-6 w-6 text-white fill-white" />
+                  </div>
                 </div>
+              )}
+            </>
+          )}
+          
+          {/* Show file attachment preview */}
+          {hasFileAttachment && !hasVisualMedia && (
+            <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+              <div className="text-center">
+                {getFileIcon(firstMedia.type)}
+                <p className="text-sm text-gray-300 mt-2 px-4 truncate">
+                  {firstMedia.name || `${firstMedia.type.toUpperCase()} File`}
+                </p>
+                {fileTypeLabel && (
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <span>{fileTypeLabel.icon}</span>
+                    <span className="text-xs text-gray-400">{fileTypeLabel.label}</span>
+                  </div>
+                )}
               </div>
-            )}
-            
-            {/* Creator's own premium content indicator - ONLY top-left badge */}
-            {isPremium && hasFullAccess && isOwnPost && (
-              <div className="absolute top-2 left-2">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Your Premium
-                </Badge>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Enhanced text-only post display with banner-style design */}
-        {!hasVisualMedia && !hasFileAttachment && (
-          <div className="relative w-full h-40 bg-gradient-to-br from-purple-900/80 to-blue-900/80 flex items-center justify-center p-6">
-            <div className="text-center w-full">
-              <h2 className="text-xl text-white font-bold line-clamp-3 leading-tight">
-                {post.title}
-              </h2>
             </div>
-            
-            {/* Premium lock overlay for text posts - ONLY for non-creators */}
-            {isPremium && !hasFullAccess && !isOwnPost && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="bg-black/80 rounded-full p-3">
-                  <Lock className="h-8 w-8 text-white/70" />
-                </div>
+          )}
+          
+          {/* Show post content for text-only posts */}
+          {!hasVisualMedia && !hasFileAttachment && (
+            <div className="w-full h-full bg-gradient-to-br from-purple-900/80 to-blue-900/80 p-4 flex flex-col justify-center">
+              <div className="text-center">
+                <h3 className="text-lg font-bold text-white mb-2 line-clamp-2">{post.title}</h3>
+                {post.content && (
+                  <p className="text-sm text-gray-200 line-clamp-3 leading-relaxed">
+                    {post.content.length > 150 ? `${post.content.substring(0, 150)}...` : post.content}
+                  </p>
+                )}
               </div>
-            )}
-            
-            {/* Creator's own premium content indicator - ONLY top-left badge */}
-            {isPremium && hasFullAccess && isOwnPost && (
-              <div className="absolute top-2 left-2">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Your Premium
-                </Badge>
+            </div>
+          )}
+          
+          {/* Premium lock overlay - ONLY for non-creators */}
+          {isPremium && !hasFullAccess && !isOwnPost && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="bg-black/80 rounded-full p-3">
+                <Lock className="h-8 w-8 text-white/70" />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+          
+          {/* Creator's own premium content indicator - ONLY top-left badge */}
+          {isPremium && hasFullAccess && isOwnPost && (
+            <div className="absolute top-2 left-2">
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                <Crown className="h-3 w-3 mr-1" />
+                Your Premium
+              </Badge>
+            </div>
+          )}
+        </div>
         
         {/* Badges and metadata overlays */}
         <div className="absolute top-2 right-2">
