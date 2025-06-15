@@ -1,12 +1,12 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download, FileImage, Lock } from "lucide-react";
+import { Video, FileText, Heart, Eye, TrendingUp, Clock, Play, File, Download, FileImage, Lock, Crown } from "lucide-react";
 import { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ContentItemProps {
   post: Post;
@@ -15,6 +15,26 @@ interface ContentItemProps {
 
 export function ContentItem({ post, type }: ContentItemProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // CREATOR-CENTRIC ACCESS LOGIC: Creators ALWAYS have full access to their own posts
+  const isOwnPost = !!(user?.id && post.authorId && String(user.id) === String(post.authorId));
+  const isPremium = !!post.tier_id;
+  
+  // CREATOR ALWAYS HAS FULL ACCESS - this matches the logic from PostCard.tsx
+  const hasFullAccess = isOwnPost || !isPremium;
+  
+  console.log('[ContentItem] ENHANCED Creator access check:', {
+    postId: post.id,
+    postTitle: post.title,
+    tierId: post.tier_id,
+    authorId: post.authorId,
+    userId: user?.id,
+    isOwnPost,
+    isPremium,
+    hasFullAccess,
+    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
+  });
 
   // Helper function to get the first media from attachments
   const getFirstMedia = (attachments: any) => {
@@ -164,12 +184,22 @@ export function ContentItem({ post, type }: ContentItemProps) {
               </div>
             )}
             
-            {/* Premium lock overlay for visual media */}
-            {isPremium && (
+            {/* Premium lock overlay for visual media - ONLY for non-creators */}
+            {isPremium && !hasFullAccess && !isOwnPost && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <div className="bg-black/80 rounded-full p-3">
                   <Lock className="h-8 w-8 text-white/70" />
                 </div>
+              </div>
+            )}
+            
+            {/* Creator's own premium content indicator */}
+            {isPremium && hasFullAccess && isOwnPost && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Your Premium
+                </Badge>
               </div>
             )}
           </div>
@@ -191,12 +221,22 @@ export function ContentItem({ post, type }: ContentItemProps) {
               )}
             </div>
             
-            {/* Premium lock overlay for files */}
-            {isPremium && (
+            {/* Premium lock overlay for files - ONLY for non-creators */}
+            {isPremium && !hasFullAccess && !isOwnPost && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <div className="bg-black/80 rounded-full p-3">
                   <Lock className="h-8 w-8 text-white/70" />
                 </div>
+              </div>
+            )}
+            
+            {/* Creator's own premium content indicator */}
+            {isPremium && hasFullAccess && isOwnPost && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Your Premium
+                </Badge>
               </div>
             )}
           </div>
@@ -216,12 +256,22 @@ export function ContentItem({ post, type }: ContentItemProps) {
               )}
             </div>
             
-            {/* Premium lock overlay for text posts */}
-            {isPremium && (
+            {/* Premium lock overlay for text posts - ONLY for non-creators */}
+            {isPremium && !hasFullAccess && !isOwnPost && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                 <div className="bg-black/80 rounded-full p-3">
                   <Lock className="h-8 w-8 text-white/70" />
                 </div>
+              </div>
+            )}
+            
+            {/* Creator's own premium content indicator */}
+            {isPremium && hasFullAccess && isOwnPost && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  <Crown className="h-3 w-3 mr-1" />
+                  Your Premium
+                </Badge>
               </div>
             )}
           </div>
@@ -265,7 +315,16 @@ export function ContentItem({ post, type }: ContentItemProps) {
           </Avatar>
           <span className="text-sm text-gray-400">{authorName}</span>
         </div>
-        <h3 className="font-semibold line-clamp-2">{post.title}</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold line-clamp-2 flex-1">{post.title}</h3>
+          {/* Creator's own premium content indicator in title area */}
+          {isPremium && hasFullAccess && isOwnPost && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+              <Crown className="h-3 w-3 mr-1" />
+              Your Premium
+            </Badge>
+          )}
+        </div>
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -277,13 +336,21 @@ export function ContentItem({ post, type }: ContentItemProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-end">
-        <Button 
-          size="sm" 
-          className="bg-purple-600 hover:bg-purple-700"
-          onClick={handleSubscribeClick}
-        >
-          Subscribe
-        </Button>
+        {/* Show different button for creators vs non-creators */}
+        {isPremium && hasFullAccess && isOwnPost ? (
+          <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+            <Crown className="h-3 w-3 mr-1" />
+            Your Content
+          </Badge>
+        ) : (
+          <Button 
+            size="sm" 
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={handleSubscribeClick}
+          >
+            Subscribe
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
