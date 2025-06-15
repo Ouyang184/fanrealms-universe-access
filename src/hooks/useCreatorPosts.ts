@@ -17,7 +17,7 @@ export function useCreatorPosts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDrafts, setShowDrafts] = useState(true);
 
-  // Fetch creator's posts with subscription and tier info
+  // Fetch creator's posts with real engagement data
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['creator-posts', user?.id, filter, searchQuery, showDrafts],
     queryFn: async () => {
@@ -38,7 +38,9 @@ export function useCreatorPosts() {
             title,
             price,
             creator_id
-          )
+          ),
+          likes(count),
+          comments(count)
         `)
         .eq('author_id', user.id)
         .order('created_at', { ascending: false });
@@ -62,7 +64,7 @@ export function useCreatorPosts() {
 
       console.log('[useCreatorPosts] Creator posts raw data:', data);
       
-      // Transform to CreatorPost format
+      // Transform to CreatorPost format with real engagement data
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
@@ -97,13 +99,13 @@ export function useCreatorPosts() {
 
         // CREATOR ALWAYS HAS FULL ACCESS to their own posts
         const canViewPost = true;
-        const isLocked = !!post.tier_id; // Post is locked if it has a tier_id
+        const isLocked = !!post.tier_id;
 
         console.log('[useCreatorPosts] Creator post visibility check:', {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
-          authorId: post.author_id, // Log the authorId being set
+          authorId: post.author_id,
           isCreatorOwnPost: true,
           canViewPost,
           isLocked
@@ -121,7 +123,12 @@ export function useCreatorPosts() {
         const isDraft = post.title?.toLowerCase().includes('draft');
         const status: PostStatus = isScheduled ? "scheduled" : isDraft ? "draft" : "published";
         
-        const randomEngagement = generateRandomEngagement(status);
+        // Use REAL engagement data from the database
+        const realEngagement = {
+          views: 0, // Views tracking would need to be implemented separately
+          likes: Array.isArray(post.likes) ? post.likes.length : 0,
+          comments: Array.isArray(post.comments) ? post.comments.length : 0
+        };
 
         // Safely handle attachments - ensure it's a properly typed array
         const attachments: Array<{
@@ -154,10 +161,10 @@ export function useCreatorPosts() {
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
-          authorId: post.author_id, // CRITICAL FIX: Ensure authorId is properly set from DB
+          authorId: post.author_id,
           status,
           tags,
-          engagement: randomEngagement,
+          engagement: realEngagement, // Use real engagement data
           availableTiers,
           scheduleDate: isScheduled ? generateFutureDate() : undefined,
           lastEdited: formatRelativeDate(post.created_at),
@@ -167,11 +174,10 @@ export function useCreatorPosts() {
           attachments: attachments
         };
 
-        console.log('[useCreatorPosts] FINAL transformed post with authorId:', {
+        console.log('[useCreatorPosts] FINAL transformed post with real engagement:', {
           postId: transformedPost.id,
           authorId: transformedPost.authorId,
-          authorIdType: typeof transformedPost.authorId,
-          authorIdValue: JSON.stringify(transformedPost.authorId)
+          engagement: transformedPost.engagement
         });
           
         return transformedPost;
@@ -186,18 +192,6 @@ export function useCreatorPosts() {
     if (price < 5) return "blue";
     if (price < 15) return "purple";
     return "indigo";
-  }
-
-  // Helper function to generate mock engagement data
-  function generateRandomEngagement(status: PostStatus) {
-    if (status === "draft") return { views: 0, likes: 0, comments: 0 };
-    if (status === "scheduled") return { views: 0, likes: 0, comments: 0 };
-    
-    return {
-      views: Math.floor(Math.random() * 2000) + 200,
-      likes: Math.floor(Math.random() * 150) + 10,
-      comments: Math.floor(Math.random() * 50) + 1
-    };
   }
 
   // Helper function to generate future date for scheduled posts
