@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -193,7 +192,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
               </div>
             )}
             
-            {/* Creator's own premium content indicator */}
+            {/* Creator's own premium content indicator - ONLY top-left badge */}
             {isPremium && hasFullAccess && isOwnPost && (
               <div className="absolute top-2 left-2">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
@@ -230,7 +229,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
               </div>
             )}
             
-            {/* Creator's own premium content indicator */}
+            {/* Creator's own premium content indicator - ONLY top-left badge */}
             {isPremium && hasFullAccess && isOwnPost && (
               <div className="absolute top-2 left-2">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
@@ -265,7 +264,7 @@ export function ContentItem({ post, type }: ContentItemProps) {
               </div>
             )}
             
-            {/* Creator's own premium content indicator */}
+            {/* Creator's own premium content indicator - ONLY top-left badge */}
             {isPremium && hasFullAccess && isOwnPost && (
               <div className="absolute top-2 left-2">
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
@@ -317,13 +316,6 @@ export function ContentItem({ post, type }: ContentItemProps) {
         </div>
         <div className="flex items-center gap-2 mb-2">
           <h3 className="font-semibold line-clamp-2 flex-1">{post.title}</h3>
-          {/* Creator's own premium content indicator in title area */}
-          {isPremium && hasFullAccess && isOwnPost && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-              <Crown className="h-3 w-3 mr-1" />
-              Your Premium
-            </Badge>
-          )}
         </div>
         <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
           <div className="flex items-center gap-1">
@@ -336,21 +328,14 @@ export function ContentItem({ post, type }: ContentItemProps) {
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-end">
-        {/* Show different button for creators vs non-creators */}
-        {isPremium && hasFullAccess && isOwnPost ? (
-          <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
-            <Crown className="h-3 w-3 mr-1" />
-            Your Content
-          </Badge>
-        ) : (
-          <Button 
-            size="sm" 
-            className="bg-purple-600 hover:bg-purple-700"
-            onClick={handleSubscribeClick}
-          >
-            Subscribe
-          </Button>
-        )}
+        {/* Show subscribe button for all posts */}
+        <Button 
+          size="sm" 
+          className="bg-purple-600 hover:bg-purple-700"
+          onClick={handleSubscribeClick}
+        >
+          Subscribe
+        </Button>
       </CardFooter>
     </Card>
   );
