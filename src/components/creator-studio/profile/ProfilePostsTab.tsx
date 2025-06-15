@@ -34,10 +34,15 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
   return (
     <div className="space-y-6">
       {posts.map((post) => {
-        console.log('ProfilePostsTab - Post data:', {
+        console.log('ProfilePostsTab - Post data with enhanced logging:', {
           postId: post.id,
           authorId: post.authorId,
-          title: post.title
+          authorIdType: typeof post.authorId,
+          authorIdValue: JSON.stringify(post.authorId),
+          title: post.title,
+          tier_id: post.tier_id,
+          hasAuthorId: !!post.authorId,
+          message: 'Creator Studio profile post with proper authorId mapping'
         });
         
         return (

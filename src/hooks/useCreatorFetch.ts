@@ -147,15 +147,30 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log(`[useCreatorFetch] Creator ${creatorUserId} post tier distribution:`, tierStats);
       
-      // FIXED: Properly map author_id to authorId for frontend compatibility
-      return postsData.map((post: any) => ({
-        ...post,
-        authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
-        authorName: creator.display_name || post.users?.username || 'Unknown', 
-        authorAvatar: post.users?.profile_picture,
-        date: formatRelativeDate(post.created_at),
-        tierInfo: post.membership_tiers
-      }));
+      // CRITICAL FIX: Properly map author_id to authorId for frontend compatibility
+      return postsData.map((post: any) => {
+        const mappedPost = {
+          ...post,
+          authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
+          authorName: creator.display_name || post.users?.username || 'Unknown', 
+          authorAvatar: post.users?.profile_picture,
+          date: formatRelativeDate(post.created_at),
+          tierInfo: post.membership_tiers
+        };
+        
+        console.log('[useCreatorFetch] ENHANCED Mapped post with creator access logic:', {
+          id: mappedPost.id,
+          title: mappedPost.title,
+          authorId: mappedPost.authorId,
+          authorIdType: typeof mappedPost.authorId,
+          authorIdValue: JSON.stringify(mappedPost.authorId),
+          tier_id: mappedPost.tier_id,
+          rawAuthorId: post.author_id,
+          message: 'Creator fetch post mapped with consistent authorId for creator access logic'
+        });
+        
+        return mappedPost;
+      });
     },
     enabled: !!creator?.user_id,
     staleTime: 60000 // Cache results for 1 minute
