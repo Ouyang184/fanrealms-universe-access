@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { PostCardContent } from "@/components/post/PostCardContent";
+import { parseVideoUrl, isVideoUrl } from "@/utils/videoUtils";
 
 interface ContentItemProps {
   post: Post;
@@ -157,37 +157,59 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
       <div className="relative">
         {/* Content banner area - always show content */}
         <div className="relative w-full h-40">
-          {/* Show media if available */}
-          {hasVisualMedia && firstMedia && (
+          {/* Show embedded video for video URLs */}
+          {hasVisualMedia && firstMedia && firstMedia.type === 'video' && isVideoUrl(firstMedia.url) && (
             <>
-              {firstMedia.type === 'image' && (
-                <img
-                  src={firstMedia.url}
-                  alt={post.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.parentElement?.classList.add('hidden');
-                  }}
-                />
-              )}
-              {firstMedia.type === 'video' && (
-                <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                  <div className="text-center">
-                    <Video className="h-12 w-12 text-blue-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-300">{firstMedia.name || "Video File"}</p>
+              {(() => {
+                const videoInfo = parseVideoUrl(firstMedia.url);
+                if (videoInfo && videoInfo.platform !== 'unknown') {
+                  return (
+                    <div className="w-full h-full">
+                      <iframe
+                        src={videoInfo.embedUrl}
+                        title={firstMedia.name || "Video"}
+                        className="w-full h-full rounded-t-lg"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  );
+                }
+                // Fallback for video URLs that can't be parsed
+                return (
+                  <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                    <div className="text-center">
+                      <Video className="h-12 w-12 text-blue-600 mx-auto mb-2" />
+                      <p className="text-sm text-gray-300">{firstMedia.name || "Video"}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              {/* Video play overlay */}
-              {firstMedia?.type === 'video' && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <div className="bg-black/70 rounded-full p-3">
-                    <Play className="h-6 w-6 text-white fill-white" />
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </>
+          )}
+          
+          {/* Show image attachments */}
+          {hasVisualMedia && firstMedia && firstMedia.type === 'image' && (
+            <img
+              src={firstMedia.url}
+              alt={post.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement?.classList.add('hidden');
+              }}
+            />
+          )}
+
+          {/* Show uploaded video files (not URLs) */}
+          {hasVisualMedia && firstMedia && firstMedia.type === 'video' && !isVideoUrl(firstMedia.url) && (
+            <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+              <div className="text-center">
+                <Video className="h-12 w-12 text-blue-600 mx-auto mb-2" />
+                <p className="text-sm text-gray-300">{firstMedia.name || "Video File"}</p>
+              </div>
+            </div>
           )}
           
           {/* Show file attachment preview */}
@@ -250,8 +272,8 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           </Badge>
         </div>
         
-        {/* File type indicator - Always show when there are attachments */}
-        {firstMedia && (
+        {/* File type indicator - Show for non-embedded videos and other files */}
+        {firstMedia && !(firstMedia.type === 'video' && isVideoUrl(firstMedia.url)) && (
           <div className="absolute bottom-2 left-2 bg-black/70 px-2 py-1 rounded text-xs flex items-center gap-1">
             {fileTypeLabel && <span>{fileTypeLabel.icon}</span>}
             {contentType === "video" && <Video className="h-3 w-3" />}
