@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Lock, ThumbsDown, Crown } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
+import { useViewTracking } from "@/hooks/useViewTracking";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
 import { PostCardContent } from "@/components/post/PostCardContent";
@@ -28,9 +29,18 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   creatorInfo 
 }) => {
   const { user } = useAuth();
+  const { trackView } = useViewTracking();
+
+  // Enhanced post read handler that also tracks views
+  const handlePostRead = (postId: string) => {
+    console.log(`[FeedPostItem] Post ${postId} marked as read - tracking view`);
+    markPostAsRead(postId);
+    trackView(postId);
+  };
+
   const postRef = usePostVisibility({
     postId: post.id,
-    onPostSeen: markPostAsRead,
+    onPostSeen: handlePostRead, // Use enhanced handler
     threshold: 0.5,
     visibilityDuration: 2000
   });

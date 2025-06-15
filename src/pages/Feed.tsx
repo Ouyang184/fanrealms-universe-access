@@ -9,11 +9,14 @@ import { Post } from "@/types";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Helper function to load read posts from localStorage synchronously
-const getReadPostsFromStorage = (): Set<string> => {
+const getReadPostsFromStorage = (userId?: string): Set<string> => {
+  if (!userId) return new Set();
+  
   try {
-    const savedReadPosts = localStorage.getItem('readPosts');
+    const savedReadPosts = localStorage.getItem(`readPosts_${userId}`);
     if (savedReadPosts) {
       return new Set(JSON.parse(savedReadPosts));
     }
@@ -24,6 +27,8 @@ const getReadPostsFromStorage = (): Set<string> => {
 };
 
 export default function FeedPage() {
+  const { user } = useAuth();
+  
   // Set document title when component mounts
   useEffect(() => {
     document.title = "Feed | Creator Platform";
@@ -39,29 +44,41 @@ export default function FeedPage() {
   const { userSubscriptions = [] } = useUserSubscriptions();
   
   // Initialize read posts from localStorage synchronously to prevent flickering
-  const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage());
+  // Use user-specific storage key to ensure read posts are per-user
+  const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage(user?.id));
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  // Update read posts when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setReadPosts(getReadPostsFromStorage(user.id));
+    }
+  }, [user?.id]);
   
   // Check if user has subscriptions that are active but scheduled to cancel
   const hasPendingCancellations = userSubscriptions.some(
     subscription => subscription.status === 'active' && subscription.cancel_at_period_end === true
   );
   
-  // Save read posts to localStorage when it changes
+  // Save read posts to localStorage when it changes (user-specific)
   useEffect(() => {
+    if (!user?.id) return;
+    
     try {
-      localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
+      localStorage.setItem(`readPosts_${user.id}`, JSON.stringify(Array.from(readPosts)));
+      console.log(`[Feed] Saved ${readPosts.size} read posts for user ${user.id}`);
     } catch (error) {
       console.error('Error saving read posts to localStorage:', error);
     }
-  }, [readPosts]);
+  }, [readPosts, user?.id]);
   
-  // Mark a post as read
+  // Mark a post as read (permanently removes from unread)
   const markPostAsRead = (postId: string) => {
     setReadPosts(prev => {
       const newReadPosts = new Set([...prev, postId]);
-      console.log(`Marking post ${postId} as read. Total read posts:`, newReadPosts.size);
+      console.log(`[Feed] Marking post ${postId} as read. Total read posts:`, newReadPosts.size);
+      console.log(`[Feed] Post ${postId} will be PERMANENTLY removed from unread section`);
       return newReadPosts;
     });
   };
@@ -114,7 +131,7 @@ export default function FeedPage() {
   console.log('Followed creators:', followedCreators);
   console.log('Followed creator user IDs:', followedCreatorUserIds);
   console.log('All posts:', posts);
-  console.log('Read posts from state:', Array.from(readPosts));
+  console.log(`Read posts from state (user: ${user?.id}):`, Array.from(readPosts));
   
   // Filter posts by matching the post's authorId with the user_id of followed creators
   const followedPosts = posts?.filter(post => {
@@ -126,12 +143,13 @@ export default function FeedPage() {
   
   console.log('Filtered followed posts:', followedPosts);
   
-  // Calculate unread posts based on what user hasn't seen
+  // Calculate unread posts based on what user hasn't seen (permanently excluded once read)
   const unreadPosts = followedPosts.filter(post => !readPosts.has(post.id));
   const unreadCount = unreadPosts.length;
 
   console.log('Unread posts count:', unreadCount);
   console.log('Unread posts:', unreadPosts.map(p => `${p.title} (${p.id})`));
+  console.log('Posts permanently excluded from unread:', Array.from(readPosts));
 
   // Create a map of creator user_id to creator info for easy lookup
   const creatorInfoMap = followedCreators.reduce((acc, creator) => {
