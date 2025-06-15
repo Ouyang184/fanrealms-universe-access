@@ -14,9 +14,10 @@ import { PostCardContent } from "@/components/post/PostCardContent";
 interface ContentItemProps {
   post: Post;
   type: 'trending' | 'new';
+  onPostClick?: (post: Post) => void;
 }
 
-export function ContentItem({ post, type }: ContentItemProps) {
+export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -144,8 +145,15 @@ export function ContentItem({ post, type }: ContentItemProps) {
     }
   };
 
+  // Handle post click
+  const handlePostClick = () => {
+    if (onPostClick) {
+      onPostClick(post);
+    }
+  };
+
   return (
-    <Card className="bg-gray-900 border-gray-800 overflow-hidden">
+    <Card className="bg-gray-900 border-gray-800 overflow-hidden cursor-pointer hover:bg-gray-800/50 transition-colors" onClick={handlePostClick}>
       <div className="relative">
         {/* Content banner area - always show content */}
         <div className="relative w-full h-40">
@@ -290,7 +298,10 @@ export function ContentItem({ post, type }: ContentItemProps) {
         <Button 
           size="sm" 
           className="bg-purple-600 hover:bg-purple-700"
-          onClick={handleSubscribeClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSubscribeClick();
+          }}
         >
           Subscribe
         </Button>

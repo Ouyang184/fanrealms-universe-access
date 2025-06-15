@@ -5,6 +5,8 @@ import { useSearchParams } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
+import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
+import { Post } from "@/types";
 
 // Import the refactored components
 import { ExploreHero } from "@/components/explore/ExploreHero";
@@ -41,6 +43,10 @@ export default function ExplorePage() {
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true); // Explicitly exclude AI creators
+  
+  // Post preview modal state
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Set document title when component mounts
   useEffect(() => {
@@ -117,6 +123,22 @@ export default function ExplorePage() {
     
   }, [categoryFilter, searchQuery, popularCreators, posts]);
   
+  // Handle post click
+  const handlePostClick = (post: Post) => {
+    console.log('Explore: Opening preview for post:', post.title);
+    setSelectedPost(post);
+    setIsPreviewOpen(true);
+  };
+
+  // Handle modal close
+  const handleModalClose = (open: boolean) => {
+    console.log('Explore: Modal close triggered, open:', open);
+    setIsPreviewOpen(open);
+    if (!open) {
+      setTimeout(() => setSelectedPost(null), 200);
+    }
+  };
+  
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
@@ -144,6 +166,7 @@ export default function ExplorePage() {
           recommendedCreators={filteredRecommended}
           isLoadingPosts={isLoadingPosts}
           isLoadingCreators={isLoadingCreators || isLoadingPopular}
+          onPostClick={handlePostClick}
         />
 
         {/* Remove hardcoded data from DiscoverSection */}
@@ -155,6 +178,15 @@ export default function ExplorePage() {
         {/* Newsletter Section */}
         <NewsletterSection />
       </div>
+      
+      {/* Post Preview Modal */}
+      {selectedPost && (
+        <PostPreviewModal
+          open={isPreviewOpen}
+          onOpenChange={handleModalClose}
+          post={selectedPost}
+        />
+      )}
     </MainLayout>
   )
 }
