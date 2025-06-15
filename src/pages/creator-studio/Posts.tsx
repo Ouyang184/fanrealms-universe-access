@@ -41,6 +41,7 @@ import { useDeletePost } from "@/hooks/useDeletePost";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -298,7 +299,7 @@ export default function CreatorPostsPage() {
   );
 }
 
-// Post Card Component 
+// Post Card Component with CREATOR-CENTRIC ACCESS LOGIC
 function PostCard({ post }: { post: CreatorPost }) {
   const navigate = useNavigate();
   const { deletePost, isDeleting } = useDeletePost();
@@ -306,6 +307,26 @@ function PostCard({ post }: { post: CreatorPost }) {
   const queryClient = useQueryClient();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // CREATOR-CENTRIC ACCESS LOGIC: Creators ALWAYS have full access to their own posts
+  const isOwnPost = !!(user?.id && post.authorId && String(user.id) === String(post.authorId));
+  const isPremiumPost = !!post.tier_id;
+  
+  // CREATOR ALWAYS HAS FULL ACCESS - this matches the logic from PostCard.tsx
+  const hasFullAccess = isOwnPost || !isPremiumPost;
+  
+  console.log('[Creator Studio PostCard] ENHANCED Creator access check:', {
+    postId: post.id,
+    postTitle: post.title,
+    tierId: post.tier_id,
+    authorId: post.authorId,
+    userId: user?.id,
+    isOwnPost,
+    isPremiumPost,
+    hasFullAccess,
+    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
+  });
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -384,13 +405,19 @@ function PostCard({ post }: { post: CreatorPost }) {
 
   return (
     <>
-      <Card className={post.isLocked ? "border-amber-200 bg-amber-50/30" : ""}>
+      <Card className={isPremiumPost && !hasFullAccess ? "border-amber-200 bg-amber-50/30" : ""}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
-                {post.isLocked && <Lock className="h-4 w-4 text-amber-600" />}
+                {isPremiumPost && <Lock className="h-4 w-4 text-amber-600" />}
                 {post.title}
+                {/* Creator's own premium content indicator */}
+                {isPremiumPost && hasFullAccess && isOwnPost && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200 ml-2">
+                    Your Premium Content
+                  </Badge>
+                )}
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <Badge variant="outline" className={getStatusBadgeStyles(post.status)}>
@@ -471,11 +498,11 @@ function PostCard({ post }: { post: CreatorPost }) {
           <p className="text-muted-foreground line-clamp-2">
             {post.content}
           </p>
-          {post.isLocked && (
-            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
-              <p className="text-sm text-amber-800 flex items-center gap-2">
+          {isPremiumPost && hasFullAccess && isOwnPost && (
+            <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 flex items-center gap-2">
                 <Lock className="h-4 w-4" />
-                This is premium content. Subscribers with access to this tier can view the full post.
+                This is your premium content. Subscribers with access to this tier can view the full post.
               </p>
             </div>
           )}
