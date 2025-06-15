@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +134,6 @@ export function ContentItem({ post, type }: ContentItemProps) {
   const thumbnail = getPostThumbnail(post);
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
-  const isPremium = !!post.tier_id;
 
   // Use real metadata from post - ensure we don't show "Unknown"
   const authorName = post.authorName || "Creator";
