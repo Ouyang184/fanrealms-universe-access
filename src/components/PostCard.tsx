@@ -67,16 +67,29 @@ const PostCard: React.FC<PostCardProps> = ({
   // FIXED: Ensure robust comparison - convert both to strings and handle undefined
   const isOwnPost = !!(user?.id && authorId && String(user.id) === String(authorId));
   
-  // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
+  // ENHANCED CREATOR ACCESS LOGIC - Apply creator-centric logic consistently
   const isPremiumPost = !!tier_id;
   const isSubscribedToTier = subscriptionData?.isSubscribed === true;
   const hasActiveSubscription = subscriptionData?.subscription?.isActive === true;
   
-  // User has full access if:
-  // 1. It's not a premium post (public post)
-  // 2. It's their own post (CREATOR CAN ALWAYS SEE THEIR OWN POSTS)
-  // 3. They have an active subscription to the tier
-  const hasFullAccess = !isPremiumPost || isOwnPost || isSubscribedToTier || hasActiveSubscription;
+  // CREATOR-CENTRIC LOGIC: Creators ALWAYS have full access to their own posts
+  // This matches the logic from useCreatorPosts.ts
+  let hasFullAccess = false;
+  
+  if (isOwnPost) {
+    // Creator viewing their own post - ALWAYS grant full access
+    hasFullAccess = true;
+    console.log('PostCard - CREATOR ACCESS OVERRIDE:', {
+      postId: id,
+      message: 'Creator viewing their own post - forcing full access',
+      authorId,
+      userId: user?.id,
+      isPremiumPost
+    });
+  } else {
+    // Non-creator viewing post - use subscription logic
+    hasFullAccess = !isPremiumPost || isSubscribedToTier || hasActiveSubscription;
+  }
   
   // Use real metadata - avoid showing "Unknown"
   const displayAuthorName = authorName || users?.username || "Creator";
@@ -99,16 +112,6 @@ const PostCard: React.FC<PostCardProps> = ({
     userObject: user,
     subscriptionDataObject: subscriptionData
   });
-
-  // CRITICAL: If this is the creator's own post, force full access regardless of other conditions
-  if (isOwnPost && isPremiumPost) {
-    console.log('PostCard - CREATOR ACCESS OVERRIDE:', {
-      postId: id,
-      message: 'Creator viewing their own premium post - forcing full access',
-      authorId,
-      userId: user?.id
-    });
-  }
 
   // Check if PostCardMedia will handle video rendering
   const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 

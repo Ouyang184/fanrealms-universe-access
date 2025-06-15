@@ -64,14 +64,15 @@ export const usePosts = () => {
           attachments: post.attachments
         };
         
-        console.log('[usePosts] ENHANCED Mapped post:', {
+        console.log('[usePosts] ENHANCED Mapped post with creator access logic:', {
           id: mappedPost.id,
           title: mappedPost.title,
           authorId: mappedPost.authorId,
           authorIdType: typeof mappedPost.authorId,
           authorIdValue: JSON.stringify(mappedPost.authorId),
           tier_id: mappedPost.tier_id,
-          rawAuthorId: post.author_id
+          rawAuthorId: post.author_id,
+          message: 'Post mapped with consistent authorId for creator access logic'
         });
         
         return mappedPost;

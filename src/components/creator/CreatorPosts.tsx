@@ -34,10 +34,14 @@ export function CreatorPosts({ posts, isLoading = false }: CreatorPostsProps) {
   return (
     <div className="space-y-6">
       {posts.map((post) => {
-        console.log('CreatorPosts - Post data:', {
+        console.log('CreatorPosts - Post data with enhanced logging:', {
           postId: post.id,
           authorId: post.authorId,
-          title: post.title
+          authorIdType: typeof post.authorId,
+          authorIdValue: JSON.stringify(post.authorId),
+          title: post.title,
+          tier_id: post.tier_id,
+          hasAuthorId: !!post.authorId
         });
         
         return (

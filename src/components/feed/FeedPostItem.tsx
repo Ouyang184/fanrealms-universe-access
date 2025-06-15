@@ -41,8 +41,24 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   // FIXED: Check if this is the creator's own post using both authorId and user.id
   const isOwnPost = user?.id === post.authorId;
   
-  // CREATOR ACCESS LOGIC - Creators always have full access to their own posts
-  const hasAccess = !post.tier_id || isOwnPost || subscriptionData?.isSubscribed || false;
+  // ENHANCED CREATOR ACCESS LOGIC - Apply creator-centric logic consistently
+  // This matches the logic from useCreatorPosts.ts and PostCard.tsx
+  let hasAccess = false;
+  
+  if (isOwnPost) {
+    // Creator viewing their own post - ALWAYS grant full access
+    hasAccess = true;
+    console.log('FeedPostItem - CREATOR ACCESS OVERRIDE:', {
+      postId: post.id,
+      message: 'Creator viewing their own post - forcing full access',
+      authorId: post.authorId,
+      userId: user?.id,
+      tierId: post.tier_id
+    });
+  } else {
+    // Non-creator viewing post - use subscription logic
+    hasAccess = !post.tier_id || subscriptionData?.isSubscribed || false;
+  }
 
   // Get the proper creator name - prioritize display_name from creator info
   const getCreatorDisplayName = () => {
