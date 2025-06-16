@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Calendar, Clock, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Post } from "@/types";
+import { CreatorPost } from "@/types/creator-studio";
 
 interface ContentCalendarCardProps {
-  creatorPosts: Post[];
+  creatorPosts: CreatorPost[];
 }
 
 export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) {
