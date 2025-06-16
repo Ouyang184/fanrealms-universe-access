@@ -794,7 +794,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_has_tier_access: {
+        Args: { tier_id_param: string }
+        Returns: boolean
+      }
+      user_owns_post: {
+        Args: { post_id_param: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
