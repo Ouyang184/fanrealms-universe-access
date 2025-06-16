@@ -1,10 +1,12 @@
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PostCard from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Post } from "@/types";
+import { PostSearchBar } from "@/components/creator/PostSearchBar";
+import { PostSearchResults } from "@/components/creator/PostSearchResults";
 
 interface ProfilePostsTabProps {
   posts: Post[];
@@ -12,6 +14,28 @@ interface ProfilePostsTabProps {
 }
 
 export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter posts based on search query
+  const filteredPosts = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return posts;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return posts.filter(post => {
+      // Search in title
+      const titleMatch = post.title?.toLowerCase().includes(query);
+      
+      // Search in tags (if they exist)
+      const tagsMatch = post.tags?.some(tag => 
+        tag.toLowerCase().includes(query)
+      );
+      
+      return titleMatch || tagsMatch;
+    });
+  }, [posts, searchQuery]);
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -32,35 +56,14 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
   }
   
   return (
-    <div className="space-y-6">
-      {posts.map((post) => {
-        console.log('ProfilePostsTab - Post data with enhanced logging:', {
-          postId: post.id,
-          authorId: post.authorId,
-          authorIdType: typeof post.authorId,
-          authorIdValue: JSON.stringify(post.authorId),
-          title: post.title,
-          tier_id: post.tier_id,
-          hasAuthorId: !!post.authorId,
-          message: 'Creator Studio profile post with proper authorId mapping'
-        });
-        
-        return (
-          <PostCard 
-            key={post.id}
-            id={post.id}
-            title={post.title}
-            content={post.content}
-            authorName={post.authorName || 'Unknown'}
-            authorAvatar={post.authorAvatar}
-            createdAt={post.createdAt}
-            date={post.date || post.createdAt}
-            tier_id={post.tier_id}
-            attachments={post.attachments}
-            authorId={post.authorId}
-          />
-        );
-      })}
+    <div>
+      <PostSearchBar onSearch={setSearchQuery} placeholder="Search your posts by title or tags..." />
+      <PostSearchResults 
+        posts={filteredPosts}
+        isLoading={isLoading}
+        searchQuery={searchQuery}
+        isCreatorStudio={true}
+      />
     </div>
   );
 }

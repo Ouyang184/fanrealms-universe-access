@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -20,13 +19,14 @@ export interface Post {
   id: string;
   title: string;
   content: string;
-  authorId: string;
-  createdAt: string;
   authorName?: string;
   authorAvatar?: string | null;
+  authorId: string;
+  createdAt: string;
   date?: string;
   tier_id?: string | null;
-  attachments?: any; // JSON from database
+  attachments?: any;
+  tags?: string[]; // Added tags field for search functionality
 }
 
 export interface CreatorProfile {
