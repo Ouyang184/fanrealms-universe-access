@@ -17,7 +17,7 @@ export function useCreatorPosts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDrafts, setShowDrafts] = useState(true);
 
-  // Fetch creator's posts with real engagement data
+  // Fetch creator's posts with real engagement data and multiple tiers
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['creator-posts', user?.id, filter, searchQuery, showDrafts],
     queryFn: async () => {
@@ -38,6 +38,14 @@ export function useCreatorPosts() {
             title,
             price,
             creator_id
+          ),
+          post_tiers (
+            tier_id,
+            membership_tiers (
+              id,
+              title,
+              price
+            )
           ),
           likes(count),
           comments(count)
@@ -64,7 +72,7 @@ export function useCreatorPosts() {
 
       console.log('[useCreatorPosts] Creator posts raw data:', data);
       
-      // Transform to CreatorPost format with real engagement data
+      // Transform to CreatorPost format with real engagement data and multiple tiers
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
@@ -99,24 +107,40 @@ export function useCreatorPosts() {
 
         // CREATOR ALWAYS HAS FULL ACCESS to their own posts
         const canViewPost = true;
-        const isLocked = !!post.tier_id;
+        
+        // Check if post has multiple tiers or legacy single tier
+        const hasMultipleTiers = post.post_tiers && post.post_tiers.length > 0;
+        const hasLegacyTier = !!post.tier_id;
+        const isLocked = hasMultipleTiers || hasLegacyTier;
 
         console.log('[useCreatorPosts] Creator post visibility check:', {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
+          postTiers: post.post_tiers,
           authorId: post.author_id,
           isCreatorOwnPost: true,
           canViewPost,
           isLocked
         });
 
-        // Create tier display info
-        const availableTiers = post.membership_tiers ? [{
-          id: post.membership_tiers.id,
-          name: post.membership_tiers.title,
-          color: determineColorByPrice(parseFloat(String(post.membership_tiers.price)))
-        }] : [];
+        // Create tier display info from multiple tiers
+        let availableTiers: Array<{ id: string; name: string; color: string; }> = [];
+        
+        if (hasMultipleTiers) {
+          availableTiers = post.post_tiers.map((pt: any) => ({
+            id: pt.membership_tiers.id,
+            name: pt.membership_tiers.title,
+            color: determineColorByPrice(parseFloat(String(pt.membership_tiers.price)))
+          }));
+        } else if (post.membership_tiers && hasLegacyTier) {
+          // Legacy single tier support
+          availableTiers = [{
+            id: post.membership_tiers.id,
+            name: post.membership_tiers.title,
+            color: determineColorByPrice(parseFloat(String(post.membership_tiers.price)))
+          }];
+        }
 
         // Determine post status
         const isScheduled = post.title?.toLowerCase().includes('scheduled');
@@ -174,9 +198,10 @@ export function useCreatorPosts() {
           attachments: attachments
         };
 
-        console.log('[useCreatorPosts] FINAL transformed post with real engagement:', {
+        console.log('[useCreatorPosts] FINAL transformed post with multiple tiers:', {
           postId: transformedPost.id,
           authorId: transformedPost.authorId,
+          availableTiers: transformedPost.availableTiers,
           engagement: transformedPost.engagement
         });
           

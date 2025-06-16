@@ -25,7 +25,7 @@ export function CreatePostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
-  const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -91,16 +91,16 @@ export function CreatePostForm() {
     return videoUrlPatterns.some(pattern => pattern.test(url));
   };
 
-  const handleTierSelect = (tierId: string | null) => {
-    console.log('[Creator Studio] Tier selected:', tierId);
-    setSelectedTierId(tierId);
+  const handleTierSelect = (tierIds: string[] | null) => {
+    console.log('[Creator Studio] Tiers selected:', tierIds);
+    setSelectedTierIds(tierIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
-    console.log('[Creator Studio] Form submission started with selectedTierId:', selectedTierId);
+    console.log('[Creator Studio] Form submission started with selectedTierIds:', selectedTierIds);
     console.log('[Creator Studio] User ID for author_id:', user.id);
     
     // Validate video URL if provided
@@ -144,14 +144,14 @@ export function CreatePostForm() {
         content,
         author_id: user.id, // CRITICAL: Ensure author_id is set to user.id
         creator_id: creatorProfile?.id || null,
-        tier_id: selectedTierId, // This should properly set the tier_id
+        tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null, // Legacy single tier support
         attachments: uploadedAttachments
       };
 
       console.log('[Creator Studio] Creating post with AUTHOR_ID:', {
         author_id: postData.author_id,
         creator_id: postData.creator_id,
-        tier_id: postData.tier_id,
+        tier_ids: selectedTierIds,
         user_id: user.id
       });
 
@@ -162,9 +162,26 @@ export function CreatePostForm() {
 
       if (error) throw error;
 
+      // Handle multiple tier assignments
+      if (selectedTierIds && selectedTierIds.length > 0 && insertedPost[0]) {
+        const postTierInserts = selectedTierIds.map(tierId => ({
+          post_id: insertedPost[0].id,
+          tier_id: tierId
+        }));
+
+        const { error: tierError } = await supabase
+          .from('post_tiers')
+          .insert(postTierInserts);
+
+        if (tierError) {
+          console.error('Error assigning tiers to post:', tierError);
+          // Still show success but log the error
+        }
+      }
+
       console.log('[Creator Studio] Post created successfully with author_id:', insertedPost[0]?.author_id);
 
-      const postType = selectedTierId ? "premium" : "public";
+      const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
       toast({
         title: "Post created",
         description: `Your ${postType} post has been published successfully.`,
@@ -174,7 +191,7 @@ export function CreatePostForm() {
       setTitle("");
       setContent("");
       setVideoUrl("");
-      setSelectedTierId(null);
+      setSelectedTierIds(null);
       setAttachments([]);
       setIsOpen(false);
       
@@ -261,16 +278,9 @@ export function CreatePostForm() {
             <Label>Post Visibility</Label>
             <TierSelect
               onSelect={handleTierSelect}
-              value={selectedTierId}
+              value={selectedTierIds}
               disabled={isLoading}
             />
-            {selectedTierId && (
-              <div className="text-sm text-muted-foreground bg-amber-50 p-2 rounded border">
-                <Lock className="inline h-3 w-3 mr-1" />
-                This post will only be visible to subscribers of the selected membership tier.
-                <div className="mt-1 text-xs">Selected tier ID: {selectedTierId}</div>
-              </div>
-            )}
           </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t">
@@ -290,12 +300,12 @@ export function CreatePostForm() {
                 </>
               ) : (
                 <>
-                  {selectedTierId ? (
+                  {selectedTierIds && selectedTierIds.length > 0 ? (
                     <Lock className="mr-2 h-4 w-4" />
                   ) : (
                     <Globe className="mr-2 h-4 w-4" />
                   )}
-                  Publish {selectedTierId ? "Premium" : "Public"} Post
+                  Publish {selectedTierIds && selectedTierIds.length > 0 ? "Premium" : "Public"} Post
                 </>
               )}
             </Button>

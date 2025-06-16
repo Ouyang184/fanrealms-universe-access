@@ -499,6 +499,42 @@ export type Database = {
           },
         ]
       }
+      post_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          tier_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          tier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          tier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tiers_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tiers_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           attachments: Json | null

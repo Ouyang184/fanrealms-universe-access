@@ -30,11 +30,38 @@ export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogPro
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
   const [videoUrl, setVideoUrl] = useState("");
-  const [selectedTierId, setSelectedTierId] = useState<string | null>(post.tier_id);
+  const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Load existing post tiers
+  const { data: existingTiers } = useQuery({
+    queryKey: ['post-tiers', post.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('post_tiers')
+        .select('tier_id')
+        .eq('post_id', post.id);
+        
+      if (error) throw error;
+      return data?.map(pt => pt.tier_id) || [];
+    },
+    enabled: !!post.id && isOpen
+  });
+
+  // Initialize selectedTierIds from existing data
+  useEffect(() => {
+    if (existingTiers) {
+      setSelectedTierIds(existingTiers.length > 0 ? existingTiers : null);
+    } else if (post.tier_id) {
+      // Legacy single tier support
+      setSelectedTierIds([post.tier_id]);
+    } else {
+      setSelectedTierIds(null);
+    }
+  }, [existingTiers, post.tier_id]);
 
   // Extract video URL from existing attachments
   useEffect(() => {
@@ -106,16 +133,16 @@ export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogPro
     return videoUrlPatterns.some(pattern => pattern.test(url));
   };
 
-  const handleTierSelect = (tierId: string | null) => {
-    console.log('[Edit Post] Tier selected:', tierId);
-    setSelectedTierId(tierId);
+  const handleTierSelect = (tierIds: string[] | null) => {
+    console.log('[Edit Post] Tiers selected:', tierIds);
+    setSelectedTierIds(tierIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
-    console.log('[Edit Post] Form submission started with selectedTierId:', selectedTierId);
+    console.log('[Edit Post] Form submission started with selectedTierIds:', selectedTierIds);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -166,7 +193,7 @@ export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogPro
       const updateData = {
         title,
         content,
-        tier_id: selectedTierId,
+        tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null, // Legacy support
         attachments: finalAttachments,
         updated_at: new Date().toISOString()
       };
@@ -181,9 +208,30 @@ export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogPro
 
       if (error) throw error;
 
+      // Update post tiers - remove existing and add new ones
+      await supabase
+        .from('post_tiers')
+        .delete()
+        .eq('post_id', post.id);
+
+      if (selectedTierIds && selectedTierIds.length > 0) {
+        const postTierInserts = selectedTierIds.map(tierId => ({
+          post_id: post.id,
+          tier_id: tierId
+        }));
+
+        const { error: tierError } = await supabase
+          .from('post_tiers')
+          .insert(postTierInserts);
+
+        if (tierError) {
+          console.error('Error updating post tiers:', tierError);
+        }
+      }
+
       console.log('[Edit Post] Post updated successfully:', updatedPost);
 
-      const postType = selectedTierId ? "premium" : "public";
+      const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
       toast({
         title: "Post updated",
         description: `Your ${postType} post has been updated successfully.`,
@@ -269,16 +317,9 @@ export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogPro
             <Label>Post Visibility</Label>
             <TierSelect
               onSelect={handleTierSelect}
-              value={selectedTierId}
+              value={selectedTierIds}
               disabled={isLoading}
             />
-            {selectedTierId && (
-              <div className="text-sm text-muted-foreground bg-amber-50 p-2 rounded border">
-                <Lock className="inline h-3 w-3 mr-1" />
-                This post will only be visible to subscribers of the selected membership tier.
-                <div className="mt-1 text-xs">Selected tier ID: {selectedTierId}</div>
-              </div>
-            )}
           </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t">
