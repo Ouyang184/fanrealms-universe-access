@@ -36,10 +36,15 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
     }
   }, [value]);
 
-  const { data: tiers = [], isLoading } = useQuery({
+  const { data: tiers = [], isLoading, error } = useQuery({
     queryKey: ['creator-tiers', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) {
+        console.log('[TierSelect] No user ID available');
+        return [];
+      }
+      
+      console.log('[TierSelect] Fetching tiers for user:', user.id);
       
       const { data: creatorProfile } = await supabase
         .from('creators')
@@ -47,7 +52,12 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
         .eq('user_id', user.id)
         .single();
         
-      if (!creatorProfile) return [];
+      if (!creatorProfile) {
+        console.log('[TierSelect] No creator profile found for user:', user.id);
+        return [];
+      }
+      
+      console.log('[TierSelect] Creator profile found:', creatorProfile.id);
       
       const { data, error } = await supabase
         .from('membership_tiers')
@@ -56,13 +66,22 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
         .eq('active', true)
         .order('price', { ascending: true });
         
-      if (error) throw error;
+      if (error) {
+        console.error('[TierSelect] Error fetching tiers:', error);
+        throw error;
+      }
+      
+      console.log('[TierSelect] Found tiers:', data);
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 3,
+    retryDelay: 1000
   });
 
   const handleTierToggle = (tierId: string, checked: boolean) => {
+    console.log('[TierSelect] Toggling tier:', tierId, 'checked:', checked);
+    
     let newSelectedTierIds: string[];
     
     if (checked) {
@@ -71,11 +90,13 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
       newSelectedTierIds = selectedTierIds.filter(id => id !== tierId);
     }
     
+    console.log('[TierSelect] New selected tier IDs:', newSelectedTierIds);
     setSelectedTierIds(newSelectedTierIds);
     onSelect(newSelectedTierIds.length > 0 ? newSelectedTierIds : null);
   };
 
   const handlePublicPost = () => {
+    console.log('[TierSelect] Setting to public post');
     setSelectedTierIds([]);
     onSelect(null);
   };
@@ -83,6 +104,13 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">Loading tiers...</div>;
   }
+
+  if (error) {
+    console.error('[TierSelect] Query error:', error);
+    return <div className="text-sm text-destructive">Error loading tiers. Please try again.</div>;
+  }
+
+  console.log('[TierSelect] Rendering with tiers:', tiers, 'selected:', selectedTierIds);
 
   return (
     <Card>
@@ -113,7 +141,7 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
         {tiers.length > 0 ? (
           <div className="space-y-2">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Premium Tiers
+              Premium Tiers ({tiers.length} available)
             </div>
             {tiers.map((tier) => (
               <div 
