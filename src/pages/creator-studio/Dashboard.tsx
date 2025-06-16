@@ -37,6 +37,7 @@ import { useCreatorPosts } from "@/hooks/useCreatorPosts"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
+import { useMemo } from "react"
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -92,6 +93,69 @@ export default function Dashboard() {
     staleTime: 300000, // 5 minutes
   });
 
+  // Calculate real month-over-month statistics
+  const monthlyStats = useMemo(() => {
+    if (!subscribers || subscribers.length === 0) {
+      return {
+        currentMonthSubscribers: 0,
+        previousMonthSubscribers: 0,
+        subscriberChange: 0,
+        subscriberGrowthPercentage: 0,
+        currentRevenue: 0,
+        previousRevenue: 0,
+        revenueChange: 0,
+        revenueGrowthPercentage: 0
+      };
+    }
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Current month active subscribers
+    const currentActiveSubscribers = subscribers.filter(sub => 
+      sub.status === 'active' && new Date(sub.created_at) >= currentMonthStart
+    );
+
+    // Previous month active subscribers
+    const previousActiveSubscribers = subscribers.filter(sub => 
+      sub.status === 'active' && 
+      new Date(sub.created_at) >= previousMonthStart && 
+      new Date(sub.created_at) <= previousMonthEnd
+    );
+
+    // Total active subscribers (for current revenue)
+    const totalActiveSubscribers = subscribers.filter(sub => sub.status === 'active');
+
+    // Calculate revenues
+    const currentRevenue = totalActiveSubscribers.reduce((total, sub) => total + (sub.amount || 0), 0);
+    const previousRevenue = previousActiveSubscribers.reduce((total, sub) => total + (sub.amount || 0), 0);
+
+    const subscriberChange = currentActiveSubscribers.length - previousActiveSubscribers.length;
+    const revenueChange = currentRevenue - previousRevenue;
+
+    const subscriberGrowthPercentage = previousActiveSubscribers.length > 0 
+      ? Math.round(((currentActiveSubscribers.length - previousActiveSubscribers.length) / previousActiveSubscribers.length) * 100)
+      : currentActiveSubscribers.length > 0 ? 100 : 0;
+
+    const revenueGrowthPercentage = previousRevenue > 0 
+      ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)
+      : currentRevenue > 0 ? 100 : 0;
+
+    return {
+      currentMonthSubscribers: currentActiveSubscribers.length,
+      previousMonthSubscribers: previousActiveSubscribers.length,
+      subscriberChange,
+      subscriberGrowthPercentage,
+      currentRevenue,
+      previousRevenue,
+      revenueChange,
+      revenueGrowthPercentage,
+      totalActiveSubscribers: totalActiveSubscribers.length
+    };
+  }, [subscribers]);
+
   const isLoading = dashboardLoading || subscribersLoading || tiersLoading;
 
   if (isLoading) {
@@ -101,27 +165,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // Calculate real stats from subscriber data
-  const activeSubscribers = subscribers?.filter(sub => sub.status === 'active') || [];
-  const totalSubscribers = activeSubscribers.length;
-  const monthlyRevenue = activeSubscribers.reduce((total, sub) => total + (sub.amount || 0), 0);
-  
-  // Calculate stats with real data
-  const stats = {
-    subscribers: {
-      total: totalSubscribers,
-      change: 0, // Would need historical data to calculate
-      percentage: 0, // Would need historical data to calculate
-      trend: "up" as const
-    },
-    revenue: {
-      total: monthlyRevenue,
-      change: 0, // Would need historical data to calculate
-      percentage: 0, // Would need historical data to calculate
-      trend: "up" as const
-    }
-  };
 
   // Find scheduled and draft posts from the creator posts
   const scheduledPosts = creatorPosts
@@ -185,18 +228,26 @@ export default function Dashboard() {
                 </div>
                 <Badge
                   variant="outline"
-                  className="bg-green-500/10 text-green-500 border-green-500/20 flex items-center gap-1"
+                  className={`${
+                    monthlyStats.subscriberGrowthPercentage >= 0 
+                      ? "bg-green-500/10 text-green-500 border-green-500/20" 
+                      : "bg-red-500/10 text-red-500 border-red-500/20"
+                  } flex items-center gap-1`}
                 >
-                  <ArrowUpRight className="h-3 w-3" />
-                  {stats.subscribers.percentage}%
+                  {monthlyStats.subscriberGrowthPercentage >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3" />
+                  )}
+                  {Math.abs(monthlyStats.subscriberGrowthPercentage)}%
                 </Badge>
               </div>
               <div className="mt-4">
                 <h3 className="text-muted-foreground text-sm">Total Subscribers</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">{stats.subscribers.total.toLocaleString()}</span>
+                  <span className="text-3xl font-bold">{monthlyStats.totalActiveSubscribers.toLocaleString()}</span>
                   <span className="text-sm text-muted-foreground">
-                    +{Math.abs(stats.subscribers.change)} this month
+                    {monthlyStats.subscriberChange >= 0 ? '+' : ''}{monthlyStats.subscriberChange} this month
                   </span>
                 </div>
               </div>
@@ -211,18 +262,26 @@ export default function Dashboard() {
                 </div>
                 <Badge
                   variant="outline"
-                  className="bg-green-500/10 text-green-500 border-green-500/20 flex items-center gap-1"
+                  className={`${
+                    monthlyStats.revenueGrowthPercentage >= 0 
+                      ? "bg-green-500/10 text-green-500 border-green-500/20" 
+                      : "bg-red-500/10 text-red-500 border-red-500/20"
+                  } flex items-center gap-1`}
                 >
-                  <ArrowUpRight className="h-3 w-3" />
-                  {stats.revenue.percentage}%
+                  {monthlyStats.revenueGrowthPercentage >= 0 ? (
+                    <ArrowUpRight className="h-3 w-3" />
+                  ) : (
+                    <ArrowDownRight className="h-3 w-3" />
+                  )}
+                  {Math.abs(monthlyStats.revenueGrowthPercentage)}%
                 </Badge>
               </div>
               <div className="mt-4">
                 <h3 className="text-muted-foreground text-sm">Monthly Revenue</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold">${stats.revenue.total.toFixed(2)}</span>
+                  <span className="text-3xl font-bold">${monthlyStats.currentRevenue.toFixed(2)}</span>
                   <span className="text-sm text-muted-foreground">
-                    +${Math.abs(stats.revenue.change)} this month
+                    {monthlyStats.revenueChange >= 0 ? '+' : ''}${Math.abs(monthlyStats.revenueChange).toFixed(2)} this month
                   </span>
                 </div>
               </div>
