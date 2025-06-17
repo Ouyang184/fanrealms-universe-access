@@ -764,6 +764,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_nsfw_enabled: boolean
           profile_picture: string | null
           updated_at: string | null
           username: string
@@ -773,6 +774,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          is_nsfw_enabled?: boolean
           profile_picture?: string | null
           updated_at?: string | null
           username: string
@@ -782,6 +784,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_nsfw_enabled?: boolean
           profile_picture?: string | null
           updated_at?: string | null
           username?: string
