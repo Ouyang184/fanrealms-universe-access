@@ -6,11 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Upload, X, AlertTriangle } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CreatorSettings } from "@/types/creator-studio";
 
 const AVAILABLE_TAGS = [
@@ -48,13 +46,6 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     const updatedTags = (settings.tags || []).filter(t => t !== tag);
     onSettingsChange('tags', updatedTags);
   };
-
-  const handleNSFWToggle = (checked: boolean) => {
-    onSettingsChange('is_nsfw', checked);
-  };
-
-  // Filter out already selected tags from dropdown options
-  const availableOptions = AVAILABLE_TAGS.filter(tag => !settings.tags?.includes(tag));
 
   // Use display_name from formData - this ensures we show the current form value
   const displayName = settings.display_name || settings.username || '';
@@ -133,12 +124,12 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 <SelectValue placeholder="Select a content tag to add..." />
               </SelectTrigger>
               <SelectContent className="bg-background border shadow-lg max-h-64 overflow-y-auto z-50">
-                {availableOptions.map((tag) => (
+                {AVAILABLE_TAGS.filter(tag => !settings.tags?.includes(tag)).map((tag) => (
                   <SelectItem key={tag} value={tag} className="cursor-pointer hover:bg-accent">
                     {tag}
                   </SelectItem>
                 ))}
-                {availableOptions.length === 0 && (
+                {AVAILABLE_TAGS.filter(tag => !settings.tags?.includes(tag)).length === 0 && (
                   <SelectItem value="" disabled className="text-muted-foreground">
                     All available tags have been selected
                   </SelectItem>
@@ -168,33 +159,6 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
               Select tags that describe your content. This helps users discover your profile. You have selected {settings.tags?.length || 0} tag{settings.tags?.length !== 1 ? 's' : ''}.
             </p>
           </div>
-        </div>
-
-        {/* NSFW Content Toggle */}
-        <div className="grid gap-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="nsfw-toggle" className="text-base">Adult Content (NSFW)</Label>
-              <p className="text-sm text-muted-foreground">
-                Mark your profile if you create adult/mature content
-              </p>
-            </div>
-            <Switch
-              id="nsfw-toggle"
-              checked={settings.is_nsfw || false}
-              onCheckedChange={handleNSFWToggle}
-            />
-          </div>
-          
-          {settings.is_nsfw && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Your profile will be marked as adult content and may be hidden from underage users. 
-                This helps comply with age verification requirements.
-              </AlertDescription>
-            </Alert>
-          )}
         </div>
       </CardContent>
     </Card>
