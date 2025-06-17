@@ -51,6 +51,8 @@ export default function AccountSettings() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
+  const [showNSFW, setShowNSFW] = useState(false);
+  const [nsfwLoading, setNsfwLoading] = useState(true);
   
   // Change password dialog state
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -87,6 +89,7 @@ export default function AccountSettings() {
     
     if (user) {
       loadUserPreferences();
+      loadNSFWPreference();
     }
   }, [profile, user]);
 
@@ -109,6 +112,25 @@ export default function AccountSettings() {
     }
   };
 
+  const loadNSFWPreference = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('category_name', 'nsfw_content')
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      setShowNSFW(data ? data.category_id === 1 : false);
+    } catch (error) {
+      console.error('Error loading NSFW preference:', error);
+    } finally {
+      setNsfwLoading(false);
+    }
+  };
+
   const handleCategoryToggle = (id: number) => {
     setSelectedCategories((prev) => 
       prev.includes(id) ? prev.filter((catId) => catId !== id) : [...prev, id]
@@ -127,11 +149,12 @@ export default function AccountSettings() {
 
     setPreferencesSaving(true);
     try {
-      // Delete existing preferences
+      // Delete existing content category preferences (but keep NSFW preference)
       await supabase
         .from('user_preferences')
         .delete()
-        .eq('user_id', user?.id);
+        .eq('user_id', user?.id)
+        .neq('category_name', 'nsfw_content');
 
       // Insert new preferences
       const preferences = selectedCategories.map(categoryId => ({
@@ -159,6 +182,41 @@ export default function AccountSettings() {
       });
     } finally {
       setPreferencesSaving(false);
+    }
+  };
+
+  const saveNSFWPreference = async (value: boolean) => {
+    try {
+      // Delete existing NSFW preference
+      await supabase
+        .from('user_preferences')
+        .delete()
+        .eq('user_id', user?.id)
+        .eq('category_name', 'nsfw_content');
+
+      // Insert new NSFW preference
+      const { error } = await supabase
+        .from('user_preferences')
+        .insert({
+          user_id: user?.id,
+          category_id: value ? 1 : 0,
+          category_name: 'nsfw_content'
+        });
+
+      if (error) throw error;
+
+      setShowNSFW(value);
+      toast({
+        title: "NSFW preference updated",
+        description: `NSFW content is now ${value ? 'enabled' : 'disabled'}.`
+      });
+    } catch (error: any) {
+      console.error('Error saving NSFW preference:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save NSFW preference. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -350,7 +408,7 @@ export default function AccountSettings() {
                   Choose the types of content you want to see in your feed
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 {preferencesLoading ? (
                   <div className="flex justify-center">
                     <LoadingSpinner />
@@ -371,6 +429,35 @@ export default function AccountSettings() {
                     </div>
                   </>
                 )}
+
+                {/* NSFW Content Preference */}
+                <div className="border-t pt-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium">Adult Content</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Control whether you see adult/mature content in your feed
+                      </p>
+                    </div>
+                    
+                    {nsfwLoading ? (
+                      <LoadingSpinner />
+                    ) : (
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-0.5">
+                          <Label>Show NSFW Posts</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Allow adult/mature content to appear in your feed
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={showNSFW}
+                          onCheckedChange={saveNSFWPreference}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
               <CardFooter>
                 <Button 
