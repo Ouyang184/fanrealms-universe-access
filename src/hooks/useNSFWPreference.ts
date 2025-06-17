@@ -43,23 +43,64 @@ export const useNSFWPreference = () => {
       
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Delete any existing NSFW preference first to avoid conflicts
-      await supabase
-        .from('user_preferences')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('category_name', 'nsfw_content');
+      // Use a more robust approach with proper SQL
+      const { error } = await supabase.rpc('upsert_user_preference', {
+        p_user_id: user.id,
+        p_category_id: enabled ? 1 : 0,
+        p_category_name: 'nsfw_content'
+      });
 
-      // Then insert the new preference
-      const { error } = await supabase
-        .from('user_preferences')
-        .insert({
-          user_id: user.id,
-          category_id: enabled ? 1 : 0,
-          category_name: 'nsfw_content'
-        });
+      // If the RPC doesn't exist, fall back to raw SQL approach
+      if (error && error.message?.includes('function')) {
+        // Use a single SQL statement that handles conflicts properly
+        const { error: sqlError } = await supabase
+          .from('user_preferences')
+          .upsert(
+            {
+              user_id: user.id,
+              category_id: enabled ? 1 : 0,
+              category_name: 'nsfw_content',
+              updated_at: new Date().toISOString()
+            },
+            {
+              onConflict: 'user_id,category_name',
+              ignoreDuplicates: false
+            }
+          );
 
-      if (error) throw error;
+        // If upsert still fails, use manual approach
+        if (sqlError) {
+          console.log('Upsert failed, trying manual update:', sqlError);
+          
+          // Try update first
+          const { data: updateData, error: updateError } = await supabase
+            .from('user_preferences')
+            .update({
+              category_id: enabled ? 1 : 0,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id)
+            .eq('category_name', 'nsfw_content')
+            .select();
+
+          // If no rows were updated, insert new
+          if (!updateError && (!updateData || updateData.length === 0)) {
+            const { error: insertError } = await supabase
+              .from('user_preferences')
+              .insert({
+                user_id: user.id,
+                category_id: enabled ? 1 : 0,
+                category_name: 'nsfw_content'
+              });
+
+            if (insertError) throw insertError;
+          } else if (updateError) {
+            throw updateError;
+          }
+        }
+      } else if (error) {
+        throw error;
+      }
       
       console.log('NSFW preference updated successfully');
       return enabled;
