@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
+import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -39,6 +40,7 @@ export default function AccountSettings() {
   const { isChecking } = useAuthCheck();
   const { user, profile, updateProfile } = useAuth();
   const { toast } = useToast();
+  const { showNSFW, isLoading: nsfwLoading, updateNSFWPreference, isUpdating: nsfwUpdating } = useNSFWPreference();
   
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
@@ -51,8 +53,6 @@ export default function AccountSettings() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [preferencesSaving, setPreferencesSaving] = useState(false);
-  const [showNSFW, setShowNSFW] = useState(false);
-  const [nsfwLoading, setNsfwLoading] = useState(true);
   
   // Change password dialog state
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -89,7 +89,6 @@ export default function AccountSettings() {
     
     if (user) {
       loadUserPreferences();
-      loadNSFWPreference();
     }
   }, [profile, user]);
 
@@ -98,7 +97,8 @@ export default function AccountSettings() {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('category_id')
-        .eq('user_id', user?.id);
+        .eq('user_id', user?.id)
+        .neq('category_name', 'nsfw_content'); // Exclude NSFW preference since it's handled by the hook
 
       if (error) throw error;
 
@@ -109,25 +109,6 @@ export default function AccountSettings() {
       console.error('Error loading preferences:', error);
     } finally {
       setPreferencesLoading(false);
-    }
-  };
-
-  const loadNSFWPreference = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('category_name', 'nsfw_content')
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      setShowNSFW(data ? data.category_id === 1 : false);
-    } catch (error) {
-      console.error('Error loading NSFW preference:', error);
-    } finally {
-      setNsfwLoading(false);
     }
   };
 
@@ -182,41 +163,6 @@ export default function AccountSettings() {
       });
     } finally {
       setPreferencesSaving(false);
-    }
-  };
-
-  const saveNSFWPreference = async (value: boolean) => {
-    try {
-      // Delete existing NSFW preference
-      await supabase
-        .from('user_preferences')
-        .delete()
-        .eq('user_id', user?.id)
-        .eq('category_name', 'nsfw_content');
-
-      // Insert new NSFW preference
-      const { error } = await supabase
-        .from('user_preferences')
-        .insert({
-          user_id: user?.id,
-          category_id: value ? 1 : 0,
-          category_name: 'nsfw_content'
-        });
-
-      if (error) throw error;
-
-      setShowNSFW(value);
-      toast({
-        title: "NSFW preference updated",
-        description: `NSFW content is now ${value ? 'enabled' : 'disabled'}.`
-      });
-    } catch (error: any) {
-      console.error('Error saving NSFW preference:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save NSFW preference. Please try again.",
-        variant: "destructive"
-      });
     }
   };
 
@@ -441,7 +387,9 @@ export default function AccountSettings() {
                     </div>
                     
                     {nsfwLoading ? (
-                      <LoadingSpinner />
+                      <div className="flex justify-center">
+                        <LoadingSpinner />
+                      </div>
                     ) : (
                       <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="space-y-0.5">
@@ -452,7 +400,8 @@ export default function AccountSettings() {
                         </div>
                         <Switch 
                           checked={showNSFW}
-                          onCheckedChange={saveNSFWPreference}
+                          onCheckedChange={updateNSFWPreference}
+                          disabled={nsfwUpdating}
                         />
                       </div>
                     )}
