@@ -41,20 +41,15 @@ export const useNSFWPreference = () => {
       
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Delete existing NSFW preference
-      await supabase
-        .from('user_preferences')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('category_name', 'nsfw_content');
-
-      // Insert new NSFW preference
+      // Use upsert to handle both insert and update cases
       const { error } = await supabase
         .from('user_preferences')
-        .insert({
+        .upsert({
           user_id: user.id,
           category_id: enabled ? 1 : 0,
           category_name: 'nsfw_content'
+        }, {
+          onConflict: 'user_id,category_name'
         });
 
       if (error) throw error;
