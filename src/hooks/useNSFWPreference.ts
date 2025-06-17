@@ -17,18 +17,17 @@ export const useNSFWPreference = () => {
       console.log('Fetching NSFW preference for user:', user.id);
       
       const { data, error } = await supabase
-        .from('user_preferences')
-        .select('category_id')
-        .eq('user_id', user.id)
-        .eq('category_name', 'nsfw_content')
-        .maybeSingle();
+        .from('users')
+        .select('is_nsfw_enabled')
+        .eq('id', user.id)
+        .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching NSFW preference:', error);
         return false;
       }
 
-      const result = data ? data.category_id === 1 : false;
+      const result = data?.is_nsfw_enabled || false;
       console.log('NSFW preference fetched:', result);
       return result;
     },
@@ -43,31 +42,15 @@ export const useNSFWPreference = () => {
       
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Try update first
-      const { data: updateData, error: updateError } = await supabase
-        .from('user_preferences')
+      const { error } = await supabase
+        .from('users')
         .update({
-          category_id: enabled ? 1 : 0,
+          is_nsfw_enabled: enabled,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id)
-        .eq('category_name', 'nsfw_content')
-        .select();
+        .eq('id', user.id);
 
-      // If no rows were updated, insert new record
-      if (!updateError && (!updateData || updateData.length === 0)) {
-        const { error: insertError } = await supabase
-          .from('user_preferences')
-          .insert({
-            user_id: user.id,
-            category_id: enabled ? 1 : 0,
-            category_name: 'nsfw_content'
-          });
-
-        if (insertError) throw insertError;
-      } else if (updateError) {
-        throw updateError;
-      }
+      if (error) throw error;
       
       console.log('NSFW preference updated successfully');
       return enabled;
