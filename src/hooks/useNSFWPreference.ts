@@ -32,7 +32,9 @@ export const useNSFWPreference = () => {
       console.log('NSFW preference fetched:', result);
       return result;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
   });
 
   const updateNSFWPreference = useMutation({
@@ -41,18 +43,38 @@ export const useNSFWPreference = () => {
       
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Use upsert to handle both insert and update cases
-      const { error } = await supabase
+      // First, check if preference exists
+      const { data: existing } = await supabase
         .from('user_preferences')
-        .upsert({
-          user_id: user.id,
-          category_id: enabled ? 1 : 0,
-          category_name: 'nsfw_content'
-        }, {
-          onConflict: 'user_id,category_name'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category_name', 'nsfw_content')
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing preference
+        const { error } = await supabase
+          .from('user_preferences')
+          .update({
+            category_id: enabled ? 1 : 0,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .eq('category_name', 'nsfw_content');
+
+        if (error) throw error;
+      } else {
+        // Insert new preference
+        const { error } = await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id,
+            category_id: enabled ? 1 : 0,
+            category_name: 'nsfw_content'
+          });
+
+        if (error) throw error;
+      }
       
       console.log('NSFW preference updated successfully');
       return enabled;
@@ -73,8 +95,6 @@ export const useNSFWPreference = () => {
       });
     }
   });
-
-  console.log('Hook state:', { showNSFW, isLoading, isUpdating: updateNSFWPreference.isPending });
 
   return {
     showNSFW,
