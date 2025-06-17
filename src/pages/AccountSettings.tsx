@@ -192,6 +192,11 @@ export default function AccountSettings() {
   const handleNotificationChange = (key: string, value: boolean) => {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
   };
+
+  const handleNSFWToggle = (checked: boolean) => {
+    console.log('NSFW toggle clicked:', checked);
+    updateNSFWPreference(checked);
+  };
   
   const saveAccountSettings = async () => {
     setAccountSettings(prev => ({ ...prev, saving: true }));
@@ -393,14 +398,15 @@ export default function AccountSettings() {
                     ) : (
                       <div className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="space-y-0.5">
-                          <Label>Show NSFW Posts</Label>
+                          <Label htmlFor="nsfw-toggle">Show NSFW Posts</Label>
                           <p className="text-sm text-muted-foreground">
                             Allow adult/mature content to appear in your feed
                           </p>
                         </div>
                         <Switch 
+                          id="nsfw-toggle"
                           checked={showNSFW}
-                          onCheckedChange={updateNSFWPreference}
+                          onCheckedChange={handleNSFWToggle}
                           disabled={nsfwUpdating}
                         />
                       </div>

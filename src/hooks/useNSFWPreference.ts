@@ -14,6 +14,8 @@ export const useNSFWPreference = () => {
     queryFn: async () => {
       if (!user?.id) return false;
       
+      console.log('Fetching NSFW preference for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_preferences')
         .select('category_id')
@@ -26,13 +28,17 @@ export const useNSFWPreference = () => {
         return false;
       }
 
-      return data ? data.category_id === 1 : false;
+      const result = data ? data.category_id === 1 : false;
+      console.log('NSFW preference fetched:', result);
+      return result;
     },
     enabled: !!user?.id
   });
 
   const updateNSFWPreference = useMutation({
     mutationFn: async (enabled: boolean) => {
+      console.log('Updating NSFW preference to:', enabled);
+      
       if (!user?.id) throw new Error('User not authenticated');
 
       // Delete existing NSFW preference
@@ -52,6 +58,8 @@ export const useNSFWPreference = () => {
         });
 
       if (error) throw error;
+      
+      console.log('NSFW preference updated successfully');
       return enabled;
     },
     onSuccess: (enabled) => {
@@ -70,6 +78,8 @@ export const useNSFWPreference = () => {
       });
     }
   });
+
+  console.log('Hook state:', { showNSFW, isLoading, isUpdating: updateNSFWPreference.isPending });
 
   return {
     showNSFW,
