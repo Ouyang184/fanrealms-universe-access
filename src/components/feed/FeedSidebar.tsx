@@ -24,7 +24,7 @@ export const FeedSidebar: React.FC<FeedSidebarProps> = ({
               <div key={creator.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
                 <Avatar className="h-10 w-10 ring-2 ring-muted">
                   <AvatarImage 
-                    src={creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
+                    src={creator.profile_image_url || creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
                     alt={creator.display_name || creator.username || "Creator"} 
                   />
                   <AvatarFallback className="text-sm">

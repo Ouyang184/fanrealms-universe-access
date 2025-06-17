@@ -14,13 +14,13 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
   const { user } = useAuth();
   const { data: followedCreators = [], isLoading, refetch } = useFollows();
   
-  // Refetch data periodically to ensure fresh state
+  // Refetch data more frequently to ensure fresh creator data
   useEffect(() => {
     const interval = setInterval(() => {
       if (user?.id) {
         refetch();
       }
-    }, 5000); // Refresh every 5 seconds
+    }, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [user?.id, refetch]);
@@ -49,7 +49,10 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
             )}
           >
             <Avatar className="h-7 w-7">
-              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} alt={creator.display_name || creator.username} />
+              <AvatarImage 
+                src={creator.profile_image_url || creator.avatar_url || undefined} 
+                alt={creator.display_name || creator.username} 
+              />
               <AvatarFallback>
                 {(creator.display_name || creator.username || "C")
                   .split(" ")

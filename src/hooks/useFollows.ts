@@ -57,7 +57,8 @@ export const useFollows = () => {
             display_name: creator.display_name || user?.username || `Creator ${creator.id.substring(0, 6)}`,
             displayName: creator.display_name || user?.username || `Creator ${creator.id.substring(0, 6)}`,
             bio: creator.bio || "",
-            avatar_url: user?.profile_picture || null,
+            // Prioritize creator's profile_image_url over user's profile_picture
+            avatar_url: creator.profile_image_url || user?.profile_picture || null,
             profile_image_url: creator.profile_image_url || user?.profile_picture || null,
             banner_url: creator.banner_url || null,
             follower_count: creator.follower_count || 0,
@@ -69,5 +70,8 @@ export const useFollows = () => {
       return followedCreators;
     },
     enabled: !!user?.id,
+    staleTime: 30000, // Cache for 30 seconds instead of longer
+    refetchInterval: 60000, // Refetch every minute to get updates
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 };
