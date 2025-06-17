@@ -25,15 +25,15 @@ export const FeedSidebar: React.FC<FeedSidebarProps> = ({
                 <Avatar className="h-10 w-10 ring-2 ring-muted">
                   <AvatarImage 
                     src={creator.avatar_url || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} 
-                    alt={creator.username || "Creator"} 
+                    alt={creator.display_name || creator.username || "Creator"} 
                   />
                   <AvatarFallback className="text-sm">
-                    {(creator.username || "C").charAt(0)}
+                    {(creator.display_name || creator.username || "C").charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm text-foreground truncate">
-                    {creator.username}
+                    {creator.display_name || creator.username}
                   </h3>
                   <p className="text-xs text-muted-foreground truncate">
                     {creator.bio || "Creator"}

@@ -49,16 +49,16 @@ export function FollowedCreators({ isCollapsed = false }: FollowedCreatorsProps)
             )}
           >
             <Avatar className="h-7 w-7">
-              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} alt={creator.displayName} />
+              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} alt={creator.display_name || creator.username} />
               <AvatarFallback>
-                {creator.displayName
+                {(creator.display_name || creator.username || "C")
                   .split(" ")
                   .map((n: string) => n[0])
                   .join("")}
               </AvatarFallback>
             </Avatar>
             {!isCollapsed && (
-              <span className="ml-3 text-sm truncate">{creator.displayName}</span>
+              <span className="ml-3 text-sm truncate">{creator.display_name || creator.username}</span>
             )}
           </Link>
         ))}
