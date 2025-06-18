@@ -150,9 +150,9 @@ export default function Settings() {
     console.log('🚨 User is trying to enable NSFW. Checking age verification...');
     console.log('🔍 Age verification details:', { isAgeVerified, isAgeVerificationLoading });
     
-    // Show modal when enabling NSFW if not age verified (including null/undefined cases)
-    if (enabled && (isAgeVerified === null || isAgeVerified === undefined || isAgeVerified === false)) {
-      console.log('🚨 User is not age verified (or verification is null/undefined) - showing verification modal');
+    // Show modal when enabling NSFW if not age verified
+    if (enabled && !isAgeVerified) {
+      console.log('🚨 User is not age verified - showing verification modal');
       setShowVerificationModal(true);
       return;
     }
