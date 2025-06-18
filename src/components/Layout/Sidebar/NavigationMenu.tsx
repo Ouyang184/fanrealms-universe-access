@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   GalleryHorizontal,
   MessageSquare,
-  Bell,
   ShoppingCart,
   Settings,
   Home,
@@ -28,7 +27,6 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
     { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
-    { icon: Bell, label: 'Notifications', path: '/notifications' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];

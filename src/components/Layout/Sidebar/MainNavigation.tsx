@@ -6,7 +6,6 @@ import {
   Rss, 
   Compass, 
   MessageSquare, 
-  Bell, 
   ShoppingBag, 
   Settings 
 } from "lucide-react";
@@ -30,7 +29,6 @@ export function MainNavigation({ collapsed }: MainNavigationProps) {
     { path: "/following", icon: Users, label: "Following" },
     { path: "/explore", icon: Compass, label: "Explore" },
     { path: "/messages", icon: MessageSquare, label: "Messages" },
-    { path: "/notifications", icon: Bell, label: "Notifications" },
     { path: "/subscriptions", icon: ShoppingBag, label: "Subscriptions" },
     { path: "/settings", icon: Settings, label: "Account Settings" },
   ];
