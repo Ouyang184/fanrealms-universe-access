@@ -1,184 +1,155 @@
 
+import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users } from "lucide-react";
-import { SubscribeButton } from "./SubscribeButton";
-import { SocialLinks } from "@/components/SocialLinks";
-import type { CreatorProfile } from "@/types";
+import { NSFWBadge } from "@/components/ui/nsfw-badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Calendar, Users, Star, Info } from "lucide-react";
 
 interface CreatorHeaderProps {
-  creator: CreatorProfile;
+  creator: {
+    id: string;
+    display_name?: string;
+    username?: string;
+    bio?: string;
+    profile_image_url?: string;
+    banner_url?: string;
+    follower_count?: number;
+    is_nsfw?: boolean;
+    created_at?: string;
+    tags?: string[];
+  };
   isFollowing: boolean;
   onFollow: () => void;
   onUnfollow: () => void;
-  isOwnProfile?: boolean;
-  onNavigateToAbout?: () => void;
-  optimisticFollowerCount?: number | null;
+  onNavigateToAbout: () => void;
+  optimisticFollowerCount: number | null;
 }
 
-export function CreatorHeader({ 
-  creator, 
-  isFollowing, 
-  onFollow, 
+export function CreatorHeader({
+  creator,
+  isFollowing,
+  onFollow,
   onUnfollow,
-  isOwnProfile = false,
   onNavigateToAbout,
-  optimisticFollowerCount 
+  optimisticFollowerCount
 }: CreatorHeaderProps) {
-  const MAX_BIO_LENGTH = 150;
-  const shouldTruncateBio = creator.bio && creator.bio.length > MAX_BIO_LENGTH;
-  const truncatedBio = shouldTruncateBio 
-    ? creator.bio!.substring(0, MAX_BIO_LENGTH).trim() + "…"
-    : creator.bio;
-
-  const handleMoreClick = () => {
-    if (onNavigateToAbout) {
-      onNavigateToAbout();
-    }
-  };
-
-  // Use optimistic count if available, otherwise use the creator's follower count
-  const displayFollowerCount = optimisticFollowerCount !== null && optimisticFollowerCount !== undefined
+  const displayFollowerCount = optimisticFollowerCount !== null 
     ? optimisticFollowerCount 
     : creator.follower_count || 0;
 
-  console.log("CreatorHeader render:", {
-    creatorFollowerCount: creator.follower_count,
-    optimisticFollowerCount,
-    displayFollowerCount,
-    isFollowing
-  });
-
+  const displayName = creator.display_name || creator.username || 'Creator';
+  
   return (
     <div className="relative">
-      {/* Banner Image */}
-      {creator.banner_url ? (
-        <div className="w-full h-48 md:h-64 overflow-hidden rounded-t-lg">
-          <img 
-            src={creator.banner_url} 
-            alt={`${creator.display_name || creator.username}'s banner`}
+      {/* Banner */}
+      <div className="h-48 md:h-64 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+        {creator.banner_url && (
+          <img
+            src={creator.banner_url}
+            alt="Creator banner"
             className="w-full h-full object-cover"
           />
-        </div>
-      ) : (
-        <div className="w-full h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-lg" />
-      )}
-      
-      {/* Profile Content */}
-      <div className="relative -mt-16 px-6 pb-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          {/* Left side: Avatar and basic info */}
-          <div className="flex flex-col md:flex-row md:items-end gap-4">
-            <Avatar className="w-32 h-32 border-4 border-background shadow-lg">
+        )}
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+
+      {/* Profile Info */}
+      <div className="relative px-6 pb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 md:-mt-20">
+          {/* Avatar */}
+          <div className="relative">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
               <AvatarImage 
-                src={creator.profile_image_url || creator.avatar_url} 
-                alt={creator.display_name || creator.username} 
+                src={creator.profile_image_url || undefined} 
+                alt={displayName}
+                className="object-cover"
               />
-              <AvatarFallback className="text-2xl">
-                {(creator.display_name || creator.username)?.[0]?.toUpperCase()}
+              <AvatarFallback className="text-2xl md:text-3xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             
-            <div className="flex flex-col gap-3">
-              {/* Name and username */}
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {creator.display_name || creator.username}
-                </h1>
-                {creator.display_name && (
-                  <p className="text-lg text-muted-foreground">@{creator.username}</p>
+            {/* NSFW Badge on Avatar */}
+            {creator.is_nsfw && (
+              <div className="absolute -top-2 -right-2">
+                <NSFWBadge variant="profile" />
+              </div>
+            )}
+          </div>
+
+          {/* Creator Info */}
+          <div className="flex-1 space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-bold">{displayName}</h1>
+                {creator.is_nsfw && (
+                  <NSFWBadge variant="profile" />
                 )}
               </div>
               
-              {/* Stats row with optimistic updates */}
+              {creator.bio && (
+                <p className="text-muted-foreground max-w-2xl">{creator.bio}</p>
+              )}
+            </div>
+
+            {/* Stats and Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span className="font-medium">{displayFollowerCount}</span>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span className="font-medium">{displayFollowerCount.toLocaleString()}</span>
                   <span>followers</span>
                 </div>
+                
                 {creator.created_at && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Joined {new Date(creator.created_at).getFullYear()}</span>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {new Date(creator.created_at).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long' 
+                    })}</span>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-          
-          {/* Right side: Action buttons */}
-          {!isOwnProfile && (
-            <div className="flex flex-col gap-3 md:items-end">
-              {creator.tiers && creator.tiers.length > 0 && (
-                <div className="space-y-2">
-                  {creator.tiers.map((tier) => (
-                    <SubscribeButton
-                      key={tier.id}
-                      tierId={tier.id}
-                      creatorId={creator.id}
-                      tierName={tier.name}
-                      price={tier.price}
-                    />
-                  ))}
-                </div>
-              )}
-              <Button
-                variant={isFollowing ? "outline" : "default"}
-                onClick={isFollowing ? onUnfollow : onFollow}
-                className="min-w-[100px]"
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Button>
-            </div>
-          )}
-        </div>
-        
-        {/* Bio section - clearly separated */}
-        {creator.bio && (
-          <div className="mt-8 pt-6 border-t border-border">
-            <div className="max-w-3xl">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">About</h3>
-              <div className="text-foreground leading-relaxed">
-                {truncatedBio}
-                {shouldTruncateBio && (
-                  <button
-                    onClick={handleMoreClick}
-                    className="ml-1 text-primary hover:text-primary/80 font-medium cursor-pointer"
-                  >
-                    more
-                  </button>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onNavigateToAbout}
+                  className="gap-2"
+                >
+                  <Info className="h-4 w-4" />
+                  About
+                </Button>
+                
+                {isFollowing ? (
+                  <Button onClick={onUnfollow} variant="secondary" className="gap-2">
+                    <Star className="h-4 w-4 fill-current" />
+                    Following
+                  </Button>
+                ) : (
+                  <Button onClick={onFollow} className="gap-2">
+                    <Users className="h-4 w-4" />
+                    Follow
+                  </Button>
                 )}
               </div>
             </div>
+
+            {/* Tags */}
+            {creator.tags && creator.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {creator.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-        
-        {/* Tags section */}
-        {creator.tags && creator.tags.length > 0 && (
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Categories</h3>
-            <div className="flex flex-wrap gap-2">
-              {creator.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="px-3 py-1">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Website Links section - keeping only the social links */}
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Website Links</h3>
-          <SocialLinks 
-            creatorId={creator.id} 
-            variant="outline" 
-            size="sm"
-            showText={true}
-            className="gap-3"
-          />
         </div>
       </div>
     </div>

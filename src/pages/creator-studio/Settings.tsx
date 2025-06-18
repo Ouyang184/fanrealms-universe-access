@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
+import { NSFWToggleSection } from "@/components/creator-studio/settings/NSFWToggleSection";
 import { StripeConnectSection } from "@/components/creator-studio/StripeConnectSection";
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -31,7 +32,7 @@ export default function CreatorStudioSettings() {
     );
   }
 
-  const handleSettingsChange = (name: string, value: string | string[]) => {
+  const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
     setPendingChanges(prev => ({
       ...prev,
       [name]: value
@@ -90,8 +91,9 @@ export default function CreatorStudioSettings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="website">Website</TabsTrigger>
           <TabsTrigger value="banner">Banner</TabsTrigger>
@@ -103,6 +105,13 @@ export default function CreatorStudioSettings() {
             onSettingsChange={handleSettingsChange}
             onImageUpload={handleImageUpload}
             isUploading={isUploading}
+          />
+        </TabsContent>
+
+        <TabsContent value="content" className="space-y-6">
+          <NSFWToggleSection 
+            settings={displaySettings}
+            onSettingsChange={handleSettingsChange}
           />
         </TabsContent>
 

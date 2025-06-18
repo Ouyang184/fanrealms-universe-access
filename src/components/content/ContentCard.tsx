@@ -98,8 +98,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const isPremium = !content.preview;
 
   return (
-    <Card 
-      className="bg-gray-900 border-gray-800 overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]" 
+    <Card className={`bg-gray-900 border-gray-800 overflow-hidden cursor-pointer transition-transform hover:scale-[1.02] ${content.is_nsfw ? 'ring-1 ring-red-500/30' : ''}`} 
       onClick={() => onClick(content)}
     >
       <div className="relative">
@@ -109,7 +108,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             <img
               src={content.thumbnail}
               alt={content.title}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover ${content.is_nsfw ? 'blur-sm hover:blur-none transition-all duration-300' : ''}`}
               onError={(e) => {
                 // Hide broken images and show file type instead
                 e.currentTarget.style.display = 'none';
@@ -124,12 +123,21 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                 </div>
               </div>
             )}
+            
+            {/* NSFW Blur Overlay */}
+            {content.is_nsfw && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center hover:opacity-0 transition-opacity duration-300">
+                <div className="bg-red-600/90 rounded-lg px-3 py-2 text-white font-bold text-sm">
+                  18+ Content - Hover to Preview
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* File attachment display */}
         {(!hasVisualMedia || hasFileAttachment) && (
-          <div className="relative w-full h-40 bg-gray-800 flex items-center justify-center">
+          <div className={`relative w-full h-40 bg-gray-800 flex items-center justify-center ${content.is_nsfw ? 'border border-red-500/30' : ''}`}>
             <div className="text-center">
               {getFileIcon(content.type)}
               <p className="text-sm text-gray-300 mt-2 px-4 truncate">
