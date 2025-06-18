@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatRelativeDate } from '@/utils/auth-helpers';
@@ -9,6 +8,8 @@ import { PostCardMedia } from './post/PostCardMedia';
 import { PostCardContent } from './post/PostCardContent';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNSFWPreferences } from '@/hooks/useNSFWPreferences';
+import { NSFWContentPlaceholder } from '@/components/nsfw/NSFWContentPlaceholder';
 import { Badge } from './ui/badge';
 import { Lock, Crown } from 'lucide-react';
 import { Button } from './ui/button';
@@ -29,6 +30,7 @@ interface PostCardProps {
     profile_picture?: string;
   };
   authorId: string;
+  is_nsfw?: boolean;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -41,10 +43,19 @@ const PostCard: React.FC<PostCardProps> = ({
   tier_id,
   attachments,
   users,
-  authorId
+  authorId,
+  is_nsfw = false
 }) => {
   const { user } = useAuth();
+  const { data: nsfwPrefs } = useNSFWPreferences();
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
+  
+  // Check if this NSFW post should be hidden
+  const shouldHideNSFW = is_nsfw && !nsfwPrefs?.isNSFWEnabled && user?.id !== authorId;
+  
+  if (shouldHideNSFW) {
+    return <NSFWContentPlaceholder type="post" />;
+  }
   
   // ENHANCED DEBUG: Log all the important values with more detail
   console.log('PostCard - ENHANCED DEBUG:', {

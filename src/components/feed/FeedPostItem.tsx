@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Lock, ThumbsDown, Crown } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
+import { NSFWContentPlaceholder } from "@/components/nsfw/NSFWContentPlaceholder";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
 import { PostCardContent } from "@/components/post/PostCardContent";
@@ -28,12 +29,25 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   creatorInfo 
 }) => {
   const { user } = useAuth();
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
   const postRef = usePostVisibility({
     postId: post.id,
     onPostSeen: markPostAsRead,
     threshold: 0.5,
     visibilityDuration: 2000
   });
+
+  // Check if this NSFW post should be hidden
+  const shouldHideNSFW = post.is_nsfw && !nsfwPrefs?.isNSFWEnabled && user?.id !== post.authorId;
+  
+  if (shouldHideNSFW) {
+    return (
+      <div ref={postRef}>
+        <NSFWContentPlaceholder type="post" />
+      </div>
+    );
+  }
 
   // Check subscription status for this post's tier
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);

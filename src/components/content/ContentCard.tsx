@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -6,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Video, FileIcon, Lock, FileImage, FileText, Play, Download } from "lucide-react";
 import { NSFWBadge } from "@/components/ui/nsfw-badge";
+import { NSFWContentPlaceholder } from "@/components/nsfw/NSFWContentPlaceholder";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ContentCardProps {
   content: {
@@ -27,6 +29,16 @@ interface ContentCardProps {
 }
 
 export function ContentCard({ content, onClick }: ContentCardProps) {
+  const { user } = useAuth();
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
+  // Check if this NSFW content should be hidden
+  const shouldHideNSFW = content.is_nsfw && !nsfwPrefs?.isNSFWEnabled;
+  
+  if (shouldHideNSFW) {
+    return <NSFWContentPlaceholder type="general" showSettingsLink={!!user} />;
+  }
+
   // Helper function to get the first media from attachments
   const getFirstMedia = (attachments: any) => {
     if (!attachments) return null;
