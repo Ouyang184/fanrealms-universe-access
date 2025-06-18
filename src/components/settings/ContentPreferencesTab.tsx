@@ -87,39 +87,13 @@ export function ContentPreferencesTab({
 
     // If age verified, enable NSFW
     if (enabled && isAgeVerified) {
-      setIsLoading(true);
-      try {
-        await supabase
-          .from('users')
-          .update({ is_nsfw_enabled: true })
-          .eq('id', user?.id);
-        
-        setNsfwEnabled(true);
-        toast({
-          title: "NSFW content enabled",
-          description: "You can now view mature content.",
-        });
-      } catch (error) {
-        console.error('Error enabling NSFW:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update NSFW settings.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      await enableNSFW();
     }
   };
 
-  const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
-    console.log('🎉 Age verification successful, enabling NSFW');
-    
+  const enableNSFW = async () => {
+    setIsLoading(true);
     try {
-      // Handle age verification
-      await handleAgeVerified(dateOfBirth);
-      
-      // Enable NSFW
       await supabase
         .from('users')
         .update({ is_nsfw_enabled: true })
@@ -127,18 +101,28 @@ export function ContentPreferencesTab({
       
       setNsfwEnabled(true);
       toast({
-        title: "Age verified and NSFW enabled",
+        title: "NSFW content enabled",
         description: "You can now view mature content.",
       });
     } catch (error) {
-      console.error('Error after age verification:', error);
+      console.error('Error enabling NSFW:', error);
       toast({
         title: "Error",
-        description: "Age verified but failed to enable NSFW settings.",
+        description: "Failed to update NSFW settings.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Listen for age verification success to enable NSFW
+  useEffect(() => {
+    if (isAgeVerified && showVerificationModal === false && !nsfwEnabled) {
+      // Age was just verified and modal was closed, enable NSFW
+      enableNSFW();
+    }
+  }, [isAgeVerified, showVerificationModal]);
 
   return (
     <Card>

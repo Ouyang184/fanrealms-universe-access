@@ -14,7 +14,6 @@ import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
-import { useRef } from "react";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
@@ -25,9 +24,6 @@ export default function Settings() {
     handleAgeVerified
   } = useAgeVerification();
 
-  // Create a ref to the ContentPreferencesTab's age verification handler
-  const contentPreferencesRef = useRef<{ handleAgeVerificationSuccess?: (dateOfBirth: string) => void }>({});
-
   console.log('🏠 Settings Page - Age verification state:', {
     isAgeVerified,
     showVerificationModal,
@@ -36,14 +32,7 @@ export default function Settings() {
 
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
     console.log('🎯 Settings - Age verification success callback');
-    
-    // Call the ContentPreferencesTab's handler if it exists
-    if (contentPreferencesRef.current.handleAgeVerificationSuccess) {
-      await contentPreferencesRef.current.handleAgeVerificationSuccess(dateOfBirth);
-    } else {
-      // Fallback to the original handler
-      await handleAgeVerified(dateOfBirth);
-    }
+    await handleAgeVerified(dateOfBirth);
   };
 
   const handleAgeVerificationCancel = () => {
@@ -122,7 +111,6 @@ export default function Settings() {
                     showVerificationModal={showVerificationModal}
                     setShowVerificationModal={setShowVerificationModal}
                     handleAgeVerified={handleAgeVerified}
-                    ref={contentPreferencesRef}
                   />
                 </TabsContent>
                 
