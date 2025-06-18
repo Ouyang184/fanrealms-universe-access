@@ -26,6 +26,7 @@ export function ContentPreferencesTab({
   const { toast } = useToast();
   const [nsfwEnabled, setNsfwEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingNSFWEnable, setPendingNSFWEnable] = useState(false);
 
   // Fetch current NSFW setting
   useEffect(() => {
@@ -47,6 +48,22 @@ export function ContentPreferencesTab({
 
     fetchNSFWSetting();
   }, [user?.id]);
+
+  // Handle age verification completion
+  useEffect(() => {
+    console.log('🔍 Age verification effect:', { 
+      isAgeVerified, 
+      showVerificationModal, 
+      pendingNSFWEnable 
+    });
+    
+    // If age was just verified and we have a pending NSFW enable request
+    if (isAgeVerified && !showVerificationModal && pendingNSFWEnable) {
+      console.log('🎉 Age verification completed, enabling NSFW');
+      enableNSFW();
+      setPendingNSFWEnable(false);
+    }
+  }, [isAgeVerified, showVerificationModal, pendingNSFWEnable]);
 
   const handleNSFWToggle = async (enabled: boolean) => {
     console.log('🔥 NSFW Toggle clicked:', { enabled, isAgeVerified, user: user?.id });
@@ -78,18 +95,19 @@ export function ContentPreferencesTab({
       return;
     }
 
-    // If enabling NSFW and NOT age verified, show modal immediately
-    if (enabled && !isAgeVerified) {
-      console.log('🚨 Age verification required - showing modal immediately');
-      setShowVerificationModal(true);
-      // Don't update the switch state yet - wait for verification
-      return;
-    }
-
     // If enabling NSFW and already age verified, proceed directly
     if (enabled && isAgeVerified) {
       console.log('✅ Age already verified, enabling NSFW directly');
       await enableNSFW();
+      return;
+    }
+
+    // If enabling NSFW and NOT age verified, show modal
+    if (enabled && !isAgeVerified) {
+      console.log('🚨 Age verification required - showing modal');
+      setPendingNSFWEnable(true);
+      setShowVerificationModal(true);
+      return;
     }
   };
 
@@ -118,24 +136,6 @@ export function ContentPreferencesTab({
       setIsLoading(false);
     }
   };
-
-  // Listen for age verification success to enable NSFW
-  useEffect(() => {
-    console.log('🔍 Age verification effect:', { 
-      isAgeVerified, 
-      showVerificationModal, 
-      nsfwEnabled 
-    });
-    
-    // Only enable NSFW if:
-    // 1. Age was just verified (isAgeVerified is true)
-    // 2. Modal was just closed (showVerificationModal is false)
-    // 3. NSFW is not already enabled
-    if (isAgeVerified && !showVerificationModal && !nsfwEnabled) {
-      console.log('🎉 Age verification completed, enabling NSFW');
-      enableNSFW();
-    }
-  }, [isAgeVerified, showVerificationModal, nsfwEnabled]);
 
   return (
     <Card>
@@ -184,6 +184,7 @@ export function ContentPreferencesTab({
             <div>NSFW Enabled: {nsfwEnabled ? 'Yes' : 'No'}</div>
             <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
             <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+            <div>Pending NSFW: {pendingNSFWEnable ? 'Yes' : 'No'}</div>
           </div>
         </div>
       </CardContent>
