@@ -52,12 +52,13 @@ export default function Settings() {
   } = useAgeVerification();
   
   useEffect(() => {
-    console.log('Settings useEffect - Age verification status:', {
+    console.log('🔍 Settings useEffect - Age verification status:', {
       isAgeVerified,
       isAgeVerificationLoading,
-      user: user?.id
+      user: user?.id,
+      showVerificationModal
     });
-  }, [isAgeVerified, isAgeVerificationLoading, user]);
+  }, [isAgeVerified, isAgeVerificationLoading, user, showVerificationModal]);
   
   useEffect(() => {
     if (!isChecking && user) {
@@ -110,7 +111,8 @@ export default function Settings() {
       enabled, 
       isAgeVerified, 
       isAgeVerificationLoading,
-      currentNSFWState: nsfwSettings.isNSFWEnabled 
+      currentNSFWState: nsfwSettings.isNSFWEnabled,
+      showVerificationModal
     });
     
     // If trying to disable NSFW, allow it immediately
@@ -135,15 +137,19 @@ export default function Settings() {
       return;
     }
     
-    // If trying to enable NSFW and not age verified, show modal
+    // If trying to enable NSFW, check age verification first
+    console.log('🚨 User is trying to enable NSFW. Checking age verification...');
+    console.log('🔍 Age verification details:', { isAgeVerified, isAgeVerificationLoading });
+    
+    // Always show modal when enabling NSFW to ensure proper verification
     if (enabled && !isAgeVerified) {
-      console.log('🚨 User is trying to enable NSFW but is not age verified - showing modal');
+      console.log('🚨 User is not age verified - showing verification modal');
       setShowVerificationModal(true);
       return;
     }
 
     // If enabling NSFW and already age verified, proceed with the change
-    console.log('✅ Proceeding with NSFW toggle to:', enabled);
+    console.log('✅ User is age verified - proceeding with NSFW toggle to:', enabled);
     setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled, saving: true }));
     
     try {
@@ -450,7 +456,7 @@ export default function Settings() {
                       {/* Debug information */}
                       <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
                         <p className="text-xs text-gray-600 font-mono">
-                          Debug: Age Verified: {isAgeVerified ? 'Yes' : 'No'} | NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'} | Modal Open: {showVerificationModal ? 'Yes' : 'No'}
+                          Debug: Age Verified: {isAgeVerified ? 'Yes' : 'No'} | NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'} | Modal Open: {showVerificationModal ? 'Yes' : 'No'} | Loading: {isAgeVerificationLoading ? 'Yes' : 'No'}
                         </p>
                       </div>
                     </CardContent>
