@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AgeVerificationModalProps {
   open: boolean;
-  onVerified: () => void;
+  onVerified: (dateOfBirth: string) => void;
   onCancel: () => void;
 }
 
@@ -61,8 +61,8 @@ export function AgeVerificationModal({ open, onVerified, onCancel }: AgeVerifica
     setIsVerifying(true);
     
     try {
-      // This will be handled by the parent component's verification logic
-      onVerified();
+      // Pass the dateOfBirth to the parent component
+      onVerified(dateOfBirth);
     } catch (error) {
       console.error('Age verification error:', error);
       toast({
