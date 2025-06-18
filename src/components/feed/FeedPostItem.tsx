@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,10 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   creatorInfo 
 }) => {
   const { user } = useAuth();
+  
+  // FIXED: Move ALL hooks to the top, before any conditional logic
   const { data: nsfwPrefs } = useNSFWPreferences();
+  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
   const postRef = usePostVisibility({
     postId: post.id,
@@ -38,6 +42,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     visibilityDuration: 2000
   });
 
+  // Now we can do conditional logic after ALL hooks have been called
   // Check if this NSFW post should be hidden
   const shouldHideNSFW = post.is_nsfw && !nsfwPrefs?.isNSFWEnabled && user?.id !== post.authorId;
   
@@ -49,9 +54,6 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     );
   }
 
-  // Check subscription status for this post's tier
-  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
-  
   // FIXED: Check if this is the creator's own post using both authorId and user.id
   const isOwnPost = user?.id === post.authorId;
   
