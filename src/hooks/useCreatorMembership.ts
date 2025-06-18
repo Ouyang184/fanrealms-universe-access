@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -21,58 +22,79 @@ export const useCreatorMembership = (creatorId: string) => {
   const { data: tiers, isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creatorId],
     queryFn: async () => {
-      console.log('Fetching membership tiers for creator:', creatorId);
+      console.log('[CreatorMembership] Fetching membership tiers for creator:', creatorId);
       
       const { data: tiersData, error: tiersError } = await supabase
         .from('membership_tiers')
         .select('*')
         .eq('creator_id', creatorId)
+        .eq('active', true) // Only get active tiers
         .order('price', { ascending: true });
 
-      if (tiersError) throw tiersError;
+      if (tiersError) {
+        console.error('[CreatorMembership] Error fetching tiers:', tiersError);
+        throw tiersError;
+      }
 
-      // Get subscriber counts from user_subscriptions table
+      console.log('[CreatorMembership] Found tiers:', tiersData?.length || 0);
+
+      // Get accurate subscriber counts for each tier from user_subscriptions table
       const tiersWithCounts = await Promise.all(
-        tiersData.map(async (tier) => {
+        (tiersData || []).map(async (tier) => {
+          console.log('[CreatorMembership] Counting subscribers for tier:', tier.id, tier.title);
+          
           try {
+            // Count active subscribers for this specific tier
             const { count, error: countError } = await supabase
               .from('user_subscriptions')
               .select('*', { count: 'exact', head: true })
               .eq('tier_id', tier.id)
+              .eq('creator_id', creatorId)
               .eq('status', 'active');
 
             if (countError) {
-              console.error('Error getting subscriber count for tier:', tier.id, countError);
+              console.error('[CreatorMembership] Error counting subscribers for tier:', tier.id, countError);
+              return {
+                id: tier.id,
+                name: tier.title,
+                price: tier.price,
+                description: tier.description || '',
+                features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
+                subscriberCount: 0,
+              };
             }
+
+            const subscriberCount = count || 0;
+            console.log('[CreatorMembership] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
 
             return {
               id: tier.id,
               name: tier.title,
               price: tier.price,
               description: tier.description || '',
-              features: tier.description ? tier.description.split('|') : [],
-              subscriberCount: count || 0,
+              features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
+              subscriberCount,
             };
           } catch (error) {
-            console.error('Error processing tier:', tier.id, error);
+            console.error('[CreatorMembership] Error processing tier:', tier.id, error);
             return {
               id: tier.id,
               name: tier.title,
               price: tier.price,
               description: tier.description || '',
-              features: tier.description ? tier.description.split('|') : [],
+              features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
               subscriberCount: 0,
             };
           }
         })
       );
 
-      console.log('Fetched tiers with subscriber counts:', tiersWithCounts);
+      console.log('[CreatorMembership] Final tiers with subscriber counts:', tiersWithCounts);
       return tiersWithCounts;
     },
     enabled: !!creatorId,
     staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // 1 minute
+    refetchInterval: 60000, // 1 minute to keep counts fresh
   });
 
   // Get user subscriptions from user_subscriptions table only
@@ -81,7 +103,7 @@ export const useCreatorMembership = (creatorId: string) => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('Checking user subscriptions for user:', user.id, 'creator:', creatorId);
+      console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
       // Query user_subscriptions table directly - include both active and cancelling
       const { data, error } = await supabase
@@ -91,12 +113,11 @@ export const useCreatorMembership = (creatorId: string) => {
         .eq('creator_id', creatorId);
 
       if (error) {
-        console.error('Error fetching user subscriptions:', error);
+        console.error('[CreatorMembership] Error fetching user subscriptions:', error);
         return [];
       }
 
-      console.log('User subscriptions to creator found:', data?.length || 0);
-      console.log('User subscription details:', data);
+      console.log('[CreatorMembership] User subscriptions to creator found:', data?.length || 0);
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
@@ -108,7 +129,6 @@ export const useCreatorMembership = (creatorId: string) => {
   const isSubscribedToCreator = useCallback((): boolean => {
     const hasActiveSubscriptions = userCreatorSubscriptions ? 
       userCreatorSubscriptions.some(sub => sub.status === 'active' || sub.status === 'cancelling') : false;
-    console.log('isSubscribedToCreator check:', hasActiveSubscriptions, userCreatorSubscriptions);
     return hasActiveSubscriptions;
   }, [userCreatorSubscriptions]);
 
@@ -116,7 +136,6 @@ export const useCreatorMembership = (creatorId: string) => {
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
     // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
-      console.log('Using local state for tier:', tierId, localSubscriptionStates[tierId]);
       return localSubscriptionStates[tierId];
     }
     
@@ -125,7 +144,6 @@ export const useCreatorMembership = (creatorId: string) => {
       sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
     ) || false;
     
-    console.log('isSubscribedToTier check for tier:', tierId, 'result:', isSubscribed);
     return isSubscribed;
   }, [userCreatorSubscriptions, localSubscriptionStates]);
 
@@ -134,13 +152,12 @@ export const useCreatorMembership = (creatorId: string) => {
     const subscription = userCreatorSubscriptions?.find(sub => 
       sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
     );
-    console.log('getSubscriptionData for tier:', tierId, 'found:', subscription);
     return subscription;
   }, [userCreatorSubscriptions]);
 
   // Handle subscription success with full sync
   const handleSubscriptionSuccess = useCallback(async () => {
-    console.log('Subscription success detected, performing full sync...');
+    console.log('[CreatorMembership] Subscription success detected, performing full sync...');
     
     // Invalidate all related queries to force fresh data
     await Promise.all([
@@ -161,7 +178,7 @@ export const useCreatorMembership = (creatorId: string) => {
 
   // Update local subscription state optimistically
   const updateLocalSubscriptionState = useCallback((tierId: string, isSubscribed: boolean) => {
-    console.log('Updating local subscription state for tier:', tierId, 'to:', isSubscribed);
+    console.log('[CreatorMembership] Updating local subscription state for tier:', tierId, 'to:', isSubscribed);
     setLocalSubscriptionStates(prev => ({
       ...prev,
       [tierId]: isSubscribed
@@ -180,7 +197,7 @@ export const useCreatorMembership = (creatorId: string) => {
   // Listen for subscription events
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
-      console.log('Subscription event detected:', event.type, event.detail);
+      console.log('[CreatorMembership] Subscription event detected:', event.type, event.detail);
       
       if (event.detail?.creatorId === creatorId) {
         const { tierId } = event.detail;
@@ -215,7 +232,7 @@ export const useCreatorMembership = (creatorId: string) => {
   useEffect(() => {
     if (!creatorId) return;
 
-    console.log('Setting up real-time subscription for user_subscriptions table, creator:', creatorId);
+    console.log('[CreatorMembership] Setting up real-time subscription for user_subscriptions table, creator:', creatorId);
     
     const channel = supabase
       .channel(`user-subscriptions-updates-${creatorId}`)
@@ -225,13 +242,13 @@ export const useCreatorMembership = (creatorId: string) => {
         table: 'user_subscriptions',
         filter: `creator_id=eq.${creatorId}`
       }, (payload) => {
-        console.log('Real-time update received for user_subscriptions:', payload);
+        console.log('[CreatorMembership] Real-time update received for user_subscriptions:', payload);
         handleSubscriptionSuccess();
       })
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
+      console.log('[CreatorMembership] Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [creatorId, handleSubscriptionSuccess]);

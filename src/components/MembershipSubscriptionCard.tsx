@@ -59,7 +59,7 @@ export function MembershipSubscriptionCard({
     }
 
     try {
-      console.log('Creating subscription for tier:', tier.id, 'creator:', creatorId);
+      console.log('[MembershipSubscriptionCard] Creating subscription for tier:', tier.id, 'creator:', creatorId);
       
       const result = await createSubscription({ 
         tierId: tier.id, 
@@ -105,7 +105,7 @@ export function MembershipSubscriptionCard({
       }
 
     } catch (error: any) {
-      console.error('Subscription error:', error);
+      console.error('[MembershipSubscriptionCard] Subscription error:', error);
       // Error is already handled in the hook
     }
   };
@@ -139,7 +139,7 @@ export function MembershipSubscriptionCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Subscribers</span>
-            <Badge variant="outline">{tier.subscriberCount || 0}</Badge>
+            <Badge variant="outline">{tier.subscriberCount ?? 0}</Badge>
           </div>
           
           <ul className="space-y-2">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +24,7 @@ export default function CreatorStudioTiers() {
     queryFn: async () => {
       if (!user) return [];
       
-      console.log('Fetching tiers for user:', user.id);
+      console.log('[MembershipTiers] Fetching tiers for user:', user.id);
       
       // First get the creator ID
       const { data: creatorData, error: creatorError } = await supabase
@@ -35,60 +34,85 @@ export default function CreatorStudioTiers() {
         .single();
       
       if (creatorError) {
+        console.error('[MembershipTiers] Error finding creator profile:', creatorError);
         throw new Error("Could not find your creator profile");
       }
       
-      console.log('Creator ID:', creatorData.id);
+      console.log('[MembershipTiers] Creator ID:', creatorData.id);
       
       // Then get the tiers for this creator
       const { data: tiersData, error: tiersError } = await supabase
         .from("membership_tiers")
         .select("*")
         .eq("creator_id", creatorData.id)
+        .eq("active", true) // Only get active tiers
         .order("price", { ascending: true });
       
-      if (tiersError) throw tiersError;
+      if (tiersError) {
+        console.error('[MembershipTiers] Error fetching tiers:', tiersError);
+        throw tiersError;
+      }
       
-      console.log('Tiers data:', tiersData);
+      console.log('[MembershipTiers] Tiers data:', tiersData);
       
-      // Count active subscribers for each tier using the new table
-      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
-        console.log('Counting subscribers for tier:', tier.id);
+      // Count active subscribers for each tier using the user_subscriptions table
+      const tiersWithSubscribers = await Promise.all((tiersData || []).map(async (tier) => {
+        console.log('[MembershipTiers] Counting subscribers for tier:', tier.id, tier.title);
         
-        // Count from user_subscriptions table with active status
-        const { count, error: countError } = await supabase
-          .from('user_subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id)
-          .eq('status', 'active');
+        try {
+          // Count from user_subscriptions table with active status only
+          const { count, error: countError } = await supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('tier_id', tier.id)
+            .eq('creator_id', creatorData.id) // Ensure we're counting for the right creator
+            .eq('status', 'active');
 
-        if (countError) {
-          console.error('Error counting subscribers for tier:', tier.id, countError);
+          if (countError) {
+            console.error('[MembershipTiers] Error counting subscribers for tier:', tier.id, countError);
+            return {
+              id: tier.id,
+              name: tier.title,
+              price: tier.price,
+              features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
+              subscriberCount: 0,
+            };
+          }
+
+          const subscriberCount = count || 0;
+          console.log('[MembershipTiers] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
+          
+          return {
+            id: tier.id,
+            name: tier.title,
+            price: tier.price,
+            features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
+            subscriberCount,
+          };
+        } catch (error) {
+          console.error('[MembershipTiers] Error processing tier:', tier.id, error);
+          return {
+            id: tier.id,
+            name: tier.title,
+            price: tier.price,
+            features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
+            subscriberCount: 0,
+          };
         }
-
-        console.log('Subscriber count for tier', tier.id, ':', count);
-        
-        return {
-          id: tier.id,
-          name: tier.title,
-          price: tier.price,
-          features: tier.description ? tier.description.split("|") : [],
-          subscriberCount: count || 0,
-        };
       }));
       
-      console.log('Final tiers with subscriber counts:', tiersWithSubscribers);
+      console.log('[MembershipTiers] Final tiers with subscriber counts:', tiersWithSubscribers);
       return tiersWithSubscribers;
     },
     enabled: !!user,
-    refetchInterval: 3000, // Reduced to 3 seconds for faster updates
-    staleTime: 1000, // Consider data stale after 1 second
+    refetchInterval: 30000, // Refresh every 30 seconds to keep counts updated
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 
   // Listen for subscription events and tier deletion events
   useEffect(() => {
     const handleDataUpdate = async () => {
-      console.log('MembershipTiers: Data update event detected, refreshing...');
+      console.log('[MembershipTiers] Data update event detected, refreshing...');
       
       // Invalidate and refetch queries immediately
       await queryClient.invalidateQueries({ queryKey: ["tiers"] });
@@ -109,11 +133,11 @@ export default function CreatorStudioTiers() {
     };
   }, [queryClient, refetch]);
   
-  // Set up real-time subscription for membership_tiers changes
+  // Set up real-time subscription for membership_tiers and user_subscriptions changes
   useEffect(() => {
     if (!user) return;
 
-    console.log('Setting up real-time subscription for tier changes');
+    console.log('[MembershipTiers] Setting up real-time subscription for tier and subscription changes');
     
     const channel = supabase
       .channel('membership-tiers-changes')
@@ -122,7 +146,7 @@ export default function CreatorStudioTiers() {
         schema: 'public',
         table: 'membership_tiers'
       }, (payload) => {
-        console.log('Real-time tier update received:', payload);
+        console.log('[MembershipTiers] Real-time tier update received:', payload);
         // Invalidate and refetch the tiers query when tier changes occur
         queryClient.invalidateQueries({ queryKey: ["tiers"] });
       })
@@ -131,14 +155,14 @@ export default function CreatorStudioTiers() {
         schema: 'public',
         table: 'user_subscriptions'
       }, (payload) => {
-        console.log('Real-time subscription update received:', payload);
+        console.log('[MembershipTiers] Real-time subscription update received:', payload);
         // Invalidate and refetch the tiers query when subscription changes occur
         queryClient.invalidateQueries({ queryKey: ["tiers"] });
       })
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
+      console.log('[MembershipTiers] Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);
