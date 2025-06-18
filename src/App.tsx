@@ -18,7 +18,7 @@ import SubscriptionsPage from "./pages/Subscriptions";
 import RootLayout from "@/components/RootLayout";
 import FeedPage from "./pages/Feed";
 import FollowingPage from "./pages/Following";
-import Notifications from "./pages/Notifications";
+import Notifications from "./pages/creator-studio/Notifications";
 import Messages from "./pages/Messages";
 import ExplorePage from "./pages/Explore";
 import ExploreCategoryPage from "./pages/ExploreCategory";
@@ -92,7 +92,6 @@ export default function App() {
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
-                <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
                 
                 {/* Settings page */}
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
@@ -111,6 +110,13 @@ export default function App() {
                   <CreatorCheck>
                     <CreatorPostsPage />
                   </CreatorCheck>
+                } />
+                <Route path="/creator-studio/notifications" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <Notifications />
+                    </CreatorCheck>
+                  </MainLayout>
                 } />
                 <Route path="/creator-studio/membership-tiers" element={
                   <MainLayout>
