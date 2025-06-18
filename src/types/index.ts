@@ -27,6 +27,7 @@ export interface Post {
   tier_id?: string | null;
   attachments?: any;
   tags?: string[]; // Added tags field for search functionality
+  is_nsfw?: boolean; // Added NSFW flag for content filtering
 }
 
 export interface CreatorProfile {

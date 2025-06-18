@@ -61,7 +61,8 @@ export const usePosts = () => {
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
-          attachments: post.attachments
+          attachments: post.attachments,
+          is_nsfw: post.is_nsfw || false // Include NSFW flag
         };
         
         console.log('[usePosts] ENHANCED Mapped post with creator access logic:', {
@@ -71,6 +72,7 @@ export const usePosts = () => {
           authorIdType: typeof mappedPost.authorId,
           authorIdValue: JSON.stringify(mappedPost.authorId),
           tier_id: mappedPost.tier_id,
+          is_nsfw: mappedPost.is_nsfw,
           rawAuthorId: post.author_id,
           message: 'Post mapped with consistent authorId for creator access logic'
         });
