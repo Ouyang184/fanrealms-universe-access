@@ -1,4 +1,3 @@
-
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -141,9 +140,9 @@ export default function Settings() {
     console.log('🚨 User is trying to enable NSFW. Checking age verification...');
     console.log('🔍 Age verification details:', { isAgeVerified, isAgeVerificationLoading });
     
-    // Always show modal when enabling NSFW to ensure proper verification
+    // Show modal when enabling NSFW if not age verified (including null/undefined cases)
     if (enabled && !isAgeVerified) {
-      console.log('🚨 User is not age verified - showing verification modal');
+      console.log('🚨 User is not age verified (or verification is null) - showing verification modal');
       setShowVerificationModal(true);
       return;
     }
