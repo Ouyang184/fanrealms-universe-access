@@ -78,20 +78,22 @@ export function ContentPreferencesTab({
       return;
     }
 
-    // If enabling NSFW, check age verification
+    // If enabling NSFW, check age verification first
     if (enabled && !isAgeVerified) {
       console.log('🚨 Age verification required - showing modal');
       setShowVerificationModal(true);
       return;
     }
 
-    // If age verified, enable NSFW
+    // If enabling NSFW and already age verified, proceed directly
     if (enabled && isAgeVerified) {
+      console.log('✅ Age already verified, enabling NSFW directly');
       await enableNSFW();
     }
   };
 
   const enableNSFW = async () => {
+    console.log('🎯 Enabling NSFW...');
     setIsLoading(true);
     try {
       await supabase
@@ -118,11 +120,21 @@ export function ContentPreferencesTab({
 
   // Listen for age verification success to enable NSFW
   useEffect(() => {
-    if (isAgeVerified && showVerificationModal === false && !nsfwEnabled) {
-      // Age was just verified and modal was closed, enable NSFW
+    console.log('🔍 Age verification effect:', { 
+      isAgeVerified, 
+      showVerificationModal, 
+      nsfwEnabled 
+    });
+    
+    // Only enable NSFW if:
+    // 1. Age was just verified (isAgeVerified is true)
+    // 2. Modal was just closed (showVerificationModal is false)
+    // 3. NSFW is not already enabled
+    if (isAgeVerified && !showVerificationModal && !nsfwEnabled) {
+      console.log('🎉 Age verification completed, enabling NSFW');
       enableNSFW();
     }
-  }, [isAgeVerified, showVerificationModal]);
+  }, [isAgeVerified, showVerificationModal, nsfwEnabled]);
 
   return (
     <Card>
