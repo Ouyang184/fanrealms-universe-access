@@ -22,7 +22,7 @@ export function NSFWContentGate({
 }: NSFWContentGateProps) {
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
-  const { isAgeVerified } = useAgeVerification();
+  const { isAgeVerified, isLoading: isAgeVerificationLoading } = useAgeVerification();
 
   // Don't gate content for the author viewing their own content
   const isOwnContent = user?.id === authorId;
@@ -46,8 +46,12 @@ export function NSFWContentGate({
     );
   }
 
-  // If user has NSFW enabled but hasn't verified age, show placeholder with settings link
-  // (Age verification should now happen in settings, not here)
+  // If we're still loading age verification status, show loading state
+  if (isAgeVerificationLoading) {
+    return <>{children}</>;
+  }
+
+  // If user has NSFW enabled but hasn't verified age, show placeholder directing to settings
   if (nsfwPrefs?.isNSFWEnabled && !isAgeVerified) {
     return (
       <div className={className}>

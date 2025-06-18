@@ -69,10 +69,16 @@ export default function Settings() {
             .eq('id', user.id)
             .single();
           
+          const nsfwEnabled = data?.is_nsfw_enabled || false;
           setNSFWSettings(prev => ({
             ...prev,
-            isNSFWEnabled: data?.is_nsfw_enabled || false
+            isNSFWEnabled: nsfwEnabled
           }));
+
+          // If user has NSFW enabled but hasn't verified age, show verification modal
+          if (nsfwEnabled && !isAgeVerified) {
+            setShowVerificationModal(true);
+          }
         } catch (error) {
           console.error('Error fetching NSFW preferences:', error);
         }
@@ -80,7 +86,7 @@ export default function Settings() {
       
       fetchNSFWPrefs();
     }
-  }, [isChecking, user]);
+  }, [isChecking, user, isAgeVerified, setShowVerificationModal]);
   
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -117,18 +123,20 @@ export default function Settings() {
     // First handle age verification
     await handleAgeVerified(dateOfBirth);
     
-    // Then enable NSFW content
-    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true, saving: true }));
-    
-    try {
-      await supabase
-        .from('users')
-        .update({ is_nsfw_enabled: true })
-        .eq('id', user?.id);
-    } catch (error) {
-      console.error('Error enabling NSFW settings:', error);
-    } finally {
-      setNSFWSettings(prev => ({ ...prev, saving: false }));
+    // Then enable NSFW content if it wasn't already enabled
+    if (!nsfwSettings.isNSFWEnabled) {
+      setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true, saving: true }));
+      
+      try {
+        await supabase
+          .from('users')
+          .update({ is_nsfw_enabled: true })
+          .eq('id', user?.id);
+      } catch (error) {
+        console.error('Error enabling NSFW settings:', error);
+      } finally {
+        setNSFWSettings(prev => ({ ...prev, saving: false }));
+      }
     }
   };
   
@@ -368,15 +376,21 @@ export default function Settings() {
                         />
                       </div>
                       
-                      {nsfwSettings.isNSFWEnabled && isAgeVerified && (
+                      {nsfwSettings.isNSFWEnabled && (
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                           <div className="flex items-start gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-amber-800">
                               <p className="font-medium mb-1">18+ Content Enabled</p>
-                              <p className="text-xs">
-                                You have verified your age and can now view mature content across the platform.
-                              </p>
+                              {isAgeVerified ? (
+                                <p className="text-xs">
+                                  You have verified your age and can now view mature content across the platform.
+                                </p>
+                              ) : (
+                                <p className="text-xs">
+                                  Age verification is required to view mature content. You will be prompted to verify your age.
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
