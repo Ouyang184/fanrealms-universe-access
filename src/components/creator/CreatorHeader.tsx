@@ -23,8 +23,9 @@ interface CreatorHeaderProps {
   isFollowing: boolean;
   onFollow: () => void;
   onUnfollow: () => void;
-  onNavigateToAbout: () => void;
+  onNavigateToAbout?: () => void;
   optimisticFollowerCount: number | null;
+  isOwnProfile?: boolean;
 }
 
 export function CreatorHeader({
@@ -33,7 +34,8 @@ export function CreatorHeader({
   onFollow,
   onUnfollow,
   onNavigateToAbout,
-  optimisticFollowerCount
+  optimisticFollowerCount,
+  isOwnProfile = false
 }: CreatorHeaderProps) {
   const displayFollowerCount = optimisticFollowerCount !== null 
     ? optimisticFollowerCount 
@@ -115,26 +117,32 @@ export function CreatorHeader({
               </div>
 
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onNavigateToAbout}
-                  className="gap-2"
-                >
-                  <Info className="h-4 w-4" />
-                  About
-                </Button>
+                {onNavigateToAbout && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onNavigateToAbout}
+                    className="gap-2"
+                  >
+                    <Info className="h-4 w-4" />
+                    About
+                  </Button>
+                )}
                 
-                {isFollowing ? (
-                  <Button onClick={onUnfollow} variant="secondary" className="gap-2">
-                    <Star className="h-4 w-4 fill-current" />
-                    Following
-                  </Button>
-                ) : (
-                  <Button onClick={onFollow} className="gap-2">
-                    <Users className="h-4 w-4" />
-                    Follow
-                  </Button>
+                {!isOwnProfile && (
+                  <>
+                    {isFollowing ? (
+                      <Button onClick={onUnfollow} variant="secondary" className="gap-2">
+                        <Star className="h-4 w-4 fill-current" />
+                        Following
+                      </Button>
+                    ) : (
+                      <Button onClick={onFollow} className="gap-2">
+                        <Users className="h-4 w-4" />
+                        Follow
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
