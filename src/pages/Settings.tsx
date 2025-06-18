@@ -74,11 +74,6 @@ export default function Settings() {
             ...prev,
             isNSFWEnabled: nsfwEnabled
           }));
-
-          // If user has NSFW enabled but hasn't verified age, show verification modal
-          if (nsfwEnabled && !isAgeVerified) {
-            setShowVerificationModal(true);
-          }
         } catch (error) {
           console.error('Error fetching NSFW preferences:', error);
         }
@@ -86,7 +81,7 @@ export default function Settings() {
       
       fetchNSFWPrefs();
     }
-  }, [isChecking, user, isAgeVerified, setShowVerificationModal]);
+  }, [isChecking, user]);
   
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -98,8 +93,11 @@ export default function Settings() {
   };
   
   const handleNSFWChange = async (enabled: boolean) => {
+    console.log('NSFW toggle clicked:', { enabled, isAgeVerified });
+    
     if (enabled && !isAgeVerified) {
       // If user is trying to enable NSFW but hasn't verified age, show verification modal
+      console.log('Showing age verification modal because user is not age verified');
       setShowVerificationModal(true);
       return;
     }
@@ -112,6 +110,8 @@ export default function Settings() {
         .from('users')
         .update({ is_nsfw_enabled: enabled })
         .eq('id', user?.id);
+      
+      console.log('NSFW preference updated successfully to:', enabled);
     } catch (error) {
       console.error('Error saving NSFW settings:', error);
     } finally {
@@ -120,24 +120,32 @@ export default function Settings() {
   };
 
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
+    console.log('Age verification successful, enabling NSFW');
+    
     // First handle age verification
     await handleAgeVerified(dateOfBirth);
     
-    // Then enable NSFW content if it wasn't already enabled
-    if (!nsfwSettings.isNSFWEnabled) {
-      setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true, saving: true }));
+    // Then enable NSFW content
+    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true, saving: true }));
+    
+    try {
+      await supabase
+        .from('users')
+        .update({ is_nsfw_enabled: true })
+        .eq('id', user?.id);
       
-      try {
-        await supabase
-          .from('users')
-          .update({ is_nsfw_enabled: true })
-          .eq('id', user?.id);
-      } catch (error) {
-        console.error('Error enabling NSFW settings:', error);
-      } finally {
-        setNSFWSettings(prev => ({ ...prev, saving: false }));
-      }
+      console.log('NSFW enabled after age verification');
+    } catch (error) {
+      console.error('Error enabling NSFW settings:', error);
+    } finally {
+      setNSFWSettings(prev => ({ ...prev, saving: false }));
     }
+  };
+
+  const handleAgeVerificationCancel = () => {
+    console.log('Age verification cancelled');
+    setShowVerificationModal(false);
+    // Don't enable NSFW if verification was cancelled
   };
   
   const saveProfileSettings = () => {
@@ -442,7 +450,7 @@ export default function Settings() {
       <AgeVerificationModal
         open={showVerificationModal}
         onVerified={handleAgeVerificationSuccess}
-        onCancel={() => setShowVerificationModal(false)}
+        onCancel={handleAgeVerificationCancel}
       />
     </SidebarProvider>
   );
