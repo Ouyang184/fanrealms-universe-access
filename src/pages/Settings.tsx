@@ -1,3 +1,4 @@
+
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -112,6 +113,28 @@ export default function Settings() {
       currentNSFWState: nsfwSettings.isNSFWEnabled 
     });
     
+    // If trying to disable NSFW, allow it immediately
+    if (!enabled) {
+      console.log('✅ User is disabling NSFW - proceeding immediately');
+      setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: false, saving: true }));
+      
+      try {
+        await supabase
+          .from('users')
+          .update({ is_nsfw_enabled: false })
+          .eq('id', user?.id);
+        
+        console.log('✅ NSFW preference disabled successfully');
+      } catch (error) {
+        console.error('❌ Error saving NSFW settings:', error);
+        // Revert the UI state on error
+        setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true }));
+      } finally {
+        setNSFWSettings(prev => ({ ...prev, saving: false }));
+      }
+      return;
+    }
+    
     // If trying to enable NSFW and not age verified, show modal
     if (enabled && !isAgeVerified) {
       console.log('🚨 User is trying to enable NSFW but is not age verified - showing modal');
@@ -119,7 +142,7 @@ export default function Settings() {
       return;
     }
 
-    // If disabling NSFW or already age verified, proceed with the change
+    // If enabling NSFW and already age verified, proceed with the change
     console.log('✅ Proceeding with NSFW toggle to:', enabled);
     setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled, saving: true }));
     
@@ -392,7 +415,7 @@ export default function Settings() {
                     <CardContent className="space-y-6">
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label>18+ Content</Label>
+                          <Label>Show NSFW Posts</Label>
                           <p className="text-sm text-muted-foreground">
                             Enable viewing of mature/adult content (requires age verification)
                           </p>
@@ -409,7 +432,7 @@ export default function Settings() {
                           <div className="flex items-start gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-amber-800">
-                              <p className="font-medium mb-1">18+ Content Enabled</p>
+                              <p className="font-medium mb-1">NSFW Content Enabled</p>
                               {isAgeVerified ? (
                                 <p className="text-xs">
                                   You have verified your age and can now view mature content across the platform.
