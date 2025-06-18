@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,11 +37,19 @@ export function CreatorHeader({
   optimisticFollowerCount,
   isOwnProfile = false
 }: CreatorHeaderProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const displayFollowerCount = optimisticFollowerCount !== null 
     ? optimisticFollowerCount 
     : creator.follower_count || 0;
 
   const displayName = creator.display_name || creator.username || 'Creator';
+  
+  // Bio truncation logic
+  const BIO_CHAR_LIMIT = 200;
+  const shouldTruncate = creator.bio && creator.bio.length > BIO_CHAR_LIMIT;
+  const displayBio = shouldTruncate && !isExpanded 
+    ? creator.bio!.substring(0, BIO_CHAR_LIMIT).trim() + "..."
+    : creator.bio;
   
   return (
     <div className="relative">
@@ -57,11 +65,11 @@ export function CreatorHeader({
         <div className="absolute inset-0 bg-black/20" />
       </div>
 
-      {/* Profile Info */}
-      <div className="relative px-6 pb-6">
+      {/* Profile Info Container - Properly spaced to avoid overlap */}
+      <div className="relative px-6 pb-6 bg-background">
         <div className="flex flex-col md:flex-row items-start md:items-end gap-6 -mt-16 md:-mt-20">
           {/* Avatar */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background shadow-xl">
               <AvatarImage 
                 src={creator.profile_image_url || undefined} 
@@ -81,8 +89,8 @@ export function CreatorHeader({
             )}
           </div>
 
-          {/* Creator Info */}
-          <div className="flex-1 space-y-4">
+          {/* Creator Info - Properly spaced to avoid avatar overlap */}
+          <div className="flex-1 space-y-4 min-w-0">
             <div className="space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-3xl font-bold">{displayName}</h1>
@@ -91,13 +99,26 @@ export function CreatorHeader({
                 )}
               </div>
               
+              {/* Bio section with proper spacing and truncation */}
               {creator.bio && (
-                <p className="text-muted-foreground max-w-2xl">{creator.bio}</p>
+                <div className="space-y-2 mt-4">
+                  <div className="text-muted-foreground max-w-3xl leading-relaxed break-words">
+                    {displayBio}
+                  </div>
+                  {shouldTruncate && (
+                    <button
+                      onClick={() => setIsExpanded(!isExpanded)}
+                      className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
+                    >
+                      {isExpanded ? "Show less" : "Read more..."}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Stats and Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between pt-4">
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
@@ -149,7 +170,7 @@ export function CreatorHeader({
 
             {/* Tags */}
             {creator.tags && creator.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {creator.tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
                     {tag}
