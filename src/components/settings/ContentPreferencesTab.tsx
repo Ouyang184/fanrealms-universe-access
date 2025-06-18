@@ -66,10 +66,16 @@ export function ContentPreferencesTab({
   }, [isAgeVerified, showVerificationModal, pendingNSFWEnable]);
 
   const handleNSFWToggle = async (enabled: boolean) => {
-    console.log('🔥 NSFW Toggle clicked:', { enabled, isAgeVerified, user: user?.id });
+    console.log('🔥 NSFW Toggle clicked:', { 
+      enabled, 
+      isAgeVerified, 
+      nsfwEnabled, 
+      user: user?.id 
+    });
     
     // If disabling NSFW, allow immediately
     if (!enabled) {
+      console.log('🔴 Disabling NSFW - proceeding directly');
       setIsLoading(true);
       try {
         await supabase
@@ -95,19 +101,21 @@ export function ContentPreferencesTab({
       return;
     }
 
-    // If enabling NSFW and already age verified, proceed directly
-    if (enabled && isAgeVerified) {
-      console.log('✅ Age already verified, enabling NSFW directly');
-      await enableNSFW();
-      return;
-    }
-
-    // If enabling NSFW and NOT age verified, show modal
-    if (enabled && !isAgeVerified) {
-      console.log('🚨 Age verification required - showing modal');
-      setPendingNSFWEnable(true);
-      setShowVerificationModal(true);
-      return;
+    // If enabling NSFW, ALWAYS check age verification first
+    if (enabled) {
+      console.log('🟡 Enabling NSFW - checking age verification...', { isAgeVerified });
+      
+      // Force age verification check regardless of current state
+      if (!isAgeVerified) {
+        console.log('🚨 Age NOT verified - showing modal');
+        setPendingNSFWEnable(true);
+        setShowVerificationModal(true);
+        return;
+      } else {
+        console.log('✅ Age already verified, enabling NSFW directly');
+        await enableNSFW();
+        return;
+      }
     }
   };
 
