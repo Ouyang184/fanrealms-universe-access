@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle } from "lucide-react";
-import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -11,20 +10,22 @@ import { User } from "@supabase/supabase-js";
 
 interface ContentPreferencesTabProps {
   user: User | null;
+  isAgeVerified: boolean;
+  showVerificationModal: boolean;
+  setShowVerificationModal: (show: boolean) => void;
+  handleAgeVerified: (dateOfBirth: string) => void;
 }
 
-export function ContentPreferencesTab({ user }: ContentPreferencesTabProps) {
+export function ContentPreferencesTab({ 
+  user, 
+  isAgeVerified, 
+  showVerificationModal, 
+  setShowVerificationModal, 
+  handleAgeVerified 
+}: ContentPreferencesTabProps) {
   const { toast } = useToast();
   const [nsfwEnabled, setNsfwEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const {
-    isAgeVerified,
-    showVerificationModal,
-    setShowVerificationModal,
-    handleAgeVerified,
-    isLoading: isAgeVerificationLoading
-  } = useAgeVerification();
 
   // Fetch current NSFW setting
   useEffect(() => {
@@ -139,11 +140,6 @@ export function ContentPreferencesTab({ user }: ContentPreferencesTabProps) {
     }
   };
 
-  const handleAgeVerificationCancel = () => {
-    console.log('❌ Age verification cancelled');
-    setShowVerificationModal(false);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -163,7 +159,7 @@ export function ContentPreferencesTab({ user }: ContentPreferencesTabProps) {
           <Switch 
             checked={nsfwEnabled}
             onCheckedChange={handleNSFWToggle}
-            disabled={isLoading || isAgeVerificationLoading}
+            disabled={isLoading}
           />
         </div>
         

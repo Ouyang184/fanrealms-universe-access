@@ -18,16 +18,25 @@ import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesT
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
   const {
+    isAgeVerified,
     showVerificationModal,
     setShowVerificationModal,
     handleAgeVerified
   } = useAgeVerification();
 
+  console.log('🏠 Settings Page - Age verification state:', {
+    isAgeVerified,
+    showVerificationModal,
+    userId: user?.id
+  });
+
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
+    console.log('🎯 Settings - Age verification success callback');
     await handleAgeVerified(dateOfBirth);
   };
 
   const handleAgeVerificationCancel = () => {
+    console.log('❌ Settings - Age verification cancelled');
     setShowVerificationModal(false);
   };
   
@@ -96,7 +105,13 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="content" className="m-0">
-                  <ContentPreferencesTab user={user} />
+                  <ContentPreferencesTab 
+                    user={user}
+                    isAgeVerified={isAgeVerified}
+                    showVerificationModal={showVerificationModal}
+                    setShowVerificationModal={setShowVerificationModal}
+                    handleAgeVerified={handleAgeVerified}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="privacy" className="m-0">
