@@ -2,18 +2,20 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Settings, Eye } from "lucide-react";
+import { AlertTriangle, Settings, Eye, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NSFWContentPlaceholderProps {
   type?: "post" | "creator" | "general";
   showSettingsLink?: boolean;
+  onVerifyAge?: () => void;
   className?: string;
 }
 
 export function NSFWContentPlaceholder({ 
   type = "general", 
   showSettingsLink = true,
+  onVerifyAge,
   className 
 }: NSFWContentPlaceholderProps) {
   const getContent = () => {
@@ -53,19 +55,27 @@ export function NSFWContentPlaceholder({
             </p>
           </div>
           
-          {showSettingsLink && (
-            <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            {onVerifyAge && (
+              <Button onClick={onVerifyAge} className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Verify Age (18+)
+              </Button>
+            )}
+            
+            {showSettingsLink && (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/settings" className="gap-2">
                   <Settings className="h-4 w-4" />
                   Update Settings
                 </Link>
               </Button>
-              <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-800">
-                Learn More
-              </Button>
-            </div>
-          )}
+            )}
+            
+            <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-800">
+              Learn More
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

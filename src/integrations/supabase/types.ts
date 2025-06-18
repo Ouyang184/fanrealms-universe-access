@@ -761,7 +761,9 @@ export type Database = {
       }
       users: {
         Row: {
+          age_verified: boolean | null
           created_at: string
+          date_of_birth: string | null
           email: string
           id: string
           is_nsfw_enabled: boolean
@@ -771,7 +773,9 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          age_verified?: boolean | null
           created_at?: string
+          date_of_birth?: string | null
           email: string
           id?: string
           is_nsfw_enabled?: boolean
@@ -781,7 +785,9 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          age_verified?: boolean | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           id?: string
           is_nsfw_enabled?: boolean

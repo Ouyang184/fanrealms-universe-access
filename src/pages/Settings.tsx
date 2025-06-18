@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { supabase } from "@/lib/supabase";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
@@ -32,6 +34,12 @@ export default function Settings() {
     saving: false
   });
   
+  // NSFW settings state
+  const [nsfwSettings, setNSFWSettings] = useState({
+    isNSFWEnabled: false,
+    saving: false
+  });
+  
   useEffect(() => {
     if (!isChecking && user) {
       // In a real app, would fetch from API/context
@@ -42,6 +50,26 @@ export default function Settings() {
         website: "https://example.com",
         saving: false
       });
+      
+      // Fetch NSFW preferences
+      const fetchNSFWPrefs = async () => {
+        try {
+          const { data } = await supabase
+            .from('users')
+            .select('is_nsfw_enabled')
+            .eq('id', user.id)
+            .single();
+          
+          setNSFWSettings(prev => ({
+            ...prev,
+            isNSFWEnabled: data?.is_nsfw_enabled || false
+          }));
+        } catch (error) {
+          console.error('Error fetching NSFW preferences:', error);
+        }
+      };
+      
+      fetchNSFWPrefs();
     }
   }, [isChecking, user]);
   
@@ -52,6 +80,10 @@ export default function Settings() {
   
   const handleNotificationChange = (key: string, value: boolean) => {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
+  };
+  
+  const handleNSFWChange = (enabled: boolean) => {
+    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled }));
   };
   
   const saveProfileSettings = () => {
@@ -68,6 +100,20 @@ export default function Settings() {
     setTimeout(() => {
       setNotificationSettings(prev => ({ ...prev, saving: false }));
     }, 1000);
+  };
+  
+  const saveNSFWSettings = async () => {
+    setNSFWSettings(prev => ({ ...prev, saving: true }));
+    try {
+      await supabase
+        .from('users')
+        .update({ is_nsfw_enabled: nsfwSettings.isNSFWEnabled })
+        .eq('id', user?.id);
+    } catch (error) {
+      console.error('Error saving NSFW settings:', error);
+    } finally {
+      setNSFWSettings(prev => ({ ...prev, saving: false }));
+    }
   };
   
   if (isChecking) {
@@ -95,6 +141,7 @@ export default function Settings() {
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="privacy">Privacy</TabsTrigger>
+                <TabsTrigger value="content">Content</TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
@@ -261,6 +308,53 @@ export default function Settings() {
                         disabled={notificationSettings.saving}
                       >
                         {notificationSettings.saving ? "Saving..." : "Save Preferences"}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="content" className="m-0">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Content Preferences</CardTitle>
+                      <CardDescription>
+                        Manage your content viewing preferences and restrictions
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>18+ Content</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Enable viewing of mature/adult content (requires age verification)
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={nsfwSettings.isNSFWEnabled}
+                          onCheckedChange={handleNSFWChange}
+                        />
+                      </div>
+                      
+                      {nsfwSettings.isNSFWEnabled && (
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-amber-800">
+                              <p className="font-medium mb-1">18+ Content Enabled</p>
+                              <p className="text-xs">
+                                You may be prompted to verify your age when accessing mature content for the first time.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        onClick={saveNSFWSettings} 
+                        disabled={nsfwSettings.saving}
+                      >
+                        {nsfwSettings.saving ? "Saving..." : "Save Preferences"}
                       </Button>
                     </CardFooter>
                   </Card>

@@ -6,8 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Lock, ThumbsDown, Crown } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { usePostVisibility } from "@/hooks/usePostVisibility";
-import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
-import { NSFWContentPlaceholder } from "@/components/nsfw/NSFWContentPlaceholder";
+import { NSFWContentGate } from "@/components/nsfw/NSFWContentGate";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
 import { PostCardContent } from "@/components/post/PostCardContent";
@@ -31,8 +30,6 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 }) => {
   const { user } = useAuth();
   
-  // FIXED: Move ALL hooks to the top, before any conditional logic
-  const { data: nsfwPrefs } = useNSFWPreferences();
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
   const postRef = usePostVisibility({
@@ -42,27 +39,11 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     visibilityDuration: 2000
   });
 
-  // Now we can do conditional logic after ALL hooks have been called
-  // Check if this NSFW post should be hidden
-  const shouldHideNSFW = post.is_nsfw && !nsfwPrefs?.isNSFWEnabled && user?.id !== post.authorId;
-  
-  if (shouldHideNSFW) {
-    return (
-      <div ref={postRef}>
-        <NSFWContentPlaceholder type="post" />
-      </div>
-    );
-  }
-
-  // FIXED: Check if this is the creator's own post using both authorId and user.id
   const isOwnPost = user?.id === post.authorId;
   
-  // ENHANCED CREATOR ACCESS LOGIC - Apply creator-centric logic consistently
-  // This matches the logic from useCreatorPosts.ts and PostCard.tsx
   let hasAccess = false;
   
   if (isOwnPost) {
-    // Creator viewing their own post - ALWAYS grant full access
     hasAccess = true;
     console.log('FeedPostItem - CREATOR ACCESS OVERRIDE:', {
       postId: post.id,
@@ -72,11 +53,9 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
       tierId: post.tier_id
     });
   } else {
-    // Non-creator viewing post - use subscription logic
     hasAccess = !post.tier_id || subscriptionData?.isSubscribed || false;
   }
 
-  // Get the proper creator name - prioritize display_name from creator info
   const getCreatorDisplayName = () => {
     if (creatorInfo?.display_name) {
       return creatorInfo.display_name;
@@ -129,65 +108,71 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
         </div>
       </div>
 
-      {/* Post Content */}
-      <div className="p-4">
-        {/* Creator's own premium content indicator */}
-        {post.tier_id && hasAccess && isOwnPost && (
-          <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center gap-2 text-blue-800">
-              <Crown className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium">Your Premium Content</span>
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                Creator View
-              </Badge>
-            </div>
-          </div>
-        )}
-
-        {/* Post content with conditional blur */}
-        <div className={hasAccess ? "" : "relative"}>
-          <PostCardContent title={post.title} content={post.content} />
-          {!hasAccess && (
-            <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
-          )}
-        </div>
-        
-        {/* Media with conditional blur */}
-        <div className={hasAccess ? "" : "relative"}>
-          <PostCardMedia attachments={post.attachments} />
-          {!hasAccess && post.attachments && (
-            <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
-              <div className="bg-black/80 rounded-full p-3">
-                <Lock className="h-6 w-6 text-white" />
+      {/* Post Content with NSFW Gate */}
+      <NSFWContentGate 
+        isNSFW={post.is_nsfw} 
+        authorId={post.authorId}
+        type="post"
+      >
+        <div className="p-4">
+          {/* Creator's own premium content indicator */}
+          {post.tier_id && hasAccess && isOwnPost && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Crown className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Your Premium Content</span>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
+                  Creator View
+                </Badge>
               </div>
             </div>
           )}
-        </div>
-        
-        {/* Dynamic Tier Access Information - ONLY show for non-creators */}
-        {!isOwnPost && !hasAccess && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
 
-        {/* Engagement Section */}
-        <div className="space-y-3">
-          {/* Like/Dislike Bar with real data */}
-          <div className="flex items-center gap-4 py-2">
-            <PostLikes postId={post.id} />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
-            >
-              <ThumbsDown className="h-4 w-4" />
-              <span className="text-sm">Dislike</span>
-            </Button>
+          {/* Post content with conditional blur */}
+          <div className={hasAccess ? "" : "relative"}>
+            <PostCardContent title={post.title} content={post.content} />
+            {!hasAccess && (
+              <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
+            )}
           </div>
+          
+          {/* Media with conditional blur */}
+          <div className={hasAccess ? "" : "relative"}>
+            <PostCardMedia attachments={post.attachments} />
+            {!hasAccess && post.attachments && (
+              <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-3">
+                  <Lock className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Dynamic Tier Access Information - ONLY show for non-creators */}
+          {!isOwnPost && !hasAccess && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
 
-          {/* Comments Section with real data */}
-          <div className="border-t pt-3">
-            <PostComments postId={post.id} />
+          {/* Engagement Section */}
+          <div className="space-y-3">
+            {/* Like/Dislike Bar with real data */}
+            <div className="flex items-center gap-4 py-2">
+              <PostLikes postId={post.id} />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2 hover:bg-red-50 hover:text-red-600"
+              >
+                <ThumbsDown className="h-4 w-4" />
+                <span className="text-sm">Dislike</span>
+              </Button>
+            </div>
+
+            {/* Comments Section with real data */}
+            <div className="border-t pt-3">
+              <PostComments postId={post.id} />
+            </div>
           </div>
         </div>
-      </div>
+      </NSFWContentGate>
     </div>
   );
 };
