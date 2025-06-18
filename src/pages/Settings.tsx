@@ -141,8 +141,8 @@ export default function Settings() {
     console.log('🔍 Age verification details:', { isAgeVerified, isAgeVerificationLoading });
     
     // Show modal when enabling NSFW if not age verified (including null/undefined cases)
-    if (enabled && !isAgeVerified) {
-      console.log('🚨 User is not age verified (or verification is null) - showing verification modal');
+    if (enabled && (isAgeVerified === null || isAgeVerified === undefined || isAgeVerified === false)) {
+      console.log('🚨 User is not age verified (or verification is null/undefined) - showing verification modal');
       setShowVerificationModal(true);
       return;
     }
@@ -455,7 +455,7 @@ export default function Settings() {
                       {/* Debug information */}
                       <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
                         <p className="text-xs text-gray-600 font-mono">
-                          Debug: Age Verified: {isAgeVerified ? 'Yes' : 'No'} | NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'} | Modal Open: {showVerificationModal ? 'Yes' : 'No'} | Loading: {isAgeVerificationLoading ? 'Yes' : 'No'}
+                          Debug: Age Verified: {String(isAgeVerified)} | NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'} | Modal Open: {showVerificationModal ? 'Yes' : 'No'} | Loading: {isAgeVerificationLoading ? 'Yes' : 'No'}
                         </p>
                       </div>
                     </CardContent>
