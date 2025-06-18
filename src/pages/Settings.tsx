@@ -38,7 +38,7 @@ export default function Settings() {
     saving: false
   });
   
-  // NSFW settings state
+  // NSFW settings state - DO NOT use useNSFWPreference hook
   const [nsfwSettings, setNSFWSettings] = useState({
     isNSFWEnabled: false,
     saving: false
@@ -72,10 +72,10 @@ export default function Settings() {
         saving: false
       });
       
-      // Fetch NSFW preferences
+      // Fetch NSFW preferences DIRECTLY - not using any other hooks
       const fetchNSFWPrefs = async () => {
         try {
-          console.log('Fetching NSFW preferences for user:', user.id);
+          console.log('📡 DIRECT FETCH: Fetching NSFW preferences for user:', user.id);
           const { data } = await supabase
             .from('users')
             .select('is_nsfw_enabled')
@@ -83,14 +83,14 @@ export default function Settings() {
             .single();
           
           const nsfwEnabled = data?.is_nsfw_enabled || false;
-          console.log('Current NSFW setting from database:', nsfwEnabled);
+          console.log('📡 DIRECT FETCH: Current NSFW setting from database:', nsfwEnabled);
           
           setNSFWSettings(prev => ({
             ...prev,
             isNSFWEnabled: nsfwEnabled
           }));
         } catch (error) {
-          console.error('Error fetching NSFW preferences:', error);
+          console.error('❌ Error fetching NSFW preferences:', error);
         }
       };
       
@@ -108,19 +108,20 @@ export default function Settings() {
   };
   
   const handleNSFWChange = async (enabled: boolean) => {
-    console.log('🔥 NSFW TOGGLE CLICKED - DETAILED DEBUG:', { 
+    console.log('🔥 SETTINGS PAGE NSFW TOGGLE - handleNSFWChange called:', { 
       enabled, 
       isAgeVerified, 
       isAgeVerificationLoading,
       currentNSFWState: nsfwSettings.isNSFWEnabled,
       showVerificationModal,
       user: user?.id,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      calledFrom: 'Settings.tsx handleNSFWChange'
     });
     
     // If trying to disable NSFW, allow it immediately
     if (!enabled) {
-      console.log('✅ User is disabling NSFW - proceeding immediately');
+      console.log('✅ SETTINGS PAGE: User is disabling NSFW - proceeding immediately');
       setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: false, saving: true }));
       
       try {
@@ -129,13 +130,13 @@ export default function Settings() {
           .update({ is_nsfw_enabled: false })
           .eq('id', user?.id);
         
-        console.log('✅ NSFW preference disabled successfully');
+        console.log('✅ SETTINGS PAGE: NSFW preference disabled successfully');
         toast({
           title: "NSFW content disabled",
           description: "You will no longer see mature content.",
         });
       } catch (error) {
-        console.error('❌ Error saving NSFW settings:', error);
+        console.error('❌ SETTINGS PAGE: Error saving NSFW settings:', error);
         setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true }));
         toast({
           title: "Error",
@@ -149,8 +150,8 @@ export default function Settings() {
     }
     
     // If trying to enable NSFW, check age verification first
-    console.log('🚨 User is trying to enable NSFW. Checking age verification...');
-    console.log('🔍 CRITICAL DEBUG - Age verification state check:', { 
+    console.log('🚨 SETTINGS PAGE: User is trying to enable NSFW. Checking age verification...');
+    console.log('🔍 SETTINGS PAGE CRITICAL DEBUG - Age verification state check:', { 
       isAgeVerified, 
       typeOfIsAgeVerified: typeof isAgeVerified,
       isAgeVerificationLoading,
@@ -159,20 +160,25 @@ export default function Settings() {
     
     // FORCE show the modal if trying to enable NSFW and not age verified
     if (enabled && !isAgeVerified) {
-      console.log('🚨 FORCING AGE VERIFICATION MODAL TO SHOW');
-      console.log('🚨 Setting showVerificationModal to TRUE');
+      console.log('🚨 SETTINGS PAGE: FORCING AGE VERIFICATION MODAL TO SHOW');
+      console.log('🚨 SETTINGS PAGE: Setting showVerificationModal to TRUE');
+      
+      // Prevent NSFW from being enabled
+      setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: false }));
+      
+      // Show the modal
       setShowVerificationModal(true);
       
       // Add a small delay to ensure state updates
       setTimeout(() => {
-        console.log('🔍 Modal state after timeout:', { showVerificationModal });
+        console.log('🔍 SETTINGS PAGE: Modal state after timeout:', { showVerificationModal });
       }, 100);
       
       return;
     }
 
     // If enabling NSFW and already age verified, proceed with the change
-    console.log('✅ User is age verified - proceeding with NSFW toggle to:', enabled);
+    console.log('✅ SETTINGS PAGE: User is age verified - proceeding with NSFW toggle to:', enabled);
     setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled, saving: true }));
     
     try {
@@ -181,13 +187,13 @@ export default function Settings() {
         .update({ is_nsfw_enabled: enabled })
         .eq('id', user?.id);
       
-      console.log('✅ NSFW preference updated successfully to:', enabled);
+      console.log('✅ SETTINGS PAGE: NSFW preference updated successfully to:', enabled);
       toast({
         title: "NSFW content enabled",
         description: "You can now view mature content.",
       });
     } catch (error) {
-      console.error('❌ Error saving NSFW settings:', error);
+      console.error('❌ SETTINGS PAGE: Error saving NSFW settings:', error);
       setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: !enabled }));
       toast({
         title: "Error",
@@ -200,7 +206,7 @@ export default function Settings() {
   };
 
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
-    console.log('🎉 Age verification successful, enabling NSFW');
+    console.log('🎉 SETTINGS PAGE: Age verification successful, enabling NSFW');
     
     // First handle age verification
     await handleAgeVerified(dateOfBirth);
@@ -214,13 +220,13 @@ export default function Settings() {
         .update({ is_nsfw_enabled: true })
         .eq('id', user?.id);
       
-      console.log('✅ NSFW enabled after age verification');
+      console.log('✅ SETTINGS PAGE: NSFW enabled after age verification');
       toast({
         title: "Age verified and NSFW enabled",
         description: "You can now view mature content.",
       });
     } catch (error) {
-      console.error('❌ Error enabling NSFW settings:', error);
+      console.error('❌ SETTINGS PAGE: Error enabling NSFW settings:', error);
       toast({
         title: "Error",
         description: "Age verified but failed to enable NSFW settings.",
@@ -232,9 +238,10 @@ export default function Settings() {
   };
 
   const handleAgeVerificationCancel = () => {
-    console.log('❌ Age verification cancelled');
+    console.log('❌ SETTINGS PAGE: Age verification cancelled');
     setShowVerificationModal(false);
     // Don't enable NSFW if verification was cancelled
+    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: false }));
   };
   
   const saveProfileSettings = async () => {
@@ -520,7 +527,8 @@ export default function Settings() {
                         <Switch 
                           checked={nsfwSettings.isNSFWEnabled}
                           onCheckedChange={(checked) => {
-                            console.log('🔥 Switch onCheckedChange called with:', checked);
+                            console.log('🔥 SETTINGS PAGE Switch onCheckedChange called with:', checked);
+                            console.log('🔥 SETTINGS PAGE Switch - calling handleNSFWChange directly');
                             handleNSFWChange(checked);
                           }}
                           disabled={nsfwSettings.saving}
@@ -544,7 +552,7 @@ export default function Settings() {
                       {/* Enhanced debug information */}
                       <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
                         <p className="text-xs text-gray-600 font-mono mb-2">
-                          Debug Info:
+                          Settings Page Debug Info:
                         </p>
                         <div className="text-xs text-gray-600 font-mono space-y-1">
                           <div>Age Verified: {String(isAgeVerified)} (Type: {typeof isAgeVerified})</div>
@@ -608,7 +616,7 @@ export default function Settings() {
       {/* Debug modal state */}
       {showVerificationModal && (
         <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded text-xs z-50">
-          Modal should be visible now!
+          SETTINGS PAGE: Modal should be visible now!
         </div>
       )}
     </SidebarProvider>
