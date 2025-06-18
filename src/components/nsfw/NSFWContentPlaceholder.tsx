@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Settings, Eye, Calendar } from "lucide-react";
+import { AlertTriangle, Settings, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NSFWContentPlaceholderProps {
@@ -10,32 +10,34 @@ interface NSFWContentPlaceholderProps {
   showSettingsLink?: boolean;
   onVerifyAge?: () => void;
   className?: string;
+  message?: string;
 }
 
 export function NSFWContentPlaceholder({ 
   type = "general", 
   showSettingsLink = true,
   onVerifyAge,
-  className 
+  className,
+  message 
 }: NSFWContentPlaceholderProps) {
   const getContent = () => {
     switch (type) {
       case "post":
         return {
           title: "18+ Post Hidden",
-          description: "This post contains mature content and is hidden based on your current settings.",
+          description: message || "This post contains mature content and is hidden based on your current settings.",
           icon: <Eye className="h-8 w-8 text-amber-600" />
         };
       case "creator":
         return {
           title: "18+ Creator Content Hidden",
-          description: "This creator publishes mature content. Enable 18+ content in your settings to view their posts.",
+          description: message || "This creator publishes mature content. Enable 18+ content in your settings to view their posts.",
           icon: <AlertTriangle className="h-8 w-8 text-amber-600" />
         };
       default:
         return {
           title: "18+ Content Hidden",
-          description: "This content is marked as mature and is hidden based on your preferences.",
+          description: message || "This content is marked as mature and is hidden based on your preferences.",
           icon: <AlertTriangle className="h-8 w-8 text-amber-600" />
         };
     }
@@ -56,13 +58,6 @@ export function NSFWContentPlaceholder({
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2">
-            {onVerifyAge && (
-              <Button onClick={onVerifyAge} className="gap-2">
-                <Calendar className="h-4 w-4" />
-                Verify Age (18+)
-              </Button>
-            )}
-            
             {showSettingsLink && (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/settings" className="gap-2">

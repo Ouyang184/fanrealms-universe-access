@@ -11,6 +11,8 @@ import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/lib/supabase";
+import { useAgeVerification } from "@/hooks/useAgeVerification";
+import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
@@ -39,6 +41,13 @@ export default function Settings() {
     isNSFWEnabled: false,
     saving: false
   });
+
+  const {
+    isAgeVerified,
+    showVerificationModal,
+    setShowVerificationModal,
+    handleAgeVerified
+  } = useAgeVerification();
   
   useEffect(() => {
     if (!isChecking && user) {
@@ -82,8 +91,45 @@ export default function Settings() {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const handleNSFWChange = (enabled: boolean) => {
-    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled }));
+  const handleNSFWChange = async (enabled: boolean) => {
+    if (enabled && !isAgeVerified) {
+      // If user is trying to enable NSFW but hasn't verified age, show verification modal
+      setShowVerificationModal(true);
+      return;
+    }
+
+    // If disabling NSFW or already age verified, proceed with the change
+    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: enabled, saving: true }));
+    
+    try {
+      await supabase
+        .from('users')
+        .update({ is_nsfw_enabled: enabled })
+        .eq('id', user?.id);
+    } catch (error) {
+      console.error('Error saving NSFW settings:', error);
+    } finally {
+      setNSFWSettings(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
+    // First handle age verification
+    await handleAgeVerified(dateOfBirth);
+    
+    // Then enable NSFW content
+    setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true, saving: true }));
+    
+    try {
+      await supabase
+        .from('users')
+        .update({ is_nsfw_enabled: true })
+        .eq('id', user?.id);
+    } catch (error) {
+      console.error('Error enabling NSFW settings:', error);
+    } finally {
+      setNSFWSettings(prev => ({ ...prev, saving: false }));
+    }
   };
   
   const saveProfileSettings = () => {
@@ -100,20 +146,6 @@ export default function Settings() {
     setTimeout(() => {
       setNotificationSettings(prev => ({ ...prev, saving: false }));
     }, 1000);
-  };
-  
-  const saveNSFWSettings = async () => {
-    setNSFWSettings(prev => ({ ...prev, saving: true }));
-    try {
-      await supabase
-        .from('users')
-        .update({ is_nsfw_enabled: nsfwSettings.isNSFWEnabled })
-        .eq('id', user?.id);
-    } catch (error) {
-      console.error('Error saving NSFW settings:', error);
-    } finally {
-      setNSFWSettings(prev => ({ ...prev, saving: false }));
-    }
   };
   
   if (isChecking) {
@@ -332,31 +364,24 @@ export default function Settings() {
                         <Switch 
                           checked={nsfwSettings.isNSFWEnabled}
                           onCheckedChange={handleNSFWChange}
+                          disabled={nsfwSettings.saving}
                         />
                       </div>
                       
-                      {nsfwSettings.isNSFWEnabled && (
+                      {nsfwSettings.isNSFWEnabled && isAgeVerified && (
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                           <div className="flex items-start gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-amber-800">
                               <p className="font-medium mb-1">18+ Content Enabled</p>
                               <p className="text-xs">
-                                You may be prompted to verify your age when accessing mature content for the first time.
+                                You have verified your age and can now view mature content across the platform.
                               </p>
                             </div>
                           </div>
                         </div>
                       )}
                     </CardContent>
-                    <CardFooter>
-                      <Button 
-                        onClick={saveNSFWSettings} 
-                        disabled={nsfwSettings.saving}
-                      >
-                        {nsfwSettings.saving ? "Saving..." : "Save Preferences"}
-                      </Button>
-                    </CardFooter>
                   </Card>
                 </TabsContent>
                 
@@ -398,6 +423,13 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Age Verification Modal */}
+      <AgeVerificationModal
+        open={showVerificationModal}
+        onVerified={handleAgeVerificationSuccess}
+        onCancel={() => setShowVerificationModal(false)}
+      />
     </SidebarProvider>
   );
 }

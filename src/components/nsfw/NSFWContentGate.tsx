@@ -1,7 +1,6 @@
 
 import React from "react";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
-import { AgeVerificationModal } from "./AgeVerificationModal";
 import { NSFWContentPlaceholder } from "./NSFWContentPlaceholder";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,14 +22,7 @@ export function NSFWContentGate({
 }: NSFWContentGateProps) {
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
-  const {
-    isAgeVerified,
-    isLoading,
-    showVerificationModal,
-    setShowVerificationModal,
-    requestAgeVerification,
-    handleAgeVerified
-  } = useAgeVerification();
+  const { isAgeVerified } = useAgeVerification();
 
   // Don't gate content for the author viewing their own content
   const isOwnContent = user?.id === authorId;
@@ -54,19 +46,15 @@ export function NSFWContentGate({
     );
   }
 
-  // If user is not age verified and NSFW is enabled, show verification modal
-  if (nsfwPrefs?.isNSFWEnabled && !isAgeVerified && !isLoading) {
+  // If user has NSFW enabled but hasn't verified age, show placeholder with settings link
+  // (Age verification should now happen in settings, not here)
+  if (nsfwPrefs?.isNSFWEnabled && !isAgeVerified) {
     return (
       <div className={className}>
         <NSFWContentPlaceholder 
           type={type} 
-          showSettingsLink={false}
-          onVerifyAge={requestAgeVerification}
-        />
-        <AgeVerificationModal
-          open={showVerificationModal}
-          onVerified={(dateOfBirth: string) => handleAgeVerified(dateOfBirth)}
-          onCancel={() => setShowVerificationModal(false)}
+          showSettingsLink={true}
+          message="Please complete age verification in your settings to view this content."
         />
       </div>
     );
