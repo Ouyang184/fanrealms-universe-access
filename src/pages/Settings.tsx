@@ -108,12 +108,14 @@ export default function Settings() {
   };
   
   const handleNSFWChange = async (enabled: boolean) => {
-    console.log('🔥 NSFW toggle clicked:', { 
+    console.log('🔥 NSFW TOGGLE CLICKED - DETAILED DEBUG:', { 
       enabled, 
       isAgeVerified, 
       isAgeVerificationLoading,
       currentNSFWState: nsfwSettings.isNSFWEnabled,
-      showVerificationModal
+      showVerificationModal,
+      user: user?.id,
+      timestamp: new Date().toISOString()
     });
     
     // If trying to disable NSFW, allow it immediately
@@ -148,12 +150,24 @@ export default function Settings() {
     
     // If trying to enable NSFW, check age verification first
     console.log('🚨 User is trying to enable NSFW. Checking age verification...');
-    console.log('🔍 Age verification details:', { isAgeVerified, isAgeVerificationLoading });
+    console.log('🔍 CRITICAL DEBUG - Age verification state check:', { 
+      isAgeVerified, 
+      typeOfIsAgeVerified: typeof isAgeVerified,
+      isAgeVerificationLoading,
+      showVerificationModal 
+    });
     
-    // Show modal when enabling NSFW if not age verified
+    // FORCE show the modal if trying to enable NSFW and not age verified
     if (enabled && !isAgeVerified) {
-      console.log('🚨 User is not age verified - showing verification modal');
+      console.log('🚨 FORCING AGE VERIFICATION MODAL TO SHOW');
+      console.log('🚨 Setting showVerificationModal to TRUE');
       setShowVerificationModal(true);
+      
+      // Add a small delay to ensure state updates
+      setTimeout(() => {
+        console.log('🔍 Modal state after timeout:', { showVerificationModal });
+      }, 100);
+      
       return;
     }
 
@@ -505,7 +519,10 @@ export default function Settings() {
                         </div>
                         <Switch 
                           checked={nsfwSettings.isNSFWEnabled}
-                          onCheckedChange={handleNSFWChange}
+                          onCheckedChange={(checked) => {
+                            console.log('🔥 Switch onCheckedChange called with:', checked);
+                            handleNSFWChange(checked);
+                          }}
                           disabled={nsfwSettings.saving}
                         />
                       </div>
@@ -524,11 +541,19 @@ export default function Settings() {
                         </div>
                       )}
                       
-                      {/* Debug information */}
+                      {/* Enhanced debug information */}
                       <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
-                        <p className="text-xs text-gray-600 font-mono">
-                          Debug: Age Verified: {String(isAgeVerified)} | NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'} | Modal Open: {showVerificationModal ? 'Yes' : 'No'} | Loading: {isAgeVerificationLoading ? 'Yes' : 'No'}
+                        <p className="text-xs text-gray-600 font-mono mb-2">
+                          Debug Info:
                         </p>
+                        <div className="text-xs text-gray-600 font-mono space-y-1">
+                          <div>Age Verified: {String(isAgeVerified)} (Type: {typeof isAgeVerified})</div>
+                          <div>NSFW Enabled: {nsfwSettings.isNSFWEnabled ? 'Yes' : 'No'}</div>
+                          <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
+                          <div>Age Loading: {isAgeVerificationLoading ? 'Yes' : 'No'}</div>
+                          <div>User ID: {user?.id || 'Not loaded'}</div>
+                          <div>Timestamp: {new Date().toLocaleTimeString()}</div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -573,12 +598,19 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Age Verification Modal */}
+      {/* Age Verification Modal with enhanced debugging */}
       <AgeVerificationModal
         open={showVerificationModal}
         onVerified={handleAgeVerificationSuccess}
         onCancel={handleAgeVerificationCancel}
       />
+      
+      {/* Debug modal state */}
+      {showVerificationModal && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded text-xs z-50">
+          Modal should be visible now!
+        </div>
+      )}
     </SidebarProvider>
   );
 }
