@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -16,8 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Loader, Globe, Lock, Video, AlertTriangle } from "lucide-react";
+import { Loader, Globe, Lock, Video } from "lucide-react";
 import { TierSelect } from "./TierSelect";
 import { FileAttachment, AttachmentFile } from "@/components/creator-studio/FileAttachment";
 
@@ -29,7 +27,6 @@ export function CreatePostForm() {
   const [videoUrl, setVideoUrl] = useState("");
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
-  const [isNSFW, setIsNSFW] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -148,7 +145,7 @@ export function CreatePostForm() {
         creator_id: creatorProfile?.id || null,
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
-        is_nsfw: isNSFW
+        is_nsfw: false // Default to false since NSFW toggle is removed
       };
 
       console.log('Creating post with data:', postData);
@@ -179,10 +176,9 @@ export function CreatePostForm() {
       console.log('Post created successfully:', insertedPost);
 
       const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
-      const nsfwText = isNSFW ? " NSFW" : "";
       toast({
         title: "Post created",
-        description: `Your ${postType}${nsfwText} post has been published successfully.`,
+        description: `Your ${postType} post has been published successfully.`,
       });
 
       // Reset form and close dialog
@@ -191,7 +187,6 @@ export function CreatePostForm() {
       setVideoUrl("");
       setSelectedTierIds(null);
       setAttachments([]);
-      setIsNSFW(false);
       setIsOpen(false);
       
       // Refresh posts list
@@ -280,28 +275,6 @@ export function CreatePostForm() {
               disabled={isLoading}
             />
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-4 border border-amber-200 bg-amber-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <div>
-                  <Label htmlFor="nsfw-toggle" className="text-sm font-medium text-amber-800">
-                    NSFW Post
-                  </Label>
-                  <p className="text-xs text-amber-700 mt-1">
-                    Mark this post as adult/mature content
-                  </p>
-                </div>
-              </div>
-              <Switch
-                id="nsfw-toggle"
-                checked={isNSFW}
-                onCheckedChange={setIsNSFW}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
           
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button 
@@ -325,7 +298,6 @@ export function CreatePostForm() {
                   ) : (
                     <Globe className="mr-2 h-4 w-4" />
                   )}
-                  {isNSFW && <AlertTriangle className="mr-2 h-4 w-4 text-amber-500" />}
                   Publish {selectedTierIds && selectedTierIds.length > 0 ? "Premium" : "Public"} Post
                 </>
               )}
