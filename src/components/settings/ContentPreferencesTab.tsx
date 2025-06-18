@@ -78,10 +78,11 @@ export function ContentPreferencesTab({
       return;
     }
 
-    // If enabling NSFW, check age verification first
+    // If enabling NSFW and NOT age verified, show modal immediately
     if (enabled && !isAgeVerified) {
-      console.log('🚨 Age verification required - showing modal');
+      console.log('🚨 Age verification required - showing modal immediately');
       setShowVerificationModal(true);
+      // Don't update the switch state yet - wait for verification
       return;
     }
 
