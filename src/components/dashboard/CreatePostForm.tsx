@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader, Globe, Lock, Video } from "lucide-react";
+import { Loader, Globe, Lock, Video, AlertTriangle } from "lucide-react";
 import { TierSelect } from "./TierSelect";
 import { FileAttachment, AttachmentFile } from "@/components/creator-studio/FileAttachment";
 
@@ -31,7 +31,7 @@ export function CreatePostForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch user's creator profile to get creator_id
+  // Fetch user's creator profile to get creator_id and NSFW status
   const { data: creatorProfile } = useQuery({
     queryKey: ['userCreator', user?.id],
     queryFn: async () => {
@@ -39,7 +39,7 @@ export function CreatePostForm() {
       
       const { data, error } = await supabase
         .from('creators')
-        .select('id')
+        .select('id, is_nsfw')
         .eq('user_id', user.id)
         .single();
         
@@ -101,6 +101,7 @@ export function CreatePostForm() {
     if (!user) return;
     
     console.log('Form submission started with selectedTierIds:', selectedTierIds);
+    console.log('Creator NSFW setting:', creatorProfile?.is_nsfw);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -138,6 +139,10 @@ export function CreatePostForm() {
         });
       }
 
+      // Automatically set NSFW flag based on creator settings
+      // The database trigger will also handle this, but we set it here for consistency
+      const isNSFW = creatorProfile?.is_nsfw || false;
+
       const postData = {
         title,
         content,
@@ -145,10 +150,14 @@ export function CreatePostForm() {
         creator_id: creatorProfile?.id || null,
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
-        is_nsfw: false // Default to false since NSFW toggle is removed
+        is_nsfw: isNSFW // Automatically flag as NSFW if creator has NSFW enabled
       };
 
-      console.log('Creating post with data:', postData);
+      console.log('Creating post with automatic NSFW flag:', { 
+        ...postData, 
+        creatorNSFWSetting: creatorProfile?.is_nsfw,
+        autoFlaggedNSFW: isNSFW 
+      });
 
       const { data: insertedPost, error } = await supabase
         .from('posts')
@@ -173,12 +182,14 @@ export function CreatePostForm() {
         }
       }
 
-      console.log('Post created successfully:', insertedPost);
+      console.log('Post created successfully with NSFW flag:', insertedPost[0]?.is_nsfw);
 
       const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
+      const nsfwNotice = isNSFW ? " (automatically flagged as 18+)" : "";
+      
       toast({
         title: "Post created",
-        description: `Your ${postType} post has been published successfully.`,
+        description: `Your ${postType} post has been published successfully${nsfwNotice}.`,
       });
 
       // Reset form and close dialog
@@ -206,6 +217,9 @@ export function CreatePostForm() {
     }
   };
 
+  // Determine if this post will be automatically flagged as NSFW
+  const willBeNSFW = creatorProfile?.is_nsfw || false;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -218,6 +232,22 @@ export function CreatePostForm() {
             Share your thoughts, ideas, or content with your followers. Choose who can see your post.
           </DialogDescription>
         </DialogHeader>
+
+        {/* NSFW Auto-Flag Notice */}
+        {willBeNSFW && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-amber-800">
+                <p className="font-medium">Automatic 18+ Content Flagging</p>
+                <p className="text-xs mt-1">
+                  Since you have 18+ content creation enabled in your settings, this post will automatically be flagged as mature content.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -299,6 +329,7 @@ export function CreatePostForm() {
                     <Globe className="mr-2 h-4 w-4" />
                   )}
                   Publish {selectedTierIds && selectedTierIds.length > 0 ? "Premium" : "Public"} Post
+                  {willBeNSFW && " (18+)"}
                 </>
               )}
             </Button>
