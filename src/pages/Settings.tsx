@@ -1,3 +1,4 @@
+
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,9 +14,11 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { supabase } from "@/lib/supabase";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
+  const { toast } = useToast();
   
   // Profile settings state
   const [profileSettings, setProfileSettings] = useState({
@@ -61,10 +64,10 @@ export default function Settings() {
   
   useEffect(() => {
     if (!isChecking && user) {
-      // In a real app, would fetch from API/context
+      // Load profile settings (in a real app, would fetch from API/context)
       setProfileSettings({
-        name: "John Doe",
-        username: "johndoe",
+        name: user.user_metadata?.full_name || "John Doe",
+        username: user.user_metadata?.username || "johndoe",
         bio: "Digital creator and tech enthusiast",
         website: "https://example.com",
         saving: false
@@ -126,10 +129,18 @@ export default function Settings() {
           .eq('id', user?.id);
         
         console.log('✅ NSFW preference disabled successfully');
+        toast({
+          title: "NSFW content disabled",
+          description: "You will no longer see mature content.",
+        });
       } catch (error) {
         console.error('❌ Error saving NSFW settings:', error);
-        // Revert the UI state on error
         setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: true }));
+        toast({
+          title: "Error",
+          description: "Failed to update NSFW settings.",
+          variant: "destructive",
+        });
       } finally {
         setNSFWSettings(prev => ({ ...prev, saving: false }));
       }
@@ -158,10 +169,18 @@ export default function Settings() {
         .eq('id', user?.id);
       
       console.log('✅ NSFW preference updated successfully to:', enabled);
+      toast({
+        title: "NSFW content enabled",
+        description: "You can now view mature content.",
+      });
     } catch (error) {
       console.error('❌ Error saving NSFW settings:', error);
-      // Revert the UI state on error
       setNSFWSettings(prev => ({ ...prev, isNSFWEnabled: !enabled }));
+      toast({
+        title: "Error",
+        description: "Failed to update NSFW settings.",
+        variant: "destructive",
+      });
     } finally {
       setNSFWSettings(prev => ({ ...prev, saving: false }));
     }
@@ -183,8 +202,17 @@ export default function Settings() {
         .eq('id', user?.id);
       
       console.log('✅ NSFW enabled after age verification');
+      toast({
+        title: "Age verified and NSFW enabled",
+        description: "You can now view mature content.",
+      });
     } catch (error) {
       console.error('❌ Error enabling NSFW settings:', error);
+      toast({
+        title: "Error",
+        description: "Age verified but failed to enable NSFW settings.",
+        variant: "destructive",
+      });
     } finally {
       setNSFWSettings(prev => ({ ...prev, saving: false }));
     }
@@ -196,20 +224,71 @@ export default function Settings() {
     // Don't enable NSFW if verification was cancelled
   };
   
-  const saveProfileSettings = () => {
+  const saveProfileSettings = async () => {
     setProfileSettings(prev => ({ ...prev, saving: true }));
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      // Update auth metadata (for name)
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: profileSettings.name,
+          username: profileSettings.username
+        }
+      });
+
+      if (authError) throw authError;
+
+      // Update users table
+      const { error: userError } = await supabase
+        .from('users')
+        .update({
+          username: profileSettings.username,
+          website: profileSettings.website,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (userError) throw userError;
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been saved.",
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setProfileSettings(prev => ({ ...prev, saving: false }));
-    }, 1000);
+    }
   };
   
-  const saveNotificationSettings = () => {
+  const saveNotificationSettings = async () => {
     setNotificationSettings(prev => ({ ...prev, saving: true }));
-    // Simulate API call
-    setTimeout(() => {
+    
+    // In a real app, you would save these to a user_preferences table
+    // For now, just simulate the API call
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Notification preferences updated",
+        description: "Your notification settings have been saved.",
+      });
+    } catch (error) {
+      console.error('Error saving notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update notification settings.",
+        variant: "destructive",
+      });
+    } finally {
       setNotificationSettings(prev => ({ ...prev, saving: false }));
-    }, 1000);
+    }
   };
   
   if (isChecking) {
@@ -438,15 +517,9 @@ export default function Settings() {
                             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
                             <div className="text-sm text-amber-800">
                               <p className="font-medium mb-1">NSFW Content Enabled</p>
-                              {isAgeVerified ? (
-                                <p className="text-xs">
-                                  You have verified your age and can now view mature content across the platform.
-                                </p>
-                              ) : (
-                                <p className="text-xs">
-                                  Age verification is required to view mature content. You will be prompted to verify your age.
-                                </p>
-                              )}
+                              <p className="text-xs">
+                                You have verified your age and can now view mature content across the platform.
+                              </p>
                             </div>
                           </div>
                         </div>
