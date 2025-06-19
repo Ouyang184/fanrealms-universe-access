@@ -14,6 +14,8 @@ import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { Post } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 export function HomeContent() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -34,6 +36,42 @@ export function HomeContent() {
   const { data: allPosts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
 
+  // Fetch detailed creator information for all posts
+  const { data: creatorsMap = {} } = useQuery({
+    queryKey: ['home-creators-info', [...forYouPosts, ...allPosts].map(p => p.authorId)],
+    queryFn: async () => {
+      const allHomePosts = [...forYouPosts, ...allPosts];
+      if (allHomePosts.length === 0) return {};
+      
+      const authorIds = [...new Set(allHomePosts.map(post => post.authorId))];
+      
+      console.log('HomeContent: Fetching creator info for author IDs:', authorIds);
+      
+      const { data: creatorsData, error } = await supabase
+        .from('creators')
+        .select('user_id, display_name, profile_image_url')
+        .in('user_id', authorIds);
+      
+      if (error) {
+        console.error('HomeContent: Error fetching creators:', error);
+        return {};
+      }
+      
+      console.log('HomeContent: Fetched creators data:', creatorsData);
+      
+      // Create a map from user_id to creator info
+      const creatorsMap = creatorsData?.reduce((acc, creator) => {
+        acc[creator.user_id] = creator;
+        return acc;
+      }, {} as Record<string, any>) || {};
+      
+      console.log('HomeContent: Created creators map:', creatorsMap);
+      
+      return creatorsMap;
+    },
+    enabled: forYouPosts.length > 0 || allPosts.length > 0,
+  });
+
   console.log('HomeContent: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
   console.log('HomeContent: Posts count after NSFW filtering:', {
     forYouPosts: forYouPosts.length,
@@ -41,13 +79,24 @@ export function HomeContent() {
   });
 
   const mapPostToContentItem = (post: Post) => {
+    const creatorInfo = creatorsMap[post.authorId];
+    
+    console.log('HomeContent: Mapping post to content item:', {
+      postId: post.id,
+      postTitle: post.title,
+      authorId: post.authorId,
+      creatorInfo,
+      finalName: creatorInfo?.display_name || post.authorName || 'Creator',
+      finalAvatar: creatorInfo?.profile_image_url || post.authorAvatar
+    });
+    
     return {
       id: post.id,
       title: post.title,
       content: post.content,
       authorId: post.authorId,
-      authorName: post.authorName || 'Creator',
-      authorAvatar: post.authorAvatar || null,
+      authorName: creatorInfo?.display_name || post.authorName || 'Creator',
+      authorAvatar: creatorInfo?.profile_image_url || post.authorAvatar || null,
       createdAt: post.createdAt,
       date: post.date || formatRelativeDate(post.createdAt),
       tier_id: post.tier_id,
