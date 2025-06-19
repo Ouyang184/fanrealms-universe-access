@@ -9,6 +9,7 @@ import { Post } from "@/types";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
+import { supabase } from "@/lib/supabase";
 
 // Helper function to load read posts from localStorage synchronously
 const getReadPostsFromStorage = (): Set<string> => {
@@ -133,13 +134,44 @@ export default function FeedPage() {
   console.log('Unread posts count:', unreadCount);
   console.log('Unread posts:', unreadPosts.map(p => `${p.title} (${p.id})`));
 
-  // Create a map of creator user_id to creator info for easy lookup
-  const creatorInfoMap = followedCreators.reduce((acc, creator) => {
-    if (creator.user_id) {
-      acc[creator.user_id] = creator;
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  // Enhanced creator info map with proper data fetching
+  const [creatorInfoMap, setCreatorInfoMap] = useState<Record<string, any>>({});
+
+  // Fetch detailed creator info for followed creators
+  useEffect(() => {
+    const fetchCreatorDetails = async () => {
+      if (!followedCreators.length) return;
+
+      const creatorMap: Record<string, any> = {};
+      
+      for (const creator of followedCreators) {
+        if (creator.user_id) {
+          try {
+            // Fetch full creator details including display_name and profile_image_url
+            const { data: creatorData, error } = await supabase
+              .from('creators')
+              .select('*, users:user_id(username, profile_picture)')
+              .eq('user_id', creator.user_id)
+              .single();
+
+            if (creatorData && !error) {
+              creatorMap[creator.user_id] = {
+                ...creatorData,
+                username: creatorData.users?.username,
+                profile_picture: creatorData.users?.profile_picture
+              };
+            }
+          } catch (error) {
+            console.error('Error fetching creator details:', error);
+          }
+        }
+      }
+      
+      setCreatorInfoMap(creatorMap);
+    };
+
+    fetchCreatorDetails();
+  }, [followedCreators]);
 
   return (
     <MainLayout>
