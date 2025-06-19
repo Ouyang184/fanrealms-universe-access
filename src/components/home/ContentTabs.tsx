@@ -45,21 +45,11 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
       );
     }
 
-    return posts.map((post) => {
-      console.log('ContentTabs: Rendering post with author info:', {
-        postId: post.id,
-        title: post.title,
-        authorName: post.authorName,
-        authorAvatar: post.authorAvatar,
-        authorId: post.authorId
-      });
-
-      return (
-        <div key={post.id} onClick={() => onPostClick(post)} className="cursor-pointer">
-          <ContentItem post={post} type={type} />
-        </div>
-      );
-    });
+    return posts.map((post) => (
+      <div key={post.id} onClick={() => onPostClick(post)} className="cursor-pointer">
+        <ContentItem post={post} type={type} />
+      </div>
+    ));
   };
 
   return (
