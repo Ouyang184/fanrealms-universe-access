@@ -17,6 +17,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 import { useNSFWPreference } from "@/hooks/useNSFWPreference";
+import { useAgeVerification } from "@/hooks/useAgeVerification";
+import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -40,7 +42,55 @@ export default function AccountSettings() {
   const { isChecking } = useAuthCheck();
   const { user, profile, updateProfile } = useAuth();
   const { toast } = useToast();
-  const { showNSFW, isLoading: nsfwLoading, updateNSFWPreference, isUpdating: nsfwUpdating } = useNSFWPreference();
+  
+  // Age verification hook
+  const {
+    isAgeVerified,
+    showVerificationModal,
+    setShowVerificationModal,
+    handleAgeVerified
+  } = useAgeVerification();
+
+  // NSFW preference hook with age verification callback
+  const { showNSFW, isLoading: nsfwLoading, updateNSFWPreference, isUpdating: nsfwUpdating } = useNSFWPreference({
+    onAgeVerificationRequired: async (): Promise<boolean> => {
+      console.log('🎯 AccountSettings - Age verification required - showing modal');
+      setShowVerificationModal(true);
+      
+      // Wait for age verification to complete
+      return new Promise((resolve) => {
+        let checkCount = 0;
+        const maxChecks = 60; // 30 seconds with 500ms intervals
+        
+        const checkVerification = () => {
+          checkCount++;
+          console.log(`🔍 AccountSettings - Checking verification status (attempt ${checkCount}/${maxChecks}):`, {
+            isAgeVerified,
+            showVerificationModal,
+            checkCount
+          });
+          
+          if (isAgeVerified && !showVerificationModal) {
+            console.log('✅ AccountSettings - Age verification completed successfully');
+            resolve(true);
+            return;
+          }
+          
+          if (checkCount >= maxChecks) {
+            console.log('❌ AccountSettings - Age verification timeout after 30 seconds');
+            resolve(false);
+            return;
+          }
+          
+          // Check again in 500ms
+          setTimeout(checkVerification, 500);
+        };
+        
+        // Start checking after a brief delay
+        setTimeout(checkVerification, 100);
+      });
+    }
+  });
   
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
@@ -194,8 +244,18 @@ export default function AccountSettings() {
   };
 
   const handleNSFWToggle = (checked: boolean) => {
-    console.log('NSFW toggle clicked:', checked);
+    console.log('AccountSettings - NSFW toggle clicked:', checked);
     updateNSFWPreference(checked);
+  };
+
+  const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
+    console.log('🎯 AccountSettings - Age verification success callback');
+    await handleAgeVerified(dateOfBirth);
+  };
+
+  const handleAgeVerificationCancel = () => {
+    console.log('❌ AccountSettings - Age verification cancelled');
+    setShowVerificationModal(false);
   };
   
   const saveAccountSettings = async () => {
@@ -284,345 +344,354 @@ export default function AccountSettings() {
   }
   
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account preferences</p>
-      </div>
-      
-      <Tabs defaultValue="account" className="w-full">
-        <TabsList>
-          <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="preferences">Content Preferences</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="privacy">Privacy</TabsTrigger>
-        </TabsList>
-        <div className="mt-6 space-y-6">
-          <TabsContent value="account" className="m-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account details and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input 
-                    id="username" 
-                    name="username" 
-                    value={accountSettings.username}
-                    onChange={handleAccountChange}
-                    placeholder="Enter your username"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input 
-                    id="email" 
-                    name="email"
-                    type="email" 
-                    value={accountSettings.email}
-                    onChange={handleAccountChange}
-                    placeholder="Enter your email address"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Changing your email will require verification
-                  </p>
-                </div>
-                <div className="space-y-2 pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setChangePasswordOpen(true)}
-                  >
-                    Change Password
-                  </Button>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={saveAccountSettings} 
-                  disabled={accountSettings.saving}
-                >
-                  {accountSettings.saving ? "Saving..." : "Save Changes"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="preferences" className="m-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Content Preferences</CardTitle>
-                <CardDescription>
-                  Choose the types of content you want to see in your feed
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {preferencesLoading ? (
-                  <div className="flex justify-center">
-                    <LoadingSpinner />
-                  </div>
-                ) : (
-                  <>
-                    <CategoryGrid 
-                      selectedCategories={selectedCategories} 
-                      onToggle={handleCategoryToggle} 
+    <>
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold">Settings</h1>
+          <p className="text-muted-foreground">Manage your account preferences</p>
+        </div>
+        
+        <Tabs defaultValue="account" className="w-full">
+          <TabsList>
+            <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="preferences">Content Preferences</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          </TabsList>
+          <div className="mt-6 space-y-6">
+            <TabsContent value="account" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Settings</CardTitle>
+                  <CardDescription>
+                    Manage your account details and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input 
+                      id="username" 
+                      name="username" 
+                      value={accountSettings.username}
+                      onChange={handleAccountChange}
+                      placeholder="Enter your username"
                     />
-                    <div className="text-sm text-muted-foreground">
-                      {selectedCategories.length} of 12 categories selected
-                      {selectedCategories.length < 4 && (
-                        <span className="text-red-500 ml-2">
-                          (Select at least 4)
-                        </span>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email" 
+                      name="email"
+                      type="email" 
+                      value={accountSettings.email}
+                      onChange={handleAccountChange}
+                      placeholder="Enter your email address"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Changing your email will require verification
+                    </p>
+                  </div>
+                  <div className="space-y-2 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setChangePasswordOpen(true)}
+                    >
+                      Change Password
+                    </Button>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={saveAccountSettings} 
+                    disabled={accountSettings.saving}
+                  >
+                    {accountSettings.saving ? "Saving..." : "Save Changes"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="preferences" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Content Preferences</CardTitle>
+                  <CardDescription>
+                    Choose the types of content you want to see in your feed
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {preferencesLoading ? (
+                    <div className="flex justify-center">
+                      <LoadingSpinner />
+                    </div>
+                  ) : (
+                    <>
+                      <CategoryGrid 
+                        selectedCategories={selectedCategories} 
+                        onToggle={handleCategoryToggle} 
+                      />
+                      <div className="text-sm text-muted-foreground">
+                        {selectedCategories.length} of 12 categories selected
+                        {selectedCategories.length < 4 && (
+                          <span className="text-red-500 ml-2">
+                            (Select at least 4)
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* NSFW Content Preference */}
+                  <div className="border-t pt-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium">Adult Content</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Control whether you see adult/mature content in your feed
+                        </p>
+                      </div>
+                      
+                      {nsfwLoading ? (
+                        <div className="flex justify-center">
+                          <LoadingSpinner />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="nsfw-toggle">Show NSFW Posts</Label>
+                            <p className="text-sm text-muted-foreground">
+                              Allow adult/mature content to appear in your feed
+                            </p>
+                          </div>
+                          <Switch 
+                            id="nsfw-toggle"
+                            checked={showNSFW}
+                            onCheckedChange={handleNSFWToggle}
+                            disabled={nsfwUpdating}
+                          />
+                        </div>
                       )}
                     </div>
-                  </>
-                )}
-
-                {/* NSFW Content Preference */}
-                <div className="border-t pt-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium">Adult Content</h4>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={savePreferences} 
+                    disabled={preferencesSaving || selectedCategories.length < 4}
+                  >
+                    {preferencesSaving ? "Saving..." : "Save Preferences"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="notifications" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Preferences</CardTitle>
+                  <CardDescription>
+                    Control how and when you receive notifications
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Email Notifications</Label>
                       <p className="text-sm text-muted-foreground">
-                        Control whether you see adult/mature content in your feed
+                        Receive notifications via email
                       </p>
                     </div>
-                    
-                    {nsfwLoading ? (
-                      <div className="flex justify-center">
-                        <LoadingSpinner />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="nsfw-toggle">Show NSFW Posts</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Allow adult/mature content to appear in your feed
-                          </p>
-                        </div>
-                        <Switch 
-                          id="nsfw-toggle"
-                          checked={showNSFW}
-                          onCheckedChange={handleNSFWToggle}
-                          disabled={nsfwUpdating}
-                        />
-                      </div>
-                    )}
+                    <Switch 
+                      checked={notificationSettings.emailNotifications}
+                      onCheckedChange={(checked) => handleNotificationChange("emailNotifications", checked)}
+                    />
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={savePreferences} 
-                  disabled={preferencesSaving || selectedCategories.length < 4}
-                >
-                  {preferencesSaving ? "Saving..." : "Save Preferences"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="notifications" className="m-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>
-                  Control how and when you receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications via email
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>New Content Alerts</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when creators you follow post new content
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.newContentAlerts}
+                      onCheckedChange={(checked) => handleNotificationChange("newContentAlerts", checked)}
+                    />
                   </div>
-                  <Switch 
-                    checked={notificationSettings.emailNotifications}
-                    onCheckedChange={(checked) => handleNotificationChange("emailNotifications", checked)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>New Content Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when creators you follow post new content
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Comment Replies</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when someone replies to your comments
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.commentReplies}
+                      onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
+                    />
                   </div>
-                  <Switch 
-                    checked={notificationSettings.newContentAlerts}
-                    onCheckedChange={(checked) => handleNotificationChange("newContentAlerts", checked)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Comment Replies</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when someone replies to your comments
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Mentions</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified when you're mentioned in a post or comment
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.mentions}
+                      onCheckedChange={(checked) => handleNotificationChange("mentions", checked)}
+                    />
                   </div>
-                  <Switch 
-                    checked={notificationSettings.commentReplies}
-                    onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Mentions</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when you're mentioned in a post or comment
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Creator Updates</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Get notified about important updates from creators you follow
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={notificationSettings.creatorUpdates}
+                      onCheckedChange={(checked) => handleNotificationChange("creatorUpdates", checked)}
+                    />
                   </div>
-                  <Switch 
-                    checked={notificationSettings.mentions}
-                    onCheckedChange={(checked) => handleNotificationChange("mentions", checked)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Creator Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified about important updates from creators you follow
-                    </p>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    onClick={saveNotificationSettings} 
+                    disabled={notificationSettings.saving}
+                  >
+                    {notificationSettings.saving ? "Saving..." : "Save Preferences"}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="privacy" className="m-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Privacy Settings</CardTitle>
+                  <CardDescription>
+                    Manage your privacy and security preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Profile Visibility</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Make your profile visible to others
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch 
-                    checked={notificationSettings.creatorUpdates}
-                    onCheckedChange={(checked) => handleNotificationChange("creatorUpdates", checked)}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  onClick={saveNotificationSettings} 
-                  disabled={notificationSettings.saving}
-                >
-                  {notificationSettings.saving ? "Saving..." : "Save Preferences"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="privacy" className="m-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Privacy Settings</CardTitle>
-                <CardDescription>
-                  Manage your privacy and security preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Profile Visibility</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Make your profile visible to others
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Activity Status</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Show when you're active on the platform
+                      </p>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Activity Status</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Show when you're active on the platform
-                    </p>
+                  <div className="pt-4">
+                    <Button variant="destructive">Delete Account</Button>
                   </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="pt-4">
-                  <Button variant="destructive">Delete Account</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </div>
-      </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </Tabs>
 
-      {/* Password Change Dialog */}
-      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
-            <DialogDescription>
-              Enter your current password and a new password below.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleChangePassword)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Enter current password" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Enter new password" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmNewPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Confirm new password" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setChangePasswordOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isChangingPassword}
-                >
-                  {isChangingPassword ? "Changing..." : "Change Password"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {/* Password Change Dialog */}
+        <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Enter your current password and a new password below.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleChangePassword)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter current password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter new password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="confirmNewPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Confirm new password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setChangePasswordOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword ? "Changing..." : "Change Password"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Age Verification Modal */}
+        <AgeVerificationModal
+          open={showVerificationModal}
+          onVerified={handleAgeVerificationSuccess}
+          onCancel={handleAgeVerificationCancel}
+        />
+      </div>
+    </>
   );
 }
