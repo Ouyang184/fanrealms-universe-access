@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface UseNSFWPreferenceOptions {
   onAgeVerificationRequired?: () => Promise<boolean>;
+  isAgeVerified?: boolean; // Add this to use external age verification state
 }
 
 export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
@@ -50,20 +51,17 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
       if (enabled && options?.onAgeVerificationRequired) {
         console.log('🚨 useNSFWPreference - Checking age verification for NSFW enable');
         
-        // Check current age verification status
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('age_verified')
-          .eq('id', user.id)
-          .single();
+        // Use the passed age verification status if available, otherwise check database
+        const isCurrentlyVerified = options.isAgeVerified !== undefined 
+          ? options.isAgeVerified 
+          : await checkDatabaseAgeVerification();
 
         console.log('🔍 useNSFWPreference - Age verification check:', { 
-          userData, 
-          error,
-          age_verified: userData?.age_verified 
+          isCurrentlyVerified,
+          passedValue: options.isAgeVerified 
         });
 
-        if (error || !userData?.age_verified) {
+        if (!isCurrentlyVerified) {
           console.log('🚨 useNSFWPreference - Age verification required, calling callback');
           const isVerified = await options.onAgeVerificationRequired();
           if (!isVerified) {
@@ -103,6 +101,17 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
       }
     }
   });
+
+  // Helper function to check database age verification
+  const checkDatabaseAgeVerification = async (): Promise<boolean> => {
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('age_verified')
+      .eq('id', user.id)
+      .single();
+
+    return !error && userData?.age_verified;
+  };
 
   return {
     showNSFW,

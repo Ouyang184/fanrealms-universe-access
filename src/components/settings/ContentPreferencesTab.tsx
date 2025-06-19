@@ -25,6 +25,7 @@ export function ContentPreferencesTab({
   const { toast } = useToast();
 
   const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference({
+    isAgeVerified: isAgeVerified, // Pass the current age verification status
     onAgeVerificationRequired: async (): Promise<boolean> => {
       console.log('🎯 Age verification required - showing modal');
       setShowVerificationModal(true);
@@ -63,11 +64,6 @@ export function ContentPreferencesTab({
       currentNSFW: showNSFW,
       user: user?.id 
     });
-    
-    // If trying to enable NSFW and not age verified, the hook will handle verification
-    if (enabled && !isAgeVerified) {
-      console.log('🚨 User not age verified - hook will trigger verification');
-    }
     
     updateNSFWPreference(enabled);
   };
