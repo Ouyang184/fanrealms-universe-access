@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatRelativeDate } from '@/utils/auth-helpers';
@@ -15,7 +14,6 @@ import { Badge } from './ui/badge';
 import { Lock, Crown } from 'lucide-react';
 import { Button } from './ui/button';
 import { isVideoUrl } from '@/utils/videoUtils';
-import { generatePostBanner } from '@/utils/postBanners';
 
 interface PostCardProps {
   id: string;
@@ -162,22 +160,9 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   const displayContent = getDisplayContent();
-  
-  // Generate banner gradient for this post
-  const bannerGradient = generatePostBanner(id);
 
   return (
-    <Card className={`w-full overflow-hidden ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
-      {/* Post Banner */}
-      <div className={`relative h-32 ${bannerGradient}`}>
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute bottom-4 left-4 right-4">
-          <h2 className="text-white font-bold text-lg line-clamp-2 drop-shadow-lg">
-            {displayContent.title}
-          </h2>
-        </div>
-      </div>
-      
+    <Card className={`w-full ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
       <CardHeader className="pb-3">
         <PostCardHeader
           authorName={displayAuthorName}
@@ -189,7 +174,7 @@ const PostCard: React.FC<PostCardProps> = ({
       </CardHeader>
       <CardContent className="pt-0 space-y-4">
         <div className="space-y-3">
-          <PostCardContent title="" content={displayContent.content} />
+          <PostCardContent title={displayContent.title} content={displayContent.content} />
           
           {/* Creator's own premium content indicator */}
           {isPremiumPost && hasFullAccess && isOwnPost && (
