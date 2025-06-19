@@ -69,6 +69,40 @@
   }
 }
 
+/* Custom unified scrollbar styles for dark theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(217.2 32.6% 25%) hsl(222.2 84% 4.9%);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: hsl(222.2 84% 4.9%);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(217.2 32.6% 25%);
+  border-radius: 4px;
+  border: 1px solid hsl(222.2 84% 4.9%);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(217.2 32.6% 30%);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: hsl(217.2 32.6% 35%);
+}
+
+*::-webkit-scrollbar-corner {
+  background: hsl(222.2 84% 4.9%);
+}
+
 /* Custom Stripe Elements styles */
 .stripe-card-element {
   padding: 12px;
