@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { parseVideoUrl, isVideoUrl } from "@/utils/videoUtils";
 import { Post } from "@/types";
 
 interface PostPreviewModalProps {
@@ -75,15 +76,20 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
 
   const parsedAttachments = parseAttachments(post.attachments);
   
-  // Separate images and videos
+  // Separate images, videos, and embeddable videos
   const images = parsedAttachments.filter(att => 
     att && att.type === 'image' && att.url
   );
-  const videos = parsedAttachments.filter(att => 
-    att && att.type === 'video' && att.url
+  
+  const embeddableVideos = parsedAttachments.filter(att => 
+    att && att.type === 'video' && att.url && isVideoUrl(att.url)
   );
   
-  const hasMedia = images.length > 0 || videos.length > 0;
+  const uploadedVideos = parsedAttachments.filter(att => 
+    att && att.type === 'video' && att.url && !isVideoUrl(att.url)
+  );
+  
+  const hasMedia = images.length > 0 || embeddableVideos.length > 0 || uploadedVideos.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,6 +123,83 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
         {/* Display media attachments */}
         {hasMedia && (
           <div className="my-6 space-y-4">
+            {/* Embeddable Videos (YouTube, Vimeo, etc.) */}
+            {embeddableVideos.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Videos ({embeddableVideos.length})
+                </h4>
+                <div className="space-y-3">
+                  {embeddableVideos.map((video, index) => {
+                    const videoInfo = parseVideoUrl(video.url);
+                    if (!videoInfo || videoInfo.platform === 'unknown') return null;
+                    
+                    return (
+                      <div key={index} className="border rounded-lg overflow-hidden">
+                        <div className="aspect-video w-full">
+                          <iframe
+                            src={videoInfo.embedUrl}
+                            title={video.name || `Video ${index + 1}`}
+                            className="w-full h-full"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                        <div className="p-3 bg-muted/30 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium truncate">
+                              {video.name || `${videoInfo.platform} Video`}
+                            </span>
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {videoInfo.platform}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Uploaded Videos */}
+            {uploadedVideos.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-muted-foreground">
+                  Uploaded Videos ({uploadedVideos.length})
+                </h4>
+                <div className="space-y-3">
+                  {uploadedVideos.map((video, index) => (
+                    <div key={index} className="border rounded-lg overflow-hidden">
+                      <video
+                        controls
+                        className="w-full max-h-96"
+                        preload="metadata"
+                      >
+                        <source src={video.url} type="video/mp4" />
+                        <source src={video.url} type="video/webm" />
+                        <source src={video.url} type="video/ogg" />
+                        Your browser does not support the video tag.
+                      </video>
+                      <div className="p-3 bg-muted/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium truncate">
+                            {video.name || `Video ${index + 1}`}
+                          </span>
+                          {video.size && (
+                            <Badge variant="secondary" className="text-xs">
+                              {(video.size / (1024 * 1024)).toFixed(1)} MB
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Images */}
             {images.length > 0 && (
               <div className="space-y-3">
@@ -150,43 +233,6 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
                 </div>
               </div>
             )}
-
-            {/* Videos */}
-            {videos.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Videos ({videos.length})
-                </h4>
-                <div className="space-y-3">
-                  {videos.map((video, index) => (
-                    <div key={index} className="border rounded-lg overflow-hidden">
-                      <video
-                        controls
-                        className="w-full max-h-96"
-                        preload="metadata"
-                      >
-                        <source src={video.url} type="video/mp4" />
-                        <source src={video.url} type="video/webm" />
-                        <source src={video.url} type="video/ogg" />
-                        Your browser does not support the video tag.
-                      </video>
-                      <div className="p-3 bg-muted/30 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate">
-                            {video.name || `Video ${index + 1}`}
-                          </span>
-                          {video.size && (
-                            <Badge variant="secondary" className="text-xs">
-                              {(video.size / (1024 * 1024)).toFixed(1)} MB
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -196,7 +242,7 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
               {post.tier_id ? 'Premium content' : 'Free content'}
               {hasMedia && (
                 <span className="ml-2">
-                  • {images.length + videos.length} attachment{images.length + videos.length !== 1 ? 's' : ''}
+                  • {images.length + embeddableVideos.length + uploadedVideos.length} attachment{images.length + embeddableVideos.length + uploadedVideos.length !== 1 ? 's' : ''}
                 </span>
               )}
             </div>
