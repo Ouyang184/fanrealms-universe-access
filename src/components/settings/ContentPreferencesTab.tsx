@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
+import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 
 interface ContentPreferencesTabProps {
   user: User | null;
@@ -24,31 +25,8 @@ export function ContentPreferencesTab({
   handleAgeVerified 
 }: ContentPreferencesTabProps) {
   const { toast } = useToast();
-  const [nsfwEnabled, setNsfwEnabled] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference();
   const [pendingNSFWEnable, setPendingNSFWEnable] = useState(false);
-
-  // Fetch current NSFW setting
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    const fetchNSFWSetting = async () => {
-      try {
-        const { data } = await supabase
-          .from('users')
-          .select('is_nsfw_enabled')
-          .eq('id', user.id)
-          .single();
-        
-        setNsfwEnabled(data?.is_nsfw_enabled || false);
-        console.log('📱 ContentPreferencesTab - Fetched NSFW setting:', data?.is_nsfw_enabled);
-      } catch (error) {
-        console.error('Error fetching NSFW setting:', error);
-      }
-    };
-
-    fetchNSFWSetting();
-  }, [user?.id]);
 
   // Handle age verification completion
   useEffect(() => {
@@ -61,16 +39,16 @@ export function ContentPreferencesTab({
     // If age was just verified and we have a pending NSFW enable request
     if (isAgeVerified && !showVerificationModal && pendingNSFWEnable) {
       console.log('🎉 ContentPreferencesTab - Age verification completed, enabling NSFW');
-      enableNSFW();
+      updateNSFWPreference(true);
       setPendingNSFWEnable(false);
     }
-  }, [isAgeVerified, showVerificationModal, pendingNSFWEnable]);
+  }, [isAgeVerified, showVerificationModal, pendingNSFWEnable, updateNSFWPreference]);
 
   const handleNSFWToggle = async (enabled: boolean) => {
     console.log('🔥 ContentPreferencesTab - NSFW Toggle clicked:', { 
       enabled, 
       isAgeVerified, 
-      nsfwEnabled, 
+      showNSFW, 
       user: user?.id 
     });
     
@@ -112,62 +90,9 @@ export function ContentPreferencesTab({
       }
     }
 
-    // Update NSFW setting
+    // Update NSFW setting using the hook
     console.log('🟢 ContentPreferencesTab - Processing NSFW toggle:', enabled);
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_nsfw_enabled: enabled })
-        .eq('id', user?.id);
-      
-      if (error) throw error;
-      
-      setNsfwEnabled(enabled);
-      toast({
-        title: enabled ? "NSFW content enabled" : "NSFW content disabled",
-        description: enabled 
-          ? "You can now view mature content." 
-          : "You will no longer see mature content.",
-      });
-    } catch (error) {
-      console.error('ContentPreferencesTab - Error updating NSFW:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update NSFW settings.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const enableNSFW = async () => {
-    console.log('🎯 ContentPreferencesTab - Enabling NSFW after verification...');
-    setIsLoading(true);
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_nsfw_enabled: true })
-        .eq('id', user?.id);
-      
-      if (error) throw error;
-      
-      setNsfwEnabled(true);
-      toast({
-        title: "NSFW content enabled",
-        description: "You can now view mature content.",
-      });
-    } catch (error) {
-      console.error('ContentPreferencesTab - Error enabling NSFW:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update NSFW settings.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    updateNSFWPreference(enabled);
   };
 
   return (
@@ -187,13 +112,13 @@ export function ContentPreferencesTab({
             </p>
           </div>
           <Switch 
-            checked={nsfwEnabled}
+            checked={showNSFW}
             onCheckedChange={handleNSFWToggle}
-            disabled={isLoading}
+            disabled={isUpdating}
           />
         </div>
         
-        {nsfwEnabled && (
+        {showNSFW && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -214,9 +139,9 @@ export function ContentPreferencesTab({
           </p>
           <div className="text-xs text-gray-600 font-mono space-y-1">
             <div>Age Verified (Hook): {String(isAgeVerified)}</div>
-            <div>NSFW Enabled: {nsfwEnabled ? 'Yes' : 'No'}</div>
+            <div>NSFW Enabled: {showNSFW ? 'Yes' : 'No'}</div>
             <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
-            <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
+            <div>Loading: {isUpdating ? 'Yes' : 'No'}</div>
             <div>Pending NSFW: {pendingNSFWEnable ? 'Yes' : 'No'}</div>
             <div>User ID: {user?.id || 'None'}</div>
           </div>
