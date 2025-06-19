@@ -47,8 +47,10 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
     onSettingsChange('tags', updatedTags);
   };
 
-  // Use display_name from formData - this ensures we show the current form value
-  const displayName = settings.display_name || settings.username || '';
+  // Prioritize display_name, then fall back to username
+  const displayName = settings.display_name || settings.username || 'Creator';
+  // Use avatar_url first, then profile_image_url as fallback
+  const avatarUrl = settings.avatar_url || settings.profile_image_url || null;
 
   return (
     <Card>
@@ -60,8 +62,8 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col items-center space-y-3">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={settings.avatar_url || settings.profile_image_url || undefined} alt={displayName} />
-              <AvatarFallback>{displayName?.charAt(0) || 'C'}</AvatarFallback>
+              <AvatarImage src={avatarUrl || undefined} alt={displayName} />
+              <AvatarFallback className="text-xl">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <Button 
               type="button" 
@@ -86,7 +88,7 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 placeholder="How you want to be known publicly"
               />
               <p className="text-xs text-muted-foreground">
-                This is how you'll appear to your audience
+                This is how you'll appear to your audience (currently: {displayName})
               </p>
             </div>
             
@@ -99,7 +101,11 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
                 value={settings.email || ''}
                 onChange={handleChange}
                 readOnly
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed from creator settings
+              </p>
             </div>
           </div>
         </div>

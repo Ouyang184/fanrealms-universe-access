@@ -83,11 +83,16 @@ export default function CreatorStudioSettings() {
   const displaySettings = { ...settings, ...pendingChanges };
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
+  // Show the current display name prominently
+  const currentDisplayName = displaySettings.display_name || displaySettings.username || 'Creator';
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Creator Settings</h1>
-        <p className="text-muted-foreground">Manage your creator profile and account settings</p>
+        <p className="text-muted-foreground">
+          Manage your creator profile and account settings for <span className="font-medium">{currentDisplayName}</span>
+        </p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-8">
