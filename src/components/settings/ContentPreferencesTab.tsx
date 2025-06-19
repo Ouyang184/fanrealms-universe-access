@@ -101,19 +101,48 @@ export function ContentPreferencesTab({
       return;
     }
 
-    // If enabling NSFW, ALWAYS check age verification first
+    // If enabling NSFW, ALWAYS force fresh age verification check
     if (enabled) {
-      console.log('🟡 Enabling NSFW - checking age verification...', { isAgeVerified });
+      console.log('🟡 Enabling NSFW - performing fresh age verification check');
       
-      // Force age verification check regardless of current state
-      if (!isAgeVerified) {
-        console.log('🚨 Age NOT verified - showing modal');
-        setPendingNSFWEnable(true);
-        setShowVerificationModal(true);
-        return;
-      } else {
-        console.log('✅ Age already verified, enabling NSFW directly');
-        await enableNSFW();
+      try {
+        // Force fresh check from database
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('age_verified')
+          .eq('id', user?.id)
+          .single();
+
+        if (error) {
+          console.error('Error checking age verification:', error);
+          toast({
+            title: "Error",
+            description: "Failed to check age verification status.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const isFreshAgeVerified = userData?.age_verified || false;
+        console.log('🔍 Fresh age verification check result:', { isFreshAgeVerified, userData });
+
+        if (!isFreshAgeVerified) {
+          console.log('🚨 Age NOT verified (fresh check) - showing modal');
+          setPendingNSFWEnable(true);
+          setShowVerificationModal(true);
+          return;
+        } else {
+          console.log('✅ Age verified (fresh check), enabling NSFW directly');
+          await enableNSFW();
+          return;
+        }
+      } catch (error) {
+        console.error('Error during fresh age verification check:', error);
+        toast({
+          title: "Error",
+          description: "Failed to verify age status.",
+          variant: "destructive",
+        });
         return;
       }
     }
@@ -188,11 +217,12 @@ export function ContentPreferencesTab({
             Debug Info:
           </p>
           <div className="text-xs text-gray-600 font-mono space-y-1">
-            <div>Age Verified: {String(isAgeVerified)}</div>
+            <div>Age Verified (Hook): {String(isAgeVerified)}</div>
             <div>NSFW Enabled: {nsfwEnabled ? 'Yes' : 'No'}</div>
             <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
             <div>Loading: {isLoading ? 'Yes' : 'No'}</div>
             <div>Pending NSFW: {pendingNSFWEnable ? 'Yes' : 'No'}</div>
+            <div>User ID: {user?.id || 'None'}</div>
           </div>
         </div>
       </CardContent>
