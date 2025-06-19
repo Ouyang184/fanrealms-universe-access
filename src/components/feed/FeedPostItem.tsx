@@ -14,6 +14,7 @@ import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { TierAccessInfo } from "./TierAccessInfo";
 import { Post } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { generatePostBanner, hasMediaContent } from "@/utils/postBanners";
 
 interface FeedPostItemProps {
   post: Post;
@@ -84,6 +85,9 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     finalDecision: hasAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
+  // Check if post has media content
+  const postHasMedia = hasMediaContent(post.attachments);
+
   return (
     <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Post Header */}
@@ -115,6 +119,27 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
         type="post"
       >
         <div className="p-4">
+          {/* Show gradient banner only if no media content */}
+          {!postHasMedia && (
+            <div 
+              className="relative h-48 rounded-lg overflow-hidden mb-4"
+              style={{ background: generatePostBanner(post.title) }}
+            >
+              <div className="absolute inset-0 bg-black/20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">{post.title}</h3>
+                  {post.tier_id && (
+                    <Badge className="bg-white/20 text-white border-white/30">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Premium
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Creator's own premium content indicator */}
           {post.tier_id && hasAccess && isOwnPost && (
             <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
@@ -136,17 +161,19 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
             )}
           </div>
           
-          {/* Media with conditional blur */}
-          <div className={hasAccess ? "" : "relative"}>
-            <PostCardMedia attachments={post.attachments} />
-            {!hasAccess && post.attachments && (
-              <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
-                <div className="bg-black/80 rounded-full p-3">
-                  <Lock className="h-6 w-6 text-white" />
+          {/* Media with conditional blur - only show if media exists */}
+          {postHasMedia && (
+            <div className={hasAccess ? "" : "relative"}>
+              <PostCardMedia attachments={post.attachments} />
+              {!hasAccess && (
+                <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
+                  <div className="bg-black/80 rounded-full p-3">
+                    <Lock className="h-6 w-6 text-white" />
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           
           {/* Dynamic Tier Access Information - ONLY show for non-creators */}
           {!isOwnPost && !hasAccess && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}

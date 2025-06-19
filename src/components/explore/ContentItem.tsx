@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Crown, Globe } from "lucide-react";
 import { Post } from "@/types";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
+import { generatePostBanner, hasMediaContent } from "@/utils/postBanners";
 
 interface ContentItemProps {
   post: Post;
@@ -34,14 +35,31 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
     originalAuthorAvatar: post.authorAvatar
   });
 
+  // Check if post has media content
+  const postHasMedia = hasMediaContent(post.attachments);
+
   return (
     <Card 
       className="group cursor-pointer hover:shadow-lg transition-shadow bg-gray-900 border-gray-800 text-white overflow-hidden"
       onClick={handleClick}
     >
-      {/* Media Section */}
+      {/* Media Section or Banner */}
       <div className="relative aspect-video bg-gray-800">
-        <PostCardMedia attachments={post.attachments} />
+        {postHasMedia ? (
+          <PostCardMedia attachments={post.attachments} />
+        ) : (
+          <div 
+            className="w-full h-full"
+            style={{ background: generatePostBanner(post.title) }}
+          >
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-white">
+                <h3 className="text-xl font-bold drop-shadow-lg">{post.title}</h3>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Overlay badges */}
         <div className="absolute top-2 right-2 flex gap-2">

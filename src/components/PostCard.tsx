@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatRelativeDate } from '@/utils/auth-helpers';
@@ -14,6 +15,7 @@ import { Badge } from './ui/badge';
 import { Lock, Crown } from 'lucide-react';
 import { Button } from './ui/button';
 import { isVideoUrl } from '@/utils/videoUtils';
+import { generatePostBanner, hasMediaContent } from '@/utils/postBanners';
 
 interface PostCardProps {
   id: string;
@@ -161,6 +163,9 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const displayContent = getDisplayContent();
 
+  // Check if post has media content
+  const postHasMedia = hasMediaContent(attachments);
+
   return (
     <Card className={`w-full ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
       <CardHeader className="pb-3">
@@ -175,6 +180,27 @@ const PostCard: React.FC<PostCardProps> = ({
       <CardContent className="pt-0 space-y-4">
         <div className="space-y-3">
           <PostCardContent title={displayContent.title} content={displayContent.content} />
+          
+          {/* Show gradient banner only if no media content */}
+          {!postHasMedia && (
+            <div 
+              className="relative h-48 rounded-lg overflow-hidden"
+              style={{ background: generatePostBanner(title) }}
+            >
+              <div className="absolute inset-0 bg-black/20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <h3 className="text-2xl font-bold mb-2 drop-shadow-lg">{title}</h3>
+                  {isPremiumPost && (
+                    <Badge className="bg-white/20 text-white border-white/30">
+                      <Crown className="h-3 w-3 mr-1" />
+                      Premium
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Creator's own premium content indicator */}
           {isPremiumPost && hasFullAccess && isOwnPost && (
@@ -223,8 +249,8 @@ const PostCard: React.FC<PostCardProps> = ({
             </div>
           )}
           
-          {/* Show media/attachments based on access level */}
-          {hasFullAccess ? (
+          {/* Show media/attachments based on access level and only if media exists */}
+          {postHasMedia && hasFullAccess ? (
             <>
               <PostCardMedia attachments={attachments} />
               <PostAttachments attachments={parsedAttachments.filter(attachment => {
@@ -234,7 +260,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 return true; // Include all other attachments
               })} />
             </>
-          ) : isPremiumPost && !isOwnPost && (
+          ) : postHasMedia && isPremiumPost && !isOwnPost && (
             <div className="relative">
               <PostCardMedia attachments={attachments} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-lg flex items-center justify-center">
