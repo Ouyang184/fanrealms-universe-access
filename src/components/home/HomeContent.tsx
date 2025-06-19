@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
@@ -39,38 +40,6 @@ export function HomeContent() {
     allPosts: allPosts.length
   });
 
-  const getPostThumbnail = (post: Post) => {
-    if (!post.attachments) return null;
-    
-    let parsedAttachments = [];
-    if (typeof post.attachments === 'string' && post.attachments !== "undefined") {
-      try {
-        parsedAttachments = JSON.parse(post.attachments);
-      } catch {
-        return null;
-      }
-    } else if (Array.isArray(post.attachments)) {
-      parsedAttachments = post.attachments;
-    } else if (post.attachments && typeof post.attachments === 'object' && post.attachments.value) {
-      if (typeof post.attachments.value === 'string' && post.attachments.value !== "undefined") {
-        try {
-          parsedAttachments = JSON.parse(post.attachments.value);
-        } catch {
-          return null;
-        }
-      } else if (Array.isArray(post.attachments.value)) {
-        parsedAttachments = post.attachments.value;
-      }
-    }
-
-    if (Array.isArray(parsedAttachments) && parsedAttachments.length > 0) {
-      const firstMedia = parsedAttachments.find(att => att.type === 'image' || att.type === 'video');
-      return firstMedia?.url || null;
-    }
-    
-    return null;
-  };
-
   const mapPostToContentItem = (post: Post) => {
     return {
       id: post.id,
@@ -90,7 +59,7 @@ export function HomeContent() {
   const hasForYouData = forYouPosts.length > 0;
   const hasGeneralData = allPosts.length > 0;
   
-  // Map to ContentItem format
+  // Map to ContentItem format - ensuring creator info is properly passed
   const forYouContentItems = hasForYouData ? forYouPosts.slice(0, 8).map(mapPostToContentItem) : [];
   const trendingPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
   const recentPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];

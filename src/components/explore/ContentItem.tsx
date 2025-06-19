@@ -122,8 +122,9 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   const hasVisualMedia = firstMedia && (firstMedia.type === 'image' || firstMedia.type === 'video');
   const hasFileAttachment = firstMedia && firstMedia.type !== 'image' && firstMedia.type !== 'video';
 
-  // Use real metadata from post - ensure we don't show "Unknown"
-  const authorName = post.authorName || "Creator";
+  // Use real metadata from post with better fallbacks
+  const authorName = post.authorName && post.authorName !== 'Unknown' ? post.authorName : "Creator";
+  const authorAvatar = post.authorAvatar || null;
   const displayDate = post.createdAt ? formatRelativeDate(post.createdAt) : "Recently";
   const fileTypeLabel = firstMedia ? getFileTypeLabel(firstMedia.type) : null;
 
@@ -295,7 +296,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         <div className="flex items-center gap-2 mb-2">
           <Avatar className="h-6 w-6">
             <AvatarImage 
-              src={post.authorAvatar || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
+              src={authorAvatar || `/placeholder.svg?text=${authorName.substring(0, 1)}`} 
               alt={authorName} 
             />
             <AvatarFallback className="text-xs">{authorName.substring(0, 1)}</AvatarFallback>
