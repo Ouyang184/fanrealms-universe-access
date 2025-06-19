@@ -9,9 +9,10 @@ import { Post } from "@/types";
 interface ContentItemProps {
   post: Post;
   type: 'trending' | 'new';
+  onPostClick?: (post: Post) => void;
 }
 
-export function ContentItem({ post, type }: ContentItemProps) {
+export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   const isPremiumPost = !!post.tier_id;
   
   // Get the first image/video from attachments for thumbnail
@@ -61,8 +62,17 @@ export function ContentItem({ post, type }: ContentItemProps) {
     authorId: post.authorId
   });
 
+  const handleClick = () => {
+    if (onPostClick) {
+      onPostClick(post);
+    }
+  };
+
   return (
-    <Card className="overflow-hidden bg-gray-900 border-gray-800 hover:border-purple-500/50 transition-all duration-300 group">
+    <Card 
+      className="overflow-hidden bg-gray-900 border-gray-800 hover:border-purple-500/50 transition-all duration-300 group cursor-pointer" 
+      onClick={handleClick}
+    >
       {thumbnailUrl && (
         <div className="relative">
           <AspectRatio ratio={16 / 9}>
