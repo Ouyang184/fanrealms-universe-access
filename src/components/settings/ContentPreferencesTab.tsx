@@ -74,11 +74,11 @@ export function ContentPreferencesTab({
       user: user?.id 
     });
     
-    // Prevent the switch from visually changing until we're done
-    if (enabled && !isAgeVerified) {
-      console.log('🚨 ContentPreferencesTab - Age verification required for NSFW');
+    // If trying to enable NSFW, always check age verification
+    if (enabled) {
+      console.log('🚨 ContentPreferencesTab - Checking age verification for NSFW enable');
       
-      // Force fresh check from database before showing modal
+      // Always force a fresh database check for age verification
       try {
         const { data: userData, error } = await supabase
           .from('users')
@@ -86,14 +86,21 @@ export function ContentPreferencesTab({
           .eq('id', user?.id)
           .single();
 
-        console.log('🔍 ContentPreferencesTab - Fresh age check:', { userData, error });
+        console.log('🔍 ContentPreferencesTab - Fresh age verification check:', { 
+          userData, 
+          error,
+          age_verified: userData?.age_verified 
+        });
 
         if (error || !userData?.age_verified) {
-          console.log('🚨 ContentPreferencesTab - Showing age verification modal');
+          console.log('🚨 ContentPreferencesTab - Age verification required, showing modal');
           setPendingNSFWEnable(true);
           setShowVerificationModal(true);
           return; // Don't update the switch state yet
         }
+
+        // If age is verified, proceed with enabling NSFW
+        console.log('✅ ContentPreferencesTab - Age already verified, enabling NSFW');
       } catch (error) {
         console.error('ContentPreferencesTab - Error checking age:', error);
         toast({
@@ -105,14 +112,16 @@ export function ContentPreferencesTab({
       }
     }
 
-    // If disabling NSFW or age is verified, proceed with update
+    // Update NSFW setting
     console.log('🟢 ContentPreferencesTab - Processing NSFW toggle:', enabled);
     setIsLoading(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('users')
         .update({ is_nsfw_enabled: enabled })
         .eq('id', user?.id);
+      
+      if (error) throw error;
       
       setNsfwEnabled(enabled);
       toast({
@@ -137,10 +146,12 @@ export function ContentPreferencesTab({
     console.log('🎯 ContentPreferencesTab - Enabling NSFW after verification...');
     setIsLoading(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from('users')
         .update({ is_nsfw_enabled: true })
         .eq('id', user?.id);
+      
+      if (error) throw error;
       
       setNsfwEnabled(true);
       toast({
