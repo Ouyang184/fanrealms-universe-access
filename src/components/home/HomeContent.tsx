@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
@@ -72,17 +73,28 @@ export function HomeContent() {
   };
 
   const mapPostToContentItem = (post: Post) => {
+    console.log('HomeContent: Mapping post to content item:', {
+      id: post.id,
+      title: post.title,
+      authorId: post.authorId,
+      authorName: post.authorName,
+      authorAvatar: post.authorAvatar,
+      rawPost: post
+    });
+
     return {
       id: post.id,
       title: post.title,
       content: post.content,
       authorId: post.authorId,
+      // Ensure we're using the correct author information
       authorName: post.authorName || 'Creator',
       authorAvatar: post.authorAvatar || null,
       createdAt: post.createdAt,
       date: post.date || formatRelativeDate(post.createdAt),
       tier_id: post.tier_id,
       attachments: post.attachments,
+      is_nsfw: post.is_nsfw
     };
   };
 
@@ -90,10 +102,25 @@ export function HomeContent() {
   const hasForYouData = forYouPosts.length > 0;
   const hasGeneralData = allPosts.length > 0;
   
-  // Map to ContentItem format
+  // Map to ContentItem format with proper creator info
   const forYouContentItems = hasForYouData ? forYouPosts.slice(0, 8).map(mapPostToContentItem) : [];
   const trendingPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
   const recentPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
+
+  console.log('HomeContent: Mapped content items:', {
+    forYouSample: forYouContentItems.slice(0, 2).map(item => ({
+      id: item.id,
+      title: item.title,
+      authorName: item.authorName,
+      authorAvatar: item.authorAvatar
+    })),
+    trendingSample: trendingPosts.slice(0, 2).map(item => ({
+      id: item.id,
+      title: item.title,
+      authorName: item.authorName,
+      authorAvatar: item.authorAvatar
+    }))
+  });
 
   const handlePostClick = (post: Post) => {
     console.log('HomeContent: Post clicked, opening modal for:', post.title);
