@@ -41,6 +41,7 @@ export function ContentPreferencesTab({
           .single();
         
         setNsfwEnabled(data?.is_nsfw_enabled || false);
+        console.log('📱 ContentPreferencesTab - Fetched NSFW setting:', data?.is_nsfw_enabled);
       } catch (error) {
         console.error('Error fetching NSFW setting:', error);
       }
@@ -51,7 +52,7 @@ export function ContentPreferencesTab({
 
   // Handle age verification completion
   useEffect(() => {
-    console.log('🔍 Age verification effect:', { 
+    console.log('🔍 ContentPreferencesTab - Age verification effect:', { 
       isAgeVerified, 
       showVerificationModal, 
       pendingNSFWEnable 
@@ -59,85 +60,42 @@ export function ContentPreferencesTab({
     
     // If age was just verified and we have a pending NSFW enable request
     if (isAgeVerified && !showVerificationModal && pendingNSFWEnable) {
-      console.log('🎉 Age verification completed, enabling NSFW');
+      console.log('🎉 ContentPreferencesTab - Age verification completed, enabling NSFW');
       enableNSFW();
       setPendingNSFWEnable(false);
     }
   }, [isAgeVerified, showVerificationModal, pendingNSFWEnable]);
 
   const handleNSFWToggle = async (enabled: boolean) => {
-    console.log('🔥 NSFW Toggle clicked:', { 
+    console.log('🔥 ContentPreferencesTab - NSFW Toggle clicked:', { 
       enabled, 
       isAgeVerified, 
       nsfwEnabled, 
       user: user?.id 
     });
     
-    // If disabling NSFW, allow immediately
-    if (!enabled) {
-      console.log('🔴 Disabling NSFW - proceeding directly');
-      setIsLoading(true);
-      try {
-        await supabase
-          .from('users')
-          .update({ is_nsfw_enabled: false })
-          .eq('id', user?.id);
-        
-        setNsfwEnabled(false);
-        toast({
-          title: "NSFW content disabled",
-          description: "You will no longer see mature content.",
-        });
-      } catch (error) {
-        console.error('Error disabling NSFW:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update NSFW settings.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // If enabling NSFW, ALWAYS force fresh age verification check
-    if (enabled) {
-      console.log('🟡 Enabling NSFW - performing fresh age verification check');
+    // Prevent the switch from visually changing until we're done
+    if (enabled && !isAgeVerified) {
+      console.log('🚨 ContentPreferencesTab - Age verification required for NSFW');
       
+      // Force fresh check from database before showing modal
       try {
-        // Force fresh check from database
         const { data: userData, error } = await supabase
           .from('users')
           .select('age_verified')
           .eq('id', user?.id)
           .single();
 
-        if (error) {
-          console.error('Error checking age verification:', error);
-          toast({
-            title: "Error",
-            description: "Failed to check age verification status.",
-            variant: "destructive",
-          });
-          return;
-        }
+        console.log('🔍 ContentPreferencesTab - Fresh age check:', { userData, error });
 
-        const isFreshAgeVerified = userData?.age_verified || false;
-        console.log('🔍 Fresh age verification check result:', { isFreshAgeVerified, userData });
-
-        if (!isFreshAgeVerified) {
-          console.log('🚨 Age NOT verified (fresh check) - showing modal');
+        if (error || !userData?.age_verified) {
+          console.log('🚨 ContentPreferencesTab - Showing age verification modal');
           setPendingNSFWEnable(true);
           setShowVerificationModal(true);
-          return;
-        } else {
-          console.log('✅ Age verified (fresh check), enabling NSFW directly');
-          await enableNSFW();
-          return;
+          return; // Don't update the switch state yet
         }
       } catch (error) {
-        console.error('Error during fresh age verification check:', error);
+        console.error('ContentPreferencesTab - Error checking age:', error);
         toast({
           title: "Error",
           description: "Failed to verify age status.",
@@ -146,10 +104,37 @@ export function ContentPreferencesTab({
         return;
       }
     }
+
+    // If disabling NSFW or age is verified, proceed with update
+    console.log('🟢 ContentPreferencesTab - Processing NSFW toggle:', enabled);
+    setIsLoading(true);
+    try {
+      await supabase
+        .from('users')
+        .update({ is_nsfw_enabled: enabled })
+        .eq('id', user?.id);
+      
+      setNsfwEnabled(enabled);
+      toast({
+        title: enabled ? "NSFW content enabled" : "NSFW content disabled",
+        description: enabled 
+          ? "You can now view mature content." 
+          : "You will no longer see mature content.",
+      });
+    } catch (error) {
+      console.error('ContentPreferencesTab - Error updating NSFW:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update NSFW settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const enableNSFW = async () => {
-    console.log('🎯 Enabling NSFW...');
+    console.log('🎯 ContentPreferencesTab - Enabling NSFW after verification...');
     setIsLoading(true);
     try {
       await supabase
@@ -163,7 +148,7 @@ export function ContentPreferencesTab({
         description: "You can now view mature content.",
       });
     } catch (error) {
-      console.error('Error enabling NSFW:', error);
+      console.error('ContentPreferencesTab - Error enabling NSFW:', error);
       toast({
         title: "Error",
         description: "Failed to update NSFW settings.",
