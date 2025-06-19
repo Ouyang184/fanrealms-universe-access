@@ -3,9 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 
@@ -24,25 +22,50 @@ export function ContentPreferencesTab({
   setShowVerificationModal, 
   handleAgeVerified 
 }: ContentPreferencesTabProps) {
-  const { toast } = useToast();
-  const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference();
   const [pendingNSFWEnable, setPendingNSFWEnable] = useState(false);
 
-  // Handle age verification completion
-  useEffect(() => {
-    console.log('🔍 ContentPreferencesTab - Age verification effect:', { 
-      isAgeVerified, 
-      showVerificationModal, 
-      pendingNSFWEnable 
+  // Age verification callback for the hook
+  const handleAgeVerificationRequired = useCallback(async (): Promise<boolean> => {
+    console.log('🎯 ContentPreferencesTab - Age verification callback triggered');
+    return new Promise((resolve) => {
+      setPendingNSFWEnable(true);
+      setShowVerificationModal(true);
+      
+      // Set up a one-time listener for age verification completion
+      const checkVerification = () => {
+        if (isAgeVerified && !showVerificationModal) {
+          console.log('✅ ContentPreferencesTab - Age verification completed');
+          setPendingNSFWEnable(false);
+          resolve(true);
+          return true;
+        }
+        return false;
+      };
+      
+      // Check immediately and then poll
+      if (!checkVerification()) {
+        const interval = setInterval(() => {
+          if (checkVerification()) {
+            clearInterval(interval);
+          }
+        }, 500);
+        
+        // Cleanup after 30 seconds
+        setTimeout(() => {
+          clearInterval(interval);
+          if (pendingNSFWEnable) {
+            console.log('❌ ContentPreferencesTab - Age verification timeout');
+            setPendingNSFWEnable(false);
+            resolve(false);
+          }
+        }, 30000);
+      }
     });
-    
-    // If age was just verified and we have a pending NSFW enable request
-    if (isAgeVerified && !showVerificationModal && pendingNSFWEnable) {
-      console.log('🎉 ContentPreferencesTab - Age verification completed, enabling NSFW');
-      updateNSFWPreference(true);
-      setPendingNSFWEnable(false);
-    }
-  }, [isAgeVerified, showVerificationModal, pendingNSFWEnable, updateNSFWPreference]);
+  }, [isAgeVerified, showVerificationModal, setShowVerificationModal, pendingNSFWEnable]);
+
+  const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference({
+    onAgeVerificationRequired: handleAgeVerificationRequired
+  });
 
   const handleNSFWToggle = async (enabled: boolean) => {
     console.log('🔥 ContentPreferencesTab - NSFW Toggle clicked:', { 
@@ -52,46 +75,6 @@ export function ContentPreferencesTab({
       user: user?.id 
     });
     
-    // If trying to enable NSFW, always check age verification
-    if (enabled) {
-      console.log('🚨 ContentPreferencesTab - Checking age verification for NSFW enable');
-      
-      // Always force a fresh database check for age verification
-      try {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('age_verified')
-          .eq('id', user?.id)
-          .single();
-
-        console.log('🔍 ContentPreferencesTab - Fresh age verification check:', { 
-          userData, 
-          error,
-          age_verified: userData?.age_verified 
-        });
-
-        if (error || !userData?.age_verified) {
-          console.log('🚨 ContentPreferencesTab - Age verification required, showing modal');
-          setPendingNSFWEnable(true);
-          setShowVerificationModal(true);
-          return; // Don't update the switch state yet
-        }
-
-        // If age is verified, proceed with enabling NSFW
-        console.log('✅ ContentPreferencesTab - Age already verified, enabling NSFW');
-      } catch (error) {
-        console.error('ContentPreferencesTab - Error checking age:', error);
-        toast({
-          title: "Error",
-          description: "Failed to verify age status.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Update NSFW setting using the hook
-    console.log('🟢 ContentPreferencesTab - Processing NSFW toggle:', enabled);
     updateNSFWPreference(enabled);
   };
 

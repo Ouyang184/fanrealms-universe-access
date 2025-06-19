@@ -4,7 +4,11 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
-export const useNSFWPreference = () => {
+interface UseNSFWPreferenceOptions {
+  onAgeVerificationRequired?: () => Promise<boolean>;
+}
+
+export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -38,9 +42,35 @@ export const useNSFWPreference = () => {
 
   const updateNSFWPreference = useMutation({
     mutationFn: async (enabled: boolean) => {
-      console.log('Updating NSFW preference to:', enabled);
+      console.log('🔥 useNSFWPreference - Updating NSFW preference to:', enabled);
       
       if (!user?.id) throw new Error('User not authenticated');
+
+      // If trying to enable NSFW, check age verification first
+      if (enabled && options?.onAgeVerificationRequired) {
+        console.log('🚨 useNSFWPreference - Checking age verification for NSFW enable');
+        
+        // Check current age verification status
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('age_verified')
+          .eq('id', user.id)
+          .single();
+
+        console.log('🔍 useNSFWPreference - Age verification check:', { 
+          userData, 
+          error,
+          age_verified: userData?.age_verified 
+        });
+
+        if (error || !userData?.age_verified) {
+          console.log('🚨 useNSFWPreference - Age verification required, calling callback');
+          const isVerified = await options.onAgeVerificationRequired();
+          if (!isVerified) {
+            throw new Error('Age verification required');
+          }
+        }
+      }
 
       const { error } = await supabase
         .from('users')
@@ -52,7 +82,7 @@ export const useNSFWPreference = () => {
 
       if (error) throw error;
       
-      console.log('NSFW preference updated successfully');
+      console.log('✅ useNSFWPreference - NSFW preference updated successfully');
       return enabled;
     },
     onSuccess: (enabled) => {
@@ -63,12 +93,14 @@ export const useNSFWPreference = () => {
       });
     },
     onError: (error) => {
-      console.error('Error updating NSFW preference:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update NSFW preference. Please try again.",
-        variant: "destructive"
-      });
+      console.error('❌ useNSFWPreference - Error updating NSFW preference:', error);
+      if (error.message !== 'Age verification required') {
+        toast({
+          title: "Error",
+          description: "Failed to update NSFW preference. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   });
 
