@@ -38,9 +38,18 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   // Check if post has media content
   const postHasMedia = hasMediaContent(post.attachments);
 
-  // Truncate content for preview
-  const getPreviewContent = (content: string, maxLength: number = 100) => {
+  // Responsive content preview with adaptive length
+  const getPreviewContent = (content: string) => {
     if (!content) return "No content available";
+    
+    // Adaptive content length based on screen size
+    const baseLength = 80; // Mobile
+    const mdLength = 100;  // Tablet
+    const lgLength = 120;  // Desktop
+    
+    // For now, use a medium length that works well across sizes
+    const maxLength = 100;
+    
     if (content.length <= maxLength) return content;
     return content.substring(0, maxLength).trim() + "...";
   };
@@ -60,16 +69,18 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
             style={{ background: generatePostBanner(post.title) }}
           >
             <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <div className="text-center text-white">
-                <h3 className="text-lg md:text-xl font-bold drop-shadow-lg line-clamp-2">{post.title}</h3>
+            <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
+              <div className="text-center text-white max-w-full">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold drop-shadow-lg line-clamp-2 break-words hyphens-auto">
+                  {post.title}
+                </h3>
               </div>
             </div>
           </div>
         )}
         
         {/* Overlay badges */}
-        <div className="absolute top-2 right-2 flex gap-2">
+        <div className="absolute top-2 right-2 flex gap-1 sm:gap-2">
           {type === 'trending' && (
             <Badge className="bg-red-500/90 text-white text-xs">
               Trending
@@ -83,25 +94,25 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         </div>
       </div>
 
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Title - only show if media exists (since banner already shows title) */}
         {postHasMedia && (
-          <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-purple-400 transition-colors">
+          <h3 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 group-hover:text-purple-400 transition-colors break-words hyphens-auto">
             {post.title}
           </h3>
         )}
         
-        {/* Content preview with better formatting */}
+        {/* Content preview with responsive formatting */}
         <div className="space-y-2">
-          <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
-            {getPreviewContent(post.content, 120)}
+          <p className="text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3 break-words hyphens-auto">
+            {getPreviewContent(post.content)}
           </p>
         </div>
 
         {/* Creator info and metadata */}
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-1 sm:pt-2 gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Avatar className="h-6 w-6 flex-shrink-0">
+            <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
               <AvatarImage 
                 src={avatarUrl} 
                 alt={displayName} 
@@ -110,37 +121,39 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <span className="text-sm font-medium text-gray-300 truncate">{displayName}</span>
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+              <span className="text-xs sm:text-sm font-medium text-gray-300 truncate">{displayName}</span>
               {post.tier_id ? (
-                <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200 flex-shrink-0">
-                  <Crown className="h-3 w-3 mr-1" />
-                  Premium
+                <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">
+                  <Crown className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden xs:inline">Premium</span>
+                  <span className="xs:hidden">P</span>
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0">
-                  <Globe className="h-3 w-3 mr-1" />
-                  Public
+                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">
+                  <Globe className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden xs:inline">Public</span>
+                  <span className="xs:hidden">P</span>
                 </Badge>
               )}
             </div>
           </div>
 
           {/* Engagement stats */}
-          <div className="flex items-center gap-3 text-gray-400 flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <Heart className="h-4 w-4" />
+          <div className="flex items-center gap-2 sm:gap-3 text-gray-400 flex-shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="text-xs">0</span>
             </div>
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-4 w-4" />
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="text-xs">0</span>
             </div>
           </div>
         </div>
 
         {/* Date */}
-        <div className="pt-1">
+        <div className="pt-0.5 sm:pt-1">
           <span className="text-xs text-gray-500">{post.date}</span>
         </div>
       </CardContent>

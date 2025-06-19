@@ -127,3 +127,20 @@
   height: 20px;
   padding: 0;
 }
+
+/* Responsive text utilities */
+@layer utilities {
+  .text-responsive {
+    @apply text-xs sm:text-sm md:text-base;
+  }
+  
+  .text-responsive-lg {
+    @apply text-sm sm:text-base md:text-lg lg:text-xl;
+  }
+  
+  .hyphens-auto {
+    hyphens: auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
