@@ -153,21 +153,6 @@ export default function FeedPage() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Navigation Tabs */}
-            <div className="mb-6">
-              <div className="flex items-center gap-8 border-b border-border">
-                <button className="pb-3 px-1 text-sm font-medium text-muted-foreground border-b-2 border-transparent hover:text-foreground hover:border-muted">
-                  MY CREATORS
-                </button>
-                <button className="pb-3 px-1 text-sm font-medium text-foreground border-b-2 border-primary">
-                  FEED
-                </button>
-                <button className="pb-3 px-1 text-sm font-medium text-muted-foreground border-b-2 border-transparent hover:text-foreground hover:border-muted">
-                  SERVICE NOTIFICATIONS
-                </button>
-              </div>
-            </div>
-
             {/* Main Feed Content */}
             <FeedMainContent
               hasFollowedCreators={hasFollowedCreators}
