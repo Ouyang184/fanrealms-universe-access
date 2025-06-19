@@ -38,6 +38,13 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   // Check if post has media content
   const postHasMedia = hasMediaContent(post.attachments);
 
+  // Truncate content for preview
+  const getPreviewContent = (content: string, maxLength: number = 100) => {
+    if (!content) return "No content available";
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength).trim() + "...";
+  };
+
   return (
     <Card 
       className="group cursor-pointer hover:shadow-lg transition-shadow bg-gray-900 border-gray-800 text-white overflow-hidden"
@@ -53,9 +60,9 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
             style={{ background: generatePostBanner(post.title) }}
           >
             <div className="absolute inset-0 bg-black/20" />
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center p-4">
               <div className="text-center text-white">
-                <h3 className="text-xl font-bold drop-shadow-lg">{post.title}</h3>
+                <h3 className="text-lg md:text-xl font-bold drop-shadow-lg line-clamp-2">{post.title}</h3>
               </div>
             </div>
           </div>
@@ -64,33 +71,37 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         {/* Overlay badges */}
         <div className="absolute top-2 right-2 flex gap-2">
           {type === 'trending' && (
-            <Badge className="bg-red-500/90 text-white">
+            <Badge className="bg-red-500/90 text-white text-xs">
               Trending
             </Badge>
           )}
           {type === 'new' && (
-            <Badge className="bg-blue-500/90 text-white">
+            <Badge className="bg-blue-500/90 text-white text-xs">
               New
             </Badge>
           )}
         </div>
       </div>
 
-      <CardContent className="p-4">
-        {/* Title */}
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-          {post.title}
-        </h3>
+      <CardContent className="p-4 space-y-3">
+        {/* Title - only show if media exists (since banner already shows title) */}
+        {postHasMedia && (
+          <h3 className="font-semibold text-base leading-tight line-clamp-2 group-hover:text-purple-400 transition-colors">
+            {post.title}
+          </h3>
+        )}
         
-        {/* Content preview */}
-        <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-          {post.content}
-        </p>
+        {/* Content preview with better formatting */}
+        <div className="space-y-2">
+          <p className="text-gray-300 text-sm leading-relaxed line-clamp-3">
+            {getPreviewContent(post.content, 120)}
+          </p>
+        </div>
 
         {/* Creator info and metadata */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Avatar className="h-6 w-6 flex-shrink-0">
               <AvatarImage 
                 src={avatarUrl} 
                 alt={displayName} 
@@ -99,15 +110,15 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-300">{displayName}</span>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-sm font-medium text-gray-300 truncate">{displayName}</span>
               {post.tier_id ? (
-                <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200">
+                <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200 flex-shrink-0">
                   <Crown className="h-3 w-3 mr-1" />
                   Premium
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0">
                   <Globe className="h-3 w-3 mr-1" />
                   Public
                 </Badge>
@@ -116,7 +127,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           </div>
 
           {/* Engagement stats */}
-          <div className="flex items-center gap-3 text-gray-400">
+          <div className="flex items-center gap-3 text-gray-400 flex-shrink-0">
             <div className="flex items-center gap-1">
               <Heart className="h-4 w-4" />
               <span className="text-xs">0</span>
@@ -129,7 +140,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         </div>
 
         {/* Date */}
-        <div className="mt-2">
+        <div className="pt-1">
           <span className="text-xs text-gray-500">{post.date}</span>
         </div>
       </CardContent>
