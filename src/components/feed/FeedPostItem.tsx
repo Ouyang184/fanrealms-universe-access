@@ -14,6 +14,7 @@ import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { TierAccessInfo } from "./TierAccessInfo";
 import { Post } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
+import { generatePostBanner } from "@/utils/postBanners";
 
 interface FeedPostItemProps {
   post: Post;
@@ -84,8 +85,26 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     finalDecision: hasAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
+  // Generate banner gradient for this post
+  const bannerGradient = generatePostBanner(post.id);
+
   return (
     <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
+      {/* Post Banner */}
+      <div className={`relative h-32 ${bannerGradient}`}>
+        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute top-4 right-4">
+          {!readPosts.has(post.id) && (
+            <Badge className="bg-blue-500 text-white">New</Badge>
+          )}
+        </div>
+        <div className="absolute bottom-4 left-4 right-4">
+          <h2 className="text-white font-bold text-lg line-clamp-2 drop-shadow-lg">
+            {post.title}
+          </h2>
+        </div>
+      </div>
+
       {/* Post Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
@@ -102,9 +121,6 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
               <span className="text-sm text-muted-foreground">{post.date}</span>
             </div>
           </div>
-          {!readPosts.has(post.id) && (
-            <Badge className="bg-blue-500 text-white">New</Badge>
-          )}
         </div>
       </div>
 
@@ -130,7 +146,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 
           {/* Post content with conditional blur */}
           <div className={hasAccess ? "" : "relative"}>
-            <PostCardContent title={post.title} content={post.content} />
+            <PostCardContent title="" content={post.content} />
             {!hasAccess && (
               <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
             )}

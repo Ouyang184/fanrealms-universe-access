@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, MessageCircle, Crown, Globe } from "lucide-react";
 import { Post } from "@/types";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
+import { generatePostBanner } from "@/utils/postBanners";
 
 interface ContentItemProps {
   post: Post;
@@ -34,14 +35,17 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
     originalAuthorAvatar: post.authorAvatar
   });
 
+  // Generate banner gradient for this post
+  const bannerGradient = generatePostBanner(post.id);
+
   return (
     <Card 
       className="group cursor-pointer hover:shadow-lg transition-shadow bg-gray-900 border-gray-800 text-white overflow-hidden"
       onClick={handleClick}
     >
-      {/* Media Section */}
-      <div className="relative aspect-video bg-gray-800">
-        <PostCardMedia attachments={post.attachments} />
+      {/* Post Banner */}
+      <div className={`relative h-48 ${bannerGradient}`}>
+        <div className="absolute inset-0 bg-black/30"></div>
         
         {/* Overlay badges */}
         <div className="absolute top-2 right-2 flex gap-2">
@@ -56,14 +60,16 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
             </Badge>
           )}
         </div>
+
+        {/* Title overlay */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-white drop-shadow-lg group-hover:text-purple-300 transition-colors">
+            {post.title}
+          </h3>
+        </div>
       </div>
 
       <CardContent className="p-4">
-        {/* Title */}
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-          {post.title}
-        </h3>
-        
         {/* Content preview */}
         <p className="text-gray-400 text-sm mb-3 line-clamp-2">
           {post.content}
