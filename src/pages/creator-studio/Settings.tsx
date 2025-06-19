@@ -1,4 +1,3 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
@@ -10,9 +9,11 @@ import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useState } from "react";
 import { Save } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 export default function CreatorStudioSettings() {
-  const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
+  const { creatorId } = useParams();
+  const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings(creatorId);
   const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -83,7 +84,7 @@ export default function CreatorStudioSettings() {
   const displaySettings = { ...settings, ...pendingChanges };
   const hasChanges = Object.keys(pendingChanges).length > 0;
 
-  // Show the current display name prominently
+  // Show the current display name prominently - now using creator's actual data
   const currentDisplayName = displaySettings.display_name || displaySettings.username || 'Creator';
 
   return (

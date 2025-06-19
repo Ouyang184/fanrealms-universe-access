@@ -56,53 +56,21 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
     hasAccess = !post.tier_id || subscriptionData?.isSubscribed || false;
   }
 
-  // Improved creator display logic - prioritize creatorInfo data
   const getCreatorDisplayName = () => {
-    // First try display_name from creator info
     if (creatorInfo?.display_name) {
       return creatorInfo.display_name;
     }
-    // Then try username from creator info
     if (creatorInfo?.username) {
       return creatorInfo.username;
     }
-    // Fall back to post's authorName if it's not "Unknown"
     if (post.authorName && post.authorName !== 'Unknown') {
       return post.authorName;
     }
-    // Final fallback
     return 'Creator';
   };
 
-  // Improved avatar logic - prioritize creatorInfo data
-  const getCreatorAvatar = () => {
-    // First try profile_image_url from creator info
-    if (creatorInfo?.profile_image_url) {
-      return creatorInfo.profile_image_url;
-    }
-    // Then try avatar_url from creator info
-    if (creatorInfo?.avatar_url) {
-      return creatorInfo.avatar_url;
-    }
-    // Fall back to post's authorAvatar
-    if (post.authorAvatar) {
-      return post.authorAvatar;
-    }
-    // No avatar available
-    return null;
-  };
-
   const displayName = getCreatorDisplayName();
-  const avatarUrl = getCreatorAvatar();
-
-  console.log('FeedPostItem - Creator display info:', {
-    postId: post.id,
-    creatorInfo,
-    displayName,
-    avatarUrl,
-    postAuthorName: post.authorName,
-    postAuthorAvatar: post.authorAvatar
-  });
+  const avatarUrl = creatorInfo?.avatar_url || creatorInfo?.profile_image_url || post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png";
 
   console.log('FeedPostItem - Creator access check:', {
     postId: post.id,
@@ -123,7 +91,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage 
-              src={avatarUrl || undefined} 
+              src={avatarUrl} 
               alt={displayName} 
             />
             <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
