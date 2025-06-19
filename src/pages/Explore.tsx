@@ -1,10 +1,10 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { Post } from "@/types";
 
@@ -39,10 +39,13 @@ export default function ExplorePage() {
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get("category");
   
-  // Fetch real data from Supabase
+  // Get NSFW preferences to ensure content filtering
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
+  // Fetch real data from Supabase - these hooks now automatically filter NSFW content
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
-  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true); // Explicitly exclude AI creators
+  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true);
   
   // Post preview modal state
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -61,6 +64,9 @@ export default function ExplorePage() {
   const [filteredNewReleases, setFilteredNewReleases] = useState([]);
   const [filteredRecommended, setFilteredRecommended] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
+  console.log('Explore: Posts count after NSFW filtering:', posts.length);
 
   // Helper function to check if creator matches category
   const creatorMatchesCategory = (creator, category) => {
@@ -83,7 +89,7 @@ export default function ExplorePage() {
     
     // Start with real creators only, from the popular creators query (which already excludes AI)
     let creatorFilter = popularCreators;
-    let postsFilter = posts;
+    let postsFilter = posts; // Posts are already NSFW-filtered by the hook
     
     // Filter by category if present (but not if category is "all" or undefined)
     if (categoryFilter && categoryFilter !== "all") {
@@ -121,7 +127,7 @@ export default function ExplorePage() {
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
     
-  }, [categoryFilter, searchQuery, popularCreators, posts]);
+  }, [categoryFilter, searchQuery, popularCreators, posts, nsfwPrefs?.isNSFWEnabled]);
   
   // Handle post click
   const handlePostClick = (post: Post) => {

@@ -1,16 +1,22 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const usePostsByCategories = (categoryIds: number[] = []) => {
+  const { user } = useAuth();
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
   return useQuery({
-    queryKey: ["posts", "by-categories", categoryIds],
+    queryKey: ["posts", "by-categories", categoryIds, nsfwPrefs?.isNSFWEnabled],
     queryFn: async () => {
+      console.log('[usePostsByCategories] Fetching posts with NSFW filter:', nsfwPrefs?.isNSFWEnabled);
+      
       // If no categories selected, get all posts
       if (categoryIds.length === 0) {
-        return await getAllPosts();
+        return await getAllPosts(nsfwPrefs?.isNSFWEnabled, user?.id);
       }
 
       // Get creators who have tags that match the user's preferred categories
@@ -29,7 +35,7 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
             tags
           )
         `)
-        .not('creator_id', 'is', null) // Only get posts that have a creator_id
+        .not('creator_id', 'is', null)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -39,7 +45,7 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
       }
 
       // Filter posts where creator tags overlap with user preferences
-      const filteredPosts = posts?.filter(post => {
+      let filteredPosts = posts?.filter(post => {
         if (!post.creators?.tags || !Array.isArray(post.creators.tags)) {
           return false;
         }
@@ -53,10 +59,22 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
         );
       }) || [];
 
+      // Apply NSFW filtering
+      if (!nsfwPrefs?.isNSFWEnabled) {
+        filteredPosts = filteredPosts.filter(post => {
+          // Always show user's own posts regardless of NSFW status
+          if (user?.id && post.author_id === user.id) {
+            return true;
+          }
+          // For other posts, filter out NSFW content
+          return !post.is_nsfw;
+        });
+      }
+
       // If no posts match the user's preferences, fallback to all posts
       if (filteredPosts.length === 0) {
         console.log('No posts found matching user preferences, showing all posts');
-        return await getAllPosts();
+        return await getAllPosts(nsfwPrefs?.isNSFWEnabled, user?.id);
       }
 
       return filteredPosts.map((post): Post => ({
@@ -69,14 +87,15 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
         createdAt: post.created_at,
         date: formatRelativeDate(post.created_at),
         tier_id: post.tier_id,
-        attachments: post.attachments
+        attachments: post.attachments,
+        is_nsfw: post.is_nsfw || false
       }));
     },
-    enabled: true // Always enabled now since we have fallback
+    enabled: true
   });
 };
 
-const getAllPosts = async (): Promise<Post[]> => {
+const getAllPosts = async (isNSFWEnabled?: boolean, userId?: string): Promise<Post[]> => {
   const { data: posts, error } = await supabase
     .from('posts')
     .select(`
@@ -94,7 +113,21 @@ const getAllPosts = async (): Promise<Post[]> => {
     throw error;
   }
 
-  return (posts || []).map((post): Post => ({
+  // Apply NSFW filtering
+  let filteredPosts = posts || [];
+  
+  if (!isNSFWEnabled) {
+    filteredPosts = filteredPosts.filter(post => {
+      // Always show user's own posts regardless of NSFW status
+      if (userId && post.author_id === userId) {
+        return true;
+      }
+      // For other posts, filter out NSFW content
+      return !post.is_nsfw;
+    });
+  }
+
+  return filteredPosts.map((post): Post => ({
     id: post.id,
     title: post.title,
     content: post.content,
@@ -104,7 +137,8 @@ const getAllPosts = async (): Promise<Post[]> => {
     createdAt: post.created_at,
     date: formatRelativeDate(post.created_at),
     tier_id: post.tier_id,
-    attachments: post.attachments
+    attachments: post.attachments,
+    is_nsfw: post.is_nsfw || false
   }));
 };
 

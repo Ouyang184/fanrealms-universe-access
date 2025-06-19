@@ -3,12 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { Post } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const usePosts = () => {
+  const { user } = useAuth();
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
   return useQuery({
-    queryKey: ["posts", "recent"],
+    queryKey: ["posts", "recent", nsfwPrefs?.isNSFWEnabled],
     queryFn: async () => {
-      console.log('[usePosts] Fetching ALL posts, including tier-restricted ones');
+      console.log('[usePosts] Fetching posts with NSFW filter:', nsfwPrefs?.isNSFWEnabled);
       
       // Fetch ALL posts, including tier-restricted ones
       const { data: posts, error } = await supabase
@@ -35,46 +40,56 @@ export const usePosts = () => {
         return [];
       }
 
+      // Filter NSFW content based on user preferences
+      let filteredPosts = posts;
+      
+      if (!nsfwPrefs?.isNSFWEnabled) {
+        // Filter out NSFW posts if NSFW is disabled
+        filteredPosts = posts.filter(post => {
+          // Always show user's own posts regardless of NSFW status
+          if (user?.id && post.author_id === user.id) {
+            return true;
+          }
+          // For other posts, filter out NSFW content
+          return !post.is_nsfw;
+        });
+        
+        console.log('[usePosts] Filtered out NSFW content:', {
+          originalCount: posts.length,
+          filteredCount: filteredPosts.length,
+          nsfwEnabled: nsfwPrefs?.isNSFWEnabled
+        });
+      }
+
       // Log tier distribution
-      const tierStats = posts.reduce((acc, post) => {
+      const tierStats = filteredPosts.reduce((acc, post) => {
         const tierType = post.tier_id ? 'premium' : 'public';
         acc[tierType] = (acc[tierType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
       
       console.log('[usePosts] Post tier distribution:', tierStats);
-      console.log('[usePosts] Sample posts with author IDs:', posts.slice(0, 3).map(p => ({ 
-        id: p.id, 
-        title: p.title, 
-        tier_id: p.tier_id,
-        author_id: p.author_id // Log raw author_id
-      })));
 
-      return posts.map((post): Post => {
+      return filteredPosts.map((post): Post => {
         const mappedPost = {
           id: post.id,
           title: post.title,
           content: post.content,
-          authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
+          authorId: post.author_id,
           authorName: post.users?.username || 'Unknown',
           authorAvatar: post.users?.profile_picture || null,
           createdAt: post.created_at,
           date: formatRelativeDate(post.created_at),
           tier_id: post.tier_id,
           attachments: post.attachments,
-          is_nsfw: post.is_nsfw || false // Include NSFW flag
+          is_nsfw: post.is_nsfw || false
         };
         
-        console.log('[usePosts] ENHANCED Mapped post with creator access logic:', {
+        console.log('[usePosts] Mapped post with NSFW filter:', {
           id: mappedPost.id,
           title: mappedPost.title,
-          authorId: mappedPost.authorId,
-          authorIdType: typeof mappedPost.authorId,
-          authorIdValue: JSON.stringify(mappedPost.authorId),
-          tier_id: mappedPost.tier_id,
           is_nsfw: mappedPost.is_nsfw,
-          rawAuthorId: post.author_id,
-          message: 'Post mapped with consistent authorId for creator access logic'
+          nsfwEnabled: nsfwPrefs?.isNSFWEnabled
         });
         
         return mappedPost;

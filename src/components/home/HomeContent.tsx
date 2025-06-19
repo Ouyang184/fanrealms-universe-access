@@ -10,6 +10,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { usePostsByCategories } from "@/hooks/usePostsByCategories";
 import { useUserPreferences } from "@/hooks/useUserPreferences";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
+import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 import { Post } from "@/types";
 
@@ -17,16 +18,26 @@ export function HomeContent() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [postModalOpen, setPostModalOpen] = useState(false);
   
+  // Get NSFW preferences to trigger re-render when changed
+  const { data: nsfwPrefs } = useNSFWPreferences();
+  
   // Get user preferences
   const { data: userPreferences = [], isLoading: isLoadingPreferences } = useUserPreferences();
   const categoryIds = userPreferences.map(pref => pref.category_id);
   
   // Get posts filtered by user preferences for "For You" section (with fallback to all posts)
+  // These hooks now automatically filter NSFW content based on preferences
   const { data: forYouPosts = [], isLoading: isLoadingForYou } = usePostsByCategories(categoryIds);
   
   // Get all posts for trending and recent sections
   const { data: allPosts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
+
+  console.log('HomeContent: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
+  console.log('HomeContent: Posts count after NSFW filtering:', {
+    forYouPosts: forYouPosts.length,
+    allPosts: allPosts.length
+  });
 
   const getPostThumbnail = (post: Post) => {
     if (!post.attachments) return null;
