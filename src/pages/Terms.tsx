@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -6,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
+  const { user } = useAuth();
 
   const handleAcceptContinue = () => {
     if (finalAgreement) {
@@ -20,12 +21,16 @@ export default function Terms() {
     }
   };
 
+  // Determine the back link based on authentication status
+  const backToLink = user ? '/home' : '/';
+  const backToText = user ? 'Back to Home' : 'Back to Home';
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <Link to="/" className="text-primary hover:underline mb-4 inline-block">
-            ← Back to Home
+          <Link to={backToLink} className="text-primary hover:underline mb-4 inline-block">
+            ← {backToText}
           </Link>
           <h1 className="text-4xl font-bold mb-4">Comprehensive Terms of Service & Privacy Policy</h1>
           <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
