@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface UseNSFWPreferenceOptions {
   onAgeVerificationRequired?: () => Promise<boolean>;
-  isAgeVerified?: boolean; // Add this to use external age verification state
 }
 
 export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
@@ -47,26 +46,36 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
       
       if (!user?.id) throw new Error('User not authenticated');
 
-      // If trying to enable NSFW, check age verification first
-      if (enabled && options?.onAgeVerificationRequired) {
-        console.log('🚨 useNSFWPreference - Checking age verification for NSFW enable');
+      // If trying to enable NSFW, ALWAYS check age verification from database
+      if (enabled) {
+        console.log('🚨 useNSFWPreference - Checking age verification from database');
         
-        // Use the passed age verification status if available, otherwise check database
-        const isCurrentlyVerified = options.isAgeVerified !== undefined 
-          ? options.isAgeVerified 
-          : await checkDatabaseAgeVerification();
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('age_verified')
+          .eq('id', user.id)
+          .single();
 
-        console.log('🔍 useNSFWPreference - Age verification check:', { 
-          isCurrentlyVerified,
-          passedValue: options.isAgeVerified 
+        console.log('🔍 useNSFWPreference - Database age verification check:', { 
+          userData, 
+          error,
+          age_verified: userData?.age_verified 
         });
 
-        if (!isCurrentlyVerified) {
+        const isAgeVerified = !error && userData?.age_verified;
+
+        if (!isAgeVerified && options?.onAgeVerificationRequired) {
           console.log('🚨 useNSFWPreference - Age verification required, calling callback');
-          const isVerified = await options.onAgeVerificationRequired();
-          if (!isVerified) {
+          const verificationResult = await options.onAgeVerificationRequired();
+          console.log('🎯 useNSFWPreference - Verification callback result:', verificationResult);
+          
+          if (!verificationResult) {
+            console.log('❌ useNSFWPreference - Age verification failed or cancelled');
             throw new Error('Age verification required');
           }
+        } else if (!isAgeVerified) {
+          console.log('❌ useNSFWPreference - Age verification required but no callback provided');
+          throw new Error('Age verification required');
         }
       }
 
@@ -101,17 +110,6 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
       }
     }
   });
-
-  // Helper function to check database age verification
-  const checkDatabaseAgeVerification = async (): Promise<boolean> => {
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('age_verified')
-      .eq('id', user.id)
-      .single();
-
-    return !error && userData?.age_verified;
-  };
 
   return {
     showNSFW,

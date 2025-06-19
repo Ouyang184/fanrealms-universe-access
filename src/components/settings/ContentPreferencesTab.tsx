@@ -25,17 +25,32 @@ export function ContentPreferencesTab({
   const { toast } = useToast();
 
   const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference({
-    isAgeVerified: isAgeVerified, // Pass the current age verification status
     onAgeVerificationRequired: async (): Promise<boolean> => {
       console.log('🎯 Age verification required - showing modal');
       setShowVerificationModal(true);
       
       // Wait for age verification to complete
       return new Promise((resolve) => {
+        let checkCount = 0;
+        const maxChecks = 60; // 30 seconds with 500ms intervals
+        
         const checkVerification = () => {
+          checkCount++;
+          console.log(`🔍 Checking verification status (attempt ${checkCount}/${maxChecks}):`, {
+            isAgeVerified,
+            showVerificationModal,
+            checkCount
+          });
+          
           if (isAgeVerified && !showVerificationModal) {
             console.log('✅ Age verification completed successfully');
             resolve(true);
+            return;
+          }
+          
+          if (checkCount >= maxChecks) {
+            console.log('❌ Age verification timeout after 30 seconds');
+            resolve(false);
             return;
           }
           
@@ -45,14 +60,6 @@ export function ContentPreferencesTab({
         
         // Start checking after a brief delay
         setTimeout(checkVerification, 100);
-        
-        // Timeout after 30 seconds
-        setTimeout(() => {
-          if (!isAgeVerified) {
-            console.log('❌ Age verification timeout');
-            resolve(false);
-          }
-        }, 30000);
       });
     }
   });
