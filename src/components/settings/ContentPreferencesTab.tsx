@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle } from "lucide-react";
-import { useState, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { useNSFWPreference } from "@/hooks/useNSFWPreference";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentPreferencesTabProps {
   user: User | null;
@@ -22,58 +22,52 @@ export function ContentPreferencesTab({
   setShowVerificationModal, 
   handleAgeVerified 
 }: ContentPreferencesTabProps) {
-  const [pendingNSFWEnable, setPendingNSFWEnable] = useState(false);
+  const { toast } = useToast();
 
-  // Age verification callback for the hook
-  const handleAgeVerificationRequired = useCallback(async (): Promise<boolean> => {
-    console.log('🎯 ContentPreferencesTab - Age verification callback triggered');
-    return new Promise((resolve) => {
-      setPendingNSFWEnable(true);
+  const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference({
+    onAgeVerificationRequired: async (): Promise<boolean> => {
+      console.log('🎯 Age verification required - showing modal');
       setShowVerificationModal(true);
       
-      // Set up a one-time listener for age verification completion
-      const checkVerification = () => {
-        if (isAgeVerified && !showVerificationModal) {
-          console.log('✅ ContentPreferencesTab - Age verification completed');
-          setPendingNSFWEnable(false);
-          resolve(true);
-          return true;
-        }
-        return false;
-      };
-      
-      // Check immediately and then poll
-      if (!checkVerification()) {
-        const interval = setInterval(() => {
-          if (checkVerification()) {
-            clearInterval(interval);
+      // Wait for age verification to complete
+      return new Promise((resolve) => {
+        const checkVerification = () => {
+          if (isAgeVerified && !showVerificationModal) {
+            console.log('✅ Age verification completed successfully');
+            resolve(true);
+            return;
           }
-        }, 500);
+          
+          // Check again in 500ms
+          setTimeout(checkVerification, 500);
+        };
         
-        // Cleanup after 30 seconds
+        // Start checking after a brief delay
+        setTimeout(checkVerification, 100);
+        
+        // Timeout after 30 seconds
         setTimeout(() => {
-          clearInterval(interval);
-          if (pendingNSFWEnable) {
-            console.log('❌ ContentPreferencesTab - Age verification timeout');
-            setPendingNSFWEnable(false);
+          if (!isAgeVerified) {
+            console.log('❌ Age verification timeout');
             resolve(false);
           }
         }, 30000);
-      }
-    });
-  }, [isAgeVerified, showVerificationModal, setShowVerificationModal, pendingNSFWEnable]);
-
-  const { showNSFW, updateNSFWPreference, isUpdating } = useNSFWPreference({
-    onAgeVerificationRequired: handleAgeVerificationRequired
+      });
+    }
   });
 
   const handleNSFWToggle = async (enabled: boolean) => {
-    console.log('🔥 ContentPreferencesTab - NSFW Toggle clicked:', { 
+    console.log('🔥 NSFW Toggle clicked:', { 
       enabled, 
       isAgeVerified, 
-      showNSFW, 
+      currentNSFW: showNSFW,
       user: user?.id 
     });
+    
+    // If trying to enable NSFW and not age verified, the hook will handle verification
+    if (enabled && !isAgeVerified) {
+      console.log('🚨 User not age verified - hook will trigger verification');
+    }
     
     updateNSFWPreference(enabled);
   };
@@ -121,11 +115,10 @@ export function ContentPreferencesTab({
             Debug Info:
           </p>
           <div className="text-xs text-gray-600 font-mono space-y-1">
-            <div>Age Verified (Hook): {String(isAgeVerified)}</div>
+            <div>Age Verified: {String(isAgeVerified)}</div>
             <div>NSFW Enabled: {showNSFW ? 'Yes' : 'No'}</div>
             <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
             <div>Loading: {isUpdating ? 'Yes' : 'No'}</div>
-            <div>Pending NSFW: {pendingNSFWEnable ? 'Yes' : 'No'}</div>
             <div>User ID: {user?.id || 'None'}</div>
           </div>
         </div>
