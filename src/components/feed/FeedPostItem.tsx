@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,15 +58,6 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
 
   // Improved creator display logic - prioritize creatorInfo data
   const getCreatorDisplayName = () => {
-    console.log('FeedPostItem - getCreatorDisplayName debug:', {
-      postId: post.id,
-      postAuthorId: post.authorId,
-      creatorInfo,
-      creatorInfoDisplayName: creatorInfo?.display_name,
-      creatorInfoUsername: creatorInfo?.username,
-      postAuthorName: post.authorName
-    });
-
     // First try display_name from creator info
     if (creatorInfo?.display_name) {
       return creatorInfo.display_name;
@@ -103,13 +95,13 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   const displayName = getCreatorDisplayName();
   const avatarUrl = getCreatorAvatar();
 
-  console.log('FeedPostItem - Final display values:', {
+  console.log('FeedPostItem - Creator display info:', {
     postId: post.id,
-    postAuthorId: post.authorId,
-    creatorInfoReceived: !!creatorInfo,
-    finalDisplayName: displayName,
-    finalAvatarUrl: avatarUrl,
-    creatorInfoKeys: creatorInfo ? Object.keys(creatorInfo) : 'none'
+    creatorInfo,
+    displayName,
+    avatarUrl,
+    postAuthorName: post.authorName,
+    postAuthorAvatar: post.authorAvatar
   });
 
   console.log('FeedPostItem - Creator access check:', {
