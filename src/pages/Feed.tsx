@@ -155,11 +155,14 @@ export default function FeedPage() {
               .single();
 
             if (creatorData && !error) {
+              // Store creator info keyed by user_id so we can look it up by post.authorId
               creatorMap[creator.user_id] = {
                 ...creatorData,
                 username: creatorData.users?.username,
                 profile_picture: creatorData.users?.profile_picture
               };
+              
+              console.log('Feed: Stored creator info for user_id:', creator.user_id, creatorData);
             }
           } catch (error) {
             console.error('Error fetching creator details:', error);
@@ -167,6 +170,7 @@ export default function FeedPage() {
         }
       }
       
+      console.log('Feed: Final creatorInfoMap:', creatorMap);
       setCreatorInfoMap(creatorMap);
     };
 
