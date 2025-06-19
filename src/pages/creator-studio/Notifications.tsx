@@ -7,7 +7,7 @@ import { EmptyNotifications } from "@/components/notifications/EmptyNotification
 import { NotificationHeader } from "@/components/notifications/NotificationHeader"
 import { NotificationTabs } from "@/components/notifications/NotificationTabs"
 
-export default function Notifications() {
+export default function CreatorNotifications() {
   const { user } = useAuth();
   const { 
     notifications, 
