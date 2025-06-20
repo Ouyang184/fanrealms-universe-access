@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { 
   Dialog, 
@@ -33,10 +32,10 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
   const { viewCount } = usePostViews(post.id);
   const { recordView } = usePostViewTracking();
   
-  // Record preview view when modal opens
+  // Record view when modal opens - this is the main view tracking point
   useEffect(() => {
     if (open && post.id) {
-      recordView(post.id, 'preview');
+      recordView(post.id, 'read'); // Changed from 'preview' to 'read' since clicking on content counts as viewing
     }
   }, [open, post.id, recordView]);
 

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,10 +34,10 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
-  // Enhanced post seen handler that also records view
+  // Enhanced post seen handler that records view when post leaves unread section
   const handlePostSeen = (postId: string) => {
     markPostAsRead(postId);
-    recordView(postId, 'read');
+    recordView(postId, 'read'); // Record view when post moves from unread to read
   };
   
   const postRef = usePostVisibility({
