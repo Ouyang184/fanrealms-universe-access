@@ -1,13 +1,17 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Video, FileIcon, Lock, FileImage, FileText, Play, Download } from "lucide-react";
+import { Heart, Video, FileIcon, Lock, FileImage, FileText, Play, Download, MessageCircle } from "lucide-react";
 import { NSFWBadge } from "@/components/ui/nsfw-badge";
 import { NSFWContentPlaceholder } from "@/components/nsfw/NSFWContentPlaceholder";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLikes } from "@/hooks/useLikes";
+import { useComments } from "@/hooks/useComments";
+import { cn } from "@/lib/utils";
 
 interface ContentCardProps {
   content: {
@@ -31,6 +35,8 @@ interface ContentCardProps {
 export function ContentCard({ content, onClick }: ContentCardProps) {
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
+  const { likeCount, isLiked, toggleLike, isToggling } = useLikes(content.id.toString());
+  const { comments } = useComments(content.id.toString());
   
   // Check if this NSFW content should be hidden
   const shouldHideNSFW = content.is_nsfw && !nsfwPrefs?.isNSFWEnabled;
@@ -38,6 +44,11 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   if (shouldHideNSFW) {
     return <NSFWContentPlaceholder type="general" showSettingsLink={!!user} />;
   }
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike();
+  };
 
   // Helper function to get the first media from attachments
   const getFirstMedia = (attachments: any) => {
@@ -214,9 +225,29 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             <Badge className={`${isPremium ? 'bg-purple-600' : 'bg-green-600'}`}>
               {isPremium ? "Premium" : "Free"}
             </Badge>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Heart className="h-4 w-4" />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={cn(
+                "h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors",
+                isLiked && "text-red-600"
+              )}
+              onClick={handleLike}
+              disabled={isToggling}
+            >
+              <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
             </Button>
+          </div>
+        </div>
+        {/* Engagement stats */}
+        <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
+          <div className="flex items-center gap-1">
+            <Heart className="h-3 w-3" />
+            <span>{likeCount}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <MessageCircle className="h-3 w-3" />
+            <span>{comments.length}</span>
           </div>
         </div>
       </CardContent>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Search,
@@ -21,7 +20,8 @@ import {
   MessageSquare,
   Loader,
   Lock,
-  Eye
+  Eye,
+  Heart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePostViews } from "@/hooks/usePostViews";
+import { useLikes } from "@/hooks/useLikes";
+import { useComments } from "@/hooks/useComments";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -311,7 +313,9 @@ function PostCard({ post }: { post: CreatorPost }) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { user } = useAuth();
-  const { viewCount } = usePostViews(post.id); // Add view count hook
+  const { viewCount } = usePostViews(post.id);
+  const { likeCount } = useLikes(post.id);
+  const { comments } = useComments(post.id);
   
   // CREATOR-CENTRIC ACCESS LOGIC: Creators ALWAYS have full access to their own posts
   const isOwnPost = !!(user?.id && post.authorId && String(user.id) === String(post.authorId));
@@ -529,12 +533,12 @@ function PostCard({ post }: { post: CreatorPost }) {
                   <span>{viewCount}</span>
                 </div>
                 <div className="flex items-center mr-4">
-                  <Star className="h-4 w-4 mr-1" />
-                  <span>{post.engagement?.likes || 0}</span>
+                  <Heart className="h-4 w-4 mr-1" />
+                  <span>{likeCount}</span>
                 </div>
                 <div className="flex items-center">
                   <MessageSquare className="h-4 w-4 mr-1" />
-                  <span>{post.engagement?.comments || 0}</span>
+                  <span>{comments.length}</span>
                 </div>
               </>
             )}

@@ -7,6 +7,10 @@ import { Heart, MessageCircle, Crown, Globe } from "lucide-react";
 import { Post } from "@/types";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { generatePostBanner, hasMediaContent } from "@/utils/postBanners";
+import { useLikes } from "@/hooks/useLikes";
+import { useComments } from "@/hooks/useComments";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ContentItemProps {
   post: Post;
@@ -15,10 +19,18 @@ interface ContentItemProps {
 }
 
 export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
+  const { likeCount, isLiked, toggleLike, isToggling } = useLikes(post.id);
+  const { comments } = useComments(post.id);
+
   const handleClick = () => {
     if (onPostClick) {
       onPostClick(post);
     }
+  };
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike();
   };
 
   // Use the post's authorName and authorAvatar which should now be properly set from HomeContent
@@ -139,15 +151,24 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
             </div>
           </div>
 
-          {/* Engagement stats */}
+          {/* Engagement stats with interactive buttons */}
           <div className="flex items-center gap-2 sm:gap-3 text-gray-400 flex-shrink-0">
-            <div className="flex items-center gap-0.5 sm:gap-1">
-              <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="text-xs">0</span>
-            </div>
-            <div className="flex items-center gap-0.5 sm:gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
+              disabled={isToggling}
+              className={cn(
+                "flex items-center gap-0.5 sm:gap-1 h-auto p-1 hover:bg-red-500/20 hover:text-red-400 transition-colors text-xs",
+                isLiked && "text-red-400"
+              )}
+            >
+              <Heart className={cn("h-3 w-3 sm:h-4 sm:w-4", isLiked && "fill-current")} />
+              <span>{likeCount}</span>
+            </Button>
+            <div className="flex items-center gap-0.5 sm:gap-1 text-xs">
               <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="text-xs">0</span>
+              <span>{comments.length}</span>
             </div>
           </div>
         </div>
