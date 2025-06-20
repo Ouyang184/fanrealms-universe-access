@@ -67,7 +67,7 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const navigationItems = [
     { icon: Home, label: 'Home', path: user ? '/home' : '/' },
     { icon: Rss, label: 'Feed', path: '/feed', badge: unreadCount > 0 ? unreadCount : null },
-    { icon: Users, label: 'Following', path: '/following' },
+    { icon: Users, label: 'Following', path: '/following', badge: unreadCount > 0 ? unreadCount : null },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
