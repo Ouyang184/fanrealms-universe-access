@@ -5,7 +5,7 @@ import { HeaderNotifications } from "./HeaderNotifications";
 import { UserDropdownMenu } from "./UserDropdownMenu";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageSquare, Rss } from "lucide-react";
+import { Rss } from "lucide-react";
 
 export function Header() {
   const { user } = useAuth();
@@ -20,20 +20,12 @@ export function Header() {
           <HeaderNotifications />
           
           {user && (
-            <>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" asChild>
-                <Link to="/feed">
-                  <Rss className="h-5 w-5" />
-                  <span className="sr-only">Feed</span>
-                </Link>
-              </Button>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" asChild>
-                <Link to="/messages">
-                  <MessageSquare className="h-5 w-5" />
-                  <span className="sr-only">Messages</span>
-                </Link>
-              </Button>
-            </>
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" asChild>
+              <Link to="/feed">
+                <Rss className="h-5 w-5" />
+                <span className="sr-only">Feed</span>
+              </Link>
+            </Button>
           )}
           
           {user ? (
