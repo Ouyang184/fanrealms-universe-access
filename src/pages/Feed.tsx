@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
@@ -15,7 +14,8 @@ const getReadPostsFromStorage = (): Set<string> => {
   try {
     const savedReadPosts = localStorage.getItem('readPosts');
     if (savedReadPosts) {
-      return new Set(JSON.parse(savedReadPosts));
+      const parsed = JSON.parse(savedReadPosts) as string[];
+      return new Set(parsed);
     }
   } catch (error) {
     console.error('Error loading read posts from localStorage:', error);
@@ -68,7 +68,7 @@ export default function FeedPage() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'readPosts' && e.newValue) {
         try {
-          const newReadPosts = new Set(JSON.parse(e.newValue));
+          const newReadPosts = new Set(JSON.parse(e.newValue) as string[]);
           setReadPosts(newReadPosts);
           console.log('Read posts updated from storage event:', newReadPosts.size);
         } catch (error) {
