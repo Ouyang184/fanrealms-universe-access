@@ -45,6 +45,13 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const followedPosts = posts?.filter(post => followedCreatorUserIds.includes(post.authorId)) || [];
   const unreadCount = followedPosts.filter(post => !readPosts.has(post.id)).length;
   
+  console.log('NavigationMenu - Unread count calculation:', {
+    followedCreatorUserIds,
+    followedPostsCount: followedPosts.length,
+    unreadCount,
+    readPostsSize: readPosts.size
+  });
+  
   // Update read posts when localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
@@ -98,10 +105,10 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
                 {!collapsed && <span className="text-base">{item.label}</span>}
                 {item.badge && item.badge > 0 && (
                   <span className={cn(
-                    "bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center",
+                    "bg-destructive text-destructive-foreground text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 font-medium",
                     collapsed ? "absolute -top-1 -right-1" : "ml-auto"
                   )}>
-                    {item.badge > 9 ? '9+' : item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </Link>
