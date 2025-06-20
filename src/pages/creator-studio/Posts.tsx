@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Search,
@@ -19,7 +20,8 @@ import {
   CheckCircle2,
   MessageSquare,
   Loader,
-  Lock
+  Lock,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePostViews } from "@/hooks/usePostViews";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -308,6 +311,7 @@ function PostCard({ post }: { post: CreatorPost }) {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { user } = useAuth();
+  const { viewCount } = usePostViews(post.id); // Add view count hook
   
   // CREATOR-CENTRIC ACCESS LOGIC: Creators ALWAYS have full access to their own posts
   const isOwnPost = !!(user?.id && post.authorId && String(user.id) === String(post.authorId));
@@ -518,19 +522,19 @@ function PostCard({ post }: { post: CreatorPost }) {
         </CardContent>
         <CardFooter className="flex items-center justify-between pt-0">
           <div className="flex items-center text-sm text-muted-foreground">
-            {post.status === "published" && post.engagement && (
+            {post.status === "published" && (
               <>
                 <div className="flex items-center mr-4">
-                  <EyeOff className="h-4 w-4 mr-1" />
-                  <span>{post.engagement.views.toLocaleString()}</span>
+                  <Eye className="h-4 w-4 mr-1" />
+                  <span>{viewCount}</span>
                 </div>
                 <div className="flex items-center mr-4">
                   <Star className="h-4 w-4 mr-1" />
-                  <span>{post.engagement.likes.toLocaleString()}</span>
+                  <span>{post.engagement?.likes || 0}</span>
                 </div>
                 <div className="flex items-center">
                   <MessageSquare className="h-4 w-4 mr-1" />
-                  <span>{post.engagement.comments.toLocaleString()}</span>
+                  <span>{post.engagement?.comments || 0}</span>
                 </div>
               </>
             )}
