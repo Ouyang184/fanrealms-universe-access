@@ -45,28 +45,9 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const followedPosts = posts?.filter(post => followedCreatorUserIds.includes(post.authorId)) || [];
   const unreadCount = followedPosts.filter(post => !readPosts.has(post.id)).length;
   
-  console.log('NavigationMenu - Detailed unread count calculation:', {
-    followedCreators: followedCreators.length,
-    followedCreatorUserIds,
-    allPostsCount: posts?.length || 0,
-    followedPostsCount: followedPosts.length,
-    followedPostTitles: followedPosts.map(p => p.title),
-    readPostsArray: Array.from(readPosts),
-    readPostsSize: readPosts.size,
-    unreadCount,
-    currentUser: user?.id,
-    currentPath: location.pathname
-  });
-  
-  // Debug individual posts
-  followedPosts.forEach(post => {
-    console.log(`Post "${post.title}" (${post.id}): isRead=${readPosts.has(post.id)}, authorId=${post.authorId}`);
-  });
-  
   // Update read posts when localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
-      console.log('NavigationMenu - Storage change detected');
       setReadPosts(getReadPostsFromStorage());
     };
     
@@ -76,7 +57,6 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
     const interval = setInterval(() => {
       const newReadPosts = getReadPostsFromStorage();
       if (newReadPosts.size !== readPosts.size) {
-        console.log('NavigationMenu - Local storage update detected via interval');
         setReadPosts(newReadPosts);
       }
     }, 1000);
