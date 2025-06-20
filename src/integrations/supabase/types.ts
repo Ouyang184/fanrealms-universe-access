@@ -535,6 +535,38 @@ export type Database = {
           },
         ]
       }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          view_type: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          view_type?: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          view_type?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           attachments: Json | null
@@ -803,6 +835,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_post_view_count: {
+        Args: { post_id_param: string }
+        Returns: number
+      }
       user_has_tier_access: {
         Args: { tier_id_param: string }
         Returns: boolean

@@ -1,261 +1,166 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogDescription,
-  DialogFooter
+  DialogDescription 
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { parseVideoUrl, isVideoUrl } from "@/utils/videoUtils";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Eye, Heart, MessageSquare, Share2, Crown, Lock } from "lucide-react";
 import { Post } from "@/types";
+import { PostCardMedia } from "@/components/post/PostCardMedia";
+import { PostCardContent } from "@/components/post/PostCardContent";
+import { PostLikes } from "@/components/post/PostLikes";
+import { PostComments } from "@/components/post/PostComments";
+import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
+import { useAuth } from "@/contexts/AuthContext";
+import { NSFWContentGate } from "@/components/nsfw/NSFWContentGate";
+import { usePostViews, usePostViewTracking } from "@/hooks/usePostViews";
 
 interface PostPreviewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  post: Post | null;
+  post: Post;
 }
 
 export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalProps) {
-  if (!post) return null;
+  const { user } = useAuth();
+  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
+  const { viewCount } = usePostViews(post.id);
+  const { recordView } = usePostViewTracking();
+  
+  // Record preview view when modal opens
+  useEffect(() => {
+    if (open && post.id) {
+      recordView(post.id, 'preview');
+    }
+  }, [open, post.id, recordView]);
 
-  // Enhanced attachment parsing to handle different data formats
-  const parseAttachments = (attachments: any) => {
-    if (!attachments) {
-      return [];
+  const isOwnPost = user?.id === post.authorId;
+  const hasAccess = isOwnPost || !post.tier_id || subscriptionData?.isSubscribed;
+  
+  const getDisplayContent = () => {
+    if (hasAccess || !post.tier_id) {
+      return {
+        title: post.title,
+        content: post.content,
+        showFullMedia: true
+      };
+    } else {
+      // Show preview for premium posts when not subscribed
+      const previewContent = post.content.length > 150 
+        ? post.content.substring(0, 150) + "..." 
+        : post.content;
+      
+      return {
+        title: post.title,
+        content: previewContent,
+        showFullMedia: false
+      };
     }
-    
-    // Handle the specific case where attachments have _type and value properties
-    if (attachments && typeof attachments === 'object' && attachments._type !== undefined) {
-      // If the value is "undefined" string or actual undefined, return empty array
-      if (attachments.value === "undefined" || attachments.value === undefined || attachments.value === null) {
-        return [];
-      }
-      // Try to parse the value if it's a string
-      if (typeof attachments.value === 'string' && attachments.value !== "undefined") {
-        try {
-          const parsed = JSON.parse(attachments.value);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (error) {
-          return [];
-        }
-      }
-      // If value is already an array, return it
-      if (Array.isArray(attachments.value)) {
-        return attachments.value;
-      }
-    }
-    
-    // If it's already an array, return it
-    if (Array.isArray(attachments)) {
-      return attachments;
-    }
-    
-    // If it's a string, try to parse it as JSON
-    if (typeof attachments === 'string' && attachments !== "undefined") {
-      try {
-        const parsed = JSON.parse(attachments);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (error) {
-        return [];
-      }
-    }
-    
-    // If it's an object (but not the _type structure), wrap it in an array
-    if (typeof attachments === 'object') {
-      return [attachments];
-    }
-    
-    return [];
   };
 
-  const parsedAttachments = parseAttachments(post.attachments);
-  
-  // Separate images, videos, and embeddable videos
-  const images = parsedAttachments.filter(att => 
-    att && att.type === 'image' && att.url
-  );
-  
-  const embeddableVideos = parsedAttachments.filter(att => 
-    att && att.type === 'video' && att.url && isVideoUrl(att.url)
-  );
-  
-  const uploadedVideos = parsedAttachments.filter(att => 
-    att && att.type === 'video' && att.url && !isVideoUrl(att.url)
-  );
-  
-  const hasMedia = images.length > 0 || embeddableVideos.length > 0 || uploadedVideos.length > 0;
+  const displayContent = getDisplayContent();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={post.authorAvatar || undefined} alt={post.authorName} />
+          <div className="flex items-center gap-3 mb-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} />
               <AvatarFallback>{post.authorName?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{post.authorName}</span>
                 {post.tier_id && (
-                  <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
+                  <Badge className="bg-primary">
+                    <Crown className="h-3 w-3 mr-1" />
                     Premium
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">
-                {formatRelativeDate(post.createdAt)}
-              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                {post.date}
+              </div>
             </div>
           </div>
-          <DialogTitle className="text-left text-xl">{post.title}</DialogTitle>
-          <DialogDescription className="text-left">
-            {post.content}
-          </DialogDescription>
+          <DialogTitle className="text-xl">{displayContent.title}</DialogTitle>
+          <DialogDescription className="sr-only">Post preview</DialogDescription>
         </DialogHeader>
 
-        {/* Display media attachments */}
-        {hasMedia && (
-          <div className="my-6 space-y-4">
-            {/* Embeddable Videos (YouTube, Vimeo, etc.) */}
-            {embeddableVideos.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Videos ({embeddableVideos.length})
-                </h4>
-                <div className="space-y-3">
-                  {embeddableVideos.map((video, index) => {
-                    const videoInfo = parseVideoUrl(video.url);
-                    if (!videoInfo || videoInfo.platform === 'unknown') return null;
-                    
-                    return (
-                      <div key={index} className="border rounded-lg overflow-hidden">
-                        <div className="aspect-video w-full">
-                          <iframe
-                            src={videoInfo.embedUrl}
-                            title={video.name || `Video ${index + 1}`}
-                            className="w-full h-full"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                        </div>
-                        <div className="p-3 bg-muted/30 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium truncate">
-                              {video.name || `${videoInfo.platform} Video`}
-                            </span>
-                            <Badge variant="secondary" className="text-xs capitalize">
-                              {videoInfo.platform}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+        <NSFWContentGate 
+          isNSFW={post.is_nsfw} 
+          authorId={post.authorId}
+          type="post"
+        >
+          <div className="space-y-4">
+            <PostCardContent title="" content={displayContent.content} />
+            
+            {displayContent.showFullMedia ? (
+              <PostCardMedia attachments={post.attachments} />
+            ) : post.tier_id && (
+              <div className="relative">
+                <PostCardMedia attachments={post.attachments} />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-lg flex items-center justify-center">
+                  <div className="bg-black/80 rounded-full p-4">
+                    <Lock className="h-8 w-8 text-white" />
+                  </div>
                 </div>
               </div>
             )}
-
-            {/* Uploaded Videos */}
-            {uploadedVideos.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Uploaded Videos ({uploadedVideos.length})
-                </h4>
-                <div className="space-y-3">
-                  {uploadedVideos.map((video, index) => (
-                    <div key={index} className="border rounded-lg overflow-hidden">
-                      <video
-                        controls
-                        className="w-full max-h-96"
-                        preload="metadata"
-                      >
-                        <source src={video.url} type="video/mp4" />
-                        <source src={video.url} type="video/webm" />
-                        <source src={video.url} type="video/ogg" />
-                        Your browser does not support the video tag.
-                      </video>
-                      <div className="p-3 bg-muted/30 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium truncate">
-                            {video.name || `Video ${index + 1}`}
-                          </span>
-                          {video.size && (
-                            <Badge variant="secondary" className="text-xs">
-                              {(video.size / (1024 * 1024)).toFixed(1)} MB
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+            
+            {/* Premium content notice for non-subscribers */}
+            {post.tier_id && !hasAccess && (
+              <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2 text-amber-800 mb-3">
+                  <Crown className="h-5 w-5 text-purple-600" />
+                  <span className="font-semibold">Premium Content Preview</span>
                 </div>
+                <p className="text-sm text-amber-700 mb-3">
+                  This is a preview of premium content. Subscribe to unlock the full post and exclusive content from this creator.
+                </p>
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
+                  <Lock className="h-4 w-4 mr-2" />
+                  Subscribe to Unlock
+                </Button>
               </div>
             )}
-
-            {/* Images */}
-            {images.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-muted-foreground">
-                  Images ({images.length})
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={image.url}
-                        alt={image.name || `Image ${index + 1}`}
-                        className="w-full max-h-80 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(image.url, '_blank')}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            window.open(image.url, '_blank');
-                          }}
-                          className="bg-white/90 hover:bg-white"
-                        >
-                          View Full Size
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            
+            {/* Stats */}
+            <div className="flex items-center gap-6 py-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>{viewCount}</span>
               </div>
-            )}
-          </div>
-        )}
-
-        <DialogFooter>
-          <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-muted-foreground">
-              {post.tier_id ? 'Premium content' : 'Free content'}
-              {hasMedia && (
-                <span className="ml-2">
-                  • {images.length + embeddableVideos.length + uploadedVideos.length} attachment{images.length + embeddableVideos.length + uploadedVideos.length !== 1 ? 's' : ''}
-                </span>
-              )}
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Close
-              </Button>
-              <Button className="bg-purple-600 hover:bg-purple-700">
-                Visit Creator Page
+
+            {/* Actions */}
+            <div className="flex items-center gap-4 border-t pt-4">
+              <PostLikes postId={post.id} />
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
+              >
+                <Share2 className="h-4 w-4" />
+                <span>Share</span>
               </Button>
             </div>
+
+            {/* Comments */}
+            <div className="border-t pt-4">
+              <PostComments postId={post.id} />
+            </div>
           </div>
-        </DialogFooter>
+        </NSFWContentGate>
       </DialogContent>
     </Dialog>
   );

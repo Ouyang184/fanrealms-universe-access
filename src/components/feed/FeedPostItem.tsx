@@ -15,6 +15,7 @@ import { TierAccessInfo } from "./TierAccessInfo";
 import { Post } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasMediaContent } from "@/utils/postBanners";
+import { usePostViewTracking } from "@/hooks/usePostViews";
 
 interface FeedPostItemProps {
   post: Post;
@@ -30,12 +31,19 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   creatorInfo 
 }) => {
   const { user } = useAuth();
+  const { recordView } = usePostViewTracking();
   
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
+  // Enhanced post seen handler that also records view
+  const handlePostSeen = (postId: string) => {
+    markPostAsRead(postId);
+    recordView(postId, 'read');
+  };
+  
   const postRef = usePostVisibility({
     postId: post.id,
-    onPostSeen: markPostAsRead,
+    onPostSeen: handlePostSeen,
     threshold: 0.5,
     visibilityDuration: 2000
   });

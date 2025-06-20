@@ -12,10 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNSFWPreferences } from '@/hooks/useNSFWPreferences';
 import { NSFWContentPlaceholder } from '@/components/nsfw/NSFWContentPlaceholder';
 import { Badge } from './ui/badge';
-import { Lock, Crown } from 'lucide-react';
+import { Lock, Crown, Eye } from 'lucide-react';
 import { Button } from './ui/button';
 import { isVideoUrl } from '@/utils/videoUtils';
 import { generatePostBanner, hasMediaContent } from '@/utils/postBanners';
+import { usePostViews } from '@/hooks/usePostViews';
 
 interface PostCardProps {
   id: string;
@@ -50,6 +51,7 @@ const PostCard: React.FC<PostCardProps> = ({
 }) => {
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
+  const { viewCount } = usePostViews(id);
   const parsedAttachments = attachments ? (Array.isArray(attachments) ? attachments : []) : [];
   
   // Check if this NSFW post should be hidden
@@ -248,6 +250,12 @@ const PostCard: React.FC<PostCardProps> = ({
               </Button>
             </div>
           )}
+          
+          {/* Show view count */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Eye className="h-4 w-4" />
+            <span>{viewCount} views</span>
+          </div>
           
           {/* Show media/attachments based on access level and only if media exists */}
           {postHasMedia && hasFullAccess ? (
