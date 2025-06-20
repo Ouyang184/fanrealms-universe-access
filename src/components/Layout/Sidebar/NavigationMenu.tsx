@@ -45,9 +45,28 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const followedPosts = posts?.filter(post => followedCreatorUserIds.includes(post.authorId)) || [];
   const unreadCount = followedPosts.filter(post => !readPosts.has(post.id)).length;
   
+  console.log('NavigationMenu - Detailed unread count calculation:', {
+    followedCreators: followedCreators.length,
+    followedCreatorUserIds,
+    allPostsCount: posts?.length || 0,
+    followedPostsCount: followedPosts.length,
+    followedPostTitles: followedPosts.map(p => p.title),
+    readPostsArray: Array.from(readPosts),
+    readPostsSize: readPosts.size,
+    unreadCount,
+    currentUser: user?.id,
+    currentPath: location.pathname
+  });
+  
+  // Debug individual posts
+  followedPosts.forEach(post => {
+    console.log(`Post "${post.title}" (${post.id}): isRead=${readPosts.has(post.id)}, authorId=${post.authorId}`);
+  });
+  
   // Update read posts when localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
+      console.log('NavigationMenu - Storage change detected');
       setReadPosts(getReadPostsFromStorage());
     };
     
@@ -55,19 +74,23 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
     
     // Also check periodically for localStorage updates within the same tab
     const interval = setInterval(() => {
-      setReadPosts(getReadPostsFromStorage());
+      const newReadPosts = getReadPostsFromStorage();
+      if (newReadPosts.size !== readPosts.size) {
+        console.log('NavigationMenu - Local storage update detected via interval');
+        setReadPosts(newReadPosts);
+      }
     }, 1000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [readPosts.size]);
   
   const navigationItems = [
     { icon: Home, label: 'Home', path: user ? '/home' : '/' },
     { icon: Rss, label: 'Feed', path: '/feed', badge: unreadCount > 0 ? unreadCount : null },
-    { icon: Users, label: 'Following', path: '/following', badge: unreadCount > 0 ? unreadCount : null },
+    { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
@@ -98,10 +121,10 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
                 {!collapsed && <span className="text-base">{item.label}</span>}
                 {item.badge && item.badge > 0 && (
                   <span className={cn(
-                    "bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center",
+                    "bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1.5 font-bold border-2 border-white shadow-lg",
                     collapsed ? "absolute -top-1 -right-1" : "ml-auto"
                   )}>
-                    {item.badge > 9 ? '9+' : item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </Link>
