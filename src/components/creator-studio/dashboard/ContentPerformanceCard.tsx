@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Post } from "@/types";
 import { useLikes } from "@/hooks/useLikes";
 import { useComments } from "@/hooks/useComments";
+import { usePostViews } from "@/hooks/usePostViews";
 
 interface ContentPerformanceCardProps {
   posts: Post[];
@@ -16,6 +17,7 @@ interface ContentPerformanceCardProps {
 function PostPerformanceItem({ post }: { post: Post }) {
   const { likeCount } = useLikes(post.id);
   const { comments } = useComments(post.id);
+  const { viewCount } = usePostViews(post.id);
   
   const getPostThumbnail = (post: Post) => {
     if (post.attachments && Array.isArray(post.attachments)) {
@@ -71,7 +73,7 @@ function PostPerformanceItem({ post }: { post: Post }) {
         <div className="flex items-center gap-4 mt-2">
           <div className="flex items-center gap-1 text-xs">
             <Eye className="h-3 w-3 text-muted-foreground" />
-            <span>--</span>
+            <span>{viewCount}</span>
           </div>
           <div className="flex items-center gap-1 text-xs">
             <Heart className="h-3 w-3 text-red-500" />

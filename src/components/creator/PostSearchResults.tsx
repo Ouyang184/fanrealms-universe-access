@@ -60,6 +60,7 @@ export function PostSearchResults({ posts, isLoading, searchQuery, isCreatorStud
           tier_id={post.tier_id}
           attachments={post.attachments}
           authorId={post.authorId}
+          is_nsfw={post.is_nsfw}
         />
       ))}
     </div>
