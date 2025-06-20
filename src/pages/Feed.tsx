@@ -52,16 +52,43 @@ export default function FeedPage() {
   useEffect(() => {
     try {
       localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
+      // Dispatch storage event for cross-tab synchronization
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'readPosts',
+        newValue: JSON.stringify(Array.from(readPosts)),
+        storageArea: localStorage
+      }));
     } catch (error) {
       console.error('Error saving read posts to localStorage:', error);
     }
   }, [readPosts]);
+
+  // Listen for localStorage changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'readPosts' && e.newValue) {
+        try {
+          const newReadPosts = new Set(JSON.parse(e.newValue));
+          setReadPosts(newReadPosts);
+          console.log('Read posts updated from storage event:', newReadPosts.size);
+        } catch (error) {
+          console.error('Error parsing read posts from storage event:', error);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
-  // Mark a post as read
+  // Mark a post as read - only when user explicitly interacts with it
   const markPostAsRead = (postId: string) => {
     setReadPosts(prev => {
+      if (prev.has(postId)) {
+        return prev; // Already read, no change
+      }
       const newReadPosts = new Set([...prev, postId]);
-      console.log(`Marking post ${postId} as read. Total read posts:`, newReadPosts.size);
+      console.log(`Manually marking post ${postId} as read. Total read posts:`, newReadPosts.size);
       return newReadPosts;
     });
   };
@@ -80,6 +107,7 @@ export default function FeedPage() {
     setTimeout(() => {
       setSelectedPost(post);
       setIsPreviewOpen(true);
+      // Mark as read when user opens the preview modal
       markPostAsRead(post.id);
     }, 50);
   };
@@ -163,6 +191,7 @@ export default function FeedPage() {
               readPosts={readPosts}
               markPostAsRead={markPostAsRead}
               creatorInfoMap={creatorInfoMap}
+              onPostClick={handlePostPreview}
             />
           </div>
         </div>

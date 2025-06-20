@@ -17,6 +17,7 @@ interface FeedMainContentProps {
   readPosts: Set<string>;
   markPostAsRead: (postId: string) => void;
   creatorInfoMap: Record<string, any>;
+  onPostClick?: (post: Post) => void;
 }
 
 export const FeedMainContent: React.FC<FeedMainContentProps> = ({
@@ -27,7 +28,8 @@ export const FeedMainContent: React.FC<FeedMainContentProps> = ({
   unreadCount,
   readPosts,
   markPostAsRead,
-  creatorInfoMap
+  creatorInfoMap,
+  onPostClick
 }) => {
   const hasPosts = followedPosts.length > 0;
 
@@ -84,6 +86,7 @@ export const FeedMainContent: React.FC<FeedMainContentProps> = ({
                   readPosts={readPosts}
                   markPostAsRead={markPostAsRead}
                   creatorInfo={creatorInfoMap[post.authorId]}
+                  onPostClick={onPostClick}
                 />
               ))}
             </div>
@@ -101,6 +104,7 @@ export const FeedMainContent: React.FC<FeedMainContentProps> = ({
                   readPosts={readPosts}
                   markPostAsRead={markPostAsRead}
                   creatorInfo={creatorInfoMap[post.authorId]}
+                  onPostClick={onPostClick}
                 />
               ))}
             </div>

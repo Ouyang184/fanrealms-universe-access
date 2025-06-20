@@ -1,10 +1,10 @@
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Lock, ThumbsDown, Crown } from "lucide-react";
+import { Lock, ThumbsDown, Crown, Eye } from "lucide-react";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
-import { usePostVisibility } from "@/hooks/usePostVisibility";
 import { NSFWContentGate } from "@/components/nsfw/NSFWContentGate";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
@@ -14,38 +14,25 @@ import { TierAccessInfo } from "./TierAccessInfo";
 import { Post } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasMediaContent } from "@/utils/postBanners";
-import { usePostViewTracking } from "@/hooks/usePostViews";
 
 interface FeedPostItemProps {
   post: Post;
   readPosts: Set<string>;
   markPostAsRead: (postId: string) => void;
   creatorInfo?: any;
+  onPostClick?: (post: Post) => void;
 }
 
 export const FeedPostItem: React.FC<FeedPostItemProps> = ({ 
   post, 
   readPosts, 
   markPostAsRead, 
-  creatorInfo 
+  creatorInfo,
+  onPostClick 
 }) => {
   const { user } = useAuth();
-  const { recordView } = usePostViewTracking();
   
   const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
-  
-  // Enhanced post seen handler that records view when post leaves unread section
-  const handlePostSeen = (postId: string) => {
-    markPostAsRead(postId);
-    recordView(postId, 'read'); // Record view when post moves from unread to read
-  };
-  
-  const postRef = usePostVisibility({
-    postId: post.id,
-    onPostSeen: handlePostSeen,
-    threshold: 0.5,
-    visibilityDuration: 2000
-  });
 
   const isOwnPost = user?.id === post.authorId;
   
@@ -95,8 +82,18 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   // Check if post has media content
   const postHasMedia = hasMediaContent(post.attachments);
 
+  // Handle clicking on the post to view it
+  const handlePostClick = () => {
+    if (onPostClick) {
+      onPostClick(post);
+    } else {
+      // Fallback: mark as read when clicked
+      markPostAsRead(post.id);
+    }
+  };
+
   return (
-    <div ref={postRef} className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
       {/* Post Header */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
@@ -139,17 +136,21 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
             </div>
           )}
 
-          {/* Post content with conditional blur */}
-          <div className={hasAccess ? "" : "relative"}>
+          {/* Post content with conditional blur and click handler */}
+          <div className={hasAccess ? "cursor-pointer" : "relative cursor-pointer"} onClick={handlePostClick}>
             <PostCardContent title={post.title} content={post.content} />
             {!hasAccess && (
-              <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg"></div>
+              <div className="absolute inset-0 backdrop-blur-sm bg-white/10 rounded-lg flex items-center justify-center">
+                <div className="bg-black/80 rounded-full p-3">
+                  <Eye className="h-6 w-6 text-white" />
+                </div>
+              </div>
             )}
           </div>
           
           {/* Media with conditional blur - only show if media exists */}
           {postHasMedia && (
-            <div className={hasAccess ? "" : "relative"}>
+            <div className={hasAccess ? "cursor-pointer" : "relative cursor-pointer"} onClick={handlePostClick}>
               <PostCardMedia attachments={post.attachments} />
               {!hasAccess && (
                 <div className="absolute inset-0 backdrop-blur-md bg-black/20 rounded-lg flex items-center justify-center">
@@ -164,8 +165,23 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
           {/* Dynamic Tier Access Information - ONLY show for non-creators */}
           {!isOwnPost && !hasAccess && <TierAccessInfo post={post} creatorInfo={creatorInfo} />}
 
+          {/* View Full Post Button */}
+          {hasAccess && (
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handlePostClick}
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                View Full Post
+              </Button>
+            </div>
+          )}
+
           {/* Engagement Section */}
-          <div className="space-y-3">
+          <div className="space-y-3 mt-4">
             {/* Like/Dislike Bar with real data */}
             <div className="flex items-center gap-4 py-2">
               <PostLikes postId={post.id} />
