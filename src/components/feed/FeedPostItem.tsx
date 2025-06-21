@@ -17,16 +17,16 @@ import { hasMediaContent } from "@/utils/postBanners";
 
 interface FeedPostItemProps {
   post: Post;
-  readPosts: Set<string>;
-  markPostAsRead: (postId: string) => void;
+  readPostIds: Set<string>;
+  markAsRead: (postId: string) => void;
   creatorInfo?: any;
   onPostClick?: (post: Post) => void;
 }
 
 export const FeedPostItem: React.FC<FeedPostItemProps> = ({ 
   post, 
-  readPosts, 
-  markPostAsRead, 
+  readPostIds, 
+  markAsRead, 
   creatorInfo,
   onPostClick 
 }) => {
@@ -82,13 +82,16 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
   // Check if post has media content
   const postHasMedia = hasMediaContent(post.attachments);
 
+  // Check if post is read
+  const isRead = readPostIds.has(post.id);
+
   // Handle clicking on the post to view it
   const handlePostClick = () => {
     if (onPostClick) {
       onPostClick(post);
     } else {
       // Fallback: mark as read when clicked
-      markPostAsRead(post.id);
+      markAsRead(post.id);
     }
   };
 
@@ -110,7 +113,7 @@ export const FeedPostItem: React.FC<FeedPostItemProps> = ({
               <span className="text-sm text-muted-foreground">{post.date}</span>
             </div>
           </div>
-          {!readPosts.has(post.id) && (
+          {!isRead && (
             <Badge className="bg-blue-500 text-white">New</Badge>
           )}
         </div>

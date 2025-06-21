@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
@@ -8,20 +9,7 @@ import { Post } from "@/types";
 import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
-
-// Helper function to load read posts from localStorage synchronously
-const getReadPostsFromStorage = (): Set<string> => {
-  try {
-    const savedReadPosts = localStorage.getItem('readPosts');
-    if (savedReadPosts) {
-      const parsed = JSON.parse(savedReadPosts) as string[];
-      return new Set(parsed);
-    }
-  } catch (error) {
-    console.error('Error loading read posts from localStorage:', error);
-  }
-  return new Set();
-};
+import { usePostReads } from "@/hooks/usePostReads";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -38,8 +26,9 @@ export default function FeedPage() {
   // Get user's subscriptions to check for pending cancellations
   const { userSubscriptions = [] } = useUserSubscriptions();
   
-  // Initialize read posts from localStorage synchronously to prevent flickering
-  const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage());
+  // Get post reads data
+  const { readPostIds, markAsRead, isLoading: loadingReads } = usePostReads();
+  
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
@@ -47,51 +36,6 @@ export default function FeedPage() {
   const hasPendingCancellations = userSubscriptions.some(
     subscription => subscription.status === 'active' && subscription.cancel_at_period_end === true
   );
-  
-  // Save read posts to localStorage when it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('readPosts', JSON.stringify(Array.from(readPosts)));
-      // Dispatch storage event for cross-tab synchronization
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'readPosts',
-        newValue: JSON.stringify(Array.from(readPosts)),
-        storageArea: localStorage
-      }));
-    } catch (error) {
-      console.error('Error saving read posts to localStorage:', error);
-    }
-  }, [readPosts]);
-
-  // Listen for localStorage changes from other tabs
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'readPosts' && e.newValue) {
-        try {
-          const newReadPosts = new Set(JSON.parse(e.newValue) as string[]);
-          setReadPosts(newReadPosts);
-          console.log('Read posts updated from storage event:', newReadPosts.size);
-        } catch (error) {
-          console.error('Error parsing read posts from storage event:', error);
-        }
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-  
-  // Mark a post as read - only when user explicitly interacts with it
-  const markPostAsRead = (postId: string) => {
-    setReadPosts(prev => {
-      if (prev.has(postId)) {
-        return prev; // Already read, no change
-      }
-      const newReadPosts = new Set([...prev, postId]);
-      console.log(`Manually marking post ${postId} as read. Total read posts:`, newReadPosts.size);
-      return newReadPosts;
-    });
-  };
   
   // Handle post preview with proper modal state management
   const handlePostPreview = (post: Post) => {
@@ -108,7 +52,7 @@ export default function FeedPage() {
       setSelectedPost(post);
       setIsPreviewOpen(true);
       // Mark as read when user opens the preview modal
-      markPostAsRead(post.id);
+      markAsRead(post.id);
     }, 50);
   };
 
@@ -122,8 +66,8 @@ export default function FeedPage() {
     }
   };
   
-  // If still loading followed creators or posts, show loading state
-  if (loadingFollows || loadingPosts) {
+  // If still loading followed creators, posts, or reads, show loading state
+  if (loadingFollows || loadingPosts || loadingReads) {
     return (
       <MainLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
@@ -142,7 +86,7 @@ export default function FeedPage() {
   console.log('Followed creators:', followedCreators);
   console.log('Followed creator user IDs:', followedCreatorUserIds);
   console.log('All posts:', posts);
-  console.log('Read posts from state:', Array.from(readPosts));
+  console.log('Read post IDs:', Array.from(readPostIds));
   
   // Filter posts by matching the post's authorId with the user_id of followed creators
   const followedPosts = posts?.filter(post => {
@@ -154,8 +98,8 @@ export default function FeedPage() {
   
   console.log('Filtered followed posts:', followedPosts);
   
-  // Calculate unread posts based on what user hasn't seen
-  const unreadPosts = followedPosts.filter(post => !readPosts.has(post.id));
+  // Calculate unread posts based on database read status
+  const unreadPosts = followedPosts.filter(post => !readPostIds.has(post.id));
   const unreadCount = unreadPosts.length;
 
   console.log('Unread posts count:', unreadCount);
@@ -188,8 +132,8 @@ export default function FeedPage() {
               followedPosts={followedPosts}
               unreadPosts={unreadPosts}
               unreadCount={unreadCount}
-              readPosts={readPosts}
-              markPostAsRead={markPostAsRead}
+              readPostIds={readPostIds}
+              markAsRead={markAsRead}
               creatorInfoMap={creatorInfoMap}
               onPostClick={handlePostPreview}
             />

@@ -12,60 +12,25 @@ import {
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
 import { usePosts } from '@/hooks/usePosts';
 import { useFollows } from '@/hooks/useFollows';
+import { usePostReads } from '@/hooks/usePostReads';
 
 interface NavigationMenuProps {
   collapsed?: boolean;
 }
-
-// Helper function to load read posts from localStorage synchronously
-const getReadPostsFromStorage = (): Set<string> => {
-  try {
-    const savedReadPosts = localStorage.getItem('readPosts');
-    if (savedReadPosts) {
-      return new Set(JSON.parse(savedReadPosts));
-    }
-  } catch (error) {
-    console.error('Error loading read posts from localStorage:', error);
-  }
-  return new Set();
-};
 
 export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
   const location = useLocation();
   const { user } = useAuth();
   const { data: posts } = usePosts();
   const { data: followedCreators = [] } = useFollows();
-  const [readPosts, setReadPosts] = useState<Set<string>>(() => getReadPostsFromStorage());
+  const { readPostIds } = usePostReads();
   
-  // Calculate unread posts count
+  // Calculate unread posts count using database data
   const followedCreatorUserIds = followedCreators.map(creator => creator.user_id).filter(Boolean);
   const followedPosts = posts?.filter(post => followedCreatorUserIds.includes(post.authorId)) || [];
-  const unreadCount = followedPosts.filter(post => !readPosts.has(post.id)).length;
-  
-  // Update read posts when localStorage changes
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setReadPosts(getReadPostsFromStorage());
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check periodically for localStorage updates within the same tab
-    const interval = setInterval(() => {
-      const newReadPosts = getReadPostsFromStorage();
-      if (newReadPosts.size !== readPosts.size) {
-        setReadPosts(newReadPosts);
-      }
-    }, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [readPosts.size]);
+  const unreadCount = followedPosts.filter(post => !readPostIds.has(post.id)).length;
   
   const navigationItems = [
     { icon: Home, label: 'Home', path: user ? '/home' : '/' },
