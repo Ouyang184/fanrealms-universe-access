@@ -10,7 +10,7 @@ export function PostCardContent({ title, content }: PostCardContentProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Define character limit for truncation
-  const CHARACTER_LIMIT = 400;
+  const CHARACTER_LIMIT = 800; // Increased limit for better preview
   
   // Check if content needs truncation
   const needsTruncation = content.length > CHARACTER_LIMIT;
@@ -29,7 +29,10 @@ export function PostCardContent({ title, content }: PostCardContentProps) {
           <>
             <span>...</span>
             <button
-              onClick={() => setIsExpanded(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(true);
+              }}
               className="text-primary hover:underline ml-1 font-normal"
             >
               Read more
@@ -38,7 +41,10 @@ export function PostCardContent({ title, content }: PostCardContentProps) {
         )}
         {needsTruncation && isExpanded && (
           <button
-            onClick={() => setIsExpanded(false)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(false);
+            }}
             className="text-primary hover:underline ml-2 font-normal"
           >
             Show less
