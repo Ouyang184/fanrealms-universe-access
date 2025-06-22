@@ -339,7 +339,7 @@ function PostCard({ post }: { post: CreatorPost }) {
     finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
   });
 
-  // Parse attachments for display
+  // Parse attachments for display with proper typing
   const parsedAttachments = post.attachments ? (Array.isArray(post.attachments) ? post.attachments : []) : [];
   
   // Check if PostCardMedia will handle video rendering
@@ -347,13 +347,24 @@ function PostCard({ post }: { post: CreatorPost }) {
     attachment.type === 'video' && isVideoUrl(attachment.url)
   );
 
-  // Filter out video attachments that will be handled by PostCardMedia
-  const attachmentsForPostAttachments = parsedAttachments.filter(attachment => {
-    if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
-      return false; // Exclude video URLs from PostAttachments
-    }
-    return true; // Include all other attachments
-  });
+  // Filter and properly type attachments for PostAttachments component
+  const attachmentsForPostAttachments = parsedAttachments
+    .filter(attachment => {
+      if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
+        return false; // Exclude video URLs from PostAttachments
+      }
+      return true; // Include all other attachments
+    })
+    .filter(attachment => {
+      // Only include attachments with valid types for PostAttachments
+      return ['image', 'video', 'pdf'].includes(attachment.type);
+    })
+    .map(attachment => ({
+      url: attachment.url,
+      name: attachment.name,
+      type: attachment.type as 'image' | 'video' | 'pdf',
+      size: attachment.size
+    }));
   
   const handleEditPost = (e: React.MouseEvent) => {
     e.stopPropagation();
