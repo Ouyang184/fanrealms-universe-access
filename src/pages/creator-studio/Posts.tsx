@@ -342,17 +342,24 @@ function PostCard({ post }: { post: CreatorPost }) {
   // Parse attachments for display with proper typing
   const parsedAttachments = post.attachments ? (Array.isArray(post.attachments) ? post.attachments : []) : [];
   
-  // Create filtered attachments for PostCardMedia (exclude video files entirely)
-  const mediaAttachmentsForPostCardMedia = parsedAttachments.filter(attachment => 
-    attachment.type !== 'video' // Exclude ALL video files from PostCardMedia
+  // FIXED VIDEO HANDLING: Separate video URLs from video files
+  const videoUrls = parsedAttachments.filter(attachment => 
+    attachment.type === 'video' && isVideoUrl(attachment.url)
+  );
+  
+  const videoFiles = parsedAttachments.filter(attachment => 
+    attachment.type === 'video' && !isVideoUrl(attachment.url)
+  );
+  
+  const nonVideoAttachments = parsedAttachments.filter(attachment => 
+    attachment.type !== 'video'
   );
 
-  // Filter and properly type attachments for PostAttachments component (include video files)
-  const attachmentsForPostAttachments = parsedAttachments
-    .filter(attachment => {
-      // Include all attachment types for PostAttachments
-      return ['image', 'video', 'pdf'].includes(attachment.type);
-    })
+  // Create filtered attachments for PostCardMedia (include video URLs and non-video media)
+  const mediaAttachmentsForPostCardMedia = [...videoUrls, ...nonVideoAttachments];
+
+  // Filter and properly type attachments for PostAttachments component (include only video files and PDFs)
+  const attachmentsForPostAttachments = [...videoFiles, ...parsedAttachments.filter(att => att.type === 'pdf')]
     .map(attachment => ({
       url: attachment.url,
       name: attachment.name,
@@ -531,15 +538,17 @@ function PostCard({ post }: { post: CreatorPost }) {
             {post.content}
           </p>
 
-          {/* Show media/attachments - UPDATED to exclude videos from PostCardMedia */}
+          {/* Show media/attachments - UPDATED to handle videos properly */}
           {parsedAttachments.length > 0 && (
             <div className="space-y-3">
-              {/* Only show non-video media in PostCardMedia */}
+              {/* Show video URLs and non-video media in PostCardMedia */}
               {mediaAttachmentsForPostCardMedia.length > 0 && (
                 <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
               )}
-              {/* Show all attachments (including videos) in PostAttachments */}
-              <PostAttachments attachments={attachmentsForPostAttachments} />
+              {/* Show video files and PDFs in PostAttachments */}
+              {attachmentsForPostAttachments.length > 0 && (
+                <PostAttachments attachments={attachmentsForPostAttachments} />
+              )}
             </div>
           )}
 

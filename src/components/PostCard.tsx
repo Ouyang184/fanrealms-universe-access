@@ -128,17 +128,24 @@ const PostCard: React.FC<PostCardProps> = ({
     subscriptionDataObject: subscriptionData
   });
 
-  // Create filtered attachments for PostCardMedia (exclude video files entirely)
-  const mediaAttachmentsForPostCardMedia = parsedAttachments.filter(attachment => 
-    attachment.type !== 'video' // Exclude ALL video files from PostCardMedia
+  // FIXED VIDEO HANDLING: Separate video URLs from video files
+  const videoUrls = parsedAttachments.filter(attachment => 
+    attachment.type === 'video' && isVideoUrl(attachment.url)
+  );
+  
+  const videoFiles = parsedAttachments.filter(attachment => 
+    attachment.type === 'video' && !isVideoUrl(attachment.url)
+  );
+  
+  const nonVideoAttachments = parsedAttachments.filter(attachment => 
+    attachment.type !== 'video'
   );
 
-  // Filter and properly type attachments for PostAttachments component (include video files)
-  const attachmentsForPostAttachments = parsedAttachments
-    .filter(attachment => {
-      // Include all attachment types for PostAttachments
-      return ['image', 'video', 'pdf'].includes(attachment.type);
-    })
+  // Create filtered attachments for PostCardMedia (include video URLs and non-video media)
+  const mediaAttachmentsForPostCardMedia = [...videoUrls, ...nonVideoAttachments];
+
+  // Filter and properly type attachments for PostAttachments component (include only video files and PDFs)
+  const attachmentsForPostAttachments = [...videoFiles, ...parsedAttachments.filter(att => att.type === 'pdf')]
     .map(attachment => ({
       url: attachment.url,
       name: attachment.name,
@@ -262,19 +269,21 @@ const PostCard: React.FC<PostCardProps> = ({
             <span>{viewCount} views</span>
           </div>
           
-          {/* Show media/attachments based on access level and only if media exists - UPDATED to exclude videos from PostCardMedia */}
+          {/* Show media/attachments based on access level and only if media exists */}
           {postHasMedia && hasFullAccess ? (
             <>
-              {/* Only show non-video media in PostCardMedia */}
+              {/* Show video URLs and non-video media in PostCardMedia */}
               {mediaAttachmentsForPostCardMedia.length > 0 && (
                 <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
               )}
-              {/* Show all attachments (including videos) in PostAttachments */}
-              <PostAttachments attachments={attachmentsForPostAttachments} />
+              {/* Show video files and PDFs in PostAttachments */}
+              {attachmentsForPostAttachments.length > 0 && (
+                <PostAttachments attachments={attachmentsForPostAttachments} />
+              )}
             </>
           ) : postHasMedia && isPremiumPost && !isOwnPost && (
             <div className="relative">
-              {/* Only show non-video media in PostCardMedia for preview */}
+              {/* Show video URLs and non-video media in PostCardMedia for preview */}
               {mediaAttachmentsForPostCardMedia.length > 0 && (
                 <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
               )}
