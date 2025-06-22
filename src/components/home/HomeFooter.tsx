@@ -24,9 +24,9 @@ export function HomeFooter() {
           <h3 className="font-bold mb-4">Support</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/help" className="text-sm text-gray-400 hover:text-white">
                 Help Center
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="text-sm text-gray-400 hover:text-white">
