@@ -12,6 +12,11 @@ const AuthFooter = () => {
       <Link to="/privacy" className="text-purple-400 hover:text-purple-300">
         Privacy Policy
       </Link>
+      . See our{" "}
+      <Link to="/cookie-policy" className="text-purple-400 hover:text-purple-300">
+        Cookie Policy
+      </Link>{" "}
+      for information about cookies.
     </p>
   );
 };

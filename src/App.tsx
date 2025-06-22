@@ -41,6 +41,7 @@ import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
 import AllCreatorsPage from "./pages/AllCreators";
 import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
 import Support from "./pages/Support";
+import CookiePolicy from "./pages/CookiePolicy";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -82,6 +83,7 @@ export default function App() {
                 {/* Legal and support pages */}
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/help" element={<Support />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />

@@ -54,9 +54,9 @@ export function HomeFooter() {
               </a>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/cookie-policy" className="text-sm text-gray-400 hover:text-white">
                 Cookie Policy
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="text-sm text-gray-400 hover:text-white">
