@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -84,6 +85,7 @@ export default function App() {
                 <Route path="/terms" element={<Terms />} />
                 <Route path="/help" element={<Support />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/cookies" element={<CookiePolicy />} />
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
