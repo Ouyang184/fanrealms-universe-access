@@ -47,6 +47,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePostViews } from "@/hooks/usePostViews";
 import { useLikes } from "@/hooks/useLikes";
 import { useComments } from "@/hooks/useComments";
+import { PostCardMedia } from "@/components/post/PostCardMedia";
+import { PostAttachments } from "@/components/PostAttachments";
+import { isVideoUrl } from "@/utils/videoUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -304,7 +307,7 @@ export default function CreatorPostsPage() {
   );
 }
 
-// Post Card Component with CREATOR-CENTRIC ACCESS LOGIC
+// Post Card Component with CREATOR-CENTRIC ACCESS LOGIC and Media Support
 function PostCard({ post }: { post: CreatorPost }) {
   const navigate = useNavigate();
   const { deletePost, isDeleting } = useDeletePost();
@@ -334,6 +337,22 @@ function PostCard({ post }: { post: CreatorPost }) {
     isPremiumPost,
     hasFullAccess,
     finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED'
+  });
+
+  // Parse attachments for display
+  const parsedAttachments = post.attachments ? (Array.isArray(post.attachments) ? post.attachments : []) : [];
+  
+  // Check if PostCardMedia will handle video rendering
+  const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 
+    attachment.type === 'video' && isVideoUrl(attachment.url)
+  );
+
+  // Filter out video attachments that will be handled by PostCardMedia
+  const attachmentsForPostAttachments = parsedAttachments.filter(attachment => {
+    if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
+      return false; // Exclude video URLs from PostAttachments
+    }
+    return true; // Include all other attachments
   });
   
   const handleEditPost = (e: React.MouseEvent) => {
@@ -503,9 +522,18 @@ function PostCard({ post }: { post: CreatorPost }) {
           </div>
         </CardHeader>
         <CardContent className="pb-3">
-          <p className="text-muted-foreground line-clamp-2">
+          <p className="text-muted-foreground line-clamp-2 mb-3">
             {post.content}
           </p>
+
+          {/* Show media/attachments - NEW ADDITION */}
+          {parsedAttachments.length > 0 && (
+            <div className="space-y-3">
+              <PostCardMedia attachments={post.attachments} />
+              <PostAttachments attachments={attachmentsForPostAttachments} />
+            </div>
+          )}
+
           {isPremiumPost && hasFullAccess && isOwnPost && (
             <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800 flex items-center gap-2">
