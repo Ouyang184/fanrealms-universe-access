@@ -64,14 +64,52 @@ export function CreatorHeader({
         )}
         <div className="absolute inset-0 bg-black/20" />
         
-        {/* Display Name and NSFW Badge positioned on banner */}
-        <div className="absolute bottom-6 left-6 md:left-32 lg:left-40">
+        {/* Display Name and NSFW Badge positioned at bottom of banner */}
+        <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
               {displayName}
             </h1>
             {creator.is_nsfw && (
               <NSFWBadge variant="profile" />
+            )}
+          </div>
+          
+          {/* Action buttons positioned at bottom right of banner */}
+          <div className="flex items-center gap-3">
+            {onNavigateToAbout && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNavigateToAbout}
+                className="gap-2 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+              >
+                <Info className="h-4 w-4" />
+                About
+              </Button>
+            )}
+            
+            {!isOwnProfile && (
+              <>
+                {isFollowing ? (
+                  <Button 
+                    onClick={onUnfollow} 
+                    variant="secondary" 
+                    className="gap-2 bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
+                  >
+                    <Star className="h-4 w-4 fill-current" />
+                    Following
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={onFollow} 
+                    className="gap-2 bg-primary hover:bg-primary/90"
+                  >
+                    <Users className="h-4 w-4" />
+                    Follow
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -95,7 +133,7 @@ export function CreatorHeader({
 
         {/* Main content area - properly spaced to avoid avatar overlap */}
         <div className="pt-20 space-y-6">
-          {/* Bio section positioned below avatar and name */}
+          {/* Bio section positioned below avatar */}
           {creator.bio && (
             <div className="space-y-2">
               <div className="text-muted-foreground max-w-3xl leading-relaxed break-words">
@@ -112,55 +150,23 @@ export function CreatorHeader({
             </div>
           )}
 
-          {/* Stats and Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+          {/* Stats */}
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span className="font-medium">{displayFollowerCount.toLocaleString()}</span>
+              <span>followers</span>
+            </div>
+            
+            {creator.created_at && (
               <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span className="font-medium">{displayFollowerCount.toLocaleString()}</span>
-                <span>followers</span>
+                <Calendar className="h-4 w-4" />
+                <span>Joined {new Date(creator.created_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long' 
+                })}</span>
               </div>
-              
-              {creator.created_at && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  <span>Joined {new Date(creator.created_at).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long' 
-                  })}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              {onNavigateToAbout && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onNavigateToAbout}
-                  className="gap-2"
-                >
-                  <Info className="h-4 w-4" />
-                  About
-                </Button>
-              )}
-              
-              {!isOwnProfile && (
-                <>
-                  {isFollowing ? (
-                    <Button onClick={onUnfollow} variant="secondary" className="gap-2">
-                      <Star className="h-4 w-4 fill-current" />
-                      Following
-                    </Button>
-                  ) : (
-                    <Button onClick={onFollow} className="gap-2">
-                      <Users className="h-4 w-4" />
-                      Follow
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Tags */}
