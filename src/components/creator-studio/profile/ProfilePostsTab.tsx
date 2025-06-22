@@ -73,7 +73,6 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
             date={post.date}
             tier_id={post.tier_id}
             attachments={post.attachments}
-            users={post.users}
             authorId={post.authorId}
             is_nsfw={post.is_nsfw}
           />
