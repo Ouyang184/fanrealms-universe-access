@@ -3,9 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, CheckCircle2, Star, Users, Lock, Gift, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles, ChevronRight } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -75,151 +74,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-b from-black to-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="space-y-2">
-              <p className="text-3xl md:text-4xl font-bold text-purple-400">10K+</p>
-              <p className="text-gray-400">Creators</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl md:text-4xl font-bold text-purple-400">2M+</p>
-              <p className="text-gray-400">Subscribers</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl md:text-4xl font-bold text-purple-400">50K+</p>
-              <p className="text-gray-400">Content pieces</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-3xl md:text-4xl font-bold text-purple-400">$5M+</p>
-              <p className="text-gray-400">Creator earnings</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-gray-900">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why creators and fans love FanRealms</h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              A platform built to empower creators and provide fans with unique experiences
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Gift className="h-8 w-8 text-purple-400" />,
-                title: "Exclusive Content",
-                description:
-                  "Get access to premium content that's not available anywhere else, directly from your favorite creators.",
-              },
-              {
-                icon: <Users className="h-8 w-8 text-purple-400" />,
-                title: "Community Access",
-                description: "Join private communities where you can interact with creators and like-minded fans.",
-              },
-              {
-                icon: <Lock className="h-8 w-8 text-purple-400" />,
-                title: "Direct Support",
-                description:
-                  "Your subscription directly supports creators, allowing them to continue making the content you love.",
-              },
-            ].map((feature, index) => (
-              <Card key={index} className="bg-gray-800 border-gray-700 hover:border-purple-600/50 transition-all">
-                <CardContent className="p-6">
-                  <div className="h-12 w-12 rounded-lg bg-purple-900/30 flex items-center justify-center mb-4">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                  <p className="text-gray-300">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Creators */}
-      <section className="py-20 px-4 bg-black">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex justify-between items-center mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold">Featured Creators</h2>
-              <p className="text-gray-300 mt-2">Discover popular creators across different categories</p>
-            </div>
-            <Link to="/explore">
-              <Button variant="outline" className="border-gray-700 hover:bg-gray-800">
-                View all creators
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                name: "Digital Art Master",
-                handle: "@digitalartist",
-                avatar: "DA",
-                category: "Art & Illustration",
-                subscribers: "25.4K",
-                description: "Creating digital art tutorials and exclusive artwork for subscribers.",
-                gradient: "from-purple-600 to-pink-600",
-              },
-              {
-                name: "Music Production Hub",
-                handle: "@musicpro",
-                avatar: "MP",
-                category: "Music",
-                subscribers: "18.7K",
-                description: "Sharing music production tips, sample packs, and unreleased tracks.",
-                gradient: "from-blue-600 to-cyan-600",
-              },
-              {
-                name: "Game Dev Insights",
-                handle: "@gamedev",
-                avatar: "GD",
-                category: "Gaming",
-                subscribers: "32.1K",
-                description: "Behind-the-scenes of game development with exclusive early access.",
-                gradient: "from-green-600 to-teal-600",
-              },
-            ].map((creator, index) => (
-              <Card key={index} className="bg-gray-900 border-gray-800 overflow-hidden">
-                <div className={`h-24 bg-gradient-to-r ${creator.gradient}`} />
-                <CardContent className="pt-0 -mt-10 p-6">
-                  <Avatar className="h-20 w-20 border-4 border-gray-900">
-                    <AvatarFallback className="bg-gray-800 text-xl">{creator.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="mt-4 flex items-center gap-2">
-                    <h3 className="text-xl font-bold">{creator.name}</h3>
-                    <Badge className="bg-purple-900/50 text-purple-300">Creator</Badge>
-                  </div>
-                  <p className="text-gray-400 text-sm">{creator.handle}</p>
-                  <p className="text-gray-300 mt-3">{creator.description}</p>
-
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-400">{creator.subscribers} subscribers</span>
-                    </div>
-                    <Link to="/signup">
-                      <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-                        Subscribe
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="py-20 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
@@ -267,65 +121,6 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 px-4 bg-black">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <Badge className="bg-purple-900/50 text-purple-300 hover:bg-purple-900/70 px-3 py-1 mb-4">
-              Testimonials
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What our users are saying</h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Hear from creators and subscribers who are part of the FanRealms community
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {[
-              {
-                quote:
-                  "FanRealms has completely changed how I connect with my audience. I'm able to share exclusive content and build a real community around my work.",
-                name: "Alex Rivera",
-                role: "Digital Artist",
-                avatar: "AR",
-                isCreator: true,
-              },
-              {
-                quote:
-                  "I love being able to support my favorite creators directly. The exclusive content and community access makes the subscription completely worth it.",
-                name: "Jamie Chen",
-                role: "Subscriber",
-                avatar: "JC",
-                isCreator: false,
-              },
-            ].map((testimonial, index) => (
-              <Card key={index} className="bg-gray-900 border-gray-800">
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-1 mb-4 text-yellow-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-lg mb-6">"{testimonial.quote}"</p>
-                  <div className="flex items-center gap-4">
-                    <Avatar>
-                      <AvatarFallback className="bg-purple-900/50">{testimonial.avatar}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{testimonial.name}</p>
-                        {testimonial.isCreator && <Badge className="bg-purple-900/50 text-purple-300">Creator</Badge>}
-                      </div>
-                      <p className="text-sm text-gray-400">{testimonial.role}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
         </div>
       </section>
@@ -450,7 +245,7 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/creator-guidelines" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/terms" className="text-sm text-gray-400 hover:text-white">
                     Creator Guidelines
                   </Link>
                 </li>
