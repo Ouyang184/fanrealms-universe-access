@@ -342,21 +342,15 @@ function PostCard({ post }: { post: CreatorPost }) {
   // Parse attachments for display with proper typing
   const parsedAttachments = post.attachments ? (Array.isArray(post.attachments) ? post.attachments : []) : [];
   
-  // Check if PostCardMedia will handle video rendering
-  const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 
-    attachment.type === 'video' && isVideoUrl(attachment.url)
+  // Create filtered attachments for PostCardMedia (exclude video files entirely)
+  const mediaAttachmentsForPostCardMedia = parsedAttachments.filter(attachment => 
+    attachment.type !== 'video' // Exclude ALL video files from PostCardMedia
   );
 
-  // Filter and properly type attachments for PostAttachments component
+  // Filter and properly type attachments for PostAttachments component (include video files)
   const attachmentsForPostAttachments = parsedAttachments
     .filter(attachment => {
-      if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
-        return false; // Exclude video URLs from PostAttachments
-      }
-      return true; // Include all other attachments
-    })
-    .filter(attachment => {
-      // Only include attachments with valid types for PostAttachments
+      // Include all attachment types for PostAttachments
       return ['image', 'video', 'pdf'].includes(attachment.type);
     })
     .map(attachment => ({
@@ -537,10 +531,14 @@ function PostCard({ post }: { post: CreatorPost }) {
             {post.content}
           </p>
 
-          {/* Show media/attachments - NEW ADDITION */}
+          {/* Show media/attachments - UPDATED to exclude videos from PostCardMedia */}
           {parsedAttachments.length > 0 && (
             <div className="space-y-3">
-              <PostCardMedia attachments={post.attachments} />
+              {/* Only show non-video media in PostCardMedia */}
+              {mediaAttachmentsForPostCardMedia.length > 0 && (
+                <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
+              )}
+              {/* Show all attachments (including videos) in PostAttachments */}
               <PostAttachments attachments={attachmentsForPostAttachments} />
             </div>
           )}
