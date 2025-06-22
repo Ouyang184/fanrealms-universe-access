@@ -64,8 +64,8 @@ export function CreatorHeader({
         )}
         <div className="absolute inset-0 bg-black/20" />
         
-        {/* Display Name and NSFW Badge positioned at bottom of banner */}
-        <div className="absolute bottom-6 left-6 md:left-40">
+        {/* Display Name and NSFW Badge positioned on banner */}
+        <div className="absolute bottom-6 left-6 md:left-32 lg:left-40">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
               {displayName}
