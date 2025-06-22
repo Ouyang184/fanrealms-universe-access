@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -32,7 +33,7 @@ export default function Terms() {
           <Link to={backToLink} className="text-primary hover:underline mb-4 inline-block">
             ← {backToText}
           </Link>
-          <h1 className="text-4xl font-bold mb-4">Comprehensive Terms of Service & Privacy Policy</h1>
+          <h1 className="text-4xl font-bold mb-4">Terms of Service & Privacy Policy</h1>
           <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
         </div>
 
@@ -46,7 +47,7 @@ export default function Terms() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4">
+              <p>
                 By accessing or using FanRealms ("the Platform"), you agree to comply with these Terms of Service (ToS) and our Privacy Policy. If you do not agree, you must immediately cease using the Platform.
               </p>
             </CardContent>
@@ -64,7 +65,7 @@ export default function Terms() {
               <div>
                 <h3 className="text-lg font-semibold mb-3">2.1 Age Requirement</h3>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>You must be at least 18 years old to use the Platform.</li>
+                  <li>You must be at least 18 years of age to create NSFW content.</li>
                   <li>In jurisdictions where the legal age of consent differs, you must comply with local laws.</li>
                   <li>We do not knowingly allow underage users and will terminate accounts and report illegal activity if discovered.</li>
                 </ul>
@@ -106,7 +107,7 @@ export default function Terms() {
                 <h3 className="text-lg font-semibold mb-3">3.2 Prohibited Content & Behavior</h3>
                 <p className="mb-3">You may not use the Platform to:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Post illegal content (child exploitation, revenge porn, terrorism-related material).</li>
+                  <li>Posting inappropriate content (child exploitation, revenge porn, terrorism-related material), if any inappropriate content are reported, it will be immediately deleted.</li>
                   <li>Engage in fraud, phishing, or scams.</li>
                   <li>Harass, dox, or threaten others.</li>
                   <li>Distribute malware, spam, or pirated material.</li>
@@ -120,7 +121,7 @@ export default function Terms() {
                 <h3 className="text-lg font-semibold mb-3">3.3 Content Ownership & Licensing</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Creators retain ownership of their content but grant the Platform a non-exclusive license to distribute it.</li>
-                  <li>Fans may not redistribute paid content without permission.</li>
+                  <li>Subscribers may not redistribute paid content without permission.</li>
                 </ul>
               </div>
             </CardContent>
@@ -138,7 +139,7 @@ export default function Terms() {
               <div>
                 <h3 className="text-lg font-semibold mb-3">4.1 Subscription & Tipping</h3>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Fans pay creators directly, and the Platform deducts a service fee.</li>
+                  <li>Subscribers pay creators by the use of stripe, stripe and the Platform deducts a service fee.</li>
                   <li>Recurring subscriptions auto-renew unless canceled.</li>
                 </ul>
               </div>
@@ -210,8 +211,7 @@ export default function Terms() {
             </CardHeader>
             <CardContent>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Arbitration Clause:</strong> Disputes must be resolved via binding arbitration (not class action).</li>
-                <li><strong>Governing Law:</strong> These terms are governed by United States law.</li>
+                <li><strong>Governing Law:</strong> These terms are governed by United States federal and state law.</li>
               </ul>
             </CardContent>
           </Card>
@@ -241,7 +241,7 @@ export default function Terms() {
                       </tr>
                       <tr>
                         <td className="border border-border p-3">Payment Data</td>
-                        <td className="border border-border p-3">Card details (via Stripe/PayPal)</td>
+                        <td className="border border-border p-3">Card details (via Stripe)</td>
                         <td className="border border-border p-3">Transaction processing</td>
                       </tr>
                       <tr>
@@ -276,8 +276,8 @@ export default function Terms() {
                 <h3 className="text-lg font-semibold mb-3">8.3 Data Sharing & Third Parties</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>Creators see fan interactions (tips, subscriptions).</li>
-                  <li>Payment processors (Stripe, PayPal) handle transactions.</li>
-                  <li>Cloud providers (AWS, Google Cloud) store data securely.</li>
+                  <li>Payment processors (Stripe) handle transactions.</li>
+                  <li>Cloud providers (Supabase) store data securely.</li>
                   <li>Legal authorities (if required by law).</li>
                 </ul>
               </div>
@@ -314,9 +314,7 @@ export default function Terms() {
               <div className="space-y-4">
                 <p className="font-medium">By checking ✅ I Agree, you confirm:</p>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>You are 18+ (or have parental consent).</li>
                   <li>You read and accept all terms.</li>
-                  <li>You waive class-action lawsuits (arbitration only).</li>
                 </ul>
                 
                 <div className="p-6 bg-muted/50 rounded-lg space-y-4">
