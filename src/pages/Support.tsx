@@ -96,38 +96,6 @@ export default function Support() {
             </CardContent>
           </Card>
 
-          {/* Quick Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileQuestion className="w-5 h-5" />
-                Quick Links
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <Button variant="outline" className="justify-start h-auto p-4" asChild>
-                  <Link to="/terms">
-                    <Shield className="w-4 h-4 mr-2" />
-                    <div className="text-left">
-                      <div className="font-semibold">Terms of Service</div>
-                      <div className="text-sm text-muted-foreground">Read our terms and privacy policy</div>
-                    </div>
-                  </Link>
-                </Button>
-                <Button variant="outline" className="justify-start h-auto p-4" asChild>
-                  <Link to="/explore">
-                    <HelpCircle className="w-4 h-4 mr-2" />
-                    <div className="text-left">
-                      <div className="font-semibold">Community Guidelines</div>
-                      <div className="text-sm text-muted-foreground">Learn about our community standards</div>
-                    </div>
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Response Time Notice */}
           <Card className="border-2 border-primary/20">
             <CardContent className="p-6">
