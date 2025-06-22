@@ -128,18 +128,23 @@ const PostCard: React.FC<PostCardProps> = ({
     subscriptionDataObject: subscriptionData
   });
 
-  // Check if PostCardMedia will handle video rendering
-  const hasVideoAttachmentForMedia = parsedAttachments.some(attachment => 
-    attachment.type === 'video' && isVideoUrl(attachment.url)
+  // Create filtered attachments for PostCardMedia (exclude video files entirely)
+  const mediaAttachmentsForPostCardMedia = parsedAttachments.filter(attachment => 
+    attachment.type !== 'video' // Exclude ALL video files from PostCardMedia
   );
 
-  // Filter out video attachments that will be handled by PostCardMedia
-  const attachmentsForPostAttachments = parsedAttachments.filter(attachment => {
-    if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
-      return false; // Exclude video URLs from PostAttachments
-    }
-    return true; // Include all other attachments
-  });
+  // Filter and properly type attachments for PostAttachments component (include video files)
+  const attachmentsForPostAttachments = parsedAttachments
+    .filter(attachment => {
+      // Include all attachment types for PostAttachments
+      return ['image', 'video', 'pdf'].includes(attachment.type);
+    })
+    .map(attachment => ({
+      url: attachment.url,
+      name: attachment.name,
+      type: attachment.type as 'image' | 'video' | 'pdf',
+      size: attachment.size
+    }));
 
   // Content display logic
   const getDisplayContent = () => {
@@ -257,20 +262,22 @@ const PostCard: React.FC<PostCardProps> = ({
             <span>{viewCount} views</span>
           </div>
           
-          {/* Show media/attachments based on access level and only if media exists */}
+          {/* Show media/attachments based on access level and only if media exists - UPDATED to exclude videos from PostCardMedia */}
           {postHasMedia && hasFullAccess ? (
             <>
-              <PostCardMedia attachments={attachments} />
-              <PostAttachments attachments={parsedAttachments.filter(attachment => {
-                if (attachment.type === 'video' && isVideoUrl(attachment.url)) {
-                  return false; // Exclude video URLs from PostAttachments
-                }
-                return true; // Include all other attachments
-              })} />
+              {/* Only show non-video media in PostCardMedia */}
+              {mediaAttachmentsForPostCardMedia.length > 0 && (
+                <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
+              )}
+              {/* Show all attachments (including videos) in PostAttachments */}
+              <PostAttachments attachments={attachmentsForPostAttachments} />
             </>
           ) : postHasMedia && isPremiumPost && !isOwnPost && (
             <div className="relative">
-              <PostCardMedia attachments={attachments} />
+              {/* Only show non-video media in PostCardMedia for preview */}
+              {mediaAttachmentsForPostCardMedia.length > 0 && (
+                <PostCardMedia attachments={mediaAttachmentsForPostCardMedia} />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent rounded-lg flex items-center justify-center">
                 <div className="bg-black/80 rounded-full p-4">
                   <Lock className="h-8 w-8 text-white" />

@@ -58,12 +58,33 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
   return (
     <div>
       <PostSearchBar onSearch={setSearchQuery} placeholder="Search your posts by title or tags..." />
-      <PostSearchResults 
-        posts={filteredPosts}
-        isLoading={isLoading}
-        searchQuery={searchQuery}
-        isCreatorStudio={true}
-      />
+      
+      {/* Use PostCard components directly for proper media handling */}
+      <div className="space-y-6 mt-6">
+        {filteredPosts.map((post) => (
+          <PostCard
+            key={post.id}
+            id={post.id}
+            title={post.title}
+            content={post.content}
+            authorName={post.authorName || ""}
+            authorAvatar={post.authorAvatar}
+            createdAt={post.createdAt}
+            date={post.date}
+            tier_id={post.tier_id}
+            attachments={post.attachments}
+            users={post.users}
+            authorId={post.authorId}
+            is_nsfw={post.is_nsfw}
+          />
+        ))}
+        
+        {filteredPosts.length === 0 && searchQuery && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No posts match your search query.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
