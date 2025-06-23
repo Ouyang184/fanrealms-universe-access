@@ -29,6 +29,11 @@ import Onboarding from '@/pages/Onboarding';
 import CompleteProfile from '@/pages/CompleteProfile';
 import Purchases from '@/pages/Purchases';
 import About from '@/pages/About';
+import Payments from '@/pages/Payments';
+import Security from '@/pages/Security';
+import CommunityGuidelines from '@/pages/CommunityGuidelines';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import CreatorGuidelines from '@/pages/CreatorGuidelines';
 
 // Creator Studio pages
 import CreatorStudioDashboard from '@/pages/creator-studio/Dashboard';
@@ -80,6 +85,11 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/about" element={<About />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
 
               {/* Protected routes */}
               <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
