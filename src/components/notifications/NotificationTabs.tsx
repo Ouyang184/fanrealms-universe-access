@@ -8,7 +8,6 @@ import {
   Bell,
   Heart,
   MessageSquare,
-  FileText,
   User,
   Users,
 } from "lucide-react";
@@ -65,12 +64,6 @@ export const NotificationTabs: React.FC<NotificationTabsProps> = ({
           Likes
           {unreadCounts.likes > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.likes}</Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="content" className="data-[state=active]:bg-purple-900/30 relative">
-          Content
-          {unreadCounts.content > 0 && (
-            <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.content}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="system" className="data-[state=active]:bg-purple-900/30 relative">
@@ -136,18 +129,6 @@ export const NotificationTabs: React.FC<NotificationTabsProps> = ({
           emptyIcon={Heart}
           emptyMessage="No likes yet"
           emptyDescription="When someone likes your content, it will appear here"
-          onMarkAsRead={onMarkAsRead}
-          onDelete={onDelete}
-        />
-      </TabsContent>
-
-      <TabsContent value="content" className="mt-6 space-y-4">
-        <NotificationTab
-          title="New Content"
-          notifications={notifications.filter((notification) => notification.type === "content" || notification.type === "post")}
-          emptyIcon={FileText}
-          emptyMessage="No new content notifications"
-          emptyDescription="When creators you follow post new content, it will appear here"
           onMarkAsRead={onMarkAsRead}
           onDelete={onDelete}
         />
