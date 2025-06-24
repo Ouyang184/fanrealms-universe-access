@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import AuthLayout from "@/components/AuthLayout";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
+import AuthFooter from "@/components/auth/AuthFooter";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -114,194 +114,204 @@ const Signup = () => {
 
   return (
     <>
-      <AuthLayout>
-        <Card className="bg-gray-900 border-gray-800 text-white">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
-            <CardDescription className="text-center text-gray-400">
-              Join FanRealms to support your favorite creators
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <FormControl>
-                          <Input
-                            id="fullName"
-                            placeholder="John Doe"
-                            type="text"
-                            autoComplete="name"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <FormControl>
-                          <Input
-                            id="email"
-                            placeholder="name@example.com"
-                            type="email"
-                            autoComplete="email"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                            {...field}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <FormControl>
-                          <Input
-                            id="password"
-                            placeholder="Create a strong password"
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="new-password"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                            {...field}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-                        </Button>
-                      </div>
-                      <FormMessage />
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-8">
+            <Link to="/" className="inline-block">
+              <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
+            </Link>
+          </div>
 
-                      {password && (
-                        <div className="mt-2 space-y-2">
-                          <div className="flex gap-1">
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 0 ? "bg-red-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 1 ? "bg-yellow-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 2 ? "bg-green-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 3 ? "bg-green-500" : "bg-gray-700"}`}
-                            ></div>
-                          </div>
-
-                          <ul className="text-xs space-y-1 text-gray-400">
-                            <li className="flex items-center gap-1">
-                              {hasMinLength ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
-                              At least 8 characters
-                            </li>
-                            <li className="flex items-center gap-1">
-                              {hasUppercase ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
-                              At least one uppercase letter
-                            </li>
-                            <li className="flex items-center gap-1">
-                              {hasNumber ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
-                              At least one number
-                            </li>
-                            <li className="flex items-center gap-1">
-                              {hasSpecialChar ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
-                              At least one special character
-                            </li>
-                          </ul>
+          <Card className="bg-gray-900 border-gray-800 text-white">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
+              <CardDescription className="text-center text-gray-400">
+                Join FanRealms to support your favorite creators
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <FormControl>
+                            <Input
+                              id="fullName"
+                              placeholder="John Doe"
+                              type="text"
+                              autoComplete="name"
+                              className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                              {...field}
+                            />
+                          </FormControl>
                         </div>
-                      )}
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <FormControl>
+                            <Input
+                              id="email"
+                              placeholder="name@example.com"
+                              type="email"
+                              autoComplete="email"
+                              className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                              {...field}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="password">Password</Label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <FormControl>
+                            <Input
+                              id="password"
+                              placeholder="Create a strong password"
+                              type={showPassword ? "text" : "password"}
+                              autoComplete="new-password"
+                              className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                          </Button>
+                        </div>
+                        <FormMessage />
 
-                <Alert className="bg-purple-900/20 border-purple-800 text-purple-200">
-                  <AlertDescription className="text-xs">
-                    By signing up, you'll receive updates about your account, new features, and creator content you
-                    follow. You'll be asked to review and accept our Terms of Service before your account is created.
-                  </AlertDescription>
-                </Alert>
+                        {password && (
+                          <div className="mt-2 space-y-2">
+                            <div className="flex gap-1">
+                              <div
+                                className={`h-1 flex-1 rounded-full ${passwordStrength > 0 ? "bg-red-500" : "bg-gray-700"}`}
+                              ></div>
+                              <div
+                                className={`h-1 flex-1 rounded-full ${passwordStrength > 1 ? "bg-yellow-500" : "bg-gray-700"}`}
+                              ></div>
+                              <div
+                                className={`h-1 flex-1 rounded-full ${passwordStrength > 2 ? "bg-green-500" : "bg-gray-700"}`}
+                              ></div>
+                              <div
+                                className={`h-1 flex-1 rounded-full ${passwordStrength > 3 ? "bg-green-500" : "bg-gray-700"}`}
+                              ></div>
+                            </div>
 
-                <Button
-                  type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700"
-                  disabled={isSubmitting || passwordStrength < 3}
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center">
-                      <LoadingSpinner className="mr-2 h-4 w-4" />
-                      Creating account...
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center">
-                      Review Terms & Create Account
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </div>
-                  )}
-                </Button>
-              </form>
-            </Form>
+                            <ul className="text-xs space-y-1 text-gray-400">
+                              <li className="flex items-center gap-1">
+                                {hasMinLength ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <AlertCircle className="h-3 w-3 text-gray-500" />
+                                )}
+                                At least 8 characters
+                              </li>
+                              <li className="flex items-center gap-1">
+                                {hasUppercase ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <AlertCircle className="h-3 w-3 text-gray-500" />
+                                )}
+                                At least one uppercase letter
+                              </li>
+                              <li className="flex items-center gap-1">
+                                {hasNumber ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <AlertCircle className="h-3 w-3 text-gray-500" />
+                                )}
+                                At least one number
+                              </li>
+                              <li className="flex items-center gap-1">
+                                {hasSpecialChar ? (
+                                  <Check className="h-3 w-3 text-green-500" />
+                                ) : (
+                                  <AlertCircle className="h-3 w-3 text-gray-500" />
+                                )}
+                                At least one special character
+                              </li>
+                            </ul>
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
 
-            <SocialLoginOptions />
-          </CardContent>
-          
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-400">
-              Already have an account?{" "}
-              <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
-                Sign in
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </AuthLayout>
+                  <Alert className="bg-purple-900/20 border-purple-800 text-purple-200">
+                    <AlertDescription className="text-xs">
+                      By signing up, you'll receive updates about your account, new features, and creator content you
+                      follow. You'll be asked to review and accept our Terms of Service before your account is created.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    disabled={isSubmitting || passwordStrength < 3}
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center">
+                        <LoadingSpinner className="mr-2 h-4 w-4" />
+                        Creating account...
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center">
+                        Review Terms & Create Account
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </div>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+
+              <SocialLoginOptions />
+            </CardContent>
+            
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-gray-400">
+                Already have an account?{" "}
+                <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+                  Sign in
+                </Link>
+              </p>
+            </CardFooter>
+          </Card>
+        </div>
+
+        <AuthFooter />
+      </div>
 
       <TermsModal 
         open={showTermsModal}
