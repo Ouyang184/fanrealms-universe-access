@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -43,6 +44,11 @@ import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
 import Support from "./pages/Support";
 import CookiePolicy from "./pages/CookiePolicy";
 import About from "./pages/About";
+import Payments from "./pages/Payments";
+import Security from "./pages/Security";
+import CommunityGuidelines from "./pages/CommunityGuidelines";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CreatorGuidelines from "./pages/CreatorGuidelines";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -86,6 +92,11 @@ export default function App() {
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/cookies" element={<CookiePolicy />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/security" element={<Security />} />
+                <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
@@ -95,7 +106,7 @@ export default function App() {
                 
                 {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-                <Route path="/subscriptions" element={<MainLayout><SubscriptionsPage /></MainLayout>} />
+                <Route path="/subscriptions" element={<SubscriptionsPage />} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />

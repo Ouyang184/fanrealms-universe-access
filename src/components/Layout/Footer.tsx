@@ -23,7 +23,7 @@ const Footer = () => {
             <h3 className="font-semibold mb-2">Legal</h3>
             <ul className="space-y-1.5">
               <li><Link to="/terms" className="hover:text-primary/80">Terms of Service</Link></li>
-              <li><Link to="/privacy" className="hover:text-primary/80">Privacy Policy</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-primary/80">Privacy Policy</Link></li>
               <li><Link to="/privacy-settings" className="hover:text-primary/80">Privacy Settings</Link></li>
               <li><Link to="/cookie-policy" className="hover:text-primary/80">Cookie Policy</Link></li>
               <li><Link to="/refund-policy" className="hover:text-primary/80">Refund Policy</Link></li>
@@ -45,6 +45,8 @@ const Footer = () => {
           <div className="space-y-3">
             <h3 className="font-semibold mb-2">Support</h3>
             <ul className="space-y-1.5">
+              <li><Link to="/payments" className="hover:text-primary/80">Payments</Link></li>
+              <li><Link to="/security" className="hover:text-primary/80">Security</Link></li>
               <li><Link to="/guidelines" className="hover:text-primary/80">Do's & Don'ts</Link></li>
               <li><Link to="/report" className="hover:text-primary/80">Report Content</Link></li>
               <li><Link to="/faq" className="hover:text-primary/80">FAQ</Link></li>

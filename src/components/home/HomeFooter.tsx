@@ -14,9 +14,14 @@ export function HomeFooter() {
               </Link>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
-                Blog
-              </a>
+              <Link to="/payments" className="text-sm text-gray-400 hover:text-white">
+                Payments
+              </Link>
+            </li>
+            <li>
+              <Link to="/security" className="text-sm text-gray-400 hover:text-white">
+                Security
+              </Link>
             </li>
           </ul>
         </div>
@@ -29,14 +34,14 @@ export function HomeFooter() {
               </Link>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/community-guidelines" className="text-sm text-gray-400 hover:text-white">
                 Community Guidelines
-              </a>
+              </Link>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/contact" className="text-sm text-gray-400 hover:text-white">
                 Contact Us
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -49,9 +54,9 @@ export function HomeFooter() {
               </Link>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-white">
                 Privacy Policy
-              </a>
+              </Link>
             </li>
             <li>
               <Link to="/cookie-policy" className="text-sm text-gray-400 hover:text-white">
@@ -59,9 +64,9 @@ export function HomeFooter() {
               </Link>
             </li>
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/copyright-policy" className="text-sm text-gray-400 hover:text-white">
                 Copyright Policy
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
@@ -69,14 +74,9 @@ export function HomeFooter() {
           <h3 className="font-bold mb-4">Creators</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/creator-guidelines" className="text-sm text-gray-400 hover:text-white">
                 Creator Guidelines
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
-                Creator FAQ
-              </a>
+              </Link>
             </li>
           </ul>
         </div>
