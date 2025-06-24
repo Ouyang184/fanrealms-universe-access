@@ -1,8 +1,10 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
 import RootLayout from "@/components/RootLayout";
+import { ProtectedLayout } from "@/components/Layout/ProtectedLayout";
 
 // Import pages
 import Index from '@/pages/Index';
@@ -94,44 +96,44 @@ function App() {
               <Route path="/help" element={<Help />} />
               <Route path="/contact" element={<Contact />} />
 
-              {/* Protected routes */}
-              <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
-              <Route path="/feed" element={<AuthGuard><Feed /></AuthGuard>} />
-              <Route path="/following" element={<AuthGuard><Following /></AuthGuard>} />
-              <Route path="/explore" element={<AuthGuard><Explore /></AuthGuard>} />
-              <Route path="/explore/all" element={<AuthGuard><ExploreAll /></AuthGuard>} />
-              <Route path="/explore/category/:category" element={<AuthGuard><ExploreCategory /></AuthGuard>} />
-              <Route path="/explore/creators" element={<AuthGuard><AllCreatorsExplore /></AuthGuard>} />
-              <Route path="/creators" element={<AuthGuard><AllCreators /></AuthGuard>} />
-              <Route path="/creators/featured" element={<AuthGuard><AllFeaturedCreators /></AuthGuard>} />
-              <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-              <Route path="/notifications" element={<AuthGuard><CreatorStudioNotifications /></AuthGuard>} />
-              <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-              <Route path="/account-settings" element={<AuthGuard><AccountSettings /></AuthGuard>} />
-              <Route path="/preferences" element={<AuthGuard><Preferences /></AuthGuard>} />
-              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-              <Route path="/subscriptions" element={<AuthGuard><Subscriptions /></AuthGuard>} />
-              <Route path="/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
-              <Route path="/payment" element={<AuthGuard><Payment /></AuthGuard>} />
-              <Route path="/search" element={<AuthGuard><SearchResults /></AuthGuard>} />
-              <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
-              <Route path="/complete-profile" element={<AuthGuard><CompleteProfile /></AuthGuard>} />
-              <Route path="/support" element={<AuthGuard><Support /></AuthGuard>} />
-              <Route path="/community" element={<AuthGuard><Community /></AuthGuard>} />
-              <Route path="/membership-tiers" element={<AuthGuard><MembershipTiers /></AuthGuard>} />
+              {/* Protected routes with layout */}
+              <Route path="/home" element={<ProtectedLayout><Home /></ProtectedLayout>} />
+              <Route path="/feed" element={<ProtectedLayout><Feed /></ProtectedLayout>} />
+              <Route path="/following" element={<ProtectedLayout><Following /></ProtectedLayout>} />
+              <Route path="/explore" element={<ProtectedLayout><Explore /></ProtectedLayout>} />
+              <Route path="/explore/all" element={<ProtectedLayout><ExploreAll /></ProtectedLayout>} />
+              <Route path="/explore/category/:category" element={<ProtectedLayout><ExploreCategory /></ProtectedLayout>} />
+              <Route path="/explore/creators" element={<ProtectedLayout><AllCreatorsExplore /></ProtectedLayout>} />
+              <Route path="/creators" element={<ProtectedLayout><AllCreators /></ProtectedLayout>} />
+              <Route path="/creators/featured" element={<ProtectedLayout><AllFeaturedCreators /></ProtectedLayout>} />
+              <Route path="/messages" element={<ProtectedLayout><Messages /></ProtectedLayout>} />
+              <Route path="/notifications" element={<ProtectedLayout><CreatorStudioNotifications /></ProtectedLayout>} />
+              <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+              <Route path="/account-settings" element={<ProtectedLayout><AccountSettings /></ProtectedLayout>} />
+              <Route path="/preferences" element={<ProtectedLayout><Preferences /></ProtectedLayout>} />
+              <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
+              <Route path="/subscriptions" element={<ProtectedLayout><Subscriptions /></ProtectedLayout>} />
+              <Route path="/purchases" element={<ProtectedLayout><Purchases /></ProtectedLayout>} />
+              <Route path="/payment" element={<ProtectedLayout><Payment /></ProtectedLayout>} />
+              <Route path="/search" element={<ProtectedLayout><SearchResults /></ProtectedLayout>} />
+              <Route path="/onboarding" element={<ProtectedLayout><Onboarding /></ProtectedLayout>} />
+              <Route path="/complete-profile" element={<ProtectedLayout><CompleteProfile /></ProtectedLayout>} />
+              <Route path="/support" element={<ProtectedLayout><Support /></ProtectedLayout>} />
+              <Route path="/community" element={<ProtectedLayout><Community /></ProtectedLayout>} />
+              <Route path="/membership-tiers" element={<ProtectedLayout><MembershipTiers /></ProtectedLayout>} />
 
               {/* Creator routes */}
-              <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
+              <Route path="/creator/:creatorIdentifier" element={<ProtectedLayout><Creator /></ProtectedLayout>} />
 
               {/* Creator Studio routes */}
-              <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
-              <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />
-              <Route path="/creator-studio/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-              <Route path="/creator-studio/membership-tiers" element={<AuthGuard><CreatorStudioMembershipTiers /></AuthGuard>} />
-              <Route path="/creator-studio/subscribers" element={<AuthGuard><CreatorStudioSubscribers /></AuthGuard>} />
-              <Route path="/creator-studio/payouts" element={<AuthGuard><CreatorStudioPayouts /></AuthGuard>} />
-              <Route path="/creator-studio/settings" element={<AuthGuard><CreatorStudioSettings /></AuthGuard>} />
-              <Route path="/creator-studio/profile" element={<AuthGuard><CreatorStudioProfile /></AuthGuard>} />
+              <Route path="/creator-studio/dashboard" element={<ProtectedLayout><CreatorStudioDashboard /></ProtectedLayout>} />
+              <Route path="/creator-studio/posts" element={<ProtectedLayout><CreatorStudioPosts /></ProtectedLayout>} />
+              <Route path="/creator-studio/messages" element={<ProtectedLayout><Messages /></ProtectedLayout>} />
+              <Route path="/creator-studio/membership-tiers" element={<ProtectedLayout><CreatorStudioMembershipTiers /></ProtectedLayout>} />
+              <Route path="/creator-studio/subscribers" element={<ProtectedLayout><CreatorStudioSubscribers /></ProtectedLayout>} />
+              <Route path="/creator-studio/payouts" element={<ProtectedLayout><CreatorStudioPayouts /></ProtectedLayout>} />
+              <Route path="/creator-studio/settings" element={<ProtectedLayout><CreatorStudioSettings /></ProtectedLayout>} />
+              <Route path="/creator-studio/profile" element={<ProtectedLayout><CreatorStudioProfile /></ProtectedLayout>} />
 
               {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
