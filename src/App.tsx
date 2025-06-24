@@ -1,137 +1,171 @@
 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from '@/contexts/AuthContext';
+import LandingPage from "./pages/Landing";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import AuthCallback from "./pages/AuthCallback";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import OnboardingPage from "./pages/Onboarding";
+import PreferencesPage from "./pages/Preferences";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Dashboard from "./pages/creator-studio/Dashboard";
+import LoadingPage from "./pages/Loading";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import HomePage from "./pages/Home";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import SubscriptionsPage from "./pages/Subscriptions";
 import RootLayout from "@/components/RootLayout";
+import FeedPage from "./pages/Feed";
+import FollowingPage from "./pages/Following";
+import Notifications from "./pages/creator-studio/Notifications";
+import Messages from "./pages/Messages";
+import ExplorePage from "./pages/Explore";
+import ExploreCategoryPage from "./pages/ExploreCategory";
+import SearchResultsPage from "./pages/SearchResults";
+import Logout from "./pages/Logout";
+import LogoutLoading from "./pages/LogoutLoading";
+import MembershipTiersPage from "./pages/MembershipTiers";
+import CreatorStudioTiers from "./pages/creator-studio/MembershipTiers";
+import AccountSettings from "./pages/AccountSettings";
+import { MainLayout } from "@/components/Layout/MainLayout";
+import CreatorPostsPage from "./pages/creator-studio/Posts";
+import { CreatorCheck } from "@/components/creator-studio/CreatorCheck";
+import CreatorStudioSubscribers from "./pages/creator-studio/Subscribers";
+import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
+import CreatorStudioSettings from "./pages/creator-studio/Settings";
+import CreatorPage from "./pages/Creator";
+import CreatorProfile from "./pages/creator-studio/CreatorProfile";
+import PaymentPage from "./pages/Payment";
+import Terms from "./pages/Terms";
+import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
+import AllCreatorsPage from "./pages/AllCreators";
+import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
+import Support from "./pages/Support";
+import CookiePolicy from "./pages/CookiePolicy";
 
-// Import pages
-import Index from '@/pages/Index';
-import Login from '@/pages/Login';
-import Signup from '@/pages/Signup';
-import Home from '@/pages/Home';
-import Feed from '@/pages/Feed';
-import Following from '@/pages/Following';
-import Explore from '@/pages/Explore';
-import Messages from '@/pages/Messages';
-import Settings from '@/pages/Settings';
-import Creator from '@/pages/Creator';
-import Dashboard from '@/pages/Dashboard';
-import AuthCallback from '@/pages/AuthCallback';
-import Terms from '@/pages/Terms';
-import CookiePolicy from '@/pages/CookiePolicy';
-import Profile from '@/pages/Profile';
-import Subscriptions from '@/pages/Subscriptions';
-import Payment from '@/pages/Payment';
-import SearchResults from '@/pages/SearchResults';
-import Preferences from '@/pages/Preferences';
-import Onboarding from '@/pages/Onboarding';
-import CompleteProfile from '@/pages/CompleteProfile';
-import Purchases from '@/pages/Purchases';
-import About from '@/pages/About';
-
-// Creator Studio pages
-import CreatorStudioDashboard from '@/pages/creator-studio/Dashboard';
-import CreatorStudioPosts from '@/pages/creator-studio/Posts';
-import CreatorStudioSettings from '@/pages/creator-studio/Settings';
-import CreatorStudioMembershipTiers from '@/pages/creator-studio/MembershipTiers';
-import CreatorStudioSubscribers from '@/pages/creator-studio/Subscribers';
-import CreatorStudioPayouts from '@/pages/creator-studio/Payouts';
-import CreatorStudioProfile from '@/pages/creator-studio/CreatorProfile';
-import CreatorStudioNotifications from '@/pages/creator-studio/Notifications';
-
-// Explore pages
-import ExploreAll from '@/pages/ExploreAll';
-import ExploreCategory from '@/pages/ExploreCategory';
-import AllCreators from '@/pages/AllCreators';
-import AllCreatorsExplore from '@/pages/AllCreatorsExplore';
-import AllFeaturedCreators from '@/pages/AllFeaturedCreators';
-
-import AuthGuard from '@/components/AuthGuard';
-import NotFound from '@/pages/NotFound';
-import Loading from '@/pages/Loading';
-import AccountSettings from '@/pages/AccountSettings';
-import Support from '@/pages/Support';
-import Community from '@/pages/Community';
-import MembershipTiers from '@/pages/MembershipTiers';
-
+// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      // Use the correct syntax for enabling suspense mode in React Query v5+
+      networkMode: 'online',
       refetchOnWindowFocus: false,
-      retry: 1,
     },
   },
 });
 
-function App() {
+export default function App() {
   return (
-    <RootLayout>
+    <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/cookie-policy" element={<CookiePolicy />} />
-              <Route path="/about" element={<About />} />
-
-              {/* Protected routes */}
-              <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
-              <Route path="/feed" element={<AuthGuard><Feed /></AuthGuard>} />
-              <Route path="/following" element={<AuthGuard><Following /></AuthGuard>} />
-              <Route path="/explore" element={<AuthGuard><Explore /></AuthGuard>} />
-              <Route path="/explore/all" element={<AuthGuard><ExploreAll /></AuthGuard>} />
-              <Route path="/explore/category/:category" element={<AuthGuard><ExploreCategory /></AuthGuard>} />
-              <Route path="/explore/creators" element={<AuthGuard><AllCreatorsExplore /></AuthGuard>} />
-              <Route path="/creators" element={<AuthGuard><AllCreators /></AuthGuard>} />
-              <Route path="/creators/featured" element={<AuthGuard><AllFeaturedCreators /></AuthGuard>} />
-              <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-              <Route path="/notifications" element={<AuthGuard><CreatorStudioNotifications /></AuthGuard>} />
-              <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
-              <Route path="/account-settings" element={<AuthGuard><AccountSettings /></AuthGuard>} />
-              <Route path="/preferences" element={<AuthGuard><Preferences /></AuthGuard>} />
-              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
-              <Route path="/subscriptions" element={<AuthGuard><Subscriptions /></AuthGuard>} />
-              <Route path="/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
-              <Route path="/payment" element={<AuthGuard><Payment /></AuthGuard>} />
-              <Route path="/search" element={<AuthGuard><SearchResults /></AuthGuard>} />
-              <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
-              <Route path="/complete-profile" element={<AuthGuard><CompleteProfile /></AuthGuard>} />
-              <Route path="/support" element={<AuthGuard><Support /></AuthGuard>} />
-              <Route path="/community" element={<AuthGuard><Community /></AuthGuard>} />
-              <Route path="/membership-tiers" element={<AuthGuard><MembershipTiers /></AuthGuard>} />
-
-              {/* Creator routes */}
-              <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
-
-              {/* Dashboard routes */}
-              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-
-              {/* Creator Studio routes */}
-              <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
-              <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />
-              <Route path="/creator-studio/messages" element={<AuthGuard><Messages /></AuthGuard>} />
-              <Route path="/creator-studio/membership-tiers" element={<AuthGuard><CreatorStudioMembershipTiers /></AuthGuard>} />
-              <Route path="/creator-studio/subscribers" element={<AuthGuard><CreatorStudioSubscribers /></AuthGuard>} />
-              <Route path="/creator-studio/payouts" element={<AuthGuard><CreatorStudioPayouts /></AuthGuard>} />
-              <Route path="/creator-studio/settings" element={<AuthGuard><CreatorStudioSettings /></AuthGuard>} />
-              <Route path="/creator-studio/profile" element={<AuthGuard><CreatorStudioProfile /></AuthGuard>} />
-
-              {/* Catch all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </AuthProvider>
-        </Router>
+        <AuthProvider>
+          <TooltipProvider>
+            <RootLayout>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/index" element={<Index />} />
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/feed" element={<FeedPage />} />
+                <Route path="/following" element={<FollowingPage />} />
+                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
+                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
+                <Route path="/explore/:category" element={<ExploreCategoryPage />} />
+                
+                {/* Auth routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/logout" element={<Logout />} />
+                <Route path="/logout/loading" element={<LogoutLoading />} />
+                
+                {/* Legal and support pages */}
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/help" element={<Support />} />
+                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                <Route path="/cookies" element={<CookiePolicy />} />
+                
+                {/* Payment route */}
+                <Route path="/payment" element={<PaymentPage />} />
+                
+                {/* Creator profile page */}
+                <Route path="/creator/:id" element={<CreatorPage />} />
+                
+                {/* Main app routes */}
+                <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+                <Route path="/subscriptions" element={<SubscriptionsPage />} />
+                <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
+                
+                {/* Settings page */}
+                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
+                
+                <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
+                
+                {/* Creator studio routes - All wrapped with CreatorCheck */}
+                <Route path="/creator-studio/dashboard" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <Dashboard />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/posts" element={
+                  <CreatorCheck>
+                    <CreatorPostsPage />
+                  </CreatorCheck>
+                } />
+                <Route path="/creator-studio/notifications" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <Notifications />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/membership-tiers" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorStudioTiers />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/subscribers" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorStudioSubscribers />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/payouts" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorStudioPayouts />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/settings" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorStudioSettings />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/creator-profile" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorProfile />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                
+                <Route path="/loading" element={<LoadingPage />} />
+              </Routes>
+              <Toaster />
+            </RootLayout>
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
-    </RootLayout>
+    </BrowserRouter>
   );
 }
-
-export default App;
