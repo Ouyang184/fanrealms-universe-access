@@ -1,19 +1,22 @@
-
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Heart, Star, Shield, Mail, Twitter, Instagram, ArrowLeft } from "lucide-react";
 
 export default function About() {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Simple Back Button */}
       <div className="container mx-auto px-4 py-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/" className="flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Link>
+        <Button variant="ghost" size="sm" onClick={handleBack} className="flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Back
         </Button>
       </div>
 
