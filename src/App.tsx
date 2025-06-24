@@ -78,7 +78,7 @@ export default function App() {
                 <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
                 
-                {/* Auth routes */}
+                {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
