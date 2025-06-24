@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
@@ -33,8 +34,6 @@ import Security from '@/pages/Security';
 import CommunityGuidelines from '@/pages/CommunityGuidelines';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import CreatorGuidelines from '@/pages/CreatorGuidelines';
-import Help from '@/pages/Help';
-import Contact from '@/pages/Contact';
 
 // Creator Studio pages
 import CreatorStudioDashboard from '@/pages/creator-studio/Dashboard';
@@ -91,8 +90,6 @@ function App() {
               <Route path="/community-guidelines" element={<CommunityGuidelines />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/contact" element={<Contact />} />
 
               {/* Protected routes */}
               <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
