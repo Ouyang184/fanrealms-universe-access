@@ -33,6 +33,28 @@ export default function CreatorStudioSettings() {
     );
   }
 
+  const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
+    updateSettings({ [name]: value });
+  };
+
+  const handleImageUpload = async (type: 'avatar') => {
+    // Create file input and trigger upload
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        await uploadProfileImage(file);
+      }
+    };
+    input.click();
+  };
+
+  const handleBannerUpdate = (bannerUrl: string) => {
+    updateSettings({ banner_url: bannerUrl });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div>
@@ -42,37 +64,27 @@ export default function CreatorStudioSettings() {
 
       <div className="grid gap-6">
         {/* Profile Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>
-              Update your creator profile details and bio
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProfileInfoForm 
-              settings={settings}
-              onUpdate={updateSettings}
-              onUploadImage={uploadProfileImage}
-              isUploading={isUploading}
-            />
-          </CardContent>
-        </Card>
+        <ProfileInfoForm 
+          settings={settings}
+          onSettingsChange={handleSettingsChange}
+          onImageUpload={handleImageUpload}
+          isUploading={isUploading}
+        />
 
         <Separator />
 
         {/* Banner Image */}
         <BannerSection 
-          settings={settings}
-          onUpdate={updateSettings}
+          userId={user?.id || ''}
+          currentBannerUrl={settings.banner_url}
+          onBannerUpdate={handleBannerUpdate}
         />
 
         <Separator />
 
         {/* Social Links */}
         <SocialLinksSection 
-          settings={settings}
-          onUpdate={updateSettings}
+          creatorId={settings.id}
         />
 
         <Separator />
@@ -80,7 +92,7 @@ export default function CreatorStudioSettings() {
         {/* NSFW Content Toggle */}
         <NSFWToggleSection 
           settings={settings}
-          onUpdate={updateSettings}
+          onSettingsChange={handleSettingsChange}
         />
 
         <Separator />
