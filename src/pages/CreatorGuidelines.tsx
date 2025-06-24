@@ -109,7 +109,6 @@ export default function CreatorGuidelines() {
               <div className="border-l-4 border-red-400 pl-6">
                 <h3 className="text-xl font-bold text-white mb-2">❌ Strictly Prohibited</h3>
                 <ul className="space-y-2 text-gray-300">
-                  <li>• Explicit sexual content, pornography, or adult material</li>
                   <li>• Content involving minors in any inappropriate context</li>
                   <li>• Hate speech, discrimination, or content targeting individuals/groups</li>
                   <li>• Violence, self-harm, or content that promotes dangerous activities</li>

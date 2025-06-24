@@ -96,7 +96,6 @@ export default function CommunityGuidelines() {
                   <li>• Spam, promotional content, or self-advertising</li>
                   <li>• Explicit sexual content or inappropriate requests</li>
                   <li>• Threats, doxxing, or sharing personal information</li>
-                  <li>• Off-topic discussions or derailing conversations</li>
                   <li>• Impersonation or misleading information</li>
                 </ul>
               </div>
