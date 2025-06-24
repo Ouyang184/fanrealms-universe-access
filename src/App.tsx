@@ -1,9 +1,8 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
-import { MainLayout } from '@/components/main-layout';
+import RootLayout from "@/components/RootLayout";
 
 // Import pages
 import Index from '@/pages/Index';
@@ -74,270 +73,74 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <AuthProvider>
-          <Routes>
-            {/* Public routes without MainLayout */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/cookie-policy" element={<CookiePolicy />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
-            <Route path="/help" element={<Help />} />
-            <Route path="/contact" element={<Contact />} />
+    <RootLayout>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <AuthProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/contact" element={<Contact />} />
 
-            {/* Protected routes with MainLayout */}
-            <Route path="/home" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Home />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/feed" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Feed />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/following" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Following />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/explore" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Explore />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/explore/all" element={
-              <AuthGuard>
-                <MainLayout>
-                  <ExploreAll />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/explore/category/:category" element={
-              <AuthGuard>
-                <MainLayout>
-                  <ExploreCategory />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/explore/creators" element={
-              <AuthGuard>
-                <MainLayout>
-                  <AllCreatorsExplore />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creators" element={
-              <AuthGuard>
-                <MainLayout>
-                  <AllCreators />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creators/featured" element={
-              <AuthGuard>
-                <MainLayout>
-                  <AllFeaturedCreators />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/messages" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Messages />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/notifications" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioNotifications />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/settings" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Settings />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/account-settings" element={
-              <AuthGuard>
-                <MainLayout>
-                  <AccountSettings />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/preferences" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Preferences />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/profile" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Profile />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/subscriptions" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Subscriptions />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/purchases" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Purchases />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/payment" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Payment />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/search" element={
-              <AuthGuard>
-                <MainLayout>
-                  <SearchResults />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/onboarding" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Onboarding />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/complete-profile" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CompleteProfile />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/support" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Support />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/community" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Community />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/membership-tiers" element={
-              <AuthGuard>
-                <MainLayout>
-                  <MembershipTiers />
-                </MainLayout>
-              </AuthGuard>
-            } />
+              {/* Protected routes */}
+              <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
+              <Route path="/feed" element={<AuthGuard><Feed /></AuthGuard>} />
+              <Route path="/following" element={<AuthGuard><Following /></AuthGuard>} />
+              <Route path="/explore" element={<AuthGuard><Explore /></AuthGuard>} />
+              <Route path="/explore/all" element={<AuthGuard><ExploreAll /></AuthGuard>} />
+              <Route path="/explore/category/:category" element={<AuthGuard><ExploreCategory /></AuthGuard>} />
+              <Route path="/explore/creators" element={<AuthGuard><AllCreatorsExplore /></AuthGuard>} />
+              <Route path="/creators" element={<AuthGuard><AllCreators /></AuthGuard>} />
+              <Route path="/creators/featured" element={<AuthGuard><AllFeaturedCreators /></AuthGuard>} />
+              <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
+              <Route path="/notifications" element={<AuthGuard><CreatorStudioNotifications /></AuthGuard>} />
+              <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+              <Route path="/account-settings" element={<AuthGuard><AccountSettings /></AuthGuard>} />
+              <Route path="/preferences" element={<AuthGuard><Preferences /></AuthGuard>} />
+              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+              <Route path="/subscriptions" element={<AuthGuard><Subscriptions /></AuthGuard>} />
+              <Route path="/purchases" element={<AuthGuard><Purchases /></AuthGuard>} />
+              <Route path="/payment" element={<AuthGuard><Payment /></AuthGuard>} />
+              <Route path="/search" element={<AuthGuard><SearchResults /></AuthGuard>} />
+              <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
+              <Route path="/complete-profile" element={<AuthGuard><CompleteProfile /></AuthGuard>} />
+              <Route path="/support" element={<AuthGuard><Support /></AuthGuard>} />
+              <Route path="/community" element={<AuthGuard><Community /></AuthGuard>} />
+              <Route path="/membership-tiers" element={<AuthGuard><MembershipTiers /></AuthGuard>} />
 
-            {/* Creator routes */}
-            <Route path="/creator/:creatorIdentifier" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Creator />
-                </MainLayout>
-              </AuthGuard>
-            } />
+              {/* Creator routes */}
+              <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
 
-            {/* Creator Studio routes */}
-            <Route path="/creator-studio/dashboard" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioDashboard />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/posts" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioPosts />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/messages" element={
-              <AuthGuard>
-                <MainLayout>
-                  <Messages />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/membership-tiers" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioMembershipTiers />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/subscribers" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioSubscribers />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/payouts" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioPayouts />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/settings" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioSettings />
-                </MainLayout>
-              </AuthGuard>
-            } />
-            <Route path="/creator-studio/profile" element={
-              <AuthGuard>
-                <MainLayout>
-                  <CreatorStudioProfile />
-                </MainLayout>
-              </AuthGuard>
-            } />
+              {/* Creator Studio routes */}
+              <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
+              <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />
+              <Route path="/creator-studio/messages" element={<AuthGuard><Messages /></AuthGuard>} />
+              <Route path="/creator-studio/membership-tiers" element={<AuthGuard><CreatorStudioMembershipTiers /></AuthGuard>} />
+              <Route path="/creator-studio/subscribers" element={<AuthGuard><CreatorStudioSubscribers /></AuthGuard>} />
+              <Route path="/creator-studio/payouts" element={<AuthGuard><CreatorStudioPayouts /></AuthGuard>} />
+              <Route path="/creator-studio/settings" element={<AuthGuard><CreatorStudioSettings /></AuthGuard>} />
+              <Route path="/creator-studio/profile" element={<AuthGuard><CreatorStudioProfile /></AuthGuard>} />
 
-            {/* Catch all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </AuthProvider>
-      </Router>
-    </QueryClientProvider>
+              {/* Catch all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </AuthProvider>
+        </Router>
+      </QueryClientProvider>
+    </RootLayout>
   );
 }
 
