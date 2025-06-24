@@ -1,25 +1,22 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+
+import { useCreatorSettings } from "@/hooks/useCreatorSettings";
+import { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { ProfileInfoForm } from "@/components/creator-studio/settings/ProfileInfoForm";
 import { BannerSection } from "@/components/creator-studio/settings/BannerSection";
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { NSFWToggleSection } from "@/components/creator-studio/settings/NSFWToggleSection";
 import { StripeConnectSection } from "@/components/creator-studio/StripeConnectSection";
-import { useCreatorSettings } from "@/hooks/useCreatorSettings";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { useState } from "react";
-import { Save } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export default function CreatorStudioSettings() {
-  const { creatorId } = useParams();
-  const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings(creatorId);
-  const [pendingChanges, setPendingChanges] = useState<Record<string, any>>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
+  const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <LoadingSpinner />
       </div>
     );
@@ -27,127 +24,69 @@ export default function CreatorStudioSettings() {
 
   if (!settings) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Unable to load creator settings</p>
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Creator Settings Not Found</h1>
+          <p className="text-muted-foreground">Unable to load your creator settings. Please try refreshing the page.</p>
+        </div>
       </div>
     );
   }
 
-  const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
-    setPendingChanges(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleImageUpload = (type: 'avatar') => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        try {
-          await uploadProfileImage(file);
-        } catch (error) {
-          console.error('Error uploading image:', error);
-        }
-      }
-    };
-    input.click();
-  };
-
-  const handleBannerUpdate = (bannerUrl: string) => {
-    setPendingChanges(prev => ({
-      ...prev,
-      banner_url: bannerUrl
-    }));
-  };
-
-  const handleSaveChanges = async () => {
-    if (Object.keys(pendingChanges).length === 0) {
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await updateSettings(pendingChanges);
-      setPendingChanges({});
-    } catch (error) {
-      console.error('Error saving changes:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Merge current settings with pending changes for display
-  const displaySettings = { ...settings, ...pendingChanges };
-  const hasChanges = Object.keys(pendingChanges).length > 0;
-
-  // Show the current display name prominently - now using creator's actual data
-  const currentDisplayName = displaySettings.display_name || displaySettings.username || 'Creator';
-
   return (
-    <div className="space-y-8">
+    <div className="container mx-auto p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Creator Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your creator profile and account settings for <span className="font-medium">{currentDisplayName}</span>
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Creator Settings</h1>
+        <p className="text-muted-foreground mt-1">Manage your creator profile and preferences</p>
       </div>
 
-      <Tabs defaultValue="profile" className="space-y-8">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="website">Website</TabsTrigger>
-          <TabsTrigger value="banner">Banner</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6">
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Information</CardTitle>
+            <CardDescription>
+              Update your creator profile details and bio
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ProfileInfoForm 
+              settings={settings}
+              onUpdate={updateSettings}
+              onUploadImage={uploadProfileImage}
+              isUploading={isUploading}
+            />
+          </CardContent>
+        </Card>
 
-        <TabsContent value="profile" className="space-y-6">
-          <ProfileInfoForm 
-            settings={displaySettings}
-            onSettingsChange={handleSettingsChange}
-            onImageUpload={handleImageUpload}
-            isUploading={isUploading}
-          />
-        </TabsContent>
+        <Separator />
 
-        <TabsContent value="content" className="space-y-6">
-          <NSFWToggleSection 
-            settings={displaySettings}
-            onSettingsChange={handleSettingsChange}
-          />
-        </TabsContent>
+        {/* Banner Image */}
+        <BannerSection 
+          settings={settings}
+          onUpdate={updateSettings}
+        />
 
-        <TabsContent value="payments" className="space-y-6">
-          <StripeConnectSection />
-        </TabsContent>
+        <Separator />
 
-        <TabsContent value="website" className="space-y-6">
-          <SocialLinksSection creatorId={settings.id} />
-        </TabsContent>
+        {/* Social Links */}
+        <SocialLinksSection 
+          settings={settings}
+          onUpdate={updateSettings}
+        />
 
-        <TabsContent value="banner" className="space-y-6">
-          <BannerSection 
-            userId={settings.user_id}
-            currentBannerUrl={displaySettings.banner_url}
-            onBannerUpdate={handleBannerUpdate}
-          />
-        </TabsContent>
-      </Tabs>
+        <Separator />
 
-      {/* Save Changes Button */}
-      <div className="flex justify-end pt-6 border-t">
-        <Button 
-          onClick={handleSaveChanges}
-          disabled={!hasChanges || isSaving}
-          className="min-w-[120px]"
-        >
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Changes"}
-        </Button>
+        {/* NSFW Content Toggle */}
+        <NSFWToggleSection 
+          settings={settings}
+          onUpdate={updateSettings}
+        />
+
+        <Separator />
+
+        {/* Stripe Connect */}
+        <StripeConnectSection />
       </div>
     </div>
   );
