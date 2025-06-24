@@ -166,7 +166,7 @@ export const useAuthFunctions = () => {
         description: "You have been signed out.",
       });
       
-      // Navigate to the root page
+      // Navigate to the root page (landing page)
       navigate('/', { replace: true });
     } catch (error: any) {
       toast({
