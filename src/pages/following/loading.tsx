@@ -1,6 +1,6 @@
 
 import { LoadingView } from "@/components/ui/loading-view";
-import { MainLayout } from "@/components/main-layout";
+import { MainLayout } from "@/components/Layout/MainLayout";
 
 export default function Loading() {
   return (

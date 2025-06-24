@@ -1,5 +1,5 @@
 
-import { MainLayout } from "@/components/main-layout"
+import { MainLayout } from "@/components/Layout/MainLayout"
 import { CreatorCheck } from "@/components/creator-studio/CreatorCheck"
 import { useCreatorDashboard } from "@/hooks/useCreatorDashboard"
 import { useCreatorSubscribers } from "@/hooks/useCreatorSubscribers"
