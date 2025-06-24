@@ -48,7 +48,6 @@ import CookiePolicy from "./pages/CookiePolicy";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Use the correct syntax for enabling suspense mode in React Query v5+
       networkMode: 'online',
       refetchOnWindowFocus: false,
     },
@@ -93,17 +92,14 @@ export default function App() {
                 {/* Creator profile page */}
                 <Route path="/creator/:id" element={<CreatorPage />} />
                 
-                {/* Main app routes */}
+                {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
+                <Route path="/subscriptions" element={<MainLayout><SubscriptionsPage /></MainLayout>} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
-                
-                {/* Settings page */}
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
-                
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
                 
-                {/* Creator studio routes - All wrapped with CreatorCheck */}
+                {/* Creator studio routes - All wrapped with CreatorCheck and MainLayout */}
                 <Route path="/creator-studio/dashboard" element={
                   <MainLayout>
                     <CreatorCheck>
@@ -112,9 +108,11 @@ export default function App() {
                   </MainLayout>
                 } />
                 <Route path="/creator-studio/posts" element={
-                  <CreatorCheck>
-                    <CreatorPostsPage />
-                  </CreatorCheck>
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorPostsPage />
+                    </CreatorCheck>
+                  </MainLayout>
                 } />
                 <Route path="/creator-studio/notifications" element={
                   <MainLayout>
