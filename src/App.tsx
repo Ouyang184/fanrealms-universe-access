@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
@@ -28,13 +29,6 @@ import Onboarding from '@/pages/Onboarding';
 import CompleteProfile from '@/pages/CompleteProfile';
 import Purchases from '@/pages/Purchases';
 import About from '@/pages/About';
-import Payments from '@/pages/Payments';
-import Security from '@/pages/Security';
-import CommunityGuidelines from '@/pages/CommunityGuidelines';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import CreatorGuidelines from '@/pages/CreatorGuidelines';
-import Help from '@/pages/Help';
-import Contact from '@/pages/Contact';
 
 // Creator Studio pages
 import CreatorStudioDashboard from '@/pages/creator-studio/Dashboard';
@@ -75,8 +69,8 @@ function App() {
   return (
     <RootLayout>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <AuthProvider>
+        <AuthProvider>
+          <Router>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
@@ -86,13 +80,6 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/about" element={<About />} />
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/community-guidelines" element={<CommunityGuidelines />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
-              <Route path="/help" element={<Help />} />
-              <Route path="/contact" element={<Contact />} />
 
               {/* Protected routes */}
               <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
@@ -123,6 +110,9 @@ function App() {
               {/* Creator routes */}
               <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
 
+              {/* Dashboard routes */}
+              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+
               {/* Creator Studio routes */}
               <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
               <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />
@@ -136,9 +126,9 @@ function App() {
               {/* Catch all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <Toaster />
-          </AuthProvider>
-        </Router>
+          </Router>
+          <Toaster />
+        </AuthProvider>
       </QueryClientProvider>
     </RootLayout>
   );

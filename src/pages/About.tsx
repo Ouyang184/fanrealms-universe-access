@@ -2,27 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Link, useNavigate } from "react-router-dom";
-import { Users, Heart, Zap, Globe, Mail, Twitter, Instagram, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, Heart, Zap, Globe, Mail, Twitter, Instagram } from "lucide-react";
 
 export default function About() {
-  const navigate = useNavigate();
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       <div className="container mx-auto px-4 py-16">
-        {/* Back Button */}
-        <div className="mb-8">
-          <Button
-            onClick={() => navigate(-1)}
-            variant="ghost"
-            className="text-white hover:bg-white/10 flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </div>
-
         {/* Hero Section */}
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-purple-600 hover:bg-purple-700">
@@ -136,6 +122,9 @@ export default function About() {
               content from your favorite creators, FanRealms is your gateway to authentic connections.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
+                <Link to="/signup">Start Creating Today</Link>
+              </Button>
               <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
                 <Link to="/explore">Explore Creators</Link>
               </Button>

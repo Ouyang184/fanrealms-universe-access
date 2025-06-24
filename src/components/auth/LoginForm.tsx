@@ -57,7 +57,7 @@ const LoginForm = () => {
       
       const params = new URLSearchParams(location.search);
       const returnTo = params.get('returnTo');
-      navigate(returnTo || '/home', { replace: true });
+      navigate(returnTo || '/dashboard', { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
       setLoginError(error?.message || "Unexpected error occurred");
