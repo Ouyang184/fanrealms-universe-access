@@ -1,6 +1,6 @@
 
 import { MainLayout } from "./MainLayout";
-import { AuthGuard } from "@/components/AuthGuard";
+import AuthGuard from "@/components/AuthGuard";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
