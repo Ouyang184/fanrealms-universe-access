@@ -167,7 +167,7 @@ export const useAuthFunctions = () => {
       });
       
       // Navigate to the root page
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign out failed",
