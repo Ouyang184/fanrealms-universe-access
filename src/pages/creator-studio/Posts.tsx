@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   Search,
@@ -31,7 +32,6 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { MainLayout } from "@/components/Layout/MainLayout";
 import { useCreatorPosts, PostFilter } from "@/hooks/useCreatorPosts";
 import { CreatorPost } from "@/types/creator-studio";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -115,195 +115,193 @@ export default function CreatorPostsPage() {
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto p-6 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Posts</h1>
-            <p className="text-muted-foreground mt-1">Create and manage your content</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <CreatePostForm />
-            <Button variant="outline">
-              <Calendar className="h-4 w-4 mr-2" />
-              Content Calendar
-            </Button>
-          </div>
+    <div className="container mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Posts</h1>
+          <p className="text-muted-foreground mt-1">Create and manage your content</p>
         </div>
-
-        {/* Search and Sort Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative w-full sm:w-auto sm:flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search posts..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <span>{getSortLabel(sortBy)}</span>
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuItem onClick={() => setSortBy("newest")}>
-                  Newest first
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("oldest")}>
-                  Oldest first
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("most-viewed")}>
-                  Most viewed
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <CreatePostForm />
+          <Button variant="outline">
+            <Calendar className="h-4 w-4 mr-2" />
+            Content Calendar
+          </Button>
         </div>
-
-        {/* Content Tabs */}
-        <Tabs defaultValue={filter} className="space-y-6" onValueChange={(value) => handleFilterChange(value as PostFilter)}>
-          <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="all">
-                All Posts
-              </TabsTrigger>
-              <TabsTrigger value="article">
-                <FileText className="h-4 w-4 mr-2" />
-                Articles
-              </TabsTrigger>
-              <TabsTrigger value="image">
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Images
-              </TabsTrigger>
-              <TabsTrigger value="video">
-                <Video className="h-4 w-4 mr-2" />
-                Videos
-              </TabsTrigger>
-            </TabsList>
-            <div className="hidden sm:flex items-center gap-2 text-sm">
-              <span className="text-muted-foreground">Show draft posts</span>
-              <Switch id="show-drafts" checked={showDrafts} onCheckedChange={toggleShowDrafts} />
-            </div>
-          </div>
-
-          {/* Content for all tabs */}
-          {["all", "article", "image", "video"].map((tabValue) => (
-            <TabsContent key={tabValue} value={tabValue} className="space-y-4">
-              {isLoading ? (
-                // Loading state
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="bg-card">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                          <Skeleton className="h-6 w-52" />
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-16" />
-                          </div>
-                        </div>
-                        <Skeleton className="h-8 w-8 rounded-md" />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pb-3">
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-2/3" />
-                      <div className="flex gap-2 mt-3">
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex items-center justify-between pt-0">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-4 w-16" />
-                      </div>
-                      <Skeleton className="h-6 w-24" />
-                    </CardFooter>
-                  </Card>
-                ))
-              ) : filteredPosts.length === 0 ? (
-                // Empty state
-                <Card className="bg-card py-8">
-                  <div className="text-center">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                      {tabValue === "all" || tabValue === "article" ? (
-                        <FileText className="h-10 w-10 text-muted-foreground" />
-                      ) : tabValue === "image" ? (
-                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                      ) : (
-                        <Video className="h-10 w-10 text-muted-foreground" />
-                      )}
-                    </div>
-                    <h3 className="mt-4 text-lg font-medium">No posts found</h3>
-                    <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-                      {searchQuery 
-                        ? "No posts match your search. Try different keywords or clear filters."
-                        : `You haven't created any ${tabValue === "all" ? "" : tabValue} posts yet.`
-                      }
-                    </p>
-                    <div className="mt-6">
-                      <CreatePostForm />
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                // Posts list
-                filteredPosts.map((post) => (
-                  <PostCard key={post.id} post={post} />
-                ))
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
-
-        {/* Content Calendar Preview */}
-        {posts.length > 0 && !isLoading && (
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Content Calendar</CardTitle>
-                <CardDescription>Upcoming scheduled posts</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {posts
-                  .filter(post => post.status === "scheduled")
-                  .slice(0, 3)
-                  .map(post => (
-                    <div key={post.id} className="flex items-center space-x-4">
-                      <CalendarDays className="h-8 w-8 text-blue-400" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {post.scheduleDate ? format(new Date(post.scheduleDate), "MMMM d, yyyy - h:mm a") : "Scheduled"}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">{post.title}</p>
-                      </div>
-                    </div>
-                  ))}
-                
-                {posts.filter(post => post.status === "scheduled").length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    No scheduled posts yet. Use the calendar feature to plan your content.
-                  </div>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  View Full Calendar
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        )}
       </div>
-    </MainLayout>
+
+      {/* Search and Sort Bar */}
+      <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="relative w-full sm:w-auto sm:flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search posts..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <span>{getSortLabel(sortBy)}</span>
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuItem onClick={() => setSortBy("newest")}>
+                Newest first
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("oldest")}>
+                Oldest first
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("most-viewed")}>
+                Most viewed
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Content Tabs */}
+      <Tabs defaultValue={filter} className="space-y-6" onValueChange={(value) => handleFilterChange(value as PostFilter)}>
+        <div className="flex justify-between items-center">
+          <TabsList>
+            <TabsTrigger value="all">
+              All Posts
+            </TabsTrigger>
+            <TabsTrigger value="article">
+              <FileText className="h-4 w-4 mr-2" />
+              Articles
+            </TabsTrigger>
+            <TabsTrigger value="image">
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Images
+            </TabsTrigger>
+            <TabsTrigger value="video">
+              <Video className="h-4 w-4 mr-2" />
+              Videos
+            </TabsTrigger>
+          </TabsList>
+          <div className="hidden sm:flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Show draft posts</span>
+            <Switch id="show-drafts" checked={showDrafts} onCheckedChange={toggleShowDrafts} />
+          </div>
+        </div>
+
+        {/* Content for all tabs */}
+        {["all", "article", "image", "video"].map((tabValue) => (
+          <TabsContent key={tabValue} value={tabValue} className="space-y-4">
+            {isLoading ? (
+              // Loading state
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="bg-card">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-6 w-52" />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-4 w-24" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-md" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <div className="flex gap-2 mt-3">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex items-center justify-between pt-0">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-6 w-24" />
+                  </CardFooter>
+                </Card>
+              ))
+            ) : filteredPosts.length === 0 ? (
+              // Empty state
+              <Card className="bg-card py-8">
+                <div className="text-center">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                    {tabValue === "all" || tabValue === "article" ? (
+                      <FileText className="h-10 w-10 text-muted-foreground" />
+                    ) : tabValue === "image" ? (
+                      <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                    ) : (
+                      <Video className="h-10 w-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-lg font-medium">No posts found</h3>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                    {searchQuery 
+                      ? "No posts match your search. Try different keywords or clear filters."
+                      : `You haven't created any ${tabValue === "all" ? "" : tabValue} posts yet.`
+                    }
+                  </p>
+                  <div className="mt-6">
+                    <CreatePostForm />
+                  </div>
+                </div>
+              </Card>
+            ) : (
+              // Posts list
+              filteredPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))
+            )}
+          </TabsContent>
+        ))}
+      </Tabs>
+
+      {/* Content Calendar Preview */}
+      {posts.length > 0 && !isLoading && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Content Calendar</CardTitle>
+              <CardDescription>Upcoming scheduled posts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {posts
+                .filter(post => post.status === "scheduled")
+                .slice(0, 3)
+                .map(post => (
+                  <div key={post.id} className="flex items-center space-x-4">
+                    <CalendarDays className="h-8 w-8 text-blue-400" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {post.scheduleDate ? format(new Date(post.scheduleDate), "MMMM d, yyyy - h:mm a") : "Scheduled"}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">{post.title}</p>
+                    </div>
+                  </div>
+                ))}
+              
+              {posts.filter(post => post.status === "scheduled").length === 0 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  No scheduled posts yet. Use the calendar feature to plan your content.
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button variant="outline" className="w-full">
+                View Full Calendar
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
 
