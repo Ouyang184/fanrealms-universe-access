@@ -13,18 +13,6 @@ interface SubscriberStatsCardsProps {
   isLoading?: boolean;
 }
 
-// Helper function to get tier color classes
-const getTierColorClasses = (index: number) => {
-  const colorClasses = [
-    "bg-primary/10 text-primary",
-    "bg-secondary/20 text-secondary-foreground", 
-    "bg-purple-500/10 text-purple-500",
-    "bg-blue-500/10 text-blue-500",
-    "bg-amber-500/10 text-amber-500"
-  ];
-  return colorClasses[index % colorClasses.length];
-};
-
 export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({ 
   subscribers, 
   tiers, 
@@ -33,8 +21,8 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
           <Card key={i} className="p-6">
             <div className="flex items-center gap-4">
               <Skeleton className="h-12 w-12 rounded-full" />
@@ -62,12 +50,8 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
   // Calculate average revenue per subscriber
   const averageRevenue = activeSubscribers.length > 0 ? monthlyRevenue / activeSubscribers.length : 0;
 
-  // Get the most popular tier
-  const mostPopularTier = Object.entries(tierCounts)
-    .sort((a, b) => b[1] - a[1])[0];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Total Active Subscribers Card */}
       <Card className="p-6">
         <div className="flex items-center gap-4">
@@ -115,35 +99,6 @@ export const SubscriberStatsCards: React.FC<SubscriberStatsCardsProps> = ({
           </div>
         </div>
       </Card>
-      
-      {/* Most Popular Tier or Dynamic Tier Card */}
-      {mostPopularTier ? (
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getTierColorClasses(0)}`}>
-              <UserCheck className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{mostPopularTier[0]} Tier</p>
-              <h3 className="text-2xl font-bold">{mostPopularTier[1]}</h3>
-              <p className="text-xs text-muted-foreground">Most popular</p>
-            </div>
-          </div>
-        </Card>
-      ) : (
-        <Card className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-              <UserCheck className="h-6 w-6 text-gray-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">No Tiers</p>
-              <h3 className="text-2xl font-bold">0</h3>
-              <p className="text-xs text-muted-foreground">Create tiers first</p>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 };
