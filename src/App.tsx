@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import RootLayout from "@/components/RootLayout";
 
 // Import pages
+import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Signup from '@/pages/Signup';
 import Home from '@/pages/Home';
@@ -15,6 +15,7 @@ import Explore from '@/pages/Explore';
 import Messages from '@/pages/Messages';
 import Settings from '@/pages/Settings';
 import Creator from '@/pages/Creator';
+import Dashboard from '@/pages/Dashboard';
 import AuthCallback from '@/pages/AuthCallback';
 import Terms from '@/pages/Terms';
 import CookiePolicy from '@/pages/CookiePolicy';
@@ -78,7 +79,7 @@ function App() {
           <AuthProvider>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<Login />} />
+              <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
@@ -121,6 +122,9 @@ function App() {
 
               {/* Creator routes */}
               <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
+
+              {/* Dashboard routes */}
+              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
 
               {/* Creator Studio routes */}
               <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
