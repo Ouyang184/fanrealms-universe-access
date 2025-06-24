@@ -1,11 +1,27 @@
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const SocialLoginOptions = () => {
-  const handleDiscordLogin = () => {
-    // TODO: Implement Discord OAuth login
-    console.log('Discord login clicked');
+  const handleDiscordLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        console.error('Discord login error:', error);
+        toast.error('Failed to login with Discord. Please try again.');
+      }
+    } catch (error) {
+      console.error('Discord login error:', error);
+      toast.error('An unexpected error occurred. Please try again.');
+    }
   };
 
   return (
