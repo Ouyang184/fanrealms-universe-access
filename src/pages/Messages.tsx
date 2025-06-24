@@ -16,10 +16,12 @@ export default function Messages() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [messages, setMessages] = useState([]);
 
   useEffect(() => {
     if (user?.id) {
       fetchConversations();
+      fetchMessages();
     }
   }, [user?.id]);
 
@@ -63,6 +65,48 @@ export default function Messages() {
     }
   };
 
+  const fetchMessages = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          message_text,
+          created_at,
+          is_read,
+          sender_id,
+          receiver_id,
+          sender:users!messages_sender_id_fkey (
+            id,
+            username
+          )
+        `)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching messages:', error);
+        return;
+      }
+
+      // Transform data to match MessagesList expected format
+      const transformedMessages = data?.map(msg => ({
+        id: msg.id,
+        message_text: msg.message_text,
+        created_at: msg.created_at,
+        is_read: msg.is_read,
+        sender_id: msg.sender_id,
+        sender_username: msg.sender?.username || 'Unknown User'
+      })) || [];
+
+      setMessages(transformedMessages);
+    } catch (error) {
+      console.error('Error in fetchMessages:', error);
+    }
+  };
+
   const handleConversationSelect = (conversation) => {
     setSelectedConversation(conversation);
   };
@@ -77,7 +121,19 @@ export default function Messages() {
 
   const handleMessageSent = () => {
     fetchConversations();
+    fetchMessages();
     setShowNewMessageDialog(false);
+  };
+
+  const handleSelectCreator = (creator) => {
+    // When a creator is selected from MessagesList, open chat with them
+    setSelectedConversation({
+      creator_id: creator.id,
+      creator: {
+        creator_name: creator.username,
+        profile_picture: null
+      }
+    });
   };
 
   if (loading) {
@@ -104,29 +160,30 @@ export default function Messages() {
           </Button>
         </div>
 
-        {conversations.length === 0 ? (
-          <EmptyMessages onNewMessage={handleNewMessage} />
+        {conversations.length === 0 && messages.length === 0 ? (
+          <EmptyMessages />
         ) : (
           <MessagesList 
-            conversations={conversations}
-            onConversationSelect={handleConversationSelect}
-            onRefresh={fetchConversations}
+            messages={messages}
+            onSelectCreator={handleSelectCreator}
           />
         )}
 
         {selectedConversation && (
           <CreatorChatModal
-            conversation={selectedConversation}
+            creatorId={selectedConversation.creator_id}
+            creatorName={selectedConversation.creator?.creator_name || 'Unknown Creator'}
+            creatorAvatar={selectedConversation.creator?.profile_picture}
             isOpen={!!selectedConversation}
             onClose={handleCloseChat}
-            onMessageSent={handleMessageSent}
           />
         )}
 
         <SendMessageDialog
           isOpen={showNewMessageDialog}
           onClose={() => setShowNewMessageDialog(false)}
-          onMessageSent={handleMessageSent}
+          receiverId="" // This will need to be set when we know which creator to message
+          receiverName=""
         />
       </div>
     </MainLayout>
