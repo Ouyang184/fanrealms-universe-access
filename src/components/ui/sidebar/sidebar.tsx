@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -426,7 +425,7 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                </CollapsibilContent>
+                </CollapsibleContent>
               </Collapsible>
             </div>
           )}
@@ -455,5 +454,6 @@ function SidebarSeparator({ className, ...props }: React.ComponentProps<"hr">) {
     <Separator 
       className={cn("my-4", className)} 
       {...props}
+    />
   );
 }
