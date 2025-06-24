@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home,
   Compass,
@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
   SidebarContent,
@@ -39,13 +40,32 @@ import {
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { state: sidebarState, toggleSidebar } = useSidebar();
   const { signOut } = useAuth();
+  const { toast } = useToast();
   
   const isCollapsed = sidebarState === "collapsed";
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account",
+      });
+      navigate('/');
+    } catch (error: any) {
+      toast({
+        title: "Failed to log out",
+        description: error.message || "Something went wrong",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -406,7 +426,7 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                </CollapsibleContent>
+                </CollapsibilContent>
               </Collapsible>
             </div>
           )}
@@ -418,7 +438,7 @@ export function AppSidebar() {
           <Button
             variant="ghost"
             className={cn("w-full text-muted-foreground", isCollapsed ? "justify-center px-2" : "justify-start gap-3")}
-            onClick={signOut}
+            onClick={handleSignOut}
           >
             <LogOut className="h-5 w-5" />
             {!isCollapsed && <span>Logout</span>}
@@ -435,6 +455,5 @@ function SidebarSeparator({ className, ...props }: React.ComponentProps<"hr">) {
     <Separator 
       className={cn("my-4", className)} 
       {...props}
-    />
   );
 }
