@@ -9,9 +9,9 @@ export function HomeFooter() {
           <h3 className="font-bold mb-4">FanRealms</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-sm text-gray-400 hover:text-white">
+              <Link to="/about" className="text-sm text-gray-400 hover:text-white">
                 About Us
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#" className="text-sm text-gray-400 hover:text-white">

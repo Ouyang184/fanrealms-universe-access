@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -43,6 +42,7 @@ import AllCreatorsPage from "./pages/AllCreators";
 import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
 import Support from "./pages/Support";
 import CookiePolicy from "./pages/CookiePolicy";
+import About from "./pages/About";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -85,6 +85,7 @@ export default function App() {
                 <Route path="/help" element={<Support />} />
                 <Route path="/cookie-policy" element={<CookiePolicy />} />
                 <Route path="/cookies" element={<CookiePolicy />} />
+                <Route path="/about" element={<About />} />
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
