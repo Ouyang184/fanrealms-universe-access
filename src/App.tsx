@@ -1,12 +1,8 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
 import RootLayout from "@/components/RootLayout";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/ui/sidebar/sidebar";
-import { TopBar } from "@/components/Layout/TopBar";
 
 // Import pages
 import Index from '@/pages/Index';
@@ -75,23 +71,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Wrapper component for Messages page with sidebar and header
-function MessagesWithLayout() {
-  return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <div className="flex-1 flex flex-col">
-          <TopBar />
-          <main className="flex-1 overflow-hidden">
-            <Messages />
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
-  );
-}
-
 function App() {
   return (
     <RootLayout>
@@ -125,7 +104,7 @@ function App() {
               <Route path="/explore/creators" element={<AuthGuard><AllCreatorsExplore /></AuthGuard>} />
               <Route path="/creators" element={<AuthGuard><AllCreators /></AuthGuard>} />
               <Route path="/creators/featured" element={<AuthGuard><AllFeaturedCreators /></AuthGuard>} />
-              <Route path="/messages" element={<AuthGuard><MessagesWithLayout /></AuthGuard>} />
+              <Route path="/messages" element={<AuthGuard><Messages /></AuthGuard>} />
               <Route path="/notifications" element={<AuthGuard><CreatorStudioNotifications /></AuthGuard>} />
               <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
               <Route path="/account-settings" element={<AuthGuard><AccountSettings /></AuthGuard>} />
@@ -147,7 +126,7 @@ function App() {
               {/* Creator Studio routes */}
               <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
               <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />
-              <Route path="/creator-studio/messages" element={<AuthGuard><MessagesWithLayout /></AuthGuard>} />
+              <Route path="/creator-studio/messages" element={<AuthGuard><Messages /></AuthGuard>} />
               <Route path="/creator-studio/membership-tiers" element={<AuthGuard><CreatorStudioMembershipTiers /></AuthGuard>} />
               <Route path="/creator-studio/subscribers" element={<AuthGuard><CreatorStudioSubscribers /></AuthGuard>} />
               <Route path="/creator-studio/payouts" element={<AuthGuard><CreatorStudioPayouts /></AuthGuard>} />
