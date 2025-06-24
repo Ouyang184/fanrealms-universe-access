@@ -123,9 +123,6 @@ function App() {
               {/* Creator routes */}
               <Route path="/creator/:creatorIdentifier" element={<AuthGuard><Creator /></AuthGuard>} />
 
-              {/* Dashboard routes */}
-              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
-
               {/* Creator Studio routes */}
               <Route path="/creator-studio/dashboard" element={<AuthGuard><CreatorStudioDashboard /></AuthGuard>} />
               <Route path="/creator-studio/posts" element={<AuthGuard><CreatorStudioPosts /></AuthGuard>} />

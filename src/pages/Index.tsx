@@ -16,25 +16,25 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  // If still loading within the 3-second window, show spinner
+  // If still loading, show spinner
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <LoadingSpinner />
       </div>
     );
   }
 
-  // If no user is found after loading, show login/signup options
+  // If no user is found after loading, show landing page
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold mb-4">Welcome to FanRealms</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-900 text-white">
+        <h1 className="text-4xl font-bold mb-8">Welcome to FanRealms</h1>
         <div className="flex gap-4">
-          <Button asChild>
+          <Button asChild className="bg-blue-600 hover:bg-blue-700">
             <Link to="/signup">Sign Up</Link>
           </Button>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="border-gray-600 text-white hover:bg-gray-800">
             <Link to="/login">Log In</Link>
           </Button>
         </div>
