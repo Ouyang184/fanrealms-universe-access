@@ -31,7 +31,7 @@ export function FeedPostItem({
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6" onClick={handlePostClick}>
       <PostCard
         id={post.id}
         title={post.title}
@@ -44,7 +44,6 @@ export function FeedPostItem({
         attachments={post.attachments}
         authorId={post.authorId}
         is_nsfw={post.is_nsfw}
-        onClick={handlePostClick}
       />
     </div>
   );
