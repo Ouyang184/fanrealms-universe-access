@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { 
   Dialog, 
@@ -9,12 +10,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Eye, Heart, MessageSquare, Share2, Crown, Lock } from "lucide-react";
+import { Calendar, Clock, Eye, Heart, MessageSquare, Crown, Lock } from "lucide-react";
 import { Post } from "@/types";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { PostCardContent } from "@/components/post/PostCardContent";
 import { PostLikes } from "@/components/post/PostLikes";
 import { PostComments } from "@/components/post/PostComments";
+import { ShareButton } from "@/components/post/ShareButton";
 import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { NSFWContentGate } from "@/components/nsfw/NSFWContentGate";
@@ -144,14 +146,15 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
             <div className="flex items-center gap-4 border-t pt-4">
               <PostLikes postId={post.id} />
               
-              <Button
-                variant="ghost"
-                size="sm"
+              <ShareButton
+                postId={post.id}
+                postTitle={post.title}
+                postContent={post.content}
+                creatorName={post.authorName || "Creator"}
+                creatorUsername={post.authorName}
+                isPublic={!post.tier_id}
                 className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Share</span>
-              </Button>
+              />
             </div>
 
             {/* Comments */}
