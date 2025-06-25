@@ -13,7 +13,6 @@ import {
   Bell,
   Heart,
   MessageSquare,
-  FileText,
   Star,
   MoreHorizontal,
   Clock,
@@ -43,9 +42,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         return <Heart className="h-4 w-4 text-red-400" />
       case "comment":
         return <MessageSquare className="h-4 w-4 text-green-400" />
-      case "content":
-      case "post":
-        return <FileText className="h-4 w-4 text-purple-400" />
       case "subscription":
         return <Star className="h-4 w-4 text-yellow-400" />
       case "system":
@@ -123,12 +119,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   )}
                   {notification.type === "like" && (
                     <DropdownMenuItem>View post</DropdownMenuItem>
-                  )}
-                  {(notification.type === "content" || notification.type === "post") && (
-                    <>
-                      <DropdownMenuItem>View content</DropdownMenuItem>
-                      <DropdownMenuItem>Turn off notifications from this creator</DropdownMenuItem>
-                    </>
                   )}
                   <DropdownMenuSeparator className="bg-gray-800" />
                   <DropdownMenuItem 
