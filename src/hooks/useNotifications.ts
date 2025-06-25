@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +35,7 @@ export const useNotifications = () => {
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
+        .not('type', 'in', '(post,content)') // Filter out post and content notifications
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -142,13 +142,13 @@ export const useNotifications = () => {
     }
   };
 
-  // Count unread notifications by type
+  // Count unread notifications by type - excluding post and content types
   const unreadCounts = {
     all: notifications.filter((n) => !n.is_read).length,
     mentions: notifications.filter((n) => n.type === "mention" && !n.is_read).length,
     comments: notifications.filter((n) => n.type === "comment" && !n.is_read).length,
     likes: notifications.filter((n) => n.type === "like" && !n.is_read).length,
-    content: notifications.filter((n) => (n.type === "content" || n.type === "post") && !n.is_read).length,
+    content: 0, // Always 0 since we're filtering out content notifications
     system: notifications.filter(
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.is_read,
     ).length,
