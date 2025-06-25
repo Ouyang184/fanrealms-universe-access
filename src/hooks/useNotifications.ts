@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'mention' | 'like' | 'comment' | 'content' | 'subscription' | 'system' | 'follow' | 'promotion' | 'post';
+  type: 'mention' | 'like' | 'comment' | 'subscription' | 'system' | 'follow' | 'promotion';
   title?: string;
   content: string;
   related_id?: string;
@@ -44,7 +45,14 @@ export const useNotifications = () => {
       }
 
       console.log('Fetched notifications:', data);
-      return data as Notification[];
+      
+      // Additional client-side filtering to ensure no content notifications slip through
+      const filteredData = data?.filter(notification => 
+        notification.type !== 'post' && 
+        notification.type !== 'content'
+      ) || [];
+      
+      return filteredData as Notification[];
     },
     enabled: !!user?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -78,7 +86,8 @@ export const useNotifications = () => {
         .from('notifications')
         .update({ is_read: true })
         .eq('user_id', user?.id)
-        .eq('is_read', false);
+        .eq('is_read', false)
+        .not('type', 'in', '(post,content)'); // Only mark non-content notifications as read
 
       if (error) throw error;
     },
