@@ -531,6 +531,41 @@ export type Database = {
           },
         ]
       }
+      post_shares: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          post_id: string
+          shared_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          post_id: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          post_id?: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_tiers: {
         Row: {
           created_at: string

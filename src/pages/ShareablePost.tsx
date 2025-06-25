@@ -48,7 +48,8 @@ export default function ShareablePost() {
         authorId: data.author_id,
         authorName: data.users?.username || 'Creator',
         authorAvatar: data.users?.profile_picture,
-        date: new Date(data.created_at).toLocaleDateString()
+        date: new Date(data.created_at).toLocaleDateString(),
+        createdAt: data.created_at
       };
     },
     enabled: !!postId
@@ -57,7 +58,7 @@ export default function ShareablePost() {
   // Track view when post loads
   useEffect(() => {
     if (post?.id) {
-      recordView(post.id, 'share_link');
+      recordView(post.id, 'read');
     }
   }, [post?.id, recordView]);
 
