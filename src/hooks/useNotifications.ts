@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,10 +32,12 @@ export const useNotifications = () => {
       
       console.log('Fetching notifications for user:', user.id);
       
+      // Use database-level filtering to exclude post and content notifications
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
+        .not('type', 'in', '(post,content)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -42,19 +45,8 @@ export const useNotifications = () => {
         throw error;
       }
 
-      console.log('Raw notifications from database:', data);
-      
-      // Filter out post and content notifications completely
-      const filteredData = data?.filter(notification => {
-        const isContentType = notification.type === 'post' || notification.type === 'content';
-        if (isContentType) {
-          console.log('Filtering out notification:', notification);
-        }
-        return !isContentType;
-      }) || [];
-      
-      console.log('Filtered notifications:', filteredData);
-      return filteredData as Notification[];
+      console.log('Filtered notifications from database:', data);
+      return data as Notification[];
     },
     enabled: !!user?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
