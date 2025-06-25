@@ -11,6 +11,7 @@ import { useLikes } from "@/hooks/useLikes";
 import { useComments } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ShareButton } from "@/components/post/ShareButton";
 
 interface ContentItemProps {
   post: Post;
@@ -169,6 +170,17 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
             <div className="flex items-center gap-0.5 sm:gap-1 text-xs">
               <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               <span>{comments.length}</span>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <ShareButton
+                postId={post.id}
+                postTitle={post.title}
+                postContent={post.content}
+                creatorName={displayName}
+                creatorUsername={post.authorName}
+                isPublic={!post.tier_id}
+                className="text-xs p-1 h-auto"
+              />
             </div>
           </div>
         </div>
