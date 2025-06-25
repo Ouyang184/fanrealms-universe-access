@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +8,7 @@ import { Post } from "@/types";
 import { useLikes } from "@/hooks/useLikes";
 import { useComments } from "@/hooks/useComments";
 import { usePostViews } from "@/hooks/usePostViews";
+import { usePostShares } from "@/hooks/usePostShares";
 
 interface ContentPerformanceCardProps {
   posts: Post[];
@@ -18,6 +18,7 @@ function PostPerformanceItem({ post }: { post: Post }) {
   const { likeCount } = useLikes(post.id);
   const { comments } = useComments(post.id);
   const { viewCount } = usePostViews(post.id);
+  const { shareCount } = usePostShares(post.id);
   
   const getPostThumbnail = (post: Post) => {
     if (post.attachments && Array.isArray(post.attachments)) {
@@ -85,7 +86,7 @@ function PostPerformanceItem({ post }: { post: Post }) {
           </div>
           <div className="flex items-center gap-1 text-xs">
             <Share2 className="h-3 w-3 text-blue-500" />
-            <span>Share</span>
+            <span>{shareCount}</span>
           </div>
         </div>
       </div>

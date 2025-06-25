@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -49,6 +48,7 @@ import Security from "./pages/Security";
 import CommunityGuidelines from "./pages/CommunityGuidelines";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CreatorGuidelines from "./pages/CreatorGuidelines";
+import ShareablePost from "./pages/ShareablePost";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -100,6 +100,9 @@ export default function App() {
                 
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
+                
+                {/* Shareable post route - must be before creator profile route */}
+                <Route path="/:creatorSlug/posts/:postId" element={<ShareablePost />} />
                 
                 {/* Creator profile page */}
                 <Route path="/creator/:id" element={<CreatorPage />} />

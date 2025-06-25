@@ -1,17 +1,31 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageSquare, Share2, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { PostLikes } from './PostLikes';
 import { PostComments } from './PostComments';
+import { ShareButton } from './ShareButton';
 import { usePostViews } from '@/hooks/usePostViews';
 
 interface PostInteractionsProps {
   postId: string;
   authorId: string;
+  postTitle?: string;
+  postContent?: string;
+  creatorName?: string;
+  creatorUsername?: string;
+  isPublic?: boolean;
 }
 
-export const PostInteractions: React.FC<PostInteractionsProps> = ({ postId, authorId }) => {
+export const PostInteractions: React.FC<PostInteractionsProps> = ({ 
+  postId, 
+  authorId,
+  postTitle = "Untitled Post",
+  postContent = "",
+  creatorName = "Creator",
+  creatorUsername,
+  isPublic = true
+}) => {
   const { viewCount } = usePostViews(postId);
 
   return (
@@ -28,14 +42,14 @@ export const PostInteractions: React.FC<PostInteractionsProps> = ({ postId, auth
       <div className="flex items-center gap-4">
         <PostLikes postId={postId} />
         
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600"
-        >
-          <Share2 className="h-4 w-4" />
-          <span className="text-sm">Share</span>
-        </Button>
+        <ShareButton
+          postId={postId}
+          postTitle={postTitle}
+          postContent={postContent}
+          creatorName={creatorName}
+          creatorUsername={creatorUsername}
+          isPublic={isPublic}
+        />
       </div>
 
       {/* Comments Section */}

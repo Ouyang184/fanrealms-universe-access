@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatRelativeDate } from '@/utils/auth-helpers';
@@ -43,6 +42,7 @@ const PostCard: React.FC<PostCardProps> = ({
   authorName,
   authorAvatar,
   createdAt,
+  date,
   tier_id,
   attachments,
   users,
@@ -296,7 +296,15 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
         </div>
         
-        <PostInteractions postId={id} authorId={authorId} />
+        <PostInteractions 
+          postId={id} 
+          authorId={authorId}
+          postTitle={title}
+          postContent={content}
+          creatorName={displayAuthorName}
+          creatorUsername={users?.username}
+          isPublic={!isPremiumPost}
+        />
       </CardContent>
     </Card>
   );

@@ -1,10 +1,10 @@
-
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Calendar, Clock, MoreHorizontal } from "lucide-react";
+import { ChevronRight, Calendar, Clock, MoreHorizontal, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CreatorPost } from "@/types/creator-studio";
+import { usePostShares } from "@/hooks/usePostShares";
 
 interface ContentCalendarCardProps {
   creatorPosts: CreatorPost[];
@@ -53,35 +53,7 @@ export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) 
                 : "No Time";
               
               return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 p-3 rounded-lg border bg-muted/20"
-                >
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center text-center">
-                    <span className="text-xs text-muted-foreground">{month}</span>
-                    <span className="font-bold">{day}</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium">{item.title}</h3>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {time} • {item.type || "Post"}
-                    </div>
-                  </div>
-                  <Badge
-                    variant={item.status === "scheduled" ? "default" : "outline"}
-                    className={
-                      item.status === "scheduled"
-                        ? "bg-green-500 text-white"
-                        : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                    }
-                  >
-                    {item.status === "scheduled" ? "Scheduled" : "Draft"}
-                  </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </div>
+                <PostCalendarItem key={item.id} item={item} month={month} day={day} time={time} />
               );
             })}
           </div>
@@ -104,5 +76,50 @@ export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) 
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+function PostCalendarItem({ item, month, day, time }: { 
+  item: CreatorPost; 
+  month: string; 
+  day: number; 
+  time: string; 
+}) {
+  const { shareCount } = usePostShares(item.id);
+  
+  return (
+    <div className="flex items-center gap-4 p-3 rounded-lg border bg-muted/20">
+      <div className="h-12 w-12 rounded-lg bg-primary/10 flex flex-col items-center justify-center text-center">
+        <span className="text-xs text-muted-foreground">{month}</span>
+        <span className="font-bold">{day}</span>
+      </div>
+      <div className="flex-1">
+        <h3 className="font-medium">{item.title}</h3>
+        <div className="flex items-center text-xs text-muted-foreground mt-1">
+          <Clock className="h-3 w-3 mr-1" />
+          {time} • {item.type || "Post"}
+          {item.status === "published" && shareCount > 0 && (
+            <>
+              <span className="mx-1">•</span>
+              <Share2 className="h-3 w-3 mr-1" />
+              {shareCount} shares
+            </>
+          )}
+        </div>
+      </div>
+      <Badge
+        variant={item.status === "scheduled" ? "default" : "outline"}
+        className={
+          item.status === "scheduled"
+            ? "bg-green-500 text-white"
+            : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
+        }
+      >
+        {item.status === "scheduled" ? "Scheduled" : "Draft"}
+      </Badge>
+      <Button variant="ghost" size="icon" className="h-8 w-8">
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </div>
   );
 }
