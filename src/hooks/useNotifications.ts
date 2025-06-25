@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +31,7 @@ export const useNotifications = () => {
       
       console.log('Fetching notifications for user:', user.id);
       
-      // Use database-level filtering to exclude post and content notifications
+      // Only fetch relevant notifications - exclude post/content notifications completely
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -45,7 +44,7 @@ export const useNotifications = () => {
         throw error;
       }
 
-      console.log('Filtered notifications from database:', data);
+      console.log('Relevant notifications from database:', data);
       return data as Notification[];
     },
     enabled: !!user?.id,
@@ -81,7 +80,7 @@ export const useNotifications = () => {
         .update({ is_read: true })
         .eq('user_id', user?.id)
         .eq('is_read', false)
-        .not('type', 'in', '(post,content)'); // Only mark non-content notifications as read
+        .not('type', 'in', '(post,content)'); // Only mark relevant notifications as read
 
       if (error) throw error;
     },
@@ -145,13 +144,13 @@ export const useNotifications = () => {
     }
   };
 
-  // Count unread notifications by type - excluding post and content types
+  // Count unread notifications by type - only relevant types
   const unreadCounts = {
     all: notifications.filter((n) => !n.is_read).length,
     mentions: notifications.filter((n) => n.type === "mention" && !n.is_read).length,
     comments: notifications.filter((n) => n.type === "comment" && !n.is_read).length,
     likes: notifications.filter((n) => n.type === "like" && !n.is_read).length,
-    content: 0, // Always 0 since we're filtering out content notifications
+    content: 0, // Always 0 since we're excluding content notifications
     system: notifications.filter(
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.is_read,
     ).length,
