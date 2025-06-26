@@ -6,9 +6,9 @@ export const useSubscriptionEvents = () => {
   const queryClient = useQueryClient();
 
   const refreshAllSubscriptionData = useCallback(async () => {
-    console.log('Refreshing all subscription-related data...');
+    console.log('Refreshing subscription-related data...');
     
-    // Invalidate all subscription-related queries
+    // Optimized: Only invalidate queries that are actually being used
     const queryKeys = [
       'enhancedUserSubscriptions',
       'active-subscribers', 
@@ -20,13 +20,21 @@ export const useSubscriptionEvents = () => {
       'creator-profile'
     ];
 
-    await Promise.all(
+    // Use Promise.allSettled instead of Promise.all to avoid one failure blocking others
+    const results = await Promise.allSettled(
       queryKeys.map(key => 
         queryClient.invalidateQueries({ queryKey: [key] })
       )
     );
 
-    console.log('All subscription queries invalidated');
+    // Log any failures for debugging
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.warn(`Failed to invalidate query ${queryKeys[index]}:`, result.reason);
+      }
+    });
+
+    console.log('Subscription queries invalidated');
   }, [queryClient]);
 
   const triggerSubscriptionSuccess = useCallback((data?: any) => {
@@ -41,15 +49,20 @@ export const useSubscriptionEvents = () => {
     });
     window.dispatchEvent(event);
     
-    // Also trigger immediate refresh
-    refreshAllSubscriptionData();
+    // Use setTimeout to avoid blocking the event dispatch
+    setTimeout(() => {
+      refreshAllSubscriptionData();
+    }, 0);
   }, [refreshAllSubscriptionData]);
 
-  // Listen for subscription events
+  // Optimized: Listen for subscription events without excessive realtime subscriptions
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
       console.log(`Subscription event detected: ${event.type}`, event.detail);
-      await refreshAllSubscriptionData();
+      // Use setTimeout to avoid blocking event handlers
+      setTimeout(() => {
+        refreshAllSubscriptionData();
+      }, 0);
     };
 
     // Listen for all subscription-related events

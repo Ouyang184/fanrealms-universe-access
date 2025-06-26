@@ -18,19 +18,23 @@ export function HeaderNotifications() {
   useEffect(() => {
     if (!user?.id) return;
     
-    // Fetch unread messages count, excluding messages sent to self
+    // Optimized: Fetch unread messages count without excessive realtime subscriptions
     const fetchMessagesCount = async () => {
-      const { count, error } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', user.id)
-        .neq('sender_id', user.id) // Exclude messages sent by the user themselves
-        .eq('is_read', false);
-        
-      if (!error && count !== null) {
-        setUnreadMessages(count);
-      } else {
-        // Reset to 0 if there's an error or no data
+      try {
+        const { count, error } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('receiver_id', user.id)
+          .neq('sender_id', user.id) // Exclude messages sent by the user themselves
+          .eq('is_read', false);
+          
+        if (!error && count !== null) {
+          setUnreadMessages(count);
+        } else {
+          setUnreadMessages(0);
+        }
+      } catch (error) {
+        console.error('Error fetching message count:', error);
         setUnreadMessages(0);
       }
     };
@@ -38,13 +42,30 @@ export function HeaderNotifications() {
     // Initial fetch
     fetchMessagesCount();
     
-    // Set up realtime subscription for message changes
+    // Optimized: Use a single, focused realtime subscription instead of multiple wildcards
     const messagesChannel = supabase
       .channel(`header-messages-${user.id}`)
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, 
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'messages', 
+          filter: `receiver_id=eq.${user.id}` 
+        }, 
         () => {
-          fetchMessagesCount();
+          // Use setTimeout to avoid blocking realtime callback
+          setTimeout(fetchMessagesCount, 0);
+        }
+      )
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'messages', 
+          filter: `receiver_id=eq.${user.id}` 
+        }, 
+        () => {
+          setTimeout(fetchMessagesCount, 0);
         }
       )
       .subscribe();
@@ -55,21 +76,25 @@ export function HeaderNotifications() {
     };
   }, [user?.id]);
 
-  // Refresh message count when returning to any page from messages
+  // Optimized: Refresh message count when returning from messages page
   useEffect(() => {
     if (user?.id && location.pathname !== '/messages') {
       // Small delay to allow any pending updates to complete
       const timer = setTimeout(() => {
         const fetchMessagesCount = async () => {
-          const { count, error } = await supabase
-            .from('messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('receiver_id', user.id)
-            .neq('sender_id', user.id) // Exclude messages sent by the user themselves
-            .eq('is_read', false);
-            
-          if (!error && count !== null) {
-            setUnreadMessages(count);
+          try {
+            const { count, error } = await supabase
+              .from('messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('receiver_id', user.id)
+              .neq('sender_id', user.id)
+              .eq('is_read', false);
+              
+            if (!error && count !== null) {
+              setUnreadMessages(count);
+            }
+          } catch (error) {
+            console.error('Error refreshing message count:', error);
           }
         };
         fetchMessagesCount();

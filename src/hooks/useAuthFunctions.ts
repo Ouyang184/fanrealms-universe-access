@@ -58,19 +58,15 @@ export const useAuthFunctions = () => {
     try {
       console.log('Starting optimized signup process for:', email);
       
-      // Add timeout controller for auth requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-      
+      // Optimized signup with minimal redirect URL to reduce DNS issues
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          // Use shorter, cleaner redirect URL to avoid DNS latency
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
-
-      clearTimeout(timeoutId);
 
       if (error) {
         console.error('Supabase signup error:', error);

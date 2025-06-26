@@ -16,7 +16,7 @@ const getEnvVar = (key: keyof Window['env']) => {
 const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
 const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
 
-// Create the Supabase client with persistent session configuration
+// Create the Supabase client with optimized configuration for performance
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_ANON_KEY,
@@ -28,11 +28,24 @@ export const supabase = createClient<Database>(
       storageKey: 'fanrealms-auth',
       storage: window.localStorage,
       flowType: 'pkce'
-    }
+    },
+    realtime: {
+      // Optimize realtime configuration to reduce overhead
+      params: {
+        eventsPerSecond: 10, // Limit events per second to reduce load
+      },
+      heartbeatIntervalMs: 30000, // Increase heartbeat interval
+      reconnectAfterMs: 1000, // Faster reconnection
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'fanrealms-web', // Add client identifier
+      },
+    },
   }
 );
 
-console.log('Supabase client initialized with persistent sessions');
+console.log('Supabase client initialized with optimized configuration');
 
 // Export supabase for use in other files
 export { supabase as default };
