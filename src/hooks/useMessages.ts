@@ -1,8 +1,9 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOptimizedRealtime } from "@/hooks/useOptimizedRealtime";
 
 interface MessageData {
   id: string;
@@ -88,6 +89,7 @@ export function useMessages(userId: string | undefined) {
       }) || [];
     },
     enabled: !!userId,
+    staleTime: 30000, // Cache for 30 seconds to reduce queries
   });
 
   // Mark messages as read mutation
@@ -116,58 +118,20 @@ export function useMessages(userId: string | undefined) {
     }
   });
 
-  // Set up realtime subscription
-  useEffect(() => {
-    if (!userId) return;
+  // Optimized realtime subscription using the new hook
+  const handleRealtimeUpdate = useCallback(() => {
+    console.log('useMessages: Realtime update received, refreshing...');
+    refetch();
+  }, [refetch]);
 
-    console.log('useMessages: Setting up realtime subscription for user:', userId);
-
-    const channel = supabase
-      .channel(`messages-${userId}`)
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${userId}` 
-        }, 
-        (payload) => {
-          console.log('useMessages: New message received via realtime:', payload);
-          refetch();
-        }
-      )
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${userId}` 
-        }, 
-        (payload) => {
-          console.log('useMessages: Message updated via realtime:', payload);
-          refetch();
-        }
-      )
-      // Add subscription for deleted messages
-      .on('postgres_changes', 
-        { 
-          event: 'DELETE', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `sender_id=eq.${userId}` 
-        }, 
-        (payload) => {
-          console.log('useMessages: Message was deleted, refreshing...');
-          refetch();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('useMessages: Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [userId, refetch]);
+  useOptimizedRealtime({
+    table: 'messages',
+    event: '*',
+    filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`,
+    callback: handleRealtimeUpdate,
+    enabled: !!userId,
+    debounceMs: 1500 // Debounce updates to reduce load
+  });
 
   return { 
     messages, 

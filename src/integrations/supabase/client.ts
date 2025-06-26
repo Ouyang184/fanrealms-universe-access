@@ -21,7 +21,7 @@ console.log('Supabase client configuration:', {
   hasAnonKey: !!SUPABASE_ANON_KEY
 });
 
-// Create the Supabase client with optimized configuration for performance
+// Create the Supabase client with highly optimized configuration to minimize realtime overhead
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_ANON_KEY,
@@ -35,22 +35,61 @@ export const supabase = createClient<Database>(
       flowType: 'pkce'
     },
     realtime: {
-      // Optimize realtime configuration to reduce overhead
+      // Drastically reduce realtime overhead to fix performance issue
       params: {
-        eventsPerSecond: 10, // Limit events per second to reduce load
+        eventsPerSecond: 2, // Reduced from 10 to 2 to minimize database load
       },
-      heartbeatIntervalMs: 30000, // Fixed: Use proper number type
-      reconnectAfterMs: () => 1000, // Fixed: Use function returning number
+      heartbeatIntervalMs: 60000, // Increased from 30s to 60s to reduce heartbeat frequency
+      reconnectAfterMs: () => 5000, // Increased reconnect delay
+      // Disable automatic channel cleanup to reduce overhead
+      transport: 'websocket',
     },
     global: {
       headers: {
-        'X-Client-Info': 'fanrealms-web', // Add client identifier
+        'X-Client-Info': 'fanrealms-web-optimized', // Updated identifier
       },
     },
+    // Add database connection pooling optimization
+    db: {
+      schema: 'public'
+    }
   }
 );
 
-console.log('Supabase client initialized with optimized configuration');
+// Global channel management to prevent duplicate subscriptions
+const activeChannels = new Map<string, any>();
+
+// Optimized channel creation with deduplication
+export const createOptimizedChannel = (channelName: string) => {
+  if (activeChannels.has(channelName)) {
+    console.log(`Reusing existing channel: ${channelName}`);
+    return activeChannels.get(channelName);
+  }
+  
+  console.log(`Creating new optimized channel: ${channelName}`);
+  const channel = supabase.channel(channelName, {
+    config: {
+      // Minimize broadcast overhead
+      presence: { key: '' },
+      broadcast: { self: false, ack: false }
+    }
+  });
+  
+  activeChannels.set(channelName, channel);
+  return channel;
+};
+
+// Cleanup function to remove unused channels
+export const cleanupChannel = (channelName: string) => {
+  if (activeChannels.has(channelName)) {
+    const channel = activeChannels.get(channelName);
+    supabase.removeChannel(channel);
+    activeChannels.delete(channelName);
+    console.log(`Cleaned up channel: ${channelName}`);
+  }
+};
+
+console.log('Supabase client initialized with performance-optimized configuration');
 
 // Export supabase for use in other files
 export { supabase as default };

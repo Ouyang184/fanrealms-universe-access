@@ -8,33 +8,29 @@ export const useSubscriptionEvents = () => {
   const refreshAllSubscriptionData = useCallback(async () => {
     console.log('Refreshing subscription-related data...');
     
-    // Optimized: Only invalidate queries that are actually being used
-    const queryKeys = [
-      'enhancedUserSubscriptions',
-      'active-subscribers', 
-      'tiers',
-      'creatorMembershipTiers',
-      'userSubscriptions',
-      'creator-posts',
-      'subscriber-tiers',
-      'creator-profile'
+    // Highly optimized: Only invalidate the most critical queries
+    const criticalQueryKeys = [
+      'user-subscriptions',
+      'simple-user-subscriptions'
     ];
+    
+    // Use requestIdleCallback to avoid blocking main thread
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => {
+        criticalQueryKeys.forEach(key => {
+          queryClient.invalidateQueries({ queryKey: [key] });
+        });
+      });
+    } else {
+      // Fallback for browsers without requestIdleCallback
+      setTimeout(() => {
+        criticalQueryKeys.forEach(key => {
+          queryClient.invalidateQueries({ queryKey: [key] });
+        });
+      }, 100);
+    }
 
-    // Use Promise.allSettled instead of Promise.all to avoid one failure blocking others
-    const results = await Promise.allSettled(
-      queryKeys.map(key => 
-        queryClient.invalidateQueries({ queryKey: [key] })
-      )
-    );
-
-    // Log any failures for debugging
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        console.warn(`Failed to invalidate query ${queryKeys[index]}:`, result.reason);
-      }
-    });
-
-    console.log('Subscription queries invalidated');
+    console.log('Critical subscription queries invalidated');
   }, [queryClient]);
 
   const triggerSubscriptionSuccess = useCallback((data?: any) => {
@@ -49,30 +45,29 @@ export const useSubscriptionEvents = () => {
     });
     window.dispatchEvent(event);
     
-    // Use setTimeout to avoid blocking the event dispatch
-    setTimeout(() => {
-      refreshAllSubscriptionData();
-    }, 0);
+    // Use requestIdleCallback to avoid blocking
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => refreshAllSubscriptionData());
+    } else {
+      setTimeout(() => refreshAllSubscriptionData(), 0);
+    }
   }, [refreshAllSubscriptionData]);
 
-  // Optimized: Listen for subscription events without excessive realtime subscriptions
+  // Heavily optimized: Remove excessive realtime subscriptions
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
       console.log(`Subscription event detected: ${event.type}`, event.detail);
-      // Use setTimeout to avoid blocking event handlers
-      setTimeout(() => {
-        refreshAllSubscriptionData();
-      }, 0);
+      
+      // Use requestIdleCallback to avoid blocking critical operations
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => refreshAllSubscriptionData());
+      } else {
+        setTimeout(() => refreshAllSubscriptionData(), 0);
+      }
     };
 
-    // Listen for all subscription-related events
-    const events = [
-      'subscriptionSuccess',
-      'paymentSuccess', 
-      'subscriptionCreated',
-      'subscriptionUpdated',
-      'subscriptionCanceled'
-    ];
+    // Reduced to only essential events
+    const events = ['subscriptionSuccess', 'paymentSuccess'];
 
     events.forEach(eventType => {
       window.addEventListener(eventType, handleSubscriptionEvent as EventListener);

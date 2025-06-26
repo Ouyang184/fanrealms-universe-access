@@ -1,12 +1,13 @@
 
 import { Bell, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { useOptimizedRealtime } from "@/hooks/useOptimizedRealtime";
 
 export function HeaderNotifications() {
   const { user } = useAuth();
@@ -15,94 +16,51 @@ export function HeaderNotifications() {
   const location = useLocation();
   const { isCreator } = useCreatorProfile();
   
-  useEffect(() => {
+  // Optimized message count fetching
+  const fetchMessagesCount = useCallback(async () => {
     if (!user?.id) return;
     
-    // Optimized: Fetch unread messages count without excessive realtime subscriptions
-    const fetchMessagesCount = async () => {
-      try {
-        const { count, error } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true })
-          .eq('receiver_id', user.id as any)
-          .neq('sender_id', user.id as any) // Exclude messages sent by the user themselves
-          .eq('is_read', false as any);
+    try {
+      const { count, error } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('receiver_id', user.id as any)
+        .neq('sender_id', user.id as any)
+        .eq('is_read', false as any);
           
-        if (!error && count !== null) {
-          setUnreadMessages(count);
-        } else {
-          setUnreadMessages(0);
-        }
-      } catch (error) {
-        console.error('Error fetching message count:', error);
+      if (!error && count !== null) {
+        setUnreadMessages(count);
+      } else {
         setUnreadMessages(0);
       }
-    };
-    
-    // Initial fetch
-    fetchMessagesCount();
-    
-    // Optimized: Use a single, focused realtime subscription instead of multiple wildcards
-    const messagesChannel = supabase
-      .channel(`header-messages-${user.id}`)
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages', 
-          filter: `receiver_id=eq.${user.id}` 
-        }, 
-        () => {
-          // Use setTimeout to avoid blocking realtime callback
-          setTimeout(fetchMessagesCount, 0);
-        }
-      )
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'messages', 
-          filter: `receiver_id=eq.${user.id}` 
-        }, 
-        () => {
-          setTimeout(fetchMessagesCount, 0);
-        }
-      )
-      .subscribe();
-    
-    // Cleanup subscriptions
-    return () => {
-      supabase.removeChannel(messagesChannel);
-    };
+    } catch (error) {
+      console.error('Error fetching message count:', error);
+      setUnreadMessages(0);
+    }
   }, [user?.id]);
+  
+  // Initial fetch
+  useEffect(() => {
+    fetchMessagesCount();
+  }, [fetchMessagesCount]);
 
-  // Optimized: Refresh message count when returning from messages page
+  // Use optimized realtime hook instead of direct subscriptions
+  useOptimizedRealtime({
+    table: 'messages',
+    event: '*',
+    filter: `receiver_id=eq.${user?.id}`,
+    callback: () => fetchMessagesCount(),
+    enabled: !!user?.id,
+    debounceMs: 2000 // Increased debounce to reduce database load
+  });
+
+  // Refresh message count when returning from messages page (with debounce)
   useEffect(() => {
     if (user?.id && location.pathname !== '/messages') {
-      // Small delay to allow any pending updates to complete
-      const timer = setTimeout(() => {
-        const fetchMessagesCount = async () => {
-          try {
-            const { count, error } = await supabase
-              .from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('receiver_id', user.id as any)
-              .neq('sender_id', user.id as any)
-              .eq('is_read', false as any);
-              
-            if (!error && count !== null) {
-              setUnreadMessages(count);
-            }
-          } catch (error) {
-            console.error('Error refreshing message count:', error);
-          }
-        };
-        fetchMessagesCount();
-      }, 500);
-
+      const timer = setTimeout(fetchMessagesCount, 1000);
       return () => clearTimeout(timer);
     }
-  }, [location.pathname, user?.id]);
+  }, [location.pathname, user?.id, fetchMessagesCount]);
 
   return (
     <div className="flex items-center gap-2">
