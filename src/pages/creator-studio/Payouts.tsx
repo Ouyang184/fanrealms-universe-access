@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,18 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 export default function CreatorStudioPayouts() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
-  const { connectStatus, balance, createLoginLink } = useStripeConnect();
+  const { 
+    stripeStatus, 
+    isConnected, 
+    hasStripeAccount, 
+    stripeAccountId, 
+    isOnboardingComplete, 
+    isStripeReady, 
+    isLoading, 
+    isConnecting, 
+    createStripeAccount, 
+    refreshStripeStatus 
+  } = useStripeConnect();
   const queryClient = useQueryClient();
 
   // Manual sync mutation
@@ -43,6 +55,31 @@ export default function CreatorStudioPayouts() {
     }
   });
 
+  // Create login link function
+  const createLoginLink = async (accountId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { 
+          action: 'create_login_link',
+          accountId: accountId
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.loginUrl) {
+        window.open(data.loginUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating login link:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open Stripe dashboard. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Fetch creator earnings
   const { data: earnings = [], isLoading: earningsLoading } = useQuery({
     queryKey: ['creatorEarnings', creatorProfile?.id],
@@ -62,6 +99,25 @@ export default function CreatorStudioPayouts() {
     enabled: !!creatorProfile?.id
   });
 
+  // Fetch balance from Stripe
+  const { data: balance } = useQuery({
+    queryKey: ['stripeBalance', stripeAccountId],
+    queryFn: async () => {
+      if (!stripeAccountId) return null;
+      
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { 
+          action: 'get_balance',
+          accountId: stripeAccountId
+        }
+      });
+
+      if (error) throw error;
+      return data?.balance;
+    },
+    enabled: !!stripeAccountId && isOnboardingComplete
+  });
+
   // Calculate totals
   const totalEarnings = earnings.reduce((sum, earning) => sum + (earning.net_amount || 0), 0);
   const monthlyEarnings = earnings
@@ -74,7 +130,7 @@ export default function CreatorStudioPayouts() {
 
   const availableBalance = balance?.available?.[0]?.amount ? balance.available[0].amount / 100 : 0;
 
-  if (earningsLoading) {
+  if (earningsLoading || isLoading) {
     return (
       <div className="flex justify-center py-12">
         <LoadingSpinner />
@@ -112,7 +168,7 @@ export default function CreatorStudioPayouts() {
       </div>
 
       {/* Sync Status Alert */}
-      {connectStatus?.stripe_account_id && (
+      {stripeAccountId && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -162,7 +218,7 @@ export default function CreatorStudioPayouts() {
       </div>
 
       {/* Stripe Dashboard Access */}
-      {connectStatus?.stripe_account_id && (
+      {stripeAccountId && (
         <Card>
           <CardHeader>
             <CardTitle>Stripe Dashboard</CardTitle>
@@ -170,7 +226,7 @@ export default function CreatorStudioPayouts() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              onClick={() => createLoginLink(stripeAccountId)}
               className="flex items-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
@@ -230,7 +286,7 @@ export default function CreatorStudioPayouts() {
         </CardContent>
       </Card>
       
-      {!connectStatus?.stripe_onboarding_complete && (
+      {!isOnboardingComplete && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>

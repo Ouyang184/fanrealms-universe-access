@@ -2,12 +2,21 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Tier, CreateTierForm } from "@/components/creator-studio/CreateTierForm";
+import { CreateTierForm } from "@/components/creator-studio/CreateTierForm";
 import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
+
+// Define Tier interface locally since it's not exported from CreateTierForm
+export interface Tier {
+  id: string;
+  name: string;
+  price: number;
+  features: string[];
+  subscriberCount: number;
+}
 
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
@@ -289,12 +298,11 @@ export default function CreatorStudioTiers() {
         editingTier={editingTier} 
       />
       
-      {/* Delete Tier Dialog */}
+      {/* Delete Tier Dialog - Fixed props */}
       <DeleteTierDialog
         isOpen={isDeleteDialogOpen}
         onClose={closeDeleteDialog}
         tierId={deletingTier?.id || ""}
-        tierName={deletingTier?.name || ""}
       />
     </div>
   );
