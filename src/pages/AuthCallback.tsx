@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -8,23 +8,42 @@ import { useToast } from "@/hooks/use-toast";
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // Check if this is a password recovery flow
+        const type = searchParams.get('type');
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        
+        if (type === 'recovery' && accessToken && refreshToken) {
+          // Set the session for password recovery
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) throw error;
+          
+          // Redirect to reset password page with tokens
+          navigate(`/reset-password?access_token=${accessToken}&refresh_token=${refreshToken}`);
+          return;
+        }
+        
+        // Handle regular auth callback
         const { data, error } = await supabase.auth.getSession();
         
         if (error) throw error;
         
         if (data?.session) {
-          // Session exists, redirect accordingly
           toast({
             title: "Authentication successful",
             description: "You have been successfully authenticated.",
           });
           navigate("/dashboard");
         } else {
-          // No session, might be an error or the auth link expired
           toast({
             title: "Authentication failed",
             description: "Please try logging in again.",
@@ -43,9 +62,8 @@ const AuthCallback = () => {
       }
     };
 
-    // Process the authentication callback
     handleAuthCallback();
-  }, [navigate, toast]);
+  }, [navigate, toast, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

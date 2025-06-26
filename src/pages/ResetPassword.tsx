@@ -34,6 +34,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSessionSet, setIsSessionSet] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -44,16 +45,41 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    // Check if we have the necessary tokens in the URL
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    if (!accessToken || !refreshToken) {
-      setError("Invalid or expired reset link. Please request a new password reset.");
-    }
+    const setupSession = async () => {
+      // Check if we have the necessary tokens in the URL
+      const accessToken = searchParams.get('access_token');
+      const refreshToken = searchParams.get('refresh_token');
+      
+      if (!accessToken || !refreshToken) {
+        setError("Invalid or expired reset link. Please request a new password reset.");
+        return;
+      }
+
+      try {
+        // Set the session with the tokens from the URL
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        if (error) throw error;
+        
+        setIsSessionSet(true);
+      } catch (error: any) {
+        console.error("Session setup error:", error);
+        setError("Invalid or expired reset link. Please request a new password reset.");
+      }
+    };
+
+    setupSession();
   }, [searchParams]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
+    if (!isSessionSet) {
+      setError("Session not properly initialized. Please try the reset link again.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
@@ -189,7 +215,11 @@ const ResetPassword = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-purple-600 hover:bg-purple-700" 
+                  disabled={isSubmitting || !isSessionSet}
+                >
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <svg
