@@ -1,143 +1,135 @@
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
-import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
-interface ProfileTabProps {
-  user: User | null;
-}
-
-export function ProfileTab({ user }: ProfileTabProps) {
+export function ProfileTab() {
+  const { profile, updateProfile } = useAuth();
   const { toast } = useToast();
-  const [profileSettings, setProfileSettings] = useState({
-    name: "",
-    username: "",
-    bio: "",
-    website: "",
-    saving: false
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    website: ''
   });
 
   useEffect(() => {
-    if (user) {
-      setProfileSettings({
-        name: user.user_metadata?.full_name || "John Doe",
-        username: user.user_metadata?.username || "johndoe",
-        bio: "Digital creator and tech enthusiast",
-        website: "https://example.com",
-        saving: false
+    if (profile) {
+      setFormData({
+        username: profile.username || '',
+        email: profile.email || '',
+        website: profile.website || ''
       });
     }
-  }, [user]);
+  }, [profile]);
 
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfileSettings(prev => ({ ...prev, [name]: value }));
-  };
-
-  const saveProfileSettings = async () => {
-    setProfileSettings(prev => ({ ...prev, saving: true }));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!profile?.id) return;
+    
+    setIsLoading(true);
     
     try {
-      // Update auth metadata (for name)
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          full_name: profileSettings.name,
-          username: profileSettings.username
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Update users table
-      const { error: userError } = await supabase
+      // Update in Supabase
+      const { error } = await supabase
         .from('users')
         .update({
-          username: profileSettings.username,
-          website: profileSettings.website,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user?.id);
+          username: formData.username,
+          website: formData.website,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', profile.id as any);
 
-      if (userError) throw userError;
+      if (error) throw error;
+
+      // Update local profile state
+      await updateProfile({
+        username: formData.username,
+        website: formData.website
+      });
 
       toast({
         title: "Profile updated",
-        description: "Your profile information has been saved.",
+        description: "Your profile has been updated successfully.",
       });
-    } catch (error) {
-      console.error('Error saving profile:', error);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error.message || "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setProfileSettings(prev => ({ ...prev, saving: false }));
+      setIsLoading(false);
     }
   };
 
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-        <CardDescription>
-          Update your public profile information
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
-            <Input 
-              id="name" 
-              name="name" 
-              value={profileSettings.name}
-              onChange={handleProfileChange}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
-            <Input 
-              id="username" 
-              name="username" 
-              value={profileSettings.username}
-              onChange={handleProfileChange}
-            />
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Profile Information</h3>
+        <p className="text-sm text-muted-foreground">
+          Update your account profile information.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="bio">Bio</Label>
-          <Input 
-            id="bio" 
-            name="bio" 
-            value={profileSettings.bio}
-            onChange={handleProfileChange}
+          <Label htmlFor="username">Username</Label>
+          <Input
+            id="username"
+            value={formData.username}
+            onChange={(e) => handleInputChange('username', e.target.value)}
+            placeholder="Enter your username"
+            disabled={isLoading}
           />
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            disabled
+            className="bg-muted"
+          />
+          <p className="text-xs text-muted-foreground">
+            Email cannot be changed from this interface.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="website">Website</Label>
-          <Input 
-            id="website" 
-            name="website" 
+          <Input
+            id="website"
             type="url"
-            value={profileSettings.website}
-            onChange={handleProfileChange}
+            value={formData.website}
+            onChange={(e) => handleInputChange('website', e.target.value)}
+            placeholder="https://yourwebsite.com"
+            disabled={isLoading}
           />
         </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={saveProfileSettings} 
-          disabled={profileSettings.saving}
-        >
-          {profileSettings.saving ? "Saving..." : "Save Changes"}
+
+        <Button type="submit" disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Save Changes
         </Button>
-      </CardFooter>
-    </Card>
+      </form>
+    </div>
   );
 }

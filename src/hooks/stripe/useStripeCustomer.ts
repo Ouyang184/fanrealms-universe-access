@@ -1,33 +1,26 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-export const useStripeCustomer = () => {
-  const { user } = useAuth();
-
-  const { data: stripeCustomer, isLoading } = useQuery({
-    queryKey: ['stripeCustomer', user?.id],
+export function useStripeCustomer(userId: string | undefined) {
+  return useQuery({
+    queryKey: ['stripe-customer', userId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!userId) return null;
       
       const { data, error } = await supabase
         .from('stripe_customers')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId as any)
         .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      
+      if (error) {
+        console.error('Error fetching Stripe customer:', error);
+        return null;
       }
-
-      return data;
+      
+      return data as any;
     },
-    enabled: !!user?.id,
+    enabled: !!userId,
   });
-
-  return {
-    stripeCustomer,
-    isLoading
-  };
-};
+}

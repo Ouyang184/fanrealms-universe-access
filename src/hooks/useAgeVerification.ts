@@ -1,95 +1,81 @@
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
-export const useAgeVerification = () => {
+export function useAgeVerification() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: isAgeVerified = false, isLoading } = useQuery({
-    queryKey: ['age-verification', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return false;
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('age_verified')
-        .eq('id', user.id)
-        .single();
+  useEffect(() => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
 
-      if (error) {
-        console.error('Error fetching age verification status:', error);
-        return false;
+    const checkAgeVerification = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('age_verified')
+          .eq('id', user.id as any)
+          .single();
+
+        if (error) {
+          console.error('Error checking age verification:', error);
+          setIsVerified(false);
+        } else {
+          setIsVerified((data as any)?.age_verified || false);
+        }
+      } catch (error) {
+        console.error('Error in age verification check:', error);
+        setIsVerified(false);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      return data?.age_verified || false;
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+    checkAgeVerification();
+  }, [user?.id]);
 
-  const verifyAgeMutation = useMutation({
-    mutationFn: async (dateOfBirth: string) => {
-      if (!user?.id) throw new Error('User not authenticated');
+  const verifyAge = async (dateOfBirth: string) => {
+    if (!user?.id) return;
 
+    try {
       const { error } = await supabase
         .from('users')
         .update({
           age_verified: true,
           date_of_birth: dateOfBirth,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', user.id as any);
 
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(['age-verification', user?.id], true);
-      setShowVerificationModal(false);
+
+      setIsVerified(true);
+      
       toast({
         title: "Age verified",
-        description: "You can now access 18+ content.",
+        description: "Your age has been verified successfully.",
       });
-    },
-    onError: (error) => {
+    } catch (error: any) {
       console.error('Error verifying age:', error);
       toast({
-        title: "Verification failed",
-        description: "Unable to verify age. Please try again.",
+        title: "Error",
+        description: error.message || "Failed to verify age. Please try again.",
         variant: "destructive",
       });
+      throw error;
     }
-  });
-
-  const requestAgeVerification = () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to verify your age.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setShowVerificationModal(true);
-  };
-
-  const handleAgeVerified = (dateOfBirth: string) => {
-    verifyAgeMutation.mutate(dateOfBirth);
   };
 
   return {
-    isAgeVerified,
+    isVerified,
     isLoading,
-    showVerificationModal,
-    setShowVerificationModal,
-    requestAgeVerification,
-    handleAgeVerified,
-    isVerifying: verifyAgeMutation.isPending
+    verifyAge,
   };
-};
+}

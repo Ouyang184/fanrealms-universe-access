@@ -26,7 +26,7 @@ export function HomeContent() {
   
   // Get user preferences
   const { data: userPreferences = [], isLoading: isLoadingPreferences } = useUserPreferences();
-  const categoryIds = userPreferences.map(pref => pref.category_id);
+  const categoryIds = (userPreferences as any[]).map((pref: any) => pref.category_id);
   
   // Get posts filtered by user preferences for "For You" section (with fallback to all posts)
   // These hooks now automatically filter NSFW content based on preferences
@@ -50,7 +50,7 @@ export function HomeContent() {
       const { data: creatorsData, error } = await supabase
         .from('creators')
         .select('user_id, display_name, profile_image_url')
-        .in('user_id', authorIds);
+        .in('user_id', authorIds as any);
       
       if (error) {
         console.error('HomeContent: Error fetching creators:', error);
@@ -61,7 +61,7 @@ export function HomeContent() {
       
       // Create a map from user_id to creator info
       const creatorsMap = creatorsData?.reduce((acc, creator) => {
-        acc[creator.user_id] = creator;
+        acc[(creator as any).user_id] = creator;
         return acc;
       }, {} as Record<string, any>) || {};
       
@@ -129,11 +129,16 @@ export function HomeContent() {
     }, 50);
   };
 
-  const handleModalClose = (open: boolean) => {
-    console.log('HomeContent: Modal close triggered, open:', open);
+  const handleModalClose = () => {
+    console.log('HomeContent: Modal close triggered');
+    setPostModalOpen(false);
+    setTimeout(() => setSelectedPost(null), 200);
+  };
+
+  const handleModalOpenChange = (open: boolean) => {
+    console.log('HomeContent: Modal open change triggered, open:', open);
     setPostModalOpen(open);
     if (!open) {
-      // Clear selected post when modal is closed
       setTimeout(() => setSelectedPost(null), 200);
     }
   };
@@ -159,7 +164,8 @@ export function HomeContent() {
       {selectedPost && (
         <PostPreviewModal
           open={postModalOpen}
-          onOpenChange={handleModalClose}
+          onOpenChange={handleModalOpenChange}
+          onClose={handleModalClose}
           post={selectedPost}
         />
       )}
