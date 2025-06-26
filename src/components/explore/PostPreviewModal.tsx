@@ -10,8 +10,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePostViews } from "@/hooks/usePostViews";
-import { useLikes } from "@/hooks/useLikes";
-import { useComments } from "@/hooks/useComments";
+import { PostInteractions } from "@/components/post/PostInteractions";
+import { PostComments } from "@/components/post/PostComments";
 
 interface PostPreviewModalProps {
   post: any;
@@ -30,8 +30,6 @@ export function PostPreviewModal({
 }: PostPreviewModalProps) {
   const { user } = useAuth();
   const { viewCount } = usePostViews(post?.id || '');
-  const { likeCount, isLiked, toggleLike } = useLikes(post?.id || '');
-  const { comments } = useComments(post?.id || '');
 
   const modalOpen = open !== undefined ? open : isOpen;
   const handleOpenChange = onOpenChange || ((open: boolean) => !open && onClose());
@@ -66,6 +64,46 @@ export function PostPreviewModal({
             </div>
           </div>
         </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Post content */}
+          <div className="prose prose-sm max-w-none">
+            <p>{post.content}</p>
+          </div>
+          
+          {/* Post attachments/media if any */}
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="space-y-2">
+              {post.attachments.map((attachment: any, index: number) => (
+                <div key={index}>
+                  {attachment.type === 'image' && (
+                    <img 
+                      src={attachment.url} 
+                      alt="Post attachment" 
+                      className="rounded-lg max-w-full h-auto"
+                    />
+                  )}
+                  {attachment.type === 'video' && (
+                    <video 
+                      controls 
+                      className="rounded-lg max-w-full h-auto"
+                      src={attachment.url}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Post interactions (like, comment, share) */}
+          <PostInteractions 
+            postId={post.id} 
+            showCounts={true}
+          />
+          
+          {/* Comments section */}
+          <PostComments postId={post.id} />
+        </div>
       </DialogContent>
     </Dialog>
   );
