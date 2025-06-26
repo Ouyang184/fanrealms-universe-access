@@ -1,97 +1,75 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Profile } from '@/lib/types/auth';
-import { useAuthFunctions } from '@/hooks/useAuthFunctions';
-import { useProfile } from '@/hooks/useProfile';
-import type { AuthContextType } from '@/lib/types/auth';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  loading: true,
+});
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
-  const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
     console.log('Auth state change setup with persistent sessions');
     
-    // First, check for existing session
-    supabase.auth.getSession()
-      .then(({ data: { session: initialSession } }) => {
-        console.log('Got initial session:', initialSession ? 'exists' : 'none');
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        if (initialSession?.user) {
-          setTimeout(() => {
-            fetchUserProfile(initialSession.user.id).then(userProfile => {
-              if (userProfile) {
-                setProfile(userProfile);
-              }
-            });
-          }, 0);
-        }
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("Error getting session:", error);
-        setLoading(false);
-      });
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log('Auth state change:', event);
-        
-        // Handle session changes
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          setTimeout(() => {
-            fetchUserProfile(currentSession.user.id).then(userProfile => {
-              if (userProfile) {
-                setProfile(userProfile);
-              }
-            });
-          }, 0);
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting initial session:', error);
         } else {
-          // Clear profile when no session exists
-          setProfile(null);
+          console.log('Got initial session:', initialSession ? 'exists' : 'none');
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
         }
+      } catch (error) {
+        console.error('Failed to get initial session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state change:', event);
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, []);
 
-  const handleUpdateProfile = async (data: Partial<Profile>) => {
-    if (!user) throw new Error("No user logged in");
-    const updatedProfile = await updateUserProfile(user.id, data);
-    if (updatedProfile) {
-      setProfile(updatedProfile);
-    }
-    return updatedProfile;
-  };
-
-  const value: AuthContextType = {
-    session,
+  const value = {
     user,
-    profile,
+    session,
     loading,
-    signIn,
-    signInWithMagicLink,
-    signUp,
-    signOut,
-    updateProfile: handleUpdateProfile
   };
 
   return (
@@ -99,12 +77,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

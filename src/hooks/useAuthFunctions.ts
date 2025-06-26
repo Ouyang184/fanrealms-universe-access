@@ -55,7 +55,7 @@ export const useAuthFunctions = () => {
   }, [toast, navigate]);
 
   const signUpWithRetry = useCallback(async (email: string, password: string, retryCount = 0): Promise<any> => {
-    const maxRetries = 2;
+    const maxRetries = 3;
     
     try {
       console.log(`Signup attempt ${retryCount + 1} for:`, email);
@@ -67,8 +67,6 @@ export const useAuthFunctions = () => {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             signup_timestamp: new Date().toISOString(),
-            allow_multiple_from_ip: true,
-            ip_restriction_disabled: true
           }
         }
       });
@@ -77,6 +75,19 @@ export const useAuthFunctions = () => {
 
       if (error) {
         console.error('Supabase signup error:', error);
+        
+        // Handle specific error types
+        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+          throw new Error('This email is already registered. Please try logging in instead.');
+        }
+        
+        if (error.message?.includes('invalid email')) {
+          throw new Error('Please enter a valid email address.');
+        }
+
+        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+          throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
+        }
         
         // Handle retryable errors (504, timeouts, etc.)
         const isRetryableError = 
@@ -91,24 +102,11 @@ export const useAuthFunctions = () => {
         if (isRetryableError && retryCount < maxRetries) {
           console.log(`Retrying signup (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
           
-          // Wait before retrying (exponential backoff)
-          const delay = Math.pow(2, retryCount) * 2000; // 2s, 4s delays
+          // Wait before retrying with exponential backoff
+          const delay = Math.pow(2, retryCount) * 3000; // 3s, 6s, 12s delays
           await new Promise(resolve => setTimeout(resolve, delay));
           
           return await signUpWithRetry(email, password, retryCount + 1);
-        }
-        
-        // Handle non-retryable specific errors
-        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
-          throw new Error('This email is already registered. Please try logging in instead.');
-        }
-        
-        if (error.message?.includes('invalid email')) {
-          throw new Error('Please enter a valid email address.');
-        }
-
-        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
-          throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
         // For retryable errors that exhausted retries
@@ -131,11 +129,11 @@ export const useAuthFunctions = () => {
       
       console.error("Signup network error:", error);
       
-      // Handle network/connection errors
+      // Handle network/connection errors with retry
       if (retryCount < maxRetries) {
         console.log(`Network error, retrying signup (attempt ${retryCount + 2}/${maxRetries + 1})...`);
         
-        const delay = Math.pow(2, retryCount) * 2000;
+        const delay = Math.pow(2, retryCount) * 3000;
         await new Promise(resolve => setTimeout(resolve, delay));
         
         return await signUpWithRetry(email, password, retryCount + 1);
@@ -185,9 +183,6 @@ export const useAuthFunctions = () => {
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            magic_link_ip_allowed: true
-          }
         },
       });
 

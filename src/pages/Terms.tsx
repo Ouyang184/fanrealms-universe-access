@@ -78,7 +78,6 @@ export default function Terms() {
         navigate("/login", { replace: true });
         
       } catch (error: any) {
-        // This catch block handles any unexpected errors
         console.error("Unexpected signup error:", error);
         toast.error("An unexpected error occurred. Please try again.");
       } finally {
