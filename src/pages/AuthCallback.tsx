@@ -38,18 +38,7 @@ const AuthCallback = () => {
           
           console.log("AuthCallback: Session set successfully", { user: data.user?.email });
           
-          // Wait a moment to ensure session is fully established
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Verify session is active
-          const { data: sessionData } = await supabase.auth.getSession();
-          console.log("AuthCallback: Session verified", { hasSession: !!sessionData.session });
-          
-          if (!sessionData.session) {
-            throw new Error("Failed to establish session");
-          }
-          
-          // Redirect to reset password page without tokens in URL
+          // Redirect to reset password page
           navigate('/reset-password', { replace: true });
           return;
         }
