@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Check, Shield, FileText, Users, CreditCard, AlertTriangle } from 'lucide-react';
+import { Check, Shield, FileText, Users, CreditCard, AlertTriangle, ExternalLink } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { toast } from 'sonner';

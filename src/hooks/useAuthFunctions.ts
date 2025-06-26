@@ -36,7 +36,7 @@ export const useAuthFunctions = () => {
       if (error.message?.includes("Invalid login")) {
         errorMessage = "Invalid email or password. Please check your credentials.";
       } else if (error.message?.includes("timeout") || error.message?.includes("504") || error.status === 504) {
-        errorMessage = "Server is busy. Please try again in a moment.";
+        errorMessage = "Server is temporarily overloaded. Please try again in a few minutes.";
       } else if (error.message && error.message !== "{}") {
         errorMessage = error.message;
       }
@@ -55,14 +55,14 @@ export const useAuthFunctions = () => {
   }, [toast, navigate]);
 
   const signUpWithRetry = useCallback(async (email: string, password: string, retryCount = 0): Promise<any> => {
-    const maxRetries = 2; // Reduced from 3 to 2 for faster feedback
+    const maxRetries = 1; // Reduced to 1 retry for faster feedback
     
     try {
       console.log(`Signup attempt ${retryCount + 1} for:`, email);
       
-      // Set a more reasonable timeout for signup attempts
+      // Shorter timeout for quicker failure detection
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -94,8 +94,8 @@ export const useAuthFunctions = () => {
           throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        // Handle retryable errors (504, timeouts, etc.)
-        const isRetryableError = 
+        // Handle server overload errors (504, timeouts, etc.)
+        const isServerOverloaded = 
           error.status === 504 || 
           error.name === 'AuthRetryableFetchError' ||
           error.message?.includes('timeout') ||
@@ -104,19 +104,19 @@ export const useAuthFunctions = () => {
           !error.message ||
           error.message.trim() === '';
         
-        if (isRetryableError && retryCount < maxRetries) {
-          console.log(`Retrying signup (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
+        if (isServerOverloaded && retryCount < maxRetries) {
+          console.log(`Server overloaded, retrying (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
           
-          // Shorter delay for faster user feedback
-          const delay = Math.min(3000 * Math.pow(1.5, retryCount), 8000); // Max 8 seconds
+          // Short delay
+          const delay = 2000; // 2 seconds
           await new Promise(resolve => setTimeout(resolve, delay));
           
           return await signUpWithRetry(email, password, retryCount + 1);
         }
         
-        // For retryable errors that exhausted retries
-        if (isRetryableError) {
-          throw new Error('The server is currently experiencing high traffic. Please try again in a few minutes, or try using a different email address.');
+        // For server overload errors that exhausted retries
+        if (isServerOverloaded) {
+          throw new Error('Supabase authentication servers are currently overloaded due to high traffic. This is a temporary issue. Please try again in a few minutes, or contact support if this persists.');
         }
         
         // For other errors, use the original message or a fallback
@@ -138,13 +138,13 @@ export const useAuthFunctions = () => {
       if (retryCount < maxRetries && (error.name === 'AbortError' || error.message?.includes('network'))) {
         console.log(`Network error, retrying signup (attempt ${retryCount + 2}/${maxRetries + 1})...`);
         
-        const delay = Math.min(3000 * Math.pow(1.5, retryCount), 8000);
+        const delay = 2000;
         await new Promise(resolve => setTimeout(resolve, delay));
         
         return await signUpWithRetry(email, password, retryCount + 1);
       }
       
-      throw new Error('Network error occurred. Please check your connection and try again, or try using a different email address.');
+      throw new Error('Network connection error. Please check your internet connection and try again.');
     }
   }, []);
 
