@@ -49,7 +49,7 @@ export function useCreatorProfileData() {
       
       // Ensure both objects exist before spreading
       const baseProfile = creatorProfile || {};
-      const latestData = latestCreatorData || {};
+      const latestData = latestCreatorData as any || {};
       const userDataSafe = userData as any;
       
       return {
@@ -57,13 +57,13 @@ export function useCreatorProfileData() {
         ...latestData,
         username: userDataSafe.username,
         fullName: userDataSafe.username,
-        displayName: (latestData as any)?.display_name || userDataSafe.username,
+        displayName: latestData.display_name || userDataSafe.username,
         email: userDataSafe.email,
         avatar_url: userDataSafe.profile_picture,
-        banner_url: (latestData as any)?.banner_url || null,
-        bio: (latestData as any)?.bio || "No bio provided yet.",
-        display_name: (latestData as any)?.display_name || null,
-        follower_count: (latestData as any)?.follower_count || 0
+        banner_url: latestData.banner_url || null,
+        bio: latestData.bio || "No bio provided yet.",
+        display_name: latestData.display_name || null,
+        follower_count: latestData.follower_count || 0
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile
@@ -175,22 +175,22 @@ export function useCreatorProfileData() {
         const { count, error: countError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', (tier as any).id as any);
+          .eq('tier_id', tier.id as any);
           
         return {
-          id: (tier as any).id,
-          name: (tier as any).title,
-          title: (tier as any).title,
-          price: (tier as any).price,
-          description: (tier as any).description,
-          features: (tier as any).description ? [(tier as any).description] : [],
+          id: tier.id,
+          name: tier.title,
+          title: tier.title,
+          price: tier.price,
+          description: tier.description,
+          features: tier.description ? [tier.description] : [],
           subscriberCount: count || 0
         };
       }));
       
       return tiersWithSubscribers;
     },
-    enabled: !!creatorProfile?.id
+    enabled: !!(creatorProfile as any)?.id
   });
   
   return {

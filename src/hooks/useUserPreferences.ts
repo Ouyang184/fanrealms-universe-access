@@ -14,7 +14,7 @@ export const useUserPreferences = () => {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('category_id, category_name')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id as any);
 
       if (error) {
         console.error('Error fetching user preferences:', error);

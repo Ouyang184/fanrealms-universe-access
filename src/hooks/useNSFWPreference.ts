@@ -23,7 +23,7 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
       const { data, error } = await supabase
         .from('users')
         .select('is_nsfw_enabled')
-        .eq('id', user.id)
+        .eq('id', user.id as any)
         .single();
 
       if (error) {
@@ -31,7 +31,7 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
         return false;
       }
 
-      const result = data?.is_nsfw_enabled || false;
+      const result = (data as any)?.is_nsfw_enabled || false;
       console.log('NSFW preference fetched:', result);
       return result;
     },
@@ -53,16 +53,16 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
         const { data: userData, error } = await supabase
           .from('users')
           .select('age_verified')
-          .eq('id', user.id)
+          .eq('id', user.id as any)
           .single();
 
         console.log('🔍 useNSFWPreference - Database age verification check:', { 
           userData, 
           error,
-          age_verified: userData?.age_verified 
+          age_verified: (userData as any)?.age_verified 
         });
 
-        const isAgeVerified = !error && userData?.age_verified;
+        const isAgeVerified = !error && (userData as any)?.age_verified;
 
         if (!isAgeVerified && options?.onAgeVerificationRequired) {
           console.log('🚨 useNSFWPreference - Age verification required, calling callback');
@@ -84,8 +84,8 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
         .update({
           is_nsfw_enabled: enabled,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        } as any)
+        .eq('id', user.id as any);
 
       if (error) throw error;
       

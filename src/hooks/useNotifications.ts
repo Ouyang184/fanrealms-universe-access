@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +36,7 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .not('type', 'in', '(post,content)')
         .order('created_at', { ascending: false });
 
@@ -45,7 +46,7 @@ export const useNotifications = () => {
       }
 
       console.log('Relevant notifications from database:', data);
-      return data as Notification[];
+      return data as unknown as Notification[];
     },
     enabled: !!user?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -55,9 +56,9 @@ export const useNotifications = () => {
     mutationFn: async (notificationId: string) => {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId)
-        .eq('user_id', user?.id);
+        .update({ is_read: true } as any)
+        .eq('id', notificationId as any)
+        .eq('user_id', user?.id as any);
 
       if (error) throw error;
     },
@@ -77,9 +78,9 @@ export const useNotifications = () => {
     mutationFn: async () => {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user?.id)
-        .eq('is_read', false)
+        .update({ is_read: true } as any)
+        .eq('user_id', user?.id as any)
+        .eq('is_read', false as any)
         .not('type', 'in', '(post,content)'); // Only mark relevant notifications as read
 
       if (error) throw error;
@@ -104,8 +105,8 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', notificationId)
-        .eq('user_id', user?.id);
+        .eq('id', notificationId as any)
+        .eq('user_id', user?.id as any);
 
       if (error) throw error;
     },
@@ -131,10 +132,10 @@ export const useNotifications = () => {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_read: true })
-        .in('id', notificationIds)
-        .eq('user_id', user?.id)
-        .eq('is_read', false);
+        .update({ is_read: true } as any)
+        .in('id', notificationIds as any)
+        .eq('user_id', user?.id as any)
+        .eq('is_read', false as any);
 
       if (!error) {
         queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
