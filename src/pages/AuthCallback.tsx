@@ -15,52 +15,54 @@ const AuthCallback = () => {
       try {
         console.log("AuthCallback: Processing auth callback");
         
-        // Check if this is a password recovery flow
-        const type = searchParams.get('type');
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        
-        console.log("AuthCallback: URL params", { type, hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken });
-        
-        if (type === 'recovery' && accessToken && refreshToken) {
-          console.log("AuthCallback: Setting session for password recovery");
-          
-          // Set the session for password recovery
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          
-          if (error) {
-            console.error("AuthCallback: Error setting session", error);
-            throw error;
-          }
-          
-          console.log("AuthCallback: Session set successfully", { user: data.user?.email });
-          
-          // Redirect to reset password page
-          navigate('/reset-password', { replace: true });
-          return;
-        }
-        
-        // Handle regular auth callback
+        // First, let Supabase handle the auth callback automatically
         const { data, error } = await supabase.auth.getSession();
         
-        if (error) throw error;
+        if (error) {
+          console.error("AuthCallback: Error getting session", error);
+          throw error;
+        }
         
-        if (data?.session) {
+        console.log("AuthCallback: Session data", { 
+          hasSession: !!data?.session, 
+          user: data?.session?.user?.email 
+        });
+        
+        if (data?.session?.user) {
+          // Check if this came from a password recovery email
+          // Password recovery emails have specific URL patterns or we can check user metadata
+          const searchString = window.location.search;
+          const hashString = window.location.hash;
+          
+          console.log("AuthCallback: URL details", { searchString, hashString });
+          
+          // Check if this is a recovery flow by looking for recovery-related parameters
+          const isRecovery = searchString.includes('type=recovery') || 
+                           hashString.includes('type=recovery') ||
+                           searchParams.get('type') === 'recovery';
+          
+          console.log("AuthCallback: Is recovery flow?", isRecovery);
+          
+          if (isRecovery) {
+            console.log("AuthCallback: Redirecting to reset password page");
+            navigate('/reset-password', { replace: true });
+            return;
+          }
+          
+          // Regular authentication success
           toast({
             title: "Authentication successful",
             description: "You have been successfully authenticated.",
           });
-          navigate("/dashboard");
+          navigate("/home", { replace: true });
         } else {
+          // No session found, redirect to login
           toast({
             title: "Authentication failed",
             description: "Please try logging in again.",
             variant: "destructive"
           });
-          navigate("/login");
+          navigate("/login", { replace: true });
         }
       } catch (error) {
         console.error("Auth callback error:", error);
@@ -69,7 +71,7 @@ const AuthCallback = () => {
           description: "An error occurred during authentication. Please try again.",
           variant: "destructive"
         });
-        navigate("/login");
+        navigate("/login", { replace: true });
       }
     };
 
