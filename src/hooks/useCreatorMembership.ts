@@ -27,8 +27,8 @@ export const useCreatorMembership = (creatorId: string) => {
       const { data: tiersData, error: tiersError } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', creatorId)
-        .eq('active', true) // Only get active tiers
+        .eq('creator_id', creatorId as any)
+        .eq('active', true as any) // Only get active tiers
         .order('price', { ascending: true });
 
       if (tiersError) {
@@ -40,49 +40,49 @@ export const useCreatorMembership = (creatorId: string) => {
 
       // Get accurate subscriber counts for each tier from user_subscriptions table
       const tiersWithCounts = await Promise.all(
-        (tiersData || []).map(async (tier) => {
-          console.log('[CreatorMembership] Counting subscribers for tier:', tier.id, tier.title);
+        (tiersData || []).map(async (tier: any) => {
+          console.log('[CreatorMembership] Counting subscribers for tier:', (tier as any).id, (tier as any).title);
           
           try {
             // Count active subscribers for this specific tier
             const { count, error: countError } = await supabase
               .from('user_subscriptions')
               .select('*', { count: 'exact', head: true })
-              .eq('tier_id', tier.id)
-              .eq('creator_id', creatorId)
-              .eq('status', 'active');
+              .eq('tier_id', (tier as any).id as any)
+              .eq('creator_id', creatorId as any)
+              .eq('status', 'active' as any);
 
             if (countError) {
-              console.error('[CreatorMembership] Error counting subscribers for tier:', tier.id, countError);
+              console.error('[CreatorMembership] Error counting subscribers for tier:', (tier as any).id, countError);
               return {
-                id: tier.id,
-                name: tier.title,
-                price: tier.price,
-                description: tier.description || '',
-                features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
+                id: (tier as any).id,
+                name: (tier as any).title,
+                price: (tier as any).price,
+                description: (tier as any).description || '',
+                features: (tier as any).description ? (tier as any).description.split('|').filter((f: string) => f.trim()) : [],
                 subscriberCount: 0,
               };
             }
 
             const subscriberCount = count || 0;
-            console.log('[CreatorMembership] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
+            console.log('[CreatorMembership] Tier', (tier as any).title, 'has', subscriberCount, 'active subscribers');
 
             return {
-              id: tier.id,
-              name: tier.title,
-              price: tier.price,
-              description: tier.description || '',
-              features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
+              id: (tier as any).id,
+              name: (tier as any).title,
+              price: (tier as any).price,
+              description: (tier as any).description || '',
+              features: (tier as any).description ? (tier as any).description.split('|').filter((f: string) => f.trim()) : [],
               subscriberCount,
             };
           } catch (error) {
-            console.error('[CreatorMembership] Error processing tier:', tier.id, error);
+            console.error('[CreatorMembership] Error processing tier:', (tier as any).id, error);
             return {
-              id: tier.id,
-              name: tier.title,
-              price: tier.price,
-              description: tier.description || '',
-              features: tier.description ? tier.description.split('|').filter(f => f.trim()) : [],
+              id: (tier as any).id,
+              name: (tier as any).title,
+              price: (tier as any).price,
+              description: (tier as any).description || '',
+              features: (tier as any).description ? (tier as any).description.split('|').filter((f: string) => f.trim()) : [],
               subscriberCount: 0,
             };
           }
@@ -109,8 +109,8 @@ export const useCreatorMembership = (creatorId: string) => {
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId);
+        .eq('user_id', user.id as any)
+        .eq('creator_id', creatorId as any);
 
       if (error) {
         console.error('[CreatorMembership] Error fetching user subscriptions:', error);
@@ -128,7 +128,7 @@ export const useCreatorMembership = (creatorId: string) => {
   // Check if user is subscribed to ANY tier of this creator
   const isSubscribedToCreator = useCallback((): boolean => {
     const hasActiveSubscriptions = userCreatorSubscriptions ? 
-      userCreatorSubscriptions.some(sub => sub.status === 'active' || sub.status === 'cancelling') : false;
+      userCreatorSubscriptions.some((sub: any) => (sub as any).status === 'active' || (sub as any).status === 'cancelling') : false;
     return hasActiveSubscriptions;
   }, [userCreatorSubscriptions]);
 
@@ -140,8 +140,8 @@ export const useCreatorMembership = (creatorId: string) => {
     }
     
     // Fall back to server data from user_subscriptions - include cancelling status
-    const isSubscribed = userCreatorSubscriptions?.some(sub => 
-      sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
+    const isSubscribed = userCreatorSubscriptions?.some((sub: any) => 
+      (sub as any).tier_id === tierId && ((sub as any).status === 'active' || (sub as any).status === 'cancelling')
     ) || false;
     
     return isSubscribed;
@@ -149,8 +149,8 @@ export const useCreatorMembership = (creatorId: string) => {
 
   // Get subscription data for a specific tier - include cancelling subscriptions
   const getSubscriptionData = useCallback((tierId: string) => {
-    const subscription = userCreatorSubscriptions?.find(sub => 
-      sub.tier_id === tierId && (sub.status === 'active' || sub.status === 'cancelling')
+    const subscription = userCreatorSubscriptions?.find((sub: any) => 
+      (sub as any).tier_id === tierId && ((sub as any).status === 'active' || (sub as any).status === 'cancelling')
     );
     return subscription;
   }, [userCreatorSubscriptions]);
