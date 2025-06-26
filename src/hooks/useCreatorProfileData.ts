@@ -49,7 +49,7 @@ export function useCreatorProfileData() {
       
       // Ensure both objects exist before spreading
       const baseProfile = creatorProfile || {};
-      const latestData = latestCreatorData as any || {};
+      const latestData = (latestCreatorData as any) || {};
       const userDataSafe = userData as any;
       
       return {
@@ -150,9 +150,9 @@ export function useCreatorProfileData() {
     data: tiers = [],
     isLoading: isLoadingTiers,
   } = useQuery({
-    queryKey: ['creatorProfileTiers', creatorProfile?.id],
+    queryKey: ['creatorProfileTiers', (creatorProfile as any)?.id],
     queryFn: async () => {
-      if (!creatorProfile?.id) return [];
+      if (!(creatorProfile as any)?.id) return [];
       
       const { data: tiersData, error } = await supabase
         .from('membership_tiers')
