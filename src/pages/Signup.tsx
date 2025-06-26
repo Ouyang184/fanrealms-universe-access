@@ -1,15 +1,16 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
-import TermsModal from "@/components/auth/TermsModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -40,7 +41,6 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -62,16 +62,6 @@ const Signup = () => {
   const hasNumber = /[0-9]/.test(password || "");
   const hasSpecialChar = /[^A-Za-z0-9]/.test(password || "");
   const passwordStrength = [hasMinLength, hasUppercase, hasNumber, hasSpecialChar].filter(Boolean).length;
-
-  const handleTermsAccept = () => {
-    form.setValue("agreeToTerms", true);
-    setShowTermsModal(false);
-  };
-
-  const handleTermsDecline = () => {
-    form.setValue("agreeToTerms", false);
-    setShowTermsModal(false);
-  };
 
   const onSubmit = async (values: SignupFormValues) => {
     try {
@@ -279,13 +269,23 @@ const Signup = () => {
                         <div className="flex-1">
                           <Label className="text-sm text-gray-300 leading-relaxed">
                             I agree to the{" "}
-                            <button
-                              type="button"
-                              onClick={() => setShowTermsModal(true)}
+                            <Link
+                              to="/terms"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="text-purple-400 hover:text-purple-300 underline"
                             >
                               Terms of Service
-                            </button>
+                            </Link>
+                            {" "}and{" "}
+                            <Link
+                              to="/privacy"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-purple-400 hover:text-purple-300 underline"
+                            >
+                              Privacy Policy
+                            </Link>
                           </Label>
                         </div>
                       </div>
@@ -336,12 +336,6 @@ const Signup = () => {
       </div>
 
       <AuthFooter />
-
-      <TermsModal
-        open={showTermsModal}
-        onAccept={handleTermsAccept}
-        onDecline={handleTermsDecline}
-      />
     </div>
   );
 };
