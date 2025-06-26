@@ -27,8 +27,8 @@ const AuthCallback = () => {
           
           if (error) throw error;
           
-          // Redirect to reset password page with tokens
-          navigate(`/reset-password?access_token=${accessToken}&refresh_token=${refreshToken}`);
+          // Redirect to reset password page without tokens in URL
+          navigate('/reset-password');
           return;
         }
         

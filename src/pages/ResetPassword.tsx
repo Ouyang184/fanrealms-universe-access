@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +26,6 @@ const resetPasswordSchema = z.object({
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +33,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSessionSet, setIsSessionSet] = useState(false);
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -45,37 +44,28 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const setupSession = async () => {
-      // Check if we have the necessary tokens in the URL
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
-      
-      if (!accessToken || !refreshToken) {
-        setError("Invalid or expired reset link. Please request a new password reset.");
-        return;
-      }
-
+    const checkSession = async () => {
       try {
-        // Set the session with the tokens from the URL
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (error) throw error;
         
-        setIsSessionSet(true);
+        if (session) {
+          setIsSessionReady(true);
+        } else {
+          setError("Invalid or expired reset link. Please request a new password reset.");
+        }
       } catch (error: any) {
-        console.error("Session setup error:", error);
+        console.error("Session check error:", error);
         setError("Invalid or expired reset link. Please request a new password reset.");
       }
     };
 
-    setupSession();
-  }, [searchParams]);
+    checkSession();
+  }, []);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
-    if (!isSessionSet) {
+    if (!isSessionReady) {
       setError("Session not properly initialized. Please try the reset link again.");
       return;
     }
@@ -218,7 +208,7 @@ const ResetPassword = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-purple-600 hover:bg-purple-700" 
-                  disabled={isSubmitting || !isSessionSet}
+                  disabled={isSubmitting || !isSessionReady}
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">
