@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
-import { useSubscriptions } from "@/hooks/useSubscriptions"
+import { useStripeSubscription } from "@/hooks/useStripeSubscription"
 import { useEffect, useState, useCallback } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
@@ -14,7 +14,12 @@ import { useSubscriptionEventManager } from "@/hooks/useSubscriptionEventManager
 import { MainLayout } from "@/components/Layout/MainLayout"
 
 export default function SubscriptionsPage() {
-  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useSubscriptions();
+  const { 
+    userSubscriptions, 
+    subscriptionsLoading, 
+    cancelSubscription, 
+    refetchSubscriptions 
+  } = useStripeSubscription();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();

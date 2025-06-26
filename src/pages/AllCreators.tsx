@@ -1,11 +1,13 @@
+
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, ArrowLeft, Filter } from "lucide-react";
+import { Users, ArrowLeft, Filter, Search, ChevronLeft, SlidersHorizontal, Clock } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,8 +25,9 @@ type SortOption = "newest" | "oldest" | "popular" | "alphabetical" | "price-low"
 type ContentType = "all" | "art-illustration" | "gaming" | "music" | "writing" | "photography" | "education" | "podcasts" | "cooking" | "fitness" | "technology" | "fashion" | "film-video";
 
 export default function AllCreatorsPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const { creators, isLoadingCreators } = useCreators(searchTerm);
+  const { creators, isLoadingCreators } = useCreators();
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [contentType, setContentType] = useState<ContentType>("all");
   const [sortedCreators, setSortedCreators] = useState<CreatorProfile[]>([]);
@@ -251,7 +254,7 @@ export default function AllCreatorsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Filter className="h-4 w-4" />
-                  Sort: {sortBy === "top-rated" ? "Top Rated" : sortBy === "newest" ? "Newest" : "Most Popular"}
+                  Sort: {sortBy === "newest" ? "Newest" : sortBy === "popular" ? "Most Popular" : "Alphabetical"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">

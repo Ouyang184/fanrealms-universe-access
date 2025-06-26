@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
-import PostCard from '@/components/PostCard';
+import { PostCard } from '@/components/PostCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown } from 'lucide-react';

@@ -19,11 +19,23 @@ export default function SearchResultsPage() {
   console.log("SearchResults - searchQuery:", searchQuery);
   
   // Always call the hook, but only search when there's a valid query
-  const { data: creators = [], isLoading, error } = useCreators(searchQuery.trim());
+  const { creators, isLoadingCreators, creatorsError } = useCreators();
 
   console.log("SearchResults - creators data:", creators);
-  console.log("SearchResults - isLoading:", isLoading);
-  console.log("SearchResults - error:", error);
+  console.log("SearchResults - isLoadingCreators:", isLoadingCreators);
+  console.log("SearchResults - creatorsError:", creatorsError);
+
+  // Filter creators based on search query
+  const filteredCreators = creators?.filter(creator => {
+    if (!searchQuery.trim()) return false;
+    const query = searchQuery.toLowerCase();
+    return (
+      (creator.display_name || "").toLowerCase().includes(query) ||
+      (creator.displayName || "").toLowerCase().includes(query) ||
+      (creator.username || "").toLowerCase().includes(query) ||
+      (creator.bio || "").toLowerCase().includes(query)
+    );
+  }) || [];
 
   useEffect(() => {
     document.title = searchQuery ? `"${searchQuery}" - Search Results | FanRealms` : "Search Results | FanRealms";
@@ -71,9 +83,9 @@ export default function SearchResultsPage() {
             </h1>
           </div>
           
-          {searchQuery && !isLoading && (
+          {searchQuery && !isLoadingCreators && (
             <p className="text-gray-400">
-              Found {creators.length} creator{creators.length !== 1 ? 's' : ''} matching your search
+              Found {filteredCreators.length} creator{filteredCreators.length !== 1 ? 's' : ''} matching your search
             </p>
           )}
         </div>
@@ -85,7 +97,7 @@ export default function SearchResultsPage() {
             <h3 className="text-xl font-semibold mb-2">Start Your Search</h3>
             <p>Enter a search term to find creators on FanRealms</p>
           </div>
-        ) : isLoading ? (
+        ) : isLoadingCreators ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array(8).fill(0).map((_, i) => (
               <Card key={`search-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
@@ -108,15 +120,15 @@ export default function SearchResultsPage() {
               </Card>
             ))}
           </div>
-        ) : error ? (
+        ) : creatorsError ? (
           <div className="text-center py-20 text-red-400">
             <Search className="h-16 w-16 mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-semibold mb-2">Search Error</h3>
             <p>There was an error searching for creators. Please try again.</p>
           </div>
-        ) : creators.length > 0 ? (
+        ) : filteredCreators.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {creators.map((creator) => {
+            {filteredCreators.map((creator) => {
               const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
               const avatarUrl = creator.profile_image_url || creator.avatar_url;
               const creatorLink = creator.username 
