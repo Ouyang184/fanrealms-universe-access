@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -93,8 +92,8 @@ export const useAuthFunctions = () => {
           throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        // Handle server overload errors - fix the error object access
-        const errorStatus = error.status || (error.__isAuthError && error.status);
+        // Handle server overload errors - simplified error detection
+        const errorStatus = error.status;
         const errorName = error.name;
         const errorMessage = error.message || '';
         
@@ -128,7 +127,7 @@ export const useAuthFunctions = () => {
       
     } catch (error: any) {
       // If this is already our custom error, re-throw it
-      if (error.message && !error.status && !error.__isAuthError) {
+      if (error.message && typeof error.message === 'string' && !error.status) {
         throw error;
       }
       
