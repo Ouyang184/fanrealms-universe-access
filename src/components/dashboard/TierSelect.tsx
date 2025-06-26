@@ -9,15 +9,21 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
 interface TierSelectProps {
-  onTierSelect: (tierId: string | null) => void;
-  selectedTier: string | null;
+  onTierSelect?: (tierId: string | null) => void;
+  onSelect?: (tierIds: string[] | null) => void;
+  selectedTier?: string | null;
+  value?: string[] | null;
+  disabled?: boolean;
 }
 
-export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
+export function TierSelect({ onTierSelect, onSelect, selectedTier, value, disabled = false }: TierSelectProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newTierTitle, setNewTierTitle] = useState("");
   const [newTierPrice, setNewTierPrice] = useState<number | "">("");
   const { user } = useAuth();
+
+  // Use value if provided, otherwise use selectedTier
+  const currentSelection = value || (selectedTier ? [selectedTier] : null);
 
   const { data: creator } = useQuery({
     queryKey: ['creator-profile', user?.id],
@@ -62,6 +68,15 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
     enabled: !!(creator as any)?.id
   });
 
+  const handleTierChange = (tierId: string | null) => {
+    if (onTierSelect) {
+      onTierSelect(tierId);
+    }
+    if (onSelect) {
+      onSelect(tierId ? [tierId] : null);
+    }
+  };
+
   const handleCreateTier = async () => {
     if (!user?.id || !(creator as any)?.id) return;
     
@@ -87,7 +102,7 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
         title: "Success",
         description: "New tier created successfully",
       });
-      onTierSelect(newTier.id);
+      handleTierChange(newTier.id);
       setNewTierTitle("");
       setNewTierPrice("");
       setIsCreating(false);
@@ -113,8 +128,9 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
             id={`tier-${(tier as any).id}`}
             name="tier"
             value={(tier as any).id}
-            checked={selectedTier === (tier as any).id}
-            onChange={(e) => onTierSelect(e.target.value)}
+            checked={currentSelection?.includes((tier as any).id) || false}
+            onChange={(e) => handleTierChange(e.target.value)}
+            disabled={disabled}
             className="w-4 h-4 text-primary"
           />
           <label htmlFor={`tier-${(tier as any).id}`} className="flex-1 cursor-pointer">
@@ -131,8 +147,9 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
           id="no-tier"
           name="tier"
           value=""
-          checked={selectedTier === null}
-          onChange={() => onTierSelect(null)}
+          checked={!currentSelection || currentSelection.length === 0}
+          onChange={() => handleTierChange(null)}
+          disabled={disabled}
           className="w-4 h-4 text-primary"
         />
         <label htmlFor="no-tier" className="cursor-pointer">
@@ -150,6 +167,7 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
               placeholder="e.g., Gold, VIP"
               value={newTierTitle}
               onChange={(e) => setNewTierTitle(e.target.value)}
+              disabled={disabled}
             />
           </div>
           <div>
@@ -160,6 +178,7 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
               placeholder="e.g., 4.99"
               value={newTierPrice}
               onChange={(e) => setNewTierPrice(Number(e.target.value))}
+              disabled={disabled}
             />
           </div>
         </div>
@@ -167,7 +186,7 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
           type="button"
           size="sm"
           onClick={handleCreateTier}
-          disabled={isCreating}
+          disabled={isCreating || disabled}
           className="w-full mt-2"
         >
           {isCreating ? "Creating..." : "Create Tier"}

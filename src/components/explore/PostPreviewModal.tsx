@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -14,20 +15,31 @@ import { useComments } from "@/hooks/useComments";
 
 interface PostPreviewModalProps {
   post: any;
-  isOpen: boolean;
+  isOpen?: boolean;
+  open?: boolean;
   onClose: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function PostPreviewModal({ post, isOpen, onClose }: PostPreviewModalProps) {
+export function PostPreviewModal({ 
+  post, 
+  isOpen, 
+  open, 
+  onClose, 
+  onOpenChange 
+}: PostPreviewModalProps) {
   const { user } = useAuth();
   const { viewCount } = usePostViews(post?.id || '');
   const { likeCount, isLiked, toggleLike } = useLikes(post?.id || '');
   const { comments } = useComments(post?.id || '');
 
+  const modalOpen = open !== undefined ? open : isOpen;
+  const handleOpenChange = onOpenChange || ((open: boolean) => !open && onClose());
+
   if (!post) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <div className="flex items-start justify-between">
@@ -48,7 +60,7 @@ export function PostPreviewModal({ post, isOpen, onClose }: PostPreviewModalProp
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Eye className="h-3 w-3" />
-                  <span>{Number(viewCount)}</span>
+                  <span>{Number(viewCount) || 0}</span>
                 </div>
               </div>
             </div>

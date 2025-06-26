@@ -62,7 +62,7 @@ export function TierAccessInfo({ tierId, creatorId, className }: TierAccessInfoP
   });
 
   // Check subscription status
-  const { data: subscriptionStatus } = useSubscriptionCheck(user?.id, tierId);
+  const subscriptionResult = useSubscriptionCheck(user?.id, tierId);
 
   if (tierLoading || creatorLoading) {
     return (
@@ -81,7 +81,7 @@ export function TierAccessInfo({ tierId, creatorId, className }: TierAccessInfoP
     return null;
   }
 
-  const isSubscribed = subscriptionStatus?.isSubscribed;
+  const isSubscribed = subscriptionResult?.subscriptionStatus?.isSubscribed || false;
   const monthlyPrice = (tierInfo as any)?.price ? Number((tierInfo as any).price) : 0;
   const yearlyPrice = monthlyPrice * 12 * 0.9; // 10% discount for yearly
 
