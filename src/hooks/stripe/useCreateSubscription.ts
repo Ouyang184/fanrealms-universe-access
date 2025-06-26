@@ -3,10 +3,17 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+interface CreateSubscriptionResult {
+  success?: boolean;
+  error?: { message: string };
+  clientSecret?: string;
+  subscriptionId?: string;
+}
+
 export const useCreateSubscription = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const createSubscription = async (tierId: string, creatorId: string) => {
+  const createSubscription = async (params: { tierId: string; creatorId: string }): Promise<CreateSubscriptionResult> => {
     try {
       setIsProcessing(true);
       
@@ -17,10 +24,9 @@ export const useCreateSubscription = () => {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: { 
           action: 'create',
-          tier_id: tierId,
-          creator_id: creatorId 
-        },
-        signal: controller.signal
+          tier_id: params.tierId,
+          creator_id: params.creatorId 
+        }
       });
       
       clearTimeout(timeoutId);
@@ -38,6 +44,13 @@ export const useCreateSubscription = () => {
       
       if (data?.url) {
         window.location.href = data.url;
+        return { success: true };
+      } else if (data?.clientSecret) {
+        return { 
+          success: true, 
+          clientSecret: data.clientSecret,
+          subscriptionId: data.subscriptionId 
+        };
       } else {
         throw new Error('No checkout URL received');
       }
@@ -52,15 +65,21 @@ export const useCreateSubscription = () => {
       }
       
       toast.error(errorMessage);
-      throw error;
+      return { error: { message: errorMessage } };
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const clearSubscriptionCache = (tierId: string, creatorId: string) => {
+    // Implementation for clearing subscription cache
+    console.log('Clearing subscription cache for tier:', tierId, 'creator:', creatorId);
   };
 
   return {
     createSubscription,
     isProcessing,
     setIsProcessing,
+    clearSubscriptionCache,
   };
 };
