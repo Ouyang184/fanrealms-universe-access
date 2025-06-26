@@ -37,18 +37,12 @@ export default function FollowingPage() {
     document.title = "Following | Creator Platform";
   }, []);
 
-  const { data: allCreators, isLoading: loadingCreators, refetch: refetchCreators } = useCreators();
-  const { data: followedCreators = [], isLoading: loadingFollows, refetch: refetchFollows } = useFollows();
+  const { creators: allCreators, isLoadingCreators: loadingCreators } = useCreators();
+  const { data: followedCreators = [], isLoading: loadingFollows } = useFollows();
   const { unfollowCreator, followCreator } = useFollow();
   
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-
-  // Refetch data when component mounts to ensure fresh data
-  useEffect(() => {
-    refetchCreators();
-    refetchFollows();
-  }, [refetchCreators, refetchFollows]);
 
   // Loading state
   if (loadingCreators || loadingFollows) {
@@ -103,11 +97,6 @@ export default function FollowingPage() {
   const handleUnfollow = async (creatorId: string) => {
     try {
       await unfollowCreator(creatorId);
-      // Force refresh the data after unfollowing
-      await Promise.all([
-        refetchCreators(),
-        refetchFollows()
-      ]);
     } catch (error) {
       console.error('Error unfollowing creator:', error);
     }
@@ -116,11 +105,6 @@ export default function FollowingPage() {
   const handleFollow = async (creatorId: string) => {
     try {
       await followCreator(creatorId);
-      // Force refresh the data after following
-      await Promise.all([
-        refetchCreators(),
-        refetchFollows()
-      ]);
     } catch (error) {
       console.error('Error following creator:', error);
     }

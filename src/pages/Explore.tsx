@@ -137,13 +137,11 @@ export default function ExplorePage() {
     setIsPreviewOpen(true);
   };
 
-  // Handle modal close
-  const handleModalClose = (open: boolean) => {
-    console.log('Explore: Modal close triggered, open:', open);
-    setIsPreviewOpen(open);
-    if (!open) {
-      setTimeout(() => setSelectedPost(null), 200);
-    }
+  // Handle modal close - fix the function signature
+  const handleModalClose = () => {
+    console.log('Explore: Modal close triggered');
+    setIsPreviewOpen(false);
+    setTimeout(() => setSelectedPost(null), 200);
   };
   
   return (
@@ -190,7 +188,7 @@ export default function ExplorePage() {
       {selectedPost && (
         <PostPreviewModal
           open={isPreviewOpen}
-          onOpenChange={handleModalClose}
+          onOpenChange={setIsPreviewOpen}
           onClose={handleModalClose}
           post={selectedPost}
         />

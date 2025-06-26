@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
@@ -53,8 +54,7 @@ const CreatorPage: React.FC = () => {
     followCreator, 
     unfollowCreator, 
     setIsFollowing, 
-    checkFollowStatus,
-    optimisticFollowerCount 
+    checkFollowStatus
   } = useFollow();
   
   // Check follow status when creator is loaded
@@ -85,11 +85,7 @@ const CreatorPage: React.FC = () => {
   const handleUnfollow = async () => {
     if (creator?.id) {
       console.log("Unfollow button clicked");
-      // Pass the current displayed follower count to avoid database fetch
-      const currentDisplayedCount = optimisticFollowerCount !== null 
-        ? optimisticFollowerCount 
-        : creator.follower_count || 0;
-      await unfollowCreator(creator.id, currentDisplayedCount);
+      await unfollowCreator(creator.id);
     }
   };
 
@@ -142,7 +138,7 @@ const CreatorPage: React.FC = () => {
           onFollow={handleFollow}
           onUnfollow={handleUnfollow}
           onNavigateToAbout={handleNavigateToAbout}
-          optimisticFollowerCount={optimisticFollowerCount}
+          optimisticFollowerCount={creator.follower_count || 0}
         />
         
         {/* Tab Navigation - properly spaced below header */}
