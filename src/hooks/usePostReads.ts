@@ -16,7 +16,7 @@ export const usePostReads = () => {
       const { data, error } = await supabase
         .from('post_reads')
         .select('post_id, read_at')
-        .eq('user_id', user.id as any);
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error fetching post reads:', error);
@@ -30,7 +30,7 @@ export const usePostReads = () => {
   });
 
   // Convert to Set for faster lookups
-  const readPostIds = new Set((postReads as any).map((read: any) => read.post_id));
+  const readPostIds = new Set(postReads.map(read => read.post_id));
 
   // Mark a post as read
   const markAsReadMutation = useMutation({
@@ -43,7 +43,7 @@ export const usePostReads = () => {
           user_id: user.id,
           post_id: postId,
           read_at: new Date().toISOString()
-        } as any, {
+        }, {
           onConflict: 'user_id,post_id'
         });
 

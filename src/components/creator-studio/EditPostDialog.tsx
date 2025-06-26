@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -15,21 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader, Globe, Lock, Video } from "lucide-react";
+import { Loader, Globe, Lock, Video, Save } from "lucide-react";
 import { TierSelect } from "@/components/dashboard/TierSelect";
 import { FileAttachment, AttachmentFile } from "./FileAttachment";
+import { CreatorPost } from "@/types/creator-studio";
 
 interface EditPostDialogProps {
-  post: any;
+  post: CreatorPost;
   isOpen: boolean;
-  onClose: () => void;
-  onSave?: () => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialogProps) {
+export function EditPostDialog({ post, isOpen, onOpenChange }: EditPostDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
   const [videoUrl, setVideoUrl] = useState("");
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
@@ -37,93 +36,64 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch existing tier assignments for this post
+  // Load existing post tiers
   const { data: existingTiers } = useQuery({
-    queryKey: ['post-tiers', post?.id],
+    queryKey: ['post-tiers', post.id],
     queryFn: async () => {
-      if (!post?.id) return [];
-      
-      try {
-        const { data, error } = await supabase
-          .from('post_tiers')
-          .select('tier_id')
-          .eq('post_id', post.id as any);
-          
-        if (error) {
-          console.error('Error fetching post tiers:', error);
-          return [];
-        }
+      const { data, error } = await supabase
+        .from('post_tiers')
+        .select('tier_id')
+        .eq('post_id', post.id);
         
-        return data?.map(pt => (pt as any).tier_id) || [];
-      } catch (error) {
-        console.error('Error in post tiers query:', error);
-        return [];
-      }
+      if (error) throw error;
+      return data?.map(pt => pt.tier_id) || [];
     },
-    enabled: !!post?.id && isOpen,
+    enabled: !!post.id && isOpen
   });
 
-  // Fetch user's creator profile to get creator_id for NSFW checking
+  // Initialize selectedTierIds from existing data
+  useEffect(() => {
+    if (existingTiers) {
+      setSelectedTierIds(existingTiers.length > 0 ? existingTiers : null);
+    } else if (post.tier_id) {
+      // Legacy single tier support
+      setSelectedTierIds([post.tier_id]);
+    } else {
+      setSelectedTierIds(null);
+    }
+  }, [existingTiers, post.tier_id]);
+
+  // Extract video URL from existing attachments
+  useEffect(() => {
+    if (post.attachments) {
+      const videoAttachment = post.attachments.find(att => att.type === "video");
+      if (videoAttachment) {
+        setVideoUrl(videoAttachment.url);
+      }
+    }
+  }, [post.attachments]);
+
+  // Fetch user's creator profile to get creator_id
   const { data: creatorProfile } = useQuery({
     queryKey: ['userCreator', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       
-      try {
-        const { data, error } = await supabase
-          .from('creators')
-          .select('id, is_nsfw')
-          .eq('user_id', user.id as any)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching creator profile:', error);
-          return null;
-        }
+      const { data, error } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
         
-        return data ? {
-          id: (data as any).id,
-          is_nsfw: (data as any).is_nsfw
-        } : null;
-      } catch (error) {
-        console.error('Error in creator profile query:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching creator profile:', error);
         return null;
       }
+      
+      return data;
     },
-    enabled: !!user?.id && isOpen
+    enabled: !!user?.id
   });
-
-  // Initialize form with post data
-  useEffect(() => {
-    if (post && isOpen) {
-      setTitle(post.title || "");
-      setContent(post.content || "");
-      
-      // Extract video URL from attachments
-      const videoAttachment = post.attachments?.find((att: any) => att.type === "video");
-      setVideoUrl(videoAttachment?.url || "");
-      
-      // Set non-video attachments
-      const fileAttachments = post.attachments?.filter((att: any) => att.type !== "video") || [];
-      setAttachments(fileAttachments.map((att: any) => ({
-        url: att.url,
-        name: att.name,
-        type: att.type,
-        size: att.size || 0
-      })));
-    }
-  }, [post, isOpen]);
-
-  // Set tier selection when existing tiers are loaded
-  useEffect(() => {
-    if (existingTiers && existingTiers.length > 0) {
-      setSelectedTierIds(existingTiers);
-    } else if (post?.tier_id) {
-      setSelectedTierIds([post.tier_id]);
-    } else {
-      setSelectedTierIds(null);
-    }
-  }, [existingTiers, post?.tier_id]);
 
   const uploadFile = async (file: File, userId: string): Promise<string | null> => {
     try {
@@ -164,33 +134,48 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
   };
 
   const handleTierSelect = (tierIds: string[] | null) => {
+    console.log('[Edit Post] Tiers selected:', tierIds);
     setSelectedTierIds(tierIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!post) return;
+    if (!user) return;
+    
+    console.log('[Edit Post] Form submission started with selectedTierIds:', selectedTierIds);
+    
+    // Validate video URL if provided
+    if (videoUrl && !isValidVideoUrl(videoUrl)) {
+      toast({
+        title: "Invalid video URL",
+        description: "Please enter a valid YouTube, Vimeo, Dailymotion, or Twitch URL.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     try {
       // Upload new attachments
       const uploadedAttachments = [];
       for (const attachment of attachments) {
-        if (attachment.file) {
-          const url = await uploadFile(attachment.file, user?.id || '');
-          if (url) {
-            uploadedAttachments.push({
-              url,
-              name: attachment.file.name,
-              type: attachment.type,
-              size: attachment.file.size
-            });
-          }
-        } else {
-          // Keep existing attachment
-          uploadedAttachments.push(attachment);
+        const url = await uploadFile(attachment.file, user.id);
+        if (url) {
+          uploadedAttachments.push({
+            url,
+            name: attachment.file.name,
+            type: attachment.type,
+            size: attachment.file.size
+          });
         }
       }
+
+      // Keep existing attachments that aren't being replaced
+      const existingAttachments = post.attachments?.filter(att => {
+        // Remove existing video if new video URL is provided
+        if (att.type === "video" && videoUrl) return false;
+        return true;
+      }) || [];
 
       // Add video URL to attachments if provided
       if (videoUrl) {
@@ -202,58 +187,64 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
         });
       }
 
-      // Update the post
-      const { error: updateError } = await supabase
+      // Combine existing and new attachments
+      const finalAttachments = [...existingAttachments, ...uploadedAttachments];
+
+      const updateData = {
+        title,
+        content,
+        tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null, // Legacy support
+        attachments: finalAttachments,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('[Edit Post] Updating post with data:', updateData);
+
+      const { data: updatedPost, error } = await supabase
         .from('posts')
-        .update({
-          title,
-          content,
-          attachments: uploadedAttachments,
-          tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
-        } as any)
-        .eq('id', post.id as any);
+        .update(updateData)
+        .eq('id', post.id)
+        .select('*');
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
-      // Handle tier assignments (delete existing and create new ones)
-      if (selectedTierIds) {
-        // Delete existing tier assignments
-        await supabase
+      // Update post tiers - remove existing and add new ones
+      await supabase
+        .from('post_tiers')
+        .delete()
+        .eq('post_id', post.id);
+
+      if (selectedTierIds && selectedTierIds.length > 0) {
+        const postTierInserts = selectedTierIds.map(tierId => ({
+          post_id: post.id,
+          tier_id: tierId
+        }));
+
+        const { error: tierError } = await supabase
           .from('post_tiers')
-          .delete()
-          .eq('post_id', post.id as any);
+          .insert(postTierInserts);
 
-        // Create new tier assignments
-        if (selectedTierIds.length > 0) {
-          const tierInserts = selectedTierIds.map(tierId => ({
-            post_id: post.id,
-            tier_id: tierId
-          }));
-
-          const { error: tierError } = await supabase
-            .from('post_tiers')
-            .insert(tierInserts as any);
-
-          if (tierError) {
-            console.error('Error updating post tiers:', tierError);
-          }
+        if (tierError) {
+          console.error('Error updating post tiers:', tierError);
         }
       }
 
+      console.log('[Edit Post] Post updated successfully:', updatedPost);
+
+      const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
       toast({
         title: "Post updated",
-        description: "Your post has been updated successfully.",
+        description: `Your ${postType} post has been updated successfully.`,
       });
 
-      onSave?.();
-      onClose();
+      // Close dialog
+      onOpenChange(false);
       
-      // Refresh queries
+      // Refresh creator posts list
       queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
 
     } catch (error: any) {
-      console.error('Error updating post:', error);
+      console.error('[Edit Post] Error updating post:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update post. Please try again.",
@@ -264,23 +255,20 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
     }
   };
 
-  if (!post) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Post</DialogTitle>
           <DialogDescription>
-            Update your post content and settings.
+            Update your post content, visibility, and attachments.
           </DialogDescription>
         </DialogHeader>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="edit-title">Title</Label>
             <Input
-              id="title"
+              id="edit-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter post title"
@@ -290,9 +278,9 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
+            <Label htmlFor="edit-content">Content</Label>
             <Textarea
-              id="content"
+              id="edit-content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Write your post content..."
@@ -303,12 +291,12 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="videoUrl" className="flex items-center gap-2">
+            <Label htmlFor="edit-videoUrl" className="flex items-center gap-2">
               <Video className="h-4 w-4" />
               Video URL (Optional)
             </Label>
             <Input
-              id="videoUrl"
+              id="edit-videoUrl"
               value={videoUrl}
               onChange={(e) => setVideoUrl(e.target.value)}
               placeholder="Paste YouTube, Vimeo, or other video URL..."
@@ -338,7 +326,7 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
             <Button 
               type="button" 
               variant="outline" 
-              onClick={onClose}
+              onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
@@ -351,11 +339,7 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
                 </>
               ) : (
                 <>
-                  {selectedTierIds && selectedTierIds.length > 0 ? (
-                    <Lock className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Globe className="mr-2 h-4 w-4" />
-                  )}
+                  <Save className="mr-2 h-4 w-4" />
                   Update Post
                 </>
               )}

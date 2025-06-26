@@ -45,7 +45,7 @@ export const usePosts = () => {
       
       if (!nsfwPrefs?.isNSFWEnabled) {
         // Filter out NSFW posts if NSFW is disabled
-        filteredPosts = (posts as any).filter((post: any) => {
+        filteredPosts = posts.filter(post => {
           // Always show user's own posts regardless of NSFW status
           if (user?.id && post.author_id === user.id) {
             return true;
@@ -62,7 +62,7 @@ export const usePosts = () => {
       }
 
       // Log tier distribution
-      const tierStats = (filteredPosts as any).reduce((acc: any, post: any) => {
+      const tierStats = filteredPosts.reduce((acc, post) => {
         const tierType = post.tier_id ? 'premium' : 'public';
         acc[tierType] = (acc[tierType] || 0) + 1;
         return acc;
@@ -70,7 +70,7 @@ export const usePosts = () => {
       
       console.log('[usePosts] Post tier distribution:', tierStats);
 
-      return (filteredPosts as any).map((post: any): Post => {
+      return filteredPosts.map((post): Post => {
         const mappedPost = {
           id: post.id,
           title: post.title,

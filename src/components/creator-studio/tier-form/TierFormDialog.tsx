@@ -20,11 +20,7 @@ interface TierFormDialogProps {
 }
 
 export function TierFormDialog({ isOpen, onClose, editingTier }: TierFormDialogProps) {
-  const { form, isLoading, onSubmit } = useTierForm({ 
-    editingTier, 
-    onClose,
-    tierId: editingTier?.id
-  });
+  const { form, isLoading, onSubmit } = useTierForm({ editingTier, onClose });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -39,7 +35,7 @@ export function TierFormDialog({ isOpen, onClose, editingTier }: TierFormDialogP
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={onSubmit} className="space-y-4">
-            <TierFormFields form={form as any} />
+            <TierFormFields form={form} />
             
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose} disabled={isLoading}>

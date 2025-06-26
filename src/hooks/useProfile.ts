@@ -25,7 +25,7 @@ export const useProfile = () => {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId as any)
+        .eq('id', userId)
         .single();
       
       if (userError) throw userError;
@@ -34,18 +34,18 @@ export const useProfile = () => {
       const { data: creatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', userId as any)
+        .eq('user_id', userId)
         .maybeSingle();
 
       // Note: creatorError is not thrown as it's optional - user might not be a creator
 
       // Combine the data
       const profileData: ProfileData = {
-        ...(userData as any),
-        bio: (creatorData as any)?.bio || null,
-        tags: (creatorData as any)?.tags || [],
-        display_name: (creatorData as any)?.display_name || null,
-        creator_id: (creatorData as any)?.id || null
+        ...userData,
+        bio: creatorData?.bio || null,
+        tags: creatorData?.tags || [],
+        display_name: creatorData?.display_name || null,
+        creator_id: creatorData?.id || null
       };
       
       return profileData;
@@ -65,8 +65,8 @@ export const useProfile = () => {
       if (Object.keys(userData).length > 0) {
         const { error: userError } = await supabase
           .from('users')
-          .update(userData as any)
-          .eq('id', userId as any);
+          .update(userData)
+          .eq('id', userId);
 
         if (userError) throw userError;
       }
@@ -77,15 +77,15 @@ export const useProfile = () => {
         const { data: existingCreator } = await supabase
           .from('creators')
           .select('id')
-          .eq('user_id', userId as any)
+          .eq('user_id', userId)
           .maybeSingle();
 
         if (existingCreator) {
           // Update existing creator record
           const { error: creatorError } = await supabase
             .from('creators')
-            .update(creatorData as any)
-            .eq('user_id', userId as any);
+            .update(creatorData)
+            .eq('user_id', userId);
 
           if (creatorError) throw creatorError;
         } else {
@@ -95,7 +95,7 @@ export const useProfile = () => {
             .insert({
               user_id: userId,
               ...creatorData
-            } as any);
+            });
 
           if (creatorError) throw creatorError;
         }

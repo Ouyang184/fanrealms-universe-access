@@ -51,7 +51,7 @@ export const usePopularCreators = (excludeAI = true) => {
       console.log("Fetched popular creators:", data?.length || 0);
 
       // Additional filter to remove any hardcoded placeholders that might have made it through
-      const filtered = (data as any).filter((creator: any) => {
+      const filtered = data.filter(creator => {
         // Filter out any creators with placeholder names that might exist in db
         const name = creator.display_name || '';
         const placeholderNames = [
@@ -65,7 +65,7 @@ export const usePopularCreators = (excludeAI = true) => {
         return !placeholderNames.some(placeholder => name.includes(placeholder));
       });
 
-      return filtered.map((creator: any): CreatorProfile => {
+      return filtered.map((creator): CreatorProfile => {
         const displayName = creator.display_name || creator.users?.username || '';
         
         return {
@@ -82,13 +82,13 @@ export const usePopularCreators = (excludeAI = true) => {
           created_at: creator.created_at,
           tags: creator.tags || [],
           is_nsfw: creator.is_nsfw || false,
-          tiers: creator.membership_tiers?.map((tier: any): Tier => ({
+          tiers: creator.membership_tiers?.map((tier): Tier => ({
             id: tier.id,
             creator_id: creator.id,
             name: tier.title,
             price: tier.price,
             description: tier.description,
-            features: tier.description.split(',').map((item: string) => item.trim()),
+            features: tier.description.split(',').map(item => item.trim()),
             subscriberCount: 0 // Default value for subscriber count
           })) || []
         };

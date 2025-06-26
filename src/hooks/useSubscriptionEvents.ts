@@ -6,30 +6,27 @@ export const useSubscriptionEvents = () => {
   const queryClient = useQueryClient();
 
   const refreshAllSubscriptionData = useCallback(async () => {
-    console.log('Refreshing subscription-related data via manual invalidation...');
+    console.log('Refreshing all subscription-related data...');
     
-    // Only invalidate when explicitly needed - no automatic refresh
-    const criticalQueryKeys = [
-      'user-subscriptions',
-      'simple-user-subscriptions'
+    // Invalidate all subscription-related queries
+    const queryKeys = [
+      'enhancedUserSubscriptions',
+      'active-subscribers', 
+      'tiers',
+      'creatorMembershipTiers',
+      'userSubscriptions',
+      'creator-posts',
+      'subscriber-tiers',
+      'creator-profile'
     ];
-    
-    // Use requestIdleCallback to avoid blocking main thread
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(() => {
-        criticalQueryKeys.forEach(key => {
-          queryClient.invalidateQueries({ queryKey: [key] });
-        });
-      });
-    } else {
-      setTimeout(() => {
-        criticalQueryKeys.forEach(key => {
-          queryClient.invalidateQueries({ queryKey: [key] });
-        });
-      }, 1000);
-    }
 
-    console.log('Manual subscription queries invalidated');
+    await Promise.all(
+      queryKeys.map(key => 
+        queryClient.invalidateQueries({ queryKey: [key] })
+      )
+    );
+
+    console.log('All subscription queries invalidated');
   }, [queryClient]);
 
   const triggerSubscriptionSuccess = useCallback((data?: any) => {
@@ -44,25 +41,25 @@ export const useSubscriptionEvents = () => {
     });
     window.dispatchEvent(event);
     
-    // Delayed refresh to avoid overwhelming the system
-    setTimeout(() => refreshAllSubscriptionData(), 2000);
+    // Also trigger immediate refresh
+    refreshAllSubscriptionData();
   }, [refreshAllSubscriptionData]);
 
-  // COMPLETELY REMOVED all realtime subscriptions - use custom events only
+  // Listen for subscription events
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
-      console.log(`Manual subscription event detected: ${event.type}`, event.detail);
-      
-      // Use requestIdleCallback to avoid blocking critical operations
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(() => refreshAllSubscriptionData());
-      } else {
-        setTimeout(() => refreshAllSubscriptionData(), 2000);
-      }
+      console.log(`Subscription event detected: ${event.type}`, event.detail);
+      await refreshAllSubscriptionData();
     };
 
-    // Only essential custom events - NO database realtime subscriptions
-    const events = ['subscriptionSuccess', 'paymentSuccess'];
+    // Listen for all subscription-related events
+    const events = [
+      'subscriptionSuccess',
+      'paymentSuccess', 
+      'subscriptionCreated',
+      'subscriptionUpdated',
+      'subscriptionCanceled'
+    ];
 
     events.forEach(eventType => {
       window.addEventListener(eventType, handleSubscriptionEvent as EventListener);

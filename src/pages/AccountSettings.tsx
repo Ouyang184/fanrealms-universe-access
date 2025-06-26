@@ -45,7 +45,7 @@ export default function AccountSettings() {
   
   // Age verification hook
   const {
-    isVerified: isAgeVerified,
+    isAgeVerified,
     showVerificationModal,
     setShowVerificationModal,
     handleAgeVerified
@@ -147,13 +147,13 @@ export default function AccountSettings() {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('category_id')
-        .eq('user_id', user?.id as any)
-        .neq('category_name', 'nsfw_content' as any); // Exclude NSFW preference since it's handled by the hook
+        .eq('user_id', user?.id)
+        .neq('category_name', 'nsfw_content'); // Exclude NSFW preference since it's handled by the hook
 
       if (error) throw error;
 
       if (data) {
-        setSelectedCategories((data as any[]).map((pref: any) => pref.category_id));
+        setSelectedCategories(data.map(pref => pref.category_id));
       }
     } catch (error) {
       console.error('Error loading preferences:', error);
@@ -184,8 +184,8 @@ export default function AccountSettings() {
       await supabase
         .from('user_preferences')
         .delete()
-        .eq('user_id', user?.id as any)
-        .neq('category_name', 'nsfw_content' as any);
+        .eq('user_id', user?.id)
+        .neq('category_name', 'nsfw_content');
 
       // Insert new preferences
       const preferences = selectedCategories.map(categoryId => ({
@@ -196,7 +196,7 @@ export default function AccountSettings() {
 
       const { error } = await supabase
         .from('user_preferences')
-        .insert(preferences as any);
+        .insert(preferences);
 
       if (error) throw error;
 

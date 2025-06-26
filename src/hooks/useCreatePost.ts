@@ -21,7 +21,7 @@ export function useCreatePost() {
       const { data, error } = await supabase
         .from('creators')
         .select('id, is_nsfw')
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .single();
         
       if (error && error.code !== 'PGRST116') {
@@ -29,7 +29,7 @@ export function useCreatePost() {
         return null;
       }
       
-      return data as any;
+      return data;
     },
     enabled: !!user?.id
   });
@@ -71,7 +71,7 @@ export function useCreatePost() {
     if (!user) return;
     
     console.log('Form submission started with selectedTierIds:', formData.selectedTierIds);
-    console.log('Creator NSFW setting:', (creatorProfile as any)?.is_nsfw);
+    console.log('Creator NSFW setting:', creatorProfile?.is_nsfw);
     
     setIsLoading(true);
     try {
@@ -100,13 +100,13 @@ export function useCreatePost() {
       }
 
       // Automatically set NSFW flag based on creator settings
-      const isNSFW = (creatorProfile as any)?.is_nsfw || false;
+      const isNSFW = creatorProfile?.is_nsfw || false;
 
       const postData = {
         title: formData.title,
         content: formData.content,
         author_id: user.id,
-        creator_id: (creatorProfile as any)?.id || null,
+        creator_id: creatorProfile?.id || null,
         tier_id: formData.selectedTierIds && formData.selectedTierIds.length === 1 ? formData.selectedTierIds[0] : null,
         attachments: uploadedAttachments,
         is_nsfw: isNSFW
@@ -114,34 +114,34 @@ export function useCreatePost() {
 
       console.log('Creating post with automatic NSFW flag:', { 
         ...postData, 
-        creatorNSFWSetting: (creatorProfile as any)?.is_nsfw,
+        creatorNSFWSetting: creatorProfile?.is_nsfw,
         autoFlaggedNSFW: isNSFW 
       });
 
       const { data: insertedPost, error } = await supabase
         .from('posts')
-        .insert([postData as any])
+        .insert([postData])
         .select('*');
 
       if (error) throw error;
 
       // Handle multiple tier assignments
-      if (formData.selectedTierIds && formData.selectedTierIds.length > 0 && insertedPost && insertedPost[0]) {
+      if (formData.selectedTierIds && formData.selectedTierIds.length > 0 && insertedPost[0]) {
         const postTierInserts = formData.selectedTierIds.map(tierId => ({
-          post_id: (insertedPost[0] as any).id,
+          post_id: insertedPost[0].id,
           tier_id: tierId
         }));
 
         const { error: tierError } = await supabase
           .from('post_tiers')
-          .insert(postTierInserts as any);
+          .insert(postTierInserts);
 
         if (tierError) {
           console.error('Error assigning tiers to post:', tierError);
         }
       }
 
-      console.log('Post created successfully with NSFW flag:', (insertedPost?.[0] as any)?.is_nsfw);
+      console.log('Post created successfully with NSFW flag:', insertedPost[0]?.is_nsfw);
 
       const postType = formData.selectedTierIds && formData.selectedTierIds.length > 0 ? "premium" : "public";
       const nsfwNotice = isNSFW ? " (automatically flagged as 18+)" : "";

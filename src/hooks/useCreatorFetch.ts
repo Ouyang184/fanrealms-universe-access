@@ -109,17 +109,17 @@ export function useCreatorFetch(identifier?: string) {
             price
           )
         `)
-        .eq('author_id', creatorUserId as any)
+        .eq('author_id', creatorUserId)
         .order('created_at', { ascending: false });
       
       console.log(`[useCreatorFetch] Raw posts query result:`, { 
         postsCount: postsData?.length, 
         error,
         samplePosts: postsData?.slice(0, 2).map(p => ({ 
-          id: (p as any).id, 
-          title: (p as any).title, 
-          tier_id: (p as any).tier_id,
-          author_id: (p as any).author_id // Log the raw author_id from database
+          id: p.id, 
+          title: p.title, 
+          tier_id: p.tier_id,
+          author_id: p.author_id // Log the raw author_id from database
         }))
       });
       
@@ -140,7 +140,7 @@ export function useCreatorFetch(identifier?: string) {
 
       // Log tier distribution for this creator
       const tierStats = postsData.reduce((acc, post) => {
-        const tierType = (post as any).tier_id ? 'premium' : 'public';
+        const tierType = post.tier_id ? 'premium' : 'public';
         acc[tierType] = (acc[tierType] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);

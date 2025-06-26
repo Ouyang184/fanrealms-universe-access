@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
-import { PostCard } from '@/components/PostCard';
+import PostCard from '@/components/PostCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Lock, Crown } from 'lucide-react';
@@ -38,12 +38,10 @@ export default function ShareablePost() {
             price
           )
         `)
-        .eq('id', postId as any)
+        .eq('id', postId)
         .single();
 
       if (error) throw error;
-
-      if (!data) return null;
 
       return {
         ...data,
@@ -102,7 +100,7 @@ export default function ShareablePost() {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-2xl">
-          <PostCard post={post} />
+          <PostCard {...post} />
         </div>
       </div>
     );

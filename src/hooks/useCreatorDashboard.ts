@@ -20,7 +20,7 @@ export function useCreatorDashboard() {
       const { data, error } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .single();
         
       if (error) {
@@ -28,7 +28,7 @@ export function useCreatorDashboard() {
         return null;
       }
       
-      return data as any as DbCreator;
+      return data as DbCreator;
     },
     enabled: !!user?.id
   });
@@ -48,7 +48,7 @@ export function useCreatorDashboard() {
             profile_picture
           )
         `)
-        .eq('author_id', user.id as any)
+        .eq('author_id', user.id)
         .order('created_at', { ascending: false })
         .limit(3);
         
@@ -62,7 +62,7 @@ export function useCreatorDashboard() {
         return [];
       }
       
-      return (data as any).map((post: any): Post => ({
+      return data.map((post): Post => ({
         id: post.id,
         title: post.title,
         content: post.content,
@@ -86,7 +86,7 @@ export function useCreatorDashboard() {
       const { data, error } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', creatorProfile.id as any)
+        .eq('creator_id', creatorProfile.id)
         .order('price', { ascending: true });
         
       if (error) {
@@ -94,7 +94,7 @@ export function useCreatorDashboard() {
         return [];
       }
       
-      return data as any;
+      return data;
     },
     enabled: !!creatorProfile?.id
   });
@@ -114,14 +114,14 @@ export function useCreatorDashboard() {
       const { count: currentCount, error: currentError } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id as any)
+        .eq('creator_id', creatorProfile.id)
         .gte('created_at', firstDayOfMonth);
         
       // Previous month subscribers
       const { count: previousCount, error: previousError } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id as any)
+        .eq('creator_id', creatorProfile.id)
         .gte('created_at', firstDayOfPrevMonth)
         .lt('created_at', firstDayOfMonth);
         
@@ -129,7 +129,7 @@ export function useCreatorDashboard() {
       const { count: totalCount, error: totalError } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id as any);
+        .eq('creator_id', creatorProfile.id);
         
       if (currentError || previousError || totalError) {
         console.error('Error fetching subscribers data:', { currentError, previousError, totalError });
@@ -151,7 +151,7 @@ export function useCreatorDashboard() {
     queryFn: async () => {
       if (!creatorProfile?.id || !tiers.length) return [];
       
-      const tierPromises = (tiers as any).map(async (tier: any) => {
+      const tierPromises = tiers.map(async (tier) => {
         // Current month subscribers for this tier
         const now = new Date();
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -160,14 +160,14 @@ export function useCreatorDashboard() {
         const { count: currentSubscribers, error: currentError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('creator_id', creatorProfile.id as any)
-          .eq('tier_id', tier.id as any);
+          .eq('creator_id', creatorProfile.id)
+          .eq('tier_id', tier.id);
           
         const { count: prevMonthSubscribers, error: prevError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('creator_id', creatorProfile.id as any)
-          .eq('tier_id', tier.id as any)
+          .eq('creator_id', creatorProfile.id)
+          .eq('tier_id', tier.id)
           .lt('created_at', firstDayOfMonth);
           
         if (currentError || prevError) {
@@ -185,7 +185,7 @@ export function useCreatorDashboard() {
         
         const subscribers = currentSubscribers || 0;
         const previousSubscribers = prevMonthSubscribers || 0;
-        const subscribersTotal = (subscriptionData as any).total || subscribers;
+        const subscribersTotal = subscriptionData.total || subscribers;
         const percentage = subscribersTotal > 0 ? Math.round((subscribers / subscribersTotal) * 100) : 0;
         const revenue = Number(tier.price) * subscribers;
         const prevRevenue = Number(tier.price) * previousSubscribers;
@@ -212,15 +212,15 @@ export function useCreatorDashboard() {
   });
 
   // Calculate actual stats based on real data
-  const currentMonthSubscribers = (subscriptionData as any).current || 0;
-  const previousMonthSubscribers = (subscriptionData as any).previous || 0;
+  const currentMonthSubscribers = subscriptionData.current || 0;
+  const previousMonthSubscribers = subscriptionData.previous || 0;
   const subscriberChange = currentMonthSubscribers - previousMonthSubscribers;
   const subscriberPercentage = previousMonthSubscribers > 0 
     ? Math.round(((currentMonthSubscribers - previousMonthSubscribers) / previousMonthSubscribers) * 100) 
     : currentMonthSubscribers > 0 ? 100 : 0;
   
-  const currentRevenue = (tierPerformance as any).reduce((acc: number, tier: any) => acc + tier.revenue, 0);
-  const previousRevenue = (tierPerformance as any).reduce((acc: number, tier: any) => acc + (tier.revenue - tier.revenueChange), 0);
+  const currentRevenue = tierPerformance.reduce((acc, tier) => acc + tier.revenue, 0);
+  const previousRevenue = tierPerformance.reduce((acc, tier) => acc + (tier.revenue - tier.revenueChange), 0);
   const revenueChange = currentRevenue - previousRevenue;
   const revenuePercentage = previousRevenue > 0 
     ? Math.round(((currentRevenue - previousRevenue) / previousRevenue) * 100)
@@ -229,7 +229,7 @@ export function useCreatorDashboard() {
   // Format stats for display
   const stats = {
     subscribers: {
-      total: (subscriptionData as any).total || 0,
+      total: subscriptionData.total || 0,
       change: subscriberChange,
       percentage: subscriberPercentage,
       trend: subscriberChange >= 0 ? "up" : "down"

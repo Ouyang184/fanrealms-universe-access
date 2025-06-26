@@ -1,269 +1,223 @@
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import * as z from "zod";
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
+const tierSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  price: z.number().min(1, "Price must be at least $1"),
+  features: z.string().min(1, "Features are required"),
+});
 
-export interface TierFormData {
-  title: string;
-  price: number;
-  description: string;
-}
+type TierFormValues = z.infer<typeof tierSchema>;
 
 export interface Tier {
   id: string;
-  title: string;
+  name: string;
   price: number;
-  description: string;
-  creator_id: string;
-  stripe_product_id?: string;
-  stripe_price_id?: string;
+  features: string[];
+  subscriberCount?: number;
 }
 
 interface UseTierFormProps {
-  creatorId?: string;
-  tierId?: string;
   editingTier?: Tier | null;
-  onSuccess?: () => void;
-  onClose?: () => void;
+  onClose: () => void;
 }
 
-export const useTierForm = ({ creatorId, tierId, editingTier, onSuccess, onClose }: UseTierFormProps = {}) => {
+export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const form = useForm<TierFormData>({
+  
+  const form = useForm<TierFormValues>({
+    resolver: zodResolver(tierSchema),
     defaultValues: {
-      title: editingTier?.title || '',
-      price: editingTier?.price || 0,
-      description: editingTier?.description || ''
+      name: "",
+      price: 5,
+      features: "",
     }
   });
 
-  const loadTierData = async (tierIdToLoad: string) => {
-    if (!tierIdToLoad) return;
-
-    try {
-      setIsLoading(true);
-
-      // Get creator data first
-      const { data: creatorData, error: creatorError } = await supabase
-        .from('creators')
-        .select('id')
-        .eq('user_id', user?.id as any)
-        .single();
-
-      if (creatorError) {
-        console.error('Error fetching creator:', creatorError);
-        return;
-      }
-
-      // Get tier data
-      const { data: tierData, error: tierError } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('id', tierIdToLoad as any)
-        .single();
-
-      if (tierError) {
-        console.error('Error fetching tier:', tierError);
-        return;
-      }
-
-      if (tierData) {
-        form.reset({
-          title: (tierData as any).title || '',
-          price: (tierData as any).price || 0,
-          description: (tierData as any).description || ''
-        });
-      }
-
-    } catch (error) {
-      console.error('Error loading tier data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getStripeProductData = async (tierIdToGet: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('membership_tiers')
-        .select('stripe_product_id, stripe_price_id')
-        .eq('id', tierIdToGet as any)
-        .single();
-
-      if (error) throw error;
-
-      return {
-        stripeProductId: (data as any)?.stripe_product_id,
-        stripePriceId: (data as any)?.stripe_price_id
-      };
-    } catch (error) {
-      console.error('Error fetching Stripe product data:', error);
-      return { stripeProductId: null, stripePriceId: null };
-    }
-  };
-
-  const archiveStripeProduct = async (tierIdToArchive: string) => {
-    try {
-      const { stripeProductId } = await getStripeProductData(tierIdToArchive);
-      
-      if (stripeProductId) {
-        await supabase.functions.invoke('archive-stripe-product', {
-          body: { productId: (stripeProductId as any) }
-        });
-      }
-    } catch (error) {
-      console.error('Error archiving Stripe product:', error);
-    }
-  };
-
-  const updateTier = async (data: TierFormData) => {
-    if (!tierId && !editingTier?.id) return;
-
-    try {
-      setIsLoading(true);
-
-      const { error } = await supabase
-        .from('membership_tiers')
-        .update({
-          title: data.title,
-          price: data.price,
-          description: data.description
-        } as any)
-        .eq('id', (tierId || editingTier?.id) as any);
-
-      if (error) throw error;
-
-      toast({
-        title: "Tier updated",
-        description: "Your membership tier has been successfully updated."
+  // Update form when editingTier changes
+  useEffect(() => {
+    if (editingTier) {
+      form.reset({
+        name: editingTier.name,
+        price: editingTier.price,
+        features: editingTier.features.join("\n"),
       });
-
-      queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
-      onSuccess?.();
-      onClose?.();
-
-    } catch (error: any) {
-      console.error('Error updating tier:', error);
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update tier. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createTier = async (data: TierFormData) => {
-    if (!creatorId) return;
-
-    try {
-      setIsLoading(true);
-
-      // Create Stripe product first
-      const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
-        body: {
-          name: data.title,
-          price: data.price,
-          description: data.description
-        }
-      });
-
-      if (stripeError) throw stripeError;
-
-      // Create membership tier in database
-      const { error } = await supabase
-        .from('membership_tiers')
-        .insert({
-          creator_id: creatorId as any,
-          title: data.title,
-          price: data.price,
-          description: data.description,
-          stripe_product_id: stripeData?.product?.id as any,
-          stripe_price_id: stripeData?.price?.id as any
-        } as any);
-
-      if (error) throw error;
-
-      toast({
-        title: "Tier created",
-        description: "Your membership tier has been successfully created."
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
-      onSuccess?.();
-      onClose?.();
-
-    } catch (error: any) {
-      console.error('Error creating tier:', error);
-      toast({
-        title: "Creation failed",
-        description: error.message || "Failed to create tier. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const deleteTier = async (tierIdToDelete: string) => {
-    try {
-      setIsDeleting(true);
-
-      // Archive Stripe product first
-      await archiveStripeProduct(tierIdToDelete);
-
-      // Delete tier from database
-      const { error } = await supabase
-        .from('membership_tiers')
-        .delete()
-        .eq('id', tierIdToDelete as any);
-
-      if (error) throw error;
-
-      toast({
-        title: "Tier deleted",
-        description: "The membership tier has been successfully deleted."
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
-      onSuccess?.();
-      onClose?.();
-
-    } catch (error: any) {
-      console.error('Error deleting tier:', error);
-      toast({
-        title: "Deletion failed",
-        description: error.message || "Failed to delete tier. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const onSubmit = async (data: TierFormData) => {
-    if (tierId || editingTier) {
-      await updateTier(data);
     } else {
-      await createTier(data);
+      form.reset({
+        name: "",
+        price: 5,
+        features: "",
+      });
+    }
+  }, [editingTier, form]);
+
+  const onSubmit = async (data: TierFormValues) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to perform this action",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // First, get the creator ID for the current user
+      const { data: creatorData, error: creatorError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (creatorError) {
+        throw new Error("Could not find your creator profile");
+      }
+      
+      const features = data.features.split("\n").filter(feature => feature.trim() !== "");
+      
+      if (editingTier) {
+        // Get the existing tier data from database to check for Stripe IDs
+        const { data: existingTierData, error: tierFetchError } = await supabase
+          .from("membership_tiers")
+          .select("stripe_product_id, stripe_price_id")
+          .eq("id", editingTier.id)
+          .single();
+
+        if (tierFetchError) {
+          throw new Error("Could not fetch existing tier data");
+        }
+
+        // Update existing tier - keep existing Stripe IDs and just update the product details
+        const tierUpdateData = {
+          name: data.name,
+          price: data.price,
+          features: features,
+          existingStripeProductId: existingTierData?.stripe_product_id,
+          existingStripePriceId: existingTierData?.stripe_price_id
+        };
+
+        console.log('Updating existing Stripe product for tier:', tierUpdateData);
+
+        // Only call Stripe if we have existing product/price IDs to update
+        if (existingTierData?.stripe_product_id) {
+          const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+            body: { 
+              tierData: tierUpdateData,
+              tierId: editingTier.id,
+              isUpdate: true // Flag to indicate this is an update operation
+            }
+          });
+
+          if (stripeError) {
+            console.error('Stripe product update error:', stripeError);
+            throw new Error('Failed to update Stripe product: ' + stripeError.message);
+          }
+
+          if (!stripeResult?.success) {
+            throw new Error('Failed to update Stripe product');
+          }
+
+          console.log('Stripe product updated successfully:', stripeResult);
+        }
+
+        // Update the tier in database (keeping existing Stripe IDs since we only updated the product details)
+        const { error: updateError } = await supabase
+          .from("membership_tiers")
+          .update({
+            title: data.name,
+            price: data.price,
+            description: features.join("|"), // Store features as pipe-separated string
+            // Keep the existing Stripe IDs - no changes needed since we only updated the product details
+          })
+          .eq("id", editingTier.id);
+        
+        if (updateError) throw updateError;
+        
+        toast({
+          title: "Success",
+          description: "Membership tier updated successfully",
+        });
+      } else {
+        // Create new tier (existing logic)
+        const tierData = {
+          name: data.name,
+          price: data.price,
+          features: features
+        };
+
+        console.log('Creating new Stripe product for tier:', tierData);
+
+        // Create new Stripe product
+        const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+          body: { 
+            tierData,
+            isUpdate: false // Flag to indicate this is a create operation
+          }
+        });
+
+        if (stripeError) {
+          console.error('Stripe product creation error:', stripeError);
+          throw new Error('Failed to sync with Stripe: ' + stripeError.message);
+        }
+
+        if (!stripeResult?.success) {
+          throw new Error('Failed to create Stripe product');
+        }
+
+        console.log('Stripe product created:', stripeResult);
+
+        // Create new tier
+        const { error: insertError } = await supabase
+          .from("membership_tiers")
+          .insert({
+            creator_id: creatorData.id,
+            title: data.name,
+            price: data.price,
+            description: features.join("|"), // Store features as pipe-separated string
+            stripe_product_id: stripeResult.stripeProductId,
+            stripe_price_id: stripeResult.stripePriceId,
+          });
+        
+        if (insertError) throw insertError;
+        
+        toast({
+          title: "Success",
+          description: "New membership tier created successfully",
+        });
+      }
+      
+      // Refresh tiers data
+      queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      
+      // Close modal and reset form
+      onClose();
+      form.reset();
+    } catch (error: any) {
+      console.error('Tier creation/update error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save tier",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
     form,
     isLoading,
-    isDeleting,
     onSubmit: form.handleSubmit(onSubmit),
-    loadTierData,
-    deleteTier
   };
-};
+}

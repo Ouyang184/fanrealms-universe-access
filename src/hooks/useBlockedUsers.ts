@@ -24,7 +24,7 @@ export function useBlockedUsers() {
       // Update all messages between the current user and the target user to mark them as blocked
       const { error } = await supabase
         .from('messages')
-        .update({ blocked_at: new Date().toISOString() } as any)
+        .update({ blocked_at: new Date().toISOString() })
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`);
 
       if (error) throw error;
@@ -56,7 +56,7 @@ export function useBlockedUsers() {
       // Update all messages between the current user and the target user to unblock them
       const { error } = await supabase
         .from('messages')
-        .update({ blocked_at: null } as any)
+        .update({ blocked_at: null })
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${user.id})`);
 
       if (error) throw error;
@@ -100,7 +100,7 @@ export function useBlockedUsers() {
 
         // Extract unique user IDs that are blocked
         const blocked = new Set<string>();
-        (data as any)?.forEach((message: any) => {
+        data?.forEach(message => {
           const otherUserId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
           blocked.add(otherUserId);
         });

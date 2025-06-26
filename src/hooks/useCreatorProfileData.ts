@@ -23,7 +23,7 @@ export function useCreatorProfileData() {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id as any)
+        .eq('id', user.id)
         .single();
       
       if (userError || !userData) {
@@ -40,30 +40,25 @@ export function useCreatorProfileData() {
       const { data: latestCreatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .single();
       
       if (creatorError) {
         console.error('Error fetching latest creator data:', creatorError);
       }
       
-      // Ensure both objects exist before spreading
-      const baseProfile = creatorProfile || {};
-      const latestData = (latestCreatorData as any) || {};
-      const userDataSafe = userData as any;
-      
       return {
-        ...baseProfile,
-        ...latestData,
-        username: userDataSafe.username,
-        fullName: userDataSafe.username,
-        displayName: latestData.display_name || userDataSafe.username,
-        email: userDataSafe.email,
-        avatar_url: userDataSafe.profile_picture,
-        banner_url: latestData.banner_url || null,
-        bio: latestData.bio || "No bio provided yet.",
-        display_name: latestData.display_name || null,
-        follower_count: latestData.follower_count || 0
+        ...creatorProfile,
+        ...latestCreatorData, // This will include the latest follower_count
+        username: userData.username,
+        fullName: userData.username,
+        displayName: latestCreatorData?.display_name || userData.username,
+        email: userData.email,
+        avatar_url: userData.profile_picture,
+        banner_url: latestCreatorData?.banner_url || null,
+        bio: latestCreatorData?.bio || "No bio provided yet.",
+        display_name: latestCreatorData?.display_name || null,
+        follower_count: latestCreatorData?.follower_count || 0
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile
@@ -94,7 +89,7 @@ export function useCreatorProfileData() {
             price
           )
         `)
-        .eq('author_id', user.id as any)
+        .eq('author_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -110,15 +105,15 @@ export function useCreatorProfileData() {
       console.log('[useCreatorProfileData] Raw posts data:', {
         postsCount: postsData?.length,
         samplePosts: postsData?.slice(0, 2).map(p => ({ 
-          id: (p as any).id, 
-          title: (p as any).title, 
-          tier_id: (p as any).tier_id,
-          author_id: (p as any).author_id
+          id: p.id, 
+          title: p.title, 
+          tier_id: p.tier_id,
+          author_id: p.author_id
         }))
       });
       
       // CRITICAL FIX: Ensure proper authorId mapping for creator access logic
-      return (postsData as any).map((post: any) => {
+      return postsData.map((post: any) => {
         const mappedPost = {
           ...post,
           authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
@@ -150,14 +145,14 @@ export function useCreatorProfileData() {
     data: tiers = [],
     isLoading: isLoadingTiers,
   } = useQuery({
-    queryKey: ['creatorProfileTiers', (creatorProfile as any)?.id],
+    queryKey: ['creatorProfileTiers', creatorProfile?.id],
     queryFn: async () => {
-      if (!(creatorProfile as any)?.id) return [];
+      if (!creatorProfile?.id) return [];
       
       const { data: tiersData, error } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', (creatorProfile as any).id as any)
+        .eq('creator_id', creatorProfile.id)
         .order('price', { ascending: true });
       
       if (error) {
@@ -171,11 +166,11 @@ export function useCreatorProfileData() {
       }
       
       // Count subscribers for each tier and format properly
-      const tiersWithSubscribers = await Promise.all((tiersData as any).map(async (tier: any) => {
+      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         const { count, error: countError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id as any);
+          .eq('tier_id', tier.id);
           
         return {
           id: tier.id,
@@ -190,7 +185,7 @@ export function useCreatorProfileData() {
       
       return tiersWithSubscribers;
     },
-    enabled: !!(creatorProfile as any)?.id
+    enabled: !!creatorProfile?.id
   });
   
   return {

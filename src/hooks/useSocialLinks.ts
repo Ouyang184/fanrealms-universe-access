@@ -40,7 +40,7 @@ export function useSocialLinks(creatorId: string | undefined) {
         const { data, error } = await supabase
           .from('creator_links')
           .select('*')
-          .eq('creator_id', creatorId as any)
+          .eq('creator_id', creatorId)
           .order('position', { ascending: true });
         
         if (error) {
@@ -50,7 +50,7 @@ export function useSocialLinks(creatorId: string | undefined) {
         }
         
         console.log(`Found ${data?.length || 0} social links for creator ${creatorId}:`, data);
-        return (data as any) as SocialLink[];
+        return data as SocialLink[];
       } catch (error) {
         console.error('Error in useSocialLinks:', error);
         setIsError(true);

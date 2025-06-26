@@ -23,30 +23,30 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       const { data: creatorById, error: creatorByIdError } = await supabase
         .from('creators')
         .select('id, user_id, display_name')
-        .eq('id', creatorId as any)
+        .eq('id', creatorId)
         .maybeSingle();
 
-      if ((creatorById as any) && !creatorByIdError) {
-        actualCreatorId = (creatorById as any).id;
+      if (creatorById && !creatorByIdError) {
+        actualCreatorId = creatorById.id;
         console.log('[SubscriptionCheck] Creator found by profile ID:', {
-          creatorId: (creatorById as any).id,
-          userId: (creatorById as any).user_id,
-          displayName: (creatorById as any).display_name
+          creatorId: creatorById.id,
+          userId: creatorById.user_id,
+          displayName: creatorById.display_name
         });
       } else {
         // If not found by ID, try to find by user_id
         const { data: creatorByUserId, error: creatorByUserIdError } = await supabase
           .from('creators')
           .select('id, user_id, display_name')
-          .eq('user_id', creatorId as any)
+          .eq('user_id', creatorId)
           .maybeSingle();
 
-        if ((creatorByUserId as any) && !creatorByUserIdError) {
-          actualCreatorId = (creatorByUserId as any).id;
+        if (creatorByUserId && !creatorByUserIdError) {
+          actualCreatorId = creatorByUserId.id;
           console.log('[SubscriptionCheck] Found creator by user_id:', {
             inputCreatorId: creatorId,
             actualCreatorId: actualCreatorId,
-            creatorDisplayName: (creatorByUserId as any).display_name
+            creatorDisplayName: creatorByUserId.display_name
           });
         } else {
           console.log('[SubscriptionCheck] Creator not found by ID or user_id:', creatorId);
@@ -64,9 +64,9 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
             creator_id
           )
         `)
-        .eq('user_id', user.id as any)
-        .eq('creator_id', actualCreatorId as any)
-        .eq('tier_id', tierId as any);
+        .eq('user_id', user.id)
+        .eq('creator_id', actualCreatorId)
+        .eq('tier_id', tierId);
 
       if (error) {
         console.error('[SubscriptionCheck] Database error:', error);
@@ -86,13 +86,13 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
             creator_id
           )
         `)
-        .eq('user_id', user.id as any)
-        .eq('creator_id', actualCreatorId as any);
+        .eq('user_id', user.id)
+        .eq('creator_id', actualCreatorId);
 
       console.log('[SubscriptionCheck] All user subscriptions to this creator:', allUserSubs);
 
       // Filter for active subscriptions only
-      const activeSubscriptions = (data as any)?.filter((sub: any) => 
+      const activeSubscriptions = data?.filter(sub => 
         sub.status === 'active'
       ) || [];
       

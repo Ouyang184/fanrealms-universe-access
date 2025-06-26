@@ -1,20 +1,9 @@
 
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { AuthResult } from '@/lib/types/auth';
-import { 
-  signInWithCredentials, 
-  signUpWithCredentials, 
-  signInWithMagicLink as magicLinkService,
-  signOutUser 
-} from '@/lib/auth/authService';
-import { 
-  getSignInErrorMessage, 
-  getSignUpErrorMessage, 
-  getMagicLinkErrorMessage, 
-  getSignOutErrorMessage 
-} from '@/lib/auth/authErrorHandler';
 
 export const useAuthFunctions = () => {
   const navigate = useNavigate();
@@ -22,18 +11,37 @@ export const useAuthFunctions = () => {
 
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      const result = await signInWithCredentials(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Login successful",
         description: "You are now logged in.",
       });
       
-      return result;
+      // Added navigation to the onboarding page for new users
+      // In a real app, you would check if the user has completed onboarding
+      const isNewUser = false; // This would be determined by your user profile data
+      
+      if (isNewUser) {
+        navigate('/onboarding');
+      }
+      
+      return {
+        success: true,
+        user: data.user,
+        session: data.session
+      };
     } catch (error: any) {
       console.error("Login error:", error);
       
-      const errorMessage = getSignInErrorMessage(error);
+      const errorMessage = error.message?.includes("Invalid login") 
+        ? "Invalid email or password. Please check your credentials."
+        : error.message || "An error occurred during login";
       
       toast({
         title: "Login failed",
@@ -46,44 +54,92 @@ export const useAuthFunctions = () => {
         error: { message: errorMessage }
       };
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      const result = await signUpWithCredentials(email, password);
-      
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account before signing in.",
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
+
+      if (error) throw error;
       
-      return result;
-      
+      if (data.session) {
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully.",
+        });
+        
+        if (data.user) {
+          const { error: userError } = await supabase
+            .from('users')
+            .insert([{ 
+              id: data.user.id, 
+              email: data.user.email || '',
+              username: email.split('@')[0],
+            }])
+            .single();
+
+          if (userError) {
+            console.error('Error creating user profile:', userError);
+            throw userError;
+          }
+          
+          // Navigate to preferences page after successful signup
+          navigate('/preferences');
+        }
+
+        return {
+          success: true,
+          user: data.user!,
+          session: data.session!
+        };
+      } else {
+        toast({
+          title: "Verification required",
+          description: "Please check your email to confirm your account.",
+        });
+        
+        return {
+          success: true,
+          user: data.user!,
+          session: data.session!
+        };
+      }
     } catch (error: any) {
-      console.error("Signup error details:", {
-        message: error.message,
-        name: error.name,
-        stack: error.stack
-      });
+      console.error("Signup error:", error);
       
-      const errorMessage = getSignUpErrorMessage(error);
+      const errorMessage = error.message?.includes("already registered")
+        ? "This email is already registered. Please try logging in instead."
+        : error.message || "An error occurred during registration";
       
       toast({
-        title: "Account creation failed",
+        title: "Registration failed",
         description: errorMessage,
         variant: "destructive"
       });
-      
+
       return {
         success: false,
         error: { message: errorMessage }
       };
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     try {
-      await magicLinkService(email);
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Magic link sent!",
@@ -91,11 +147,9 @@ export const useAuthFunctions = () => {
       });
       
     } catch (error: any) {
-      const errorMessage = getMagicLinkErrorMessage(error);
-      
       toast({
         title: "Failed to send magic link",
-        description: errorMessage,
+        description: error.message || "An error occurred. Please try again.",
         variant: "destructive"
       });
       throw error;
@@ -104,20 +158,20 @@ export const useAuthFunctions = () => {
 
   const signOut = useCallback(async () => {
     try {
-      await signOutUser();
+      // Only sign out from current session, don't clear localStorage
+      await supabase.auth.signOut({ scope: 'local' });
       
       toast({
         title: "Signed out successfully",
         description: "You have been signed out.",
       });
       
+      // Navigate to the root page
       navigate('/', { replace: true });
     } catch (error: any) {
-      const errorMessage = getSignOutErrorMessage(error);
-      
       toast({
         title: "Sign out failed",
-        description: errorMessage,
+        description: error.message || "An error occurred during sign out. Please try again.",
         variant: "destructive"
       });
     }

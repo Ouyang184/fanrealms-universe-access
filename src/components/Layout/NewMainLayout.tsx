@@ -69,8 +69,8 @@ export function NewMainLayout({ children }: MainLayoutProps) {
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', user.id as any)
-        .eq('is_read', false as any);
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
         
       if (!error && count !== null) {
         setUnreadMessages(count);
@@ -108,8 +108,8 @@ export function NewMainLayout({ children }: MainLayoutProps) {
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id as any)
-        .eq('is_read', false as any);
+        .eq('user_id', user.id)
+        .eq('is_read', false);
         
       if (!error && count !== null) {
         setUnreadNotifications(count);

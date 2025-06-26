@@ -6,7 +6,7 @@ import { useFollows } from "@/hooks/useFollows";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import { Post } from "@/types";
-import { useStripeSubscription } from "@/hooks/useStripeSubscription";
+import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
 import { usePostReads } from "@/hooks/usePostReads";
@@ -24,7 +24,7 @@ export default function FeedPage() {
   const { data: posts, isLoading: loadingPosts } = usePosts();
   
   // Get user's subscriptions to check for pending cancellations
-  const { userSubscriptions = [] } = useStripeSubscription();
+  const { userSubscriptions = [] } = useUserSubscriptions();
   
   // Get post reads data
   const { readPostIds, markAsRead, isLoading: loadingReads } = usePostReads();
@@ -57,11 +57,13 @@ export default function FeedPage() {
   };
 
   // Handle modal close with proper cleanup
-  const handleModalClose = () => {
-    console.log('Feed: Modal close triggered');
-    setIsPreviewOpen(false);
-    // Clear selected post when modal is closed
-    setTimeout(() => setSelectedPost(null), 200);
+  const handleModalClose = (open: boolean) => {
+    console.log('Feed: Modal close triggered, open:', open);
+    setIsPreviewOpen(open);
+    if (!open) {
+      // Clear selected post when modal is closed
+      setTimeout(() => setSelectedPost(null), 200);
+    }
   };
   
   // If still loading followed creators, posts, or reads, show loading state
@@ -96,9 +98,8 @@ export default function FeedPage() {
   
   console.log('Filtered followed posts:', followedPosts);
   
-  // Calculate unread posts based on database read status - ensure readPostIds is a Set<string>
-  const stringReadPostIds = new Set(Array.from(readPostIds).map(id => String(id)));
-  const unreadPosts = followedPosts.filter(post => !stringReadPostIds.has(post.id));
+  // Calculate unread posts based on database read status
+  const unreadPosts = followedPosts.filter(post => !readPostIds.has(post.id));
   const unreadCount = unreadPosts.length;
 
   console.log('Unread posts count:', unreadCount);
@@ -131,7 +132,7 @@ export default function FeedPage() {
               followedPosts={followedPosts}
               unreadPosts={unreadPosts}
               unreadCount={unreadCount}
-              readPostIds={stringReadPostIds}
+              readPostIds={readPostIds}
               markAsRead={markAsRead}
               creatorInfoMap={creatorInfoMap}
               onPostClick={handlePostPreview}
@@ -144,8 +145,7 @@ export default function FeedPage() {
       {selectedPost && (
         <PostPreviewModal
           open={isPreviewOpen}
-          onOpenChange={setIsPreviewOpen}
-          onClose={handleModalClose}
+          onOpenChange={handleModalClose}
           post={selectedPost}
         />
       )}

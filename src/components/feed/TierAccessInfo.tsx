@@ -1,126 +1,163 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Crown, Lock, Users } from 'lucide-react';
-import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
-import { SubscribeButton } from '@/components/creator/SubscribeButton';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Lock, Loader2 } from "lucide-react";
+import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Post } from "@/types";
+import { useCreateSubscription } from "@/hooks/stripe/useCreateSubscription";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface TierAccessInfoProps {
-  tierId: string;
-  tierName: string;
-  tierPrice: number;
-  creatorId: string;
-  creatorName?: string;
-  totalPosts: number;
-  accessiblePosts: number;
+  post: Post;
+  creatorInfo?: any;
 }
 
-export function TierAccessInfo({ 
-  tierId, 
-  tierName, 
-  tierPrice, 
-  creatorId, 
-  creatorName = 'Creator',
-  totalPosts,
-  accessiblePosts
-}: TierAccessInfoProps) {
+export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInfo }) => {
   const { user } = useAuth();
-  const { subscriptionData, isLoading } = useSubscriptionCheck(creatorId, tierId);
+  const { toast } = useToast();
+  const { createSubscription, isProcessing } = useCreateSubscription();
+  const { subscriptionData } = useSimpleSubscriptionCheck(post.tier_id || undefined, post.authorId);
   
-  const restrictedPosts = totalPosts - accessiblePosts;
+  // Fetch the specific tier information for this post
+  const { data: tierInfo } = useQuery({
+    queryKey: ['tier-info', post.tier_id],
+    queryFn: async () => {
+      if (!post.tier_id) return null;
+      
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('id', post.tier_id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching tier info:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!post.tier_id,
+  });
+
+  // Fetch all tiers for this creator to show upgrade path
+  const { data: creatorTiers } = useQuery({
+    queryKey: ['creator-tiers', post.authorId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select('*')
+        .eq('creator_id', post.authorId)
+        .order('price', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching creator tiers:', error);
+        return [];
+      }
+      
+      return data;
+    },
+    enabled: !!post.authorId,
+  });
+
+  // Check if user has access to this tier
   const hasAccess = subscriptionData?.isSubscribed || false;
-
-  if (isLoading) {
-    return (
-      <Card className="border-orange-200 bg-orange-50">
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-orange-200 rounded w-3/4"></div>
-            <div className="h-3 bg-orange-200 rounded w-1/2"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  
+  // If no tier required or user has access, don't show unlock section
+  if (!post.tier_id || hasAccess) {
+    return null;
   }
 
-  if (hasAccess) {
-    return (
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <Crown className="h-6 w-6 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-semibold text-green-800">
-                  {tierName} Member
-                </h3>
-                <span className="px-2 py-1 bg-green-200 text-green-700 text-xs rounded-full font-medium">
-                  Active
-                </span>
-              </div>
-              <p className="text-sm text-green-700 mb-3">
-                You have full access to all {totalPosts} posts from {creatorName} in this tier.
-              </p>
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <Users className="h-4 w-4" />
-                <span>Premium content unlocked</span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  // Find tiers that grant access (current tier and higher)
+  const accessTiers = creatorTiers?.filter(tier => 
+    tierInfo && tier.price >= tierInfo.price
+  ) || [];
+
+  // Get the lowest tier that grants access (should be the post's tier)
+  const lowestAccessTier = accessTiers.length > 0 ? accessTiers[0] : tierInfo;
+
+  if (!tierInfo) {
+    return null;
   }
+
+  // Format tier prices for display
+  const tierPricesText = accessTiers.length > 1 
+    ? `$${accessTiers.map(tier => tier.price).join(', $')} tiers`
+    : `$${tierInfo.price} tier`;
+
+  const handleUnlockTier = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to subscribe to creators.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      console.log('Creating subscription for tier:', lowestAccessTier?.id, 'creator:', creatorInfo?.id);
+      
+      const result = await createSubscription({ 
+        tierId: lowestAccessTier?.id || tierInfo.id, 
+        creatorId: creatorInfo?.id || post.authorId 
+      });
+      
+      if (result?.error) {
+        console.error('Subscription error:', result.error);
+        toast({
+          title: "Subscription Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // The createSubscription hook handles navigation to payment page
+      
+    } catch (error) {
+      console.error('Unlock tier error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start subscription process. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
-    <Card className="border-orange-200 bg-orange-50">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-orange-100 rounded-full">
-            <Lock className="h-6 w-6 text-orange-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-orange-800 mb-2">
-              {tierName} - Premium Content
-            </h3>
-            
-            <div className="space-y-3 mb-4">
-              <p className="text-sm text-orange-700">
-                You're viewing {accessiblePosts} out of {totalPosts} posts. 
-                {restrictedPosts > 0 && (
-                  <span className="font-medium"> {restrictedPosts} premium posts are locked.</span>
-                )}
-              </p>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-orange-600">
-                  Unlock all content for ${tierPrice}/month
-                </span>
-              </div>
-            </div>
-
-            {user ? (
-              <SubscribeButton
-                tierId={tierId}
-                creatorId={creatorId}
-                tierName={tierName}
-                price={tierPrice}
-                isSubscribed={subscriptionData?.isSubscribed || false}
-                subscriptionData={subscriptionData}
-              />
-            ) : (
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <p className="text-sm text-orange-700 text-center">
-                  Please sign in to subscribe and unlock all content
-                </p>
-              </div>
-            )}
-          </div>
+    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-purple-800 mb-1">
+            Posted for {tierPricesText}
+          </p>
+          <p className="text-xs text-purple-600">
+            Premium content available to subscribers
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <Button
+          size="sm"
+          className="bg-pink-500 hover:bg-pink-600 text-white"
+          onClick={handleUnlockTier}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Starting...
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4 mr-2" />
+              Unlock ${lowestAccessTier?.price || tierInfo.price}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
   );
-}
+};

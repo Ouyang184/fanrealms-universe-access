@@ -53,8 +53,8 @@ export const useCreatorImageUpload = () => {
       // Update the creator profile with the new image URL
       const { error } = await supabase
         .from('creators')
-        .update({ profile_image_url: publicUrl } as any)
-        .eq('user_id', user.id as any);
+        .update({ profile_image_url: publicUrl })
+        .eq('user_id', user.id);
       
       if (error) {
         console.error("Database update error:", error);
@@ -119,8 +119,8 @@ export const useCreatorImageUpload = () => {
       // Update the creator profile with the new banner URL
       const { error } = await supabase
         .from('creators')
-        .update({ banner_url: publicUrl } as any)
-        .eq('user_id', user.id as any);
+        .update({ banner_url: publicUrl })
+        .eq('user_id', user.id);
       
       if (error) {
         console.error("Database update error:", error);

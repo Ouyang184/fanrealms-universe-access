@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -86,8 +85,8 @@ export function CreatorChatModal({
       const { error } = await supabase
         .from('messages')
         .delete()
-        .eq('id', messageId as any)
-        .eq('sender_id', user.id as any); // Only allow deleting own messages
+        .eq('id', messageId)
+        .eq('sender_id', user.id); // Only allow deleting own messages
 
       if (error) throw error;
 
@@ -140,7 +139,7 @@ export function CreatorChatModal({
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-        setMessages((data as any) || []);
+        setMessages(data || []);
       } catch (error) {
         console.error('Error loading messages:', error);
         toast({
@@ -203,7 +202,7 @@ export function CreatorChatModal({
           receiver_id: creatorId,
           message_text: newMessage.trim(),
           is_read: false
-        } as any);
+        });
 
       if (error) throw error;
       setNewMessage('');
@@ -238,7 +237,7 @@ export function CreatorChatModal({
               receiver_id: creatorId,
               message_text: `[IMAGE]${base64String}`,
               is_read: false
-            } as any);
+            });
 
           if (error) throw error;
           

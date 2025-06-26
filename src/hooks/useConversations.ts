@@ -45,7 +45,7 @@ export function useConversations() {
       const { data: participants, error: participantsError } = await supabase
         .from('conversation_participants')
         .select('*')
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .order('last_message_at', { ascending: false });
 
       if (participantsError) {
@@ -58,11 +58,11 @@ export function useConversations() {
       }
 
       // Get user data for all other users
-      const otherUserIds = (participants as any).map((p: any) => p.other_user_id);
+      const otherUserIds = participants.map(p => p.other_user_id);
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, username, email, profile_picture')
-        .in('id', otherUserIds as any);
+        .in('id', otherUserIds);
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
@@ -73,36 +73,36 @@ export function useConversations() {
       const { data: creatorProfiles } = await supabase
         .from('creators')
         .select('id, user_id, display_name, profile_image_url, bio')
-        .in('user_id', otherUserIds as any);
+        .in('user_id', otherUserIds);
 
       // Get last messages for each conversation
       const { data: lastMessages } = await supabase
         .from('messages')
         .select('*')
-        .in('sender_id', otherUserIds.concat(user.id) as any)
-        .in('receiver_id', otherUserIds.concat(user.id) as any)
+        .in('sender_id', otherUserIds.concat(user.id))
+        .in('receiver_id', otherUserIds.concat(user.id))
         .order('created_at', { ascending: false });
 
       // Get unread message counts
       const { data: unreadCounts } = await supabase
         .from('messages')
         .select('sender_id, receiver_id')
-        .eq('receiver_id', user.id as any)
-        .eq('is_read', false as any);
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
 
       // Build the conversation data
-      const conversationData: ConversationParticipant[] = (participants as any).map((participant: any) => {
-        const otherUser = (usersData as any)?.find((u: any) => u.id === participant.other_user_id);
-        const creatorProfile = (creatorProfiles as any)?.find((cp: any) => cp.user_id === participant.other_user_id);
+      const conversationData: ConversationParticipant[] = participants.map(participant => {
+        const otherUser = usersData?.find(u => u.id === participant.other_user_id);
+        const creatorProfile = creatorProfiles?.find(cp => cp.user_id === participant.other_user_id);
         
         // Find the most recent message between these two users
-        const lastMessage = (lastMessages as any)?.find((msg: any) => 
+        const lastMessage = lastMessages?.find(msg => 
           (msg.sender_id === user.id && msg.receiver_id === participant.other_user_id) ||
           (msg.sender_id === participant.other_user_id && msg.receiver_id === user.id)
         );
 
         // Count unread messages from this specific user
-        const unreadCount = (unreadCounts as any)?.filter((msg: any) => 
+        const unreadCount = unreadCounts?.filter(msg => 
           msg.sender_id === participant.other_user_id
         ).length || 0;
 
@@ -141,7 +141,7 @@ export function useConversations() {
           receiver_id: receiverId,
           message_text: messageText,
           is_read: false
-        } as any)
+        })
         .select()
         .single();
 

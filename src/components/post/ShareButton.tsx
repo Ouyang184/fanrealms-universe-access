@@ -1,153 +1,269 @@
 
 import React, { useState } from 'react';
-import { Share2, Copy, Twitter, Facebook, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { 
+  Share2, 
+  Link, 
+  Twitter, 
+  Facebook, 
+  Linkedin, 
+  Mail, 
+  MessageCircle,
+  Code,
+  Copy,
+  ExternalLink
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ShareButtonProps {
   postId: string;
-  title?: string;
-  postTitle?: string;
-  postContent?: string;
-  creatorName?: string;
+  postTitle: string;
+  postContent: string;
+  creatorName: string;
   creatorUsername?: string;
   isPublic?: boolean;
   className?: string;
 }
 
-export function ShareButton({ 
-  postId, 
-  title = "Check out this post!", 
+export const ShareButton: React.FC<ShareButtonProps> = ({
+  postId,
   postTitle,
   postContent,
   creatorName,
   creatorUsername,
-  isPublic,
-  className
-}: ShareButtonProps) {
-  const { toast } = useToast();
-  const [isSharing, setIsSharing] = useState(false);
+  isPublic = true,
+  className = ""
+}) => {
+  const [showEmbedDialog, setShowEmbedDialog] = useState(false);
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
 
-  const postUrl = `${window.location.origin}/post/${postId}`;
-  const shareTitle = postTitle || title;
+  // Generate shareable URL
+  const getShareableUrl = () => {
+    const baseUrl = window.location.origin;
+    const creatorSlug = creatorUsername || creatorName.toLowerCase().replace(/\s+/g, '-');
+    return `${baseUrl}/${creatorSlug}/posts/${postId}`;
+  };
 
-  const handleShare = async (platform: string) => {
-    if (isSharing) return;
-    
-    setIsSharing(true);
-    
+  // Track share action
+  const trackShare = async (platform: string) => {
     try {
-      // Log the share action
       await supabase
         .from('post_shares')
         .insert({
           post_id: postId,
-          platform,
-          shared_at: new Date().toISOString(),
-        } as any);
-
-      let shareUrl = '';
-      
-      switch (platform) {
-        case 'twitter':
-          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(postUrl)}`;
-          break;
-        case 'facebook':
-          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-          break;
-        case 'copy':
-          await navigator.clipboard.writeText(postUrl);
-          toast({
-            title: "Link copied!",
-            description: "Post link has been copied to your clipboard.",
-          });
-          return;
-        default:
-          return;
-      }
-
-      if (shareUrl) {
-        window.open(shareUrl, '_blank', 'width=600,height=400');
-      }
-
-      toast({
-        title: "Shared!",
-        description: `Post shared on ${platform}`,
-      });
-
+          platform: platform,
+          shared_at: new Date().toISOString()
+        });
     } catch (error) {
-      console.error('Error sharing post:', error);
-      toast({
-        title: "Error",
-        description: "Failed to share post. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSharing(false);
+      console.error('Error tracking share:', error);
     }
   };
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          url: postUrl,
-        });
-        
-        // Log native share
-        await handleShare('native');
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          console.error('Error sharing:', error);
-        }
-      }
+  // Share to different platforms
+  const shareToTwitter = () => {
+    const url = getShareableUrl();
+    const text = `Check out "${postTitle}" by ${creatorName}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, '_blank');
+    trackShare('twitter');
+  };
+
+  const shareToFacebook = () => {
+    const url = getShareableUrl();
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+    window.open(facebookUrl, '_blank');
+    trackShare('facebook');
+  };
+
+  const shareToLinkedIn = () => {
+    const url = getShareableUrl();
+    const title = `${postTitle} by ${creatorName}`;
+    const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+    window.open(linkedinUrl, '_blank');
+    trackShare('linkedin');
+  };
+
+  const shareToReddit = () => {
+    const url = getShareableUrl();
+    const title = `${postTitle} by ${creatorName}`;
+    const redditUrl = `https://reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`;
+    window.open(redditUrl, '_blank');
+    trackShare('reddit');
+  };
+
+  const shareViaEmail = () => {
+    const url = getShareableUrl();
+    const subject = `Check out "${postTitle}" by ${creatorName}`;
+    const body = `I thought you might find this interesting:\n\n"${postTitle}" by ${creatorName}\n\n${url}`;
+    const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(emailUrl);
+    trackShare('email');
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(getShareableUrl());
+      toast.success('Link copied to clipboard!');
+      trackShare('copy_link');
+    } catch (error) {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const getEmbedCode = () => {
+    const url = getShareableUrl();
+    const previewText = postContent.length > 100 ? postContent.substring(0, 100) + '...' : postContent;
+    
+    return `<div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; max-width: 500px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <h3 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600;">${postTitle}</h3>
+  <p style="margin: 0 0 12px 0; color: #64748b; font-size: 14px;">by ${creatorName}</p>
+  <p style="margin: 0 0 12px 0; line-height: 1.5;">${previewText}</p>
+  <a href="${url}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; color: #3b82f6; text-decoration: none; font-size: 14px;">
+    Read more <span style="font-size: 12px;">↗</span>
+  </a>
+</div>`;
+  };
+
+  const copyEmbedCode = async () => {
+    try {
+      await navigator.clipboard.writeText(getEmbedCode());
+      toast.success('Embed code copied to clipboard!');
+      trackShare('embed');
+    } catch (error) {
+      toast.error('Failed to copy embed code');
     }
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className={`text-muted-foreground hover:text-foreground ${className || ''}`}
-          disabled={isSharing}
-        >
-          <Share2 className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {navigator.share && (
-          <>
-            <DropdownMenuItem onClick={handleNativeShare}>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share...
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuItem onClick={() => handleShare('copy')}>
-          <Copy className="mr-2 h-4 w-4" />
-          Copy link
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleShare('twitter')}>
-          <Twitter className="mr-2 h-4 w-4" />
-          Share on Twitter
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleShare('facebook')}>
-          <Facebook className="mr-2 h-4 w-4" />
-          Share on Facebook
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`flex items-center gap-2 hover:bg-blue-50 hover:text-blue-600 ${className}`}
+          >
+            <Share2 className="h-4 w-4" />
+            <span className="text-sm">Share</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={copyLink} className="flex items-center gap-2">
+            <Link className="h-4 w-4" />
+            Copy Link
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem onClick={shareToTwitter} className="flex items-center gap-2">
+            <Twitter className="h-4 w-4" />
+            Share to Twitter
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={shareToFacebook} className="flex items-center gap-2">
+            <Facebook className="h-4 w-4" />
+            Share to Facebook
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={shareToLinkedIn} className="flex items-center gap-2">
+            <Linkedin className="h-4 w-4" />
+            Share to LinkedIn
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={shareToReddit} className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4" />
+            Share to Reddit
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={shareViaEmail} className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Share via Email
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
+          <DropdownMenuItem onClick={() => setShowEmbedDialog(true)} className="flex items-center gap-2">
+            <Code className="h-4 w-4" />
+            Embed Post
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => setShowLinkDialog(true)} className="flex items-center gap-2">
+            <ExternalLink className="h-4 w-4" />
+            View Shareable Link
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Embed Dialog */}
+      <Dialog open={showEmbedDialog} onOpenChange={setShowEmbedDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Embed Post</DialogTitle>
+            <DialogDescription>
+              Copy this HTML code to embed the post on your website or blog.
+              {!isPublic && " Note: Private posts will show a login prompt for unauthorized users."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <textarea
+                readOnly
+                value={getEmbedCode()}
+                className="w-full h-32 p-3 text-sm font-mono bg-gray-50 border rounded-md resize-none"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button onClick={copyEmbedCode} className="flex-1">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Embed Code
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shareable Link Dialog */}
+      <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Shareable Link</DialogTitle>
+            <DialogDescription>
+              Anyone with this link can {isPublic ? 'view the post' : 'see a preview (full access requires login)'}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                readOnly
+                value={getShareableUrl()}
+                className="flex-1"
+              />
+              <Button onClick={copyLink} size="sm">
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-}
+};

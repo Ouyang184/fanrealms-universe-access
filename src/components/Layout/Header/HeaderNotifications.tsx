@@ -1,7 +1,7 @@
 
 import { Bell, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "react-router-dom";
@@ -15,43 +15,73 @@ export function HeaderNotifications() {
   const location = useLocation();
   const { isCreator } = useCreatorProfile();
   
-  const fetchMessagesCount = useCallback(async () => {
+  useEffect(() => {
     if (!user?.id) return;
     
-    try {
+    // Fetch unread messages count, excluding messages sent to self
+    const fetchMessagesCount = async () => {
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
-        .eq('receiver_id', user.id as any)
-        .neq('sender_id', user.id as any)
-        .eq('is_read', false as any);
-          
+        .eq('receiver_id', user.id)
+        .neq('sender_id', user.id) // Exclude messages sent by the user themselves
+        .eq('is_read', false);
+        
       if (!error && count !== null) {
         setUnreadMessages(count);
       } else {
+        // Reset to 0 if there's an error or no data
         setUnreadMessages(0);
       }
-    } catch (error) {
-      console.error('Error fetching message count:', error);
-      setUnreadMessages(0);
-    }
-  }, [user?.id]);
-  
-  // Only fetch on mount - no polling, no realtime
-  useEffect(() => {
+    };
+    
+    // Initial fetch
     fetchMessagesCount();
-  }, [fetchMessagesCount]);
+    
+    // Set up realtime subscription for message changes
+    const messagesChannel = supabase
+      .channel(`header-messages-${user.id}`)
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, 
+        () => {
+          fetchMessagesCount();
+        }
+      )
+      .subscribe();
+    
+    // Cleanup subscriptions
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [user?.id]);
 
-  // COMPLETELY REMOVED all realtime and polling - use location-based refresh only
+  // Refresh message count when returning to any page from messages
   useEffect(() => {
-    // Only refresh when user navigates to messages page
-    if (location.pathname === '/messages') {
-      fetchMessagesCount();
+    if (user?.id && location.pathname !== '/messages') {
+      // Small delay to allow any pending updates to complete
+      const timer = setTimeout(() => {
+        const fetchMessagesCount = async () => {
+          const { count, error } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('receiver_id', user.id)
+            .neq('sender_id', user.id) // Exclude messages sent by the user themselves
+            .eq('is_read', false);
+            
+          if (!error && count !== null) {
+            setUnreadMessages(count);
+          }
+        };
+        fetchMessagesCount();
+      }, 500);
+
+      return () => clearTimeout(timer);
     }
-  }, [location.pathname, fetchMessagesCount]);
+  }, [location.pathname, user?.id]);
 
   return (
     <div className="flex items-center gap-2">
+      {/* Notifications button - only show for creators */}
       {isCreator && (
         <Link to="/creator-studio/notifications">
           <Button 
@@ -70,6 +100,7 @@ export function HeaderNotifications() {
         </Link>
       )}
       
+      {/* Messages button */}
       <Link to="/messages">
         <Button 
           variant="ghost" 

@@ -14,7 +14,7 @@ export const useNSFWPreferences = () => {
       const { data, error } = await supabase
         .from('users')
         .select('is_nsfw_enabled')
-        .eq('id', user.id as any)
+        .eq('id', user.id)
         .single();
 
       if (error) {
@@ -22,7 +22,7 @@ export const useNSFWPreferences = () => {
         return { isNSFWEnabled: false };
       }
 
-      return { isNSFWEnabled: (data as any)?.is_nsfw_enabled || false };
+      return { isNSFWEnabled: data?.is_nsfw_enabled || false };
     },
     enabled: !!user?.id
   });

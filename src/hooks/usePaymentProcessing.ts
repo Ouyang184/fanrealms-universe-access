@@ -42,9 +42,9 @@ export function usePaymentProcessing({
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
-          .eq('tier_id', tierId as any)
-          .eq('creator_id', creatorId as any)
-          .eq('status', 'active' as any)
+          .eq('tier_id', tierId)
+          .eq('creator_id', creatorId)
+          .eq('status', 'active')
           .maybeSingle();
 
         if (error) {

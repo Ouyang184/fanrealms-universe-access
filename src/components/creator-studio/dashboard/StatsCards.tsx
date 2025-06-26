@@ -18,12 +18,12 @@ interface StatsCardsProps {
 
 export function StatsCards({ monthlyStats }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card className="bg-card border">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <Users className="h-6 w-6 text-blue-500" />
+          <div className="flex items-center justify-between">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Users className="h-6 w-6 text-primary" />
             </div>
             <Badge
               variant="outline"
@@ -41,8 +41,8 @@ export function StatsCards({ monthlyStats }: StatsCardsProps) {
               {Math.abs(monthlyStats.subscriberGrowthPercentage)}%
             </Badge>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Subscribers</h3>
+          <div className="mt-4">
+            <h3 className="text-muted-foreground text-sm">Total Subscribers</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold">{monthlyStats.totalActiveSubscribers.toLocaleString()}</span>
               <span className="text-sm text-muted-foreground">
@@ -53,9 +53,9 @@ export function StatsCards({ monthlyStats }: StatsCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-card border">
+      <Card>
         <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <div className="h-12 w-12 rounded-full bg-green-500/10 flex items-center justify-center">
               <DollarSign className="h-6 w-6 text-green-500" />
             </div>
@@ -75,8 +75,8 @@ export function StatsCards({ monthlyStats }: StatsCardsProps) {
               {Math.abs(monthlyStats.revenueGrowthPercentage)}%
             </Badge>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">Monthly Revenue</h3>
+          <div className="mt-4">
+            <h3 className="text-muted-foreground text-sm">Monthly Revenue</h3>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold">${monthlyStats.currentRevenue.toFixed(2)}</span>
               <span className="text-sm text-muted-foreground">

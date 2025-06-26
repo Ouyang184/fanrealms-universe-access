@@ -1,13 +1,12 @@
 
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, ArrowLeft, Filter, Search, ChevronLeft, SlidersHorizontal, Clock } from "lucide-react";
+import { Users, ArrowLeft, Filter } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,9 +24,8 @@ type SortOption = "newest" | "oldest" | "popular" | "alphabetical" | "price-low"
 type ContentType = "all" | "art-illustration" | "gaming" | "music" | "writing" | "photography" | "education" | "podcasts" | "cooking" | "fitness" | "technology" | "fashion" | "film-video";
 
 export default function AllCreatorsPage() {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const { creators, isLoadingCreators } = useCreators();
+  const { data: creators = [], isLoading } = useCreators(searchTerm);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [contentType, setContentType] = useState<ContentType>("all");
   const [sortedCreators, setSortedCreators] = useState<CreatorProfile[]>([]);
@@ -95,23 +93,31 @@ export default function AllCreatorsPage() {
     });
   };
 
+  const getContentTypeLabel = (type: ContentType) => {
+    const labels: Record<ContentType, string> = {
+      "all": "All Content",
+      "art-illustration": "Art & Illustration",
+      "gaming": "Gaming",
+      "music": "Music",
+      "writing": "Writing",
+      "photography": "Photography",
+      "education": "Education",
+      "podcasts": "Podcasts",
+      "cooking": "Cooking",
+      "fitness": "Fitness",
+      "technology": "Technology",
+      "fashion": "Fashion",
+      "film-video": "Film & Video"
+    };
+    return labels[type];
+  };
+
   // Sort creators based on selected option
   useEffect(() => {
-    if (!creators || !creators.length) return;
+    if (!creators.length) return;
 
     // First filter by content type
     let filtered = filterCreatorsByContentType(creators, contentType);
-    
-    // Filter by search term if present
-    if (searchTerm) {
-      const query = searchTerm.toLowerCase();
-      filtered = filtered.filter(creator => 
-        (creator.display_name || "").toLowerCase().includes(query) ||
-        (creator.displayName || "").toLowerCase().includes(query) ||
-        (creator.username || "").toLowerCase().includes(query) ||
-        (creator.bio || "").toLowerCase().includes(query)
-      );
-    }
     
     // Then sort the filtered results
     let sorted = [...filtered];
@@ -151,219 +157,215 @@ export default function AllCreatorsPage() {
     }
 
     setSortedCreators(sorted);
-  }, [creators, sortBy, contentType, searchTerm]);
+  }, [creators, sortBy, contentType]);
 
   useEffect(() => {
     document.title = "All Creators | FanRealms";
   }, []);
 
-  const getContentTypeLabel = (type: ContentType) => {
-    const labels: Record<ContentType, string> = {
-      "all": "All Content",
-      "art-illustration": "Art & Illustration",
-      "gaming": "Gaming",
-      "music": "Music",
-      "writing": "Writing",
-      "photography": "Photography",
-      "education": "Education",
-      "podcasts": "Podcasts",
-      "cooking": "Cooking",
-      "fitness": "Fitness",
-      "technology": "Technology",
-      "fashion": "Fashion",
-      "film-video": "Film & Video"
-    };
-    return labels[type];
-  };
-
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
-        
-        
-        {/* Hero Section */}
-        <section className="mb-8">
-          <div className="relative rounded-xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
-            <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
-              <h1 className="text-4xl font-bold mb-2">All Creators</h1>
-              <p className="text-xl text-gray-200 max-w-2xl mb-6">
-                Discover amazing creators and exclusive content across all categories
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search for creators, content, or topics..."
-                    className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Back to Explore Button */}
-        <section className="mb-8">
-          <div className="flex items-center justify-end">
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
-              <ChevronLeft className="h-4 w-4" />
+        {/* Header */}
+        <div className="mb-8">
+          <Link to="/explore">
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Explore
             </Button>
-          </div>
-        </section>
-
-        {/* Filtering and Sorting */}
-        <section className="mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center">
-                <SlidersHorizontal className="h-5 w-5 mr-2 text-purple-400" />
-                <span className="mr-3 font-medium">Filters:</span>
-              </div>
-              
-              {/* Content Type Filter */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Filter className="h-4 w-4" />
-                    {getContentTypeLabel(contentType)}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
-                  <DropdownMenuItem onClick={() => setContentType("all")}>
-                    All Content
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setContentType("art-illustration")}>
-                    Art & Illustration
-                  </DropdownMenuItem>
-                  
-                </DropdownMenuContent>
-              </DropdownMenu>
+          </Link>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">All Creators</h1>
+              <p className="text-gray-400">
+                Discover all {sortedCreators.length} creators on FanRealms
+              </p>
             </div>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Sort: {sortBy === "newest" ? "Newest" : sortBy === "popular" ? "Most Popular" : "Alphabetical"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
-                <DropdownMenuItem onClick={() => setSortBy("newest")} className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Newest</span>
-                </DropdownMenuItem>
+            {/* Filter and Sort Controls */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Filters:</span>
                 
-              </DropdownMenuContent>
-            </DropdownMenu>
+                {/* Content Type Filter */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Filter className="h-4 w-4" />
+                      {getContentTypeLabel(contentType)}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
+                    <DropdownMenuItem onClick={() => setContentType("all")}>
+                      All Content
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setContentType("art-illustration")}>
+                      Art & Illustration
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("gaming")}>
+                      Gaming
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("music")}>
+                      Music
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("writing")}>
+                      Writing
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("photography")}>
+                      Photography
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("education")}>
+                      Education
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("podcasts")}>
+                      Podcasts
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("cooking")}>
+                      Cooking
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("fitness")}>
+                      Fitness
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("technology")}>
+                      Technology
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("fashion")}>
+                      Fashion
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setContentType("film-video")}>
+                      Film & Video
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Sort:</span>
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-48 bg-gray-800 border-gray-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="popular">Most Popular</SelectItem>
+                    <SelectItem value="alphabetical">A-Z</SelectItem>
+                    <SelectItem value="price-low">Price: Low to High</SelectItem>
+                    <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-        </section>
+          
+          {/* Search */}
+          <div className="mt-4">
+            <Input
+              placeholder="Search creators by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-md bg-gray-800 border-gray-700"
+            />
+          </div>
+        </div>
 
         {/* Creators Grid */}
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">
-              {isLoadingCreators 
-                ? "Loading creators..." 
-                : `${sortedCreators.length} Creators`}
-            </h2>
-          </div>
-
-          {isLoadingCreators ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Array(6).fill(0).map((_, i) => (
-                <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
-                  <div className="h-32 bg-gray-800" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {isLoading ? (
+            // Loading skeletons
+            Array(12).fill(0).map((_, i) => (
+              <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
+                <div className="h-32 bg-gray-800" />
+                <CardContent className="pt-0 -mt-12 p-6">
+                  <div className="flex justify-between items-start">
+                    <Skeleton className="h-20 w-20 rounded-md" />
+                  </div>
+                  <Skeleton className="h-6 w-3/4 mt-4" />
+                  <Skeleton className="h-4 w-full mt-2" />
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                  <div className="mt-6 flex items-center justify-between">
+                    <Skeleton className="h-5 w-16" />
+                    <Skeleton className="h-10 w-24" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : sortedCreators.length > 0 ? (
+            sortedCreators.map((creator) => {
+              const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
+              const avatarUrl = creator.profile_image_url || creator.avatar_url;
+              const creatorLink = creator.username 
+                ? `/creator/${creator.username}` 
+                : `/creator/${creator.id}`;
+              const avatarFallback = displayName.substring(0, 1).toUpperCase();
+              
+              return (
+                <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden hover:border-purple-500/50 transition-colors">
+                  <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
+                    {creator.banner_url && (
+                      <img
+                        src={creator.banner_url}
+                        alt={displayName}
+                        className="w-full h-full object-cover mix-blend-overlay"
+                      />
+                    )}
+                  </div>
                   <CardContent className="pt-0 -mt-12 p-6">
                     <div className="flex justify-between items-start">
-                      <div className="h-20 w-20 rounded-full bg-gray-800" />
+                      <Avatar className="h-20 w-20 border-4 border-gray-900">
+                        <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
+                        <AvatarFallback className="bg-gray-800 text-xl">
+                          {avatarFallback}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
-                    <div className="h-6 w-3/4 bg-gray-800 mt-4 rounded" />
-                    <div className="h-4 w-full bg-gray-800 mt-2 rounded" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : sortedCreators.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {sortedCreators.map((creator) => {
-                const creatorLink = creator.username 
-                  ? `/creator/${creator.username}` 
-                  : `/creator/${creator.id}`;
-                
-                const displayName = creator.display_name || creator.username || "Creator";
-                const avatarUrl = creator.profile_image_url || creator.avatar_url;
-                const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
-                
-                return (
-                  <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-                    <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
-                      {creator.banner_url && (
-                        <img
-                          src={creator.banner_url}
-                          alt={displayName}
-                          className="w-full h-full object-cover mix-blend-overlay"
-                        />
-                      )}
+                    <h3 className="text-xl font-bold mt-4">{displayName}</h3>
+                    <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {getCreatorTags(creator).map((tag, index) => (
+                        <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
+                          {tag}
+                        </Badge>
+                      ))}
                     </div>
-                    <CardContent className="pt-0 -mt-12 p-6">
-                      <div className="flex justify-between items-start">
-                        <Avatar className="h-20 w-20 border-4 border-gray-900">
-                          <AvatarImage src={avatarUrl || ''} alt={displayName} />
-                          <AvatarFallback className="bg-gray-800 text-xl">
-                            {avatarFallback}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <h3 className="text-xl font-bold mt-4">{displayName}</h3>
-                      <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {getCreatorTags(creator).map((tag, index) => (
-                          <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <div className="mt-6 flex items-center justify-between">
-                        <div className="text-sm text-gray-400">
-                          {creator.tiers && creator.tiers.length > 0 ? (
-                            <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
+                    <div className="mt-6 flex items-center justify-between">
+                      <div className="text-sm text-gray-400">
+                        {creator.tiers && creator.tiers.length > 0 ? (
+                          <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
                         ) : (
                           <span className="font-medium text-white">Free</span>
                         )}
                       </div>
-                      <Button className="bg-purple-600 hover:bg-purple-700" asChild>
-                        <a href={creatorLink}>View Creator</a>
-                      </Button>
+                      <Link to={creatorLink}>
+                        <Button className="bg-purple-600 hover:bg-purple-700" size="sm">View Creator</Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
               );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-900/30 rounded-lg border border-gray-800">
-            <h3 className="text-xl font-medium mb-2">No creators found</h3>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              {searchTerm 
-                ? "We couldn't find any creators matching your search. Try different keywords."
-                : "We couldn't find any creators yet. Check back soon!"}
-            </p>
-          </div>
-        )}
-      </section>
-    </div>
-  </MainLayout>
+            })
+          ) : (
+            <div className="col-span-full text-center py-20 text-gray-400">
+              <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No Creators Found</h3>
+              <p>
+                {searchTerm 
+                  ? `No creators found matching "${searchTerm}"`
+                  : "No creators have joined yet. Be the first!"
+                }
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </MainLayout>
   );
 }

@@ -9,7 +9,7 @@ export const useCreatorStripeStatus = (creatorId: string) => {
       const { data, error } = await supabase
         .from('creators')
         .select('stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled')
-        .eq('id', creatorId as any)
+        .eq('id', creatorId)
         .single();
 
       if (error) throw error;
@@ -18,9 +18,9 @@ export const useCreatorStripeStatus = (creatorId: string) => {
     enabled: !!creatorId
   });
 
-  const isCreatorStripeReady = (creatorStripeStatus as any)?.stripe_account_id && 
-                              (creatorStripeStatus as any)?.stripe_onboarding_complete && 
-                              (creatorStripeStatus as any)?.stripe_charges_enabled;
+  const isCreatorStripeReady = creatorStripeStatus?.stripe_account_id && 
+                              creatorStripeStatus?.stripe_onboarding_complete && 
+                              creatorStripeStatus?.stripe_charges_enabled;
 
   return {
     creatorStripeStatus,

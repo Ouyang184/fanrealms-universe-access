@@ -18,7 +18,7 @@ export const useNotificationActions = () => {
       const { data: followerUser, error: followerError } = await supabase
         .from('users')
         .select('username')
-        .eq('id', user.id as any)
+        .eq('id', user.id)
         .single();
 
       if (followerError) {
@@ -26,7 +26,7 @@ export const useNotificationActions = () => {
         // Continue with email fallback
       }
 
-      const followerName = (followerUser as any)?.username || user.email?.split('@')[0] || 'Someone';
+      const followerName = followerUser?.username || user.email?.split('@')[0] || 'Someone';
 
       console.log("Creating notification with follower name:", followerName);
 
@@ -44,7 +44,7 @@ export const useNotificationActions = () => {
             follower_username: followerName,
             creator_id: creatorId
           }
-        } as any)
+        })
         .select('*')
         .single();
 

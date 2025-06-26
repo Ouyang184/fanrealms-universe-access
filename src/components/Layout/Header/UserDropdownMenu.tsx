@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
@@ -28,7 +28,7 @@ export function UserDropdownMenu() {
       const { data, error } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .single();
         
       if (error && error.code !== 'PGRST116') {

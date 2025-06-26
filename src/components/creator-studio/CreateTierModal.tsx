@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
@@ -59,22 +58,20 @@ export function CreateTierModal({ isOpen, onClose }: CreateTierModalProps) {
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
         .select("id")
-        .eq("user_id", user.id as any)
+        .eq("user_id", user.id)
         .single();
 
       if (creatorError || !creatorData) {
         throw new Error("Failed to get creator profile");
       }
 
-      const creatorId = (creatorData as any).id;
-
       // Insert the new tier
       const { error: insertError } = await supabase.from("membership_tiers").insert({
         title: data.title,
         price: data.price,
         description: data.description,
-        creator_id: creatorId,
-      } as any);
+        creator_id: creatorData.id,
+      });
 
       if (insertError) throw insertError;
 

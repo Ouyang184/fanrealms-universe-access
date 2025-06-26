@@ -1,23 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { CreateTierForm } from "@/components/creator-studio/CreateTierForm";
+import { Tier, CreateTierForm } from "@/components/creator-studio/CreateTierForm";
 import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
-
-// Define Tier interface locally since it's not exported from CreateTierForm
-export interface Tier {
-  id: string;
-  name: string;
-  price: number;
-  features: string[];
-  subscriberCount: number;
-}
 
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
@@ -28,11 +18,11 @@ export default function CreatorStudioTiers() {
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
   
-  // Fetch creator tiers with accurate subscriber counts - NO REALTIME
+  // Fetch creator tiers with accurate subscriber counts
   const { data: tiers, isLoading, error, refetch } = useQuery({
-    queryKey: ["tiers", user?.id],
+    queryKey: ["tiers"],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user) return [];
       
       console.log('[MembershipTiers] Fetching tiers for user:', user.id);
       
@@ -40,17 +30,12 @@ export default function CreatorStudioTiers() {
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
         .select("id")
-        .eq("user_id", user.id as any)
+        .eq("user_id", user.id)
         .single();
       
       if (creatorError) {
         console.error('[MembershipTiers] Error finding creator profile:', creatorError);
         throw new Error("Could not find your creator profile");
-      }
-      
-      if (!creatorData) {
-        console.log('[MembershipTiers] No creator data found');
-        return [];
       }
       
       console.log('[MembershipTiers] Creator ID:', creatorData.id);
@@ -59,8 +44,8 @@ export default function CreatorStudioTiers() {
       const { data: tiersData, error: tiersError } = await supabase
         .from("membership_tiers")
         .select("*")
-        .eq("creator_id", creatorData.id as any)
-        .eq("active", true as any)
+        .eq("creator_id", creatorData.id)
+        .eq("active", true) // Only get active tiers
         .order("price", { ascending: true });
       
       if (tiersError) {
@@ -70,12 +55,8 @@ export default function CreatorStudioTiers() {
       
       console.log('[MembershipTiers] Tiers data:', tiersData);
       
-      if (!tiersData || !Array.isArray(tiersData)) {
-        return [];
-      }
-      
       // Count active subscribers for each tier using the user_subscriptions table
-      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
+      const tiersWithSubscribers = await Promise.all((tiersData || []).map(async (tier) => {
         console.log('[MembershipTiers] Counting subscribers for tier:', tier.id, tier.title);
         
         try {
@@ -83,9 +64,9 @@ export default function CreatorStudioTiers() {
           const { count, error: countError } = await supabase
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
-            .eq('tier_id', tier.id as any)
-            .eq('creator_id', creatorData.id as any)
-            .eq('status', 'active' as any);
+            .eq('tier_id', tier.id)
+            .eq('creator_id', creatorData.id) // Ensure we're counting for the right creator
+            .eq('status', 'active');
 
           if (countError) {
             console.error('[MembershipTiers] Error counting subscribers for tier:', tier.id, countError);
@@ -124,42 +105,67 @@ export default function CreatorStudioTiers() {
       return tiersWithSubscribers;
     },
     enabled: !!user,
-    staleTime: 120000, // Cache for 2 minutes to reduce queries
-    refetchInterval: false, // DISABLE auto-refetch to prevent excessive queries
+    refetchInterval: 30000, // Refresh every 30 seconds to keep counts updated
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 
-  // REMOVED all realtime subscriptions - they were causing massive performance issues
-
-  // Listen for subscription events using custom events only (no realtime DB subscriptions)
+  // Listen for subscription events and tier deletion events
   useEffect(() => {
     const handleDataUpdate = async () => {
       console.log('[MembershipTiers] Data update event detected, refreshing...');
       
-      // Use requestIdleCallback to avoid blocking
-      if (window.requestIdleCallback) {
-        window.requestIdleCallback(() => {
-          queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-        });
-      } else {
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-        }, 2000);
-      }
+      // Invalidate and refetch queries immediately
+      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      await refetch();
     };
 
-    // Only listen to custom events - no realtime DB subscriptions
-    const events = ['subscriptionSuccess', 'tierDeleted'];
-    
-    events.forEach(eventType => {
-      window.addEventListener(eventType, handleDataUpdate);
-    });
+    // Listen for custom subscription events
+    window.addEventListener('subscriptionSuccess', handleDataUpdate);
+    window.addEventListener('paymentSuccess', handleDataUpdate);
+    window.addEventListener('subscriptionCanceled', handleDataUpdate);
+    window.addEventListener('tierDeleted', handleDataUpdate);
     
     return () => {
-      events.forEach(eventType => {
-        window.removeEventListener(eventType, handleDataUpdate);
-      });
+      window.removeEventListener('subscriptionSuccess', handleDataUpdate);
+      window.removeEventListener('paymentSuccess', handleDataUpdate);
+      window.removeEventListener('subscriptionCanceled', handleDataUpdate);
+      window.removeEventListener('tierDeleted', handleDataUpdate);
     };
-  }, [queryClient, user?.id]);
+  }, [queryClient, refetch]);
+  
+  // Set up real-time subscription for membership_tiers and user_subscriptions changes
+  useEffect(() => {
+    if (!user) return;
+
+    console.log('[MembershipTiers] Setting up real-time subscription for tier and subscription changes');
+    
+    const channel = supabase
+      .channel('membership-tiers-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'membership_tiers'
+      }, (payload) => {
+        console.log('[MembershipTiers] Real-time tier update received:', payload);
+        // Invalidate and refetch the tiers query when tier changes occur
+        queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_subscriptions'
+      }, (payload) => {
+        console.log('[MembershipTiers] Real-time subscription update received:', payload);
+        // Invalidate and refetch the tiers query when subscription changes occur
+        queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      })
+      .subscribe();
+
+    return () => {
+      console.log('[MembershipTiers] Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
   
   const handleEditTier = (tier: Tier) => {
     setEditingTier(tier);
@@ -183,10 +189,11 @@ export default function CreatorStudioTiers() {
     // Trigger a custom event to notify other components
     window.dispatchEvent(new CustomEvent('tierDeleted'));
     
-    // Force refresh after closing dialog (with delay to reduce load)
+    // Force refresh after closing dialog
     setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-    }, 2000);
+      queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      refetch();
+    }, 500);
   };
   
   if (error) {
@@ -282,12 +289,12 @@ export default function CreatorStudioTiers() {
         editingTier={editingTier} 
       />
       
-      {/* Delete Tier Dialog - Fixed props */}
+      {/* Delete Tier Dialog */}
       <DeleteTierDialog
         isOpen={isDeleteDialogOpen}
         onClose={closeDeleteDialog}
         tierId={deletingTier?.id || ""}
-        tierTitle={deletingTier?.name || ""}
+        tierName={deletingTier?.name || ""}
       />
     </div>
   );

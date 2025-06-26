@@ -39,11 +39,11 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       const { data, error } = await supabase
         .from("creator_links")
         .select("*")
-        .eq("creator_id", creatorId as any)
+        .eq("creator_id", creatorId)
         .order("position", { ascending: true });
 
       if (error) throw error;
-      setLinks((data as any) || []);
+      setLinks(data || []);
     } catch (error: any) {
       console.error("Error fetching website links:", error);
       toast({
@@ -114,14 +114,14 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       const { data: existingLinks, error: fetchError } = await supabase
         .from("creator_links")
         .select("id")
-        .eq("creator_id", creatorId as any);
+        .eq("creator_id", creatorId);
 
       if (fetchError) throw fetchError;
 
       const currentLinkIds = links.filter(link => link.id).map(link => link.id);
-      const linksToDelete = (existingLinks as any)
-        ?.filter((link: any) => !currentLinkIds.includes(link.id))
-        .map((link: any) => link.id) || [];
+      const linksToDelete = existingLinks
+        ?.filter(link => !currentLinkIds.includes(link.id))
+        .map(link => link.id) || [];
 
       // Delete removed links
       if (linksToDelete.length > 0) {
@@ -148,7 +148,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
         if (newLinks.length > 0) {
           const { error: insertError } = await supabase
             .from("creator_links")
-            .insert(newLinks as any);
+            .insert(newLinks);
             
           if (insertError) throw insertError;
         }
@@ -158,7 +158,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
         if (existingLinksToUpdate.length > 0) {
           const { error: updateError } = await supabase
             .from("creator_links")
-            .upsert(existingLinksToUpdate as any);
+            .upsert(existingLinksToUpdate);
             
           if (updateError) throw updateError;
         }
@@ -175,7 +175,7 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       console.error("Error saving website links:", error);
       toast({
         title: "Error",
-        description: error?.message || "Failed to save website links",
+        description: error.message || "Failed to save website links",
         variant: "destructive",
       });
     } finally {

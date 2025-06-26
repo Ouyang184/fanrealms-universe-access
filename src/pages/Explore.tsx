@@ -1,4 +1,3 @@
-
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -44,7 +43,7 @@ export default function ExplorePage() {
   const { data: nsfwPrefs } = useNSFWPreferences();
   
   // Fetch real data from Supabase - these hooks now automatically filter NSFW content
-  const { creators, isLoadingCreators } = useCreators();
+  const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true);
   
@@ -137,11 +136,13 @@ export default function ExplorePage() {
     setIsPreviewOpen(true);
   };
 
-  // Handle modal close - fix the function signature
-  const handleModalClose = () => {
-    console.log('Explore: Modal close triggered');
-    setIsPreviewOpen(false);
-    setTimeout(() => setSelectedPost(null), 200);
+  // Handle modal close
+  const handleModalClose = (open: boolean) => {
+    console.log('Explore: Modal close triggered, open:', open);
+    setIsPreviewOpen(open);
+    if (!open) {
+      setTimeout(() => setSelectedPost(null), 200);
+    }
   };
   
   return (
@@ -188,8 +189,7 @@ export default function ExplorePage() {
       {selectedPost && (
         <PostPreviewModal
           open={isPreviewOpen}
-          onOpenChange={setIsPreviewOpen}
-          onClose={handleModalClose}
+          onOpenChange={handleModalClose}
           post={selectedPost}
         />
       )}

@@ -27,19 +27,19 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       const { data: tiersData, error: tiersError } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', creatorId as any)
+        .eq('creator_id', creatorId)
         .order('price', { ascending: true });
 
       if (tiersError) throw tiersError;
 
       // Get subscriber counts for each tier from user_subscriptions table
       const tiersWithCounts = await Promise.all(
-        (tiersData as any).map(async (tier: any) => {
+        tiersData.map(async (tier) => {
           const { count, error: countError } = await supabase
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
-            .eq('tier_id', tier.id as any)
-            .eq('status', 'active' as any);
+            .eq('tier_id', tier.id)
+            .eq('status', 'active');
 
           if (countError) {
             console.error('[CreatorMembership] Error counting subscribers for tier:', tier.id, countError);
@@ -79,9 +79,9 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', user.id as any)
-        .eq('creator_id', creatorId as any)
-        .eq('status', 'active' as any); // Only get active subscriptions
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('status', 'active'); // Only get active subscriptions
 
       if (error) {
         console.error('[CreatorMembership] Error fetching subscriptions:', error);
@@ -91,7 +91,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       console.log('[CreatorMembership] Found active subscriptions:', data?.length || 0, data);
       
       // Process each subscription to ensure correct cancellation state
-      const processedSubscriptions = (data as any)?.map((sub: any) => {
+      const processedSubscriptions = data?.map(sub => {
         let isScheduledToCancel = false;
         let currentPeriodEnd = null;
 
@@ -147,7 +147,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     }
     
     // Fall back to server data with enhanced logic
-    const isSubscribed = userSubscriptions?.some((sub: any) => {
+    const isSubscribed = userSubscriptions?.some(sub => {
       const isActive = sub.status === 'active';
       const matches = sub.tier_id === tierId && isActive;
       
@@ -177,7 +177,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
     }
     
     // Fall back to server data
-    return userSubscriptions?.find((sub: any) => sub.tier_id === tierId && sub.status === 'active') || null;
+    return userSubscriptions?.find(sub => sub.tier_id === tierId && sub.status === 'active') || null;
   }, [userSubscriptions, localSubscriptionStates]);
 
   // Manual refresh function with delay

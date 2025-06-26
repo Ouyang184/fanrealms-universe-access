@@ -6,19 +6,20 @@ import { Badge } from '@/components/ui/badge';
 import { useStripeConnect } from '@/hooks/useStripeConnect';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { ExternalLink, CreditCard, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export function StripeConnectSection() {
   const { creatorProfile } = useCreatorProfile();
   const { 
-    stripeStatus, 
-    isLoading, 
-    createStripeAccount, 
-    isConnecting 
+    connectStatus, 
+    statusLoading, 
+    createConnectAccount, 
+    createLoginLink, 
+    balance,
+    isLoading 
   } = useStripeConnect();
 
-  if (isLoading) {
+  if (statusLoading) {
     return (
       <Card>
         <CardHeader>
@@ -36,28 +37,9 @@ export function StripeConnectSection() {
     );
   }
 
-  const isConnected = (stripeStatus as any)?.stripe_account_id;
-  const isOnboardingComplete = (stripeStatus as any)?.stripe_onboarding_complete;
-  const canReceivePayments = (stripeStatus as any)?.stripe_charges_enabled;
-
-  const createLoginLink = async (accountId: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { 
-          action: 'create_login_link',
-          accountId: accountId
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data?.loginUrl) {
-        window.open(data.loginUrl, '_blank');
-      }
-    } catch (error) {
-      console.error('Error creating login link:', error);
-    }
-  };
+  const isConnected = connectStatus?.stripe_account_id;
+  const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
+  const canReceivePayments = connectStatus?.stripe_charges_enabled;
 
   return (
     <Card>
@@ -104,8 +86,8 @@ export function StripeConnectSection() {
         <div className="flex gap-2">
           {!isConnected ? (
             <Button 
-              onClick={() => creatorProfile && createStripeAccount()}
-              disabled={!creatorProfile || isConnecting}
+              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              disabled={!creatorProfile}
             >
               <CreditCard className="mr-2 h-4 w-4" />
               Connect Stripe Account
@@ -113,9 +95,8 @@ export function StripeConnectSection() {
           ) : !isOnboardingComplete ? (
             // Show Complete Onboarding button for connected but incomplete accounts
             <Button 
-              onClick={() => creatorProfile && createStripeAccount()}
+              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
               variant="default"
-              disabled={isConnecting}
             >
               Complete Onboarding
             </Button>
@@ -123,14 +104,38 @@ export function StripeConnectSection() {
             // Only show dashboard access for fully onboarded accounts
             <Button
               variant="outline"
-              onClick={() => createLoginLink((stripeStatus as any).stripe_account_id)}
-              disabled={isConnecting}
+              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              disabled={isLoading}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Open Stripe Dashboard
             </Button>
           )}
         </div>
+
+        {/* Balance Display */}
+        {canReceivePayments && balance && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <span className="font-medium text-green-800">Available Balance</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-green-600">Available:</p>
+                <p className="font-mono font-medium">
+                  ${(balance.available?.[0]?.amount || 0) / 100}
+                </p>
+              </div>
+              <div>
+                <p className="text-green-600">Pending:</p>
+                <p className="font-mono font-medium">
+                  ${(balance.pending?.[0]?.amount || 0) / 100}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Information */}
         <div className="text-sm text-muted-foreground space-y-2">

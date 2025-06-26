@@ -9,38 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { CreatorsSection } from "@/components/dashboard/CreatorsSection";
-
-interface PostsSectionProps {
-  posts: any[];
-  isLoading: boolean;
-  isCreator: boolean;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-}
-
-// Simple inline PostsSection component to avoid component prop issues
-const PostsSection = ({ posts, isLoading, isCreator, activeTab, setActiveTab }: PostsSectionProps) => {
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Your Posts</h2>
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : posts.length > 0 ? (
-        <div className="grid gap-4">
-          {posts.map((post) => (
-            <div key={post.id} className="p-4 border rounded-lg">
-              <h3 className="font-medium">{post.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{post.content}</p>
-              <p className="text-xs text-muted-foreground mt-2">{post.date}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">No posts yet.</p>
-      )}
-    </div>
-  );
-};
+import { PostsSection } from "@/components/dashboard/PostsSection";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -65,7 +34,7 @@ export default function Dashboard() {
             profile_picture
           )
         `)
-        .eq('author_id', user.id as any)
+        .eq('author_id', user.id)
         .order('created_at', { ascending: false });
         
       if (error) {
@@ -108,7 +77,7 @@ export default function Dashboard() {
             price
           )
         `)
-        .eq('user_id', user.id as any)
+        .eq('user_id', user.id)
         .single();
         
       if (error && error.code !== 'PGRST116') {
