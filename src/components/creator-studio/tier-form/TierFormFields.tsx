@@ -3,18 +3,10 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
-import * as z from "zod";
-
-const tierSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  price: z.number().min(1, "Price must be at least $1"),
-  features: z.string().min(1, "Features are required"),
-});
-
-type TierFormValues = z.infer<typeof tierSchema>;
+import { TierFormData } from "@/hooks/useTierForm";
 
 interface TierFormFieldsProps {
-  form: UseFormReturn<TierFormValues>;
+  form: UseFormReturn<TierFormData>;
 }
 
 export function TierFormFields({ form }: TierFormFieldsProps) {
@@ -22,7 +14,7 @@ export function TierFormFields({ form }: TierFormFieldsProps) {
     <>
       <FormField
         control={form.control}
-        name="name"
+        name="title"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Tier Name</FormLabel>
@@ -57,15 +49,13 @@ export function TierFormFields({ form }: TierFormFieldsProps) {
       
       <FormField
         control={form.control}
-        name="features"
+        name="description"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Features (one per line)</FormLabel>
+            <FormLabel>Description</FormLabel>
             <FormControl>
               <Textarea 
-                placeholder="Exclusive content
-Early access
-Monthly Q&A" 
+                placeholder="Describe the benefits of this tier..."
                 className="min-h-[100px]"
                 {...field}
               />

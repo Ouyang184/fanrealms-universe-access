@@ -12,13 +12,25 @@ export interface TierFormData {
   description: string;
 }
 
+export interface Tier {
+  id: string;
+  title: string;
+  price: number;
+  description: string;
+  creator_id: string;
+  stripe_product_id?: string;
+  stripe_price_id?: string;
+}
+
 interface UseTierFormProps {
   creatorId?: string;
   tierId?: string;
+  editingTier?: Tier | null;
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps = {}) => {
+export const useTierForm = ({ creatorId, tierId, editingTier, onSuccess, onClose }: UseTierFormProps = {}) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -27,9 +39,9 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
 
   const form = useForm<TierFormData>({
     defaultValues: {
-      title: '',
-      price: 0,
-      description: ''
+      title: editingTier?.title || '',
+      price: editingTier?.price || 0,
+      description: editingTier?.description || ''
     }
   });
 
@@ -113,7 +125,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
   };
 
   const updateTier = async (data: TierFormData) => {
-    if (!tierId) return;
+    if (!tierId && !editingTier?.id) return;
 
     try {
       setIsLoading(true);
@@ -125,7 +137,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
           price: data.price,
           description: data.description
         } as any)
-        .eq('id', tierId as any);
+        .eq('id', (tierId || editingTier?.id) as any);
 
       if (error) throw error;
 
@@ -136,6 +148,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
 
       queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
       onSuccess?.();
+      onClose?.();
 
     } catch (error: any) {
       console.error('Error updating tier:', error);
@@ -187,6 +200,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
 
       queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
       onSuccess?.();
+      onClose?.();
 
     } catch (error: any) {
       console.error('Error creating tier:', error);
@@ -222,6 +236,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
 
       queryClient.invalidateQueries({ queryKey: ['membership-tiers'] });
       onSuccess?.();
+      onClose?.();
 
     } catch (error: any) {
       console.error('Error deleting tier:', error);
@@ -236,7 +251,7 @@ export const useTierForm = ({ creatorId, tierId, onSuccess }: UseTierFormProps =
   };
 
   const onSubmit = async (data: TierFormData) => {
-    if (tierId) {
+    if (tierId || editingTier) {
       await updateTier(data);
     } else {
       await createTier(data);

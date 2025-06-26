@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStripeConnect } from '@/hooks/useStripeConnect';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { ExternalLink, CreditCard, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 export function StripeConnectSection() {
@@ -103,7 +104,7 @@ export function StripeConnectSection() {
         <div className="flex gap-2">
           {!isConnected ? (
             <Button 
-              onClick={() => creatorProfile && createStripeAccount((creatorProfile as any).id)}
+              onClick={() => creatorProfile && createStripeAccount()}
               disabled={!creatorProfile || isConnecting}
             >
               <CreditCard className="mr-2 h-4 w-4" />
@@ -112,7 +113,7 @@ export function StripeConnectSection() {
           ) : !isOnboardingComplete ? (
             // Show Complete Onboarding button for connected but incomplete accounts
             <Button 
-              onClick={() => creatorProfile && createStripeAccount((creatorProfile as any).id)}
+              onClick={() => creatorProfile && createStripeAccount()}
               variant="default"
               disabled={isConnecting}
             >
