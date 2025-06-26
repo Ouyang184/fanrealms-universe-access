@@ -78,15 +78,9 @@ export default function Terms() {
         navigate("/login", { replace: true });
         
       } catch (error: any) {
-        console.error("Signup error:", error);
-        
-        let errorMessage = "An error occurred during account creation";
-        
-        if (error?.message && error.message !== '{}') {
-          errorMessage = error.message;
-        }
-        
-        toast.error(errorMessage);
+        // This catch block handles any unexpected errors
+        console.error("Unexpected signup error:", error);
+        toast.error("An unexpected error occurred. Please try again.");
       } finally {
         setIsProcessingSignup(false);
       }

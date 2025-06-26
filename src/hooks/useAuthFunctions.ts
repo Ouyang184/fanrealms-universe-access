@@ -54,9 +54,11 @@ export const useAuthFunctions = () => {
     }
   }, [toast, navigate]);
 
-  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+  const signUpWithRetry = useCallback(async (email: string, password: string, retryCount = 0): Promise<any> => {
+    const maxRetries = 2;
+    
     try {
-      console.log('Starting signup process for:', email);
+      console.log(`Signup attempt ${retryCount + 1} for:`, email);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -76,15 +78,27 @@ export const useAuthFunctions = () => {
       if (error) {
         console.error('Supabase signup error:', error);
         
-        // Handle specific error types
-        if (error.status === 504 || error.name === 'AuthRetryableFetchError') {
-          throw new Error('Server is experiencing high traffic. Please wait a moment and try again.');
+        // Handle retryable errors (504, timeouts, etc.)
+        const isRetryableError = 
+          error.status === 504 || 
+          error.name === 'AuthRetryableFetchError' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('504') ||
+          error.message === '{}' ||
+          !error.message ||
+          error.message.trim() === '';
+        
+        if (isRetryableError && retryCount < maxRetries) {
+          console.log(`Retrying signup (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
+          
+          // Wait before retrying (exponential backoff)
+          const delay = Math.pow(2, retryCount) * 2000; // 2s, 4s delays
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          return await signUpWithRetry(email, password, retryCount + 1);
         }
         
-        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
-          throw new Error('Multiple signup attempts detected. Please wait a moment before trying again.');
-        }
-        
+        // Handle non-retryable specific errors
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
           throw new Error('This email is already registered. Please try logging in instead.');
         }
@@ -93,17 +107,49 @@ export const useAuthFunctions = () => {
           throw new Error('Please enter a valid email address.');
         }
 
-        // Handle empty or malformed error messages
-        if (!error.message || error.message === '{}' || error.message.trim() === '') {
-          throw new Error('Unable to create account at this time. Please try again later.');
+        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+          throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        throw error;
+        // For retryable errors that exhausted retries
+        if (isRetryableError) {
+          throw new Error('The server is currently experiencing high traffic. Please try again in a few minutes.');
+        }
+        
+        // For other errors, use the original message or a fallback
+        throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
       }
       
       console.log('Signup successful, user data:', data.user);
+      return { data, error: null };
       
-      // Show success message immediately
+    } catch (error: any) {
+      // If this is already our custom error, re-throw it
+      if (error.message && !error.status) {
+        throw error;
+      }
+      
+      console.error("Signup network error:", error);
+      
+      // Handle network/connection errors
+      if (retryCount < maxRetries) {
+        console.log(`Network error, retrying signup (attempt ${retryCount + 2}/${maxRetries + 1})...`);
+        
+        const delay = Math.pow(2, retryCount) * 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        return await signUpWithRetry(email, password, retryCount + 1);
+      }
+      
+      throw new Error('Network error occurred. Please check your connection and try again.');
+    }
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+    try {
+      const result = await signUpWithRetry(email, password);
+      
+      // Show success message
       toast({
         title: "Account created successfully!",
         description: "Please check your email to verify your account before signing in.",
@@ -111,31 +157,14 @@ export const useAuthFunctions = () => {
       
       return {
         success: true,
-        user: data.user!,
-        session: data.session
+        user: result.data.user!,
+        session: result.data.session
       };
       
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("Final signup error:", error);
       
-      let errorMessage = "Unable to create account at this time";
-      
-      // Handle different error types
-      if (error.message) {
-        if (error.message === '{}' || error.message.trim() === '') {
-          errorMessage = "Server error occurred. Please try again in a few moments.";
-        } else if (error.message.includes("already registered")) {
-          errorMessage = "This email is already registered. Please try logging in instead.";
-        } else if (error.message.includes("rate limit") || error.message.includes("too many")) {
-          errorMessage = "Multiple signup attempts detected. Please wait a moment before trying again.";
-        } else if (error.message.includes("Server is experiencing")) {
-          errorMessage = error.message;
-        } else if (error.message.includes("invalid email")) {
-          errorMessage = "Please enter a valid email address.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
+      const errorMessage = error.message || "Unable to create account at this time. Please try again later.";
       
       toast({
         title: "Account creation failed",
@@ -148,7 +177,7 @@ export const useAuthFunctions = () => {
         error: { message: errorMessage }
       };
     }
-  }, [toast]);
+  }, [signUpWithRetry, toast]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     try {
