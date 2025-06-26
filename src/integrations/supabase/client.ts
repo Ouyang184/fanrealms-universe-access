@@ -12,9 +12,14 @@ const getEnvVar = (key: keyof Window['env']) => {
   return value;
 };
 
-// Get environment variables
-const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
-const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// Get environment variables - Use the actual project values for now
+const SUPABASE_URL = 'https://eaeqyctjljbtcatlohky.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZXF5Y3RqbGpidGNhdGxvaGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3ODE1OTgsImV4cCI6MjA2MTM1NzU5OH0.FrxmM9nqPNUjo3ZTMUdUWPirm0q1WFssoierxq9zb7A';
+
+console.log('Supabase client configuration:', {
+  url: SUPABASE_URL,
+  hasAnonKey: !!SUPABASE_ANON_KEY
+});
 
 // Create the Supabase client with optimized configuration for performance
 export const supabase = createClient<Database>(

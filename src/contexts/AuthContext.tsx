@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data) {
+        console.log('Profile fetched successfully:', data);
         setProfile(data as any);
       }
     } catch (error) {
@@ -64,20 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
+    console.log('AuthProvider initializing...');
 
-    // Listen for auth changes
+    // Set up auth state listener first
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -90,19 +86,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Then get initial session
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting initial session:', error);
+      }
+      
+      console.log('Initial session:', session?.user?.id);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => {
+      console.log('AuthProvider cleanup');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    console.log('Attempting sign in for:', email);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Sign in error:', error);
+      throw error;
+    }
+    
+    console.log('Sign in successful');
   };
 
   const signUp = async (email: string, password: string, username: string) => {
+    console.log('Attempting sign up for:', email);
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -113,10 +138,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Sign up error:', error);
+      throw error;
+    }
+    
+    console.log('Sign up successful');
   };
 
   const signInWithMagicLink = async (email: string) => {
+    console.log('Attempting magic link for:', email);
+    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -124,22 +156,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Magic link error:', error);
+      throw error;
+    }
+    
+    console.log('Magic link sent successfully');
   };
 
   const signOut = async () => {
+    console.log('Attempting sign out');
+    
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    if (error) {
+      console.error('Sign out error:', error);
+      throw error;
+    }
     
     setUser(null);
     setProfile(null);
     setSession(null);
+    console.log('Sign out successful');
   };
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user?.id) throw new Error('No user logged in');
 
     try {
+      console.log('Updating profile:', updates);
+      
       const { error } = await supabase
         .from('users')
         .update(updates as any)
@@ -149,6 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Update local state
       setProfile(current => current ? { ...current, ...updates } : null);
+      console.log('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;

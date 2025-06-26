@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -11,14 +12,23 @@ import AuthFooter from "@/components/auth/AuthFooter";
 
 const Login = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    console.log('Login page - Auth state:', { user: !!user, loading });
+    
     // Only mark as ready once we've confirmed loading is complete
     if (!loading) {
       setIsReady(true);
+      
+      // If user is already logged in, redirect to home
+      if (user) {
+        console.log('User already logged in, redirecting to home');
+        navigate('/home', { replace: true });
+      }
     }
-  }, [loading]);
+  }, [loading, user, navigate]);
 
   if (loading || !isReady) {
     return (
@@ -26,6 +36,11 @@ const Login = () => {
         <LoadingSpinner />
       </div>
     );
+  }
+
+  // Don't render login form if user is already authenticated
+  if (user) {
+    return null;
   }
 
   return (
