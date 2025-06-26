@@ -9,7 +9,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
-import { useOptimizedRealtime } from "@/hooks/useOptimizedRealtime";
 
 // Define Tier interface locally since it's not exported from CreateTierForm
 export interface Tier {
@@ -29,7 +28,7 @@ export default function CreatorStudioTiers() {
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
   
-  // Fetch creator tiers with accurate subscriber counts
+  // Fetch creator tiers with accurate subscriber counts - NO REALTIME
   const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers", user?.id],
     queryFn: async () => {
@@ -125,35 +124,13 @@ export default function CreatorStudioTiers() {
       return tiersWithSubscribers;
     },
     enabled: !!user,
-    staleTime: 60000, // Cache for 1 minute to reduce queries
-    refetchInterval: false, // Disable auto-refetch to reduce load
+    staleTime: 120000, // Cache for 2 minutes to reduce queries
+    refetchInterval: false, // DISABLE auto-refetch to prevent excessive queries
   });
 
-  // Optimized realtime subscription for tier changes
-  useOptimizedRealtime({
-    table: 'membership_tiers',
-    event: '*',
-    callback: () => {
-      console.log('[MembershipTiers] Tier change detected, refreshing...');
-      queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-    },
-    enabled: !!user,
-    debounceMs: 3000 // Increased debounce to reduce load
-  });
+  // REMOVED all realtime subscriptions - they were causing massive performance issues
 
-  // Optimized realtime subscription for subscription changes
-  useOptimizedRealtime({
-    table: 'user_subscriptions',
-    event: '*',
-    callback: () => {
-      console.log('[MembershipTiers] Subscription change detected, refreshing...');
-      queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-    },
-    enabled: !!user,
-    debounceMs: 3000 // Increased debounce to reduce load
-  });
-
-  // Listen for subscription events and tier deletion events (reduced frequency)
+  // Listen for subscription events using custom events only (no realtime DB subscriptions)
   useEffect(() => {
     const handleDataUpdate = async () => {
       console.log('[MembershipTiers] Data update event detected, refreshing...');
@@ -166,11 +143,11 @@ export default function CreatorStudioTiers() {
       } else {
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-        }, 1000);
+        }, 2000);
       }
     };
 
-    // Reduced event listeners
+    // Only listen to custom events - no realtime DB subscriptions
     const events = ['subscriptionSuccess', 'tierDeleted'];
     
     events.forEach(eventType => {
@@ -209,7 +186,7 @@ export default function CreatorStudioTiers() {
     // Force refresh after closing dialog (with delay to reduce load)
     setTimeout(() => {
       queryClient.invalidateQueries({ queryKey: ["tiers", user?.id] });
-    }, 1000);
+    }, 2000);
   };
   
   if (error) {

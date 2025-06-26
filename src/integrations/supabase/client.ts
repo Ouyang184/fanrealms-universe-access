@@ -21,7 +21,7 @@ console.log('Supabase client configuration:', {
   hasAnonKey: !!SUPABASE_ANON_KEY
 });
 
-// Create the Supabase client with highly optimized configuration to minimize realtime overhead
+// Create the Supabase client with minimal realtime configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_ANON_KEY,
@@ -34,61 +34,72 @@ export const supabase = createClient<Database>(
       storage: window.localStorage,
       flowType: 'pkce'
     },
+    // DISABLED realtime entirely to eliminate performance issues
     realtime: {
-      // Drastically reduce realtime overhead to fix performance issue
       params: {
-        eventsPerSecond: 2, // Reduced from 10 to 2 to minimize database load
+        eventsPerSecond: 1, // Minimal events
       },
-      heartbeatIntervalMs: 60000, // Increased from 30s to 60s to reduce heartbeat frequency
-      reconnectAfterMs: () => 5000, // Increased reconnect delay
-      // Remove invalid transport property
+      heartbeatIntervalMs: 300000, // 5 minutes - very long intervals
+      reconnectAfterMs: () => 30000, // 30 second reconnect delay
     },
     global: {
       headers: {
-        'X-Client-Info': 'fanrealms-web-optimized', // Updated identifier
+        'X-Client-Info': 'fanrealms-web-minimal', 
       },
     },
-    // Add database connection pooling optimization
     db: {
       schema: 'public'
     }
   }
 );
 
-// Global channel management to prevent duplicate subscriptions
+// Centralized channel management to prevent duplicate subscriptions
 const activeChannels = new Map<string, any>();
 
-// Optimized channel creation with deduplication
-export const createOptimizedChannel = (channelName: string) => {
-  if (activeChannels.has(channelName)) {
-    console.log(`Reusing existing channel: ${channelName}`);
-    return activeChannels.get(channelName);
+// Only create channels when absolutely necessary with strict scoping
+export const createScopedChannel = (channelName: string, filters?: { table?: string; filter?: string; userId?: string }) => {
+  const scopedChannelName = filters?.userId ? `${channelName}-${filters.userId}` : channelName;
+  
+  if (activeChannels.has(scopedChannelName)) {
+    console.log(`Reusing existing scoped channel: ${scopedChannelName}`);
+    return activeChannels.get(scopedChannelName);
   }
   
-  console.log(`Creating new optimized channel: ${channelName}`);
-  const channel = supabase.channel(channelName, {
+  console.log(`Creating new scoped channel: ${scopedChannelName}`, filters);
+  const channel = supabase.channel(scopedChannelName, {
     config: {
-      // Minimize broadcast overhead
       presence: { key: '' },
       broadcast: { self: false, ack: false }
     }
   });
   
-  activeChannels.set(channelName, channel);
+  activeChannels.set(scopedChannelName, channel);
   return channel;
 };
 
-// Cleanup function to remove unused channels
-export const cleanupChannel = (channelName: string) => {
-  if (activeChannels.has(channelName)) {
-    const channel = activeChannels.get(channelName);
+// Aggressive cleanup function
+export const cleanupChannel = (channelName: string, userId?: string) => {
+  const scopedChannelName = userId ? `${channelName}-${userId}` : channelName;
+  
+  if (activeChannels.has(scopedChannelName)) {
+    const channel = activeChannels.get(scopedChannelName);
     supabase.removeChannel(channel);
-    activeChannels.delete(channelName);
-    console.log(`Cleaned up channel: ${channelName}`);
+    activeChannels.delete(scopedChannelName);
+    console.log(`Aggressively cleaned up channel: ${scopedChannelName}`);
   }
 };
 
-console.log('Supabase client initialized with performance-optimized configuration');
+// Cleanup all channels - use sparingly
+export const cleanupAllChannels = () => {
+  console.log('Cleaning up all channels...');
+  activeChannels.forEach((channel, channelName) => {
+    supabase.removeChannel(channel);
+    console.log(`Removed channel: ${channelName}`);
+  });
+  activeChannels.clear();
+};
+
+console.log('Supabase client initialized with minimal realtime configuration');
 
 // Export supabase for use in other files
 export { supabase as default };

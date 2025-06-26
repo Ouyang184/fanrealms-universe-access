@@ -89,7 +89,7 @@ export function useMessages(userId: string | undefined) {
       }) || [];
     },
     enabled: !!userId,
-    staleTime: 30000, // Cache for 30 seconds to reduce queries
+    staleTime: 60000, // Cache for 1 minute to reduce queries
   });
 
   // Mark messages as read mutation
@@ -118,19 +118,20 @@ export function useMessages(userId: string | undefined) {
     }
   });
 
-  // Optimized realtime subscription using the new hook
+  // ONLY use realtime for user-specific messages with strict filtering
   const handleRealtimeUpdate = useCallback(() => {
-    console.log('useMessages: Realtime update received, refreshing...');
+    console.log('useMessages: User-specific realtime update received, refreshing...');
     refetch();
   }, [refetch]);
 
   useOptimizedRealtime({
     table: 'messages',
     event: '*',
-    filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`,
+    filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`, // User-specific filter
     callback: handleRealtimeUpdate,
     enabled: !!userId,
-    debounceMs: 1500 // Debounce updates to reduce load
+    debounceMs: 3000, // 3 second debounce
+    userId: userId // Pass userId for scoped channel
   });
 
   return { 

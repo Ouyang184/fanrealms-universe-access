@@ -18,7 +18,7 @@ export const useCreatorMembership = (creatorId: string) => {
   const queryClient = useQueryClient();
   const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, boolean>>({});
 
-  // Fetch membership tiers with accurate subscriber counts from user_subscriptions
+  // Fetch membership tiers with accurate subscriber counts from user_subscriptions - NO REALTIME
   const { data: tiers, isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creatorId],
     queryFn: async () => {
@@ -93,11 +93,11 @@ export const useCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // 1 minute to keep counts fresh
+    staleTime: 60000, // 1 minute cache
+    refetchInterval: false, // DISABLED to prevent excessive queries
   });
 
-  // Get user subscriptions from user_subscriptions table only
+  // Get user subscriptions from user_subscriptions table only - NO REALTIME
   const { data: userCreatorSubscriptions, refetch: refetchUserCreatorSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -121,8 +121,8 @@ export const useCreatorMembership = (creatorId: string) => {
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 60000, // 1 minute cache
+    refetchInterval: false, // DISABLED to prevent excessive queries
   });
 
   // Check if user is subscribed to ANY tier of this creator
@@ -191,10 +191,10 @@ export const useCreatorMembership = (creatorId: string) => {
         delete newState[tierId];
         return newState;
       });
-    }, 10000); // 10 seconds
+    }, 15000); // 15 seconds
   }, []);
 
-  // Listen for subscription events
+  // Listen for subscription events - NO REALTIME DB SUBSCRIPTIONS
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
       console.log('[CreatorMembership] Subscription event detected:', event.type, event.detail);
@@ -228,30 +228,7 @@ export const useCreatorMembership = (creatorId: string) => {
     };
   }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
 
-  // Set up real-time subscription for user_subscriptions table changes only
-  useEffect(() => {
-    if (!creatorId) return;
-
-    console.log('[CreatorMembership] Setting up real-time subscription for user_subscriptions table, creator:', creatorId);
-    
-    const channel = supabase
-      .channel(`user-subscriptions-updates-${creatorId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_subscriptions',
-        filter: `creator_id=eq.${creatorId}`
-      }, (payload) => {
-        console.log('[CreatorMembership] Real-time update received for user_subscriptions:', payload);
-        handleSubscriptionSuccess();
-      })
-      .subscribe();
-
-    return () => {
-      console.log('[CreatorMembership] Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [creatorId, handleSubscriptionSuccess]);
+  // REMOVED real-time subscription - was causing massive performance issues
 
   return {
     tiers,

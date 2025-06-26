@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
-import { useOptimizedRealtime } from "@/hooks/useOptimizedRealtime";
 
 export function HeaderNotifications() {
   const { user } = useAuth();
@@ -16,7 +15,7 @@ export function HeaderNotifications() {
   const location = useLocation();
   const { isCreator } = useCreatorProfile();
   
-  // Optimized message count fetching
+  // Conservative message count fetching - no realtime
   const fetchMessagesCount = useCallback(async () => {
     if (!user?.id) return;
     
@@ -39,25 +38,17 @@ export function HeaderNotifications() {
     }
   }, [user?.id]);
   
-  // Initial fetch
+  // Initial fetch only
   useEffect(() => {
     fetchMessagesCount();
   }, [fetchMessagesCount]);
 
-  // Use optimized realtime hook instead of direct subscriptions
-  useOptimizedRealtime({
-    table: 'messages',
-    event: '*',
-    filter: `receiver_id=eq.${user?.id}`,
-    callback: () => fetchMessagesCount(),
-    enabled: !!user?.id,
-    debounceMs: 2000 // Increased debounce to reduce database load
-  });
-
-  // Refresh message count when returning from messages page (with debounce)
+  // REMOVED realtime subscription - was causing performance issues
+  // Instead, refresh count when returning from messages page
   useEffect(() => {
     if (user?.id && location.pathname !== '/messages') {
-      const timer = setTimeout(fetchMessagesCount, 1000);
+      // Refresh count after a delay when navigating away from messages
+      const timer = setTimeout(fetchMessagesCount, 2000);
       return () => clearTimeout(timer);
     }
   }, [location.pathname, user?.id, fetchMessagesCount]);

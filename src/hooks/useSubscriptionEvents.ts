@@ -8,7 +8,7 @@ export const useSubscriptionEvents = () => {
   const refreshAllSubscriptionData = useCallback(async () => {
     console.log('Refreshing subscription-related data...');
     
-    // Highly optimized: Only invalidate the most critical queries
+    // Only invalidate the most critical queries - no realtime needed
     const criticalQueryKeys = [
       'user-subscriptions',
       'simple-user-subscriptions'
@@ -27,7 +27,7 @@ export const useSubscriptionEvents = () => {
         criticalQueryKeys.forEach(key => {
           queryClient.invalidateQueries({ queryKey: [key] });
         });
-      }, 100);
+      }, 500);
     }
 
     console.log('Critical subscription queries invalidated');
@@ -49,11 +49,11 @@ export const useSubscriptionEvents = () => {
     if (window.requestIdleCallback) {
       window.requestIdleCallback(() => refreshAllSubscriptionData());
     } else {
-      setTimeout(() => refreshAllSubscriptionData(), 0);
+      setTimeout(() => refreshAllSubscriptionData(), 100);
     }
   }, [refreshAllSubscriptionData]);
 
-  // Heavily optimized: Remove excessive realtime subscriptions
+  // REMOVED excessive realtime subscriptions - use events only
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
       console.log(`Subscription event detected: ${event.type}`, event.detail);
@@ -62,11 +62,11 @@ export const useSubscriptionEvents = () => {
       if (window.requestIdleCallback) {
         window.requestIdleCallback(() => refreshAllSubscriptionData());
       } else {
-        setTimeout(() => refreshAllSubscriptionData(), 0);
+        setTimeout(() => refreshAllSubscriptionData(), 100);
       }
     };
 
-    // Reduced to only essential events
+    // Only essential events - no realtime database subscriptions
     const events = ['subscriptionSuccess', 'paymentSuccess'];
 
     events.forEach(eventType => {
