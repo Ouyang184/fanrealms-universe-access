@@ -68,39 +68,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     console.log('AuthProvider initializing...');
 
-    // Set up auth state listener first
+    // Set up auth state listener first - CRITICAL: No async operations inside this callback
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
+      // Only synchronous state updates here
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
       
+      // Defer profile fetching with setTimeout to avoid deadlock
       if (session?.user) {
-        await fetchProfile(session.user.id);
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 0);
       } else {
         setProfile(null);
       }
-      
-      setLoading(false);
     });
 
     // Then get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Error getting initial session:', error);
+        setLoading(false);
+        return;
       }
       
       console.log('Initial session:', session?.user?.id);
+      
+      // These will also trigger the auth state change callback above
+      // but we set them here too for consistency
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 0);
       }
-      
-      setLoading(false);
     });
 
     return () => {
