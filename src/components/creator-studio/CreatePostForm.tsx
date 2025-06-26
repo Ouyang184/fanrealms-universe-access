@@ -154,7 +154,7 @@ export function CreatePostForm() {
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
         is_nsfw: isNSFW // Automatically flag as NSFW if creator has NSFW enabled
-      };
+      } as any;
 
       console.log('[Creator Studio] Creating post with automatic NSFW flag:', {
         author_id: postData.author_id,
@@ -168,7 +168,7 @@ export function CreatePostForm() {
 
       const { data: insertedPost, error } = await supabase
         .from('posts')
-        .insert([postData])
+        .insert([postData] as any)
         .select('*');
 
       if (error) throw error;
@@ -182,7 +182,7 @@ export function CreatePostForm() {
 
         const { error: tierError } = await supabase
           .from('post_tiers')
-          .insert(postTierInserts);
+          .insert(postTierInserts as any);
 
         if (tierError) {
           console.error('Error assigning tiers to post:', tierError);

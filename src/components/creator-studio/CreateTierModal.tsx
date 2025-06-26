@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
@@ -58,7 +59,7 @@ export function CreateTierModal({ isOpen, onClose }: CreateTierModalProps) {
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id as any)
         .single();
 
       if (creatorError || !creatorData) {
@@ -71,7 +72,7 @@ export function CreateTierModal({ isOpen, onClose }: CreateTierModalProps) {
         price: data.price,
         description: data.description,
         creator_id: creatorData.id,
-      });
+      } as any);
 
       if (insertError) throw insertError;
 
