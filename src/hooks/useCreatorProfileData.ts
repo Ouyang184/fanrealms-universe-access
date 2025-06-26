@@ -23,7 +23,7 @@ export function useCreatorProfileData() {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', user.id as any)
         .single();
       
       if (userError || !userData) {
@@ -40,7 +40,7 @@ export function useCreatorProfileData() {
       const { data: latestCreatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
       
       if (creatorError) {
@@ -49,16 +49,16 @@ export function useCreatorProfileData() {
       
       return {
         ...creatorProfile,
-        ...latestCreatorData, // This will include the latest follower_count
-        username: userData.username,
-        fullName: userData.username,
-        displayName: latestCreatorData?.display_name || userData.username,
-        email: userData.email,
-        avatar_url: userData.profile_picture,
-        banner_url: latestCreatorData?.banner_url || null,
-        bio: latestCreatorData?.bio || "No bio provided yet.",
-        display_name: latestCreatorData?.display_name || null,
-        follower_count: latestCreatorData?.follower_count || 0
+        ...(latestCreatorData as any), // This will include the latest follower_count
+        username: (userData as any).username,
+        fullName: (userData as any).username,
+        displayName: (latestCreatorData as any)?.display_name || (userData as any).username,
+        email: (userData as any).email,
+        avatar_url: (userData as any).profile_picture,
+        banner_url: (latestCreatorData as any)?.banner_url || null,
+        bio: (latestCreatorData as any)?.bio || "No bio provided yet.",
+        display_name: (latestCreatorData as any)?.display_name || null,
+        follower_count: (latestCreatorData as any)?.follower_count || 0
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile
@@ -89,7 +89,7 @@ export function useCreatorProfileData() {
             price
           )
         `)
-        .eq('author_id', user.id)
+        .eq('author_id', user.id as any)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -105,15 +105,15 @@ export function useCreatorProfileData() {
       console.log('[useCreatorProfileData] Raw posts data:', {
         postsCount: postsData?.length,
         samplePosts: postsData?.slice(0, 2).map(p => ({ 
-          id: p.id, 
-          title: p.title, 
-          tier_id: p.tier_id,
-          author_id: p.author_id
+          id: (p as any).id, 
+          title: (p as any).title, 
+          tier_id: (p as any).tier_id,
+          author_id: (p as any).author_id
         }))
       });
       
       // CRITICAL FIX: Ensure proper authorId mapping for creator access logic
-      return postsData.map((post: any) => {
+      return (postsData as any).map((post: any) => {
         const mappedPost = {
           ...post,
           authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
@@ -152,7 +152,7 @@ export function useCreatorProfileData() {
       const { data: tiersData, error } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', creatorProfile.id)
+        .eq('creator_id', creatorProfile.id as any)
         .order('price', { ascending: true });
       
       if (error) {
@@ -166,11 +166,11 @@ export function useCreatorProfileData() {
       }
       
       // Count subscribers for each tier and format properly
-      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
+      const tiersWithSubscribers = await Promise.all((tiersData as any).map(async (tier: any) => {
         const { count, error: countError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id);
+          .eq('tier_id', tier.id as any);
           
         return {
           id: tier.id,

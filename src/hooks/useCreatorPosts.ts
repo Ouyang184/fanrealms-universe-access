@@ -50,7 +50,7 @@ export function useCreatorPosts() {
           likes(count),
           comments(count)
         `)
-        .eq('author_id', user.id)
+        .eq('author_id', user.id as any)
         .order('created_at', { ascending: false });
 
       // Apply search query if provided
@@ -73,7 +73,7 @@ export function useCreatorPosts() {
       console.log('[useCreatorPosts] Creator posts raw data:', data);
       
       // Transform to CreatorPost format with real engagement data and multiple tiers
-      return data.map((post): CreatorPost => {
+      return (data as any).map((post: any): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
         
@@ -91,16 +91,16 @@ export function useCreatorPosts() {
         
         const tags = post.title
           ?.split(' ')
-          .filter(word => word.length > 3)
+          .filter((word: string) => word.length > 3)
           .slice(0, 3)
-          .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, ''));
+          .map((tag: string) => tag.toLowerCase().replace(/[^a-z0-9]/g, ''));
 
         if (tags) {
-          if (tags.some(tag => ['image', 'photo', 'picture', 'art', 'design'].includes(tag))) {
+          if (tags.some((tag: string) => ['image', 'photo', 'picture', 'art', 'design'].includes(tag))) {
             postType = "image";
-          } else if (tags.some(tag => ['video', 'tutorial', 'stream', 'recording'].includes(tag))) {
+          } else if (tags.some((tag: string) => ['video', 'tutorial', 'stream', 'recording'].includes(tag))) {
             postType = "video";
-          } else if (tags.some(tag => ['audio', 'podcast', 'song', 'music', 'sound'].includes(tag))) {
+          } else if (tags.some((tag: string) => ['audio', 'podcast', 'song', 'music', 'sound'].includes(tag))) {
             postType = "audio";
           }
         }
