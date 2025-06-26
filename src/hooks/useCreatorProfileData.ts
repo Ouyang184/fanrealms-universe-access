@@ -47,18 +47,23 @@ export function useCreatorProfileData() {
         console.error('Error fetching latest creator data:', creatorError);
       }
       
+      // Ensure both objects exist before spreading
+      const baseProfile = creatorProfile || {};
+      const latestData = latestCreatorData || {};
+      const userDataSafe = userData as any;
+      
       return {
-        ...creatorProfile,
-        ...(latestCreatorData as any), // This will include the latest follower_count
-        username: (userData as any).username,
-        fullName: (userData as any).username,
-        displayName: (latestCreatorData as any)?.display_name || (userData as any).username,
-        email: (userData as any).email,
-        avatar_url: (userData as any).profile_picture,
-        banner_url: (latestCreatorData as any)?.banner_url || null,
-        bio: (latestCreatorData as any)?.bio || "No bio provided yet.",
-        display_name: (latestCreatorData as any)?.display_name || null,
-        follower_count: (latestCreatorData as any)?.follower_count || 0
+        ...baseProfile,
+        ...latestData,
+        username: userDataSafe.username,
+        fullName: userDataSafe.username,
+        displayName: (latestData as any)?.display_name || userDataSafe.username,
+        email: userDataSafe.email,
+        avatar_url: userDataSafe.profile_picture,
+        banner_url: (latestData as any)?.banner_url || null,
+        bio: (latestData as any)?.bio || "No bio provided yet.",
+        display_name: (latestData as any)?.display_name || null,
+        follower_count: (latestData as any)?.follower_count || 0
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile

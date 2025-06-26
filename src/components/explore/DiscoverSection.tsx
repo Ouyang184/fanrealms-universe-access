@@ -7,7 +7,7 @@ import { useCreators } from "@/hooks/useCreators";
 
 export function DiscoverSection() {
   // Check if creators exist
-  const { data: creators = [] } = useCreators();
+  const { creators } = useCreators();
   const hasCreators = creators.length > 0;
   
   return (

@@ -15,7 +15,7 @@ interface Category {
 
 export function CategoriesSection() {
   const navigate = useNavigate();
-  const { data: creators = [], isLoading } = useCreators();
+  const { creators, isLoadingCreators } = useCreators();
   const [categoryCreatorCounts, setCategoryCreatorCounts] = useState<Record<string, number>>({});
   
   const categories: Category[] = [
@@ -29,7 +29,7 @@ export function CategoriesSection() {
 
   // Count real creators per category based on their tags or bio content
   useEffect(() => {
-    if (!isLoading && creators.length > 0) {
+    if (!isLoadingCreators && creators.length > 0) {
       console.log("Counting creators per category, total creators:", creators.length);
       
       const counts: Record<string, number> = {};
@@ -71,7 +71,7 @@ export function CategoriesSection() {
       console.log("Category creator counts:", counts);
       setCategoryCreatorCounts(counts);
     }
-  }, [creators, isLoading]);
+  }, [creators, isLoadingCreators]);
 
   const handleCategoryClick = (route: string) => {
     navigate(`/explore/${route}`);
@@ -104,7 +104,7 @@ export function CategoriesSection() {
               <h3 className="font-medium group-hover:text-purple-400 transition-colors">
                 {category.name}
               </h3>
-              {!isLoading && (
+              {!isLoadingCreators && (
                 <p className="text-xs text-gray-500 mt-1">
                   {categoryCreatorCounts[category.route]} creators
                 </p>

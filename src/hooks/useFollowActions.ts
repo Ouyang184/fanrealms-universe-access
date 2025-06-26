@@ -1,184 +1,139 @@
 
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
-import { useNotificationActions } from "./useNotificationActions";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
-export function useFollowActions() {
+export const useFollowActions = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const { createFollowNotification } = useNotificationActions();
+  const queryClient = useQueryClient();
 
-  // Function to check if user is following a creator using follows table
-  const checkFollowStatus = async (creatorId: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    try {
-      const { data, error } = await supabase
-        .from("follows")
-        .select("user_id, creator_id")
-        .eq("user_id", user.id)
-        .eq("creator_id", creatorId)
-        .maybeSingle();
+  const followMutation = useMutation({
+    mutationFn: async (creatorId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
       
-      if (error && error.code !== "PGRST116") {
-        console.error("Error checking follow status:", error);
-        return false;
-      }
-      
-      return !!data;
-    } catch (error) {
-      console.error("Error checking follow status:", error);
-      return false;
-    }
-  };
+      const { error } = await supabase
+        .from('follows')
+        .insert([{
+          user_id: user.id as any,
+          creator_id: creatorId as any
+        } as any]);
 
-  const performFollowOperation = async (creatorId: string) => {
-    if (!user) {
+      if (error) throw error;
+      return creatorId;
+    },
+    onSuccess: (creatorId) => {
+      queryClient.invalidateQueries({ queryKey: ['follows'] });
+      queryClient.invalidateQueries({ queryKey: ['followedCreators'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
       toast({
-        title: "Authentication Required",
-        description: "You must be logged in to follow a creator",
-        variant: "destructive",
-      });
-      throw new Error("No user authenticated");
-    }
-    
-    console.log("Following creator:", creatorId, "User:", user.id);
-    
-    // Get current creator data
-    const { data: creator, error } = await supabase
-      .from("creators")
-      .select("user_id, display_name, users(username), follower_count")
-      .eq("id", creatorId)
-      .single();
-    
-    if (error) {
-      console.error("Error fetching creator:", error);
-      toast({
-        title: "Error",
-        description: "Failed to follow creator",
-        variant: "destructive",
-      });
-      throw error;
-    }
-    
-    console.log("Creator data:", creator);
-    
-    if (creator?.user_id === user.id) {
-      toast({
-        title: "Cannot Follow Yourself",
-        description: "You cannot follow your own creator profile",
-        variant: "destructive",
-      });
-      throw new Error("Cannot follow yourself");
-    }
-
-    // Insert the follow relationship
-    const { data: insertData, error: followError } = await supabase
-      .from("follows")
-      .insert([{
-        user_id: user.id,
-        creator_id: creatorId
-      }])
-      .select('creator_id')
-      .single();
-    
-    if (followError) {
-      if (followError.code === "23505") { // Unique constraint violation
-        toast({
-          description: "You're already following this creator",
-        });
-        return { alreadyFollowing: true, currentFollowerCount: creator.follower_count || 0 };
-      } else {
-        console.error("Follow error:", followError);
-        throw followError;
-      }
-    } else {
-      console.log("Follow successful");
-      
-      // Update the follower count in the creators table
-      const newFollowerCount = (creator.follower_count || 0) + 1;
-      const { error: updateError } = await supabase
-        .from("creators")
-        .update({ follower_count: newFollowerCount })
-        .eq("id", creatorId);
-      
-      if (updateError) {
-        console.error("Error updating follower count:", updateError);
-        // Don't throw here as the follow was successful, just log the error
-      } else {
-        console.log("Follower count updated to:", newFollowerCount);
-      }
-      
-      toast({
+        title: "Success",
         description: "You are now following this creator",
       });
-      
-      // Create follow notification
-      try {
-        await createFollowNotification(creatorId, creator.user_id);
-        console.log("Follow notification created successfully");
-      } catch (notificationError) {
-        console.error("Failed to create follow notification:", notificationError);
-        // Don't fail the follow action if notification creation fails
-      }
-      
-      return { alreadyFollowing: false, currentFollowerCount: newFollowerCount };
+    },
+    onError: (error: any) => {
+      console.error('Error following creator:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to follow creator",
+        variant: "destructive",
+      });
     }
-  };
+  });
 
-  const performUnfollowOperation = async (creatorId: string) => {
-    if (!user) throw new Error("No user authenticated");
-    
-    // Get current follower count before unfollowing
-    const { data: creator, error: creatorError } = await supabase
-      .from("creators")
-      .select("follower_count")
-      .eq("id", creatorId)
-      .single();
-    
-    if (creatorError) {
-      console.error("Error fetching creator for unfollow:", creatorError);
-      throw creatorError;
+  const unfollowMutation = useMutation({
+    mutationFn: async (creatorId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // First get creator details to show in notification
+      const { data: creator, error: creatorError } = await supabase
+        .from('creators')
+        .select('id, user_id, display_name, users:user_id(username), follower_count')
+        .eq('id', creatorId as any)
+        .single();
+
+      if (creatorError) {
+        console.error('Error fetching creator for unfollow:', creatorError);
+        // Continue with unfollow even if we can't fetch creator details
+      }
+
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('user_id', user.id as any)
+        .eq('creator_id', creatorId as any);
+
+      if (error) throw error;
+
+      // If we have creator data, show their name in the success message
+      const creatorName = creator ? 
+        ((creator as any).display_name || (creator as any).users?.username || 'Creator') :
+        'Creator';
+
+      return { creatorId, creatorName };
+    },
+    onSuccess: ({ creatorId, creatorName }) => {
+      queryClient.invalidateQueries({ queryKey: ['follows'] });
+      queryClient.invalidateQueries({ queryKey: ['followedCreators'] });
+      queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
+      toast({
+        title: "Success",
+        description: `You have unfollowed ${creatorName}`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error unfollowing creator:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unfollow creator",
+        variant: "destructive",
+      });
     }
-    
-    const { error } = await supabase
-      .from("follows")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("creator_id", creatorId);
-    
-    if (error) {
-      console.error("Unfollow error:", error);
-      throw error;
+  });
+
+  const batchFollowMutation = useMutation({
+    mutationFn: async (creatorIds: string[]) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      const followData = creatorIds.map(creatorId => ({
+        user_id: user.id,
+        creator_id: creatorId
+      }));
+
+      const { error } = await supabase
+        .from('follows')
+        .insert(followData as any);
+
+      if (error) throw error;
+      return creatorIds;
+    },
+    onSuccess: (creatorIds) => {
+      queryClient.invalidateQueries({ queryKey: ['follows'] });
+      queryClient.invalidateQueries({ queryKey: ['followedCreators'] });
+      creatorIds.forEach(creatorId => {
+        queryClient.invalidateQueries({ queryKey: ['creatorProfile', creatorId] });
+      });
+      toast({
+        title: "Success",
+        description: `You are now following ${creatorIds.length} creators`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error batch following creators:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to follow creators",
+        variant: "destructive",
+      });
     }
-    
-    console.log("Unfollow successful");
-    
-    // Update the follower count in the creators table
-    const newFollowerCount = Math.max((creator.follower_count || 0) - 1, 0);
-    const { error: updateError } = await supabase
-      .from("creators")
-      .update({ follower_count: newFollowerCount })
-      .eq("id", creatorId);
-    
-    if (updateError) {
-      console.error("Error updating follower count:", updateError);
-      // Don't throw here as the unfollow was successful, just log the error
-    } else {
-      console.log("Follower count updated to:", newFollowerCount);
-    }
-    
-    toast({
-      description: "You have unfollowed this creator",
-    });
-    
-    return { newFollowerCount };
-  };
+  });
 
   return {
-    checkFollowStatus,
-    performFollowOperation,
-    performUnfollowOperation,
+    followCreator: followMutation.mutate,
+    unfollowCreator: unfollowMutation.mutate,
+    batchFollowCreators: batchFollowMutation.mutate,
+    isFollowing: followMutation.isPending,
+    isUnfollowing: unfollowMutation.isPending,
+    isBatchFollowing: batchFollowMutation.isPending,
   };
-}
+};

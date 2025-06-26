@@ -45,7 +45,7 @@ export function EnhancedSearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Get real-time search results
-  const { data: creators = [], isLoading } = useCreators(searchTerm);
+  const { creators, isLoadingCreators } = useCreators();
 
   // Filter suggestions based on current input
   const filteredSuggestions = popularSuggestions.filter(suggestion =>
@@ -216,7 +216,7 @@ export function EnhancedSearchBar({
               width: `${Math.max(dropdownPosition.width, 300)}px`,
             }}
           >
-            {isLoading ? (
+            {isLoadingCreators ? (
               <div className="p-4 flex items-center justify-center">
                 <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
                 <span>Searching...</span>

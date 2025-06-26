@@ -1,37 +1,31 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useDeletePost = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  const deletePostMutation = useMutation({
+  return useMutation({
     mutationFn: async (postId: string) => {
-      console.log('Attempting to delete post:', postId, 'User:', user?.id);
-      
       if (!user?.id) {
-        console.error('No user found');
-        throw new Error('Must be logged in to delete posts');
+        throw new Error('User not authenticated');
       }
 
-      // First check if the post exists and belongs to the user
+      // First, check if the user owns the post
       const { data: post, error: fetchError } = await supabase
         .from('posts')
         .select('id, author_id')
-        .eq('id', postId)
+        .eq('id', postId as any)
         .single();
 
       if (fetchError) {
-        console.error('Error fetching post:', fetchError);
-        throw new Error('Post not found');
+        throw fetchError;
       }
 
-      if (post.author_id !== user.id) {
-        console.error('User does not own this post');
+      if ((post as any)?.author_id !== user.id) {
         throw new Error('You can only delete your own posts');
       }
 
@@ -39,29 +33,25 @@ export const useDeletePost = () => {
       const { error } = await supabase
         .from('posts')
         .delete()
-        .eq('id', postId)
-        .eq('author_id', user.id);
+        .eq('id', postId as any)
+        .eq('author_id', user.id as any);
 
       if (error) {
-        console.error('Error deleting post:', error);
         throw error;
       }
 
-      console.log('Post deleted successfully');
+      return postId;
     },
     onSuccess: () => {
-      // Invalidate all post-related queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['posts'] });
-      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
-      queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
       queryClient.invalidateQueries({ queryKey: ['creatorPosts'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['creatorProfilePosts'] });
       toast({
         title: "Success",
         description: "Post deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error deleting post:', error);
       toast({
         title: "Error",
@@ -70,9 +60,4 @@ export const useDeletePost = () => {
       });
     }
   });
-
-  return {
-    deletePost: deletePostMutation.mutate,
-    isDeleting: deletePostMutation.isPending,
-  };
 };

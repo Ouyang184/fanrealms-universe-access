@@ -1,98 +1,87 @@
-import { useFollowState } from "./useFollowState";
-import { useFollowActions } from "./useFollowActions";
-import { useFollowOptimisticUpdates } from "./useFollowOptimisticUpdates";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
 
-export function useFollow() {
-  const { toast } = useToast();
-  const {
-    isFollowing,
-    setIsFollowing,
-    isLoading,
-    setIsLoading,
-    optimisticFollowerCount,
-    setOptimisticFollowerCount,
-  } = useFollowState();
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
-  const {
-    checkFollowStatus,
-    performFollowOperation,
-    performUnfollowOperation,
-  } = useFollowActions();
+export const useFollow = () => {
+  const { user } = useAuth();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    applyOptimisticFollowUpdate,
-    revertOptimisticUpdate,
-    finalizeMutationAfterSuccess,
-  } = useFollowOptimisticUpdates();
-
-  // Function to follow a creator using follows table with optimistic updates
-  const followCreator = async (creatorId: string): Promise<void> => {
-    if (isLoading) return;
-    setIsLoading(true);
+  const checkFollowStatus = async (creatorId: string) => {
+    if (!user?.id) return false;
     
-    // Get current creator data for optimistic update
-    let currentFollowerCount = 0;
     try {
-      const { data: creator, error } = await supabase
-        .from("creators")
-        .select("follower_count")
-        .eq("id", creatorId)
-        .single();
-      
+      const { data, error } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('user_id', user.id as any)
+        .eq('creator_id', creatorId as any)
+        .maybeSingle();
+
       if (error) {
-        console.error("Error fetching creator:", error);
-        setIsLoading(false);
-        return;
+        console.error('Error checking follow status:', error);
+        return false;
       }
 
-      currentFollowerCount = creator.follower_count || 0;
-      
-      // Apply optimistic update
-      applyOptimisticFollowUpdate(
-        creatorId,
-        currentFollowerCount,
-        true,
-        setIsFollowing,
-        setOptimisticFollowerCount
-      );
-      
+      return !!data;
     } catch (error) {
-      console.error("Error checking creator ownership:", error);
-      setIsLoading(false);
+      console.error('Error checking follow status:', error);
+      return false;
+    }
+  };
+
+  const getFollowerCount = async (creatorId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('creators')
+        .select('follower_count')
+        .eq('id', creatorId as any)
+        .single();
+
+      if (error) {
+        console.error('Error fetching follower count:', error);
+        return 0;
+      }
+
+      return (data as any)?.follower_count || 0;
+    } catch (error) {
+      console.error('Error fetching follower count:', error);
+      return 0;
+    }
+  };
+
+  const followCreator = async (creatorId: string) => {
+    if (!user?.id) {
       toast({
         title: "Error",
-        description: "Failed to follow creator",
+        description: "You must be logged in to follow creators",
         variant: "destructive",
       });
       return;
     }
-    
+
+    setIsLoading(true);
     try {
-      const result = await performFollowOperation(creatorId);
-      
-      if (result.alreadyFollowing) {
-        // Keep optimistic state as user is already following
-        setIsFollowing(true);
+      const { error } = await supabase
+        .from('follows')
+        .insert([{
+          user_id: user.id,
+          creator_id: creatorId
+        } as any]);
+
+      if (error) {
+        throw error;
       }
-      
-      // Finalize the mutation after success - no need to clear optimistic state since DB is updated
-      setTimeout(() => {
-        console.log("Clearing optimistic state after follow");
-        setOptimisticFollowerCount(null);
-      }, 500);
-      
+
+      setIsFollowing(true);
+      toast({
+        title: "Success",
+        description: "You are now following this creator",
+      });
     } catch (error: any) {
-      console.error("Error following creator:", error);
-      // Revert optimistic update on error
-      revertOptimisticUpdate(
-        creatorId,
-        currentFollowerCount,
-        false,
-        setIsFollowing,
-        setOptimisticFollowerCount
-      );
+      console.error('Error following creator:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to follow creator",
@@ -103,59 +92,32 @@ export function useFollow() {
     }
   };
 
-  // Function to unfollow a creator using follows table with optimistic updates
-  const unfollowCreator = async (creatorId: string, currentDisplayedCount?: number): Promise<void> => {
-    if (isLoading) return;
+  const unfollowCreator = async (creatorId: string) => {
+    if (!user?.id) return;
+
     setIsLoading(true);
-    
-    // Use the current displayed count if provided, otherwise fetch from database
-    let currentFollowerCount = currentDisplayedCount;
-    
-    if (currentFollowerCount === undefined) {
-      try {
-        const { data: creator } = await supabase
-          .from("creators")
-          .select("follower_count")
-          .eq("id", creatorId)
-          .single();
-        
-        currentFollowerCount = creator?.follower_count || 0;
-      } catch (error) {
-        console.error("Error getting creator data for optimistic update:", error);
-        currentFollowerCount = 0;
-      }
-    }
-    
-    console.log("Unfollowing with current count:", currentFollowerCount);
-    
-    // Apply optimistic update
-    applyOptimisticFollowUpdate(
-      creatorId,
-      currentFollowerCount,
-      false,
-      setIsFollowing,
-      setOptimisticFollowerCount
-    );
-    
     try {
-      const result = await performUnfollowOperation(creatorId);
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('user_id', user.id as any)
+        .eq('creator_id', creatorId as any);
+
+      if (error) {
+        throw error;
+      }
+
+      setIsFollowing(false);
       
-      // Since the database is updated, just clear optimistic state after a short delay
-      setTimeout(() => {
-        console.log("Clearing optimistic state after unfollow");
-        setOptimisticFollowerCount(null);
-      }, 500);
+      // Get updated follower count
+      const followerCount = await getFollowerCount(creatorId);
       
+      toast({
+        title: "Success",
+        description: "You have unfollowed this creator",
+      });
     } catch (error: any) {
-      console.error("Error unfollowing creator:", error);
-      // Revert optimistic update on error
-      revertOptimisticUpdate(
-        creatorId,
-        currentFollowerCount,
-        true,
-        setIsFollowing,
-        setOptimisticFollowerCount
-      );
+      console.error('Error unfollowing creator:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to unfollow creator",
@@ -169,11 +131,9 @@ export function useFollow() {
   return {
     isFollowing,
     isLoading,
-    optimisticFollowerCount,
     setIsFollowing,
-    setOptimisticFollowerCount,
     checkFollowStatus,
     followCreator,
     unfollowCreator,
   };
-}
+};
