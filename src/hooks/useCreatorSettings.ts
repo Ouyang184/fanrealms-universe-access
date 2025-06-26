@@ -24,14 +24,14 @@ export const useCreatorSettings = (creatorId?: string) => {
         creatorQuery = supabase
           .from('creators')
           .select('*, users:user_id(username, email)')
-          .eq('id', creatorId)
+          .eq('id', creatorId as any)
           .maybeSingle();
       } else {
         // Fetch by user ID (for current user's creator profile)
         creatorQuery = supabase
           .from('creators')
           .select('*, users:user_id(username, email)')
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as any)
           .maybeSingle();
       }
       
@@ -54,7 +54,7 @@ export const useCreatorSettings = (creatorId?: string) => {
             profile_image_url: null,
             banner_url: null,
             tags: []
-          })
+          } as any)
           .select('*, users:user_id(username, email)')
           .single();
           

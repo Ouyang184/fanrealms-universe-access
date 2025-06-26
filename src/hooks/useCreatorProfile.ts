@@ -20,7 +20,7 @@ export function useCreatorProfile() {
       const { data, error } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
         
       if (error && error.code !== 'PGRST116') {
@@ -44,7 +44,7 @@ export function useCreatorProfile() {
           bio: '',
           profile_image_url: null,
           display_name: displayName || null
-        }])
+        } as any])
         .select()
         .single();
         

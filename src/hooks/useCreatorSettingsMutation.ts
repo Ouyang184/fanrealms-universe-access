@@ -55,8 +55,8 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         // 1. Update the creators table
         const { error: updateError } = await supabase
           .from('creators')
-          .update(creatorUpdates)
-          .eq('user_id', user.id);
+          .update(creatorUpdates as any)
+          .eq('user_id', user.id as any);
         
         if (updateError) {
           console.error('Error updating creator:', updateError);
@@ -69,7 +69,7 @@ export const useCreatorSettingsMutation = (settings: CreatorSettingsData | null)
         const { data: updatedData, error: fetchError } = await supabase
           .from('creators')
           .select('*, users:user_id(username, email)')
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as any)
           .maybeSingle();
         
         if (fetchError) {

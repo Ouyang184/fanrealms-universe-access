@@ -152,7 +152,7 @@ export function useCreatorProfileData() {
       const { data: tiersData, error } = await supabase
         .from('membership_tiers')
         .select('*')
-        .eq('creator_id', creatorProfile.id as any)
+        .eq('creator_id', (creatorProfile as any).id as any)
         .order('price', { ascending: true });
       
       if (error) {
@@ -170,15 +170,15 @@ export function useCreatorProfileData() {
         const { count, error: countError } = await supabase
           .from('subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id as any);
+          .eq('tier_id', (tier as any).id as any);
           
         return {
-          id: tier.id,
-          name: tier.title,
-          title: tier.title,
-          price: tier.price,
-          description: tier.description,
-          features: tier.description ? [tier.description] : [],
+          id: (tier as any).id,
+          name: (tier as any).title,
+          title: (tier as any).title,
+          price: (tier as any).price,
+          description: (tier as any).description,
+          features: (tier as any).description ? [(tier as any).description] : [],
           subscriberCount: count || 0
         };
       }));
