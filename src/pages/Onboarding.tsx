@@ -86,7 +86,8 @@ export default function OnboardingPage() {
 
                 <CreatorList 
                   selectedCreators={selectedCreators} 
-                  onToggle={handleCreatorToggle} 
+                  onToggle={handleCreatorToggle}
+                  selectedCategories={selectedCategories}
                 />
               </TabsContent>
             </Tabs>
