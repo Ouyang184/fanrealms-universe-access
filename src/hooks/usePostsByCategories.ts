@@ -45,7 +45,7 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
       }
 
       // Filter posts where creator tags overlap with user preferences
-      let filteredPosts = posts?.filter(post => {
+      let filteredPosts = (posts as any)?.filter((post: any) => {
         if (!post.creators?.tags || !Array.isArray(post.creators.tags)) {
           return false;
         }
@@ -61,7 +61,7 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
 
       // Apply NSFW filtering
       if (!nsfwPrefs?.isNSFWEnabled) {
-        filteredPosts = filteredPosts.filter(post => {
+        filteredPosts = filteredPosts.filter((post: any) => {
           // Always show user's own posts regardless of NSFW status
           if (user?.id && post.author_id === user.id) {
             return true;
@@ -77,7 +77,7 @@ export const usePostsByCategories = (categoryIds: number[] = []) => {
         return await getAllPosts(nsfwPrefs?.isNSFWEnabled, user?.id);
       }
 
-      return filteredPosts.map((post): Post => ({
+      return filteredPosts.map((post: any): Post => ({
         id: post.id,
         title: post.title,
         content: post.content,
@@ -114,10 +114,10 @@ const getAllPosts = async (isNSFWEnabled?: boolean, userId?: string): Promise<Po
   }
 
   // Apply NSFW filtering
-  let filteredPosts = posts || [];
+  let filteredPosts = (posts as any) || [];
   
   if (!isNSFWEnabled) {
-    filteredPosts = filteredPosts.filter(post => {
+    filteredPosts = filteredPosts.filter((post: any) => {
       // Always show user's own posts regardless of NSFW status
       if (userId && post.author_id === userId) {
         return true;
@@ -127,7 +127,7 @@ const getAllPosts = async (isNSFWEnabled?: boolean, userId?: string): Promise<Po
     });
   }
 
-  return filteredPosts.map((post): Post => ({
+  return filteredPosts.map((post: any): Post => ({
     id: post.id,
     title: post.title,
     content: post.content,
