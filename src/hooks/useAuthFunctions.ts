@@ -55,14 +55,13 @@ export const useAuthFunctions = () => {
   }, [toast, navigate]);
 
   const signUpWithRetry = useCallback(async (email: string, password: string, retryCount = 0): Promise<any> => {
-    const maxRetries = 1; // Reduced to 1 retry for faster feedback
+    const maxRetries = 1;
     
     try {
       console.log(`Signup attempt ${retryCount + 1} for:`, email);
       
-      // Shorter timeout for quicker failure detection
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -94,33 +93,34 @@ export const useAuthFunctions = () => {
           throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        // Handle server overload errors (504, timeouts, etc.)
+        // Handle server overload errors - fix the error object access
+        const errorStatus = error.status || (error.__isAuthError && error.status);
+        const errorName = error.name;
+        const errorMessage = error.message || '';
+        
         const isServerOverloaded = 
-          error.status === 504 || 
-          error.name === 'AuthRetryableFetchError' ||
-          error.message?.includes('timeout') ||
-          error.message?.includes('504') ||
-          error.message === '{}' ||
-          !error.message ||
-          error.message.trim() === '';
+          errorStatus === 504 || 
+          errorName === 'AuthRetryableFetchError' ||
+          errorMessage.includes('timeout') ||
+          errorMessage.includes('504') ||
+          errorMessage === '{}' ||
+          !errorMessage ||
+          errorMessage.trim() === '';
         
         if (isServerOverloaded && retryCount < maxRetries) {
           console.log(`Server overloaded, retrying (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
           
-          // Short delay
-          const delay = 2000; // 2 seconds
+          const delay = 2000;
           await new Promise(resolve => setTimeout(resolve, delay));
           
           return await signUpWithRetry(email, password, retryCount + 1);
         }
         
-        // For server overload errors that exhausted retries
         if (isServerOverloaded) {
           throw new Error('Supabase authentication servers are currently overloaded due to high traffic. This is a temporary issue. Please try again in a few minutes, or contact support if this persists.');
         }
         
-        // For other errors, use the original message or a fallback
-        throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
+        throw new Error(errorMessage || 'Unable to create account at this time. Please try again later.');
       }
       
       console.log('Signup successful, user data:', data.user);
@@ -128,7 +128,7 @@ export const useAuthFunctions = () => {
       
     } catch (error: any) {
       // If this is already our custom error, re-throw it
-      if (error.message && !error.status) {
+      if (error.message && !error.status && !error.__isAuthError) {
         throw error;
       }
       
@@ -152,7 +152,6 @@ export const useAuthFunctions = () => {
     try {
       const result = await signUpWithRetry(email, password);
       
-      // Show success message
       toast({
         title: "Account created successfully!",
         description: "Please check your email to verify your account before signing in.",
