@@ -68,10 +68,8 @@ export const useAuthFunctions = () => {
       
       const errorMessage = getSignUpErrorMessage(error);
       
-      const toastTitle = error.message?.includes('timeout') ? "Signup timeout" : "Account creation failed";
-      
       toast({
-        title: toastTitle,
+        title: "Account creation failed",
         description: errorMessage,
         variant: "destructive"
       });

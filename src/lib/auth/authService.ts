@@ -33,6 +33,20 @@ export const signUpWithCredentials = async (email: string, password: string): Pr
       name: error.name
     });
     
+    // Check if this is actually a successful signup despite the error
+    // Supabase sometimes returns 504 with '{}' message but user is created
+    const isEmptyErrorMessage = error.message === '{}' || !error.message || error.message.trim() === '';
+    const is504Error = error.status === 504;
+    
+    if (is504Error && isEmptyErrorMessage && data?.user) {
+      console.log('504 error but user was created successfully:', data.user?.id);
+      return {
+        success: true,
+        user: data.user!,
+        session: data.session
+      };
+    }
+    
     // Enhanced error handling for specific signup issues
     if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
       throw new Error('This email is already registered. Please try logging in instead.');
