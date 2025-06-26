@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -19,155 +18,104 @@ export interface DeleteTierDialogProps {
   isOpen: boolean;
   onClose: () => void;
   tierId: string;
-  tierName: string;
+  tierTitle: string;
+  onDelete?: () => void;
 }
 
-export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTierDialogProps) {
+export function DeleteTierDialog({ isOpen, onClose, tierId, tierTitle, onDelete }: DeleteTierDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const handleDelete = async () => {
     if (!tierId) return;
     
-    setIsLoading(true);
+    setIsDeleting(true);
     
     try {
-      console.log('Starting tier deletion process for tier:', tierId);
+      // First, check if tier has any active subscriptions
+      const { data: activeSubscriptions, error: subscriptionError } = await supabase
+        .from('user_subscriptions')
+        .select('id')
+        .eq('tier_id', tierId as any)
+        .eq('status', 'active' as any);
 
-      // First, get the tier details including Stripe IDs
-      const { data: tierData, error: tierFetchError } = await supabase
-        .from("membership_tiers")
-        .select("stripe_product_id, stripe_price_id, title")
-        .eq("id", tierId)
-        .single();
-
-      if (tierFetchError) {
-        throw new Error("Could not fetch tier details");
-      }
-
-      console.log('Tier data to delete:', tierData);
-
-      // Check if there are active subscriptions for this tier
-      const { data: activeSubscriptions, error: subscriptionsError } = await supabase
-        .from("user_subscriptions")
-        .select("id, stripe_subscription_id")
-        .eq("tier_id", tierId)
-        .eq("status", "active");
-
-      if (subscriptionsError) {
-        console.error('Error checking subscriptions:', subscriptionsError);
+      if (subscriptionError) {
+        console.error('Error checking subscriptions:', subscriptionError);
+        throw new Error('Failed to check active subscriptions');
       }
 
       if (activeSubscriptions && activeSubscriptions.length > 0) {
         toast({
-          title: "Cannot Delete Tier",
-          description: `This tier has ${activeSubscriptions.length} active subscriber(s). Please cancel all subscriptions before deleting the tier.`,
+          title: "Cannot delete tier",
+          description: `This tier has ${activeSubscriptions.length} active subscriber(s). Please cancel all active subscriptions first.`,
           variant: "destructive",
         });
         return;
       }
 
-      // Check if there are posts associated with this tier
-      const { data: associatedPosts, error: postsError } = await supabase
-        .from("posts")
-        .select("id, title")
-        .eq("tier_id", tierId);
+      // Update posts that use this tier to remove the tier_id
+      const { error: postUpdateError } = await supabase
+        .from('posts')
+        .update({ tier_id: null } as any)
+        .eq('tier_id', tierId as any);
 
-      if (postsError) {
-        console.error('Error checking posts:', postsError);
+      if (postUpdateError) {
+        console.error('Error updating posts:', postUpdateError);
+        // Continue with deletion even if post update fails
       }
 
-      // If there are posts, remove the tier association from them
-      if (associatedPosts && associatedPosts.length > 0) {
-        console.log(`Found ${associatedPosts.length} posts associated with this tier. Removing tier association...`);
-        
-        const { error: updatePostsError } = await supabase
-          .from("posts")
-          .update({ tier_id: null })
-          .eq("tier_id", tierId);
+      // Get tier details for Stripe cleanup
+      const { data: tierData, error: tierError } = await supabase
+        .from('membership_tiers')
+        .select('stripe_product_id, stripe_price_id, title')
+        .eq('id', tierId as any)
+        .single();
 
-        if (updatePostsError) {
-          console.error('Error updating posts:', updatePostsError);
-          throw new Error("Failed to remove tier association from posts");
-        }
-
-        console.log('Successfully removed tier association from posts');
-      }
-
-      // Delete from Stripe first (completely, not just archive)
-      if (tierData.stripe_product_id) {
+      if (tierData?.stripe_product_id) {
         try {
-          console.log('Deleting Stripe product completely:', tierData.stripe_product_id);
-          
-          const { error: stripeError } = await supabase.functions.invoke('delete-stripe-product', {
-            body: { 
-              productId: tierData.stripe_product_id
-            }
+          const { error: archiveError } = await supabase.functions.invoke('archive-stripe-product', {
+            body: { productId: tierData.stripe_product_id }
           });
-
-          if (stripeError) {
-            console.error('Error deleting Stripe product:', stripeError);
-            // Continue with database deletion even if Stripe deletion fails
-            toast({
-              title: "Warning",
-              description: "Tier deleted from database, but Stripe product could not be completely removed. You may need to manually delete it in Stripe.",
-              variant: "destructive",
-            });
-          } else {
-            console.log('Stripe product deleted successfully');
+          
+          if (archiveError) {
+            console.error('Error archiving Stripe product:', archiveError);
           }
         } catch (stripeError) {
-          console.error('Error with Stripe deletion:', stripeError);
-          // Continue with database deletion
+          console.error('Stripe archive error:', stripeError);
+          // Continue with deletion even if Stripe cleanup fails
         }
       }
 
-      // Delete the tier from database completely
-      console.log('Deleting tier from database:', tierId);
+      // Finally, delete the tier
       const { error: deleteError } = await supabase
-        .from("membership_tiers")
+        .from('membership_tiers')
         .delete()
-        .eq("id", tierId);
-      
-      if (deleteError) {
-        console.error('Database deletion error:', deleteError);
-        throw deleteError;
-      }
-      
-      console.log('Tier deleted from database successfully');
+        .eq('id', tierId as any);
 
-      // Show success message
+      if (deleteError) throw deleteError;
+
       toast({
-        description: `"${tierName}" tier has been completely deleted.`,
+        title: "Tier deleted",
+        description: `${tierTitle} has been successfully deleted.`,
       });
+
+      // Refresh the tiers list
+      queryClient.invalidateQueries({ queryKey: ['creator-tiers'] });
       
-      // Aggressively refresh all related data
-      console.log('Refreshing frontend data...');
-      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
-      await queryClient.refetchQueries({ queryKey: ["tiers"] });
-      
-      // Also invalidate any creator-related queries
-      await queryClient.invalidateQueries({ queryKey: ["creator-tiers"] });
-      await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      
-      // Force a small delay to ensure backend sync
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["tiers"] });
-      }, 1000);
-      
-      // Close the dialog
+      onDelete?.();
       onClose();
       
     } catch (error: any) {
-      console.error('Tier deletion error:', error);
+      console.error('Error deleting tier:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete tier",
+        description: error?.message || "Failed to delete tier. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
   };
 
@@ -177,7 +125,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Membership Tier</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to permanently delete the "{tierName}" tier? This action cannot be undone.
+            Are you sure you want to permanently delete the "{tierTitle}" tier? This action cannot be undone.
             <p className="mt-2 text-destructive font-medium">
               Warning: This will completely remove the tier from both Stripe and your database. Any posts associated with this tier will be made public.
             </p>
@@ -187,16 +135,16 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading || isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction 
             onClick={(e) => {
               e.preventDefault();
               handleDelete();
             }}
-            disabled={isLoading}
+            disabled={isLoading || isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isLoading ? (
+            {isLoading || isDeleting ? (
               <>
                 <Loader className="mr-2 h-4 w-4 animate-spin" />
                 Deleting...
