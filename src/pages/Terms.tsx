@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -9,10 +10,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
+interface PendingSignupData {
+  fullName: string;
+  email: string;
+  password: string;
+}
+
 export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
   const [isProcessingSignup, setIsProcessingSignup] = useState(false);
-  const [pendingSignupData, setPendingSignupData] = useState<any>(null);
+  const [pendingSignupData, setPendingSignupData] = useState<PendingSignupData | null>(null);
   const { user, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -22,18 +29,29 @@ export default function Terms() {
     if (storedData) {
       try {
         const parsedData = JSON.parse(storedData);
-        setPendingSignupData(parsedData);
+        console.log('Parsed signup data:', parsedData);
+        
+        // Validate the parsed data has required fields
+        if (parsedData.email && parsedData.password && parsedData.fullName) {
+          setPendingSignupData(parsedData);
+        } else {
+          console.error('Invalid signup data structure:', parsedData);
+          toast.error('Invalid signup data. Please try signing up again.');
+          localStorage.removeItem('pending_signup_data');
+          navigate('/signup');
+        }
       } catch (error) {
         console.error('Error parsing stored signup data:', error);
         localStorage.removeItem('pending_signup_data');
+        toast.error('Error processing signup data. Please try again.');
+        navigate('/signup');
       }
     }
-  }, []);
+  }, [navigate]);
 
   const handleAcceptContinue = async () => {
     if (!finalAgreement) {
-      // Exit website if not agreed
-      window.location.href = '/';
+      toast.error('Please accept the terms to continue');
       return;
     }
 
@@ -41,11 +59,14 @@ export default function Terms() {
     if (pendingSignupData) {
       try {
         setIsProcessingSignup(true);
+        console.log('Processing signup with data:', pendingSignupData);
         
         const result = await signUp(pendingSignupData.email, pendingSignupData.password);
+        console.log('Signup result:', result);
         
         if (result.success === false) {
-          toast.error(result.error.message);
+          console.error('Signup failed:', result.error);
+          toast.error(result.error?.message || 'Signup failed. Please try again.');
           return;
         }
         
@@ -75,7 +96,7 @@ export default function Terms() {
     // Clear any pending signup data
     localStorage.removeItem('pending_signup_data');
     // Exit to home page
-    window.location.href = '/';
+    navigate('/');
   };
 
   // Determine the back link based on authentication status and signup flow
@@ -405,7 +426,7 @@ export default function Terms() {
                   <Button 
                     size="lg" 
                     onClick={handleAcceptContinue}
-                    disabled={isProcessingSignup}
+                    disabled={isProcessingSignup || !finalAgreement}
                   >
                     {isProcessingSignup ? (
                       <div className="flex items-center">

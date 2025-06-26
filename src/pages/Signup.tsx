@@ -37,7 +37,6 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signUp } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<SignupFormValues>({
@@ -62,15 +61,26 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       
+      // Validate form data
+      const validatedData = signupSchema.parse(values);
+      console.log("Form validation passed:", validatedData);
+      
       // Store the signup data in localStorage for the terms page to access
-      localStorage.setItem("pending_signup_data", JSON.stringify(values));
+      localStorage.setItem("pending_signup_data", JSON.stringify(validatedData));
       
       // Navigate to terms page
       navigate("/terms");
       
     } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error?.message || "An error occurred during signup");
+      console.error("Signup form error:", error);
+      if (error.errors) {
+        // Zod validation errors
+        error.errors.forEach((err: any) => {
+          toast.error(err.message);
+        });
+      } else {
+        toast.error(error?.message || "An error occurred during signup");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -255,7 +265,7 @@ const Signup = () => {
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <LoadingSpinner className="mr-2 h-4 w-4" />
-                      Creating account...
+                      Processing...
                     </div>
                   ) : (
                     <div className="flex items-center justify-center">
