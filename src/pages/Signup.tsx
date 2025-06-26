@@ -72,12 +72,26 @@ const Signup = () => {
       const validatedData = signupSchema.parse(values);
       console.log("Form validation passed:", validatedData);
       
+      // Show initial loading message
+      toast.info("Creating your account...", {
+        description: "This may take a moment due to high server traffic.",
+        duration: 5000,
+      });
+      
       // Create the account directly
       const result = await signUp(validatedData.email, validatedData.password);
       console.log('Signup result:', result);
       
       if (!result.success) {
         console.error('Signup failed:', result.error);
+        
+        // Show specific error guidance for server timeouts
+        if (result.error?.message?.includes('timeout') || result.error?.message?.includes('traffic')) {
+          toast.error("Server Timeout", {
+            description: "Supabase is experiencing high traffic. Please wait 2-3 minutes and try again.",
+            duration: 8000,
+          });
+        }
         return;
       }
       
@@ -128,6 +142,14 @@ const Signup = () => {
           </CardHeader>
           
           <CardContent>
+            {/* Server Status Alert */}
+            <Alert className="bg-amber-900/20 border-amber-800 text-amber-200 mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                If signup is slow, Supabase may be experiencing high traffic. Please be patient and try again if it times out.
+              </AlertDescription>
+            </Alert>
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField

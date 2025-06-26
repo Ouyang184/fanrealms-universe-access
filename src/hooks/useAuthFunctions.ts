@@ -56,17 +56,22 @@ export const useAuthFunctions = () => {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      console.log('Starting optimized signup process for:', email);
+      console.log('Starting signup process for:', email);
       
-      // Optimized signup with minimal redirect URL to reduce DNS issues
-      const { data, error } = await supabase.auth.signUp({
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000);
+      });
+      
+      const signupPromise = supabase.auth.signUp({
         email,
         password,
         options: {
-          // Use shorter, cleaner redirect URL to avoid DNS latency
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         }
       });
+
+      const { data, error } = await Promise.race([signupPromise, timeoutPromise]) as any;
 
       if (error) {
         console.error('Supabase signup error:', error);
@@ -102,7 +107,7 @@ export const useAuthFunctions = () => {
           error.message.trim() === '';
         
         if (isServerOverloaded) {
-          throw new Error('Authentication servers are experiencing high traffic. Please try again in 2-3 minutes.');
+          throw new Error('Supabase servers are experiencing high traffic. Please try again in 2-3 minutes.');
         }
         
         throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
@@ -123,6 +128,22 @@ export const useAuthFunctions = () => {
       
     } catch (error: any) {
       console.error("Signup error:", error);
+      
+      // Handle timeout errors specifically
+      if (error.message?.includes('Request timeout') || error.message?.includes('timeout')) {
+        const errorMessage = "The signup request is taking longer than expected. Supabase servers may be experiencing high traffic. Please try again in a few minutes.";
+        
+        toast({
+          title: "Signup timeout",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        
+        return {
+          success: false,
+          error: { message: errorMessage }
+        };
+      }
       
       const errorMessage = error.message || "Unable to create account at this time. Please try again later.";
       
