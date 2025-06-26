@@ -55,7 +55,7 @@ export function MembershipTierCard({
   };
 
   return (
-    <Card className={`relative ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
+    <Card className={`relative h-full flex flex-col ${isSubscribed ? 'ring-2 ring-primary' : ''}`}>
       {isActive && !isScheduledToCancel && (
         <div className="absolute -top-2 -right-2">
           <Badge variant="default" className="gap-1">
@@ -88,7 +88,7 @@ export function MembershipTierCard({
         <CardDescription>{tier.description}</CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="flex-1">
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Subscribers</span>
@@ -124,7 +124,7 @@ export function MembershipTierCard({
         </div>
       </CardContent>
 
-      <CardFooter>
+      <CardFooter className="mt-auto">
         <SubscribeButton
           tierId={tier.id}
           creatorId={creatorId}
