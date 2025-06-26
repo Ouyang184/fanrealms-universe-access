@@ -5,7 +5,7 @@ import { useCancelSubscription } from '@/hooks/stripe/useCancelSubscription';
 import { useSubscriptionRefresh } from '@/hooks/stripe/useSubscriptionRefresh';
 
 export const useStripeSubscription = () => {
-  const { userSubscriptions, subscriptionsLoading, refetchSubscriptions } = useUserSubscriptions();
+  const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch: refetchSubscriptions } = useUserSubscriptions();
   const { createSubscription, isProcessing, setIsProcessing } = useCreateSubscription();
   
   // Wrap refetchSubscriptions to match expected signature

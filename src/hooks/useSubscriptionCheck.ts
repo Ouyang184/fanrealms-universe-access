@@ -3,78 +3,64 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const useSubscriptionCheck = (tierId?: string, creatorId?: string) => {
+export const useSubscriptionCheck = (creatorId?: string, tierId?: string) => {
   const { user } = useAuth();
 
-  const { data: subscriptionStatus, isLoading, refetch } = useQuery({
-    queryKey: ['subscription-check', user?.id, tierId, creatorId],
+  const { data: subscriptionData, isLoading, refetch } = useQuery({
+    queryKey: ['subscription-check', user?.id, creatorId, tierId],
     queryFn: async () => {
-      if (!user?.id || !tierId || !creatorId) {
+      if (!user?.id || !creatorId) {
         return { isSubscribed: false, subscription: null };
       }
 
-      console.log('Checking subscription for:', { userId: user.id, tierId, creatorId });
-
-      // First, check for any active subscription to this creator (any tier)
-      const { data: creatorSubscriptions, error: creatorError } = await supabase
+      // First check for any active subscription to this creator
+      const { data: generalSub, error: generalError } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('status', 'active');
-
-      if (creatorError) {
-        console.error('Creator subscription check error:', creatorError);
-      }
-
-      // Check for specific tier subscription
-      const { data: tierSubscription, error: tierError } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('tier_id', tierId)
-        .eq('status', 'active')
+        .eq('user_id', user.id as any)
+        .eq('creator_id', creatorId as any)
+        .eq('status', 'active' as any)
         .maybeSingle();
 
-      if (tierError) {
-        console.error('Tier subscription check error:', tierError);
-        return { isSubscribed: false, subscription: null };
+      if (generalError) {
+        console.error('Error checking general subscription:', generalError);
       }
 
-      console.log('Subscription check result:', { 
-        isSubscribed: !!tierSubscription, 
-        subscription: tierSubscription,
-        hasAnyCreatorSubscription: !!(creatorSubscriptions && creatorSubscriptions.length > 0),
-        creatorSubscriptions: creatorSubscriptions
-      });
+      // If a specific tier is requested, check for that tier
+      if (tierId) {
+        const { data: tierSub, error: tierError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', user.id as any)
+          .eq('creator_id', creatorId as any)
+          .eq('tier_id', tierId as any)
+          .eq('status', 'active' as any)
+          .maybeSingle();
+
+        if (tierError) {
+          console.error('Error checking tier subscription:', tierError);
+        }
+
+        return {
+          isSubscribed: !!tierSub,
+          subscription: tierSub,
+          hasAnySubscription: !!generalSub
+        };
+      }
 
       return {
-        isSubscribed: !!tierSubscription,
-        subscription: tierSubscription,
-        hasAnyCreatorSubscription: !!(creatorSubscriptions && creatorSubscriptions.length > 0),
-        creatorSubscriptions: creatorSubscriptions || []
+        isSubscribed: !!generalSub,
+        subscription: generalSub,
+        hasAnySubscription: !!generalSub
       };
     },
-    enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 0,
-    gcTime: 0, // Don't cache results
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    retry: (failureCount, error) => {
-      // Retry up to 3 times with increasing delays
-      if (failureCount < 3) {
-        setTimeout(() => {
-          console.log(`Retrying subscription check (attempt ${failureCount + 1})`);
-        }, 1000 * (failureCount + 1)); // 1s, 2s, 3s delays
-        return true;
-      }
-      return false;
-    }
+    enabled: !!user?.id && !!creatorId,
+    staleTime: 5000, // 5 seconds
+    gcTime: 30000, // 30 seconds
   });
 
   return {
-    subscriptionStatus,
+    subscriptionData,
     isLoading,
     refetch
   };
