@@ -1,10 +1,9 @@
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Check, Shield, FileText, Users, CreditCard } from "lucide-react";
+import { Shield, FileText, Users, CreditCard } from "lucide-react";
 
 interface TermsModalProps {
   open: boolean;
@@ -293,15 +292,6 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
             </Card>
           </div>
         </ScrollArea>
-
-        <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
-          <Button variant="outline" onClick={onDecline}>
-            Decline
-          </Button>
-          <Button onClick={onAccept}>
-            Accept Terms
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
