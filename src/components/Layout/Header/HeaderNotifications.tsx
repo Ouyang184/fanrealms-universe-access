@@ -15,7 +15,6 @@ export function HeaderNotifications() {
   const location = useLocation();
   const { isCreator } = useCreatorProfile();
   
-  // ELIMINATED realtime subscription - now using polling with longer intervals
   const fetchMessagesCount = useCallback(async () => {
     if (!user?.id) return;
     
@@ -38,23 +37,21 @@ export function HeaderNotifications() {
     }
   }, [user?.id]);
   
-  // Initial fetch only
+  // Only fetch on mount - no polling, no realtime
   useEffect(() => {
     fetchMessagesCount();
   }, [fetchMessagesCount]);
 
-  // REMOVED realtime subscription entirely - use location-based refresh instead
+  // COMPLETELY REMOVED all realtime and polling - use location-based refresh only
   useEffect(() => {
-    if (user?.id && location.pathname !== '/messages') {
-      // Only refresh when navigating away from messages page
-      const timer = setTimeout(fetchMessagesCount, 5000);
-      return () => clearTimeout(timer);
+    // Only refresh when user navigates to messages page
+    if (location.pathname === '/messages') {
+      fetchMessagesCount();
     }
-  }, [location.pathname, user?.id, fetchMessagesCount]);
+  }, [location.pathname, fetchMessagesCount]);
 
   return (
     <div className="flex items-center gap-2">
-      {/* Notifications button - only show for creators */}
       {isCreator && (
         <Link to="/creator-studio/notifications">
           <Button 
@@ -73,7 +70,6 @@ export function HeaderNotifications() {
         </Link>
       )}
       
-      {/* Messages button */}
       <Link to="/messages">
         <Button 
           variant="ghost" 

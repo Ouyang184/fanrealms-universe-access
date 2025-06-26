@@ -17,7 +17,7 @@ export const useCreatorMembership = (creatorId: string) => {
   const queryClient = useQueryClient();
   const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, boolean>>({});
 
-  // ELIMINATED realtime subscription - now using longer cache times and event-driven updates
+  // COMPLETELY REMOVED realtime - now using very long cache times and manual refresh only
   const { data: tiers, isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creatorId],
     queryFn: async () => {
@@ -37,13 +37,11 @@ export const useCreatorMembership = (creatorId: string) => {
 
       console.log('[CreatorMembership] Found tiers:', tiersData?.length || 0);
 
-      // Get accurate subscriber counts for each tier from user_subscriptions table
       const tiersWithCounts = await Promise.all(
         (tiersData || []).map(async (tier: any) => {
           console.log('[CreatorMembership] Counting subscribers for tier:', (tier as any).id, (tier as any).title);
           
           try {
-            // Count active subscribers for this specific tier
             const { count, error: countError } = await supabase
               .from('user_subscriptions')
               .select('*', { count: 'exact', head: true })
@@ -92,11 +90,11 @@ export const useCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 300000, // 5 minute cache to dramatically reduce queries
-    refetchInterval: false, // DISABLED to prevent excessive queries
+    staleTime: 600000, // 10 minute cache to drastically reduce queries
+    refetchInterval: false, // COMPLETELY DISABLED to prevent excessive queries
   });
 
-  // ELIMINATED realtime subscription - now using longer cache times
+  // COMPLETELY REMOVED realtime - now using very long cache times
   const { data: userCreatorSubscriptions, refetch: refetchUserCreatorSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -104,7 +102,6 @@ export const useCreatorMembership = (creatorId: string) => {
       
       console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
       
-      // Query user_subscriptions table directly - include both active and cancelling
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -120,25 +117,21 @@ export const useCreatorMembership = (creatorId: string) => {
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 300000, // 5 minute cache to dramatically reduce queries
-    refetchInterval: false, // DISABLED to prevent excessive queries
+    staleTime: 600000, // 10 minute cache to drastically reduce queries
+    refetchInterval: false, // COMPLETELY DISABLED to prevent excessive queries
   });
 
-  // Check if user is subscribed to ANY tier of this creator
   const isSubscribedToCreator = useCallback((): boolean => {
     const hasActiveSubscriptions = userCreatorSubscriptions ? 
       userCreatorSubscriptions.some((sub: any) => (sub as any).status === 'active' || (sub as any).status === 'cancelling') : false;
     return hasActiveSubscriptions;
   }, [userCreatorSubscriptions]);
 
-  // Check if user is subscribed to a specific tier
   const isSubscribedToTier = useCallback((tierId: string): boolean => {
-    // Check local state first for immediate updates
     if (localSubscriptionStates[tierId] !== undefined) {
       return localSubscriptionStates[tierId];
     }
     
-    // Fall back to server data from user_subscriptions - include cancelling status
     const isSubscribed = userCreatorSubscriptions?.some((sub: any) => 
       (sub as any).tier_id === tierId && ((sub as any).status === 'active' || (sub as any).status === 'cancelling')
     ) || false;
@@ -146,7 +139,6 @@ export const useCreatorMembership = (creatorId: string) => {
     return isSubscribed;
   }, [userCreatorSubscriptions, localSubscriptionStates]);
 
-  // Get subscription data for a specific tier - include cancelling subscriptions
   const getSubscriptionData = useCallback((tierId: string) => {
     const subscription = userCreatorSubscriptions?.find((sub: any) => 
       (sub as any).tier_id === tierId && ((sub as any).status === 'active' || (sub as any).status === 'cancelling')
@@ -154,11 +146,9 @@ export const useCreatorMembership = (creatorId: string) => {
     return subscription;
   }, [userCreatorSubscriptions]);
 
-  // Handle subscription success with full sync
   const handleSubscriptionSuccess = useCallback(async () => {
-    console.log('[CreatorMembership] Subscription success detected, performing full sync...');
+    console.log('[CreatorMembership] Manual subscription success detected, performing controlled sync...');
     
-    // Invalidate all related queries to force fresh data
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['creatorMembershipTiers'] }),
       queryClient.invalidateQueries({ queryKey: ['userCreatorSubscriptions'] }),
@@ -168,14 +158,15 @@ export const useCreatorMembership = (creatorId: string) => {
       queryClient.invalidateQueries({ queryKey: ['userActiveSubscriptions'] }),
     ]);
 
-    // Force immediate refetch
-    await Promise.all([
-      refetchTiers(),
-      refetchUserCreatorSubscriptions(),
-    ]);
+    // Delayed refetch to avoid overwhelming the system
+    setTimeout(async () => {
+      await Promise.all([
+        refetchTiers(),
+        refetchUserCreatorSubscriptions(),
+      ]);
+    }, 3000);
   }, [queryClient, refetchTiers, refetchUserCreatorSubscriptions]);
 
-  // Update local subscription state optimistically
   const updateLocalSubscriptionState = useCallback((tierId: string, isSubscribed: boolean) => {
     console.log('[CreatorMembership] Updating local subscription state for tier:', tierId, 'to:', isSubscribed);
     setLocalSubscriptionStates(prev => ({
@@ -183,20 +174,19 @@ export const useCreatorMembership = (creatorId: string) => {
       [tierId]: isSubscribed
     }));
     
-    // Clear local state after a delay to let server data take over
     setTimeout(() => {
       setLocalSubscriptionStates(prev => {
         const newState = { ...prev };
         delete newState[tierId];
         return newState;
       });
-    }, 20000); // 20 seconds
+    }, 30000); // 30 seconds
   }, []);
 
-  // Listen for subscription events - NO REALTIME DB SUBSCRIPTIONS
+  // Listen for custom events only - NO realtime DB subscriptions
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
-      console.log('[CreatorMembership] Subscription event detected:', event.type, event.detail);
+      console.log('[CreatorMembership] Manual subscription event detected:', event.type, event.detail);
       
       if (event.detail?.creatorId === creatorId) {
         const { tierId } = event.detail;
@@ -211,8 +201,8 @@ export const useCreatorMembership = (creatorId: string) => {
           }
         }
         
-        // Delayed sync to avoid overwhelming the database
-        setTimeout(() => handleSubscriptionSuccess(), 3000);
+        // Very delayed sync to avoid overwhelming the database
+        setTimeout(() => handleSubscriptionSuccess(), 5000);
       }
     };
 
@@ -227,7 +217,7 @@ export const useCreatorMembership = (creatorId: string) => {
     };
   }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
 
-  // COMPLETELY REMOVED real-time subscription to eliminate performance bottleneck
+  // COMPLETELY REMOVED all real-time database subscriptions
 
   return {
     tiers,

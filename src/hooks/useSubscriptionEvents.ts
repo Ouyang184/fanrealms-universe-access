@@ -6,9 +6,9 @@ export const useSubscriptionEvents = () => {
   const queryClient = useQueryClient();
 
   const refreshAllSubscriptionData = useCallback(async () => {
-    console.log('Refreshing subscription-related data...');
+    console.log('Refreshing subscription-related data via manual invalidation...');
     
-    // Only invalidate the most critical queries - no realtime needed
+    // Only invalidate when explicitly needed - no automatic refresh
     const criticalQueryKeys = [
       'user-subscriptions',
       'simple-user-subscriptions'
@@ -22,15 +22,14 @@ export const useSubscriptionEvents = () => {
         });
       });
     } else {
-      // Fallback for browsers without requestIdleCallback
       setTimeout(() => {
         criticalQueryKeys.forEach(key => {
           queryClient.invalidateQueries({ queryKey: [key] });
         });
-      }, 500);
+      }, 1000);
     }
 
-    console.log('Critical subscription queries invalidated');
+    console.log('Manual subscription queries invalidated');
   }, [queryClient]);
 
   const triggerSubscriptionSuccess = useCallback((data?: any) => {
@@ -45,28 +44,24 @@ export const useSubscriptionEvents = () => {
     });
     window.dispatchEvent(event);
     
-    // Use requestIdleCallback to avoid blocking
-    if (window.requestIdleCallback) {
-      window.requestIdleCallback(() => refreshAllSubscriptionData());
-    } else {
-      setTimeout(() => refreshAllSubscriptionData(), 100);
-    }
+    // Delayed refresh to avoid overwhelming the system
+    setTimeout(() => refreshAllSubscriptionData(), 2000);
   }, [refreshAllSubscriptionData]);
 
-  // REMOVED excessive realtime subscriptions - use events only
+  // COMPLETELY REMOVED all realtime subscriptions - use custom events only
   useEffect(() => {
     const handleSubscriptionEvent = async (event: CustomEvent) => {
-      console.log(`Subscription event detected: ${event.type}`, event.detail);
+      console.log(`Manual subscription event detected: ${event.type}`, event.detail);
       
       // Use requestIdleCallback to avoid blocking critical operations
       if (window.requestIdleCallback) {
         window.requestIdleCallback(() => refreshAllSubscriptionData());
       } else {
-        setTimeout(() => refreshAllSubscriptionData(), 100);
+        setTimeout(() => refreshAllSubscriptionData(), 2000);
       }
     };
 
-    // Only essential events - no realtime database subscriptions
+    // Only essential custom events - NO database realtime subscriptions
     const events = ['subscriptionSuccess', 'paymentSuccess'];
 
     events.forEach(eventType => {
