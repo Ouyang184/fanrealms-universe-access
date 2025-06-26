@@ -23,14 +23,6 @@ export const useAuthFunctions = () => {
         description: "You are now logged in.",
       });
       
-      // Added navigation to the onboarding page for new users
-      // In a real app, you would check if the user has completed onboarding
-      const isNewUser = false; // This would be determined by your user profile data
-      
-      if (isNewUser) {
-        navigate('/onboarding');
-      }
-      
       return {
         success: true,
         user: data.user,
@@ -39,9 +31,15 @@ export const useAuthFunctions = () => {
     } catch (error: any) {
       console.error("Login error:", error);
       
-      const errorMessage = error.message?.includes("Invalid login") 
-        ? "Invalid email or password. Please check your credentials."
-        : error.message || "An error occurred during login";
+      let errorMessage = "An error occurred during login";
+      
+      if (error.message?.includes("Invalid login")) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes("timeout") || error.message?.includes("504")) {
+        errorMessage = "Server is busy. Please try again in a moment.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
       toast({
         title: "Login failed",
@@ -58,91 +56,57 @@ export const useAuthFunctions = () => {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      // Remove any potential IP-based restrictions by ensuring clean signup
+      console.log('Starting signup process for:', email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            // Add timestamp to ensure unique signups from same IP
             signup_timestamp: new Date().toISOString(),
-            signup_ip_allowed: true
+            allow_multiple_from_ip: true
           }
         }
       });
 
+      console.log('Supabase signup response:', { data, error });
+
       if (error) {
-        // Handle specific signup errors that might be IP-related
+        console.error('Supabase signup error:', error);
+        
         if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
           throw new Error('Multiple signup attempts detected. Please wait a moment before trying again.');
+        }
+        if (error.message?.includes('timeout') || error.message?.includes('504')) {
+          throw new Error('Server is busy. Please wait a moment and try again.');
         }
         throw error;
       }
       
-      if (data.session) {
-        toast({
-          title: "Account created!",
-          description: "Your account has been created successfully.",
-        });
-        
-        if (data.user) {
-          // Create user profile without IP restrictions
-          const { error: userError } = await supabase
-            .from('users')
-            .insert([{ 
-              id: data.user.id, 
-              email: data.user.email || '',
-              username: email.split('@')[0] + '_' + Date.now().toString().slice(-4), // Ensure unique username
-            }])
-            .single();
-
-          if (userError && !userError.message?.includes('duplicate')) {
-            console.error('Error creating user profile:', userError);
-            // Don't throw error for profile creation issues, account is still created
-          }
-          
-          // Navigate to onboarding after successful signup
-          navigate('/onboarding');
-        }
-
-        return {
-          success: true,
-          user: data.user!,
-          session: data.session!
-        };
-      } else {
-        toast({
-          title: "Verification required",
-          description: "Please check your email to confirm your account.",
-        });
-        
-        return {
-          success: true,
-          user: data.user!,
-          session: data.session
-        };
-      }
+      console.log('Signup successful, user data:', data.user);
+      
+      return {
+        success: true,
+        user: data.user!,
+        session: data.session
+      };
+      
     } catch (error: any) {
       console.error("Signup error:", error);
       
       let errorMessage = error.message || "An error occurred during registration";
       
-      // Handle common signup errors that might occur with multiple accounts from same IP
       if (error.message?.includes("already registered")) {
         errorMessage = "This email is already registered. Please try logging in instead.";
-      } else if (error.message?.includes("rate limit")) {
-        errorMessage = "Too many signup attempts. Please wait a moment before trying again.";
+      } else if (error.message?.includes("rate limit") || error.message?.includes("too many")) {
+        errorMessage = "Multiple signup attempts detected. Please wait a moment before trying again.";
+      } else if (error.message?.includes("timeout") || error.message?.includes("504")) {
+        errorMessage = "Server is busy. Please wait a moment and try again.";
       } else if (error.message?.includes("invalid email")) {
         errorMessage = "Please enter a valid email address.";
       }
       
-      toast({
-        title: "Registration failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
-
       return {
         success: false,
         error: { message: errorMessage }
@@ -157,7 +121,6 @@ export const useAuthFunctions = () => {
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
-            // Allow magic link from any IP
             magic_link_ip_allowed: true
           }
         },
@@ -182,7 +145,6 @@ export const useAuthFunctions = () => {
 
   const signOut = useCallback(async () => {
     try {
-      // Only sign out from current session, don't clear localStorage
       await supabase.auth.signOut({ scope: 'local' });
       
       toast({
@@ -190,7 +152,6 @@ export const useAuthFunctions = () => {
         description: "You have been signed out.",
       });
       
-      // Navigate to the root page
       navigate('/', { replace: true });
     } catch (error: any) {
       toast({

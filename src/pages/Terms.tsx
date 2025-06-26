@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -19,7 +20,7 @@ export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
   const [isProcessingSignup, setIsProcessingSignup] = useState(false);
   const [pendingSignupData, setPendingSignupData] = useState<PendingSignupData | null>(null);
-  const { user, signUp } = useAuth();
+  const { signUp } = useAuthFunctions();
   const navigate = useNavigate();
 
   // Check if user came from signup flow
@@ -30,7 +31,6 @@ export default function Terms() {
         const parsedData = JSON.parse(storedData);
         console.log('Parsed signup data:', parsedData);
         
-        // Validate the parsed data has required fields
         if (parsedData.email && parsedData.password && parsedData.fullName) {
           setPendingSignupData(parsedData);
         } else {
@@ -60,23 +60,24 @@ export default function Terms() {
         setIsProcessingSignup(true);
         console.log('Processing signup with data:', pendingSignupData);
         
-        // Add IP-friendly signup data
-        const signupData = {
-          ...pendingSignupData,
-          timestamp: new Date().toISOString(),
-          allowMultipleFromIP: true
-        };
-        
-        const result = await signUp(signupData.email, signupData.password);
+        const result = await signUp(pendingSignupData.email, pendingSignupData.password);
         console.log('Signup result:', result);
         
-        if (result.success === false) {
+        if (!result.success) {
           console.error('Signup failed:', result.error);
-          // Handle specific IP-related errors
-          let errorMessage = result.error?.message || 'Signup failed. Please try again.';
           
-          if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
-            errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
+          let errorMessage = 'Account creation failed. Please try again.';
+          
+          if (result.error?.message) {
+            if (result.error.message.includes('timeout') || result.error.message.includes('504')) {
+              errorMessage = 'Server is busy. Please wait a moment and try again.';
+            } else if (result.error.message.includes('rate limit') || result.error.message.includes('too many')) {
+              errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
+            } else if (result.error.message.includes('already registered')) {
+              errorMessage = 'This email is already registered. Please try logging in instead.';
+            } else {
+              errorMessage = result.error.message;
+            }
           }
           
           toast.error(errorMessage);
@@ -89,17 +90,27 @@ export default function Terms() {
         // Clear the pending signup data
         localStorage.removeItem('pending_signup_data');
         
-        // Navigate to onboarding
-        toast.success("Account created successfully!");
-        navigate("/onboarding", { replace: true });
+        // Show success message
+        toast.success("Account created successfully! Please check your email to verify your account.");
+        
+        // Navigate to login page instead of onboarding since email verification is required
+        navigate("/login", { replace: true });
         
       } catch (error: any) {
         console.error("Signup error:", error);
-        let errorMessage = error?.message || "An error occurred during signup";
         
-        // Handle IP-specific errors gracefully
-        if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
-          errorMessage = 'Multiple accounts from the same location detected. This is allowed, but please wait a moment before creating another account.';
+        let errorMessage = "An error occurred during account creation";
+        
+        if (error?.message) {
+          if (error.message.includes('timeout') || error.message.includes('504')) {
+            errorMessage = 'Server is busy. Please wait a moment and try again.';
+          } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
+            errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
+          } else if (error.message.includes('already registered')) {
+            errorMessage = 'This email is already registered. Please try logging in instead.';
+          } else {
+            errorMessage = error.message;
+          }
         }
         
         toast.error(errorMessage);
@@ -108,7 +119,7 @@ export default function Terms() {
       }
     } else {
       // Regular terms acceptance - navigate to home
-      navigate(user ? '/home' : '/');
+      navigate('/');
     }
   };
 
@@ -119,15 +130,15 @@ export default function Terms() {
     navigate('/');
   };
 
-  // Determine the back link based on authentication status and signup flow
+  // Determine the back link based on signup flow
   const getBackLink = () => {
     if (pendingSignupData) return '/signup';
-    return user ? '/home' : '/';
+    return '/';
   };
 
   const getBackText = () => {
     if (pendingSignupData) return 'Back to Signup';
-    return user ? 'Back to Home' : 'Back to Home';
+    return 'Back to Home';
   };
 
   return (
@@ -167,7 +178,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Eligibility */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -200,7 +210,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* User Responsibilities */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +253,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Payments */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -278,7 +286,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Copyright */}
           <Card>
             <CardHeader>
               <CardTitle>5. Copyright & DMCA Compliance</CardTitle>
@@ -308,7 +315,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Termination */}
           <Card>
             <CardHeader>
               <CardTitle>6. Termination & Suspension</CardTitle>
@@ -321,7 +327,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Dispute Resolution */}
           <Card>
             <CardHeader>
               <CardTitle>7. Dispute Resolution & Governing Law</CardTitle>
@@ -333,7 +338,6 @@ export default function Terms() {
             </CardContent>
           </Card>
 
-          {/* Privacy Policy */}
           <Card>
             <CardHeader>
               <CardTitle>8. Privacy Policy (Detailed Breakdown)</CardTitle>
