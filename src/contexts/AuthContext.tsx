@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId as any)
+        .eq('id', userId)
         .single();
 
       if (error) {
@@ -198,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase
         .from('users')
         .update(updates as any)
-        .eq('id', user.id as any);
+        .eq('id', user.id);
 
       if (error) throw error;
 
