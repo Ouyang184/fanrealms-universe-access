@@ -65,23 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const completeUserSetup = async (userId: string) => {
-    try {
-      console.log('Completing user setup for:', userId);
-      const { data, error } = await supabase.rpc('complete_user_setup', {
-        user_id_param: userId
-      });
-      
-      if (error) {
-        console.error('Error completing user setup:', error);
-      } else {
-        console.log('User setup completed successfully');
-      }
-    } catch (error) {
-      console.error('Error in completeUserSetup:', error);
-    }
-  };
-
   useEffect(() => {
     console.log('AuthProvider initializing...');
 
@@ -97,14 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       
       if (session?.user) {
-        // Defer profile fetching and setup to not block auth flow
+        // Defer profile fetching to not block auth flow
         setTimeout(async () => {
           await fetchProfile(session.user.id);
-          
-          // Complete user setup after first login (not during signup)
-          if (event === 'SIGNED_IN') {
-            await completeUserSetup(session.user.id);
-          }
         }, 100); // Small delay to ensure auth is fully processed
       } else {
         setProfile(null);
@@ -175,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
     
-    console.log('Sign up successful - setup will complete after login');
+    console.log('Sign up successful - profile will be created automatically by trigger');
   };
 
   const signInWithMagicLink = async (email: string) => {
