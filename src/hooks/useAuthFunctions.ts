@@ -35,9 +35,9 @@ export const useAuthFunctions = () => {
       
       if (error.message?.includes("Invalid login")) {
         errorMessage = "Invalid email or password. Please check your credentials.";
-      } else if (error.message?.includes("timeout") || error.message?.includes("504")) {
+      } else if (error.message?.includes("timeout") || error.message?.includes("504") || error.status === 504) {
         errorMessage = "Server is busy. Please try again in a moment.";
-      } else if (error.message) {
+      } else if (error.message && error.message !== "{}") {
         errorMessage = error.message;
       }
       
@@ -65,7 +65,8 @@ export const useAuthFunctions = () => {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             signup_timestamp: new Date().toISOString(),
-            allow_multiple_from_ip: true
+            allow_multiple_from_ip: true,
+            ip_restriction_disabled: true
           }
         }
       });
@@ -75,16 +76,38 @@ export const useAuthFunctions = () => {
       if (error) {
         console.error('Supabase signup error:', error);
         
+        // Handle specific error types
+        if (error.status === 504 || error.name === 'AuthRetryableFetchError') {
+          throw new Error('Server is experiencing high traffic. Please wait a moment and try again.');
+        }
+        
         if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
           throw new Error('Multiple signup attempts detected. Please wait a moment before trying again.');
         }
-        if (error.message?.includes('timeout') || error.message?.includes('504')) {
-          throw new Error('Server is busy. Please wait a moment and try again.');
+        
+        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+          throw new Error('This email is already registered. Please try logging in instead.');
         }
+        
+        if (error.message?.includes('invalid email')) {
+          throw new Error('Please enter a valid email address.');
+        }
+
+        // Handle empty or malformed error messages
+        if (!error.message || error.message === '{}' || error.message.trim() === '') {
+          throw new Error('Unable to create account at this time. Please try again later.');
+        }
+        
         throw error;
       }
       
       console.log('Signup successful, user data:', data.user);
+      
+      // Show success message immediately
+      toast({
+        title: "Account created successfully!",
+        description: "Please check your email to verify your account before signing in.",
+      });
       
       return {
         success: true,
@@ -95,24 +118,37 @@ export const useAuthFunctions = () => {
     } catch (error: any) {
       console.error("Signup error:", error);
       
-      let errorMessage = error.message || "An error occurred during registration";
+      let errorMessage = "Unable to create account at this time";
       
-      if (error.message?.includes("already registered")) {
-        errorMessage = "This email is already registered. Please try logging in instead.";
-      } else if (error.message?.includes("rate limit") || error.message?.includes("too many")) {
-        errorMessage = "Multiple signup attempts detected. Please wait a moment before trying again.";
-      } else if (error.message?.includes("timeout") || error.message?.includes("504")) {
-        errorMessage = "Server is busy. Please wait a moment and try again.";
-      } else if (error.message?.includes("invalid email")) {
-        errorMessage = "Please enter a valid email address.";
+      // Handle different error types
+      if (error.message) {
+        if (error.message === '{}' || error.message.trim() === '') {
+          errorMessage = "Server error occurred. Please try again in a few moments.";
+        } else if (error.message.includes("already registered")) {
+          errorMessage = "This email is already registered. Please try logging in instead.";
+        } else if (error.message.includes("rate limit") || error.message.includes("too many")) {
+          errorMessage = "Multiple signup attempts detected. Please wait a moment before trying again.";
+        } else if (error.message.includes("Server is experiencing")) {
+          errorMessage = error.message;
+        } else if (error.message.includes("invalid email")) {
+          errorMessage = "Please enter a valid email address.";
+        } else {
+          errorMessage = error.message;
+        }
       }
+      
+      toast({
+        title: "Account creation failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
       
       return {
         success: false,
         error: { message: errorMessage }
       };
     }
-  }, [toast, navigate]);
+  }, [toast]);
 
   const signInWithMagicLink = useCallback(async (email: string) => {
     try {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -65,22 +64,7 @@ export default function Terms() {
         
         if (!result.success) {
           console.error('Signup failed:', result.error);
-          
-          let errorMessage = 'Account creation failed. Please try again.';
-          
-          if (result.error?.message) {
-            if (result.error.message.includes('timeout') || result.error.message.includes('504')) {
-              errorMessage = 'Server is busy. Please wait a moment and try again.';
-            } else if (result.error.message.includes('rate limit') || result.error.message.includes('too many')) {
-              errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
-            } else if (result.error.message.includes('already registered')) {
-              errorMessage = 'This email is already registered. Please try logging in instead.';
-            } else {
-              errorMessage = result.error.message;
-            }
-          }
-          
-          toast.error(errorMessage);
+          // Error toast is already shown in useAuthFunctions
           return;
         }
         
@@ -90,10 +74,7 @@ export default function Terms() {
         // Clear the pending signup data
         localStorage.removeItem('pending_signup_data');
         
-        // Show success message
-        toast.success("Account created successfully! Please check your email to verify your account.");
-        
-        // Navigate to login page instead of onboarding since email verification is required
+        // Navigate to login page since email verification is required
         navigate("/login", { replace: true });
         
       } catch (error: any) {
@@ -101,16 +82,8 @@ export default function Terms() {
         
         let errorMessage = "An error occurred during account creation";
         
-        if (error?.message) {
-          if (error.message.includes('timeout') || error.message.includes('504')) {
-            errorMessage = 'Server is busy. Please wait a moment and try again.';
-          } else if (error.message.includes('rate limit') || error.message.includes('too many')) {
-            errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
-          } else if (error.message.includes('already registered')) {
-            errorMessage = 'This email is already registered. Please try logging in instead.';
-          } else {
-            errorMessage = error.message;
-          }
+        if (error?.message && error.message !== '{}') {
+          errorMessage = error.message;
         }
         
         toast.error(errorMessage);
