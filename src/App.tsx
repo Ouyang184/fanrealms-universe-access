@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -51,6 +50,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CreatorGuidelines from "./pages/CreatorGuidelines";
 import ShareablePost from "./pages/ShareablePost";
 import CompleteProfile from "./pages/CompleteProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -83,6 +84,8 @@ export default function App() {
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/complete-profile" element={<CompleteProfile />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
