@@ -1,164 +1,125 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Lock, Star, CreditCard } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Crown, Lock, Users } from 'lucide-react';
 import { useSubscriptionCheck } from '@/hooks/useSubscriptionCheck';
-import { Link } from 'react-router-dom';
+import { SubscribeButton } from '@/components/creator/SubscribeButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TierAccessInfoProps {
   tierId: string;
-  creatorId?: string;
-  className?: string;
+  tierName: string;
+  tierPrice: number;
+  creatorId: string;
+  creatorName?: string;
+  totalPosts: number;
+  accessiblePosts: number;
 }
 
-export function TierAccessInfo({ tierId, creatorId, className }: TierAccessInfoProps) {
+export function TierAccessInfo({ 
+  tierId, 
+  tierName, 
+  tierPrice, 
+  creatorId, 
+  creatorName = 'Creator',
+  totalPosts,
+  accessiblePosts
+}: TierAccessInfoProps) {
   const { user } = useAuth();
+  const { subscriptionData, isLoading } = useSubscriptionCheck(creatorId, tierId);
   
-  // Fetch tier information
-  const { data: tierInfo, isLoading: tierLoading } = useQuery({
-    queryKey: ['tier-info', tierId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('id', tierId as any)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching tier info:', error);
-        return null;
-      }
-      
-      return data as any;
-    },
-    enabled: !!tierId
-  });
+  const restrictedPosts = totalPosts - accessiblePosts;
+  const hasAccess = subscriptionData?.isSubscribed || false;
 
-  // Fetch creator information if creatorId is provided
-  const { data: creatorInfo, isLoading: creatorLoading } = useQuery({
-    queryKey: ['creator-info-for-tier', creatorId],
-    queryFn: async () => {
-      if (!creatorId) return null;
-      
-      const { data, error } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('id', creatorId as any)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching creator info:', error);
-        return null;
-      }
-      
-      return data as any;
-    },
-    enabled: !!creatorId
-  });
-
-  // Check subscription status
-  const subscriptionResult = useSubscriptionCheck(user?.id, tierId);
-
-  if (tierLoading || creatorLoading) {
+  if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className="border-orange-200 bg-orange-50">
         <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-orange-200 rounded w-3/4"></div>
+            <div className="h-3 bg-orange-200 rounded w-1/2"></div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!tierInfo) {
-    return null;
+  if (hasAccess) {
+    return (
+      <Card className="border-green-200 bg-green-50">
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-green-100 rounded-full">
+              <Crown className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="font-semibold text-green-800">
+                  {tierName} Member
+                </h3>
+                <span className="px-2 py-1 bg-green-200 text-green-700 text-xs rounded-full font-medium">
+                  Active
+                </span>
+              </div>
+              <p className="text-sm text-green-700 mb-3">
+                You have full access to all {totalPosts} posts from {creatorName} in this tier.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <Users className="h-4 w-4" />
+                <span>Premium content unlocked</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
-  const isSubscribed = subscriptionResult?.subscriptionStatus?.isSubscribed || false;
-  const monthlyPrice = (tierInfo as any)?.price ? Number((tierInfo as any).price) : 0;
-  const yearlyPrice = monthlyPrice * 12 * 0.9; // 10% discount for yearly
-
   return (
-    <Card className={`border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 ${className}`}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Lock className="h-5 w-5 text-amber-600" />
-            <CardTitle className="text-lg">Premium Content</CardTitle>
+    <Card className="border-orange-200 bg-orange-50">
+      <CardContent className="p-6">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-orange-100 rounded-full">
+            <Lock className="h-6 w-6 text-orange-600" />
           </div>
-          <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-            <Star className="h-3 w-3 mr-1" />
-            {(tierInfo as any)?.title || 'Premium'}
-          </Badge>
-        </div>
-        <CardDescription>
-          This content is exclusive to {(tierInfo as any)?.title || 'premium'} subscribers
-          {creatorInfo && ` of ${(creatorInfo as any)?.display_name || 'this creator'}`}.
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
-        {!isSubscribed ? (
-          <>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                <div>
-                  <p className="font-medium">Monthly Subscription</p>
-                  <p className="text-sm text-muted-foreground">Billed monthly</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold">${monthlyPrice.toFixed(2)}</p>
-                  <p className="text-sm text-muted-foreground">/month</p>
-                </div>
-              </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-orange-800 mb-2">
+              {tierName} - Premium Content
+            </h3>
+            
+            <div className="space-y-3 mb-4">
+              <p className="text-sm text-orange-700">
+                You're viewing {accessiblePosts} out of {totalPosts} posts. 
+                {restrictedPosts > 0 && (
+                  <span className="font-medium"> {restrictedPosts} premium posts are locked.</span>
+                )}
+              </p>
               
-              <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200">
-                <div>
-                  <p className="font-medium text-green-800">Yearly Subscription</p>
-                  <p className="text-sm text-green-600">Save 10% annually</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-green-800">${yearlyPrice.toFixed(2)}</p>
-                  <p className="text-sm text-green-600">/year</p>
-                </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-orange-600">
+                  Unlock all content for ${tierPrice}/month
+                </span>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Button 
-                asChild 
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-              >
-                <Link to={`/subscribe/${(tierInfo as any)?.id}/${(creatorInfo as any)?.id || creatorId}`}>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Subscribe Now
-                </Link>
-              </Button>
-              
-              {creatorInfo && (
-                <Button variant="outline" asChild className="w-full">
-                  <Link to={`/creator/${(creatorInfo as any)?.id}`}>
-                    View Creator Profile
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
-            <p className="text-green-800 font-medium">🎉 You have access to this content!</p>
-            <p className="text-sm text-green-600 mt-1">
-              Thanks for being a {(tierInfo as any)?.title} subscriber!
-            </p>
+            {user ? (
+              <SubscribeButton
+                tierId={tierId}
+                creatorId={creatorId}
+                tierName={tierName}
+                price={tierPrice}
+                isSubscribed={subscriptionData?.isSubscribed || false}
+                subscriptionData={subscriptionData}
+              />
+            ) : (
+              <div className="p-3 bg-orange-100 rounded-lg">
+                <p className="text-sm text-orange-700 text-center">
+                  Please sign in to subscribe and unlock all content
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
