@@ -24,11 +24,11 @@ export function usePostLikes(postId: string) {
           return;
         }
 
-        setLikes(likesData?.length || 0);
+        setLikes((likesData as any)?.length || 0);
 
         // Check if current user has liked this post
         if (user?.id) {
-          const userLike = likesData?.find(like => like.user_id === user.id);
+          const userLike = (likesData as any)?.find((like: any) => like.user_id === user.id);
           setIsLiked(!!userLike);
         }
       } catch (error) {

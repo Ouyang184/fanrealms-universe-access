@@ -34,7 +34,7 @@ export const useFollows = () => {
             )
           )
         `)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id as any);
 
       if (error) {
         console.error('Error fetching follows:', error);
@@ -42,9 +42,9 @@ export const useFollows = () => {
       }
 
       // Transform the data to match our CreatorProfile type
-      const followedCreators: CreatorProfile[] = data
-        .filter(follow => follow.creators) // Filter out any null creators
-        .map((follow) => {
+      const followedCreators: CreatorProfile[] = (data as any)
+        .filter((follow: any) => follow.creators) // Filter out any null creators
+        .map((follow: any) => {
           const creator = follow.creators;
           const user = creator.users;
           
@@ -63,7 +63,7 @@ export const useFollows = () => {
             banner_url: creator.banner_url || null,
             follower_count: creator.follower_count || 0,
             tags: creator.tags || [],
-            created_at: follow.created_at
+            created_at: (follow as any).created_at
           };
         });
 

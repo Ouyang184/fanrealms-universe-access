@@ -15,14 +15,14 @@ export const useLikes = (postId: string) => {
       const { data, error } = await supabase
         .from('likes')
         .select('id, user_id')
-        .eq('post_id', postId);
+        .eq('post_id', postId as any);
 
       if (error) throw error;
       
       return {
-        count: data.length,
-        isLiked: user ? data.some(like => like.user_id === user.id) : false,
-        userLikeId: user ? data.find(like => like.user_id === user.id)?.id : null
+        count: (data as any).length,
+        isLiked: user ? (data as any).some((like: any) => like.user_id === user.id) : false,
+        userLikeId: user ? (data as any).find((like: any) => like.user_id === user.id)?.id : null
       };
     },
     enabled: !!postId
@@ -37,7 +37,7 @@ export const useLikes = (postId: string) => {
         const { error } = await supabase
           .from('likes')
           .delete()
-          .eq('id', likesData.userLikeId);
+          .eq('id', likesData.userLikeId as any);
 
         if (error) throw error;
         return 'unliked';
@@ -48,7 +48,7 @@ export const useLikes = (postId: string) => {
           .insert({
             post_id: postId,
             user_id: user.id
-          });
+          } as any);
 
         if (error) throw error;
         return 'liked';

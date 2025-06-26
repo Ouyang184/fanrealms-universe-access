@@ -52,7 +52,7 @@ export function useMessages(userId: string | undefined) {
 
       // Get unique user IDs
       const userIds = new Set<string>();
-      messagesData?.forEach(message => {
+      (messagesData as any)?.forEach((message: any) => {
         userIds.add(message.sender_id);
         userIds.add(message.receiver_id);
       });
@@ -61,7 +61,7 @@ export function useMessages(userId: string | undefined) {
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('id, username, profile_picture')
-        .in('id', Array.from(userIds));
+        .in('id', Array.from(userIds) as any);
 
       if (usersError) {
         console.error("Error loading users:", usersError);
@@ -70,16 +70,16 @@ export function useMessages(userId: string | undefined) {
 
       // Create user lookup map
       const userMap = new Map();
-      usersData?.forEach(user => {
+      (usersData as any)?.forEach((user: any) => {
         userMap.set(user.id, user);
       });
 
       // Combine message and user data
-      return messagesData?.map(message => {
+      return (messagesData as any)?.map((message: any) => {
         const senderData = userMap.get(message.sender_id);
         const receiverData = userMap.get(message.receiver_id);
         return {
-          ...message,
+          ...(message as any),
           sender_username: senderData?.username || "Unknown User",
           sender_profile_picture: senderData?.profile_picture,
           receiver_username: receiverData?.username || "Unknown User",
@@ -99,10 +99,10 @@ export function useMessages(userId: string | undefined) {
       // Mark all unread messages from the other user as read
       const { error } = await supabase
         .from('messages')
-        .update({ is_read: true })
-        .eq('receiver_id', user.id)
-        .eq('sender_id', otherUserId)
-        .eq('is_read', false);
+        .update({ is_read: true } as any)
+        .eq('receiver_id', user.id as any)
+        .eq('sender_id', otherUserId as any)
+        .eq('is_read', false as any);
 
       if (error) throw error;
     },
