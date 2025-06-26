@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -301,47 +300,6 @@ export default function Terms() {
                   <li>We retain data as long as necessary (or per legal requirements).</li>
                   <li>Encryption & firewalls protect sensitive data.</li>
                 </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Final Consent */}
-          <Card className="border-2 border-primary">
-            <CardHeader>
-              <CardTitle>9. Final Consent & Agreement</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="font-medium">By checking ✅ I Agree, you confirm:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>You read and accept all terms.</li>
-                </ul>
-                
-                <div className="p-6 bg-muted/50 rounded-lg space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="final-agreement"
-                      checked={finalAgreement}
-                      onCheckedChange={(checked) => setFinalAgreement(!!checked)}
-                    />
-                    <label htmlFor="final-agreement" className="text-lg font-semibold cursor-pointer flex items-center gap-2">
-                      <Check className="w-5 h-5 text-green-600" />
-                      I Agree to All Terms
-                    </label>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <Button 
-                    size="lg" 
-                    onClick={handleAcceptContinue}
-                  >
-                    Accept & Continue
-                  </Button>
-                  <Button variant="outline" size="lg" asChild>
-                    <Link to="/">Decline & Exit</Link>
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>

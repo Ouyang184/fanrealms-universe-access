@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
@@ -19,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
+import TermsModal from "@/components/auth/TermsModal";
 
 const signupSchema = z
   .object({
@@ -41,6 +41,7 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -87,6 +88,16 @@ const Signup = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTermsAccept = () => {
+    form.setValue("agreeToTerms", true);
+    setShowTermsModal(false);
+  };
+
+  const handleTermsDecline = () => {
+    form.setValue("agreeToTerms", false);
+    setShowTermsModal(false);
   };
 
   if (isChecking) {
@@ -269,23 +280,13 @@ const Signup = () => {
                         <div className="flex-1">
                           <Label className="text-sm text-gray-300 leading-relaxed">
                             I agree to the{" "}
-                            <Link
-                              to="/terms"
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => setShowTermsModal(true)}
                               className="text-purple-400 hover:text-purple-300 underline"
                             >
                               Terms of Service
-                            </Link>
-                            {" "}and{" "}
-                            <Link
-                              to="/privacy"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-purple-400 hover:text-purple-300 underline"
-                            >
-                              Privacy Policy
-                            </Link>
+                            </button>
                           </Label>
                         </div>
                       </div>
@@ -336,6 +337,12 @@ const Signup = () => {
       </div>
 
       <AuthFooter />
+
+      <TermsModal
+        open={showTermsModal}
+        onAccept={handleTermsAccept}
+        onDecline={handleTermsDecline}
+      />
     </div>
   );
 };
