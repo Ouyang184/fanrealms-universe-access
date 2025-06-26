@@ -34,8 +34,8 @@ export const supabase = createClient<Database>(
       params: {
         eventsPerSecond: 10, // Limit events per second to reduce load
       },
-      heartbeatIntervalMs: 30000, // Increase heartbeat interval
-      reconnectAfterMs: 1000, // Faster reconnection
+      heartbeatIntervalMs: 30000, // Fixed: Use proper number type
+      reconnectAfterMs: () => 1000, // Fixed: Use function returning number
     },
     global: {
       headers: {

@@ -43,7 +43,7 @@ window.createTestNotifications = async () => {
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .insert(testNotifications)
+      .insert(testNotifications as any)
       .select('*')
 
     if (error) {
