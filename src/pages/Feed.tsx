@@ -24,7 +24,7 @@ export default function FeedPage() {
   const { data: posts, isLoading: loadingPosts } = usePosts();
   
   // Get user's subscriptions to check for pending cancellations
-  const { subscriptions = [] } = useStripeSubscription();
+  const { userSubscriptions = [] } = useStripeSubscription();
   
   // Get post reads data
   const { readPostIds, markAsRead, isLoading: loadingReads } = usePostReads();
@@ -33,7 +33,7 @@ export default function FeedPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Check if user has subscriptions that are active but scheduled to cancel
-  const hasPendingCancellations = subscriptions.some(
+  const hasPendingCancellations = userSubscriptions.some(
     subscription => subscription.status === 'active' && subscription.cancel_at_period_end === true
   );
   
@@ -56,7 +56,7 @@ export default function FeedPage() {
     }, 50);
   };
 
-  // Handle modal close with proper cleanup - fix the function signature
+  // Handle modal close with proper cleanup
   const handleModalClose = () => {
     console.log('Feed: Modal close triggered');
     setIsPreviewOpen(false);

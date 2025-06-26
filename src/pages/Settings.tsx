@@ -82,7 +82,13 @@ export default function SettingsPage() {
           </TabsList>
 
           <TabsContent value="content" className="space-y-6">
-            <ContentPreferences />
+            <ContentPreferences 
+              user={user}
+              isAgeVerified={isVerified}
+              showVerificationModal={showVerificationModal}
+              setShowVerificationModal={setShowVerificationModal}
+              handleAgeVerified={handleAgeVerified}
+            />
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
@@ -92,7 +98,7 @@ export default function SettingsPage() {
 
         {/* Age Verification Modal */}
         <AgeVerificationModal
-          isOpen={showVerificationModal}
+          open={showVerificationModal}
           onClose={() => setShowVerificationModal(false)}
           onVerified={handleAgeVerified}
         />
@@ -102,7 +108,21 @@ export default function SettingsPage() {
 }
 
 // Simple inline ContentPreferences component to avoid prop issues
-const ContentPreferences = () => {
+interface ContentPreferencesProps {
+  user: any;
+  isAgeVerified: boolean;
+  showVerificationModal: boolean;
+  setShowVerificationModal: (show: boolean) => void;
+  handleAgeVerified: () => void;
+}
+
+const ContentPreferences = ({ 
+  user, 
+  isAgeVerified, 
+  showVerificationModal, 
+  setShowVerificationModal, 
+  handleAgeVerified 
+}: ContentPreferencesProps) => {
   return (
     <div className="space-y-6">
       <div>
@@ -111,7 +131,13 @@ const ContentPreferences = () => {
           Configure what content you want to see
         </p>
       </div>
-      <ContentPreferencesTab />
+      <ContentPreferencesTab 
+        user={user}
+        isAgeVerified={isAgeVerified}
+        showVerificationModal={showVerificationModal}
+        setShowVerificationModal={setShowVerificationModal}
+        handleAgeVerified={handleAgeVerified}
+      />
     </div>
   );
 };
