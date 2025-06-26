@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,17 +43,22 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
     queryFn: async () => {
       if (!post?.id) return [];
       
-      const { data, error } = await supabase
-        .from('post_tiers')
-        .select('tier_id')
-        .eq('post_id', post.id as any);
+      try {
+        const { data, error } = await supabase
+          .from('post_tiers')
+          .select('tier_id')
+          .eq('post_id', post.id as any);
+          
+        if (error) {
+          console.error('Error fetching post tiers:', error);
+          return [];
+        }
         
-      if (error) {
-        console.error('Error fetching post tiers:', error);
+        return data?.map(pt => (pt as any).tier_id) || [];
+      } catch (error) {
+        console.error('Error in post tiers query:', error);
         return [];
       }
-      
-      return data?.map(pt => pt.tier_id) || [];
     },
     enabled: !!post?.id && isOpen,
   });
@@ -63,18 +69,26 @@ export function EditPostDialog({ post, isOpen, onClose, onSave }: EditPostDialog
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('creators')
-        .select('id, is_nsfw')
-        .eq('user_id', user.id as any)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('creators')
+          .select('id, is_nsfw')
+          .eq('user_id', user.id as any)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching creator profile:', error);
+          return null;
+        }
         
-      if (error) {
-        console.error('Error fetching creator profile:', error);
+        return data ? {
+          id: (data as any).id,
+          is_nsfw: (data as any).is_nsfw
+        } : null;
+      } catch (error) {
+        console.error('Error in creator profile query:', error);
         return null;
       }
-      
-      return data;
     },
     enabled: !!user?.id && isOpen
   });

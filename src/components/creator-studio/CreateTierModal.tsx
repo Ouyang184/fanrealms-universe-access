@@ -66,12 +66,14 @@ export function CreateTierModal({ isOpen, onClose }: CreateTierModalProps) {
         throw new Error("Failed to get creator profile");
       }
 
+      const creatorId = (creatorData as any).id;
+
       // Insert the new tier
       const { error: insertError } = await supabase.from("membership_tiers").insert({
         title: data.title,
         price: data.price,
         description: data.description,
-        creator_id: creatorData.id,
+        creator_id: creatorId,
       } as any);
 
       if (insertError) throw insertError;

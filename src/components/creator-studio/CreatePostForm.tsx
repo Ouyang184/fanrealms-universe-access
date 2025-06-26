@@ -39,18 +39,26 @@ export function CreatePostForm() {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('creators')
-        .select('id, is_nsfw')
-        .eq('user_id', user.id as any)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('creators')
+          .select('id, is_nsfw')
+          .eq('user_id', user.id as any)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching creator profile:', error);
+          return null;
+        }
         
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching creator profile:', error);
+        return data ? {
+          id: (data as any).id,
+          is_nsfw: (data as any).is_nsfw
+        } : null;
+      } catch (error) {
+        console.error('Error in creator profile query:', error);
         return null;
       }
-      
-      return data;
     },
     enabled: !!user?.id
   });
@@ -143,7 +151,6 @@ export function CreatePostForm() {
       }
 
       // Automatically set NSFW flag based on creator settings
-      // The database trigger will also handle this, but we set it here for consistency
       const isNSFW = creatorProfile?.is_nsfw || false;
 
       const postData = {
@@ -153,7 +160,7 @@ export function CreatePostForm() {
         creator_id: creatorProfile?.id || null,
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
-        is_nsfw: isNSFW // Automatically flag as NSFW if creator has NSFW enabled
+        is_nsfw: isNSFW
       } as any;
 
       console.log('[Creator Studio] Creating post with automatic NSFW flag:', {
@@ -176,7 +183,7 @@ export function CreatePostForm() {
       // Handle multiple tier assignments
       if (selectedTierIds && selectedTierIds.length > 0 && insertedPost && insertedPost[0]) {
         const postTierInserts = selectedTierIds.map(tierId => ({
-          post_id: insertedPost[0].id,
+          post_id: (insertedPost[0] as any).id,
           tier_id: tierId
         }));
 
@@ -190,8 +197,8 @@ export function CreatePostForm() {
       }
 
       console.log('[Creator Studio] Post created successfully with automatic NSFW flag:', {
-        author_id: insertedPost?.[0]?.author_id, 
-        is_nsfw: insertedPost?.[0]?.is_nsfw,
+        author_id: insertedPost?.[0] ? (insertedPost[0] as any).author_id : null, 
+        is_nsfw: insertedPost?.[0] ? (insertedPost[0] as any).is_nsfw : null,
         wasAutoFlagged: isNSFW
       });
 

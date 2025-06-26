@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -73,10 +74,10 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierTitle, onDelete 
         .eq('id', tierId as any)
         .single();
 
-      if (tierData?.stripe_product_id) {
+      if (tierData && (tierData as any).stripe_product_id) {
         try {
           const { error: archiveError } = await supabase.functions.invoke('archive-stripe-product', {
-            body: { productId: tierData.stripe_product_id }
+            body: { productId: (tierData as any).stripe_product_id }
           });
           
           if (archiveError) {
