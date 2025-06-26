@@ -1,172 +1,140 @@
-
-import { useState } from "react";
-import * as z from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Loader } from "lucide-react";
 
-const tierFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  price: z.number().min(1, "Price must be greater than 0"),
-  description: z.string().min(1, "Description is required"),
-});
-
-type TierFormValues = z.infer<typeof tierFormSchema>;
-
-interface CreateTierModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export function CreateTierModal({ isOpen, onClose }: CreateTierModalProps) {
+export function CreateTierModal() {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [price, setPrice] = useState(0);
+  const [description, setDescription] = useState("");
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<TierFormValues>({
-    resolver: zodResolver(tierFormSchema),
-    defaultValues: {
-      title: "",
-      price: 0,
-      description: "",
-    },
-  });
-
-  const onSubmit = async (data: TierFormValues) => {
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create a tier",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // First get the creator id for the current user
-      const { data: creatorData, error: creatorError } = await supabase
-        .from("creators")
-        .select("id")
-        .eq("user_id", user.id)
+  const createTierMutation = useMutation({
+    mutationFn: async (tierData: { title: string; price: number; description: string }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Get creator profile
+      const { data: creator, error: creatorError } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user.id as any)
         .single();
-
-      if (creatorError || !creatorData) {
-        throw new Error("Failed to get creator profile");
+      
+      if (creatorError || !creator) {
+        throw new Error('Creator profile not found');
       }
-
-      // Insert the new tier
-      const { error: insertError } = await supabase.from("membership_tiers").insert({
-        title: data.title,
-        price: data.price,
-        description: data.description,
-        creator_id: creatorData.id,
-      });
-
-      if (insertError) throw insertError;
-
+      
+      // Create the tier
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .insert({
+          title: tierData.title,
+          price: tierData.price,
+          description: tierData.description,
+          creator_id: (creator as any).id
+        } as any)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: () => {
       toast({
         title: "Success",
         description: "Membership tier created successfully",
       });
-
-      // Invalidate the tiers query to trigger a refresh
-      queryClient.invalidateQueries({ queryKey: ["creator-tiers"] });
-      
-      // Reset form and close modal
-      form.reset();
-      onClose();
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ["membership-tiers"] });
+      setOpen(false);
+      setTitle("");
+      setPrice(0);
+      setDescription("");
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create membership tier",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
+  });
+
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    createTierMutation.mutate({ title, price, description });
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Create New Tier</Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Membership Tier</DialogTitle>
+          <DialogTitle>Create New Tier</DialogTitle>
+          <DialogDescription>
+            Create a new membership tier for your subscribers.
+          </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Premium Tier" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Price (USD)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      min="1"
-                      step="0.01"
-                      placeholder="9.99" 
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe the benefits of this tier..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader className="mr-2 h-4 w-4 animate-spin" />}
-                Create Tier
-              </Button>
+        <form onSubmit={onSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                Title
+              </Label>
+              <Input
+                type="text"
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="col-span-3"
+              />
             </div>
-          </form>
-        </Form>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">
+                Price
+              </Label>
+              <Input
+                type="number"
+                id="price"
+                value={price}
+                onChange={(e) => setPrice(Number(e.target.value))}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input
+                type="text"
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit">Create Tier</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

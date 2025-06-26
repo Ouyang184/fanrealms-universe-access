@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import PostCard from "@/components/PostCard";
+import { PostCard } from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Post } from "@/types";
 import { PostSearchBar } from "./PostSearchBar";

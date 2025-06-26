@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -28,6 +29,9 @@ export interface Post {
   attachments?: any;
   tags?: string[]; // Added tags field for search functionality
   is_nsfw?: boolean; // Added NSFW flag for content filtering
+  viewCount?: number | any; // Added viewCount for analytics
+  likes?: number; // Added likes count
+  comment_count?: number; // Added comment count
 }
 
 export interface CreatorProfile {

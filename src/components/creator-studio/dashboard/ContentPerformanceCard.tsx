@@ -30,7 +30,7 @@ export function ContentPerformanceCard() {
 
   const totalViews = posts?.reduce((sum, post) => {
     // Safely handle view count that might be a function return type
-    const viewCount = typeof post.viewCount === 'number' ? post.viewCount : 0;
+    const viewCount = post.viewCount && typeof post.viewCount === 'number' ? post.viewCount : 0;
     return sum + viewCount;
   }, 0) || 0;
 
@@ -38,8 +38,8 @@ export function ContentPerformanceCard() {
   const totalComments = posts?.reduce((sum, post) => sum + (post.comment_count || 0), 0) || 0;
 
   const topPost = posts?.reduce((best, current) => {
-    const currentViews = typeof current.viewCount === 'number' ? current.viewCount : 0;
-    const bestViews = typeof best.viewCount === 'number' ? best.viewCount : 0;
+    const currentViews = current.viewCount && typeof current.viewCount === 'number' ? current.viewCount : 0;
+    const bestViews = best.viewCount && typeof best.viewCount === 'number' ? best.viewCount : 0;
     return currentViews > bestViews ? current : best;
   });
 
@@ -86,7 +86,7 @@ export function ContentPerformanceCard() {
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Eye className="h-3 w-3" />
-                  {Number(typeof topPost.viewCount === 'number' ? topPost.viewCount : 0).toLocaleString()}
+                  {Number(topPost.viewCount && typeof topPost.viewCount === 'number' ? topPost.viewCount : 0).toLocaleString()}
                 </span>
                 <span className="flex items-center gap-1">
                   <Heart className="h-3 w-3" />
