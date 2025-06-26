@@ -41,8 +41,7 @@ export const supabase = createClient<Database>(
       },
       heartbeatIntervalMs: 60000, // Increased from 30s to 60s to reduce heartbeat frequency
       reconnectAfterMs: () => 5000, // Increased reconnect delay
-      // Disable automatic channel cleanup to reduce overhead
-      transport: 'websocket',
+      // Remove invalid transport property
     },
     global: {
       headers: {

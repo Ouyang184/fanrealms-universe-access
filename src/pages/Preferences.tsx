@@ -26,16 +26,18 @@ export default function PreferencesPage() {
   }, [user]);
 
   const loadExistingPreferences = async () => {
+    if (!user?.id) return;
+    
     try {
       const { data, error } = await supabase
         .from('user_preferences')
         .select('category_id')
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id as any);
 
       if (error) throw error;
 
-      if (data) {
-        setSelectedCategories(data.map(pref => pref.category_id));
+      if (data && Array.isArray(data)) {
+        setSelectedCategories(data.map((pref: any) => pref.category_id));
       }
     } catch (error) {
       console.error('Error loading preferences:', error);
@@ -51,6 +53,8 @@ export default function PreferencesPage() {
   };
 
   const handleSavePreferences = async () => {
+    if (!user?.id) return;
+    
     if (selectedCategories.length < 4) {
       toast({
         title: "Select at least 4 categories",
@@ -66,18 +70,18 @@ export default function PreferencesPage() {
       await supabase
         .from('user_preferences')
         .delete()
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id as any);
 
       // Insert new preferences
       const preferences = selectedCategories.map(categoryId => ({
-        user_id: user?.id,
+        user_id: user.id as string,
         category_id: categoryId,
         category_name: getCategoryName(categoryId)
       }));
 
       const { error } = await supabase
         .from('user_preferences')
-        .insert(preferences);
+        .insert(preferences as any);
 
       if (error) throw error;
 

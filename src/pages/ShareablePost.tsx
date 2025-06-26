@@ -38,10 +38,12 @@ export default function ShareablePost() {
             price
           )
         `)
-        .eq('id', postId)
+        .eq('id', postId as any)
         .single();
 
       if (error) throw error;
+
+      if (!data) return null;
 
       return {
         ...data,

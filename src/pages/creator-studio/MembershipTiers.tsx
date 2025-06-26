@@ -33,7 +33,7 @@ export default function CreatorStudioTiers() {
   const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers", user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.id) return [];
       
       console.log('[MembershipTiers] Fetching tiers for user:', user.id);
       
@@ -41,12 +41,17 @@ export default function CreatorStudioTiers() {
       const { data: creatorData, error: creatorError } = await supabase
         .from("creators")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id as any)
         .single();
       
       if (creatorError) {
         console.error('[MembershipTiers] Error finding creator profile:', creatorError);
         throw new Error("Could not find your creator profile");
+      }
+      
+      if (!creatorData) {
+        console.log('[MembershipTiers] No creator data found');
+        return [];
       }
       
       console.log('[MembershipTiers] Creator ID:', creatorData.id);
@@ -55,8 +60,8 @@ export default function CreatorStudioTiers() {
       const { data: tiersData, error: tiersError } = await supabase
         .from("membership_tiers")
         .select("*")
-        .eq("creator_id", creatorData.id)
-        .eq("active", true)
+        .eq("creator_id", creatorData.id as any)
+        .eq("active", true as any)
         .order("price", { ascending: true });
       
       if (tiersError) {
@@ -66,8 +71,12 @@ export default function CreatorStudioTiers() {
       
       console.log('[MembershipTiers] Tiers data:', tiersData);
       
+      if (!tiersData || !Array.isArray(tiersData)) {
+        return [];
+      }
+      
       // Count active subscribers for each tier using the user_subscriptions table
-      const tiersWithSubscribers = await Promise.all((tiersData || []).map(async (tier) => {
+      const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         console.log('[MembershipTiers] Counting subscribers for tier:', tier.id, tier.title);
         
         try {
@@ -75,9 +84,9 @@ export default function CreatorStudioTiers() {
           const { count, error: countError } = await supabase
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
-            .eq('tier_id', tier.id)
-            .eq('creator_id', creatorData.id)
-            .eq('status', 'active');
+            .eq('tier_id', tier.id as any)
+            .eq('creator_id', creatorData.id as any)
+            .eq('status', 'active' as any);
 
           if (countError) {
             console.error('[MembershipTiers] Error counting subscribers for tier:', tier.id, countError);

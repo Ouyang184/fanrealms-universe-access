@@ -65,7 +65,7 @@ export default function Dashboard() {
             profile_picture
           )
         `)
-        .eq('author_id', user.id)
+        .eq('author_id', user.id as any)
         .order('created_at', { ascending: false });
         
       if (error) {
@@ -108,7 +108,7 @@ export default function Dashboard() {
             price
           )
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
         
       if (error && error.code !== 'PGRST116') {
