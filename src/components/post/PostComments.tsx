@@ -28,10 +28,21 @@ export function PostComments({ postId }: PostCommentsProps) {
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
     if (!newComment.trim() || !user) return;
     
     addComment(newComment.trim());
     setNewComment('');
+  };
+
+  const handleToggleComments = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    setShowComments(!showComments);
+  };
+
+  const handleDeleteComment = (e: React.MouseEvent, commentId: string) => {
+    e.stopPropagation(); // Prevent event bubbling
+    deleteComment(commentId);
   };
 
   // Debug logging
@@ -48,7 +59,7 @@ export function PostComments({ postId }: PostCommentsProps) {
       {/* Comments toggle button */}
       <Button
         variant="ghost"
-        onClick={() => setShowComments(!showComments)}
+        onClick={handleToggleComments}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
       >
         <MessageSquare className="h-4 w-4" />
@@ -61,7 +72,7 @@ export function PostComments({ postId }: PostCommentsProps) {
       </Button>
 
       {showComments && (
-        <div className="space-y-4 border-t pt-4">
+        <div className="space-y-4 border-t pt-4" onClick={(e) => e.stopPropagation()}>
           {/* Add comment form */}
           {user && (
             <form onSubmit={handleSubmitComment} className="space-y-3">
@@ -71,6 +82,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                 placeholder="Write a comment..."
                 className="min-h-[80px] resize-none"
                 disabled={isAddingComment}
+                onClick={(e) => e.stopPropagation()}
               />
               <div className="flex justify-end">
                 <Button 
@@ -139,7 +151,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => deleteComment(comment.id)}
+                            onClick={(e) => handleDeleteComment(e, comment.id)}
                             className="h-6 w-6 p-0 hover:bg-destructive/20"
                           >
                             <Trash2 className="h-3 w-3" />

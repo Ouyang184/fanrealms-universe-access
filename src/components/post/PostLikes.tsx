@@ -14,7 +14,8 @@ export function PostLikes({ postId }: PostLikesProps) {
   const { user } = useAuth();
   const { likeCount, isLiked, toggleLike, isToggling } = useLikes(postId);
 
-  const handleLike = () => {
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     if (!user) return;
     toggleLike();
   };
