@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
-import { useAuth } from "@/contexts/AuthContext";
+import { TermsOfServiceModal } from "@/components/auth/TermsOfServiceModal";
+import { useAuthFunctions } from "@/hooks/useAuthFunctions";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useForm } from "react-hook-form";
@@ -29,6 +31,9 @@ const signupSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+    acceptTerms: z.boolean().refine(val => val === true, {
+      message: "You must accept the Terms of Service to continue"
+    }),
   });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -37,6 +42,7 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signUp } = useAuthFunctions();
   const navigate = useNavigate();
 
   const form = useForm<SignupFormValues>({
@@ -45,6 +51,7 @@ const Signup = () => {
       fullName: "",
       email: "",
       password: "",
+      acceptTerms: false,
     },
   });
 
@@ -65,11 +72,20 @@ const Signup = () => {
       const validatedData = signupSchema.parse(values);
       console.log("Form validation passed:", validatedData);
       
-      // Store the signup data in localStorage for the terms page to access
-      localStorage.setItem("pending_signup_data", JSON.stringify(validatedData));
+      // Create the account directly
+      const result = await signUp(validatedData.email, validatedData.password);
+      console.log('Signup result:', result);
       
-      // Navigate to terms page
-      navigate("/terms");
+      if (!result.success) {
+        console.error('Signup failed:', result.error);
+        return;
+      }
+      
+      // Store the user's full name for later use
+      localStorage.setItem("user_fullname", validatedData.fullName);
+      
+      // Navigate to login page
+      navigate("/login", { replace: true });
       
     } catch (error: any) {
       console.error("Signup form error:", error);
@@ -250,10 +266,45 @@ const Signup = () => {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="acceptTerms"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start space-x-3 p-4 bg-gray-800 rounded-lg">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            className="mt-1"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <label className="text-sm font-medium leading-relaxed cursor-pointer">
+                            I agree to the{" "}
+                            <TermsOfServiceModal>
+                              <button
+                                type="button"
+                                className="text-purple-400 hover:text-purple-300 underline"
+                              >
+                                Terms of Service
+                              </button>
+                            </TermsOfServiceModal>
+                          </label>
+                          <p className="text-xs text-gray-400">
+                            Multiple accounts from the same location are allowed on FanRealms.
+                          </p>
+                        </div>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Alert className="bg-purple-900/20 border-purple-800 text-purple-200">
                   <AlertDescription className="text-xs">
                     By signing up, you'll receive updates about your account, new features, and creator content you
-                    follow. You'll be asked to review and accept our Terms of Service before your account is created.
+                    follow. Please check your email to verify your account after signing up.
                   </AlertDescription>
                 </Alert>
 
@@ -265,11 +316,11 @@ const Signup = () => {
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <LoadingSpinner className="mr-2 h-4 w-4" />
-                      Processing...
+                      Creating Account...
                     </div>
                   ) : (
                     <div className="flex items-center justify-center">
-                      Review Terms & Create Account
+                      Create Account
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </div>
                   )}
