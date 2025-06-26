@@ -13,22 +13,44 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log("AuthCallback: Processing auth callback");
+        
         // Check if this is a password recovery flow
         const type = searchParams.get('type');
         const accessToken = searchParams.get('access_token');
         const refreshToken = searchParams.get('refresh_token');
         
+        console.log("AuthCallback: URL params", { type, hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken });
+        
         if (type === 'recovery' && accessToken && refreshToken) {
+          console.log("AuthCallback: Setting session for password recovery");
+          
           // Set the session for password recovery
-          const { error } = await supabase.auth.setSession({
+          const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           
-          if (error) throw error;
+          if (error) {
+            console.error("AuthCallback: Error setting session", error);
+            throw error;
+          }
+          
+          console.log("AuthCallback: Session set successfully", { user: data.user?.email });
+          
+          // Wait a moment to ensure session is fully established
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Verify session is active
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log("AuthCallback: Session verified", { hasSession: !!sessionData.session });
+          
+          if (!sessionData.session) {
+            throw new Error("Failed to establish session");
+          }
           
           // Redirect to reset password page without tokens in URL
-          navigate('/reset-password');
+          navigate('/reset-password', { replace: true });
           return;
         }
         
