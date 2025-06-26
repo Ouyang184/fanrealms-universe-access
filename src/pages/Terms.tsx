@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
+import { Check, Shield, FileText, Users, CreditCard, AlertTriangle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { toast } from 'sonner';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface PendingSignupData {
   fullName: string;
@@ -18,6 +19,7 @@ interface PendingSignupData {
 export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
   const [isProcessingSignup, setIsProcessingSignup] = useState(false);
+  const [signupAttempts, setSignupAttempts] = useState(0);
   const [pendingSignupData, setPendingSignupData] = useState<PendingSignupData | null>(null);
   const { signUp } = useAuthFunctions();
   const navigate = useNavigate();
@@ -57,6 +59,7 @@ export default function Terms() {
     if (pendingSignupData) {
       try {
         setIsProcessingSignup(true);
+        setSignupAttempts(prev => prev + 1);
         console.log('Processing signup with data:', pendingSignupData);
         
         const result = await signUp(pendingSignupData.email, pendingSignupData.password);
@@ -96,6 +99,12 @@ export default function Terms() {
     navigate('/');
   };
 
+  const handleTryDifferentEmail = () => {
+    // Clear pending data and go back to signup
+    localStorage.removeItem('pending_signup_data');
+    navigate('/signup');
+  };
+
   // Determine the back link based on signup flow
   const getBackLink = () => {
     if (pendingSignupData) return '/signup';
@@ -125,6 +134,17 @@ export default function Terms() {
                 Note: Multiple accounts from the same location are allowed on FanRealms.
               </p>
             </div>
+          )}
+
+          {/* Show server issues warning if multiple attempts */}
+          {signupAttempts > 0 && isProcessingSignup && (
+            <Alert className="mt-4 bg-yellow-900/20 border-yellow-800">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-yellow-200">
+                Our servers are experiencing high traffic. This may take a moment...
+                {signupAttempts > 1 && " If this continues to fail, you can try using a different email address."}
+              </AlertDescription>
+            </Alert>
           )}
         </div>
 
@@ -420,7 +440,7 @@ export default function Terms() {
                   </div>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   <Button 
                     size="lg" 
                     onClick={handleAcceptContinue}
@@ -435,9 +455,17 @@ export default function Terms() {
                       pendingSignupData ? "Accept & Create Account" : "Accept & Continue"
                     )}
                   </Button>
+                  
                   <Button variant="outline" size="lg" onClick={handleDecline}>
                     Decline & Exit
                   </Button>
+
+                  {/* Show alternative option if signup is failing */}
+                  {signupAttempts > 1 && pendingSignupData && (
+                    <Button variant="secondary" size="lg" onClick={handleTryDifferentEmail}>
+                      Try Different Email
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
