@@ -9,6 +9,7 @@ export function useAgeVerification() {
   const { toast } = useToast();
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -57,6 +58,7 @@ export function useAgeVerification() {
       if (error) throw error;
 
       setIsVerified(true);
+      setShowVerificationModal(false);
       
       toast({
         title: "Age verified",
@@ -73,9 +75,17 @@ export function useAgeVerification() {
     }
   };
 
+  const handleAgeVerified = async (dateOfBirth: string) => {
+    await verifyAge(dateOfBirth);
+  };
+
   return {
     isVerified,
     isLoading,
     verifyAge,
+    isAgeVerified: isVerified,
+    showVerificationModal,
+    setShowVerificationModal,
+    handleAgeVerified,
   };
 }
