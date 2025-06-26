@@ -17,7 +17,7 @@ export function CommunitySection() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button className="bg-purple-600 hover:bg-purple-700" asChild>
-                  <Link to="/onboarding">Become a Creator</Link>
+                  <Link to="/complete-profile">Become a Creator</Link>
                 </Button>
                 <Button variant="outline">Learn More</Button>
               </div>

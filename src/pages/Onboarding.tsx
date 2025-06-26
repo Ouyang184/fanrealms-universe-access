@@ -6,8 +6,6 @@ import { Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
 import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 import { CreatorList } from "@/components/onboarding/CreatorList";
@@ -32,12 +30,8 @@ export default function OnboardingPage() {
     if (currentTab === "interests") {
       setCurrentTab("creators");
     } else {
-      // If user is logged in, go to complete profile, otherwise redirect to dashboard
-      if (user) {
-        navigate("/complete-profile");
-      } else {
-        navigate("/dashboard");
-      }
+      // Redirect to home page after onboarding
+      navigate("/home");
     }
   };
 
@@ -121,7 +115,7 @@ export default function OnboardingPage() {
                 </>
               ) : (
                 <>
-                  {user ? "Complete Profile" : "Get Started"}
+                  Get Started
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </>
               )}
@@ -130,7 +124,7 @@ export default function OnboardingPage() {
         </Card>
 
         <div className="mt-6 text-center">
-          <Button variant="link" className="text-gray-400 hover:text-white" onClick={() => navigate("/dashboard")}>
+          <Button variant="link" className="text-gray-400 hover:text-white" onClick={() => navigate("/home")}>
             Skip for now
           </Button>
         </div>

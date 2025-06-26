@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Grid, 
@@ -24,7 +23,7 @@ interface CreatorStudioMenuProps {
 
 export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
   const location = useLocation();
-  const { creatorProfile, isLoading, setShowModal } = useCreatorProfile();
+  const { creatorProfile, isLoading } = useCreatorProfile();
   const [isOpen, setIsOpen] = useState(true);
   
   const isActive = (path: string) => {
@@ -59,27 +58,29 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
     if (collapsed) {
       return (
         <div className="p-2">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-center px-2"
-            onClick={() => setShowModal(true)}
-          >
-            <PlusCircle className="h-5 w-5" />
-          </Button>
+          <Link to="/complete-profile">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-center px-2"
+            >
+              <PlusCircle className="h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       );
     }
 
     return (
       <div className="px-2">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 font-medium"
-          onClick={() => setShowModal(true)}
-        >
-          <PlusCircle className="h-5 w-5" />
-          Become a Creator
-        </Button>
+        <Link to="/complete-profile">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 font-medium"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Become a Creator
+          </Button>
+        </Link>
       </div>
     );
   }
