@@ -18,6 +18,7 @@ interface AuthContextType {
   session: Session | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
+  signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
   loading: boolean;
@@ -29,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   signIn: async () => {},
   signUp: async () => {},
+  signInWithMagicLink: async () => {},
   signOut: async () => {},
   updateProfile: async () => {},
   loading: true,
@@ -114,6 +116,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithMagicLink = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
@@ -148,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     signIn,
     signUp,
+    signInWithMagicLink,
     signOut,
     updateProfile,
     loading,

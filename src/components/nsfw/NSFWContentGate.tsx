@@ -22,7 +22,7 @@ export function NSFWContentGate({
 }: NSFWContentGateProps) {
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
-  const { isAgeVerified, isLoading: isAgeVerificationLoading } = useAgeVerification();
+  const { isVerified: isAgeVerified, isLoading: isAgeVerificationLoading } = useAgeVerification();
 
   // Don't gate content for the author viewing their own content
   const isOwnContent = user?.id === authorId;

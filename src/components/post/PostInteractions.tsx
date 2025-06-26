@@ -25,13 +25,17 @@ export function PostInteractions({
   const displayLikes = likeCount !== undefined ? likeCount : initialLikes;
   const displayComments = initialComments;
 
+  const handleLikeClick = () => {
+    toggleLike();
+  };
+
   return (
     <div className="flex items-center justify-between pt-4 border-t">
       <div className="flex items-center space-x-4">
         <Button
           variant="ghost"
           size="sm"
-          onClick={toggleLike}
+          onClick={handleLikeClick}
           className={`flex items-center space-x-2 ${
             isLiked ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-foreground'
           }`}

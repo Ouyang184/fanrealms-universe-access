@@ -15,13 +15,29 @@ import { supabase } from '@/integrations/supabase/client';
 interface ShareButtonProps {
   postId: string;
   title?: string;
+  postTitle?: string;
+  postContent?: string;
+  creatorName?: string;
+  creatorUsername?: string;
+  isPublic?: boolean;
+  className?: string;
 }
 
-export function ShareButton({ postId, title = "Check out this post!" }: ShareButtonProps) {
+export function ShareButton({ 
+  postId, 
+  title = "Check out this post!", 
+  postTitle,
+  postContent,
+  creatorName,
+  creatorUsername,
+  isPublic,
+  className
+}: ShareButtonProps) {
   const { toast } = useToast();
   const [isSharing, setIsSharing] = useState(false);
 
   const postUrl = `${window.location.origin}/post/${postId}`;
+  const shareTitle = postTitle || title;
 
   const handleShare = async (platform: string) => {
     if (isSharing) return;
@@ -42,7 +58,7 @@ export function ShareButton({ postId, title = "Check out this post!" }: ShareBut
       
       switch (platform) {
         case 'twitter':
-          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(postUrl)}`;
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle)}&url=${encodeURIComponent(postUrl)}`;
           break;
         case 'facebook':
           shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
@@ -83,7 +99,7 @@ export function ShareButton({ postId, title = "Check out this post!" }: ShareBut
     if (navigator.share) {
       try {
         await navigator.share({
-          title,
+          title: shareTitle,
           url: postUrl,
         });
         
@@ -103,7 +119,7 @@ export function ShareButton({ postId, title = "Check out this post!" }: ShareBut
         <Button 
           variant="ghost" 
           size="sm" 
-          className="text-muted-foreground hover:text-foreground"
+          className={`text-muted-foreground hover:text-foreground ${className || ''}`}
           disabled={isSharing}
         >
           <Share2 className="h-4 w-4" />

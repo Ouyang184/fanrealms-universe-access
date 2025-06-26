@@ -36,7 +36,7 @@ export const useComments = (postId: string) => {
             profile_picture
           )
         `)
-        .eq('post_id', postId)
+        .eq('post_id', postId as any)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -45,7 +45,7 @@ export const useComments = (postId: string) => {
       }
       
       console.log('Fetched comments:', data);
-      return data as Comment[];
+      return data as unknown as Comment[];
     },
     enabled: !!postId
   });
@@ -62,7 +62,7 @@ export const useComments = (postId: string) => {
           post_id: postId,
           user_id: user.id,
           content
-        })
+        } as any)
         .select(`
           *,
           users (
@@ -105,8 +105,8 @@ export const useComments = (postId: string) => {
       const { error } = await supabase
         .from('comments')
         .delete()
-        .eq('id', commentId)
-        .eq('user_id', user.id);
+        .eq('id', commentId as any)
+        .eq('user_id', user.id as any);
 
       if (error) {
         console.error('Error deleting comment:', error);
