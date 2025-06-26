@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthFunctions } from "@/hooks/useAuthFunctions";
 import { AuthResult } from "@/lib/types/auth";
 
 const loginSchema = z.object({
@@ -26,7 +26,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
-  const { signIn } = useAuth();
+  const { signIn } = useAuthFunctions();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);

@@ -1,6 +1,7 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -173,7 +174,7 @@ export function CreatePostForm() {
       if (error) throw error;
 
       // Handle multiple tier assignments
-      if (selectedTierIds && selectedTierIds.length > 0 && insertedPost[0]) {
+      if (selectedTierIds && selectedTierIds.length > 0 && insertedPost && insertedPost[0]) {
         const postTierInserts = selectedTierIds.map(tierId => ({
           post_id: insertedPost[0].id,
           tier_id: tierId
@@ -189,8 +190,8 @@ export function CreatePostForm() {
       }
 
       console.log('[Creator Studio] Post created successfully with automatic NSFW flag:', {
-        author_id: insertedPost[0]?.author_id, 
-        is_nsfw: insertedPost[0]?.is_nsfw,
+        author_id: insertedPost?.[0]?.author_id, 
+        is_nsfw: insertedPost?.[0]?.is_nsfw,
         wasAutoFlagged: isNSFW
       });
 
