@@ -54,13 +54,24 @@ export const useAuthFunctions = () => {
   }, [toast, navigate]);
 
   const signUpWithRetry = useCallback(async (email: string, password: string, retryCount = 0): Promise<any> => {
-    const maxRetries = 1;
+    const maxRetries = 3; // Increased from 1 to 3
     
     try {
       console.log(`Signup attempt ${retryCount + 1} for:`, email);
       
+      // Exponential backoff delay calculation
+      const baseDelay = 1000; // 1 second
+      const delay = baseDelay * Math.pow(2, retryCount); // 1s, 2s, 4s, 8s
+      
+      if (retryCount > 0) {
+        console.log(`Waiting ${delay}ms before retry attempt ${retryCount + 1}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      // Increased timeout with exponential scaling
+      const timeoutDuration = 10000 + (retryCount * 5000); // 10s, 15s, 20s, 25s
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -69,6 +80,7 @@ export const useAuthFunctions = () => {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             signup_timestamp: new Date().toISOString(),
+            retry_attempt: retryCount + 1,
           }
         }
       });
@@ -79,7 +91,7 @@ export const useAuthFunctions = () => {
       if (error) {
         console.error('Supabase signup error:', error);
         
-        // Handle specific error types
+        // Handle specific error types first
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
           throw new Error('This email is already registered. Please try logging in instead.');
         }
@@ -92,34 +104,28 @@ export const useAuthFunctions = () => {
           throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        // Handle server overload errors - simplified error detection
-        const errorStatus = error.status;
-        const errorName = error.name;
-        const errorMessage = error.message || '';
-        
+        // Enhanced server overload detection
         const isServerOverloaded = 
-          errorStatus === 504 || 
-          errorName === 'AuthRetryableFetchError' ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('504') ||
-          errorMessage === '{}' ||
-          !errorMessage ||
-          errorMessage.trim() === '';
+          error.status === 504 || 
+          error.name === 'AuthRetryableFetchError' ||
+          error.message?.includes('timeout') ||
+          error.message?.includes('504') ||
+          error.message?.includes('Gateway') ||
+          error.message?.includes('upstream') ||
+          error.message === '{}' ||
+          !error.message ||
+          error.message.trim() === '';
         
         if (isServerOverloaded && retryCount < maxRetries) {
-          console.log(`Server overloaded, retrying (attempt ${retryCount + 2}/${maxRetries + 1}) after delay...`);
-          
-          const delay = 2000;
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
+          console.log(`Server overloaded (${error.name || error.status}), retrying attempt ${retryCount + 2}/${maxRetries + 1}...`);
           return await signUpWithRetry(email, password, retryCount + 1);
         }
         
         if (isServerOverloaded) {
-          throw new Error('Supabase authentication servers are currently overloaded due to high traffic. This is a temporary issue. Please try again in a few minutes, or contact support if this persists.');
+          throw new Error('Our authentication servers are experiencing high traffic. This is temporary - please try again in 2-3 minutes, or use a different email address if the issue persists.');
         }
         
-        throw new Error(errorMessage || 'Unable to create account at this time. Please try again later.');
+        throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
       }
       
       console.log('Signup successful, user data:', data.user);
@@ -134,12 +140,14 @@ export const useAuthFunctions = () => {
       console.error("Signup network error:", error);
       
       // Handle network/connection errors with retry
-      if (retryCount < maxRetries && (error.name === 'AbortError' || error.message?.includes('network'))) {
-        console.log(`Network error, retrying signup (attempt ${retryCount + 2}/${maxRetries + 1})...`);
-        
-        const delay = 2000;
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
+      const isNetworkError = 
+        error.name === 'AbortError' || 
+        error.message?.includes('network') ||
+        error.message?.includes('fetch') ||
+        error.code === 'NETWORK_ERROR';
+      
+      if (retryCount < maxRetries && isNetworkError) {
+        console.log(`Network error (${error.name}), retrying signup attempt ${retryCount + 2}/${maxRetries + 1}...`);
         return await signUpWithRetry(email, password, retryCount + 1);
       }
       

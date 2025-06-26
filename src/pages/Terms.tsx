@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Check, Shield, FileText, Users, CreditCard, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Check, Shield, FileText, Users, CreditCard, AlertTriangle, ExternalLink, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { toast } from 'sonner';
@@ -105,6 +105,11 @@ export default function Terms() {
     navigate('/signup');
   };
 
+  const handleWaitAndRetry = () => {
+    // Just retry the current signup process
+    handleAcceptContinue();
+  };
+
   // Determine the back link based on signup flow
   const getBackLink = () => {
     if (pendingSignupData) return '/signup';
@@ -136,13 +141,37 @@ export default function Terms() {
             </div>
           )}
 
-          {/* Show server issues warning if multiple attempts */}
+          {/* Enhanced server issues warning */}
           {signupAttempts > 0 && isProcessingSignup && (
             <Alert className="mt-4 bg-yellow-900/20 border-yellow-800">
-              <AlertTriangle className="h-4 w-4" />
+              <Clock className="h-4 w-4" />
               <AlertDescription className="text-yellow-200">
-                Our servers are experiencing high traffic. This may take a moment...
-                {signupAttempts > 1 && " If this continues to fail, you can try using a different email address."}
+                <div className="space-y-2">
+                  <p>Our authentication servers are experiencing high traffic. This may take up to 30 seconds...</p>
+                  {signupAttempts > 1 && (
+                    <p className="text-sm">
+                      If this continues to fail after a few attempts, you can try waiting 2-3 minutes or using a different email address.
+                    </p>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Show enhanced error info after multiple failed attempts */}
+          {signupAttempts >= 2 && !isProcessingSignup && (
+            <Alert className="mt-4 bg-red-900/20 border-red-800">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-red-200">
+                <div className="space-y-3">
+                  <p className="font-medium">Authentication servers are currently overloaded</p>
+                  <p className="text-sm">This is a temporary issue with high traffic. You can:</p>
+                  <ul className="text-sm list-disc pl-4 space-y-1">
+                    <li>Wait 2-3 minutes and try again</li>
+                    <li>Try using a different email address</li>
+                    <li>Check <a href="https://status.supabase.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline inline-flex items-center gap-1">Supabase status <ExternalLink className="h-3 w-3" /></a> for service updates</li>
+                  </ul>
+                </div>
               </AlertDescription>
             </Alert>
           )}
@@ -460,11 +489,17 @@ export default function Terms() {
                     Decline & Exit
                   </Button>
 
-                  {/* Show alternative option if signup is failing */}
-                  {signupAttempts > 1 && pendingSignupData && (
-                    <Button variant="secondary" size="lg" onClick={handleTryDifferentEmail}>
-                      Try Different Email
-                    </Button>
+                  {/* Enhanced alternative options after failed attempts */}
+                  {signupAttempts >= 2 && pendingSignupData && !isProcessingSignup && (
+                    <>
+                      <Button variant="secondary" size="lg" onClick={handleTryDifferentEmail}>
+                        Try Different Email
+                      </Button>
+                      <Button variant="ghost" size="lg" onClick={handleWaitAndRetry}>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Wait & Retry
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
