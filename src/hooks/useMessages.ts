@@ -89,7 +89,7 @@ export function useMessages(userId: string | undefined) {
       }) || [];
     },
     enabled: !!userId,
-    staleTime: 60000, // Cache for 1 minute to reduce queries
+    staleTime: 120000, // Increased cache time to reduce queries
   });
 
   // Mark messages as read mutation
@@ -118,7 +118,7 @@ export function useMessages(userId: string | undefined) {
     }
   });
 
-  // ONLY use realtime for user-specific messages with strict filtering
+  // ONLY use realtime for user-specific messages with STRICT filtering
   const handleRealtimeUpdate = useCallback(() => {
     console.log('useMessages: User-specific realtime update received, refreshing...');
     refetch();
@@ -130,7 +130,7 @@ export function useMessages(userId: string | undefined) {
     filter: `or(sender_id.eq.${userId},receiver_id.eq.${userId})`, // User-specific filter
     callback: handleRealtimeUpdate,
     enabled: !!userId,
-    debounceMs: 3000, // 3 second debounce
+    debounceMs: 8000, // 8 second debounce to reduce query load
     userId: userId // Pass userId for scoped channel
   });
 

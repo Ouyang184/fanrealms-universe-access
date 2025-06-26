@@ -18,7 +18,7 @@ export const useOptimizedRealtime = ({
   filter,
   callback,
   enabled = true,
-  debounceMs = 5000, // Much longer debounce
+  debounceMs = 10000, // Increased to 10 seconds to dramatically reduce queries
   userId
 }: UseOptimizedRealtimeOptions) => {
   const debounceRef = useRef<NodeJS.Timeout>();
@@ -36,24 +36,32 @@ export const useOptimizedRealtime = ({
   }, [callback, debounceMs]);
 
   useEffect(() => {
-    // Only create realtime subscriptions for critical tables
-    const allowedTables = ['messages', 'user_subscriptions', 'notifications'];
+    // DRASTICALLY restrict realtime to only critical user-specific operations
+    const allowedTables = ['messages']; // Only messages need realtime
     
     if (!enabled || !allowedTables.includes(table)) {
-      console.log(`Realtime disabled for table: ${table} (not in allowed list)`);
+      console.log(`Realtime BLOCKED for table: ${table} (performance optimization)`);
       return;
     }
 
-    // Require specific filters for performance
-    if (!filter && !userId) {
-      console.warn(`Realtime subscription blocked: ${table} requires specific filter or userId for performance`);
+    // REQUIRE specific user filtering for ALL subscriptions
+    if (!filter || !userId) {
+      console.warn(`Realtime subscription BLOCKED: ${table} requires userId and specific filter for performance`);
       return;
     }
 
-    const channelName = `scoped-${table}-${event}`;
+    // Only allow user-specific filters to prevent broad subscriptions
+    if (!filter.includes(`user_id=eq.${userId}`) && 
+        !filter.includes(`sender_id=eq.${userId}`) && 
+        !filter.includes(`receiver_id=eq.${userId}`)) {
+      console.warn(`Realtime subscription BLOCKED: ${table} filter must be user-specific for performance`);
+      return;
+    }
+
+    const channelName = `scoped-${table}-${event}-${userId}`;
     channelNameRef.current = channelName;
     
-    console.log(`Setting up scoped realtime for: ${table} with filter: ${filter}`);
+    console.log(`Setting up RESTRICTED realtime for: ${table} with user filter: ${filter}`);
     
     const channel = createScopedChannel(channelName, { table, filter, userId });
     channelRef.current = channel;
@@ -63,11 +71,11 @@ export const useOptimizedRealtime = ({
         event,
         schema: 'public',
         table,
-        filter // Apply specific filter
+        filter // Apply specific user filter
       }, debouncedCallback)
       .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Scoped realtime subscription active for ${table} with filter: ${filter}`);
+          console.log(`Scoped realtime active for ${table} with filter: ${filter}`);
         }
         if (status === 'CHANNEL_ERROR') {
           console.error(`Realtime subscription error for ${table}`);

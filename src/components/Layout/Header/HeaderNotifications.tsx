@@ -15,7 +15,7 @@ export function HeaderNotifications() {
   const location = useLocation();
   const { isCreator } = useCreatorProfile();
   
-  // Conservative message count fetching - no realtime
+  // ELIMINATED realtime subscription - now using polling with longer intervals
   const fetchMessagesCount = useCallback(async () => {
     if (!user?.id) return;
     
@@ -43,12 +43,11 @@ export function HeaderNotifications() {
     fetchMessagesCount();
   }, [fetchMessagesCount]);
 
-  // REMOVED realtime subscription - was causing performance issues
-  // Instead, refresh count when returning from messages page
+  // REMOVED realtime subscription entirely - use location-based refresh instead
   useEffect(() => {
     if (user?.id && location.pathname !== '/messages') {
-      // Refresh count after a delay when navigating away from messages
-      const timer = setTimeout(fetchMessagesCount, 2000);
+      // Only refresh when navigating away from messages page
+      const timer = setTimeout(fetchMessagesCount, 5000);
       return () => clearTimeout(timer);
     }
   }, [location.pathname, user?.id, fetchMessagesCount]);

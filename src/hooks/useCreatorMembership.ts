@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -18,7 +17,7 @@ export const useCreatorMembership = (creatorId: string) => {
   const queryClient = useQueryClient();
   const [localSubscriptionStates, setLocalSubscriptionStates] = useState<Record<string, boolean>>({});
 
-  // Fetch membership tiers with accurate subscriber counts from user_subscriptions - NO REALTIME
+  // ELIMINATED realtime subscription - now using longer cache times and event-driven updates
   const { data: tiers, isLoading, refetch: refetchTiers } = useQuery({
     queryKey: ['creatorMembershipTiers', creatorId],
     queryFn: async () => {
@@ -28,7 +27,7 @@ export const useCreatorMembership = (creatorId: string) => {
         .from('membership_tiers')
         .select('*')
         .eq('creator_id', creatorId as any)
-        .eq('active', true as any) // Only get active tiers
+        .eq('active', true as any)
         .order('price', { ascending: true });
 
       if (tiersError) {
@@ -93,11 +92,11 @@ export const useCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 60000, // 1 minute cache
+    staleTime: 300000, // 5 minute cache to dramatically reduce queries
     refetchInterval: false, // DISABLED to prevent excessive queries
   });
 
-  // Get user subscriptions from user_subscriptions table only - NO REALTIME
+  // ELIMINATED realtime subscription - now using longer cache times
   const { data: userCreatorSubscriptions, refetch: refetchUserCreatorSubscriptions } = useQuery({
     queryKey: ['userCreatorSubscriptions', user?.id, creatorId],
     queryFn: async () => {
@@ -121,7 +120,7 @@ export const useCreatorMembership = (creatorId: string) => {
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 60000, // 1 minute cache
+    staleTime: 300000, // 5 minute cache to dramatically reduce queries
     refetchInterval: false, // DISABLED to prevent excessive queries
   });
 
@@ -191,7 +190,7 @@ export const useCreatorMembership = (creatorId: string) => {
         delete newState[tierId];
         return newState;
       });
-    }, 15000); // 15 seconds
+    }, 20000); // 20 seconds
   }, []);
 
   // Listen for subscription events - NO REALTIME DB SUBSCRIPTIONS
@@ -212,8 +211,8 @@ export const useCreatorMembership = (creatorId: string) => {
           }
         }
         
-        // Always perform full sync on any subscription event
-        await handleSubscriptionSuccess();
+        // Delayed sync to avoid overwhelming the database
+        setTimeout(() => handleSubscriptionSuccess(), 3000);
       }
     };
 
@@ -228,7 +227,7 @@ export const useCreatorMembership = (creatorId: string) => {
     };
   }, [creatorId, handleSubscriptionSuccess, updateLocalSubscriptionState]);
 
-  // REMOVED real-time subscription - was causing massive performance issues
+  // COMPLETELY REMOVED real-time subscription to eliminate performance bottleneck
 
   return {
     tiers,

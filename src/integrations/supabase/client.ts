@@ -21,7 +21,7 @@ console.log('Supabase client configuration:', {
   hasAnonKey: !!SUPABASE_ANON_KEY
 });
 
-// Create the Supabase client with minimal realtime configuration
+// Create the Supabase client with MINIMAL realtime configuration
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_ANON_KEY,
@@ -34,17 +34,17 @@ export const supabase = createClient<Database>(
       storage: window.localStorage,
       flowType: 'pkce'
     },
-    // DISABLED realtime entirely to eliminate performance issues
+    // DRASTICALLY REDUCED realtime configuration to eliminate performance issues
     realtime: {
       params: {
         eventsPerSecond: 1, // Minimal events
       },
-      heartbeatIntervalMs: 300000, // 5 minutes - very long intervals
-      reconnectAfterMs: () => 30000, // 30 second reconnect delay
+      heartbeatIntervalMs: 600000, // 10 minutes - very long intervals
+      reconnectAfterMs: () => 60000, // 1 minute reconnect delay
     },
     global: {
       headers: {
-        'X-Client-Info': 'fanrealms-web-minimal', 
+        'X-Client-Info': 'fanrealms-web-optimized', 
       },
     },
     db: {
@@ -53,10 +53,10 @@ export const supabase = createClient<Database>(
   }
 );
 
-// Centralized channel management to prevent duplicate subscriptions
+// AGGRESSIVE channel management to prevent duplicate subscriptions
 const activeChannels = new Map<string, any>();
 
-// Only create channels when absolutely necessary with strict scoping
+// Only create channels when absolutely necessary with VERY strict scoping
 export const createScopedChannel = (channelName: string, filters?: { table?: string; filter?: string; userId?: string }) => {
   const scopedChannelName = filters?.userId ? `${channelName}-${filters.userId}` : channelName;
   
@@ -77,7 +77,7 @@ export const createScopedChannel = (channelName: string, filters?: { table?: str
   return channel;
 };
 
-// Aggressive cleanup function
+// IMMEDIATE cleanup function
 export const cleanupChannel = (channelName: string, userId?: string) => {
   const scopedChannelName = userId ? `${channelName}-${userId}` : channelName;
   
@@ -85,11 +85,11 @@ export const cleanupChannel = (channelName: string, userId?: string) => {
     const channel = activeChannels.get(scopedChannelName);
     supabase.removeChannel(channel);
     activeChannels.delete(scopedChannelName);
-    console.log(`Aggressively cleaned up channel: ${scopedChannelName}`);
+    console.log(`Immediately cleaned up channel: ${scopedChannelName}`);
   }
 };
 
-// Cleanup all channels - use sparingly
+// Cleanup all channels - use on app shutdown/navigation
 export const cleanupAllChannels = () => {
   console.log('Cleaning up all channels...');
   activeChannels.forEach((channel, channelName) => {
@@ -99,7 +99,7 @@ export const cleanupAllChannels = () => {
   activeChannels.clear();
 };
 
-console.log('Supabase client initialized with minimal realtime configuration');
+console.log('Supabase client initialized with MINIMAL realtime configuration');
 
 // Export supabase for use in other files
 export { supabase as default };
