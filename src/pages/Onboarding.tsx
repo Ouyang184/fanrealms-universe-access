@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 
 import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 import { CreatorList } from "@/components/onboarding/CreatorList";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function OnboardingPage() {
   const [currentTab, setCurrentTab] = useState("interests");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedCreators, setSelectedCreators] = useState<number[]>([]);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleCategoryToggle = (id: number) => {
@@ -30,8 +32,12 @@ export default function OnboardingPage() {
     if (currentTab === "interests") {
       setCurrentTab("creators");
     } else {
-      // Complete onboarding
-      navigate("/dashboard");
+      // If user is logged in, go to complete profile, otherwise redirect to dashboard
+      if (user) {
+        navigate("/complete-profile");
+      } else {
+        navigate("/dashboard");
+      }
     }
   };
 
@@ -115,7 +121,7 @@ export default function OnboardingPage() {
                 </>
               ) : (
                 <>
-                  Get Started
+                  {user ? "Complete Profile" : "Get Started"}
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </>
               )}

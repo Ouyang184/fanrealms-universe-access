@@ -15,8 +15,8 @@ export function HeroSection() {
             <Link to="/explore">
               <Button className="bg-purple-600 hover:bg-purple-700">Discover Creators</Button>
             </Link>
-            <Button variant="outline" className="border-white/30 hover:bg-white/10">
-              How It Works
+            <Button variant="outline" className="border-white/30 hover:bg-white/10" asChild>
+              <Link to="/onboarding">Become a Creator</Link>
             </Button>
           </div>
         </div>

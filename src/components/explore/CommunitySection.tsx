@@ -1,6 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export function CommunitySection() {
   return (
@@ -15,7 +16,9 @@ export function CommunitySection() {
                 earn from your content on FanRealms.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button className="bg-purple-600 hover:bg-purple-700">Become a Creator</Button>
+                <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+                  <Link to="/onboarding">Become a Creator</Link>
+                </Button>
                 <Button variant="outline">Learn More</Button>
               </div>
             </div>
