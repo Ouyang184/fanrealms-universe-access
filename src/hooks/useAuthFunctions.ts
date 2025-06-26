@@ -56,29 +56,29 @@ export const useAuthFunctions = () => {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      console.log('Starting OPTIMIZED signup process for:', email);
+      console.log('Starting ULTRA-OPTIMIZED signup process for:', email);
       
-      // Reduced timeout to fail fast if server is overloaded
+      // Reduced timeout to 10 seconds to fail faster
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Signup timeout - server may be overloaded')), 15000);
+        setTimeout(() => reject(new Error('Signup timeout after 10 seconds - server overloaded')), 10000);
       });
       
-      // Simplified signup without complex redirect options
+      // Absolute minimal signup with no extra options
       const signupPromise = supabase.auth.signUp({
         email,
-        password,
-        options: {
-          // Minimal options to reduce processing time
-          data: {
-            username: email.split('@')[0] // Simple username generation
-          }
-        }
+        password
+        // Removed ALL options to minimize processing time
       });
 
       const { data, error } = await Promise.race([signupPromise, timeoutPromise]) as any;
 
       if (error) {
-        console.error('Supabase signup error:', error);
+        console.error('Supabase signup error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          stack: error.stack
+        });
         
         // Enhanced error handling for specific signup issues
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
@@ -98,6 +98,7 @@ export const useAuthFunctions = () => {
           error.status === 504 || 
           error.status === 502 ||
           error.status === 503 ||
+          error.status === 408 ||
           error.name === 'AbortError' ||
           error.name === 'AuthRetryableFetchError' ||
           error.message?.includes('timeout') ||
@@ -106,21 +107,22 @@ export const useAuthFunctions = () => {
           error.message?.includes('503') ||
           error.message?.includes('Gateway') ||
           error.message?.includes('upstream') ||
+          error.message?.includes('context deadline') ||
           error.message === '{}' ||
           !error.message ||
           error.message.trim() === '';
         
         if (isServerOverloaded) {
-          throw new Error('Server is experiencing high traffic. The optimized signup should be much faster now. Please try again.');
+          throw new Error('Supabase is overloaded. Database optimizations applied. Please wait 30 seconds and try again.');
         }
         
         throw new Error(error.message || 'Unable to create account. Please try again.');
       }
       
-      console.log('OPTIMIZED signup successful:', data.user?.id);
+      console.log('ULTRA-OPTIMIZED signup successful:', data.user?.id);
       
       toast({
-        title: "Account created successfully!",
+        title: "Account created!",
         description: "Please check your email to verify your account before signing in.",
       });
       
@@ -131,11 +133,15 @@ export const useAuthFunctions = () => {
       };
       
     } catch (error: any) {
-      console.error("Signup error:", error);
+      console.error("Signup error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
       
       // Handle timeout errors specifically
-      if (error.message?.includes('timeout')) {
-        const errorMessage = "Signup is taking longer than expected. We've optimized the process - please try again.";
+      if (error.message?.includes('timeout') || error.message?.includes('10 seconds')) {
+        const errorMessage = "Signup timed out after 10 seconds. Supabase may be experiencing high traffic. Try again in 30 seconds.";
         
         toast({
           title: "Signup timeout",

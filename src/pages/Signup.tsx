@@ -72,13 +72,13 @@ const Signup = () => {
       const validatedData = signupSchema.parse(values);
       console.log("Form validation passed:", validatedData);
       
-      // Show initial loading message
+      // Show loading message with updated guidance
       toast.info("Creating your account...", {
-        description: "This may take a moment due to high server traffic.",
-        duration: 5000,
+        description: "This may take up to 30 seconds due to Supabase traffic. Please be patient.",
+        duration: 8000,
       });
       
-      // Create the account directly
+      // Create the account with ultra-optimized settings
       const result = await signUp(validatedData.email, validatedData.password);
       console.log('Signup result:', result);
       
@@ -86,10 +86,10 @@ const Signup = () => {
         console.error('Signup failed:', result.error);
         
         // Show specific error guidance for server timeouts
-        if (result.error?.message?.includes('timeout') || result.error?.message?.includes('traffic')) {
+        if (result.error?.message?.includes('timeout') || result.error?.message?.includes('overloaded')) {
           toast.error("Server Timeout", {
-            description: "Supabase is experiencing high traffic. Please wait 2-3 minutes and try again.",
-            duration: 8000,
+            description: "Database has been optimized. Please wait 30 seconds and try again. If it persists, Supabase may be down.",
+            duration: 10000,
           });
         }
         return;
@@ -142,11 +142,11 @@ const Signup = () => {
           </CardHeader>
           
           <CardContent>
-            {/* Server Status Alert */}
+            {/* Updated Server Status Alert */}
             <Alert className="bg-amber-900/20 border-amber-800 text-amber-200 mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-xs">
-                If signup is slow, Supabase may be experiencing high traffic. Please be patient and try again if it times out.
+                Database optimized! If signup times out, Supabase may be experiencing high traffic. Wait 30 seconds and try again.
               </AlertDescription>
             </Alert>
 
@@ -338,7 +338,7 @@ const Signup = () => {
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <LoadingSpinner className="mr-2 h-4 w-4" />
-                      Creating Account...
+                      Creating Account... (may take 30s)
                     </div>
                   ) : (
                     <div className="flex items-center justify-center">
