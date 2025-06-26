@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import PostCard from "@/components/PostCard";
+import { PostCard } from "@/components/PostCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Post } from "@/types";
 import { PostSearchBar } from "@/components/creator/PostSearchBar";
@@ -64,17 +64,10 @@ export function ProfilePostsTab({ posts, isLoading }: ProfilePostsTabProps) {
         {filteredPosts.map((post) => (
           <PostCard
             key={post.id}
-            id={post.id}
-            title={post.title}
-            content={post.content}
-            authorName={post.authorName || ""}
-            authorAvatar={post.authorAvatar}
-            createdAt={post.createdAt}
-            date={post.date}
-            tier_id={post.tier_id}
-            attachments={post.attachments}
-            authorId={post.authorId}
-            is_nsfw={post.is_nsfw}
+            post={{
+              ...post,
+              comment_count: post.comment_count || 0
+            }}
           />
         ))}
         

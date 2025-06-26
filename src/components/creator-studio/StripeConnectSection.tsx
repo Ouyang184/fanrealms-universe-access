@@ -37,9 +37,9 @@ export function StripeConnectSection() {
     );
   }
 
-  const isConnected = connectStatus?.stripe_account_id;
-  const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
-  const canReceivePayments = connectStatus?.stripe_charges_enabled;
+  const isConnected = (connectStatus as any)?.stripe_account_id;
+  const isOnboardingComplete = (connectStatus as any)?.stripe_onboarding_complete;
+  const canReceivePayments = (connectStatus as any)?.stripe_charges_enabled;
 
   return (
     <Card>
@@ -86,7 +86,7 @@ export function StripeConnectSection() {
         <div className="flex gap-2">
           {!isConnected ? (
             <Button 
-              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              onClick={() => creatorProfile && createConnectAccount((creatorProfile as any).id)}
               disabled={!creatorProfile}
             >
               <CreditCard className="mr-2 h-4 w-4" />
@@ -95,7 +95,7 @@ export function StripeConnectSection() {
           ) : !isOnboardingComplete ? (
             // Show Complete Onboarding button for connected but incomplete accounts
             <Button 
-              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              onClick={() => creatorProfile && createConnectAccount((creatorProfile as any).id)}
               variant="default"
             >
               Complete Onboarding
@@ -104,7 +104,7 @@ export function StripeConnectSection() {
             // Only show dashboard access for fully onboarded accounts
             <Button
               variant="outline"
-              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              onClick={() => createLoginLink((connectStatus as any).stripe_account_id)}
               disabled={isLoading}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
