@@ -60,7 +60,7 @@ export const useAuthFunctions = () => {
       
       // Add timeout controller for auth requests
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
       
       const { data, error } = await supabase.auth.signUp({
         email,
