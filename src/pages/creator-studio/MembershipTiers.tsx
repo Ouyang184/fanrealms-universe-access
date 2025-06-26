@@ -303,6 +303,7 @@ export default function CreatorStudioTiers() {
         isOpen={isDeleteDialogOpen}
         onClose={closeDeleteDialog}
         tierId={deletingTier?.id || ""}
+        tierTitle={deletingTier?.name || ""}
       />
     </div>
   );
