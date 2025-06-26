@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +26,6 @@ const resetPasswordSchema = z.object({
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +33,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSessionSet, setIsSessionSet] = useState(false);
+  const [isSessionReady, setIsSessionReady] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -45,37 +44,41 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const setupSession = async () => {
-      // Check if we have the necessary tokens in the URL
-      const accessToken = searchParams.get('access_token');
-      const refreshToken = searchParams.get('refresh_token');
+    const checkSession = async () => {
+      console.log("ResetPassword: Checking session");
       
-      if (!accessToken || !refreshToken) {
-        setError("Invalid or expired reset link. Please request a new password reset.");
-        return;
-      }
-
       try {
-        // Set the session with the tokens from the URL
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+        // Wait a moment in case we just navigated from auth callback
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log("ResetPassword: Session check result", { 
+          hasSession: !!session, 
+          user: session?.user?.email,
+          error: error?.message 
         });
-
+        
         if (error) throw error;
         
-        setIsSessionSet(true);
+        if (session) {
+          console.log("ResetPassword: Session is ready");
+          setIsSessionReady(true);
+        } else {
+          console.log("ResetPassword: No active session found");
+          setError("Invalid or expired reset link. Please request a new password reset.");
+        }
       } catch (error: any) {
-        console.error("Session setup error:", error);
+        console.error("ResetPassword: Session check error:", error);
         setError("Invalid or expired reset link. Please request a new password reset.");
       }
     };
 
-    setupSession();
-  }, [searchParams]);
+    checkSession();
+  }, []);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
-    if (!isSessionSet) {
+    if (!isSessionReady) {
       setError("Session not properly initialized. Please try the reset link again.");
       return;
     }
@@ -84,12 +87,15 @@ const ResetPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
+      console.log("ResetPassword: Updating password");
+
       const { error } = await supabase.auth.updateUser({
         password: values.password
       });
 
       if (error) throw error;
 
+      console.log("ResetPassword: Password updated successfully");
       setIsSuccess(true);
       
       toast({
@@ -137,7 +143,7 @@ const ResetPassword = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              Enter your new password below.
+              {isSessionReady ? "Enter your new password below." : "Verifying your reset link..."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -149,105 +155,116 @@ const ResetPassword = () => {
                   </Alert>
                 )}
 
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label htmlFor="password">New Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <FormControl>
-                          <Input
-                            id="password"
-                            placeholder="••••••••"
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="new-password"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                            {...field}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isSessionReady && !error && (
+                  <div className="text-center py-4">
+                    <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-400">Verifying your session...</p>
+                  </div>
+                )}
 
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <FormControl>
-                          <Input
-                            id="confirmPassword"
-                            placeholder="••••••••"
-                            type={showConfirmPassword ? "text" : "password"}
-                            autoComplete="new-password"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                            {...field}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {isSessionReady && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <Label htmlFor="password">New Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <FormControl>
+                              <Input
+                                id="password"
+                                placeholder="••••••••"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="new-password"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-purple-600 hover:bg-purple-700" 
-                  disabled={isSubmitting || !isSessionSet}
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Updating password...
-                    </div>
-                  ) : (
-                    "Update password"
-                  )}
-                </Button>
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <FormControl>
+                              <Input
+                                id="confirmPassword"
+                                placeholder="••••••••"
+                                type={showConfirmPassword ? "text" : "password"}
+                                autoComplete="new-password"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-purple-600 hover:bg-purple-700" 
+                      disabled={isSubmitting || !isSessionReady}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Updating password...
+                        </div>
+                      ) : (
+                        "Update password"
+                      )}
+                    </Button>
+                  </>
+                )}
               </form>
             </Form>
           </CardContent>
