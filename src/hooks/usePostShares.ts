@@ -9,7 +9,7 @@ export function usePostShares(postId: string) {
       const { data, error } = await supabase
         .from('post_shares')
         .select('id')
-        .eq('post_id', postId);
+        .eq('post_id', postId as any);
       
       if (error) {
         console.error('Error fetching share count:', error);

@@ -33,8 +33,8 @@ export const usePostViews = (postId: string) => {
       const { data, error } = await supabase
         .from('post_views')
         .select('id')
-        .eq('post_id', postId)
-        .eq('user_id', user.id)
+        .eq('post_id', postId as any)
+        .eq('user_id', user.id as any)
         .single();
       
       if (error && error.code !== 'PGRST116') {
@@ -59,7 +59,7 @@ export const usePostViews = (postId: string) => {
           user_id: user.id,
           view_type: viewType,
           viewed_at: new Date().toISOString()
-        }, {
+        } as any, {
           onConflict: 'post_id,user_id'
         });
       
@@ -96,7 +96,7 @@ export const usePostViewTracking = () => {
           user_id: user.id,
           view_type: viewType,
           viewed_at: new Date().toISOString()
-        }, {
+        } as any, {
           onConflict: 'post_id,user_id'
         });
 
