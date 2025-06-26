@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -167,7 +168,7 @@ export function TierSelect({ onTierSelect, selectedTier }: TierSelectProps) {
           size="sm"
           onClick={handleCreateTier}
           disabled={isCreating}
-          className="w-full"
+          className="w-full mt-2"
         >
           {isCreating ? "Creating..." : "Create Tier"}
         </Button>

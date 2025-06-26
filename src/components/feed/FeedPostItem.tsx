@@ -1,6 +1,6 @@
 
 import React from 'react';
-import PostCard from '@/components/PostCard';
+import { PostCard } from '@/components/PostCard';
 import { Post } from '@/types';
 
 interface FeedPostItemProps {
@@ -33,17 +33,22 @@ export function FeedPostItem({
   return (
     <div className="mb-6" onClick={handlePostClick}>
       <PostCard
-        id={post.id}
-        title={post.title}
-        content={post.content}
-        authorName={post.authorName || creatorInfo?.display_name || ''}
-        authorAvatar={post.authorAvatar || creatorInfo?.avatar_url}
-        createdAt={post.createdAt}
-        date={post.date}
-        tier_id={post.tier_id}
-        attachments={post.attachments}
-        authorId={post.authorId}
-        is_nsfw={post.is_nsfw}
+        post={{
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorName: post.authorName || creatorInfo?.display_name || '',
+          authorAvatar: post.authorAvatar || creatorInfo?.avatar_url,
+          createdAt: post.createdAt,
+          date: post.date,
+          tier_id: post.tier_id,
+          attachments: post.attachments,
+          authorId: post.authorId,
+          is_nsfw: post.is_nsfw,
+          viewCount: post.viewCount || 0,
+          likes: post.likes || 0,
+          comment_count: post.comment_count || 0
+        }}
       />
     </div>
   );

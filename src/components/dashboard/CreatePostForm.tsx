@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from 'react-router-dom';
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,16 +13,6 @@ import { supabase } from "@/lib/supabase";
 import { TierSelect } from "@/components/dashboard/TierSelect";
 import { FileInput } from "@/components/ui/file-input";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-
-const formSchema = z.object({
-  title: z.string().min(3, {
-    message: "Title must be at least 3 characters.",
-  }),
-  content: z.string().min(10, {
-    message: "Content must be at least 10 characters.",
-  }),
-});
 
 export default function CreatePostForm() {
   const { toast } = useToast();
@@ -35,14 +23,8 @@ export default function CreatePostForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [isNSFW, setIsNSFW] = useState(false);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      content: "",
-    },
-  });
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
 
   // Get creator profile for NSFW status
   const { data: creatorData } = useQuery({
@@ -53,7 +35,7 @@ export default function CreatePostForm() {
       const { data, error } = await supabase
         .from('creators')
         .select('id, is_nsfw')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
       
       if (error) {
@@ -66,12 +48,6 @@ export default function CreatePostForm() {
     enabled: !!user?.id
   });
 
-  const {
-    handleSubmit,
-    register,
-    formState: { errors },
-  } = form;
-
   const handleTierSelect = (tierId: string | null) => {
     setSelectedTier(tierId);
   };
@@ -80,7 +56,7 @@ export default function CreatePostForm() {
     setAttachments(files);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!user?.id || !creatorData?.id) {
@@ -91,9 +67,6 @@ export default function CreatePostForm() {
       });
       return;
     }
-
-    const title = form.getValues("title");
-    const content = form.getValues("content");
 
     if (!title || !content) {
       toast({
@@ -108,7 +81,7 @@ export default function CreatePostForm() {
       setIsLoading(true);
 
       // Auto-flag as NSFW if creator is NSFW
-      const shouldAutoFlagNSFW = creatorData?.is_nsfw === true;
+      const shouldAutoFlagNSFW = (creatorData as any)?.is_nsfw === true;
       const finalNSFWFlag = shouldAutoFlagNSFW || isNSFW;
 
       let finalAttachments: any[] = [];
@@ -155,11 +128,11 @@ export default function CreatePostForm() {
           title,
           content,
           author_id: user.id,
-          creator_id: creatorData.id,
+          creator_id: (creatorData as any).id,
           tier_id: selectedTier || null,
           attachments: finalAttachments,
           is_nsfw: finalNSFWFlag
-        })
+        } as any)
         .select()
         .single();
 
@@ -176,7 +149,7 @@ export default function CreatePostForm() {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       queryClient.invalidateQueries({ queryKey: ["user-posts", user.id] });
 
-      navigate(`/posts/${newPost.id}`);
+      navigate(`/posts/${(newPost as any).id}`);
     } catch (error: any) {
       console.error("Error creating post:", error);
       toast({
@@ -190,8 +163,8 @@ export default function CreatePostForm() {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit}>
+    <Card className="w-full max-w-2xl mx-auto p-6">
+      <form onSubmit={handleFormSubmit}>
         <div className="space-y-4">
           <div>
             <Label htmlFor="title">Title</Label>
@@ -199,11 +172,9 @@ export default function CreatePostForm() {
               id="title"
               placeholder="My awesome post"
               type="text"
-              {...register("title")}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
-            {errors.title && (
-              <p className="text-sm text-red-500">{errors.title.message}</p>
-            )}
           </div>
 
           <div>
@@ -212,14 +183,12 @@ export default function CreatePostForm() {
               id="content"
               placeholder="Write something..."
               rows={5}
-              {...register("content")}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
-            {errors.content && (
-              <p className="text-sm text-red-500">{errors.content.message}</p>
-            )}
           </div>
 
-          <TierSelect onTierSelect={handleTierSelect} />
+          <TierSelect onTierSelect={handleTierSelect} selectedTier={selectedTier} />
 
           <div>
             <Label>Attachments</Label>
@@ -227,14 +196,14 @@ export default function CreatePostForm() {
           </div>
           
           {/* NSFW Toggle */}
-          {(creatorData?.is_nsfw || isNSFW) && (
+          {((creatorData as any)?.is_nsfw || isNSFW) && (
             <div className="flex items-center space-x-2">
               <Label htmlFor="nsfw">NSFW</Label>
               <Switch id="nsfw" checked={isNSFW} onCheckedChange={setIsNSFW} />
             </div>
           )}
 
-          <Button disabled={isLoading}>
+          <Button disabled={isLoading} type="submit">
             {isLoading ? "Creating..." : "Create Post"}
           </Button>
         </div>

@@ -24,7 +24,7 @@ export function PostsSection() {
             profile_picture
           )
         `)
-        .eq('author_id', user.id)
+        .eq('author_id', user.id as any)
         .order('created_at', { ascending: false });
       
       if (error) {
