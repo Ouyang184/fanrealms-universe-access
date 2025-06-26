@@ -43,7 +43,8 @@ export default function SettingsPage() {
     document.title = "Settings | FanRealms";
   }, []);
 
-  const handleAgeVerified = () => {
+  const handleAgeVerified = async (dateOfBirth: string) => {
+    await verifyAge(dateOfBirth);
     setShowVerificationModal(false);
   };
 
@@ -99,7 +100,7 @@ export default function SettingsPage() {
         {/* Age Verification Modal */}
         <AgeVerificationModal
           open={showVerificationModal}
-          onClose={() => setShowVerificationModal(false)}
+          onCancel={() => setShowVerificationModal(false)}
           onVerified={handleAgeVerified}
         />
       </div>
@@ -113,7 +114,7 @@ interface ContentPreferencesProps {
   isAgeVerified: boolean;
   showVerificationModal: boolean;
   setShowVerificationModal: (show: boolean) => void;
-  handleAgeVerified: () => void;
+  handleAgeVerified: (dateOfBirth: string) => void;
 }
 
 const ContentPreferences = ({ 

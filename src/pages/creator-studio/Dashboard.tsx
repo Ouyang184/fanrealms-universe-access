@@ -1,98 +1,167 @@
 
-import { MainLayout } from "@/components/Layout/MainLayout"
-import { CreatorCheck } from "@/components/creator-studio/CreatorCheck"
-import { useCreatorDashboard } from "@/hooks/useCreatorDashboard"
-import { useCreatorSubscribers } from "@/hooks/useCreatorSubscribers"
-import { useCreatorPosts } from "@/hooks/useCreatorPosts"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/lib/supabase"
-import { useAuth } from "@/contexts/AuthContext"
-import LoadingSpinner from "@/components/LoadingSpinner"
-import { DashboardHeader } from "@/components/creator-studio/dashboard/DashboardHeader"
-import { StatsCards } from "@/components/creator-studio/dashboard/StatsCards"
-import { ContentPerformanceCard } from "@/components/creator-studio/dashboard/ContentPerformanceCard"
-import { ContentCalendarCard } from "@/components/creator-studio/dashboard/ContentCalendarCard"
-import { MembershipTiersCard } from "@/components/creator-studio/dashboard/MembershipTiersCard"
-import { useDashboardStats } from "@/hooks/useDashboardStats"
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { formatRelativeDate } from "@/utils/auth-helpers";
+import { Button } from "@/components/ui/button";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import { CreatorsSection } from "@/components/dashboard/CreatorsSection";
+
+interface PostsSectionProps {
+  posts: any[];
+  isLoading: boolean;
+  isCreator: boolean;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+// Simple inline PostsSection component to avoid component prop issues
+const PostsSection = ({ posts, isLoading, isCreator, activeTab, setActiveTab }: PostsSectionProps) => {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Your Posts</h2>
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : posts.length > 0 ? (
+        <div className="grid gap-4">
+          {posts.map((post) => (
+            <div key={post.id} className="p-4 border rounded-lg">
+              <h3 className="font-medium">{post.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{post.content}</p>
+              <p className="text-xs text-muted-foreground mt-2">{post.date}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">No posts yet.</p>
+      )}
+    </div>
+  );
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { creatorProfile, posts, isLoading: dashboardLoading } = useCreatorDashboard();
-  const { posts: creatorPosts, isLoading: isLoadingPosts } = useCreatorPosts();
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("feed");
   
-  const { subscribers, isLoading: subscribersLoading } = useCreatorSubscribers(creatorProfile?.id || '');
-  
-  const { data: tiersWithCounts = [], isLoading: tiersLoading } = useQuery({
-    queryKey: ['dashboard-tiers-with-counts', creatorProfile?.id],
+  // Fetch user's posts
+  const { 
+    data: posts = [], 
+    isLoading: isLoadingPosts,
+  } = useQuery({
+    queryKey: ['userPosts', user?.id],
     queryFn: async () => {
-      if (!creatorProfile?.id) return [];
+      if (!user?.id) return [];
       
-      const { data: tiers, error: tiersError } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('creator_id', creatorProfile.id)
-        .order('price', { ascending: true });
+      const { data: userPosts, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          users:author_id (
+            username,
+            profile_picture
+          )
+        `)
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false });
         
-      if (tiersError) throw tiersError;
-      
-      const tiersWithRealCounts = tiers.map(tier => {
-        const tierSubscribers = subscribers?.filter(sub => 
-          sub.tier_id === tier.id && sub.status === 'active'
-        ) || [];
-        
-        const subscriberCount = tierSubscribers.length;
-        const revenue = subscriberCount * (tier.price || 0);
-        const totalActiveSubscribers = subscribers?.filter(sub => sub.status === 'active').length || 0;
-        const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
-        
-        return {
-          id: tier.id,
-          name: tier.title,
-          title: tier.title,
-          price: Number(tier.price),
-          subscribers: subscriberCount,
-          percentage,
-          revenue,
-          revenueChange: 0,
-          previousSubscribers: 0,
-          growth: 0,
-        };
-      });
-      
-      return tiersWithRealCounts;
+      if (error) {
+        console.error('Error fetching posts:', error);
+        toast({
+          title: "Error fetching posts",
+          description: "Failed to load your posts. Please try again.",
+          variant: "destructive"
+        });
+        return [];
+      }
+
+      return userPosts.map((post: any) => ({
+        ...post,
+        authorName: post.users.username,
+        authorAvatar: post.users.profile_picture,
+        date: formatRelativeDate(post.created_at)
+      }));
     },
-    enabled: !!creatorProfile?.id && !!subscribers,
-    staleTime: 300000,
+    enabled: !!user?.id
   });
 
-  const monthlyStats = useDashboardStats(subscribers);
-  const isLoading = dashboardLoading || subscribersLoading || tiersLoading;
+  // Query to check if user is a creator
+  const { 
+    data: creatorProfile,
+    isLoading: isLoadingCreator
+  } = useQuery({
+    queryKey: ['userCreator', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('creators')
+        .select(`
+          *,
+          membership_tiers (
+            id,
+            title,
+            description,
+            price
+          )
+        `)
+        .eq('user_id', user.id)
+        .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking creator status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load creator profile. Please try again.",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id
+  });
 
-  if (isLoading) {
+  if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <LoadingSpinner />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center py-20">
+          <h2 className="text-2xl font-semibold mb-4">Please sign in</h2>
+          <p className="text-muted-foreground mb-6">You need to be signed in to view your dashboard.</p>
+          <Button asChild>
+            <Link to="/login">Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (isLoadingPosts || isLoadingCreator) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
 
   return (
-    <CreatorCheck>
-      <div className="max-w-7xl mx-auto">
-        <DashboardHeader />
-        <StatsCards monthlyStats={monthlyStats} />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <ContentPerformanceCard posts={posts} />
-            <ContentCalendarCard creatorPosts={creatorPosts} />
-          </div>
-
-          <div className="space-y-6">
-            <MembershipTiersCard tiersWithCounts={tiersWithCounts} />
-          </div>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="space-y-8">
+        <CreatorsSection />
+        <PostsSection 
+          posts={posts}
+          isLoading={isLoadingPosts}
+          isCreator={!!creatorProfile}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
       </div>
-    </CreatorCheck>
-  )
+    </div>
+  );
 }

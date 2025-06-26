@@ -39,10 +39,9 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
 import { EditPostDialog } from "@/components/creator-studio/EditPostDialog";
-import { useDeletePost } from "@/hooks/useDeletePost";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePostViews } from "@/hooks/usePostViews";
 import { useLikes } from "@/hooks/useLikes";
@@ -308,7 +307,6 @@ export default function CreatorPostsPage() {
 // Post Card Component with CREATOR-CENTRIC ACCESS LOGIC and Media Support
 function PostCard({ post }: { post: CreatorPost }) {
   const navigate = useNavigate();
-  const { deletePost, isDeleting } = useDeletePost();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isPublishing, setIsPublishing] = useState(false);
@@ -317,6 +315,34 @@ function PostCard({ post }: { post: CreatorPost }) {
   const { viewCount } = usePostViews(post.id);
   const { likeCount } = useLikes(post.id);
   const { comments } = useComments(post.id);
+  
+  // Use mutation for delete post
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId);
+      
+      if (error) throw error;
+      return postId;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Post deleted",
+        description: "Your post has been deleted successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting post:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete post. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
   
   // CREATOR-CENTRIC ACCESS LOGIC: Creators ALWAYS have full access to their own posts
   const isOwnPost = !!(user?.id && post.authorId && String(user.id) === String(post.authorId));
@@ -376,7 +402,7 @@ function PostCard({ post }: { post: CreatorPost }) {
       console.error('No post ID provided');
       return;
     }
-    deletePost(post.id);
+    deletePostMutation.mutate(post.id);
   };
 
   const handlePublishPost = async () => {
@@ -520,9 +546,9 @@ function PostCard({ post }: { post: CreatorPost }) {
                       <AlertDialogAction
                         onClick={handleDeletePost}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={isDeleting}
+                        disabled={deletePostMutation.isPending}
                       >
-                        {isDeleting ? 'Deleting...' : 'Delete Post'}
+                        {deletePostMutation.isPending ? 'Deleting...' : 'Delete Post'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -642,7 +668,7 @@ function PostCard({ post }: { post: CreatorPost }) {
       <EditPostDialog 
         post={post}
         isOpen={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
       />
     </>
   );
