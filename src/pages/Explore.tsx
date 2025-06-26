@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -43,7 +44,7 @@ export default function ExplorePage() {
   const { data: nsfwPrefs } = useNSFWPreferences();
   
   // Fetch real data from Supabase - these hooks now automatically filter NSFW content
-  const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
+  const { creators, isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true);
   
@@ -190,6 +191,7 @@ export default function ExplorePage() {
         <PostPreviewModal
           open={isPreviewOpen}
           onOpenChange={handleModalClose}
+          onClose={handleModalClose}
           post={selectedPost}
         />
       )}

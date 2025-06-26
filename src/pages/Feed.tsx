@@ -6,7 +6,7 @@ import { useFollows } from "@/hooks/useFollows";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { usePosts } from "@/hooks/usePosts";
 import { Post } from "@/types";
-import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
+import { useStripeSubscription } from "@/hooks/useStripeSubscription";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
 import { usePostReads } from "@/hooks/usePostReads";
@@ -24,7 +24,7 @@ export default function FeedPage() {
   const { data: posts, isLoading: loadingPosts } = usePosts();
   
   // Get user's subscriptions to check for pending cancellations
-  const { userSubscriptions = [] } = useUserSubscriptions();
+  const { userSubscriptions = [] } = useStripeSubscription();
   
   // Get post reads data
   const { readPostIds, markAsRead, isLoading: loadingReads } = usePostReads();
@@ -98,8 +98,9 @@ export default function FeedPage() {
   
   console.log('Filtered followed posts:', followedPosts);
   
-  // Calculate unread posts based on database read status
-  const unreadPosts = followedPosts.filter(post => !readPostIds.has(post.id));
+  // Calculate unread posts based on database read status - ensure readPostIds is a Set<string>
+  const stringReadPostIds = new Set(Array.from(readPostIds).map(id => String(id)));
+  const unreadPosts = followedPosts.filter(post => !stringReadPostIds.has(post.id));
   const unreadCount = unreadPosts.length;
 
   console.log('Unread posts count:', unreadCount);
@@ -132,7 +133,7 @@ export default function FeedPage() {
               followedPosts={followedPosts}
               unreadPosts={unreadPosts}
               unreadCount={unreadCount}
-              readPostIds={readPostIds}
+              readPostIds={stringReadPostIds}
               markAsRead={markAsRead}
               creatorInfoMap={creatorInfoMap}
               onPostClick={handlePostPreview}
@@ -146,6 +147,7 @@ export default function FeedPage() {
         <PostPreviewModal
           open={isPreviewOpen}
           onOpenChange={handleModalClose}
+          onClose={handleModalClose}
           post={selectedPost}
         />
       )}

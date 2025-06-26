@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
@@ -36,7 +35,7 @@ export default function AllCreatorsExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Fetch all creators from the database
-  const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators(searchQuery);
+  const { creators, isLoadingCreators } = useCreators();
   
   useEffect(() => {
     // Set document title
@@ -48,6 +47,16 @@ export default function AllCreatorsExplorePage() {
     if (!creators || creators.length === 0) return [];
     
     let result = [...creators];
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(creator => 
+        (creator.display_name || "").toLowerCase().includes(query) ||
+        (creator.username || "").toLowerCase().includes(query) ||
+        (creator.bio || "").toLowerCase().includes(query)
+      );
+    }
     
     // Apply sorting
     if (sortOption === "top-rated") {
@@ -69,7 +78,7 @@ export default function AllCreatorsExplorePage() {
     return result;
   };
   
-  const displayCreators = applyFilters(allCreators);
+  const displayCreators = applyFilters(creators || []);
 
   // Helper function to get creator tags
   const getCreatorTags = (creator: CreatorProfile) => {
