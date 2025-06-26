@@ -1,40 +1,110 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Terms() {
   const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
-  const { user } = useAuth();
+  const [isProcessingSignup, setIsProcessingSignup] = useState(false);
+  const [pendingSignupData, setPendingSignupData] = useState<any>(null);
+  const { user, signUp } = useAuth();
+  const navigate = useNavigate();
 
-  const handleAcceptContinue = () => {
-    if (finalAgreement) {
-      // Navigate to home if agreed
-      window.location.href = '/home';
-    } else {
+  // Check if user came from signup flow
+  useEffect(() => {
+    const storedData = localStorage.getItem('pending_signup_data');
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        setPendingSignupData(parsedData);
+      } catch (error) {
+        console.error('Error parsing stored signup data:', error);
+        localStorage.removeItem('pending_signup_data');
+      }
+    }
+  }, []);
+
+  const handleAcceptContinue = async () => {
+    if (!finalAgreement) {
       // Exit website if not agreed
       window.location.href = '/';
+      return;
+    }
+
+    // If this is part of signup flow, process the signup
+    if (pendingSignupData) {
+      try {
+        setIsProcessingSignup(true);
+        
+        const result = await signUp(pendingSignupData.email, pendingSignupData.password);
+        
+        if (result.success === false) {
+          toast.error(result.error.message);
+          return;
+        }
+        
+        // Store the user's full name to be saved during onboarding
+        localStorage.setItem("user_fullname", pendingSignupData.fullName);
+        
+        // Clear the pending signup data
+        localStorage.removeItem('pending_signup_data');
+        
+        // Navigate to onboarding
+        toast.success("Account created successfully!");
+        navigate("/onboarding", { replace: true });
+        
+      } catch (error: any) {
+        console.error("Signup error:", error);
+        toast.error(error?.message || "An error occurred during signup");
+      } finally {
+        setIsProcessingSignup(false);
+      }
+    } else {
+      // Regular terms acceptance - navigate to home
+      navigate(user ? '/home' : '/');
     }
   };
 
-  // Determine the back link based on authentication status
-  const backToLink = user ? '/home' : '/';
-  const backToText = user ? 'Back to Home' : 'Back to Home';
+  const handleDecline = () => {
+    // Clear any pending signup data
+    localStorage.removeItem('pending_signup_data');
+    // Exit to home page
+    window.location.href = '/';
+  };
+
+  // Determine the back link based on authentication status and signup flow
+  const getBackLink = () => {
+    if (pendingSignupData) return '/signup';
+    return user ? '/home' : '/';
+  };
+
+  const getBackText = () => {
+    if (pendingSignupData) return 'Back to Signup';
+    return user ? 'Back to Home' : 'Back to Home';
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <Link to={backToLink} className="text-primary hover:underline mb-4 inline-block">
-            ← {backToText}
+          <Link to={getBackLink()} className="text-primary hover:underline mb-4 inline-block">
+            ← {getBackText()}
           </Link>
           <h1 className="text-4xl font-bold mb-4">Terms of Service & Privacy Policy</h1>
           <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
+          {pendingSignupData && (
+            <div className="mt-4 p-4 bg-purple-900/20 border border-purple-800 rounded-lg">
+              <p className="text-purple-200 text-sm">
+                Please review and accept our terms to complete your account creation for <strong>{pendingSignupData.email}</strong>
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-8">
@@ -335,11 +405,19 @@ export default function Terms() {
                   <Button 
                     size="lg" 
                     onClick={handleAcceptContinue}
+                    disabled={isProcessingSignup}
                   >
-                    Accept & Continue
+                    {isProcessingSignup ? (
+                      <div className="flex items-center">
+                        <LoadingSpinner className="mr-2 h-4 w-4" />
+                        Creating Account...
+                      </div>
+                    ) : (
+                      pendingSignupData ? "Accept & Create Account" : "Accept & Continue"
+                    )}
                   </Button>
-                  <Button variant="outline" size="lg" asChild>
-                    <Link to="/">Decline & Exit</Link>
+                  <Button variant="outline" size="lg" onClick={handleDecline}>
+                    Decline & Exit
                   </Button>
                 </div>
               </div>
