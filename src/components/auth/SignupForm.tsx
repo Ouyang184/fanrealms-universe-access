@@ -60,8 +60,8 @@ export const SignupForm = () => {
       console.log("Form validation passed:", validatedData);
       
       toast.info("Creating your account...", {
-        description: "This may take up to 30 seconds due to Supabase traffic. Please be patient.",
-        duration: 8000,
+        description: "Please wait while we set up your account.",
+        duration: 5000,
       });
       
       const result = await signUp(validatedData.email, validatedData.password);
@@ -69,13 +69,6 @@ export const SignupForm = () => {
       
       if (!result.success) {
         console.error('Signup failed:', result.error);
-        
-        if (result.error?.message?.includes('timeout') || result.error?.message?.includes('overloaded')) {
-          toast.error("Server Timeout", {
-            description: "Database has been optimized. Please wait 30 seconds and try again. If it persists, Supabase may be down.",
-            duration: 10000,
-          });
-        }
         return;
       }
       
@@ -116,7 +109,7 @@ export const SignupForm = () => {
           {isSubmitting ? (
             <div className="flex items-center">
               <LoadingSpinner className="mr-2 h-4 w-4" />
-              Creating Account... (may take 30s)
+              Creating Account...
             </div>
           ) : (
             <div className="flex items-center justify-center">

@@ -14,11 +14,6 @@ export const getSignInErrorMessage = (error: any): string => {
 };
 
 export const getSignUpErrorMessage = (error: any): string => {
-  // Handle timeout errors specifically
-  if (error.message?.includes('timeout') || error.message?.includes('10 seconds')) {
-    return "Signup timed out after 10 seconds. Supabase may be experiencing high traffic. Try again in 30 seconds.";
-  }
-  
   return error.message || "Unable to create account. Please try again.";
 };
 
