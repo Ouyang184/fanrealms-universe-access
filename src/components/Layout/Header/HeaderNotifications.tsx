@@ -24,9 +24,9 @@ export function HeaderNotifications() {
         const { count, error } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
-          .eq('receiver_id', user.id)
-          .neq('sender_id', user.id) // Exclude messages sent by the user themselves
-          .eq('is_read', false);
+          .eq('receiver_id', user.id as any)
+          .neq('sender_id', user.id as any) // Exclude messages sent by the user themselves
+          .eq('is_read', false as any);
           
         if (!error && count !== null) {
           setUnreadMessages(count);
@@ -86,9 +86,9 @@ export function HeaderNotifications() {
             const { count, error } = await supabase
               .from('messages')
               .select('*', { count: 'exact', head: true })
-              .eq('receiver_id', user.id)
-              .neq('sender_id', user.id)
-              .eq('is_read', false);
+              .eq('receiver_id', user.id as any)
+              .neq('sender_id', user.id as any)
+              .eq('is_read', false as any);
               
             if (!error && count !== null) {
               setUnreadMessages(count);

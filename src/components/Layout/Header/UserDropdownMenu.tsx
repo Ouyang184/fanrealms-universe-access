@@ -28,7 +28,7 @@ export function UserDropdownMenu() {
       const { data, error } = await supabase
         .from('creators')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
         
       if (error && error.code !== 'PGRST116') {

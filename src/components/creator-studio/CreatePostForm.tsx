@@ -42,7 +42,7 @@ export function CreatePostForm() {
       const { data, error } = await supabase
         .from('creators')
         .select('id, is_nsfw')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id as any)
         .single();
         
       if (error && error.code !== 'PGRST116') {
