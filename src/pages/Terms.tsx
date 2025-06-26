@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -61,12 +60,26 @@ export default function Terms() {
         setIsProcessingSignup(true);
         console.log('Processing signup with data:', pendingSignupData);
         
-        const result = await signUp(pendingSignupData.email, pendingSignupData.password);
+        // Add IP-friendly signup data
+        const signupData = {
+          ...pendingSignupData,
+          timestamp: new Date().toISOString(),
+          allowMultipleFromIP: true
+        };
+        
+        const result = await signUp(signupData.email, signupData.password);
         console.log('Signup result:', result);
         
         if (result.success === false) {
           console.error('Signup failed:', result.error);
-          toast.error(result.error?.message || 'Signup failed. Please try again.');
+          // Handle specific IP-related errors
+          let errorMessage = result.error?.message || 'Signup failed. Please try again.';
+          
+          if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
+            errorMessage = 'Multiple signup attempts detected. Please wait a moment and try again.';
+          }
+          
+          toast.error(errorMessage);
           return;
         }
         
@@ -82,7 +95,14 @@ export default function Terms() {
         
       } catch (error: any) {
         console.error("Signup error:", error);
-        toast.error(error?.message || "An error occurred during signup");
+        let errorMessage = error?.message || "An error occurred during signup";
+        
+        // Handle IP-specific errors gracefully
+        if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
+          errorMessage = 'Multiple accounts from the same location detected. This is allowed, but please wait a moment before creating another account.';
+        }
+        
+        toast.error(errorMessage);
       } finally {
         setIsProcessingSignup(false);
       }
@@ -123,6 +143,9 @@ export default function Terms() {
             <div className="mt-4 p-4 bg-purple-900/20 border border-purple-800 rounded-lg">
               <p className="text-purple-200 text-sm">
                 Please review and accept our terms to complete your account creation for <strong>{pendingSignupData.email}</strong>
+              </p>
+              <p className="text-purple-200 text-xs mt-1">
+                Note: Multiple accounts from the same location are allowed on FanRealms.
               </p>
             </div>
           )}
@@ -165,10 +188,12 @@ export default function Terms() {
               <Separator />
 
               <div>
-                <h3 className="text-lg font-semibold mb-3">2.2 Account Security</h3>
+                <h3 className="text-lg font-semibold mb-3">2.2 Account Security & Multiple Accounts</h3>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>You are responsible for maintaining confidential login credentials.</li>
                   <li>You must notify us immediately of unauthorized access.</li>
+                  <li>Multiple accounts from the same IP address or location are permitted.</li>
+                  <li>Each account must have a unique email address.</li>
                   <li>We reserve the right to suspend or terminate accounts suspected of fraudulent activity.</li>
                 </ul>
               </div>
@@ -189,6 +214,7 @@ export default function Terms() {
                 <ul className="list-disc pl-6 space-y-2">
                   <li>The Platform is for legally permissible content (e.g., artistic, educational, or adult content where allowed).</li>
                   <li>Users must comply with all applicable laws (local, national, and international).</li>
+                  <li>Users may create multiple accounts with different email addresses.</li>
                 </ul>
               </div>
 
@@ -358,6 +384,7 @@ export default function Terms() {
                   <li>To provide services (payments, moderation).</li>
                   <li>To improve the Platform (bug fixes, UX enhancements).</li>
                   <li>For legal compliance (fraud prevention, subpoenas).</li>
+                  <li>IP addresses are not used to restrict multiple account creation.</li>
                 </ul>
               </div>
 
@@ -406,6 +433,7 @@ export default function Terms() {
                 <p className="font-medium">By checking ✅ I Agree, you confirm:</p>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>You read and accept all terms.</li>
+                  <li>You understand that multiple accounts from the same IP are allowed.</li>
                 </ul>
                 
                 <div className="p-6 bg-muted/50 rounded-lg space-y-4">

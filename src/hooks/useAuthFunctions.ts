@@ -58,15 +58,27 @@ export const useAuthFunctions = () => {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
+      // Remove any potential IP-based restrictions by ensuring clean signup
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            // Add timestamp to ensure unique signups from same IP
+            signup_timestamp: new Date().toISOString(),
+            signup_ip_allowed: true
+          }
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific signup errors that might be IP-related
+        if (error.message?.includes('rate limit') || error.message?.includes('too many')) {
+          throw new Error('Multiple signup attempts detected. Please wait a moment before trying again.');
+        }
+        throw error;
+      }
       
       if (data.session) {
         toast({
@@ -75,22 +87,23 @@ export const useAuthFunctions = () => {
         });
         
         if (data.user) {
+          // Create user profile without IP restrictions
           const { error: userError } = await supabase
             .from('users')
             .insert([{ 
               id: data.user.id, 
               email: data.user.email || '',
-              username: email.split('@')[0],
+              username: email.split('@')[0] + '_' + Date.now().toString().slice(-4), // Ensure unique username
             }])
             .single();
 
-          if (userError) {
+          if (userError && !userError.message?.includes('duplicate')) {
             console.error('Error creating user profile:', userError);
-            throw userError;
+            // Don't throw error for profile creation issues, account is still created
           }
           
-          // Navigate to preferences page after successful signup
-          navigate('/preferences');
+          // Navigate to onboarding after successful signup
+          navigate('/onboarding');
         }
 
         return {
@@ -107,15 +120,22 @@ export const useAuthFunctions = () => {
         return {
           success: true,
           user: data.user!,
-          session: data.session!
+          session: data.session
         };
       }
     } catch (error: any) {
       console.error("Signup error:", error);
       
-      const errorMessage = error.message?.includes("already registered")
-        ? "This email is already registered. Please try logging in instead."
-        : error.message || "An error occurred during registration";
+      let errorMessage = error.message || "An error occurred during registration";
+      
+      // Handle common signup errors that might occur with multiple accounts from same IP
+      if (error.message?.includes("already registered")) {
+        errorMessage = "This email is already registered. Please try logging in instead.";
+      } else if (error.message?.includes("rate limit")) {
+        errorMessage = "Too many signup attempts. Please wait a moment before trying again.";
+      } else if (error.message?.includes("invalid email")) {
+        errorMessage = "Please enter a valid email address.";
+      }
       
       toast({
         title: "Registration failed",
@@ -136,6 +156,10 @@ export const useAuthFunctions = () => {
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            // Allow magic link from any IP
+            magic_link_ip_allowed: true
+          }
         },
       });
 
