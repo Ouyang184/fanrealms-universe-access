@@ -11,19 +11,24 @@ import { useToast } from '@/hooks/use-toast';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { CategoryGrid } from '@/components/onboarding/CategoryGrid';
-import { ChevronRight, ArrowLeft } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Upload, X } from 'lucide-react';
+import { useCreatorImageUpload } from '@/hooks/useCreatorImageUpload';
 
 const CompleteProfile = () => {
   const { user, loading } = useAuth();
   const [step, setStep] = useState<'profile' | 'content'>('profile');
   const [displayName, setDisplayName] = useState<string>('');
   const [bio, setBio] = useState<string>('');
-  const [profilePicture, setProfilePicture] = useState<string>('');
+  const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
+  const [selectedBannerImage, setSelectedBannerImage] = useState<File | null>(null);
+  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+  const [bannerImagePreview, setBannerImagePreview] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { uploadProfileImage, uploadBannerImage, isUploading } = useCreatorImageUpload();
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -35,6 +40,52 @@ const CompleteProfile = () => {
     setSelectedCategories((prev) => 
       prev.includes(id) ? prev.filter((catId) => catId !== id) : [...prev, id]
     );
+  };
+
+  const handleProfileImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setSelectedProfileImage(file);
+      const objectUrl = URL.createObjectURL(file);
+      setProfileImagePreview(objectUrl);
+    }
+  };
+
+  const handleBannerImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setSelectedBannerImage(file);
+      const objectUrl = URL.createObjectURL(file);
+      setBannerImagePreview(objectUrl);
+    }
+  };
+
+  const clearProfileImage = () => {
+    setSelectedProfileImage(null);
+    setProfileImagePreview(null);
+  };
+
+  const clearBannerImage = () => {
+    setSelectedBannerImage(null);
+    setBannerImagePreview(null);
   };
 
   const handleProfileNext = () => {
@@ -62,6 +113,18 @@ const CompleteProfile = () => {
     try {
       setIsSubmitting(true);
       
+      // Upload images first if selected
+      let profileImageUrl = null;
+      let bannerImageUrl = null;
+      
+      if (selectedProfileImage) {
+        profileImageUrl = await uploadProfileImage(selectedProfileImage);
+      }
+      
+      if (selectedBannerImage) {
+        bannerImageUrl = await uploadBannerImage(selectedBannerImage);
+      }
+      
       // Map category IDs to tag names
       const categoryMap: { [key: number]: string } = {
         1: "art",
@@ -87,7 +150,8 @@ const CompleteProfile = () => {
           user_id: user?.id,
           display_name: displayName.trim(),
           bio: bio.trim(),
-          profile_image_url: profilePicture || null,
+          profile_image_url: profileImageUrl,
+          banner_url: bannerImageUrl,
           tags: tags
         }])
         .select()
@@ -165,13 +229,91 @@ const CompleteProfile = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="profilePicture">Profile Picture URL</Label>
-                <Input
-                  id="profilePicture"
-                  value={profilePicture}
-                  onChange={(e) => setProfilePicture(e.target.value)}
-                  placeholder="Enter a URL for your profile picture"
-                />
+                <Label>Profile Picture</Label>
+                <div className="space-y-4">
+                  {profileImagePreview && (
+                    <div className="relative w-24 h-24">
+                      <img 
+                        src={profileImagePreview} 
+                        alt="Profile preview" 
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                      <button
+                        onClick={clearProfileImage}
+                        className="absolute -top-2 -right-2 p-1 bg-destructive rounded-full hover:bg-destructive/90"
+                        type="button"
+                      >
+                        <X className="h-3 w-3 text-white" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('profile-image-upload')?.click()}
+                      disabled={isUploading}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {profileImagePreview ? "Change Picture" : "Upload Picture"}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">PNG or JPG</span>
+                  </div>
+                  <input
+                    type="file"
+                    id="profile-image-upload"
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                    onChange={handleProfileImageSelect}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Profile Banner</Label>
+                <div className="space-y-4">
+                  <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
+                    {bannerImagePreview ? (
+                      <>
+                        <img 
+                          src={bannerImagePreview} 
+                          alt="Banner preview" 
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={clearBannerImage}
+                          className="absolute top-2 right-2 p-1 bg-destructive rounded-full hover:bg-destructive/90"
+                          type="button"
+                        >
+                          <X className="h-4 w-4 text-white" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        No banner image uploaded
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('banner-image-upload')?.click()}
+                      disabled={isUploading}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {bannerImagePreview ? "Change Banner" : "Upload Banner"}
+                    </Button>
+                    <span className="text-sm text-muted-foreground">PNG or JPG</span>
+                  </div>
+                  <input
+                    type="file"
+                    id="banner-image-upload"
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                    onChange={handleBannerImageSelect}
+                  />
+                </div>
               </div>
 
               <Button 
@@ -202,9 +344,9 @@ const CompleteProfile = () => {
                 
                 <Button 
                   onClick={handleSubmit}
-                  disabled={isSubmitting || selectedCategories.length === 0}
+                  disabled={isSubmitting || selectedCategories.length === 0 || isUploading}
                 >
-                  {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
+                  {(isSubmitting || isUploading) ? <LoadingSpinner className="mr-2" /> : null}
                   {isSubmitting ? "Creating Profile..." : "Become a Creator"}
                 </Button>
               </div>
