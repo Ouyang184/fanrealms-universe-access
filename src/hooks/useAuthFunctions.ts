@@ -58,6 +58,10 @@ export const useAuthFunctions = () => {
     try {
       console.log('Starting optimized signup process for:', email);
       
+      // Add timeout controller for auth requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -66,10 +70,12 @@ export const useAuthFunctions = () => {
         }
       });
 
+      clearTimeout(timeoutId);
+
       if (error) {
         console.error('Supabase signup error:', error);
         
-        // Handle specific error types
+        // Handle specific error types with better messaging
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
           throw new Error('This email is already registered. Please try logging in instead.');
         }
@@ -82,12 +88,17 @@ export const useAuthFunctions = () => {
           throw new Error('Too many signup attempts. Please wait a few minutes before trying again.');
         }
         
-        // Server overload detection
+        // Enhanced server overload detection
         const isServerOverloaded = 
           error.status === 504 || 
+          error.status === 502 ||
+          error.status === 503 ||
+          error.name === 'AbortError' ||
           error.name === 'AuthRetryableFetchError' ||
           error.message?.includes('timeout') ||
           error.message?.includes('504') ||
+          error.message?.includes('502') ||
+          error.message?.includes('503') ||
           error.message?.includes('Gateway') ||
           error.message?.includes('upstream') ||
           error.message === '{}' ||
@@ -95,7 +106,7 @@ export const useAuthFunctions = () => {
           error.message.trim() === '';
         
         if (isServerOverloaded) {
-          throw new Error('Our authentication servers are experiencing high traffic. Please try again in 2-3 minutes.');
+          throw new Error('Authentication servers are experiencing high traffic. Please try again in 2-3 minutes.');
         }
         
         throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
