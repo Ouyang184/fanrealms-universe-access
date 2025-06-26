@@ -65,31 +65,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const completeUserSetup = async (userId: string) => {
+    try {
+      console.log('Completing user setup for:', userId);
+      const { data, error } = await supabase.rpc('complete_user_setup', {
+        user_id_param: userId
+      });
+      
+      if (error) {
+        console.error('Error completing user setup:', error);
+      } else {
+        console.log('User setup completed successfully');
+      }
+    } catch (error) {
+      console.error('Error in completeUserSetup:', error);
+    }
+  };
+
   useEffect(() => {
     console.log('AuthProvider initializing...');
 
-    // Set up auth state listener first - CRITICAL: No async operations inside this callback
+    // Set up auth state listener - OPTIMIZED to prevent blocking
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
       
-      // Only synchronous state updates here
+      // Synchronous state updates first
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Defer profile fetching with setTimeout to avoid deadlock
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 0);
+        // Defer profile fetching and setup to not block auth flow
+        setTimeout(async () => {
+          await fetchProfile(session.user.id);
+          
+          // Complete user setup after first login (not during signup)
+          if (event === 'SIGNED_IN') {
+            await completeUserSetup(session.user.id);
+          }
+        }, 100); // Small delay to ensure auth is fully processed
       } else {
         setProfile(null);
       }
     });
 
-    // Then get initial session
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         console.error('Error getting initial session:', error);
@@ -99,16 +121,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       console.log('Initial session:', session?.user?.id);
       
-      // These will also trigger the auth state change callback above
-      // but we set them here too for consistency
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       
       if (session?.user) {
+        // Defer profile fetching to not block initial load
         setTimeout(() => {
           fetchProfile(session.user.id);
-        }, 0);
+        }, 100);
       }
     });
 
@@ -135,8 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, username: string) => {
-    console.log('Attempting sign up for:', email);
+    console.log('Attempting OPTIMIZED sign up for:', email);
     
+    // Use a simplified signup that doesn't block on additional operations
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -144,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           username,
         },
+        // Remove redirect to prevent additional delays
       },
     });
     
@@ -152,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
     
-    console.log('Sign up successful');
+    console.log('Sign up successful - setup will complete after login');
   };
 
   const signInWithMagicLink = async (email: string) => {

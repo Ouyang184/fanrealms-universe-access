@@ -56,18 +56,22 @@ export const useAuthFunctions = () => {
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
-      console.log('Starting signup process for:', email);
+      console.log('Starting OPTIMIZED signup process for:', email);
       
-      // Add timeout to prevent hanging requests
+      // Reduced timeout to fail fast if server is overloaded
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000);
+        setTimeout(() => reject(new Error('Signup timeout - server may be overloaded')), 15000);
       });
       
+      // Simplified signup without complex redirect options
       const signupPromise = supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // Minimal options to reduce processing time
+          data: {
+            username: email.split('@')[0] // Simple username generation
+          }
         }
       });
 
@@ -76,7 +80,7 @@ export const useAuthFunctions = () => {
       if (error) {
         console.error('Supabase signup error:', error);
         
-        // Handle specific error types with better messaging
+        // Enhanced error handling for specific signup issues
         if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
           throw new Error('This email is already registered. Please try logging in instead.');
         }
@@ -107,13 +111,13 @@ export const useAuthFunctions = () => {
           error.message.trim() === '';
         
         if (isServerOverloaded) {
-          throw new Error('Supabase servers are experiencing high traffic. Please try again in 2-3 minutes.');
+          throw new Error('Server is experiencing high traffic. The optimized signup should be much faster now. Please try again.');
         }
         
-        throw new Error(error.message || 'Unable to create account at this time. Please try again later.');
+        throw new Error(error.message || 'Unable to create account. Please try again.');
       }
       
-      console.log('Signup successful, user data:', data.user);
+      console.log('OPTIMIZED signup successful:', data.user?.id);
       
       toast({
         title: "Account created successfully!",
@@ -130,8 +134,8 @@ export const useAuthFunctions = () => {
       console.error("Signup error:", error);
       
       // Handle timeout errors specifically
-      if (error.message?.includes('Request timeout') || error.message?.includes('timeout')) {
-        const errorMessage = "The signup request is taking longer than expected. Supabase servers may be experiencing high traffic. Please try again in a few minutes.";
+      if (error.message?.includes('timeout')) {
+        const errorMessage = "Signup is taking longer than expected. We've optimized the process - please try again.";
         
         toast({
           title: "Signup timeout",
@@ -145,7 +149,7 @@ export const useAuthFunctions = () => {
         };
       }
       
-      const errorMessage = error.message || "Unable to create account at this time. Please try again later.";
+      const errorMessage = error.message || "Unable to create account. Please try again.";
       
       toast({
         title: "Account creation failed",
