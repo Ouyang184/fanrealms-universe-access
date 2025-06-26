@@ -110,7 +110,7 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
         console.error('Subscription error:', result.error);
         toast({
           title: "Subscription Failed",
-          description: result.error,
+          description: result.error.message, // Fixed: access the message property
           variant: "destructive"
         });
         return;
