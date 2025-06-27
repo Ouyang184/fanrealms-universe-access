@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -55,7 +54,8 @@ const ResetPassword = () => {
         console.log("ResetPassword: Session check result:", { 
           hasSession: !!session, 
           error: sessionError?.message,
-          user: session?.user?.email
+          user: session?.user?.email,
+          sessionId: session?.id?.substring(0, 8) + "..."
         });
 
         if (sessionError) {
@@ -66,7 +66,7 @@ const ResetPassword = () => {
         }
 
         if (!session || !session.user) {
-          console.log("ResetPassword: No valid session found");
+          console.log("ResetPassword: No valid session found for password reset");
           setError("This password reset link is invalid or has expired. Please request a new one.");
           setIsLoading(false);
           // Redirect after showing error
@@ -76,8 +76,23 @@ const ResetPassword = () => {
           return;
         }
 
+        // Enhanced validation for recovery sessions
+        const isValidRecoverySession = session.user && 
+                                     session.user.aud === 'authenticated' &&
+                                     session.user.email;
+
+        if (!isValidRecoverySession) {
+          console.log("ResetPassword: Session exists but is not a valid recovery session");
+          setError("This session is not valid for password reset. Please request a new password reset link.");
+          setIsLoading(false);
+          setTimeout(() => {
+            navigate('/forgot-password', { replace: true });
+          }, 3000);
+          return;
+        }
+
         // Valid session found
-        console.log("ResetPassword: Valid session found for password reset");
+        console.log("ResetPassword: Valid recovery session found for password reset");
         setHasValidSession(true);
         setIsLoading(false);
         
