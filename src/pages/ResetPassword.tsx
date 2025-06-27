@@ -54,7 +54,8 @@ const ResetPassword = () => {
         
         console.log("ResetPassword: Session check result:", { 
           hasSession: !!session, 
-          error: sessionError?.message 
+          error: sessionError?.message,
+          user: session?.user?.email
         });
 
         if (sessionError) {
@@ -64,8 +65,8 @@ const ResetPassword = () => {
           return;
         }
 
-        if (!session) {
-          console.log("ResetPassword: No session found - invalid reset link");
+        if (!session || !session.user) {
+          console.log("ResetPassword: No valid session found");
           setError("This password reset link is invalid or has expired. Please request a new one.");
           setIsLoading(false);
           // Redirect after showing error
@@ -122,11 +123,9 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
-      // Sign out the user after password reset to ensure clean state
-      await supabase.auth.signOut();
-
-      // Redirect to login
-      setTimeout(() => {
+      // Sign out the user after password reset
+      setTimeout(async () => {
+        await supabase.auth.signOut();
         navigate('/login', { replace: true });
       }, 2000);
 
@@ -138,7 +137,6 @@ const ResetPassword = () => {
     }
   };
 
-  // Success state
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">

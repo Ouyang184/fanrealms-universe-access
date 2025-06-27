@@ -14,16 +14,13 @@ const AuthCallback = () => {
     const handleAuthCallback = async () => {
       console.log("AuthCallback: Processing auth callback");
       console.log("AuthCallback: Current URL:", window.location.href);
-      console.log("AuthCallback: Hash:", window.location.hash);
-      console.log("AuthCallback: Search:", window.location.search);
       
-      // Get all parameters from both URL and hash
+      // Get all parameters from URL
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       
       const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
-      const code = urlParams.get('code') || hashParams.get('code');
       const type = urlParams.get('type') || hashParams.get('type');
       const error = urlParams.get('error') || hashParams.get('error');
       const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
@@ -31,7 +28,6 @@ const AuthCallback = () => {
       console.log("AuthCallback: Parameters found:", { 
         hasAccessToken: !!accessToken, 
         hasRefreshToken: !!refreshToken, 
-        hasCode: !!code, 
         type,
         error,
         errorDescription
@@ -49,24 +45,43 @@ const AuthCallback = () => {
         return;
       }
       
-      // Check for recovery flow - ANY indication this is a password reset
-      const isRecoveryFlow = 
-        type === 'recovery' ||
-        window.location.href.includes('type=recovery') ||
-        accessToken || // Password reset emails include access tokens
-        code; // Or authorization codes
-      
-      console.log("AuthCallback: Is recovery flow:", isRecoveryFlow);
-      
-      // If this is a recovery flow, redirect to reset-password with all parameters
-      if (isRecoveryFlow) {
-        console.log("AuthCallback: Redirecting to reset-password for recovery flow");
-        const currentParams = window.location.search;
-        const currentHash = window.location.hash;
-        const redirectUrl = `/reset-password${currentParams}${currentHash}`;
-        console.log("AuthCallback: Redirect URL:", redirectUrl);
-        window.location.replace(redirectUrl);
-        return;
+      // Handle recovery flow (password reset)
+      if (type === 'recovery' || accessToken) {
+        console.log("AuthCallback: Recovery flow detected");
+        
+        try {
+          // Set the session from the tokens
+          if (accessToken && refreshToken) {
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+            
+            if (sessionError) {
+              console.error("AuthCallback: Session error:", sessionError);
+              toast({
+                title: "Session error",
+                description: "Failed to establish recovery session. Please try requesting a new password reset.",
+                variant: "destructive"
+              });
+              navigate("/forgot-password", { replace: true });
+              return;
+            }
+            
+            console.log("AuthCallback: Recovery session established, redirecting to reset-password");
+            navigate("/reset-password", { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error("AuthCallback: Recovery session error:", error);
+          toast({
+            title: "Authentication error",
+            description: "Failed to process password reset. Please try again.",
+            variant: "destructive"
+          });
+          navigate("/forgot-password", { replace: true });
+          return;
+        }
       }
       
       // For regular auth flows, process the session
