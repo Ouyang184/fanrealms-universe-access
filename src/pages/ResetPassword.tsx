@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,7 +28,6 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 const ResetPassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,12 +44,10 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const setupPasswordReset = async () => {
-      console.log("ResetPassword: Setting up password reset session");
-      console.log("ResetPassword: Current URL:", window.location.href);
+    const checkSession = async () => {
+      console.log("ResetPassword: Checking session");
       
       try {
-        // Check if we have session already
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -60,21 +57,18 @@ const ResetPassword = () => {
           return;
         }
 
-        if (session) {
-          console.log("ResetPassword: Valid session found, ready for password reset");
-          setIsLoading(false);
-          return;
+        if (!session) {
+          console.log("ResetPassword: No session found");
+          setError("Invalid or expired reset link. Please request a new password reset.");
+          setTimeout(() => {
+            navigate('/forgot-password');
+          }, 3000);
+        } else {
+          console.log("ResetPassword: Valid session found");
         }
-
-        // If no session, redirect back to forgot password
-        console.log("ResetPassword: No valid session found");
-        setError("Invalid or expired reset link. Please request a new password reset.");
-        setTimeout(() => {
-          navigate('/forgot-password');
-        }, 3000);
         
       } catch (error: any) {
-        console.error("ResetPassword: Setup error:", error);
+        console.error("ResetPassword: Error:", error);
         setError("An error occurred. Please try requesting a new password reset.");
         setTimeout(() => {
           navigate('/forgot-password');
@@ -84,7 +78,7 @@ const ResetPassword = () => {
       }
     };
 
-    setupPasswordReset();
+    checkSession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
@@ -111,7 +105,6 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         navigate('/login', { replace: true });
       }, 2000);
@@ -253,7 +246,7 @@ const ResetPassword = () => {
               </Form>
             ) : null}
           </CardContent>
-        </div>
+        </Card>
       </div>
     </div>
   );
