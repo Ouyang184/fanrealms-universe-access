@@ -15,7 +15,35 @@ const AuthCallback = () => {
       try {
         console.log("AuthCallback: Processing auth callback");
         
-        // First, let Supabase handle the auth callback automatically
+        // Check URL parameters and hash for recovery indicators BEFORE getting session
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const urlHashParams = new URLSearchParams(window.location.hash.substring(1));
+        
+        const typeFromSearch = urlSearchParams.get('type') || searchParams.get('type');
+        const typeFromHash = urlHashParams.get('type');
+        
+        console.log("AuthCallback: Checking for recovery type", { 
+          typeFromSearch, 
+          typeFromHash,
+          fullSearch: window.location.search,
+          fullHash: window.location.hash 
+        });
+        
+        // Check if this is a recovery flow BEFORE processing the session
+        const isRecovery = typeFromSearch === 'recovery' || 
+                          typeFromHash === 'recovery' ||
+                          window.location.search.includes('type=recovery') ||
+                          window.location.hash.includes('type=recovery');
+        
+        console.log("AuthCallback: Is recovery flow detected?", isRecovery);
+        
+        if (isRecovery) {
+          console.log("AuthCallback: Recovery flow detected, redirecting to reset password");
+          navigate('/reset-password', { replace: true });
+          return;
+        }
+        
+        // For non-recovery flows, get the session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -29,26 +57,6 @@ const AuthCallback = () => {
         });
         
         if (data?.session?.user) {
-          // Check if this came from a password recovery email
-          // Password recovery emails have specific URL patterns or we can check user metadata
-          const searchString = window.location.search;
-          const hashString = window.location.hash;
-          
-          console.log("AuthCallback: URL details", { searchString, hashString });
-          
-          // Check if this is a recovery flow by looking for recovery-related parameters
-          const isRecovery = searchString.includes('type=recovery') || 
-                           hashString.includes('type=recovery') ||
-                           searchParams.get('type') === 'recovery';
-          
-          console.log("AuthCallback: Is recovery flow?", isRecovery);
-          
-          if (isRecovery) {
-            console.log("AuthCallback: Redirecting to reset password page");
-            navigate('/reset-password', { replace: true });
-            return;
-          }
-          
           // Regular authentication success
           toast({
             title: "Authentication successful",
