@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -33,7 +32,6 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isValidatingSession, setIsValidatingSession] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
@@ -45,29 +43,29 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const validateRecoverySession = async () => {
-      console.log("ResetPassword: Starting session validation");
+    const handleRecoverySession = async () => {
+      console.log("ResetPassword: Starting recovery session handling");
       
       try {
-        // First check if we have URL parameters that indicate a recovery session
-        const currentUrl = window.location.href;
+        // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
         const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
         const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+        const code = urlParams.get('code') || hashParams.get('code');
         const type = urlParams.get('type') || hashParams.get('type');
-        
-        console.log("ResetPassword: URL parameters", {
-          hasAccessToken: !!accessToken,
-          hasRefreshToken: !!refreshToken,
-          type,
-          currentUrl
+
+        console.log("ResetPassword: Found parameters:", { 
+          hasAccessToken: !!accessToken, 
+          hasRefreshToken: !!refreshToken, 
+          hasCode: !!code, 
+          type 
         });
-        
-        // If we have tokens in the URL, set the session
-        if (accessToken && refreshToken && type === 'recovery') {
-          console.log("ResetPassword: Setting session from URL tokens");
+
+        // If we have access and refresh tokens, set the session directly
+        if (accessToken && refreshToken) {
+          console.log("ResetPassword: Setting session with tokens");
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
@@ -83,39 +81,56 @@ const ResetPassword = () => {
           if (data.session) {
             console.log("ResetPassword: Session set successfully");
             setHasValidSession(true);
-          }
-        } else {
-          // Check if we already have a session
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error("ResetPassword: Session error:", error);
-            setError("Invalid or expired reset link. Please request a new password reset.");
-            setTimeout(() => navigate('/forgot-password'), 3000);
-            return;
-          }
-          
-          if (session?.user) {
-            console.log("ResetPassword: Found existing session");
-            setHasValidSession(true);
-          } else {
-            console.log("ResetPassword: No valid session found");
-            setError("Invalid or expired reset link. Please request a new password reset.");
-            setTimeout(() => navigate('/forgot-password'), 3000);
             return;
           }
         }
+
+        // If we have a code, try to exchange it for a session
+        if (code) {
+          console.log("ResetPassword: Exchanging code for session");
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error("ResetPassword: Error exchanging code:", error);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
+          
+          if (data.session) {
+            console.log("ResetPassword: Code exchange successful");
+            setHasValidSession(true);
+            return;
+          }
+        }
+
+        // If no tokens or code, check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        setIsValidatingSession(false);
+        if (error) {
+          console.error("ResetPassword: Session error:", error);
+          setError("Invalid or expired reset link. Please request a new password reset.");
+          setTimeout(() => navigate('/forgot-password'), 3000);
+          return;
+        }
+        
+        if (session?.user) {
+          console.log("ResetPassword: Found existing session");
+          setHasValidSession(true);
+        } else {
+          console.log("ResetPassword: No valid session found");
+          setError("Invalid or expired reset link. Please request a new password reset.");
+          setTimeout(() => navigate('/forgot-password'), 3000);
+        }
         
       } catch (error: any) {
-        console.error("ResetPassword: Validation error:", error);
+        console.error("ResetPassword: Recovery session error:", error);
         setError("Invalid or expired reset link. Please request a new password reset.");
         setTimeout(() => navigate('/forgot-password'), 3000);
       }
     };
 
-    validateRecoverySession();
+    handleRecoverySession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
@@ -185,7 +200,7 @@ const ResetPassword = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              {isValidatingSession ? "Verifying your reset link..." : "Enter your new password below."}
+              {!hasValidSession && !error ? "Setting up your session..." : "Enter your new password below."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -197,14 +212,14 @@ const ResetPassword = () => {
                   </Alert>
                 )}
 
-                {isValidatingSession && !error && (
+                {!hasValidSession && !error && (
                   <div className="text-center py-4">
                     <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                    <p className="text-sm text-gray-400">Verifying your session...</p>
+                    <p className="text-sm text-gray-400">Setting up your session...</p>
                   </div>
                 )}
 
-                {!isValidatingSession && !error && hasValidSession && (
+                {hasValidSession && !error && (
                   <>
                     <FormField
                       control={form.control}

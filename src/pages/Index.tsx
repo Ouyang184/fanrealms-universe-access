@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -18,31 +17,18 @@ const Index = () => {
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     
-    // If we have recovery parameters, redirect to auth callback
+    // If we have recovery parameters, redirect DIRECTLY to reset-password
     if (code || (accessToken && refreshToken) || type === 'recovery') {
-      console.log("Index: Recovery parameters detected, redirecting to auth callback");
+      console.log("Index: Recovery parameters detected, redirecting to reset-password");
       console.log("Index: Parameters found:", { code, type, accessToken: !!accessToken, refreshToken: !!refreshToken });
       
-      // Properly construct the redirect URL with all parameters
+      // Pass all parameters to reset-password page
       const currentParams = window.location.search;
       const currentHash = window.location.hash;
-      const redirectUrl = `/auth/callback${currentParams}${currentHash}`;
+      const redirectUrl = `/reset-password${currentParams}${currentHash}`;
       
       console.log("Index: Redirecting to:", redirectUrl);
       window.location.replace(redirectUrl);
-      return;
-    }
-    
-    // Check if we're in a recovery flow - if so, don't redirect
-    const currentUrl = window.location.href;
-    const isRecoveryFlow = 
-      currentUrl.includes('type=recovery') ||
-      currentUrl.includes('recovery') ||
-      window.location.pathname === '/reset-password' ||
-      window.location.pathname === '/auth/callback';
-      
-    if (isRecoveryFlow) {
-      console.log("Index: Recovery flow detected, skipping auto-redirect");
       return;
     }
     
