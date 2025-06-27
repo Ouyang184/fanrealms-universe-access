@@ -43,10 +43,13 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const checkSession = async () => {
-      console.log("ResetPassword: Checking session");
+    const setupRecoverySession = async () => {
+      console.log("ResetPassword: Setting up recovery session");
       
       try {
+        // Wait a moment for URL processing
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         console.log("ResetPassword: Session check result", { 
@@ -58,10 +61,10 @@ const ResetPassword = () => {
         if (error) throw error;
         
         if (session && session.user) {
-          console.log("ResetPassword: Session is ready");
+          console.log("ResetPassword: Recovery session is ready");
           setIsSessionReady(true);
         } else {
-          console.log("ResetPassword: No active session found");
+          console.log("ResetPassword: No recovery session found");
           setError("Invalid or expired reset link. Please request a new password reset.");
           // Redirect to forgot password page after 3 seconds
           setTimeout(() => {
@@ -69,7 +72,7 @@ const ResetPassword = () => {
           }, 3000);
         }
       } catch (error: any) {
-        console.error("ResetPassword: Session check error:", error);
+        console.error("ResetPassword: Session setup error:", error);
         setError("Invalid or expired reset link. Please request a new password reset.");
         // Redirect to forgot password page after 3 seconds
         setTimeout(() => {
@@ -78,7 +81,7 @@ const ResetPassword = () => {
       }
     };
 
-    checkSession();
+    setupRecoverySession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {

@@ -18,6 +18,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
+  // Helper function to check if current URL indicates a recovery flow
+  const isRecoveryFlow = () => {
+    const currentUrl = window.location.href;
+    const searchString = window.location.search;
+    const hashString = window.location.hash;
+    
+    return searchString.includes('type=recovery') ||
+           hashString.includes('type=recovery') ||
+           currentUrl.includes('type=recovery') ||
+           currentUrl.includes('recovery') ||
+           currentUrl.includes('reset');
+  };
+
   useEffect(() => {
     console.log('Auth state change setup with persistent sessions');
     
@@ -25,6 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
         console.log('Got initial session:', initialSession ? 'exists' : 'none');
+        
+        // Check if this is a recovery flow before setting session
+        if (initialSession && isRecoveryFlow()) {
+          console.log('AuthContext: Recovery flow detected, not setting session yet');
+          setLoading(false);
+          return;
+        }
+        
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
@@ -48,6 +69,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
         console.log('Auth state change:', event);
+        
+        // Check if this is a recovery flow before updating session
+        if (currentSession && isRecoveryFlow()) {
+          console.log('AuthContext: Recovery flow detected during auth state change, not updating session');
+          return;
+        }
         
         // Handle session changes
         setSession(currentSession);
