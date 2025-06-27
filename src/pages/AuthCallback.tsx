@@ -29,18 +29,21 @@ const AuthCallback = () => {
           fullSearch: window.location.search
         });
         
-        // Check if this is a recovery/password reset flow
+        // Check if this is a recovery/password reset flow - be more aggressive
         const isRecoveryFlow = 
           searchType === 'recovery' ||
           hashType === 'recovery' ||
           currentUrl.includes('type=recovery') ||
-          currentUrl.includes('recovery');
+          currentUrl.includes('recovery') ||
+          hashParams.get('access_token') || // Recovery tokens are present
+          searchParams.get('access_token');
         
         console.log("AuthCallback: Recovery flow detection:", isRecoveryFlow);
         
         if (isRecoveryFlow) {
-          console.log("AuthCallback: Recovery flow detected - redirecting to reset password");
-          // For recovery flows, redirect immediately without processing session
+          console.log("AuthCallback: Recovery flow detected - redirecting to reset password immediately");
+          // For recovery flows, redirect immediately without any session processing
+          // Use replace to avoid back button issues
           navigate('/reset-password', { replace: true });
           return;
         }

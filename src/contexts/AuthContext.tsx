@@ -21,11 +21,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('Auth state change setup with persistent sessions');
     
-    // Check if we're on the reset password page - if so, don't process sessions here
-    const isOnResetPasswordPage = window.location.pathname === '/reset-password';
+    // Check if we're in a recovery flow - if so, don't process sessions here
+    const currentUrl = window.location.href;
+    const isRecoveryFlow = 
+      currentUrl.includes('type=recovery') ||
+      currentUrl.includes('recovery') ||
+      window.location.pathname === '/reset-password' ||
+      window.location.pathname === '/auth/callback';
     
-    if (isOnResetPasswordPage) {
-      console.log('AuthContext: On reset password page, skipping session processing');
+    if (isRecoveryFlow) {
+      console.log('AuthContext: Recovery flow detected, skipping session processing');
       setLoading(false);
       return;
     }
@@ -62,10 +67,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        // Skip session updates if we're on the reset password page
-        const isCurrentlyOnResetPasswordPage = window.location.pathname === '/reset-password';
-        if (isCurrentlyOnResetPasswordPage) {
-          console.log('AuthContext: Skipping session update on reset password page');
+        // Skip session updates if we're in a recovery flow
+        const isCurrentlyInRecoveryFlow = 
+          window.location.href.includes('type=recovery') ||
+          window.location.href.includes('recovery') ||
+          window.location.pathname === '/reset-password' ||
+          window.location.pathname === '/auth/callback';
+          
+        if (isCurrentlyInRecoveryFlow) {
+          console.log('AuthContext: Skipping session update during recovery flow');
           return;
         }
         
@@ -73,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (currentSession?.user && !isCurrentlyOnResetPasswordPage) {
+        if (currentSession?.user && !isCurrentlyInRecoveryFlow) {
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(userProfile => {
               if (userProfile) {
