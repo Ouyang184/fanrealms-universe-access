@@ -34,6 +34,7 @@ const ResetPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasValidSession, setHasValidSession] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -44,57 +45,73 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const checkSession = async () => {
-      console.log("ResetPassword: Checking session");
+    const checkResetSession = async () => {
+      console.log("ResetPassword: Checking for valid reset session");
       
       try {
+        // Get current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        console.log("ResetPassword: Session check result:", { 
+          hasSession: !!session, 
+          error: sessionError?.message 
+        });
+
         if (sessionError) {
           console.error("ResetPassword: Session error:", sessionError);
-          setError("Invalid reset link. Please request a new password reset.");
+          setError("There was a problem with your reset link. Please request a new password reset.");
           setIsLoading(false);
           return;
         }
 
         if (!session) {
-          console.log("ResetPassword: No session found");
-          setError("Invalid or expired reset link. Please request a new password reset.");
+          console.log("ResetPassword: No session found - invalid reset link");
+          setError("This password reset link is invalid or has expired. Please request a new one.");
+          setIsLoading(false);
+          // Redirect after showing error
           setTimeout(() => {
-            navigate('/forgot-password');
+            navigate('/forgot-password', { replace: true });
           }, 3000);
-        } else {
-          console.log("ResetPassword: Valid session found");
+          return;
         }
+
+        // Valid session found
+        console.log("ResetPassword: Valid session found for password reset");
+        setHasValidSession(true);
+        setIsLoading(false);
         
       } catch (error: any) {
-        console.error("ResetPassword: Error:", error);
-        setError("An error occurred. Please try requesting a new password reset.");
-        setTimeout(() => {
-          navigate('/forgot-password');
-        }, 3000);
-      } finally {
+        console.error("ResetPassword: Unexpected error:", error);
+        setError("An unexpected error occurred. Please try requesting a new password reset.");
         setIsLoading(false);
+        setTimeout(() => {
+          navigate('/forgot-password', { replace: true });
+        }, 3000);
       }
     };
 
-    checkSession();
+    checkResetSession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
+    if (!hasValidSession) {
+      setError("Invalid session. Please request a new password reset.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
 
-      console.log("ResetPassword: Updating password");
+      console.log("ResetPassword: Attempting to update password");
 
-      const { error } = await supabase.auth.updateUser({
+      const { error: updateError } = await supabase.auth.updateUser({
         password: values.password
       });
 
-      if (error) {
-        console.error("ResetPassword: Password update error:", error);
-        throw error;
+      if (updateError) {
+        console.error("ResetPassword: Password update error:", updateError);
+        throw updateError;
       }
 
       console.log("ResetPassword: Password updated successfully");
@@ -105,18 +122,23 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
+      // Sign out the user after password reset to ensure clean state
+      await supabase.auth.signOut();
+
+      // Redirect to login
       setTimeout(() => {
         navigate('/login', { replace: true });
       }, 2000);
 
     } catch (error: any) {
       console.error("Password update error:", error);
-      setError(error.message || "An error occurred while updating your password");
+      setError(error.message || "An error occurred while updating your password. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Success state
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
@@ -126,7 +148,7 @@ const ResetPassword = () => {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="h-12 w-12 text-green-500" />
               </div>
-              <CardTitle className="text-2xl font-bold">Password updated!</CardTitle>
+              <CardTitle className="text-2xl font-bold">Password Updated!</CardTitle>
               <CardDescription className="text-gray-400">
                 Your password has been successfully updated. You'll be redirected to login shortly.
               </CardDescription>
@@ -142,9 +164,9 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <Card className="bg-gray-900 border-gray-800 text-white">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Set New Password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              {isLoading ? "Verifying reset link..." : "Enter your new password below."}
+              {isLoading ? "Verifying your reset link..." : "Enter your new password below."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -159,7 +181,7 @@ const ResetPassword = () => {
                 <div className="animate-spin h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                 <p className="text-sm text-gray-400">Verifying your reset link...</p>
               </div>
-            ) : !error ? (
+            ) : hasValidSession && !error ? (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -239,7 +261,7 @@ const ResetPassword = () => {
                         Updating password...
                       </div>
                     ) : (
-                      "Update password"
+                      "Update Password"
                     )}
                   </Button>
                 </form>
