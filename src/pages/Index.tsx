@@ -1,5 +1,6 @@
+
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -8,34 +9,25 @@ import { Link } from "react-router-dom";
 const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   
   useEffect(() => {
-    // Check for recovery flow parameters at root URL
-    const code = searchParams.get('code');
-    const type = searchParams.get('type');
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
-    
-    // If we have recovery parameters, redirect DIRECTLY to reset-password
-    if (code || (accessToken && refreshToken) || type === 'recovery') {
-      console.log("Index: Recovery parameters detected, redirecting to reset-password");
-      console.log("Index: Parameters found:", { code, type, accessToken: !!accessToken, refreshToken: !!refreshToken });
+    // Check if we're in a recovery flow - if so, don't redirect
+    const currentUrl = window.location.href;
+    const isRecoveryFlow = 
+      currentUrl.includes('type=recovery') ||
+      currentUrl.includes('recovery') ||
+      window.location.pathname === '/reset-password' ||
+      window.location.pathname === '/auth/callback';
       
-      // Pass all parameters to reset-password page
-      const currentParams = window.location.search;
-      const currentHash = window.location.hash;
-      const redirectUrl = `/reset-password${currentParams}${currentHash}`;
-      
-      console.log("Index: Redirecting to:", redirectUrl);
-      window.location.replace(redirectUrl);
+    if (isRecoveryFlow) {
+      console.log("Index: Recovery flow detected, skipping auto-redirect");
       return;
     }
     
     if (!loading && user) {
       navigate("/home", { replace: true });
     }
-  }, [user, loading, navigate, searchParams]);
+  }, [user, loading, navigate]);
 
   // If still loading within the 3-second window, show spinner
   if (loading) {

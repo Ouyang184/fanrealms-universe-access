@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -37,25 +36,16 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
-      console.log("ForgotPassword: Sending password reset email to:", values.email);
-
-      // Send user directly to the reset password page
-      const redirectTo = `${window.location.origin}/reset-password`;
-      
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
 
-      if (error) {
-        console.error("ForgotPassword: Reset password error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("ForgotPassword: Password reset email sent successfully");
       setIsSuccess(true);
     } catch (error: any) {
-      console.error("ForgotPassword: Error:", error);
-      setError(error.message || "An error occurred while sending the reset email. Please try again.");
+      console.error("Password reset error:", error);
+      setError(error.message || "An error occurred while sending the reset email");
     } finally {
       setIsSubmitting(false);
     }
@@ -82,21 +72,11 @@ const ForgotPassword = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                <p className="text-sm text-gray-300 mb-2">
-                  <strong>What happens next:</strong>
-                </p>
-                <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside">
-                  <li>Check your email inbox for a reset link</li>
-                  <li>Click the link in the email</li>
-                  <li>You'll be redirected to set a new password</li>
-                </ol>
-              </div>
               <p className="text-sm text-gray-400 text-center">
                 If you don't see the email in your inbox, check your spam folder.
               </p>
               <Link to="/login">
-                <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800">
+                <Button variant="outline" className="w-full">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Sign In
                 </Button>
@@ -157,11 +137,7 @@ const ForgotPassword = () => {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-purple-600 hover:bg-purple-700" 
-                  disabled={isSubmitting}
-                >
+                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <svg
@@ -177,12 +153,12 @@ const ForgotPassword = () => {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        />
+                        ></circle>
                         <path
                           className="opacity-75"
                           fill="currentColor"
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
+                        ></path>
                       </svg>
                       Sending reset link...
                     </div>
@@ -192,7 +168,7 @@ const ForgotPassword = () => {
                 </Button>
 
                 <Link to="/login">
-                  <Button variant="outline" className="w-full mt-4 border-gray-700 hover:bg-gray-800">
+                  <Button variant="outline" className="w-full mt-4">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Sign In
                   </Button>

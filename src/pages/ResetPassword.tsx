@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -32,7 +33,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isValidatingSession, setIsValidatingSession] = useState(true);
   const [hasValidSession, setHasValidSession] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
@@ -44,74 +45,82 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const checkResetSession = async () => {
-      console.log("ResetPassword: Checking for valid reset session");
+    const validateRecoverySession = async () => {
+      console.log("ResetPassword: Starting session validation");
       
       try {
-        // Get current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // First check if we have URL parameters that indicate a recovery session
+        const currentUrl = window.location.href;
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
-        console.log("ResetPassword: Session check result:", { 
-          hasSession: !!session, 
-          error: sessionError?.message,
-          user: session?.user?.email,
-          accessToken: session?.access_token ? "present" : "missing"
+        const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+        const type = urlParams.get('type') || hashParams.get('type');
+        
+        console.log("ResetPassword: URL parameters", {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          type,
+          currentUrl
         });
-
-        if (sessionError) {
-          console.error("ResetPassword: Session error:", sessionError);
-          setError("There was a problem with your reset link. Please request a new password reset.");
-          setIsLoading(false);
-          return;
+        
+        // If we have tokens in the URL, set the session
+        if (accessToken && refreshToken && type === 'recovery') {
+          console.log("ResetPassword: Setting session from URL tokens");
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error("ResetPassword: Error setting session:", error);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
+          
+          if (data.session) {
+            console.log("ResetPassword: Session set successfully");
+            setHasValidSession(true);
+          }
+        } else {
+          // Check if we already have a session
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("ResetPassword: Session error:", error);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
+          
+          if (session?.user) {
+            console.log("ResetPassword: Found existing session");
+            setHasValidSession(true);
+          } else {
+            console.log("ResetPassword: No valid session found");
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
         }
-
-        if (!session || !session.user) {
-          console.log("ResetPassword: No valid session found for password reset");
-          setError("This password reset link is invalid or has expired. Please request a new one.");
-          setIsLoading(false);
-          // Redirect after showing error
-          setTimeout(() => {
-            navigate('/forgot-password', { replace: true });
-          }, 3000);
-          return;
-        }
-
-        // Enhanced validation for recovery sessions
-        const isValidRecoverySession = session.user && 
-                                     session.user.aud === 'authenticated' &&
-                                     session.user.email;
-
-        if (!isValidRecoverySession) {
-          console.log("ResetPassword: Session exists but is not a valid recovery session");
-          setError("This session is not valid for password reset. Please request a new password reset link.");
-          setIsLoading(false);
-          setTimeout(() => {
-            navigate('/forgot-password', { replace: true });
-          }, 3000);
-          return;
-        }
-
-        // Valid session found
-        console.log("ResetPassword: Valid recovery session found for password reset");
-        setHasValidSession(true);
-        setIsLoading(false);
+        
+        setIsValidatingSession(false);
         
       } catch (error: any) {
-        console.error("ResetPassword: Unexpected error:", error);
-        setError("An unexpected error occurred. Please try requesting a new password reset.");
-        setIsLoading(false);
-        setTimeout(() => {
-          navigate('/forgot-password', { replace: true });
-        }, 3000);
+        console.error("ResetPassword: Validation error:", error);
+        setError("Invalid or expired reset link. Please request a new password reset.");
+        setTimeout(() => navigate('/forgot-password'), 3000);
       }
     };
 
-    checkResetSession();
+    validateRecoverySession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     if (!hasValidSession) {
-      setError("Invalid session. Please request a new password reset.");
+      setError("No valid session found. Please request a new password reset.");
       return;
     }
 
@@ -119,16 +128,13 @@ const ResetPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
-      console.log("ResetPassword: Attempting to update password");
+      console.log("ResetPassword: Updating password");
 
-      const { error: updateError } = await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: values.password
       });
 
-      if (updateError) {
-        console.error("ResetPassword: Password update error:", updateError);
-        throw updateError;
-      }
+      if (error) throw error;
 
       console.log("ResetPassword: Password updated successfully");
       setIsSuccess(true);
@@ -138,16 +144,15 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
-      // Sign out the user and redirect to login after password reset
+      // Sign out and redirect to landing page after 2 seconds
       setTimeout(async () => {
-        console.log("ResetPassword: Signing out user after password reset");
         await supabase.auth.signOut();
-        navigate('/login', { replace: true });
+        navigate('/', { replace: true });
       }, 2000);
 
     } catch (error: any) {
       console.error("Password update error:", error);
-      setError(error.message || "An error occurred while updating your password. Please try again.");
+      setError(error.message || "An error occurred while updating your password");
     } finally {
       setIsSubmitting(false);
     }
@@ -162,9 +167,9 @@ const ResetPassword = () => {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="h-12 w-12 text-green-500" />
               </div>
-              <CardTitle className="text-2xl font-bold">Password Updated!</CardTitle>
+              <CardTitle className="text-2xl font-bold">Password updated!</CardTitle>
               <CardDescription className="text-gray-400">
-                Your password has been successfully updated. You'll be redirected to the login page shortly.
+                Your password has been successfully updated. You'll be redirected to the home page shortly.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -178,109 +183,132 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <Card className="bg-gray-900 border-gray-800 text-white">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Set New Password</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              {isLoading ? "Verifying your reset link..." : "Enter your new password below."}
+              {isValidatingSession ? "Verifying your reset link..." : "Enter your new password below."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin h-8 w-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-sm text-gray-400">Verifying your reset link...</p>
-              </div>
-            ) : hasValidSession && !error ? (
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <Label htmlFor="password">New Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <FormControl>
-                            <Input
-                              id="password"
-                              placeholder="••••••••"
-                              type={showPassword ? "text" : "password"}
-                              autoComplete="new-password"
-                              className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                              {...field}
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
-                            onClick={() => setShowPassword(!showPassword)}
+                {isValidatingSession && !error && (
+                  <div className="text-center py-4">
+                    <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-400">Verifying your session...</p>
+                  </div>
+                )}
+
+                {!isValidatingSession && !error && hasValidSession && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <Label htmlFor="password">New Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <FormControl>
+                              <Input
+                                id="password"
+                                placeholder="••••••••"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="new-password"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <FormControl>
+                              <Input
+                                id="confirmPassword"
+                                placeholder="••••••••"
+                                type={showConfirmPassword ? "text" : "password"}
+                                autoComplete="new-password"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-purple-600 hover:bg-purple-700" 
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <div className="flex items-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
                           >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Updating password...
                         </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                          <FormControl>
-                            <Input
-                              id="confirmPassword"
-                              placeholder="••••••••"
-                              type={showConfirmPassword ? "text" : "password"}
-                              autoComplete="new-password"
-                              className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
-                              {...field}
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          >
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-purple-600 hover:bg-purple-700" 
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <div className="flex items-center">
-                        <div className="animate-spin -ml-1 mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        Updating password...
-                      </div>
-                    ) : (
-                      "Update Password"
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            ) : null}
+                      ) : (
+                        "Update password"
+                      )}
+                    </Button>
+                  </>
+                )}
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>
