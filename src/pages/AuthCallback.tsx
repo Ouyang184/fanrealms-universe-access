@@ -40,8 +40,7 @@ const AuthCallback = () => {
         
         if (isRecoveryFlow) {
           console.log("AuthCallback: Recovery flow detected - redirecting to reset password");
-          // For recovery flows, redirect immediately to reset password page
-          // The session will be handled there
+          // For recovery flows, redirect immediately without processing session
           navigate('/reset-password', { replace: true });
           return;
         }

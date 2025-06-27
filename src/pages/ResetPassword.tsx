@@ -34,6 +34,7 @@ const ResetPassword = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isValidatingSession, setIsValidatingSession] = useState(true);
+  const [hasValidSession, setHasValidSession] = useState(false);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -45,35 +46,66 @@ const ResetPassword = () => {
 
   useEffect(() => {
     const validateRecoverySession = async () => {
-      console.log("ResetPassword: Validating recovery session");
+      console.log("ResetPassword: Starting session validation");
       
       try {
-        // Wait for URL processing and session setup
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // First check if we have URL parameters that indicate a recovery session
+        const currentUrl = window.location.href;
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+        const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+        const type = urlParams.get('type') || hashParams.get('type');
         
-        console.log("ResetPassword: Session validation result", { 
-          hasSession: !!session, 
-          user: session?.user?.email,
-          error: error?.message 
+        console.log("ResetPassword: URL parameters", {
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken,
+          type,
+          currentUrl
         });
         
-        if (error) {
-          console.error("ResetPassword: Session error:", error);
-          setError("Invalid or expired reset link. Please request a new password reset.");
-          setTimeout(() => navigate('/forgot-password'), 3000);
-          return;
+        // If we have tokens in the URL, set the session
+        if (accessToken && refreshToken && type === 'recovery') {
+          console.log("ResetPassword: Setting session from URL tokens");
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error("ResetPassword: Error setting session:", error);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
+          
+          if (data.session) {
+            console.log("ResetPassword: Session set successfully");
+            setHasValidSession(true);
+          }
+        } else {
+          // Check if we already have a session
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("ResetPassword: Session error:", error);
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
+          
+          if (session?.user) {
+            console.log("ResetPassword: Found existing session");
+            setHasValidSession(true);
+          } else {
+            console.log("ResetPassword: No valid session found");
+            setError("Invalid or expired reset link. Please request a new password reset.");
+            setTimeout(() => navigate('/forgot-password'), 3000);
+            return;
+          }
         }
         
-        if (!session || !session.user) {
-          console.log("ResetPassword: No valid recovery session found");
-          setError("Invalid or expired reset link. Please request a new password reset.");
-          setTimeout(() => navigate('/forgot-password'), 3000);
-          return;
-        }
-        
-        console.log("ResetPassword: Valid recovery session confirmed");
         setIsValidatingSession(false);
         
       } catch (error: any) {
@@ -87,6 +119,11 @@ const ResetPassword = () => {
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
+    if (!hasValidSession) {
+      setError("No valid session found. Please request a new password reset.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
@@ -107,7 +144,7 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
-      // Sign out the user and redirect to landing page after 2 seconds
+      // Sign out and redirect to landing page after 2 seconds
       setTimeout(async () => {
         await supabase.auth.signOut();
         navigate('/', { replace: true });
@@ -167,7 +204,7 @@ const ResetPassword = () => {
                   </div>
                 )}
 
-                {!isValidatingSession && !error && (
+                {!isValidatingSession && !error && hasValidSession && (
                   <>
                     <FormField
                       control={form.control}

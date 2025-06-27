@@ -21,20 +21,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('Auth state change setup with persistent sessions');
     
+    // Check if we're on the reset password page - if so, don't process sessions here
+    const isOnResetPasswordPage = window.location.pathname === '/reset-password';
+    
+    if (isOnResetPasswordPage) {
+      console.log('AuthContext: On reset password page, skipping session processing');
+      setLoading(false);
+      return;
+    }
+    
     // First, check for existing session
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
         console.log('Got initial session:', initialSession ? 'exists' : 'none');
         
-        // For recovery sessions, we'll let the ResetPassword page handle the session
-        // Only set session state for non-recovery flows
-        const currentUrl = window.location.href;
-        const isOnResetPasswordPage = window.location.pathname === '/reset-password';
-        const isRecoveryFlow = currentUrl.includes('type=recovery') || 
-                              currentUrl.includes('recovery') || 
-                              isOnResetPasswordPage;
-        
-        if (!isRecoveryFlow && initialSession) {
+        if (initialSession) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           
@@ -62,9 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state change:', event);
         
         // Skip session updates if we're on the reset password page
-        // This prevents automatic authentication during password reset
-        const isOnResetPasswordPage = window.location.pathname === '/reset-password';
-        if (isOnResetPasswordPage && event === 'SIGNED_IN') {
+        const isCurrentlyOnResetPasswordPage = window.location.pathname === '/reset-password';
+        if (isCurrentlyOnResetPasswordPage) {
           console.log('AuthContext: Skipping session update on reset password page');
           return;
         }
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (currentSession?.user && !isOnResetPasswordPage) {
+        if (currentSession?.user && !isCurrentlyOnResetPasswordPage) {
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(userProfile => {
               if (userProfile) {
