@@ -14,127 +14,97 @@ const AuthCallback = () => {
     const handleAuthCallback = async () => {
       console.log("AuthCallback: Starting auth callback process");
       console.log("AuthCallback: Current URL:", window.location.href);
-      console.log("AuthCallback: Initial hash:", window.location.hash);
-      console.log("AuthCallback: Search params:", searchParams.toString());
 
-      // Step 1: Wait for URL hash with polling
-      let hashCheckAttempts = 0;
-      const maxAttempts = 10; // 2 seconds with 200ms intervals
-      
-      const waitForHash = () => {
-        return new Promise<void>((resolve) => {
-          const checkHash = () => {
-            hashCheckAttempts++;
-            const currentHash = window.location.hash;
-            console.log(`AuthCallback: Hash check attempt ${hashCheckAttempts}:`, currentHash);
-            
-            // Check if hash contains auth tokens or recovery type
-            const hasAuthData = currentHash.includes('access_token') || 
-                               currentHash.includes('type=recovery') ||
-                               searchParams.get('type') === 'recovery';
-            
-            if (hasAuthData || hashCheckAttempts >= maxAttempts) {
-              console.log("AuthCallback: Hash check complete", { hasAuthData, attempts: hashCheckAttempts });
-              resolve();
-            } else {
-              setTimeout(checkHash, 200);
-            }
-          };
-          checkHash();
-        });
-      };
-
-      // Wait for hash to be populated
-      await waitForHash();
-
-      // Step 2: Get session first to check for recovery context
-      let sessionData;
       try {
-        const { data, error } = await supabase.auth.getSession();
+        // Use getSessionFromUrl to properly handle the auth callback
+        const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+        
+        console.log("AuthCallback: getSessionFromUrl result:", {
+          hasData: !!data,
+          type: data?.type,
+          hasSession: !!data?.session,
+          hasUser: !!data?.session?.user,
+          error: error?.message
+        });
+
         if (error) {
-          console.error("AuthCallback: Error getting session:", error);
-          throw error;
+          console.error("AuthCallback: Error getting session from URL:", error);
+          toast({
+            title: "Authentication failed",
+            description: error.message || "Failed to process authentication. Please try again.",
+            variant: "destructive"
+          });
+          navigate("/login", { replace: true });
+          return;
         }
-        sessionData = data;
-      } catch (error) {
-        console.error("AuthCallback: Session error:", error);
+
+        // Check if this is a password recovery flow
+        if (data?.type === 'recovery') {
+          console.log("AuthCallback: Recovery flow detected, redirecting to reset-password");
+          if (data.session?.user) {
+            navigate("/reset-password", { replace: true });
+            return;
+          } else {
+            console.log("AuthCallback: Recovery flow but no session");
+            toast({
+              title: "Password reset failed",
+              description: "Invalid or expired reset link. Please request a new one.",
+              variant: "destructive"
+            });
+            navigate("/forgot-password", { replace: true });
+            return;
+          }
+        }
+
+        // Handle normal authentication flow
+        if (data?.session?.user) {
+          console.log("AuthCallback: Normal auth flow - session found, redirecting to home");
+          toast({
+            title: "Authentication successful",
+            description: "You have been successfully logged in.",
+          });
+          navigate("/home", { replace: true });
+          return;
+        }
+        
+        // Fallback: check for existing session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("AuthCallback: Session error:", sessionError);
+          toast({
+            title: "Authentication failed",
+            description: "Failed to get session. Please try again.",
+            variant: "destructive"
+          });
+          navigate("/login", { replace: true });
+          return;
+        }
+
+        if (session?.user) {
+          console.log("AuthCallback: Found existing session, redirecting to home");
+          navigate("/home", { replace: true });
+          return;
+        }
+
+        // No valid session found
+        console.log("AuthCallback: No valid session found");
         toast({
-          title: "Authentication failed",
-          description: "Failed to process authentication. Please try again.",
+          title: "Authentication failed", 
+          description: "No valid session found. Please try again.",
           variant: "destructive"
         });
         navigate("/login", { replace: true });
-        return;
-      }
 
-      // Step 3: Enhanced recovery detection
-      const currentHash = window.location.hash;
-      const hashParams = new URLSearchParams(currentHash.substring(1));
-      const urlParams = new URLSearchParams(window.location.search);
-      
-      // Multiple ways to detect recovery flow
-      const isRecoveryFromHash = hashParams.get('type') === 'recovery';
-      const isRecoveryFromSearch = urlParams.get('type') === 'recovery';
-      const hasRecoveryInUrl = window.location.href.includes('type=recovery');
-      
-      // Check if this is a recovery session by examining the session metadata
-      const isRecoverySession = sessionData.session?.user?.app_metadata?.provider === 'email' && 
-                               sessionData.session?.user?.user_metadata?.email_change_confirm_status === undefined &&
-                               sessionData.session?.user?.aud === 'authenticated';
-      
-      // Additional check: if we have a fresh session but came from /forgot-password
-      const referrer = document.referrer;
-      const cameFromForgotPassword = referrer.includes('/forgot-password');
-      
-      const isRecoveryFlow = isRecoveryFromHash || isRecoveryFromSearch || hasRecoveryInUrl || 
-                            (sessionData.session && cameFromForgotPassword);
-      
-      console.log("AuthCallback: Enhanced recovery detection", {
-        isRecoveryFromHash,
-        isRecoveryFromSearch,
-        hasRecoveryInUrl,
-        isRecoverySession,
-        cameFromForgotPassword,
-        isRecoveryFlow,
-        sessionExists: !!sessionData.session,
-        userEmail: sessionData.session?.user?.email
-      });
-
-      // Step 4: Handle recovery flow
-      if (isRecoveryFlow && sessionData.session?.user) {
-        console.log("AuthCallback: Recovery flow detected with valid session, redirecting to reset-password");
-        navigate("/reset-password", { replace: true });
-        return;
-      } else if (isRecoveryFlow && !sessionData.session) {
-        console.log("AuthCallback: Recovery flow detected but no session");
+      } catch (error: any) {
+        console.error("AuthCallback: Unexpected error:", error);
         toast({
-          title: "Password reset failed",
-          description: "Invalid or expired reset link. Please request a new one.",
+          title: "Authentication failed",
+          description: "An unexpected error occurred. Please try again.",
           variant: "destructive"
         });
-        navigate("/forgot-password", { replace: true });
-        return;
+        navigate("/login", { replace: true });
       }
-
-      // Step 5: Normal auth flow
-      if (sessionData.session?.user) {
-        console.log("AuthCallback: Normal auth flow - session found, redirecting to home");
-        toast({
-          title: "Authentication successful",
-          description: "You have been successfully logged in.",
-        });
-        navigate("/home", { replace: true });
-        return;
-      }
-      
-      // No session found
-      console.log("AuthCallback: No session found");
-      toast({
-        title: "Authentication failed", 
-        description: "No valid session found. Please try again.",
-        variant: "destructive"
-      });
-      navigate("/login", { replace: true });
     };
 
     handleAuthCallback();

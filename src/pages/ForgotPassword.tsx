@@ -38,11 +38,11 @@ const ForgotPassword = () => {
 
       console.log("ForgotPassword: Sending password reset email to:", values.email);
 
-      // Improved redirect URL configuration for recovery
-      const redirectUrl = `${window.location.origin}/auth/callback?type=recovery`;
+      // Use the proper callback URL for password recovery
+      const redirectTo = `${window.location.origin}/auth/callback`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: redirectUrl,
+        redirectTo,
       });
 
       if (error) {
