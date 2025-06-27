@@ -18,19 +18,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
-  // Helper function to check if current URL indicates a recovery flow
-  const isRecoveryFlow = () => {
-    const currentUrl = window.location.href;
-    const searchString = window.location.search;
-    const hashString = window.location.hash;
-    
-    return searchString.includes('type=recovery') ||
-           hashString.includes('type=recovery') ||
-           currentUrl.includes('type=recovery') ||
-           currentUrl.includes('recovery') ||
-           currentUrl.includes('reset');
-  };
-
   useEffect(() => {
     console.log('Auth state change setup with persistent sessions');
     
@@ -39,25 +26,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then(({ data: { session: initialSession } }) => {
         console.log('Got initial session:', initialSession ? 'exists' : 'none');
         
-        // Check if this is a recovery flow before setting session
-        if (initialSession && isRecoveryFlow()) {
-          console.log('AuthContext: Recovery flow detected, not setting session yet');
-          setLoading(false);
-          return;
+        // For recovery sessions, we'll let the ResetPassword page handle the session
+        // Only set session state for non-recovery flows
+        const currentUrl = window.location.href;
+        const isOnResetPasswordPage = window.location.pathname === '/reset-password';
+        const isRecoveryFlow = currentUrl.includes('type=recovery') || 
+                              currentUrl.includes('recovery') || 
+                              isOnResetPasswordPage;
+        
+        if (!isRecoveryFlow && initialSession) {
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user) {
+            setTimeout(() => {
+              fetchUserProfile(initialSession.user.id).then(userProfile => {
+                if (userProfile) {
+                  setProfile(userProfile);
+                }
+              });
+            }, 0);
+          }
         }
         
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-        
-        if (initialSession?.user) {
-          setTimeout(() => {
-            fetchUserProfile(initialSession.user.id).then(userProfile => {
-              if (userProfile) {
-                setProfile(userProfile);
-              }
-            });
-          }, 0);
-        }
         setLoading(false);
       })
       .catch(error => {
@@ -70,17 +61,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, currentSession) => {
         console.log('Auth state change:', event);
         
-        // Check if this is a recovery flow before updating session
-        if (currentSession && isRecoveryFlow()) {
-          console.log('AuthContext: Recovery flow detected during auth state change, not updating session');
+        // Skip session updates if we're on the reset password page
+        // This prevents automatic authentication during password reset
+        const isOnResetPasswordPage = window.location.pathname === '/reset-password';
+        if (isOnResetPasswordPage && event === 'SIGNED_IN') {
+          console.log('AuthContext: Skipping session update on reset password page');
           return;
         }
         
-        // Handle session changes
+        // Handle session changes for normal flows
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (currentSession?.user) {
+        if (currentSession?.user && !isOnResetPasswordPage) {
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(userProfile => {
               if (userProfile) {

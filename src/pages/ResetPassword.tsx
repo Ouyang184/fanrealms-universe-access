@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -32,7 +33,7 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSessionReady, setIsSessionReady] = useState(false);
+  const [isValidatingSession, setIsValidatingSession] = useState(true);
 
   const form = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
@@ -43,53 +44,49 @@ const ResetPassword = () => {
   });
 
   useEffect(() => {
-    const setupRecoverySession = async () => {
-      console.log("ResetPassword: Setting up recovery session");
+    const validateRecoverySession = async () => {
+      console.log("ResetPassword: Validating recovery session");
       
       try {
-        // Wait a moment for URL processing
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for URL processing and session setup
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        console.log("ResetPassword: Session check result", { 
+        console.log("ResetPassword: Session validation result", { 
           hasSession: !!session, 
           user: session?.user?.email,
           error: error?.message 
         });
         
-        if (error) throw error;
-        
-        if (session && session.user) {
-          console.log("ResetPassword: Recovery session is ready");
-          setIsSessionReady(true);
-        } else {
-          console.log("ResetPassword: No recovery session found");
+        if (error) {
+          console.error("ResetPassword: Session error:", error);
           setError("Invalid or expired reset link. Please request a new password reset.");
-          // Redirect to forgot password page after 3 seconds
-          setTimeout(() => {
-            navigate('/forgot-password');
-          }, 3000);
+          setTimeout(() => navigate('/forgot-password'), 3000);
+          return;
         }
+        
+        if (!session || !session.user) {
+          console.log("ResetPassword: No valid recovery session found");
+          setError("Invalid or expired reset link. Please request a new password reset.");
+          setTimeout(() => navigate('/forgot-password'), 3000);
+          return;
+        }
+        
+        console.log("ResetPassword: Valid recovery session confirmed");
+        setIsValidatingSession(false);
+        
       } catch (error: any) {
-        console.error("ResetPassword: Session setup error:", error);
+        console.error("ResetPassword: Validation error:", error);
         setError("Invalid or expired reset link. Please request a new password reset.");
-        // Redirect to forgot password page after 3 seconds
-        setTimeout(() => {
-          navigate('/forgot-password');
-        }, 3000);
+        setTimeout(() => navigate('/forgot-password'), 3000);
       }
     };
 
-    setupRecoverySession();
+    validateRecoverySession();
   }, [navigate]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
-    if (!isSessionReady) {
-      setError("Session not properly initialized. Please try the reset link again.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setError(null);
@@ -107,12 +104,13 @@ const ResetPassword = () => {
       
       toast({
         title: "Password updated",
-        description: "Your password has been successfully updated. Redirecting to login...",
+        description: "Your password has been successfully updated.",
       });
 
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login');
+      // Sign out the user and redirect to landing page after 2 seconds
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate('/', { replace: true });
       }, 2000);
 
     } catch (error: any) {
@@ -134,7 +132,7 @@ const ResetPassword = () => {
               </div>
               <CardTitle className="text-2xl font-bold">Password updated!</CardTitle>
               <CardDescription className="text-gray-400">
-                Your password has been successfully updated. You'll be redirected to the login page shortly.
+                Your password has been successfully updated. You'll be redirected to the home page shortly.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -150,7 +148,7 @@ const ResetPassword = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              {isSessionReady ? "Enter your new password below." : "Verifying your reset link..."}
+              {isValidatingSession ? "Verifying your reset link..." : "Enter your new password below."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -162,14 +160,14 @@ const ResetPassword = () => {
                   </Alert>
                 )}
 
-                {!isSessionReady && !error && (
+                {isValidatingSession && !error && (
                   <div className="text-center py-4">
                     <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
                     <p className="text-sm text-gray-400">Verifying your session...</p>
                   </div>
                 )}
 
-                {isSessionReady && (
+                {!isValidatingSession && !error && (
                   <>
                     <FormField
                       control={form.control}
@@ -240,7 +238,7 @@ const ResetPassword = () => {
                     <Button 
                       type="submit" 
                       className="w-full bg-purple-600 hover:bg-purple-700" 
-                      disabled={isSubmitting || !isSessionReady}
+                      disabled={isSubmitting}
                     >
                       {isSubmitting ? (
                         <div className="flex items-center">
