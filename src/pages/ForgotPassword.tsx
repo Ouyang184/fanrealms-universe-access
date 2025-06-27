@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -37,12 +36,15 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
+      console.log("Sending password reset email with redirect URL:", `${window.location.origin}/auth/callback`);
+
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
 
       if (error) throw error;
 
+      console.log("Password reset email sent successfully");
       setIsSuccess(true);
     } catch (error: any) {
       console.error("Password reset error:", error);
