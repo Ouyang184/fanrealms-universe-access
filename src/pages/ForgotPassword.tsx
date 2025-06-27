@@ -37,7 +37,7 @@ const ForgotPassword = () => {
       setError(null);
 
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: "https://fanrealms.com/reset-password",
       });
 
       if (error) throw error;
