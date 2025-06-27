@@ -14,6 +14,8 @@ const AuthCallback = () => {
     const handleAuthCallback = async () => {
       console.log("AuthCallback: Processing auth callback");
       console.log("AuthCallback: Current URL:", window.location.href);
+      console.log("AuthCallback: Search params:", window.location.search);
+      console.log("AuthCallback: Hash params:", window.location.hash);
       
       // Get all parameters from URL
       const urlParams = new URLSearchParams(window.location.search);
@@ -45,33 +47,34 @@ const AuthCallback = () => {
         return;
       }
       
-      // Handle recovery flow (password reset)
-      if (type === 'recovery' || accessToken) {
-        console.log("AuthCallback: Recovery flow detected");
+      // Handle recovery flow (password reset) - this is the key fix
+      if (type === 'recovery' && accessToken && refreshToken) {
+        console.log("AuthCallback: Recovery flow detected with tokens");
         
         try {
           // Set the session from the tokens
-          if (accessToken && refreshToken) {
-            const { data, error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (sessionError) {
+            console.error("AuthCallback: Session error:", sessionError);
+            toast({
+              title: "Session error",
+              description: "Failed to establish recovery session. Please try requesting a new password reset.",
+              variant: "destructive"
             });
-            
-            if (sessionError) {
-              console.error("AuthCallback: Session error:", sessionError);
-              toast({
-                title: "Session error",
-                description: "Failed to establish recovery session. Please try requesting a new password reset.",
-                variant: "destructive"
-              });
-              navigate("/forgot-password", { replace: true });
-              return;
-            }
-            
-            console.log("AuthCallback: Recovery session established, redirecting to reset-password");
-            navigate("/reset-password", { replace: true });
+            navigate("/forgot-password", { replace: true });
             return;
           }
+          
+          console.log("AuthCallback: Recovery session established successfully");
+          console.log("AuthCallback: Redirecting to reset-password");
+          
+          // Navigate to reset password page
+          navigate("/reset-password", { replace: true });
+          return;
         } catch (error) {
           console.error("AuthCallback: Recovery session error:", error);
           toast({
@@ -81,6 +84,30 @@ const AuthCallback = () => {
           });
           navigate("/forgot-password", { replace: true });
           return;
+        }
+      }
+      
+      // If we have tokens but no type, try to process them anyway
+      if (accessToken && refreshToken && !type) {
+        console.log("AuthCallback: Tokens found without type, attempting session");
+        
+        try {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (sessionError) throw sessionError;
+          
+          // Check if this might be a recovery session
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session) {
+            console.log("AuthCallback: Session established, redirecting to reset-password as fallback");
+            navigate("/reset-password", { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error("AuthCallback: Token processing error:", error);
         }
       }
       
@@ -100,7 +127,7 @@ const AuthCallback = () => {
         }
         
         if (!data.session) {
-          console.log("AuthCallback: No session found");
+          console.log("AuthCallback: No session found, redirecting to login");
           toast({
             title: "Authentication failed",
             description: "Please try logging in again.",
@@ -110,7 +137,7 @@ const AuthCallback = () => {
           return;
         }
         
-        console.log("AuthCallback: Session loaded successfully, redirecting to /home");
+        console.log("AuthCallback: Regular session loaded successfully, redirecting to /home");
         toast({
           title: "Authentication successful",
           description: "You have been successfully authenticated.",
