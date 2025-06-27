@@ -21,8 +21,14 @@ const Index = () => {
     // If we have recovery parameters, redirect to auth callback
     if (code || (accessToken && refreshToken) || type === 'recovery') {
       console.log("Index: Recovery parameters detected, redirecting to auth callback");
-      const currentUrl = window.location.href;
-      const redirectUrl = currentUrl.replace(window.location.origin, window.location.origin + '/auth/callback');
+      console.log("Index: Parameters found:", { code, type, accessToken: !!accessToken, refreshToken: !!refreshToken });
+      
+      // Properly construct the redirect URL with all parameters
+      const currentParams = window.location.search;
+      const currentHash = window.location.hash;
+      const redirectUrl = `/auth/callback${currentParams}${currentHash}`;
+      
+      console.log("Index: Redirecting to:", redirectUrl);
       window.location.replace(redirectUrl);
       return;
     }
