@@ -12,43 +12,43 @@ const AuthCallback = () => {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      console.log("AuthCallback: Processing auth callback");
+      
+      // Get the current URL to check for recovery indicators
+      const currentUrl = window.location.href;
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const searchType = searchParams.get('type');
+      const hashType = hashParams.get('type');
+      
+      console.log("AuthCallback: URL analysis", {
+        currentUrl,
+        searchType,
+        hashType,
+        fullHash: window.location.hash,
+        fullSearch: window.location.search
+      });
+      
+      // IMMEDIATELY check for recovery flow - do this FIRST before any other processing
+      const isRecoveryFlow = 
+        searchType === 'recovery' ||
+        hashType === 'recovery' ||
+        currentUrl.includes('type=recovery') ||
+        currentUrl.includes('recovery') ||
+        hashParams.get('access_token') || // Recovery tokens are present
+        searchParams.get('access_token');
+      
+      console.log("AuthCallback: Recovery flow detection:", isRecoveryFlow);
+      
+      // If this is a recovery flow, redirect IMMEDIATELY without any session processing
+      if (isRecoveryFlow) {
+        console.log("AuthCallback: Recovery flow detected - redirecting to reset password IMMEDIATELY");
+        // Use window.location.replace to ensure immediate redirect without back button issues
+        window.location.replace('/reset-password');
+        return;
+      }
+      
+      // Only process regular authentication flows if NOT a recovery flow
       try {
-        console.log("AuthCallback: Processing auth callback");
-        
-        // Get the current URL to check for recovery indicators
-        const currentUrl = window.location.href;
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const searchType = searchParams.get('type');
-        const hashType = hashParams.get('type');
-        
-        console.log("AuthCallback: URL analysis", {
-          currentUrl,
-          searchType,
-          hashType,
-          fullHash: window.location.hash,
-          fullSearch: window.location.search
-        });
-        
-        // Check if this is a recovery/password reset flow - be more aggressive
-        const isRecoveryFlow = 
-          searchType === 'recovery' ||
-          hashType === 'recovery' ||
-          currentUrl.includes('type=recovery') ||
-          currentUrl.includes('recovery') ||
-          hashParams.get('access_token') || // Recovery tokens are present
-          searchParams.get('access_token');
-        
-        console.log("AuthCallback: Recovery flow detection:", isRecoveryFlow);
-        
-        if (isRecoveryFlow) {
-          console.log("AuthCallback: Recovery flow detected - redirecting to reset password immediately");
-          // For recovery flows, redirect immediately without any session processing
-          // Use replace to avoid back button issues
-          navigate('/reset-password', { replace: true });
-          return;
-        }
-        
-        // For regular auth flows, process the session normally
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
