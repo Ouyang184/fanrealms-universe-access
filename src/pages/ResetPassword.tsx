@@ -55,7 +55,7 @@ const ResetPassword = () => {
           hasSession: !!session, 
           error: sessionError?.message,
           user: session?.user?.email,
-          sessionId: session?.id?.substring(0, 8) + "..."
+          accessToken: session?.access_token ? "present" : "missing"
         });
 
         if (sessionError) {
