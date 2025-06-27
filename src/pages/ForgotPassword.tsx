@@ -37,25 +37,21 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
-      // Use the current domain for the redirect URL
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      console.log("Sending password reset email to:", values.email);
-      console.log("Redirect URL:", redirectUrl);
+      console.log("ForgotPassword: Sending password reset email to:", values.email);
 
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: redirectUrl,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
 
       if (error) {
-        console.error("Password reset error:", error);
+        console.error("ForgotPassword: Reset password error:", error);
         throw error;
       }
 
-      console.log("Password reset email sent successfully");
+      console.log("ForgotPassword: Password reset email sent successfully");
       setIsSuccess(true);
     } catch (error: any) {
-      console.error("Password reset error:", error);
+      console.error("ForgotPassword: Error:", error);
       setError(error.message || "An error occurred while sending the reset email. Please try again.");
     } finally {
       setIsSubmitting(false);
