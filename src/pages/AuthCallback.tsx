@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const AuthCallback = () => {
@@ -10,78 +10,66 @@ const AuthCallback = () => {
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Helper function to wait for hash to load
-  const waitForHashToLoad = (): Promise<void> => {
-    return new Promise((resolve) => {
-      const maxAttempts = 10; // 10 attempts * 200ms = 2 seconds
-      let attempts = 0;
-
-      const checkHash = () => {
-        attempts++;
-        const hash = window.location.hash;
-        
-        // Check if hash contains access_token or type=recovery
-        if (hash.includes('access_token') || hash.includes('type=recovery')) {
-          console.log("AuthCallback: Hash loaded successfully", { hash, attempts });
-          resolve();
-          return;
-        }
-
-        // If we've reached max attempts, resolve anyway
-        if (attempts >= maxAttempts) {
-          console.log("AuthCallback: Max polling attempts reached", { hash, attempts });
-          resolve();
-          return;
-        }
-
-        // Continue polling
-        setTimeout(checkHash, 200);
-      };
-
-      checkHash();
-    });
-  };
-
   useEffect(() => {
     const handleAuthCallback = async () => {
       console.log("AuthCallback: Processing auth callback");
+      console.log("AuthCallback: Current URL:", window.location.href);
+      console.log("AuthCallback: Hash:", window.location.hash);
+      console.log("AuthCallback: Search:", window.location.search);
       
-      // Wait for hash to load before processing
-      await waitForHashToLoad();
-      
-      // Get the current URL to check for recovery indicators
-      const currentUrl = window.location.href;
+      // Get all parameters from both URL and hash
+      const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const searchType = searchParams.get('type');
-      const hashType = hashParams.get('type');
       
-      console.log("AuthCallback: URL analysis after hash load", {
-        currentUrl,
-        searchType,
-        hashType,
-        fullHash: window.location.hash,
-        fullSearch: window.location.search
+      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
+      const code = urlParams.get('code') || hashParams.get('code');
+      const type = urlParams.get('type') || hashParams.get('type');
+      const error = urlParams.get('error') || hashParams.get('error');
+      const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
+      
+      console.log("AuthCallback: Parameters found:", { 
+        hasAccessToken: !!accessToken, 
+        hasRefreshToken: !!refreshToken, 
+        hasCode: !!code, 
+        type,
+        error,
+        errorDescription
       });
       
-      // Check for recovery flow indicators
-      const isRecoveryFlow = 
-        searchType === 'recovery' ||
-        hashType === 'recovery' ||
-        currentUrl.includes('type=recovery') ||
-        currentUrl.includes('recovery') ||
-        hashParams.get('access_token') || 
-        searchParams.get('access_token');
-      
-      console.log("AuthCallback: Recovery flow detection:", isRecoveryFlow);
-      
-      // If this is a recovery flow, redirect immediately without session processing
-      if (isRecoveryFlow) {
-        console.log("Redirecting to /reset-password for recovery flow...");
-        window.location.replace('/reset-password');
+      // Check for errors first
+      if (error) {
+        console.error("AuthCallback: Auth error:", error, errorDescription);
+        toast({
+          title: "Authentication failed",
+          description: errorDescription || error,
+          variant: "destructive"
+        });
+        navigate("/login", { replace: true });
         return;
       }
       
-      // For regular auth flows, now get the session after hash is loaded
+      // Check for recovery flow - ANY indication this is a password reset
+      const isRecoveryFlow = 
+        type === 'recovery' ||
+        window.location.href.includes('type=recovery') ||
+        accessToken || // Password reset emails include access tokens
+        code; // Or authorization codes
+      
+      console.log("AuthCallback: Is recovery flow:", isRecoveryFlow);
+      
+      // If this is a recovery flow, redirect to reset-password with all parameters
+      if (isRecoveryFlow) {
+        console.log("AuthCallback: Redirecting to reset-password for recovery flow");
+        const currentParams = window.location.search;
+        const currentHash = window.location.hash;
+        const redirectUrl = `/reset-password${currentParams}${currentHash}`;
+        console.log("AuthCallback: Redirect URL:", redirectUrl);
+        window.location.replace(redirectUrl);
+        return;
+      }
+      
+      // For regular auth flows, process the session
       try {
         const { data, error } = await supabase.auth.getSession();
         
