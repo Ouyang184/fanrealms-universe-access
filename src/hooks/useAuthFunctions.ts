@@ -11,25 +11,24 @@ export const useAuthFunctions = () => {
 
   const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
+      console.log("useAuthFunctions: Attempting sign in for:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("useAuthFunctions: Sign in error:", error);
+        throw error;
+      }
+      
+      console.log("useAuthFunctions: Sign in successful:", data.user?.email);
       
       toast({
         title: "Login successful",
         description: "You are now logged in.",
       });
-      
-      // Added navigation to the onboarding page for new users
-      // In a real app, you would check if the user has completed onboarding
-      const isNewUser = false; // This would be determined by your user profile data
-      
-      if (isNewUser) {
-        navigate('/onboarding');
-      }
       
       return {
         success: true,
@@ -37,7 +36,7 @@ export const useAuthFunctions = () => {
         session: data.session
       };
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("useAuthFunctions: Login error:", error);
       
       const errorMessage = error.message?.includes("Invalid login") 
         ? "Invalid email or password. Please check your credentials."
@@ -54,7 +53,7 @@ export const useAuthFunctions = () => {
         error: { message: errorMessage }
       };
     }
-  }, [toast, navigate]);
+  }, [toast]);
 
   const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
     try {
@@ -158,7 +157,8 @@ export const useAuthFunctions = () => {
 
   const signOut = useCallback(async () => {
     try {
-      // Only sign out from current session, don't clear localStorage
+      console.log("useAuthFunctions: Attempting sign out");
+      
       await supabase.auth.signOut({ scope: 'local' });
       
       toast({
@@ -169,6 +169,7 @@ export const useAuthFunctions = () => {
       // Navigate to the root page
       navigate('/', { replace: true });
     } catch (error: any) {
+      console.error("useAuthFunctions: Sign out error:", error);
       toast({
         title: "Sign out failed",
         description: error.message || "An error occurred during sign out. Please try again.",

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -134,20 +133,25 @@ const ResetPassword = () => {
         password: values.password
       });
 
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes("same_password") || error.message.includes("New password should be different")) {
+          setError("Your new password must be different from your current password. Please choose a different password.");
+          return;
+        }
+        throw error;
+      }
 
       console.log("ResetPassword: Password updated successfully");
       setIsSuccess(true);
       
       toast({
         title: "Password updated",
-        description: "Your password has been successfully updated.",
+        description: "Your password has been successfully updated. Redirecting to home...",
       });
 
-      // Sign out and redirect to landing page after 2 seconds
-      setTimeout(async () => {
-        await supabase.auth.signOut();
-        navigate('/', { replace: true });
+      // Redirect to home after 2 seconds while keeping the user logged in
+      setTimeout(() => {
+        navigate('/home', { replace: true });
       }, 2000);
 
     } catch (error: any) {
@@ -169,7 +173,7 @@ const ResetPassword = () => {
               </div>
               <CardTitle className="text-2xl font-bold">Password updated!</CardTitle>
               <CardDescription className="text-gray-400">
-                Your password has been successfully updated. You'll be redirected to the home page shortly.
+                Your password has been successfully updated. You'll be redirected to your home page shortly.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -185,7 +189,7 @@ const ResetPassword = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">Set new password</CardTitle>
             <CardDescription className="text-center text-gray-400">
-              {isValidatingSession ? "Verifying your reset link..." : "Enter your new password below."}
+              {isValidatingSession ? "Verifying your reset link..." : "Enter your new password below. Make sure it's different from your current password."}
             </CardDescription>
           </CardHeader>
           <CardContent>

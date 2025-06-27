@@ -19,21 +19,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
-    console.log('Auth state change setup with persistent sessions');
-    
-    // Check if we're on the reset password page - if so, don't process sessions here
-    const isOnResetPasswordPage = window.location.pathname === '/reset-password';
-    
-    if (isOnResetPasswordPage) {
-      console.log('AuthContext: On reset password page, skipping session processing');
-      setLoading(false);
-      return;
-    }
+    console.log('AuthContext: Setting up auth state management');
     
     // First, check for existing session
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
-        console.log('Got initial session:', initialSession ? 'exists' : 'none');
+        console.log('AuthContext: Initial session check:', initialSession ? 'exists' : 'none');
         
         if (initialSession) {
           setSession(initialSession);
@@ -53,36 +44,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       })
       .catch(error => {
-        console.error("Error getting session:", error);
+        console.error("AuthContext: Error getting session:", error);
         setLoading(false);
       });
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('Auth state change:', event);
+        console.log('AuthContext: Auth state change event:', event);
+        console.log('AuthContext: Current session:', currentSession ? 'exists' : 'none');
         
-        // Skip session updates if we're on the reset password page
-        const isCurrentlyOnResetPasswordPage = window.location.pathname === '/reset-password';
-        if (isCurrentlyOnResetPasswordPage) {
-          console.log('AuthContext: Skipping session update on reset password page');
-          return;
-        }
-        
-        // Handle session changes for normal flows
+        // Update session and user state
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (currentSession?.user && !isCurrentlyOnResetPasswordPage) {
+        if (currentSession?.user) {
+          console.log('AuthContext: User authenticated, fetching profile');
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(userProfile => {
               if (userProfile) {
                 setProfile(userProfile);
+                console.log('AuthContext: Profile loaded');
               }
             });
           }, 0);
         } else {
           // Clear profile when no session exists
+          console.log('AuthContext: No session, clearing profile');
           setProfile(null);
         }
       }

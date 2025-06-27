@@ -46,20 +46,22 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setLoginError(null);
+      console.log("LoginForm: Attempting to sign in with:", values.email);
       
       const result: AuthResult = await signIn(values.email, values.password);
       
-      // Fixed: Correctly handle discriminated union type
       if (result.success === false) {
+        console.log("LoginForm: Sign in failed:", result.error.message);
         setLoginError(result.error.message);
         return;
       }
       
+      console.log("LoginForm: Sign in successful, redirecting...");
       const params = new URLSearchParams(location.search);
       const returnTo = params.get('returnTo');
-      navigate(returnTo || '/dashboard', { replace: true });
+      navigate(returnTo || '/home', { replace: true });
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("LoginForm: Login error:", error);
       setLoginError(error?.message || "Unexpected error occurred");
     }
   };
