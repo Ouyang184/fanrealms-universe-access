@@ -15,35 +15,42 @@ const AuthCallback = () => {
       try {
         console.log("AuthCallback: Processing auth callback");
         
-        // Check URL parameters and hash for recovery indicators BEFORE getting session
-        const urlSearchParams = new URLSearchParams(window.location.search);
-        const urlHashParams = new URLSearchParams(window.location.hash.substring(1));
+        // First, check ALL possible sources for recovery indicators
+        const currentUrl = window.location.href;
+        const searchString = window.location.search;
+        const hashString = window.location.hash;
         
-        const typeFromSearch = urlSearchParams.get('type') || searchParams.get('type');
-        const typeFromHash = urlHashParams.get('type');
-        
-        console.log("AuthCallback: Checking for recovery type", { 
-          typeFromSearch, 
-          typeFromHash,
-          fullSearch: window.location.search,
-          fullHash: window.location.hash 
+        console.log("AuthCallback: Full URL analysis", {
+          currentUrl,
+          searchString,
+          hashString,
+          searchParams: Object.fromEntries(searchParams.entries())
         });
         
-        // Check if this is a recovery flow BEFORE processing the session
-        const isRecovery = typeFromSearch === 'recovery' || 
-                          typeFromHash === 'recovery' ||
-                          window.location.search.includes('type=recovery') ||
-                          window.location.hash.includes('type=recovery');
+        // Comprehensive recovery detection - check multiple sources
+        const isRecoveryFlow = 
+          // Check URL search params
+          searchString.includes('type=recovery') ||
+          // Check hash params
+          hashString.includes('type=recovery') ||
+          // Check React Router search params
+          searchParams.get('type') === 'recovery' ||
+          // Check full URL for recovery indicators
+          currentUrl.includes('type=recovery') ||
+          // Check if URL came from password reset email (common pattern)
+          currentUrl.includes('recovery') ||
+          currentUrl.includes('reset');
         
-        console.log("AuthCallback: Is recovery flow detected?", isRecovery);
+        console.log("AuthCallback: Recovery flow detection result:", isRecoveryFlow);
         
-        if (isRecovery) {
-          console.log("AuthCallback: Recovery flow detected, redirecting to reset password");
+        // If ANY recovery indicator is found, go to reset password immediately
+        if (isRecoveryFlow) {
+          console.log("AuthCallback: Recovery flow confirmed - redirecting to reset password");
           navigate('/reset-password', { replace: true });
           return;
         }
         
-        // For non-recovery flows, get the session
+        // Only process regular authentication if it's NOT a recovery flow
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -51,7 +58,7 @@ const AuthCallback = () => {
           throw error;
         }
         
-        console.log("AuthCallback: Session data", { 
+        console.log("AuthCallback: Session data for regular auth", { 
           hasSession: !!data?.session, 
           user: data?.session?.user?.email 
         });
