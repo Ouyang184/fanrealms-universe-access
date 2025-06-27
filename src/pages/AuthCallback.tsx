@@ -16,36 +16,29 @@ const AuthCallback = () => {
       console.log("AuthCallback: Current URL:", window.location.href);
 
       try {
-        // Use getSessionFromUrl to properly handle the auth callback
-        const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-        
-        console.log("AuthCallback: getSessionFromUrl result:", {
-          hasData: !!data,
-          type: data?.type,
-          hasSession: !!data?.session,
-          hasUser: !!data?.session?.user,
-          error: error?.message
+        // Check URL parameters to determine the type of callback
+        const type = searchParams.get('type');
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+
+        console.log("AuthCallback: URL params:", {
+          type,
+          hasAccessToken: !!accessToken,
+          hasRefreshToken: !!refreshToken
         });
 
-        if (error) {
-          console.error("AuthCallback: Error getting session from URL:", error);
-          toast({
-            title: "Authentication failed",
-            description: error.message || "Failed to process authentication. Please try again.",
-            variant: "destructive"
+        // Handle password recovery flow
+        if (type === 'recovery' && accessToken && refreshToken) {
+          console.log("AuthCallback: Recovery flow detected");
+          
+          // Set the session with the tokens from URL
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
           });
-          navigate("/login", { replace: true });
-          return;
-        }
 
-        // Check if this is a password recovery flow
-        if (data?.type === 'recovery') {
-          console.log("AuthCallback: Recovery flow detected, redirecting to reset-password");
-          if (data.session?.user) {
-            navigate("/reset-password", { replace: true });
-            return;
-          } else {
-            console.log("AuthCallback: Recovery flow but no session");
+          if (error) {
+            console.error("AuthCallback: Error setting recovery session:", error);
             toast({
               title: "Password reset failed",
               description: "Invalid or expired reset link. Please request a new one.",
@@ -54,19 +47,45 @@ const AuthCallback = () => {
             navigate("/forgot-password", { replace: true });
             return;
           }
+
+          if (data.session?.user) {
+            console.log("AuthCallback: Recovery session established, redirecting to reset-password");
+            navigate("/reset-password", { replace: true });
+            return;
+          }
         }
 
         // Handle normal authentication flow
-        if (data?.session?.user) {
-          console.log("AuthCallback: Normal auth flow - session found, redirecting to home");
-          toast({
-            title: "Authentication successful",
-            description: "You have been successfully logged in.",
+        if (accessToken && refreshToken && type !== 'recovery') {
+          console.log("AuthCallback: Normal auth flow detected");
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
           });
-          navigate("/home", { replace: true });
-          return;
+
+          if (error) {
+            console.error("AuthCallback: Error setting session:", error);
+            toast({
+              title: "Authentication failed",
+              description: error.message || "Failed to process authentication. Please try again.",
+              variant: "destructive"
+            });
+            navigate("/login", { replace: true });
+            return;
+          }
+
+          if (data.session?.user) {
+            console.log("AuthCallback: Normal auth session established, redirecting to home");
+            toast({
+              title: "Authentication successful",
+              description: "You have been successfully logged in.",
+            });
+            navigate("/home", { replace: true });
+            return;
+          }
         }
-        
+
         // Fallback: check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
