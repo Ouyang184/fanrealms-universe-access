@@ -11,19 +11,6 @@ const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check if we're in a recovery flow - if so, don't redirect
-    const currentUrl = window.location.href;
-    const isRecoveryFlow = 
-      currentUrl.includes('type=recovery') ||
-      currentUrl.includes('recovery') ||
-      window.location.pathname === '/reset-password' ||
-      window.location.pathname === '/auth/callback';
-      
-    if (isRecoveryFlow) {
-      console.log("Index: Recovery flow detected, skipping auto-redirect");
-      return;
-    }
-    
     if (!loading && user) {
       navigate("/home", { replace: true });
     }
