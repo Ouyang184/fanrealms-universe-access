@@ -123,8 +123,9 @@ const ResetPassword = () => {
         description: "Your password has been successfully updated.",
       });
 
-      // Sign out the user after password reset
+      // Sign out the user and redirect to login after password reset
       setTimeout(async () => {
+        console.log("ResetPassword: Signing out user after password reset");
         await supabase.auth.signOut();
         navigate('/login', { replace: true });
       }, 2000);
@@ -148,7 +149,7 @@ const ResetPassword = () => {
               </div>
               <CardTitle className="text-2xl font-bold">Password Updated!</CardTitle>
               <CardDescription className="text-gray-400">
-                Your password has been successfully updated. You'll be redirected to login shortly.
+                Your password has been successfully updated. You'll be redirected to the login page shortly.
               </CardDescription>
             </CardHeader>
           </Card>

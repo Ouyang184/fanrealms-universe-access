@@ -54,24 +54,62 @@ const AuthCallback = () => {
       
       const isRecoveryFromHash = hashParams.get('type') === 'recovery';
       const isRecoveryFromSearch = urlParams.get('type') === 'recovery';
-      const hasAccessToken = hashParams.has('access_token') || currentHash.includes('access_token');
+      const isRecoveryFlow = isRecoveryFromHash || isRecoveryFromSearch;
       
       console.log("AuthCallback: Recovery detection", {
         isRecoveryFromHash,
         isRecoveryFromSearch,
-        hasAccessToken,
+        isRecoveryFlow,
         hashParams: hashParams.toString(),
         urlParams: urlParams.toString()
       });
 
-      // Step 3: Immediate recovery redirect
-      if (isRecoveryFromHash || isRecoveryFromSearch) {
-        console.log("AuthCallback: Recovery flow detected, redirecting immediately to /reset-password");
-        window.location.replace('/reset-password');
-        return;
+      // Step 3: Handle recovery flow differently
+      if (isRecoveryFlow) {
+        console.log("AuthCallback: Recovery flow detected");
+        
+        // For recovery, we need to establish the session first, then redirect
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error("AuthCallback: Recovery session error:", error);
+            toast({
+              title: "Password reset failed",
+              description: "Invalid or expired reset link. Please request a new one.",
+              variant: "destructive"
+            });
+            navigate("/forgot-password", { replace: true });
+            return;
+          }
+          
+          if (data.session?.user) {
+            console.log("AuthCallback: Recovery session established, redirecting to reset-password");
+            navigate("/reset-password", { replace: true });
+            return;
+          } else {
+            console.log("AuthCallback: No recovery session found");
+            toast({
+              title: "Password reset failed",
+              description: "Invalid or expired reset link. Please request a new one.",
+              variant: "destructive"
+            });
+            navigate("/forgot-password", { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error("AuthCallback: Recovery error:", error);
+          toast({
+            title: "Password reset failed",
+            description: "An error occurred. Please try again.",
+            variant: "destructive"
+          });
+          navigate("/forgot-password", { replace: true });
+          return;
+        }
       }
 
-      // Step 4: Normal auth flow - only after hash check and recovery redirect logic
+      // Step 4: Normal auth flow - only for non-recovery flows
       try {
         console.log("AuthCallback: Normal auth flow, getting session");
         const { data, error } = await supabase.auth.getSession();
