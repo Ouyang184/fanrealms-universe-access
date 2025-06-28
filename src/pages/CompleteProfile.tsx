@@ -25,68 +25,71 @@ const CompleteProfile = () => {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if user exists in public.users table (created by trigger)
+  // Simple user validation - just ensure user record exists
   useEffect(() => {
-    const checkUserExists = async () => {
+    const ensureUserExists = async () => {
       if (!user?.id || loading) return;
       
       console.log('Checking if user exists in public.users:', user.id);
-      setIsValidatingUser(true);
+      setIsInitializing(true);
       
       try {
-        // Wait a bit for the trigger to complete if user just signed up
-        let attempts = 0;
-        const maxAttempts = 10;
+        // Check if user exists in public.users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
         
-        while (attempts < maxAttempts) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('id, email, username')
-            .eq('id', user.id)
-            .maybeSingle();
-          
-          if (error) {
-            console.error('Error checking user existence:', error);
-            throw error;
-          }
-          
-          if (userData) {
-            console.log('User exists in public.users:', userData);
-            setIsValidatingUser(false);
-            return;
-          }
-          
-          // User doesn't exist yet, wait and retry (trigger may still be processing)
-          console.log(`User not found, attempt ${attempts + 1}/${maxAttempts}, waiting...`);
-          attempts++;
-          
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+        if (userError && userError.code !== 'PGRST116') {
+          console.error('Error checking user existence:', userError);
+          throw userError;
         }
         
-        // If we get here, the trigger failed to create the user
-        throw new Error('User record was not created by the database trigger');
+        if (!userData) {
+          console.log('User not found, creating fallback record...');
+          // Use proper UPSERT with correct syntax
+          const { data, error: upsertError } = await supabase
+            .from('users')
+            .upsert(
+              {
+                id: user.id,
+                email: user.email || '',
+                username: `user_${Date.now()}`
+              },
+              { onConflict: 'id' }
+            )
+            .select('id');
+          
+          if (upsertError) {
+            console.error('Failed to upsert user record:', upsertError);
+            throw upsertError;
+          }
+          
+          console.log('User row in place:', data);
+        } else {
+          console.log('User exists in public.users');
+        }
+        
+        setIsInitializing(false);
         
       } catch (error: any) {
         console.error('User validation failed:', error);
-        
         toast({
-          title: "Account Setup Error",
+          title: "Setup Error",
           description: "There was an issue setting up your account. Please try refreshing the page.",
           variant: "destructive"
         });
-      } finally {
-        setIsValidatingUser(false);
+        setIsInitializing(false);
       }
     };
 
-    checkUserExists();
+    ensureUserExists();
   }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
@@ -314,8 +317,8 @@ const CompleteProfile = () => {
     }
   };
 
-  // Show loading while checking user exists or if auth is loading
-  if (loading || isValidatingUser) {
+  // Show loading while initializing or user loading
+  if (loading || isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
