@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -25,9 +24,85 @@ const CompleteProfile = () => {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Validate user exists in public.users table
+  useEffect(() => {
+    const validateUser = async () => {
+      if (!user?.id || loading) return;
+      
+      setIsValidatingUser(true);
+      try {
+        console.log('Validating user exists in public.users table:', user.id);
+        
+        // Check if user exists in public.users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email, username')
+          .eq('id', user.id)
+          .single();
+        
+        if (userError && userError.code !== 'PGRST116') {
+          console.error('Error checking user existence:', userError);
+          throw userError;
+        }
+        
+        if (!userData) {
+          console.log('User not found in public.users, creating record...');
+          
+          // Create user record if it doesn't exist
+          const username = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert([{
+              id: user.id,
+              email: user.email || '',
+              username: username
+            }]);
+          
+          if (insertError) {
+            console.error('Error creating user record:', insertError);
+            // If username conflict, try with timestamp
+            if (insertError.code === '23505' && insertError.message?.includes('username')) {
+              const timestampUsername = `${username}_${Date.now()}`;
+              const { error: retryError } = await supabase
+                .from('users')
+                .insert([{
+                  id: user.id,
+                  email: user.email || '',
+                  username: timestampUsername
+                }]);
+              
+              if (retryError) {
+                console.error('Error creating user record with timestamp:', retryError);
+                throw retryError;
+              }
+            } else {
+              throw insertError;
+            }
+          }
+          
+          console.log('User record created successfully');
+        } else {
+          console.log('User exists in public.users:', userData);
+        }
+      } catch (error: any) {
+        console.error('User validation failed:', error);
+        toast({
+          title: "Account Setup Error",
+          description: "There was an issue setting up your account. Please try logging out and back in.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsValidatingUser(false);
+      }
+    };
+
+    validateUser();
+  }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -115,7 +190,6 @@ const CompleteProfile = () => {
       return publicUrl;
     } catch (error: any) {
       console.error(`Error uploading to ${bucket}:`, error);
-      // Don't throw - make image uploads optional
       toast({
         title: "Image upload failed",
         description: `Failed to upload ${folder} image. Continuing without image.`,
@@ -153,7 +227,19 @@ const CompleteProfile = () => {
       
       console.log('Starting creator profile creation for user:', user?.id);
       
-      // Upload images if selected (but don't fail if upload fails)
+      // Verify user exists before creating creator profile
+      const { data: userData, error: userCheckError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user?.id)
+        .single();
+      
+      if (userCheckError || !userData) {
+        console.error('User validation failed before creator signup:', userCheckError);
+        throw new Error('User account not properly set up. Please try logging out and back in.');
+      }
+      
+      // Upload images if selected
       let profileImageUrl = null;
       let bannerImageUrl = null;
       
@@ -234,6 +320,8 @@ const CompleteProfile = () => {
       if (error.message?.includes('duplicate key')) {
         errorMessage = "You already have a creator profile. Redirecting to home...";
         setTimeout(() => navigate('/home'), 2000);
+      } else if (error.message?.includes('violates foreign key constraint') || error.message?.includes('User account not properly set up')) {
+        errorMessage = "Account setup incomplete. Please try logging out and back in, then try again.";
       } else if (error.message?.includes('violates row-level security')) {
         errorMessage = "Authentication error. Please try logging out and back in.";
       } else if (error.message?.includes('not authenticated')) {
@@ -253,10 +341,15 @@ const CompleteProfile = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isValidatingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <div className="text-center">
+          <LoadingSpinner className="mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            {loading ? "Loading..." : "Setting up your account..."}
+          </p>
+        </div>
       </div>
     );
   }
