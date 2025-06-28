@@ -53,46 +53,55 @@ const CompleteProfile = () => {
         if (!userData) {
           console.log('User not found in public.users, creating record...');
           
-          // Create user record if it doesn't exist
-          const username = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert([{
-              id: user.id,
-              email: user.email || '',
-              username: username
-            }]);
+          // Create user record with a unique username
+          let baseUsername = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
+          let username = baseUsername;
+          let attempt = 1;
           
-          if (insertError) {
-            console.error('Error creating user record:', insertError);
-            
-            // Handle specific RLS error
-            if (insertError.message?.includes('row-level security policy')) {
-              console.log('RLS policy violation - this should be fixed now with the new policy');
-              throw new Error('User account setup failed due to security policies. Please try logging out and back in.');
-            }
-            
-            // If username conflict, try with timestamp
-            if (insertError.code === '23505' && insertError.message?.includes('username')) {
-              const timestampUsername = `${username}_${Date.now()}`;
-              const { error: retryError } = await supabase
+          // Keep trying with different usernames until we find one that works
+          while (attempt <= 5) {
+            try {
+              const { error: insertError } = await supabase
                 .from('users')
                 .insert([{
                   id: user.id,
                   email: user.email || '',
-                  username: timestampUsername
+                  username: username
                 }]);
               
-              if (retryError) {
-                console.error('Error creating user record with timestamp:', retryError);
-                throw retryError;
+              if (!insertError) {
+                console.log('User record created successfully with username:', username);
+                break;
               }
-            } else {
+              
+              // If username conflict, try with a suffix
+              if (insertError.code === '23505' && insertError.message?.includes('username')) {
+                username = `${baseUsername}_${Date.now()}_${attempt}`;
+                attempt++;
+                console.log(`Username conflict, trying: ${username}`);
+                continue;
+              }
+              
+              // Handle other RLS errors
+              if (insertError.message?.includes('row-level security policy')) {
+                console.log('RLS policy violation - checking auth status');
+                throw new Error('User account setup failed due to security policies. Please try logging out and back in.');
+              }
+              
+              // For any other error, throw it
               throw insertError;
+              
+            } catch (error) {
+              if (attempt >= 5) {
+                throw error;
+              }
             }
           }
           
-          console.log('User record created successfully');
+          if (attempt > 5) {
+            throw new Error('Unable to create unique username after multiple attempts');
+          }
+          
         } else {
           console.log('User exists in public.users:', userData);
         }
@@ -106,6 +115,8 @@ const CompleteProfile = () => {
           errorMessage = "Authentication required. Please log in again.";
           navigate('/login');
           return;
+        } else if (error.message?.includes('unique username')) {
+          errorMessage = "Username conflict occurred. Please try refreshing the page.";
         }
         
         toast({
@@ -432,7 +443,7 @@ const CompleteProfile = () => {
                   <div className="flex items-center gap-4">
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="outline" 
                       onClick={() => document.getElementById('profile-image-upload')?.click()}
                       disabled={isUploading}
                     >
