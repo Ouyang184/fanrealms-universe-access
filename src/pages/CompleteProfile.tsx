@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +53,7 @@ const CompleteProfile = () => {
         
         if (!userData) {
           console.log('User not found, creating fallback record...');
-          // Use proper UPSERT that truly does INSERT ... ON CONFLICT (id) DO UPDATE
+          // Use proper UPSERT with correct syntax
           const { data, error: upsertError } = await supabase
             .from('users')
             .upsert(
@@ -61,7 +62,7 @@ const CompleteProfile = () => {
                 email: user.email || '',
                 username: `user_${Date.now()}`
               },
-              { onConflict: ['id'] }
+              { onConflict: 'id' }
             )
             .select('id');
           
