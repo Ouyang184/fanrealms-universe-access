@@ -29,51 +29,66 @@ const CompleteProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if user exists in public.users table (created by trigger)
+  // Simplified user validation - just check once and create if needed
   useEffect(() => {
-    const checkUserExists = async () => {
+    const ensureUserExists = async () => {
       if (!user?.id || loading) return;
       
-      console.log('Checking if user exists in public.users:', user.id);
+      console.log('Ensuring user exists in public.users:', user.id);
       setIsValidatingUser(true);
       
       try {
-        // Wait a bit for the trigger to complete if user just signed up
-        let attempts = 0;
-        const maxAttempts = 10;
+        // First, try to get the user
+        const { data: userData, error: fetchError } = await supabase
+          .from('users')
+          .select('id, email, username')
+          .eq('id', user.id)
+          .maybeSingle();
         
-        while (attempts < maxAttempts) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('id, email, username')
-            .eq('id', user.id)
-            .maybeSingle();
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          // PGRST116 is "not found", which is fine - other errors are not
+          console.error('Error checking user existence:', fetchError);
+          throw fetchError;
+        }
+        
+        if (userData) {
+          console.log('User exists in public.users:', userData);
+          setIsValidatingUser(false);
+          return;
+        }
+        
+        // User doesn't exist, let's create them
+        console.log('User not found, creating user record...');
+        const username = user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`;
+        
+        const { data: newUser, error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: user.id,
+            email: user.email || '',
+            username: username,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }])
+          .select()
+          .single();
           
-          if (error) {
-            console.error('Error checking user existence:', error);
-            throw error;
-          }
-          
-          if (userData) {
-            console.log('User exists in public.users:', userData);
+        if (insertError) {
+          // If it's a duplicate key error, that's actually fine - user exists
+          if (insertError.code === '23505') {
+            console.log('User already exists (conflict resolved)');
             setIsValidatingUser(false);
             return;
           }
           
-          // User doesn't exist yet, wait and retry (trigger may still be processing)
-          console.log(`User not found, attempt ${attempts + 1}/${maxAttempts}, waiting...`);
-          attempts++;
-          
-          if (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+          console.error('Error creating user:', insertError);
+          throw insertError;
         }
         
-        // If we get here, the trigger failed to create the user
-        throw new Error('User record was not created by the database trigger');
+        console.log('User created successfully:', newUser);
         
       } catch (error: any) {
-        console.error('User validation failed:', error);
+        console.error('User validation/creation failed:', error);
         
         toast({
           title: "Account Setup Error",
@@ -85,7 +100,7 @@ const CompleteProfile = () => {
       }
     };
 
-    checkUserExists();
+    ensureUserExists();
   }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
