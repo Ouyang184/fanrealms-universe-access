@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,66 +25,68 @@ const CompleteProfile = () => {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Wait for user record to be created by trigger - no manual creation
+  // Check if user exists in public.users table (created by trigger)
   useEffect(() => {
-    const waitForUserRecord = async () => {
+    const checkUserExists = async () => {
       if (!user?.id || loading) return;
       
-      console.log('Waiting for user record to be created by trigger:', user.id);
-      setIsInitializing(true);
+      console.log('Checking if user exists in public.users:', user.id);
+      setIsValidatingUser(true);
       
       try {
-        // Poll for user record with retries (trigger should create it)
+        // Wait a bit for the trigger to complete if user just signed up
         let attempts = 0;
         const maxAttempts = 10;
         
         while (attempts < maxAttempts) {
-          const { data: userData, error: userError } = await supabase
+          const { data: userData, error } = await supabase
             .from('users')
-            .select('id')
+            .select('id, email, username')
             .eq('id', user.id)
             .maybeSingle();
           
-          if (userError && userError.code !== 'PGRST116') {
-            console.error('Error checking user existence:', userError);
-            throw userError;
+          if (error) {
+            console.error('Error checking user existence:', error);
+            throw error;
           }
           
           if (userData) {
-            console.log('User record found, continuing...');
-            setIsInitializing(false);
+            console.log('User exists in public.users:', userData);
+            setIsValidatingUser(false);
             return;
           }
           
+          // User doesn't exist yet, wait and retry (trigger may still be processing)
+          console.log(`User not found, attempt ${attempts + 1}/${maxAttempts}, waiting...`);
           attempts++;
-          console.log(`User record not found yet, attempt ${attempts}/${maxAttempts}`);
           
           if (attempts < maxAttempts) {
-            // Wait before retrying
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
         
-        // If we get here, the trigger didn't create the user record
+        // If we get here, the trigger failed to create the user
         throw new Error('User record was not created by the database trigger');
         
       } catch (error: any) {
-        console.error('Failed to find user record:', error);
+        console.error('User validation failed:', error);
+        
         toast({
-          title: "Setup Error",
+          title: "Account Setup Error",
           description: "There was an issue setting up your account. Please try refreshing the page.",
           variant: "destructive"
         });
-        setIsInitializing(false);
+      } finally {
+        setIsValidatingUser(false);
       }
     };
 
-    waitForUserRecord();
+    checkUserExists();
   }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
@@ -311,8 +314,8 @@ const CompleteProfile = () => {
     }
   };
 
-  // Show loading while initializing or user loading
-  if (loading || isInitializing) {
+  // Show loading while checking user exists or if auth is loading
+  if (loading || isValidatingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
