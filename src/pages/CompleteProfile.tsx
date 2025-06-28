@@ -25,6 +25,7 @@ const CompleteProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
+  const [userValidationAttempted, setUserValidationAttempted] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -32,10 +33,11 @@ const CompleteProfile = () => {
   // Simplified user validation - just check once and create if needed
   useEffect(() => {
     const ensureUserExists = async () => {
-      if (!user?.id || loading) return;
+      if (!user?.id || loading || userValidationAttempted) return;
       
       console.log('Ensuring user exists in public.users:', user.id);
       setIsValidatingUser(true);
+      setUserValidationAttempted(true);
       
       try {
         // First, try to get the user
@@ -59,14 +61,34 @@ const CompleteProfile = () => {
         
         // User doesn't exist, let's create them
         console.log('User not found, creating user record...');
-        const username = user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`;
+        
+        // Generate a unique username by checking if the base username exists
+        let username = user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`;
+        let finalUsername = username;
+        let counter = 1;
+        
+        // Check if username already exists and make it unique if needed
+        while (true) {
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('username')
+            .eq('username', finalUsername)
+            .maybeSingle();
+            
+          if (!existingUser) {
+            break; // Username is available
+          }
+          
+          finalUsername = `${username}_${counter}`;
+          counter++;
+        }
         
         const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert([{
             id: user.id,
             email: user.email || '',
-            username: username,
+            username: finalUsername,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }])
@@ -101,7 +123,7 @@ const CompleteProfile = () => {
     };
 
     ensureUserExists();
-  }, [user?.id, loading, toast]);
+  }, [user?.id, loading, userValidationAttempted, toast]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
