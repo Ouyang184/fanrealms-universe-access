@@ -25,22 +25,19 @@ const CompleteProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
-  const [userValidationAttempted, setUserValidationAttempted] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simplified user validation - just check once and create if needed
+  // Just check if user exists - don't try to create them
   useEffect(() => {
-    const ensureUserExists = async () => {
-      if (!user?.id || loading || userValidationAttempted) return;
+    const checkUserExists = async () => {
+      if (!user?.id || loading) return;
       
-      console.log('Ensuring user exists in public.users:', user.id);
+      console.log('Checking if user exists in public.users:', user.id);
       setIsValidatingUser(true);
-      setUserValidationAttempted(true);
       
       try {
-        // First, try to get the user
         const { data: userData, error: fetchError } = await supabase
           .from('users')
           .select('id, email, username')
@@ -48,73 +45,28 @@ const CompleteProfile = () => {
           .maybeSingle();
         
         if (fetchError && fetchError.code !== 'PGRST116') {
-          // PGRST116 is "not found", which is fine - other errors are not
           console.error('Error checking user existence:', fetchError);
           throw fetchError;
         }
         
         if (userData) {
           console.log('User exists in public.users:', userData);
-          setIsValidatingUser(false);
-          return;
+        } else {
+          console.log('User not found in public.users - this should have been created by the signup trigger');
+          // Don't try to create the user - this indicates a system issue
+          toast({
+            title: "Account Setup Issue",
+            description: "There was an issue with your account setup. Please try refreshing the page or contact support.",
+            variant: "destructive"
+          });
         }
-        
-        // User doesn't exist, let's create them
-        console.log('User not found, creating user record...');
-        
-        // Generate a unique username by checking if the base username exists
-        let username = user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`;
-        let finalUsername = username;
-        let counter = 1;
-        
-        // Check if username already exists and make it unique if needed
-        while (true) {
-          const { data: existingUser } = await supabase
-            .from('users')
-            .select('username')
-            .eq('username', finalUsername)
-            .maybeSingle();
-            
-          if (!existingUser) {
-            break; // Username is available
-          }
-          
-          finalUsername = `${username}_${counter}`;
-          counter++;
-        }
-        
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert([{
-            id: user.id,
-            email: user.email || '',
-            username: finalUsername,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }])
-          .select()
-          .single();
-          
-        if (insertError) {
-          // If it's a duplicate key error, that's actually fine - user exists
-          if (insertError.code === '23505') {
-            console.log('User already exists (conflict resolved)');
-            setIsValidatingUser(false);
-            return;
-          }
-          
-          console.error('Error creating user:', insertError);
-          throw insertError;
-        }
-        
-        console.log('User created successfully:', newUser);
         
       } catch (error: any) {
-        console.error('User validation/creation failed:', error);
+        console.error('User validation failed:', error);
         
         toast({
           title: "Account Setup Error",
-          description: "There was an issue setting up your account. Please try refreshing the page.",
+          description: "There was an issue checking your account. Please try refreshing the page.",
           variant: "destructive"
         });
       } finally {
@@ -122,8 +74,8 @@ const CompleteProfile = () => {
       }
     };
 
-    ensureUserExists();
-  }, [user?.id, loading, userValidationAttempted, toast]);
+    checkUserExists();
+  }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -357,7 +309,7 @@ const CompleteProfile = () => {
         <div className="text-center">
           <LoadingSpinner className="mx-auto mb-4" />
           <p className="text-muted-foreground">
-            {loading ? "Loading..." : "Setting up your account..."}
+            {loading ? "Loading..." : "Checking your account..."}
           </p>
         </div>
       </div>
