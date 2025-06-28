@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,56 +29,51 @@ const CompleteProfile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simple user validation - just ensure user record exists
+  // Wait for user record to be created by trigger - no manual creation
   useEffect(() => {
-    const ensureUserExists = async () => {
+    const waitForUserRecord = async () => {
       if (!user?.id || loading) return;
       
-      console.log('Checking if user exists in public.users:', user.id);
+      console.log('Waiting for user record to be created by trigger:', user.id);
       setIsInitializing(true);
       
       try {
-        // Check if user exists in public.users
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', user.id)
-          .maybeSingle();
+        // Poll for user record with retries (trigger should create it)
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error checking user existence:', userError);
-          throw userError;
-        }
-        
-        if (!userData) {
-          console.log('User not found, creating fallback record...');
-          // Use proper UPSERT with correct syntax
-          const { data, error: upsertError } = await supabase
+        while (attempts < maxAttempts) {
+          const { data: userData, error: userError } = await supabase
             .from('users')
-            .upsert(
-              {
-                id: user.id,
-                email: user.email || '',
-                username: `user_${Date.now()}`
-              },
-              { onConflict: 'id' }
-            )
-            .select('id');
+            .select('id')
+            .eq('id', user.id)
+            .maybeSingle();
           
-          if (upsertError) {
-            console.error('Failed to upsert user record:', upsertError);
-            throw upsertError;
+          if (userError && userError.code !== 'PGRST116') {
+            console.error('Error checking user existence:', userError);
+            throw userError;
           }
           
-          console.log('User row in place:', data);
-        } else {
-          console.log('User exists in public.users');
+          if (userData) {
+            console.log('User record found, continuing...');
+            setIsInitializing(false);
+            return;
+          }
+          
+          attempts++;
+          console.log(`User record not found yet, attempt ${attempts}/${maxAttempts}`);
+          
+          if (attempts < maxAttempts) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         }
         
-        setIsInitializing(false);
+        // If we get here, the trigger didn't create the user record
+        throw new Error('User record was not created by the database trigger');
         
       } catch (error: any) {
-        console.error('User validation failed:', error);
+        console.error('Failed to find user record:', error);
         toast({
           title: "Setup Error",
           description: "There was an issue setting up your account. Please try refreshing the page.",
@@ -89,7 +83,7 @@ const CompleteProfile = () => {
       }
     };
 
-    ensureUserExists();
+    waitForUserRecord();
   }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
