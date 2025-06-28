@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,24 +24,26 @@ const CompleteProfile = () => {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
+  const [validationComplete, setValidationComplete] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simple user validation - just ensure user record exists
+  // Validate user exists in public.users table
   useEffect(() => {
-    const ensureUserExists = async () => {
-      if (!user?.id || loading) return;
+    const validateUser = async () => {
+      // Prevent multiple validation runs
+      if (!user?.id || loading || validationComplete) return;
       
-      console.log('Checking if user exists in public.users:', user.id);
-      setIsInitializing(true);
+      console.log('Starting user validation for:', user.id);
+      setIsValidatingUser(true);
       
       try {
         // Check if user exists in public.users
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('id')
+          .select('id, email, username')
           .eq('id', user.id)
           .maybeSingle();
         
@@ -51,46 +52,98 @@ const CompleteProfile = () => {
           throw userError;
         }
         
-        if (!userData) {
-          console.log('User not found, creating fallback record...');
-          // Use proper UPSERT with correct syntax
-          const { data, error: upsertError } = await supabase
-            .from('users')
-            .upsert(
-              {
-                id: user.id,
-                email: user.email || '',
-                username: `user_${Date.now()}`
-              },
-              { onConflict: 'id' }
-            )
-            .select('id');
-          
-          if (upsertError) {
-            console.error('Failed to upsert user record:', upsertError);
-            throw upsertError;
-          }
-          
-          console.log('User row in place:', data);
-        } else {
-          console.log('User exists in public.users');
+        if (userData) {
+          console.log('User exists in public.users:', userData);
+          // User exists, validation complete
+          setValidationComplete(true);
+          setIsValidatingUser(false);
+          return;
         }
         
-        setIsInitializing(false);
+        // User doesn't exist, create record
+        console.log('User not found in public.users, creating record...');
+        
+        let baseUsername = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
+        let username = baseUsername;
+        let attempt = 1;
+        let userCreated = false;
+        
+        // Keep trying with different usernames until we find one that works
+        while (attempt <= 5 && !userCreated) {
+          try {
+            console.log(`Attempting to create user with username: ${username}`);
+            
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert([{
+                id: user.id,
+                email: user.email || '',
+                username: username
+              }]);
+            
+            if (!insertError) {
+              console.log('User record created successfully with username:', username);
+              userCreated = true;
+              break;
+            }
+            
+            // If username conflict, try with a suffix
+            if (insertError.code === '23505' && insertError.message?.includes('username')) {
+              username = `${baseUsername}_${Date.now()}_${attempt}`;
+              attempt++;
+              console.log(`Username conflict, trying: ${username}`);
+              continue;
+            }
+            
+            // Handle other errors
+            console.error('Insert error:', insertError);
+            throw insertError;
+            
+          } catch (error: any) {
+            console.error(`Attempt ${attempt} failed:`, error);
+            if (attempt >= 5) {
+              throw new Error('Unable to create user record after multiple attempts');
+            }
+            attempt++;
+          }
+        }
+        
+        if (!userCreated) {
+          throw new Error('Failed to create user record');
+        }
+        
+        // Mark validation as complete
+        setValidationComplete(true);
+        console.log('User validation completed successfully');
         
       } catch (error: any) {
         console.error('User validation failed:', error);
+        
+        let errorMessage = "There was an issue setting up your account.";
+        
+        if (error.message?.includes('not authenticated')) {
+          errorMessage = "Please log in again to continue.";
+          navigate('/login');
+          return;
+        } else if (error.message?.includes('Unable to create user record')) {
+          errorMessage = "Account setup failed. Please try refreshing the page.";
+        }
+        
         toast({
-          title: "Setup Error",
-          description: "There was an issue setting up your account. Please try refreshing the page.",
+          title: "Account Setup Error",
+          description: errorMessage,
           variant: "destructive"
         });
-        setIsInitializing(false);
+        
+        // Don't mark as complete on error to allow retry
+        setValidationComplete(false);
+      } finally {
+        setIsValidatingUser(false);
       }
     };
 
-    ensureUserExists();
-  }, [user?.id, loading, toast]);
+    validateUser();
+  }, [user?.id, loading, validationComplete, toast, navigate]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -317,8 +370,8 @@ const CompleteProfile = () => {
     }
   };
 
-  // Show loading while initializing or user loading
-  if (loading || isInitializing) {
+  // Show loading while validating user
+  if (loading || (isValidatingUser && !validationComplete)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
