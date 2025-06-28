@@ -52,8 +52,8 @@ const CompleteProfile = () => {
         
         if (!userData) {
           console.log('User not found, creating fallback record...');
-          // Use UPSERT to eliminate 409 conflicts
-          const { error: upsertError } = await supabase
+          // Use proper UPSERT that truly does INSERT ... ON CONFLICT (id) DO UPDATE
+          const { data, error: upsertError } = await supabase
             .from('users')
             .upsert(
               {
@@ -61,7 +61,7 @@ const CompleteProfile = () => {
                 email: user.email || '',
                 username: `user_${Date.now()}`
               },
-              { onConflict: 'id' }
+              { onConflict: ['id'] }
             )
             .select('id');
           
@@ -70,7 +70,7 @@ const CompleteProfile = () => {
             throw upsertError;
           }
           
-          console.log('User record upserted successfully');
+          console.log('User row in place:', data);
         } else {
           console.log('User exists in public.users');
         }
