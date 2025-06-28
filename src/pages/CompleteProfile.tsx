@@ -65,6 +65,13 @@ const CompleteProfile = () => {
           
           if (insertError) {
             console.error('Error creating user record:', insertError);
+            
+            // Handle specific RLS error
+            if (insertError.message?.includes('row-level security policy')) {
+              console.log('RLS policy violation - this should be fixed now with the new policy');
+              throw new Error('User account setup failed due to security policies. Please try logging out and back in.');
+            }
+            
             // If username conflict, try with timestamp
             if (insertError.code === '23505' && insertError.message?.includes('username')) {
               const timestampUsername = `${username}_${Date.now()}`;
@@ -91,9 +98,19 @@ const CompleteProfile = () => {
         }
       } catch (error: any) {
         console.error('User validation failed:', error);
+        let errorMessage = "There was an issue setting up your account.";
+        
+        if (error.message?.includes('row-level security policy')) {
+          errorMessage = "Account setup failed due to security policies. Please try logging out and back in.";
+        } else if (error.message?.includes('not authenticated')) {
+          errorMessage = "Authentication required. Please log in again.";
+          navigate('/login');
+          return;
+        }
+        
         toast({
           title: "Account Setup Error",
-          description: "There was an issue setting up your account. Please try logging out and back in.",
+          description: errorMessage,
           variant: "destructive"
         });
       } finally {
@@ -102,7 +119,7 @@ const CompleteProfile = () => {
     };
 
     validateUser();
-  }, [user?.id, loading, toast]);
+  }, [user?.id, loading, toast, navigate]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -227,7 +244,7 @@ const CompleteProfile = () => {
       
       console.log('Starting creator profile creation for user:', user?.id);
       
-      // Verify user exists before creating creator profile
+      // Double-check user exists before creating creator profile
       const { data: userData, error: userCheckError } = await supabase
         .from('users')
         .select('id')
@@ -236,7 +253,7 @@ const CompleteProfile = () => {
       
       if (userCheckError || !userData) {
         console.error('User validation failed before creator signup:', userCheckError);
-        throw new Error('User account not properly set up. Please try logging out and back in.');
+        throw new Error('User account not properly set up. Please try refreshing the page.');
       }
       
       // Upload images if selected
@@ -321,9 +338,9 @@ const CompleteProfile = () => {
         errorMessage = "You already have a creator profile. Redirecting to home...";
         setTimeout(() => navigate('/home'), 2000);
       } else if (error.message?.includes('violates foreign key constraint') || error.message?.includes('User account not properly set up')) {
-        errorMessage = "Account setup incomplete. Please try logging out and back in, then try again.";
+        errorMessage = "Account setup incomplete. Please refresh the page and try again.";
       } else if (error.message?.includes('violates row-level security')) {
-        errorMessage = "Authentication error. Please try logging out and back in.";
+        errorMessage = "Security policy error. Please try logging out and back in.";
       } else if (error.message?.includes('not authenticated')) {
         errorMessage = "Please log in to create a creator profile.";
         navigate('/login');
