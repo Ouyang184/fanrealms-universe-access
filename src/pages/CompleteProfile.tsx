@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -332,15 +331,27 @@ const CompleteProfile = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle>
-            {step === 'profile' ? 'Complete Your Creator Profile' : 'What Type of Content Do You Create?'}
-          </CardTitle>
-          <CardDescription>
-            {step === 'profile' 
-              ? 'Set up your creator profile to start sharing content with your audience.'
-              : 'Select the categories that best describe your content.'
-            }
-          </CardDescription>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/home')}
+              className="p-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1">
+              <CardTitle>
+                {step === 'profile' ? 'Complete Your Creator Profile' : 'What Type of Content Do You Create?'}
+              </CardTitle>
+              <CardDescription>
+                {step === 'profile' 
+                  ? 'Set up your creator profile to start sharing content with your audience.'
+                  : 'Select the categories that best describe your content.'
+                }
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {step === 'profile' ? (
