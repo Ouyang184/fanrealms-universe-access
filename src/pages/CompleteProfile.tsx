@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,125 +26,68 @@ const CompleteProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
-  const [validationComplete, setValidationComplete] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Validate user exists in public.users table
+  // Check if user exists in public.users table (created by trigger)
   useEffect(() => {
-    const validateUser = async () => {
-      // Prevent multiple validation runs
-      if (!user?.id || loading || validationComplete) return;
+    const checkUserExists = async () => {
+      if (!user?.id || loading) return;
       
-      console.log('Starting user validation for:', user.id);
+      console.log('Checking if user exists in public.users:', user.id);
       setIsValidatingUser(true);
       
       try {
-        // Check if user exists in public.users
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('id, email, username')
-          .eq('id', user.id)
-          .maybeSingle();
+        // Wait a bit for the trigger to complete if user just signed up
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error checking user existence:', userError);
-          throw userError;
-        }
-        
-        if (userData) {
-          console.log('User exists in public.users:', userData);
-          // User exists, validation complete
-          setValidationComplete(true);
-          setIsValidatingUser(false);
-          return;
-        }
-        
-        // User doesn't exist, create record
-        console.log('User not found in public.users, creating record...');
-        
-        let baseUsername = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
-        let username = baseUsername;
-        let attempt = 1;
-        let userCreated = false;
-        
-        // Keep trying with different usernames until we find one that works
-        while (attempt <= 5 && !userCreated) {
-          try {
-            console.log(`Attempting to create user with username: ${username}`);
-            
-            const { error: insertError } = await supabase
-              .from('users')
-              .insert([{
-                id: user.id,
-                email: user.email || '',
-                username: username
-              }]);
-            
-            if (!insertError) {
-              console.log('User record created successfully with username:', username);
-              userCreated = true;
-              break;
-            }
-            
-            // If username conflict, try with a suffix
-            if (insertError.code === '23505' && insertError.message?.includes('username')) {
-              username = `${baseUsername}_${Date.now()}_${attempt}`;
-              attempt++;
-              console.log(`Username conflict, trying: ${username}`);
-              continue;
-            }
-            
-            // Handle other errors
-            console.error('Insert error:', insertError);
-            throw insertError;
-            
-          } catch (error: any) {
-            console.error(`Attempt ${attempt} failed:`, error);
-            if (attempt >= 5) {
-              throw new Error('Unable to create user record after multiple attempts');
-            }
-            attempt++;
+        while (attempts < maxAttempts) {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('id, email, username')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error checking user existence:', error);
+            throw error;
+          }
+          
+          if (userData) {
+            console.log('User exists in public.users:', userData);
+            setIsValidatingUser(false);
+            return;
+          }
+          
+          // User doesn't exist yet, wait and retry (trigger may still be processing)
+          console.log(`User not found, attempt ${attempts + 1}/${maxAttempts}, waiting...`);
+          attempts++;
+          
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
         
-        if (!userCreated) {
-          throw new Error('Failed to create user record');
-        }
-        
-        // Mark validation as complete
-        setValidationComplete(true);
-        console.log('User validation completed successfully');
+        // If we get here, the trigger failed to create the user
+        throw new Error('User record was not created by the database trigger');
         
       } catch (error: any) {
         console.error('User validation failed:', error);
         
-        let errorMessage = "There was an issue setting up your account.";
-        
-        if (error.message?.includes('not authenticated')) {
-          errorMessage = "Please log in again to continue.";
-          navigate('/login');
-          return;
-        } else if (error.message?.includes('Unable to create user record')) {
-          errorMessage = "Account setup failed. Please try refreshing the page.";
-        }
-        
         toast({
           title: "Account Setup Error",
-          description: errorMessage,
+          description: "There was an issue setting up your account. Please try refreshing the page.",
           variant: "destructive"
         });
-        
-        // Don't mark as complete on error to allow retry
-        setValidationComplete(false);
       } finally {
         setIsValidatingUser(false);
       }
     };
 
-    validateUser();
-  }, [user?.id, loading, validationComplete, toast, navigate]);
+    checkUserExists();
+  }, [user?.id, loading, toast]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -370,8 +314,8 @@ const CompleteProfile = () => {
     }
   };
 
-  // Show loading while validating user
-  if (loading || (isValidatingUser && !validationComplete)) {
+  // Show loading while checking user exists or if auth is loading
+  if (loading || isValidatingUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
