@@ -52,21 +52,25 @@ const CompleteProfile = () => {
         
         if (!userData) {
           console.log('User not found, creating fallback record...');
-          // Simple fallback user creation
-          const { error: insertError } = await supabase
+          // Use UPSERT to eliminate 409 conflicts
+          const { error: upsertError } = await supabase
             .from('users')
-            .insert([{
-              id: user.id,
-              email: user.email || '',
-              username: `user_${Date.now()}`
-            }]);
+            .upsert(
+              {
+                id: user.id,
+                email: user.email || '',
+                username: `user_${Date.now()}`
+              },
+              { onConflict: 'id' }
+            )
+            .select('id');
           
-          if (insertError) {
-            console.error('Failed to create user record:', insertError);
-            throw insertError;
+          if (upsertError) {
+            console.error('Failed to upsert user record:', upsertError);
+            throw upsertError;
           }
           
-          console.log('User record created successfully');
+          console.log('User record upserted successfully');
         } else {
           console.log('User exists in public.users');
         }
