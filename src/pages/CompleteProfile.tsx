@@ -12,7 +12,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
 import { CategoryGrid } from '@/components/onboarding/CategoryGrid';
 import { ChevronRight, ArrowLeft, Upload, X } from 'lucide-react';
-import { useCreatorImageUpload } from '@/hooks/useCreatorImageUpload';
 
 const CompleteProfile = () => {
   const { user, loading } = useAuth();
@@ -25,10 +24,10 @@ const CompleteProfile = () => {
   const [bannerImagePreview, setBannerImagePreview] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { uploadProfileImage, uploadBannerImage, isUploading } = useCreatorImageUpload();
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -88,6 +87,44 @@ const CompleteProfile = () => {
     setBannerImagePreview(null);
   };
 
+  const uploadImageToStorage = async (file: File, bucket: string, folder: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${folder}-${Date.now()}.${fileExt}`;
+      const filePath = `${user?.id}/${fileName}`;
+      
+      console.log(`Uploading to ${bucket}/${filePath}`);
+      
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, { 
+          upsert: true,
+          contentType: file.type 
+        });
+      
+      if (uploadError) {
+        console.error(`Storage upload error to ${bucket}:`, uploadError);
+        throw uploadError;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+      
+      console.log(`Upload successful to ${bucket}, public URL:`, publicUrl);
+      return publicUrl;
+    } catch (error: any) {
+      console.error(`Error uploading to ${bucket}:`, error);
+      // Don't throw - make image uploads optional
+      toast({
+        title: "Image upload failed",
+        description: `Failed to upload ${folder} image. Continuing without image.`,
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   const handleProfileNext = () => {
     if (!displayName.trim()) {
       toast({
@@ -112,18 +149,25 @@ const CompleteProfile = () => {
     
     try {
       setIsSubmitting(true);
+      setIsUploading(true);
       
-      // Upload images first if selected
+      console.log('Starting creator profile creation for user:', user?.id);
+      
+      // Upload images if selected (but don't fail if upload fails)
       let profileImageUrl = null;
       let bannerImageUrl = null;
       
       if (selectedProfileImage) {
-        profileImageUrl = await uploadProfileImage(selectedProfileImage);
+        console.log('Uploading profile image...');
+        profileImageUrl = await uploadImageToStorage(selectedProfileImage, 'avatars', 'avatar');
       }
       
       if (selectedBannerImage) {
-        bannerImageUrl = await uploadBannerImage(selectedBannerImage);
+        console.log('Uploading banner image...');
+        bannerImageUrl = await uploadImageToStorage(selectedBannerImage, 'banners', 'banner');
       }
+      
+      setIsUploading(false);
       
       // Map category IDs to tag names
       const categoryMap: { [key: number]: string } = {
@@ -143,6 +187,15 @@ const CompleteProfile = () => {
       
       const tags = selectedCategories.map(id => categoryMap[id]).filter(Boolean);
       
+      console.log('Creating creator profile with data:', {
+        user_id: user?.id,
+        display_name: displayName.trim(),
+        bio: bio.trim(),
+        profile_image_url: profileImageUrl,
+        banner_url: bannerImageUrl,
+        tags: tags
+      });
+      
       // Create creator profile
       const { data, error } = await supabase
         .from('creators')
@@ -158,8 +211,11 @@ const CompleteProfile = () => {
         .single();
         
       if (error) {
+        console.error('Error creating creator profile:', error);
         throw error;
       }
+      
+      console.log('Creator profile created successfully:', data);
       
       toast({
         title: "Creator profile created",
@@ -171,13 +227,29 @@ const CompleteProfile = () => {
       
     } catch (error: any) {
       console.error("Error creating creator profile:", error);
+      
+      let errorMessage = "Failed to create your creator profile. Please try again.";
+      
+      // Provide more specific error messages
+      if (error.message?.includes('duplicate key')) {
+        errorMessage = "You already have a creator profile. Redirecting to home...";
+        setTimeout(() => navigate('/home'), 2000);
+      } else if (error.message?.includes('violates row-level security')) {
+        errorMessage = "Authentication error. Please try logging out and back in.";
+      } else if (error.message?.includes('not authenticated')) {
+        errorMessage = "Please log in to create a creator profile.";
+        navigate('/login');
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to create your creator profile. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
@@ -229,7 +301,7 @@ const CompleteProfile = () => {
               </div>
               
               <div className="space-y-2">
-                <Label>Profile Picture</Label>
+                <Label>Profile Picture (Optional)</Label>
                 <div className="space-y-4">
                   {profileImagePreview && (
                     <div className="relative w-24 h-24">
@@ -257,7 +329,7 @@ const CompleteProfile = () => {
                       <Upload className="mr-2 h-4 w-4" />
                       {profileImagePreview ? "Change Picture" : "Upload Picture"}
                     </Button>
-                    <span className="text-sm text-muted-foreground">PNG or JPG</span>
+                    <span className="text-sm text-muted-foreground">PNG or JPG (Optional)</span>
                   </div>
                   <input
                     type="file"
@@ -270,7 +342,7 @@ const CompleteProfile = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Profile Banner</Label>
+                <Label>Profile Banner (Optional)</Label>
                 <div className="space-y-4">
                   <div className="relative w-full h-32 bg-muted rounded-lg overflow-hidden">
                     {bannerImagePreview ? (
@@ -304,7 +376,7 @@ const CompleteProfile = () => {
                       <Upload className="mr-2 h-4 w-4" />
                       {bannerImagePreview ? "Change Banner" : "Upload Banner"}
                     </Button>
-                    <span className="text-sm text-muted-foreground">PNG or JPG</span>
+                    <span className="text-sm text-muted-foreground">PNG or JPG (Optional)</span>
                   </div>
                   <input
                     type="file"
@@ -347,7 +419,7 @@ const CompleteProfile = () => {
                   disabled={isSubmitting || selectedCategories.length === 0 || isUploading}
                 >
                   {(isSubmitting || isUploading) ? <LoadingSpinner className="mr-2" /> : null}
-                  {isSubmitting ? "Creating Profile..." : "Become a Creator"}
+                  {isSubmitting ? "Creating Profile..." : isUploading ? "Uploading Images..." : "Become a Creator"}
                 </Button>
               </div>
             </div>

@@ -3,16 +3,18 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const useCreatorImageUpload = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
 
   const uploadProfileImage = async (file: File): Promise<string | null> => {
     if (!user?.id) {
       console.error("No user ID available for upload");
-      return null;
+      throw new Error("Please log in to upload images");
     }
     
     try {
@@ -40,6 +42,14 @@ export const useCreatorImageUpload = () => {
       
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
+        
+        // Provide helpful error messages
+        if (uploadError.message?.includes('Bucket not found')) {
+          throw new Error("Image storage is not properly configured. Please contact support.");
+        } else if (uploadError.message?.includes('Insufficient privilege')) {
+          throw new Error("You don't have permission to upload images. Please try logging out and back in.");
+        }
+        
         throw uploadError;
       }
       
@@ -58,7 +68,12 @@ export const useCreatorImageUpload = () => {
       
       if (error) {
         console.error("Database update error:", error);
-        throw error;
+        // Don't throw here - the image was uploaded successfully
+        toast({
+          title: "Image uploaded",
+          description: "Image uploaded but profile update failed. Please refresh the page.",
+          variant: "destructive"
+        });
       }
       
       // Invalidate queries to refresh data
@@ -78,7 +93,7 @@ export const useCreatorImageUpload = () => {
   const uploadBannerImage = async (file: File): Promise<string | null> => {
     if (!user?.id) {
       console.error("No user ID available for upload");
-      return null;
+      throw new Error("Please log in to upload images");
     }
     
     try {
@@ -106,6 +121,14 @@ export const useCreatorImageUpload = () => {
       
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
+        
+        // Provide helpful error messages
+        if (uploadError.message?.includes('Bucket not found')) {
+          throw new Error("Image storage is not properly configured. Please contact support.");
+        } else if (uploadError.message?.includes('Insufficient privilege')) {
+          throw new Error("You don't have permission to upload images. Please try logging out and back in.");
+        }
+        
         throw uploadError;
       }
       
@@ -124,7 +147,12 @@ export const useCreatorImageUpload = () => {
       
       if (error) {
         console.error("Database update error:", error);
-        throw error;
+        // Don't throw here - the image was uploaded successfully
+        toast({
+          title: "Banner uploaded",
+          description: "Banner uploaded but profile update failed. Please refresh the page.",
+          variant: "destructive"
+        });
       }
       
       // Invalidate queries to refresh data
