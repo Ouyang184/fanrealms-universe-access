@@ -25,6 +25,7 @@ const CompleteProfile = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isValidatingUser, setIsValidatingUser] = useState<boolean>(true);
+  const [validationComplete, setValidationComplete] = useState<boolean>(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -32,91 +33,100 @@ const CompleteProfile = () => {
   // Validate user exists in public.users table
   useEffect(() => {
     const validateUser = async () => {
-      if (!user?.id || loading) return;
+      // Prevent multiple validation runs
+      if (!user?.id || loading || validationComplete) return;
       
+      console.log('Starting user validation for:', user.id);
       setIsValidatingUser(true);
+      
       try {
-        console.log('Validating user exists in public.users table:', user.id);
-        
         // Check if user exists in public.users
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('id, email, username')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         
         if (userError && userError.code !== 'PGRST116') {
           console.error('Error checking user existence:', userError);
           throw userError;
         }
         
-        if (!userData) {
-          console.log('User not found in public.users, creating record...');
-          
-          // Create user record with a unique username
-          let baseUsername = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
-          let username = baseUsername;
-          let attempt = 1;
-          
-          // Keep trying with different usernames until we find one that works
-          while (attempt <= 5) {
-            try {
-              const { error: insertError } = await supabase
-                .from('users')
-                .insert([{
-                  id: user.id,
-                  email: user.email || '',
-                  username: username
-                }]);
-              
-              if (!insertError) {
-                console.log('User record created successfully with username:', username);
-                break;
-              }
-              
-              // If username conflict, try with a suffix
-              if (insertError.code === '23505' && insertError.message?.includes('username')) {
-                username = `${baseUsername}_${Date.now()}_${attempt}`;
-                attempt++;
-                console.log(`Username conflict, trying: ${username}`);
-                continue;
-              }
-              
-              // Handle other RLS errors
-              if (insertError.message?.includes('row-level security policy')) {
-                console.log('RLS policy violation - checking auth status');
-                throw new Error('User account setup failed due to security policies. Please try logging out and back in.');
-              }
-              
-              // For any other error, throw it
-              throw insertError;
-              
-            } catch (error) {
-              if (attempt >= 5) {
-                throw error;
-              }
-            }
-          }
-          
-          if (attempt > 5) {
-            throw new Error('Unable to create unique username after multiple attempts');
-          }
-          
-        } else {
+        if (userData) {
           console.log('User exists in public.users:', userData);
+          // User exists, validation complete
+          setValidationComplete(true);
+          setIsValidatingUser(false);
+          return;
         }
+        
+        // User doesn't exist, create record
+        console.log('User not found in public.users, creating record...');
+        
+        let baseUsername = user.email ? user.email.split('@')[0] : `user_${Date.now()}`;
+        let username = baseUsername;
+        let attempt = 1;
+        let userCreated = false;
+        
+        // Keep trying with different usernames until we find one that works
+        while (attempt <= 5 && !userCreated) {
+          try {
+            console.log(`Attempting to create user with username: ${username}`);
+            
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert([{
+                id: user.id,
+                email: user.email || '',
+                username: username
+              }]);
+            
+            if (!insertError) {
+              console.log('User record created successfully with username:', username);
+              userCreated = true;
+              break;
+            }
+            
+            // If username conflict, try with a suffix
+            if (insertError.code === '23505' && insertError.message?.includes('username')) {
+              username = `${baseUsername}_${Date.now()}_${attempt}`;
+              attempt++;
+              console.log(`Username conflict, trying: ${username}`);
+              continue;
+            }
+            
+            // Handle other errors
+            console.error('Insert error:', insertError);
+            throw insertError;
+            
+          } catch (error: any) {
+            console.error(`Attempt ${attempt} failed:`, error);
+            if (attempt >= 5) {
+              throw new Error('Unable to create user record after multiple attempts');
+            }
+            attempt++;
+          }
+        }
+        
+        if (!userCreated) {
+          throw new Error('Failed to create user record');
+        }
+        
+        // Mark validation as complete
+        setValidationComplete(true);
+        console.log('User validation completed successfully');
+        
       } catch (error: any) {
         console.error('User validation failed:', error);
+        
         let errorMessage = "There was an issue setting up your account.";
         
-        if (error.message?.includes('row-level security policy')) {
-          errorMessage = "Account setup failed due to security policies. Please try logging out and back in.";
-        } else if (error.message?.includes('not authenticated')) {
-          errorMessage = "Authentication required. Please log in again.";
+        if (error.message?.includes('not authenticated')) {
+          errorMessage = "Please log in again to continue.";
           navigate('/login');
           return;
-        } else if (error.message?.includes('unique username')) {
-          errorMessage = "Username conflict occurred. Please try refreshing the page.";
+        } else if (error.message?.includes('Unable to create user record')) {
+          errorMessage = "Account setup failed. Please try refreshing the page.";
         }
         
         toast({
@@ -124,13 +134,16 @@ const CompleteProfile = () => {
           description: errorMessage,
           variant: "destructive"
         });
+        
+        // Don't mark as complete on error to allow retry
+        setValidationComplete(false);
       } finally {
         setIsValidatingUser(false);
       }
     };
 
     validateUser();
-  }, [user?.id, loading, toast, navigate]);
+  }, [user?.id, loading, validationComplete, toast, navigate]);
 
   // Redirect if no authenticated user
   if (!user && !loading) {
@@ -255,18 +268,6 @@ const CompleteProfile = () => {
       
       console.log('Starting creator profile creation for user:', user?.id);
       
-      // Double-check user exists before creating creator profile
-      const { data: userData, error: userCheckError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user?.id)
-        .single();
-      
-      if (userCheckError || !userData) {
-        console.error('User validation failed before creator signup:', userCheckError);
-        throw new Error('User account not properly set up. Please try refreshing the page.');
-      }
-      
       // Upload images if selected
       let profileImageUrl = null;
       let bannerImageUrl = null;
@@ -348,7 +349,7 @@ const CompleteProfile = () => {
       if (error.message?.includes('duplicate key')) {
         errorMessage = "You already have a creator profile. Redirecting to home...";
         setTimeout(() => navigate('/home'), 2000);
-      } else if (error.message?.includes('violates foreign key constraint') || error.message?.includes('User account not properly set up')) {
+      } else if (error.message?.includes('violates foreign key constraint')) {
         errorMessage = "Account setup incomplete. Please refresh the page and try again.";
       } else if (error.message?.includes('violates row-level security')) {
         errorMessage = "Security policy error. Please try logging out and back in.";
@@ -369,7 +370,8 @@ const CompleteProfile = () => {
     }
   };
 
-  if (loading || isValidatingUser) {
+  // Show loading while validating user
+  if (loading || (isValidatingUser && !validationComplete)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
