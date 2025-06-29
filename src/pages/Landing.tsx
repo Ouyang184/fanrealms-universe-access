@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -152,9 +153,9 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 py-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="border-t border-gray-800 pt-8 mt-12">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>
               <h3 className="font-bold mb-4">FanRealms</h3>
               <ul className="space-y-2">
@@ -164,18 +165,13 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/careers" className="text-sm text-gray-400 hover:text-white">
-                    Careers
+                  <Link to="/payments" className="text-sm text-gray-400 hover:text-white">
+                    Payments
                   </Link>
                 </li>
                 <li>
-                  <Link to="/press" className="text-sm text-gray-400 hover:text-white">
-                    Press
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/blog" className="text-sm text-gray-400 hover:text-white">
-                    Blog
+                  <Link to="/security" className="text-sm text-gray-400 hover:text-white">
+                    Security
                   </Link>
                 </li>
               </ul>
@@ -189,12 +185,7 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/safety" className="text-sm text-gray-400 hover:text-white">
-                    Safety Center
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/guidelines" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/community-guidelines" className="text-sm text-gray-400 hover:text-white">
                     Community Guidelines
                   </Link>
                 </li>
@@ -214,17 +205,17 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/privacy" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-white">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/cookies" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/cookie-policy" className="text-sm text-gray-400 hover:text-white">
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/copyright" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/copyright-policy" className="text-sm text-gray-400 hover:text-white">
                     Copyright Policy
                   </Link>
                 </li>
@@ -234,33 +225,17 @@ export default function LandingPage() {
               <h3 className="font-bold mb-4">Creators</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link to="/creator-studio" className="text-sm text-gray-400 hover:text-white">
-                    Start Creating
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/creator-resources" className="text-sm text-gray-400 hover:text-white">
-                    Resources
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/terms" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/creator-guidelines" className="text-sm text-gray-400 hover:text-white">
                     Creator Guidelines
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/creator-faq" className="text-sm text-gray-400 hover:text-white">
-                    Creator FAQ
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-
-          <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <div className="border-t border-gray-800 pt-6 pb-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400">© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
             <div className="flex gap-4 mt-4 md:mt-0">
-              <Link to="#" className="text-gray-400 hover:text-white">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"
@@ -268,13 +243,13 @@ export default function LandingPage() {
                     clipRule="evenodd"
                   />
                 </svg>
-              </Link>
-              <Link to="#" className="text-gray-400 hover:text-white">
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                 </svg>
-              </Link>
-              <Link to="#" className="text-gray-400 hover:text-white">
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"
@@ -282,7 +257,7 @@ export default function LandingPage() {
                     clipRule="evenodd"
                   />
                 </svg>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
