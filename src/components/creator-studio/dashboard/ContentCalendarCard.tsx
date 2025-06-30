@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +36,10 @@ export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) 
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl">Content Calendar</CardTitle>
-          <Button variant="link" className="text-primary p-0">
-            View Full Calendar <ChevronRight className="h-4 w-4 ml-1" />
+          <Button variant="link" className="text-primary p-0" asChild>
+            <Link to="/creator-studio/content-calendar">
+              View Full Calendar <ChevronRight className="h-4 w-4 ml-1" />
+            </Link>
           </Button>
         </div>
         <CardDescription>Upcoming scheduled content</CardDescription>
@@ -61,7 +64,7 @@ export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) 
           <div className="py-8 text-center">
             <p className="text-muted-foreground mb-4">You don't have any scheduled content.</p>
             <Button variant="outline" asChild>
-              <Link to="/creator-studio/posts">
+              <Link to="/creator-studio/content-calendar">
                 <Calendar className="h-4 w-4 mr-2" />
                 Schedule Your First Post
               </Link>
@@ -70,9 +73,11 @@ export function ContentCalendarCard({ creatorPosts }: ContentCalendarCardProps) 
         )}
       </CardContent>
       <CardFooter className="border-t pt-4">
-        <Button variant="outline" className="w-full">
-          <Calendar className="h-4 w-4 mr-2" />
-          Schedule New Content
+        <Button variant="outline" className="w-full" asChild>
+          <Link to="/creator-studio/content-calendar">
+            <Calendar className="h-4 w-4 mr-2" />
+            Schedule New Content
+          </Link>
         </Button>
       </CardFooter>
     </Card>
