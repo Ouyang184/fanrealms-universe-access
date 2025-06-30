@@ -1,12 +1,11 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, FileText, ImageIcon, Video, Music } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, FileText, ImageIcon, Video, Music } from "lucide-react";
 import { CreatorPost } from "@/types/creator-studio";
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, startOfWeek, endOfWeek } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ContentCalendarModalProps {
@@ -16,10 +15,9 @@ interface ContentCalendarModalProps {
 }
 
 export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCalendarModalProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(2025, 0, 1)); // Start from January 2025
   const [viewMonth, setViewMonth] = useState<Date>(new Date(2025, 0, 1));
 
-  // Get posts for the selected date
+  // Get posts for a specific date
   const getPostsForDate = (date: Date) => {
     return posts.filter(post => {
       const postDate = new Date(post.createdAt);
@@ -27,22 +25,28 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
     });
   };
 
-  // Get all days in the current month that have posts
-  const getDaysWithPosts = () => {
+  // Generate calendar days including leading/trailing days
+  const generateCalendarDays = () => {
     const monthStart = startOfMonth(viewMonth);
     const monthEnd = endOfMonth(viewMonth);
-    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const calendarStart = startOfWeek(monthStart);
+    const calendarEnd = endOfWeek(monthEnd);
     
-    return daysInMonth.filter(day => {
-      return posts.some(post => {
-        const postDate = new Date(post.createdAt);
-        return isSameDay(postDate, day);
-      });
-    });
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   };
 
-  const daysWithPosts = getDaysWithPosts();
-  const selectedDatePosts = getPostsForDate(selectedDate);
+  const calendarDays = generateCalendarDays();
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newMonth = new Date(viewMonth);
+    if (direction === 'prev') {
+      newMonth.setMonth(newMonth.getMonth() - 1);
+    } else {
+      newMonth.setMonth(newMonth.getMonth() + 1);
+    }
+    setViewMonth(newMonth);
+  };
 
   const getPostTypeIcon = (type: string) => {
     switch (type) {
@@ -59,135 +63,128 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
     }
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = new Date(viewMonth);
-    if (direction === 'prev') {
-      newMonth.setMonth(newMonth.getMonth() - 1);
-    } else {
-      newMonth.setMonth(newMonth.getMonth() + 1);
-    }
-    setViewMonth(newMonth);
+  const isCurrentMonth = (date: Date) => {
+    return date.getMonth() === viewMonth.getMonth();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-gray-900 text-white border-gray-700">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-white">
             <Calendar className="h-5 w-5" />
             Content Calendar
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Calendar Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {format(viewMonth, "MMMM yyyy")}
-              </h3>
-              <div className="flex gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateMonth('prev')}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateMonth('next')}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              month={viewMonth}
-              onMonthChange={setViewMonth}
-              className="rounded-md border"
-              modifiers={{
-                hasPost: daysWithPosts
-              }}
-              modifiersStyles={{
-                hasPost: {
-                  backgroundColor: 'hsl(var(--primary))',
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold'
-                }
-              }}
-            />
-            
-            <div className="text-sm text-muted-foreground">
-              <p className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-primary"></div>
-                Days with posts
-              </p>
+        <div className="space-y-4">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-white">
+              {format(viewMonth, "MMMM yyyy")}
+            </h3>
+            <div className="flex gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('prev')}
+                className="border-gray-600 text-white hover:bg-gray-800"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('next')}
+                className="border-gray-600 text-white hover:bg-gray-800"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-
-          {/* Posts for Selected Date */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">
-              Posts for {format(selectedDate, "MMMM d, yyyy")}
-            </h3>
+          
+          {/* Calendar Grid */}
+          <div className="bg-gray-800 rounded-lg p-4">
+            {/* Days of Week Header */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {daysOfWeek.map((day) => (
+                <div
+                  key={day}
+                  className="p-2 text-center font-medium text-gray-300 text-sm"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
             
-            {selectedDatePosts.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {selectedDatePosts.map((post) => (
+            {/* Calendar Days Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((date, index) => {
+                const dayPosts = getPostsForDate(date);
+                const isInCurrentMonth = isCurrentMonth(date);
+                
+                return (
                   <div
-                    key={post.id}
-                    className="p-3 border rounded-lg space-y-2"
-                  >
-                    <div className="flex items-start justify-between">
-                      <h4 className="font-medium line-clamp-1">{post.title}</h4>
-                      <Badge
-                        variant={post.status === "published" ? "default" : "outline"}
-                        className={cn(
-                          post.status === "published"
-                            ? "bg-green-100 text-green-800 border-green-200"
-                            : post.status === "scheduled"
-                            ? "bg-blue-100 text-blue-800 border-blue-200"
-                            : "bg-gray-100 text-gray-800 border-gray-200"
-                        )}
-                      >
-                        {post.status}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {post.content}
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        {getPostTypeIcon(post.type)}
-                        <span className="capitalize">{post.type}</span>
-                      </div>
-                      <span>{format(new Date(post.createdAt), "h:mm a")}</span>
-                    </div>
-                    
-                    {post.engagement && (
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{post.engagement.views} views</span>
-                        <span>{post.engagement.likes} likes</span>
-                        <span>{post.engagement.comments} comments</span>
-                      </div>
+                    key={index}
+                    className={cn(
+                      "min-h-[120px] p-2 border border-gray-700 bg-gray-900 rounded",
+                      !isInCurrentMonth && "opacity-40"
                     )}
+                  >
+                    {/* Day Number */}
+                    <div className="text-sm font-medium text-white mb-1">
+                      {format(date, "d")}
+                    </div>
+                    
+                    {/* Post Bands */}
+                    <div className="space-y-1">
+                      {dayPosts.slice(0, 3).map((post, postIndex) => (
+                        <div
+                          key={post.id}
+                          className={cn(
+                            "text-xs px-2 py-1 rounded text-white truncate",
+                            post.status === "published" 
+                              ? "bg-blue-600" 
+                              : post.status === "scheduled" 
+                              ? "bg-indigo-600" 
+                              : "bg-gray-600"
+                          )}
+                          title={post.title}
+                        >
+                          <div className="flex items-center gap-1">
+                            {getPostTypeIcon(post.type)}
+                            <span className="truncate">{post.title}</span>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Show count if more than 3 posts */}
+                      {dayPosts.length > 3 && (
+                        <div className="text-xs text-gray-400 px-2 py-1">
+                          +{dayPosts.length - 3} more
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No posts on this date</p>
-                <p className="text-sm mt-1">Select a highlighted date to see posts</p>
-              </div>
-            )}
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Legend */}
+          <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-blue-600"></div>
+              <span>Published</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-indigo-600"></div>
+              <span>Scheduled</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-gray-600"></div>
+              <span>Draft</span>
+            </div>
           </div>
         </div>
       </DialogContent>
