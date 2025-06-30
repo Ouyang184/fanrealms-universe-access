@@ -200,7 +200,7 @@ export function ProfileInfoForm({
           <Button 
             onClick={onSave}
             disabled={!hasChanges || isSaving}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-blue-600 hover:bg-blue-700"
           >
             <Save className={`mr-2 h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
             {isSaving ? "Saving..." : "Save Changes"}
