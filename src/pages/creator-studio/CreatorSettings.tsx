@@ -16,7 +16,7 @@ export default function CreatorSettings() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Track unsaved changes
-  const { currentData, hasChanges, updateData, resetChanges } = useUnsavedChanges(settings || {});
+  const { currentData, hasChanges, updateData, resetChanges } = useUnsavedChanges(settings || {} as CreatorSettingsData);
 
   // Update current data when settings load
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function CreatorSettings() {
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file && settings?.id) {
-        const imageUrl = await uploadProfileImage(file, type);
+        const imageUrl = await uploadProfileImage(file);
         if (imageUrl) {
           const fieldName = type === 'avatar' ? 'avatar_url' : 'banner_url';
           handleSettingsChange(fieldName, imageUrl);
@@ -82,7 +82,7 @@ export default function CreatorSettings() {
       </div>
 
       <ProfileInfoForm
-        settings={currentData as any}
+        settings={currentData as CreatorSettingsData}
         onSettingsChange={handleSettingsChange}
         onImageUpload={handleImageUpload}
         isUploading={isUploading}
@@ -90,7 +90,7 @@ export default function CreatorSettings() {
 
       <BannerSection
         userId={settings.id}
-        currentBannerUrl={currentData.banner_url as string}
+        currentBannerUrl={(currentData as CreatorSettingsData).banner_url || null}
         onBannerUpdate={handleBannerUpdate}
       />
 
@@ -109,7 +109,7 @@ export default function CreatorSettings() {
             </div>
             <Switch
               id="nsfw-toggle"
-              checked={currentData.is_nsfw || false}
+              checked={(currentData as CreatorSettingsData).is_nsfw || false}
               onCheckedChange={(checked) => handleSettingsChange('is_nsfw', checked)}
             />
           </div>
