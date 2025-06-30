@@ -27,18 +27,15 @@ export default function CreatorStudioSettings() {
   // Update current data when settings load
   useEffect(() => {
     if (settings) {
-      console.log('Settings loaded, resetting changes:', settings);
       resetChanges();
     }
   }, [settings, resetChanges]);
 
   // Debug log to see if changes are being tracked
   useEffect(() => {
-    console.log('=== CHANGE TRACKING ===');
     console.log('Has changes:', hasChanges);
     console.log('Current data:', currentData);
-    console.log('Original settings:', settings);
-  }, [hasChanges, currentData, settings]);
+  }, [hasChanges, currentData]);
 
   if (isLoading) {
     return (
@@ -60,8 +57,7 @@ export default function CreatorStudioSettings() {
   }
 
   const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
-    console.log('=== SETTINGS CHANGE ===');
-    console.log('Field:', name, 'Value:', value);
+    console.log('Settings change:', name, value);
     updateData({ [name]: value });
   };
 
@@ -75,8 +71,6 @@ export default function CreatorStudioSettings() {
       if (file && settings?.id) {
         const imageUrl = await uploadProfileImage(file);
         if (imageUrl) {
-          console.log('=== IMAGE UPLOADED ===');
-          console.log('New avatar URL:', imageUrl);
           handleSettingsChange('avatar_url', imageUrl);
         }
       }
@@ -85,19 +79,11 @@ export default function CreatorStudioSettings() {
   };
 
   const handleBannerUpdate = (bannerUrl: string) => {
-    console.log('=== BANNER UPDATED ===');
-    console.log('New banner URL:', bannerUrl);
     handleSettingsChange('banner_url', bannerUrl);
   };
 
   const handleSave = async () => {
-    if (!hasChanges || !settings) {
-      console.log('No changes to save or no settings loaded');
-      return;
-    }
-
-    console.log('=== SAVING CHANGES ===');
-    console.log('Changes to save:', currentData);
+    if (!hasChanges || !settings) return;
 
     setIsSaving(true);
     try {
@@ -124,13 +110,6 @@ export default function CreatorStudioSettings() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Creator Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your creator profile and preferences</p>
-      </div>
-
-      {/* Debug info for development */}
-      <div className="bg-muted p-4 rounded-lg text-sm">
-        <p><strong>Debug Info:</strong></p>
-        <p>Has Changes: {hasChanges ? 'Yes' : 'No'}</p>
-        <p>Changes count: {Object.keys(currentData || {}).length}</p>
       </div>
 
       <div className="grid gap-6">
