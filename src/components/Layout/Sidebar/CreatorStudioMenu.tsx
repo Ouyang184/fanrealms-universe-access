@@ -51,7 +51,11 @@ const creatorStudioItems = [
   },
 ];
 
-export function CreatorStudioMenu() {
+interface CreatorStudioMenuProps {
+  collapsed?: boolean;
+}
+
+export function CreatorStudioMenu({ collapsed = false }: CreatorStudioMenuProps) {
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -66,7 +70,7 @@ export function CreatorStudioMenu() {
                 }
               >
                 <item.icon className="h-4 w-4" />
-                <span>{item.title}</span>
+                {!collapsed && <span>{item.title}</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>

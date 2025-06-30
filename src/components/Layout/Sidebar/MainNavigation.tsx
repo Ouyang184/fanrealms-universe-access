@@ -28,7 +28,7 @@ export function MainNavigation({ collapsed }: MainNavigationProps) {
     { path: "/feed", icon: Rss, label: "Feed" },
     { path: "/following", icon: Users, label: "Following" },
     { path: "/explore", icon: Compass, label: "Explore" },
-    { path: "/messages", icon: MessageSquare, label: "Messages" },
+    { path: "/messages", icon: MessageSquage, label: "Messages" },
     { path: "/subscriptions", icon: ShoppingBag, label: "Subscriptions" },
     { path: "/settings", icon: Settings, label: "Account Settings" },
   ];
