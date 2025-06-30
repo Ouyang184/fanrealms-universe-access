@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreatorSettings } from "@/types/creator-studio";
+import { CreatorSettingsData } from "@/types/creator-settings";
 
 const AVAILABLE_TAGS = [
   "Gaming", "Art", "Music", "Writing", "Photography", "Education",
@@ -20,7 +20,7 @@ const AVAILABLE_TAGS = [
 ];
 
 interface ProfileInfoFormProps {
-  settings: CreatorSettings;
+  settings: CreatorSettingsData | null;
   onSettingsChange: (name: string, value: string | string[] | boolean) => void;
   onImageUpload: (type: 'avatar') => void;
   isUploading?: boolean;
@@ -39,6 +39,23 @@ export function ProfileInfoForm({
   hasChanges = false
 }: ProfileInfoFormProps) {
   const [selectedTag, setSelectedTag] = useState<string>("");
+
+  // Return loading state if settings is null
+  if (!settings) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+          <CardDescription>Loading profile information...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
