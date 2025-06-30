@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreatorSettings } from "@/types/creator-studio";
@@ -24,9 +24,20 @@ interface ProfileInfoFormProps {
   onSettingsChange: (name: string, value: string | string[] | boolean) => void;
   onImageUpload: (type: 'avatar') => void;
   isUploading?: boolean;
+  onSave?: () => void;
+  isSaving?: boolean;
+  hasChanges?: boolean;
 }
 
-export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isUploading = false }: ProfileInfoFormProps) {
+export function ProfileInfoForm({ 
+  settings, 
+  onSettingsChange, 
+  onImageUpload, 
+  isUploading = false,
+  onSave,
+  isSaving = false,
+  hasChanges = false
+}: ProfileInfoFormProps) {
   const [selectedTag, setSelectedTag] = useState<string>("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -165,6 +176,18 @@ export function ProfileInfoForm({ settings, onSettingsChange, onImageUpload, isU
               Select tags that describe your content. This helps users discover your profile. You have selected {settings.tags?.length || 0} tag{settings.tags?.length !== 1 ? 's' : ''}.
             </p>
           </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-start pt-4 border-t">
+          <Button 
+            onClick={onSave}
+            disabled={!hasChanges || isSaving}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            <Save className={`mr-2 h-4 w-4 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -8,9 +8,6 @@ import { BannerSection } from "@/components/creator-studio/settings/BannerSectio
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { NSFWToggleSection } from "@/components/creator-studio/settings/NSFWToggleSection";
 import { StripeConnectSection } from "@/components/creator-studio/StripeConnectSection";
-import { SaveButton } from "@/components/creator-studio/settings/SaveButton";
-import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CreatorSettingsData } from "@/types/creator-settings";
 import { useToast } from "@/hooks/use-toast";
@@ -18,24 +15,43 @@ import { useToast } from "@/hooks/use-toast";
 export default function CreatorStudioSettings() {
   const { user } = useAuth();
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
-  const [isSaving, setIsSaving] = useState(false);
+  const [profileData, setProfileData] = useState<CreatorSettingsData | null>(null);
+  const [bannerData, setBannerData] = useState<CreatorSettingsData | null>(null);
+  const [profileHasChanges, setProfileHasChanges] = useState(false);
+  const [bannerHasChanges, setBannerHasChanges] = useState(false);
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [isBannerSaving, setIsBannerSaving] = useState(false);
   const { toast } = useToast();
 
-  // Track unsaved changes
-  const { currentData, hasChanges, updateData, resetChanges } = useUnsavedChanges(settings || {} as CreatorSettingsData);
-
-  // Update current data when settings load
+  // Initialize data when settings load
   useEffect(() => {
     if (settings) {
-      resetChanges();
+      setProfileData({ ...settings });
+      setBannerData({ ...settings });
+      setProfileHasChanges(false);
+      setBannerHasChanges(false);
     }
-  }, [settings, resetChanges]);
+  }, [settings]);
 
-  // Debug log to see if changes are being tracked
+  // Track profile changes
   useEffect(() => {
-    console.log('Has changes:', hasChanges);
-    console.log('Current data:', currentData);
-  }, [hasChanges, currentData]);
+    if (profileData && settings) {
+      const hasProfileChanges = 
+        profileData.display_name !== settings.display_name ||
+        profileData.bio !== settings.bio ||
+        JSON.stringify(profileData.tags) !== JSON.stringify(settings.tags) ||
+        profileData.avatar_url !== settings.avatar_url;
+      setProfileHasChanges(hasProfileChanges);
+    }
+  }, [profileData, settings]);
+
+  // Track banner changes
+  useEffect(() => {
+    if (bannerData && settings) {
+      const hasBannerChanges = bannerData.banner_url !== settings.banner_url;
+      setBannerHasChanges(hasBannerChanges);
+    }
+  }, [bannerData, settings]);
 
   if (isLoading) {
     return (
@@ -56,9 +72,16 @@ export default function CreatorStudioSettings() {
     );
   }
 
-  const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
-    console.log('Settings change:', name, value);
-    updateData({ [name]: value });
+  const handleProfileSettingsChange = (name: string, value: string | string[] | boolean) => {
+    if (profileData) {
+      setProfileData({ ...profileData, [name]: value });
+    }
+  };
+
+  const handleBannerUpdate = (bannerUrl: string) => {
+    if (bannerData) {
+      setBannerData({ ...bannerData, banner_url: bannerUrl });
+    }
   };
 
   const handleImageUpload = async (type: 'avatar') => {
@@ -71,42 +94,70 @@ export default function CreatorStudioSettings() {
       if (file && settings?.id) {
         const imageUrl = await uploadProfileImage(file);
         if (imageUrl) {
-          handleSettingsChange('avatar_url', imageUrl);
+          handleProfileSettingsChange('avatar_url', imageUrl);
         }
       }
     };
     input.click();
   };
 
-  const handleBannerUpdate = (bannerUrl: string) => {
-    handleSettingsChange('banner_url', bannerUrl);
-  };
+  const handleProfileSave = async () => {
+    if (!profileHasChanges || !profileData) return;
 
-  const handleSave = async () => {
-    if (!hasChanges || !settings) return;
-
-    setIsSaving(true);
+    setIsProfileSaving(true);
     try {
-      await updateSettings(currentData as Partial<CreatorSettingsData>);
-      resetChanges();
+      await updateSettings({
+        display_name: profileData.display_name,
+        bio: profileData.bio,
+        tags: profileData.tags,
+        avatar_url: profileData.avatar_url,
+      } as Partial<CreatorSettingsData>);
+      
+      setProfileHasChanges(false);
       toast({
-        title: "Settings saved",
-        description: "Your creator settings have been updated successfully.",
+        title: "Profile saved",
+        description: "Your profile information has been updated successfully.",
       });
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      console.error('Failed to save profile:', error);
       toast({
-        title: "Error saving settings",
-        description: "Failed to save your settings. Please try again.",
+        title: "Error saving profile",
+        description: "Failed to save your profile information. Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsProfileSaving(false);
+    }
+  };
+
+  const handleBannerSave = async () => {
+    if (!bannerHasChanges || !bannerData) return;
+
+    setIsBannerSaving(true);
+    try {
+      await updateSettings({
+        banner_url: bannerData.banner_url,
+      } as Partial<CreatorSettingsData>);
+      
+      setBannerHasChanges(false);
+      toast({
+        title: "Banner saved",
+        description: "Your banner image has been updated successfully.",
+      });
+    } catch (error) {
+      console.error('Failed to save banner:', error);
+      toast({
+        title: "Error saving banner",
+        description: "Failed to save your banner image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBannerSaving(false);
     }
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8 pb-20">
+    <div className="container mx-auto p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Creator Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your creator profile and preferences</p>
@@ -115,10 +166,13 @@ export default function CreatorStudioSettings() {
       <div className="grid gap-6">
         {/* Profile Information */}
         <ProfileInfoForm 
-          settings={currentData as CreatorSettingsData}
-          onSettingsChange={handleSettingsChange}
+          settings={profileData as CreatorSettingsData}
+          onSettingsChange={handleProfileSettingsChange}
           onImageUpload={handleImageUpload}
           isUploading={isUploading}
+          onSave={handleProfileSave}
+          isSaving={isProfileSaving}
+          hasChanges={profileHasChanges}
         />
 
         <Separator />
@@ -126,8 +180,11 @@ export default function CreatorStudioSettings() {
         {/* Banner Image */}
         <BannerSection 
           userId={user?.id || ''}
-          currentBannerUrl={(currentData as CreatorSettingsData).banner_url || null}
+          currentBannerUrl={bannerData?.banner_url || null}
           onBannerUpdate={handleBannerUpdate}
+          onSave={handleBannerSave}
+          isSaving={isBannerSaving}
+          hasChanges={bannerHasChanges}
         />
 
         <Separator />
@@ -141,8 +198,10 @@ export default function CreatorStudioSettings() {
 
         {/* NSFW Content Toggle */}
         <NSFWToggleSection 
-          settings={currentData as CreatorSettingsData}
-          onSettingsChange={handleSettingsChange}
+          settings={settings}
+          onSettingsChange={(name, value) => {
+            // Handle NSFW toggle separately since it's independent
+          }}
         />
 
         <Separator />
@@ -150,12 +209,6 @@ export default function CreatorStudioSettings() {
         {/* Stripe Connect */}
         <StripeConnectSection />
       </div>
-
-      <SaveButton
-        onSave={handleSave}
-        isLoading={isSaving}
-        hasChanges={hasChanges}
-      />
     </div>
   );
 }
