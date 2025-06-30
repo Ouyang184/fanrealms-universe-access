@@ -34,6 +34,17 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
     return formattedTags.length > 0 ? formattedTags : defaultTags;
   };
 
+  // Helper function to get pricing display
+  const getPricingDisplay = (creator: CreatorProfile) => {
+    if (!creator.tiers || creator.tiers.length === 0) {
+      return "Free";
+    }
+    
+    // Find the lowest price tier
+    const lowestPrice = Math.min(...creator.tiers.map(tier => tier.price));
+    return `From $${lowestPrice.toFixed(2)}/mo`;
+  };
+
   // Create proper route to creator profile
   const creatorLink = creator.username 
     ? `/creator/${creator.username}` 
@@ -70,8 +81,7 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
         </div>
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm">
-            <span className="text-gray-400">From </span>
-            <span className="font-medium">${(9.99).toFixed(2)}/mo</span>
+            <span className="font-medium">{getPricingDisplay(creator)}</span>
           </div>
           <Link to={creatorLink}>
             <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
