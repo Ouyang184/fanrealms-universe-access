@@ -13,11 +13,13 @@ import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CreatorSettingsData } from "@/types/creator-settings";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreatorStudioSettings() {
   const { user } = useAuth();
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   // Track unsaved changes
   const { currentData, hasChanges, updateData, resetChanges } = useUnsavedChanges(settings || {} as CreatorSettingsData);
@@ -28,6 +30,12 @@ export default function CreatorStudioSettings() {
       resetChanges();
     }
   }, [settings, resetChanges]);
+
+  // Debug log to see if changes are being tracked
+  useEffect(() => {
+    console.log('Has changes:', hasChanges);
+    console.log('Current data:', currentData);
+  }, [hasChanges, currentData]);
 
   if (isLoading) {
     return (
@@ -49,6 +57,7 @@ export default function CreatorStudioSettings() {
   }
 
   const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
+    console.log('Settings change:', name, value);
     updateData({ [name]: value });
   };
 
@@ -80,8 +89,17 @@ export default function CreatorStudioSettings() {
     try {
       await updateSettings(currentData as Partial<CreatorSettingsData>);
       resetChanges();
+      toast({
+        title: "Settings saved",
+        description: "Your creator settings have been updated successfully.",
+      });
     } catch (error) {
       console.error('Failed to save settings:', error);
+      toast({
+        title: "Error saving settings",
+        description: "Failed to save your settings. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
