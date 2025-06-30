@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { useCreatorSettings } from "@/hooks/useCreatorSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -7,12 +8,26 @@ import { BannerSection } from "@/components/creator-studio/settings/BannerSectio
 import { SocialLinksSection } from "@/components/creator-studio/settings/SocialLinksSection";
 import { NSFWToggleSection } from "@/components/creator-studio/settings/NSFWToggleSection";
 import { StripeConnectSection } from "@/components/creator-studio/StripeConnectSection";
+import { SaveButton } from "@/components/creator-studio/settings/SaveButton";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { CreatorSettingsData } from "@/types/creator-settings";
 
 export default function CreatorStudioSettings() {
   const { user } = useAuth();
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Track unsaved changes
+  const { currentData, hasChanges, updateData, resetChanges } = useUnsavedChanges(settings || {} as CreatorSettingsData);
+
+  // Update current data when settings load
+  useEffect(() => {
+    if (settings) {
+      resetChanges();
+    }
+  }, [settings, resetChanges]);
 
   if (isLoading) {
     return (
@@ -34,7 +49,7 @@ export default function CreatorStudioSettings() {
   }
 
   const handleSettingsChange = (name: string, value: string | string[] | boolean) => {
-    updateSettings({ [name]: value });
+    updateData({ [name]: value });
   };
 
   const handleImageUpload = async (type: 'avatar') => {
@@ -44,19 +59,36 @@ export default function CreatorStudioSettings() {
     input.accept = 'image/*';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        await uploadProfileImage(file);
+      if (file && settings?.id) {
+        const imageUrl = await uploadProfileImage(file);
+        if (imageUrl) {
+          handleSettingsChange('avatar_url', imageUrl);
+        }
       }
     };
     input.click();
   };
 
   const handleBannerUpdate = (bannerUrl: string) => {
-    updateSettings({ banner_url: bannerUrl });
+    handleSettingsChange('banner_url', bannerUrl);
+  };
+
+  const handleSave = async () => {
+    if (!hasChanges || !settings) return;
+
+    setIsSaving(true);
+    try {
+      await updateSettings(currentData as Partial<CreatorSettingsData>);
+      resetChanges();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="container mx-auto p-6 space-y-8 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Creator Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your creator profile and preferences</p>
@@ -65,7 +97,7 @@ export default function CreatorStudioSettings() {
       <div className="grid gap-6">
         {/* Profile Information */}
         <ProfileInfoForm 
-          settings={settings}
+          settings={currentData as CreatorSettingsData}
           onSettingsChange={handleSettingsChange}
           onImageUpload={handleImageUpload}
           isUploading={isUploading}
@@ -76,7 +108,7 @@ export default function CreatorStudioSettings() {
         {/* Banner Image */}
         <BannerSection 
           userId={user?.id || ''}
-          currentBannerUrl={settings.banner_url}
+          currentBannerUrl={(currentData as CreatorSettingsData).banner_url || null}
           onBannerUpdate={handleBannerUpdate}
         />
 
@@ -91,7 +123,7 @@ export default function CreatorStudioSettings() {
 
         {/* NSFW Content Toggle */}
         <NSFWToggleSection 
-          settings={settings}
+          settings={currentData as CreatorSettingsData}
           onSettingsChange={handleSettingsChange}
         />
 
@@ -100,6 +132,12 @@ export default function CreatorStudioSettings() {
         {/* Stripe Connect */}
         <StripeConnectSection />
       </div>
+
+      <SaveButton
+        onSave={handleSave}
+        isLoading={isSaving}
+        hasChanges={hasChanges}
+      />
     </div>
   );
 }
