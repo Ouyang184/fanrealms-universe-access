@@ -1,81 +1,139 @@
 
-import { Calendar, BarChart3, Users, Settings, CreditCard, Bell, FileText, User, Home } from "lucide-react";
-import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { NavLink } from "react-router-dom";
-
-const creatorStudioItems = [
-  {
-    title: "Dashboard",
-    url: "/creator-studio",
-    icon: Home,
-  },
-  {
-    title: "Posts",
-    url: "/creator-studio/posts", 
-    icon: FileText,
-  },
-  {
-    title: "Content Calendar",
-    url: "/creator-studio/content-calendar",
-    icon: Calendar,
-  },
-  {
-    title: "Subscribers",
-    url: "/creator-studio/subscribers",
-    icon: Users,
-  },
-  {
-    title: "Membership Tiers",
-    url: "/creator-studio/membership-tiers",
-    icon: CreditCard,
-  },
-  {
-    title: "Profile",
-    url: "/creator-studio/profile",
-    icon: User,
-  },
-  {
-    title: "Settings",
-    url: "/creator-studio/settings",
-    icon: Settings,
-  },
-  {
-    title: "Notifications",
-    url: "/creator-studio/notifications",
-    icon: Bell,
-  },
-  {
-    title: "Payouts",
-    url: "/creator-studio/payouts",
-    icon: BarChart3,
-  },
-];
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Grid, 
+  FileText, 
+  Award, 
+  UserCheck, 
+  DollarSign, 
+  Settings,
+  ChevronDown,
+  PlusCircle,
+  User,
+  Bell
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { useState, useEffect } from "react";
 
 interface CreatorStudioMenuProps {
-  collapsed?: boolean;
+  collapsed: boolean;
 }
 
-export function CreatorStudioMenu({ collapsed = false }: CreatorStudioMenuProps) {
-  return (
-    <SidebarGroup>
-      <SidebarMenu>
-        {creatorStudioItems.map((item) => (
-          <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton asChild>
-              <NavLink 
-                to={item.url}
-                end={item.url === "/creator-studio"}
-                className={({ isActive }) =>
-                  isActive ? "bg-accent text-accent-foreground font-medium" : ""
-                }
-              >
-                <item.icon className="h-4 w-4" />
-                {!collapsed && <span>{item.title}</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
+  const location = useLocation();
+  const { creatorProfile, isLoading } = useCreatorProfile();
+  const [isOpen, setIsOpen] = useState(true);
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  // Reset open state when creator status changes
+  useEffect(() => {
+    if (creatorProfile) {
+      setIsOpen(true);
+    }
+  }, [creatorProfile]);
+
+  const studioItems = [
+    { path: "/creator-studio/dashboard", icon: Grid, label: "Dashboard" },
+    { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
+    { path: "/creator-studio/notifications", icon: Bell, label: "Notifications" },
+    { path: "/creator-studio/membership-tiers", icon: Award, label: "Membership Tiers" },
+    { path: "/creator-studio/subscribers", icon: UserCheck, label: "Subscribers" },
+    { path: "/creator-studio/payouts", icon: DollarSign, label: "Payouts" },
+    { path: "/creator-studio/creator-profile", icon: User, label: "Creator Profile" },
+    { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },
+  ];
+
+  // If still loading, show a placeholder
+  if (isLoading) {
+    return null;
+  }
+
+  // Non-creator view
+  if (!creatorProfile) {
+    if (collapsed) {
+      return (
+        <div className="p-2">
+          <Link to="/complete-profile">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-center px-2"
+            >
+              <PlusCircle className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="px-2">
+        <Link to="/complete-profile">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 font-medium"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Become a Creator
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Creator view with collapsed sidebar
+  if (collapsed) {
+    return (
+      <div className="p-2">
+        {studioItems.map((item) => (
+          <Link to={item.path} key={item.path}>
+            <Button 
+              variant={isActive(item.path) ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-center px-2",
+                isActive(item.path) && "bg-primary/30"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+            </Button>
+          </Link>
         ))}
-      </SidebarMenu>
-    </SidebarGroup>
+      </div>
+    );
+  }
+
+  // Creator view with expanded sidebar
+  return (
+    <div className="px-2">
+      <Collapsible defaultOpen={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger className="flex w-full items-center justify-between p-2 font-semibold text-lg">
+          <div className="flex items-center gap-2">
+            <span>Creator Studio</span>
+          </div>
+          <ChevronDown className="h-5 w-5 text-muted-foreground" />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pl-2 space-y-1">
+          {studioItems.map((item) => (
+            <Link to={item.path} key={item.path} className="block">
+              <Button
+                variant={isActive(item.path) ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start gap-3 font-medium",
+                  isActive(item.path) && "bg-primary/30",
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Button>
+            </Link>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 }
