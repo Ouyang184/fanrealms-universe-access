@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Search,
@@ -39,6 +38,7 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { CreatePostForm } from "@/components/creator-studio/CreatePostForm";
 import { EditPostDialog } from "@/components/creator-studio/EditPostDialog";
+import { ContentCalendarModal } from "@/components/creator-studio/ContentCalendarModal";
 import { useDeletePost } from "@/hooks/useDeletePost";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +77,7 @@ export default function CreatorPostsPage() {
   } = useCreatorPosts();
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Filter posts based on filter tab and apply sorting
   const getFilteredPosts = () => {
@@ -124,7 +125,7 @@ export default function CreatorPostsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <CreatePostForm />
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setIsCalendarOpen(true)}>
             <Calendar className="h-4 w-4 mr-2" />
             Content Calendar
           </Button>
@@ -294,13 +295,20 @@ export default function CreatorPostsPage() {
               )}
             </CardContent>
             <CardFooter>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={() => setIsCalendarOpen(true)}>
                 View Full Calendar
               </Button>
             </CardFooter>
           </Card>
         </div>
       )}
+
+      {/* Content Calendar Modal */}
+      <ContentCalendarModal
+        isOpen={isCalendarOpen}
+        onOpenChange={setIsCalendarOpen}
+        posts={posts}
+      />
     </div>
   );
 }
