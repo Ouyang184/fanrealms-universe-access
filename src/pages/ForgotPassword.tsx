@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -36,16 +37,31 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
+      console.log("ForgotPassword: Sending reset email to:", values.email);
+
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: "https://fanrealms.com/reset-password",
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("ForgotPassword: Reset email error:", error);
+        throw error;
+      }
 
+      console.log("ForgotPassword: Reset email sent successfully");
       setIsSuccess(true);
     } catch (error: any) {
       console.error("Password reset error:", error);
-      setError(error.message || "An error occurred while sending the reset email");
+      
+      // Handle rate limiting gracefully
+      if (error.message?.includes("rate_limit") || error.message?.includes("rate limit")) {
+        setError("Too many reset requests. Please wait a moment before trying again.");
+      } else if (error.message?.includes("not found") || error.message?.includes("user not found")) {
+        // For security, we still show success even if email doesn't exist
+        setIsSuccess(true);
+      } else {
+        setError(error.message || "An error occurred while sending the reset email");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -73,10 +89,26 @@ const ForgotPassword = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-gray-400 text-center">
-                If you don't see the email in your inbox, check your spam folder.
+                If you don't see the email in your inbox, check your spam folder. The link will expire in 1 hour.
               </p>
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 text-center">
+                  Didn't receive the email?
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsSuccess(false);
+                    setError(null);
+                    form.reset();
+                  }}
+                >
+                  Try again
+                </Button>
+              </div>
               <Link to="/login">
-                <Button variant="outline" className="w-full">
+                <Button variant="ghost" className="w-full">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Sign In
                 </Button>
