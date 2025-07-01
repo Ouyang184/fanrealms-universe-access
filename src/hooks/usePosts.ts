@@ -74,7 +74,6 @@ export function usePosts() {
           createdAt: post.created_at, // Use createdAt to match Post interface
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
-          status: post.status || 'published',
           scheduled_for: post.scheduled_for,
           
           // User information - safely access properties
