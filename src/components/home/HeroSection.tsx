@@ -1,8 +1,21 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function HeroSection() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleBecomeCreatorClick = () => {
+    if (!user) {
+      const returnTo = encodeURIComponent('/complete-profile');
+      navigate(`/login?returnTo=${returnTo}`);
+      return;
+    }
+    navigate('/complete-profile');
+  };
+
   return (
     <section className="mb-12">
       <div className="relative rounded-xl overflow-hidden bg-gradient-to-r from-purple-900 to-black h-64">
@@ -15,8 +28,12 @@ export function HeroSection() {
             <Link to="/explore">
               <Button className="bg-purple-600 hover:bg-purple-700">Discover Creators</Button>
             </Link>
-            <Button variant="outline" className="border-white/30 hover:bg-white/10" asChild>
-              <Link to="/complete-profile">Become a Creator</Link>
+            <Button 
+              variant="outline" 
+              className="border-white/30 hover:bg-white/10"
+              onClick={handleBecomeCreatorClick}
+            >
+              Become a Creator
             </Button>
           </div>
         </div>

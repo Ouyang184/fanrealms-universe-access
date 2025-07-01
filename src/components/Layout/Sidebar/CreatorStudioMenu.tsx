@@ -1,5 +1,4 @@
-
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Grid, 
   FileText, 
@@ -16,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 
 interface CreatorStudioMenuProps {
@@ -24,6 +24,8 @@ interface CreatorStudioMenuProps {
 
 export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { creatorProfile, isLoading } = useCreatorProfile();
   const [isOpen, setIsOpen] = useState(true);
   
@@ -49,6 +51,15 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
     { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },
   ];
 
+  const handleBecomeCreatorClick = () => {
+    if (!user) {
+      const returnTo = encodeURIComponent('/complete-profile');
+      navigate(`/login?returnTo=${returnTo}`);
+      return;
+    }
+    navigate('/complete-profile');
+  };
+
   // If still loading, show a placeholder
   if (isLoading) {
     return null;
@@ -59,29 +70,27 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
     if (collapsed) {
       return (
         <div className="p-2">
-          <Link to="/complete-profile">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-center px-2"
-            >
-              <PlusCircle className="h-5 w-5" />
-            </Button>
-          </Link>
+          <Button 
+            variant="ghost" 
+            className="w-full justify-center px-2"
+            onClick={handleBecomeCreatorClick}
+          >
+            <PlusCircle className="h-5 w-5" />
+          </Button>
         </div>
       );
     }
 
     return (
       <div className="px-2">
-        <Link to="/complete-profile">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 font-medium"
-          >
-            <PlusCircle className="h-5 w-5" />
-            Become a Creator
-          </Button>
-        </Link>
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-2 font-medium"
+          onClick={handleBecomeCreatorClick}
+        >
+          <PlusCircle className="h-5 w-5" />
+          Become a Creator
+        </Button>
       </div>
     );
   }

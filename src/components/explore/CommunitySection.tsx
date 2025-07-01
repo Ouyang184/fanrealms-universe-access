@@ -1,9 +1,22 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function CommunitySection() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleBecomeCreatorClick = () => {
+    if (!user) {
+      const returnTo = encodeURIComponent('/complete-profile');
+      navigate(`/login?returnTo=${returnTo}`);
+      return;
+    }
+    navigate('/complete-profile');
+  };
+
   return (
     <section className="mb-10">
       <Card className="bg-gray-900 border-gray-800">
@@ -16,8 +29,11 @@ export function CommunitySection() {
                 earn from your content on FanRealms.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button className="bg-purple-600 hover:bg-purple-700" asChild>
-                  <Link to="/complete-profile">Become a Creator</Link>
+                <Button 
+                  className="bg-purple-600 hover:bg-purple-700"
+                  onClick={handleBecomeCreatorClick}
+                >
+                  Become a Creator
                 </Button>
                 <Button variant="outline">Learn More</Button>
               </div>

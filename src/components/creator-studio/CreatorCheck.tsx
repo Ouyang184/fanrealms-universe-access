@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreatorCheckProps {
   children: ReactNode;
@@ -12,7 +13,17 @@ interface CreatorCheckProps {
 
 export function CreatorCheck({ children }: CreatorCheckProps) {
   const { creatorProfile, isLoading } = useCreatorProfile();
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  const handleBecomeCreatorClick = () => {
+    if (!user) {
+      const returnTo = encodeURIComponent('/complete-profile');
+      navigate(`/login?returnTo=${returnTo}`);
+      return;
+    }
+    navigate('/complete-profile');
+  };
 
   if (isLoading) {
     return (
@@ -30,9 +41,7 @@ export function CreatorCheck({ children }: CreatorCheckProps) {
           <p className="text-muted-foreground mb-6">
             You don't have a Creator Profile yet. Click the button below to create one and start posting!
           </p>
-          <Button 
-            onClick={() => navigate('/complete-profile')}
-          >
+          <Button onClick={handleBecomeCreatorClick}>
             Become a Creator
           </Button>
         </CardContent>
