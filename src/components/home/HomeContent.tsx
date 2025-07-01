@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
@@ -28,13 +27,24 @@ export function HomeContent() {
   const { data: userPreferences = [], isLoading: isLoadingPreferences } = useUserPreferences();
   const categoryIds = userPreferences.map(pref => pref.category_id);
   
-  // Get posts filtered by user preferences for "For You" section (with fallback to all posts)
-  // These hooks now automatically filter NSFW content based on preferences
-  const { data: forYouPosts = [], isLoading: isLoadingForYou } = usePostsByCategories(categoryIds);
+  // Get posts filtered by user preferences for "For You" section
+  const { data: categoryPosts = [], isLoading: isLoadingCategoryPosts } = usePostsByCategories(categoryIds);
   
-  // Get all posts for trending and recent sections
+  // Get all posts for trending and recent sections, and as fallback for "For You"
   const { data: allPosts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
+
+  // Determine "For You" posts: use category-filtered posts if available, otherwise recent posts
+  const forYouPosts = categoryPosts.length > 0 ? categoryPosts : allPosts.slice(0, 8);
+
+  console.log('HomeContent: For You logic:', {
+    userPreferences: userPreferences.length,
+    categoryIds,
+    categoryPostsCount: categoryPosts.length,
+    allPostsCount: allPosts.length,
+    forYouPostsCount: forYouPosts.length,
+    usingCategoryPosts: categoryPosts.length > 0
+  });
 
   // Fetch detailed creator information for all posts
   const { data: creatorsMap = {} } = useQuery({
@@ -104,7 +114,7 @@ export function HomeContent() {
     };
   };
 
-  // Use filtered posts for "For You" (includes fallback) and regular posts for other sections
+  // Use the computed forYouPosts and regular posts for other sections
   const hasForYouData = forYouPosts.length > 0;
   const hasGeneralData = allPosts.length > 0;
   
@@ -147,7 +157,7 @@ export function HomeContent() {
         trendingPosts={trendingPosts}
         recentPosts={recentPosts}
         onPostClick={handlePostClick}
-        isLoading={isLoadingForYou || isLoadingPosts}
+        isLoading={isLoadingCategoryPosts || isLoadingPosts}
       />
       
       <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
