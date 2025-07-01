@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
@@ -85,11 +86,8 @@ const CreatorPage: React.FC = () => {
   const handleUnfollow = async () => {
     if (creator?.id) {
       console.log("Unfollow button clicked");
-      // Pass the current displayed follower count to avoid database fetch
-      const currentDisplayedCount = optimisticFollowerCount !== null 
-        ? optimisticFollowerCount 
-        : creator.follower_count || 0;
-      await unfollowCreator(creator.id, currentDisplayedCount);
+      // Fix: Remove the second argument that was causing the error
+      await unfollowCreator(creator.id);
     }
   };
 
