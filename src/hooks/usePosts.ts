@@ -7,7 +7,7 @@ export function usePosts() {
   return useQuery({
     queryKey: ['posts'],
     queryFn: async (): Promise<Post[]> => {
-      console.log('[usePosts] Fetching posts with scheduling filter');
+      console.log('[usePosts] Fetching posts with proper scheduling filter');
       
       const now = new Date().toISOString();
       
@@ -41,7 +41,8 @@ export function usePosts() {
           likes(count),
           comments(count)
         `)
-        .or(`status.eq.published,and(status.eq.scheduled,scheduled_for.lte.${now})`)
+        // Only show published posts OR scheduled posts that have reached their scheduled time
+        .or(`and(status.eq.published,scheduled_for.is.null),and(status.eq.scheduled,scheduled_for.lte.${now})`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -50,6 +51,7 @@ export function usePosts() {
       }
 
       console.log('[usePosts] Raw posts data:', data);
+      console.log('[usePosts] Current time for scheduling filter:', now);
 
       return data.map((post): Post => {
         // Safely handle user data with proper typing

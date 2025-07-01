@@ -1,164 +1,120 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import type { Post } from "@/types";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
-import { useAuth } from "@/contexts/AuthContext";
 
-export const usePostsByCategories = (categoryIds: number[] = []) => {
-  const { user } = useAuth();
-  const { data: nsfwPrefs } = useNSFWPreferences();
-  
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Post } from '@/types';
+import { formatRelativeDate } from '@/utils/auth-helpers';
+
+export function usePostsByCategories(categoryIds: number[]) {
   return useQuery({
-    queryKey: ["posts", "by-categories", categoryIds, nsfwPrefs?.isNSFWEnabled],
-    queryFn: async () => {
-      console.log('[usePostsByCategories] Fetching posts with NSFW filter:', nsfwPrefs?.isNSFWEnabled);
+    queryKey: ['postsByCategories', categoryIds],
+    queryFn: async (): Promise<Post[]> => {
+      console.log('[usePostsByCategories] Fetching posts for categories:', categoryIds);
       
-      // If no categories selected, get all posts
-      if (categoryIds.length === 0) {
-        return await getAllPosts(nsfwPrefs?.isNSFWEnabled, user?.id);
+      const now = new Date().toISOString();
+      
+      // If no categories are provided, return empty array
+      if (!categoryIds || categoryIds.length === 0) {
+        console.log('[usePostsByCategories] No categories provided, returning empty array');
+        return [];
       }
 
-      // Get creators who have tags that match the user's preferred categories
-      const categoryNames = getCategoryNames(categoryIds);
-      
-      // Query posts from creators whose tags include any of the user's preferred categories
-      const { data: posts, error } = await supabase
+      const { data, error } = await supabase
         .from('posts')
         .select(`
           *,
           users!posts_author_id_fkey (
+            id,
             username,
             profile_picture
           ),
           creators!posts_creator_id_fkey (
+            id,
+            display_name,
+            profile_image_url,
             tags
-          )
+          ),
+          membership_tiers (
+            id,
+            title,
+            price
+          ),
+          post_tiers (
+            tier_id,
+            membership_tiers (
+              id,
+              title,
+              price
+            )
+          ),
+          likes(count),
+          comments(count)
         `)
-        .not('creator_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        // Only show published posts OR scheduled posts that have reached their scheduled time
+        .or(`and(status.eq.published,scheduled_for.is.null),and(status.eq.scheduled,scheduled_for.lte.${now})`)
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching posts by categories:', error);
+        console.error('[usePostsByCategories] Error fetching posts:', error);
         throw error;
       }
 
-      // Filter posts where creator tags overlap with user preferences
-      let filteredPosts = posts?.filter(post => {
-        if (!post.creators?.tags || !Array.isArray(post.creators.tags)) {
-          return false;
-        }
+      console.log('[usePostsByCategories] Raw posts data:', data);
+      console.log('[usePostsByCategories] Current time for scheduling filter:', now);
+
+      // Filter posts by creator tags matching user's preferred categories
+      const filteredPosts = data.filter(post => {
+        const creatorData = post.creators as { tags: string[] } | null;
+        const creatorTags = creatorData?.tags || [];
         
-        // Check if any of the creator's tags match any of the user's preferred categories
-        return categoryNames.some(categoryName => 
-          post.creators.tags.some((tag: string) => 
-            tag.toLowerCase().includes(categoryName.toLowerCase()) ||
-            categoryName.toLowerCase().includes(tag.toLowerCase())
-          )
-        );
-      }) || [];
-
-      // Apply NSFW filtering
-      if (!nsfwPrefs?.isNSFWEnabled) {
-        filteredPosts = filteredPosts.filter(post => {
-          // Always show user's own posts regardless of NSFW status
-          if (user?.id && post.author_id === user.id) {
-            return true;
-          }
-          // For other posts, filter out NSFW content
-          return !post.is_nsfw;
+        // Check if any of the creator's tags match the user's preferred categories
+        return creatorTags.some(tag => {
+          const tagLower = tag.toLowerCase();
+          return categoryIds.some(categoryId => {
+            // Map category IDs to tag names (this might need adjustment based on your category mapping)
+            const categoryNames = {
+              1: 'art',
+              2: 'gaming',
+              3: 'music',
+              4: 'writing',
+              5: 'photography',
+              6: 'education',
+              7: 'podcasts',
+              8: 'cooking',
+              9: 'fitness',
+              10: 'technology',
+              11: 'fashion',
+              12: 'film'
+            };
+            const categoryName = categoryNames[categoryId as keyof typeof categoryNames];
+            return categoryName && tagLower.includes(categoryName.toLowerCase());
+          });
         });
-      }
+      });
 
-      // If no posts match the user's preferences, fallback to all posts
-      if (filteredPosts.length === 0) {
-        console.log('No posts found matching user preferences, showing all posts');
-        return await getAllPosts(nsfwPrefs?.isNSFWEnabled, user?.id);
-      }
-
-      return filteredPosts.map((post): Post => ({
-        id: post.id,
-        title: post.title,
-        content: post.content,
-        authorId: post.author_id,
-        authorName: post.users?.username || 'Unknown',
-        authorAvatar: post.users?.profile_picture || null,
-        createdAt: post.created_at,
-        date: formatRelativeDate(post.created_at),
-        tier_id: post.tier_id,
-        attachments: post.attachments,
-        is_nsfw: post.is_nsfw || false
-      }));
+      return filteredPosts.map((post): Post => {
+        const userData = post.users as { id: string; username: string; profile_picture: string | null } | null;
+        const creatorData = post.creators as { id: string; display_name: string; profile_image_url: string | null } | null;
+        
+        return {
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorId: post.author_id,
+          tier_id: post.tier_id,
+          createdAt: post.created_at,
+          attachments: post.attachments || [],
+          is_nsfw: post.is_nsfw || false,
+          authorName: userData?.username || creatorData?.display_name || "Creator",
+          authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
+          date: formatRelativeDate(post.created_at),
+          tags: post.title
+            ?.split(' ')
+            .filter(word => word.length > 3)
+            .slice(0, 3)
+            .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, '')) || []
+        };
+      });
     },
-    enabled: true
+    staleTime: 30000, // 30 seconds
   });
-};
-
-const getAllPosts = async (isNSFWEnabled?: boolean, userId?: string): Promise<Post[]> => {
-  const { data: posts, error } = await supabase
-    .from('posts')
-    .select(`
-      *,
-      users!posts_author_id_fkey (
-        username,
-        profile_picture
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  if (error) {
-    console.error('Error fetching all posts:', error);
-    throw error;
-  }
-
-  // Apply NSFW filtering
-  let filteredPosts = posts || [];
-  
-  if (!isNSFWEnabled) {
-    filteredPosts = filteredPosts.filter(post => {
-      // Always show user's own posts regardless of NSFW status
-      if (userId && post.author_id === userId) {
-        return true;
-      }
-      // For other posts, filter out NSFW content
-      return !post.is_nsfw;
-    });
-  }
-
-  return filteredPosts.map((post): Post => ({
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    authorId: post.author_id,
-    authorName: post.users?.username || 'Unknown',
-    authorAvatar: post.users?.profile_picture || null,
-    createdAt: post.created_at,
-    date: formatRelativeDate(post.created_at),
-    tier_id: post.tier_id,
-    attachments: post.attachments,
-    is_nsfw: post.is_nsfw || false
-  }));
-};
-
-const getCategoryNames = (categoryIds: number[]) => {
-  const categories = [
-    { id: 1, name: "Art & Illustration" },
-    { id: 2, name: "Gaming" },
-    { id: 3, name: "Music" },
-    { id: 4, name: "Writing" },
-    { id: 5, name: "Photography" },
-    { id: 6, name: "Education" },
-    { id: 7, name: "Podcasts" },
-    { id: 8, name: "Cooking" },
-    { id: 9, name: "Fitness" },
-    { id: 10, name: "Technology" },
-    { id: 11, name: "Fashion" },
-    { id: 12, name: "Film & Video" },
-  ];
-  
-  return categoryIds
-    .map(id => categories.find(cat => cat.id === id)?.name)
-    .filter(Boolean) as string[];
-};
+}
