@@ -139,7 +139,7 @@ export function StripeConnectSection() {
 
         {/* Information */}
         <div className="text-sm text-muted-foreground space-y-2">
-          <p>• FanRealms takes a 5% platform fee from all subscriptions</p>
+          <p>• FanRealms takes a 4% platform fee from all subscriptions</p>
           <p>• Payments are processed securely through Stripe</p>
           <p>• You'll receive payments directly to your bank account</p>
         </div>
