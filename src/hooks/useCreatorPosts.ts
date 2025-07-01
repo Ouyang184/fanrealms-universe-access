@@ -142,8 +142,14 @@ export function useCreatorPosts() {
           }];
         }
 
-        // Determine post status from database
-        const status: PostStatus = post.status || "published";
+        // Determine post status from database with proper type checking
+        const isValidStatus = (status: string): status is PostStatus => {
+          return ['published', 'scheduled', 'draft'].includes(status);
+        };
+        
+        const status: PostStatus = post.status && isValidStatus(post.status) 
+          ? post.status 
+          : "published";
         
         // Use REAL engagement data from the database
         const realEngagement = {
