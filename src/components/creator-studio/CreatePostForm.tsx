@@ -16,9 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader, Globe, Lock, Video, AlertTriangle } from "lucide-react";
+import { Loader, Globe, Lock, Video, AlertTriangle, Calendar } from "lucide-react";
 import { TierSelect } from "@/components/dashboard/TierSelect";
 import { FileAttachment, AttachmentFile } from "./FileAttachment";
+import { SchedulePostCalendar } from "./SchedulePostCalendar";
 
 export function CreatePostForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +29,8 @@ export function CreatePostForm() {
   const [videoUrl, setVideoUrl] = useState("");
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
+  const [isScheduleCalendarOpen, setIsScheduleCalendarOpen] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -97,13 +100,22 @@ export function CreatePostForm() {
     setSelectedTierIds(tierIds);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSchedulePost = (date: Date) => {
+    setScheduledDate(date);
+    setIsScheduleCalendarOpen(false);
+    
+    // Submit the post with scheduled date
+    handleSubmit(null, date);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent, scheduleDate?: Date) => {
+    if (e) e.preventDefault();
     if (!user) return;
     
     console.log('[Creator Studio] Form submission started with selectedTierIds:', selectedTierIds);
     console.log('[Creator Studio] User ID for author_id:', user.id);
     console.log('[Creator Studio] Creator NSFW setting:', creatorProfile?.is_nsfw);
+    console.log('[Creator Studio] Scheduled date:', scheduleDate);
     
     // Validate video URL if provided
     if (videoUrl && !isValidVideoUrl(videoUrl)) {
@@ -152,18 +164,12 @@ export function CreatePostForm() {
         creator_id: creatorProfile?.id || null,
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
-        is_nsfw: isNSFW // Automatically flag as NSFW if creator has NSFW enabled
+        is_nsfw: isNSFW,
+        scheduled_for: scheduleDate ? scheduleDate.toISOString() : null,
+        status: scheduleDate ? 'scheduled' : 'published'
       };
 
-      console.log('[Creator Studio] Creating post with automatic NSFW flag:', {
-        author_id: postData.author_id,
-        creator_id: postData.creator_id,
-        tier_ids: selectedTierIds,
-        user_id: user.id,
-        is_nsfw: postData.is_nsfw,
-        creatorNSFWSetting: creatorProfile?.is_nsfw,
-        autoFlaggedNSFW: isNSFW
-      });
+      console.log('[Creator Studio] Creating post with data:', postData);
 
       const { data: insertedPost, error } = await supabase
         .from('posts')
@@ -188,7 +194,7 @@ export function CreatePostForm() {
         }
       }
 
-      console.log('[Creator Studio] Post created successfully with automatic NSFW flag:', {
+      console.log('[Creator Studio] Post created successfully with data:', {
         author_id: insertedPost[0]?.author_id, 
         is_nsfw: insertedPost[0]?.is_nsfw,
         wasAutoFlagged: isNSFW
@@ -196,10 +202,11 @@ export function CreatePostForm() {
 
       const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
       const nsfwNotice = isNSFW ? " (automatically flagged as 18+)" : "";
+      const scheduleNotice = scheduleDate ? " and scheduled for " + scheduleDate.toLocaleDateString() : "";
       
       toast({
-        title: "Post created",
-        description: `Your ${postType} post has been published successfully${nsfwNotice}.`,
+        title: scheduleDate ? "Post scheduled" : "Post created",
+        description: `Your ${postType} post has been ${scheduleDate ? 'scheduled' : 'published'} successfully${nsfwNotice}${scheduleNotice}.`,
       });
 
       // Reset form and close dialog
@@ -208,6 +215,7 @@ export function CreatePostForm() {
       setVideoUrl("");
       setSelectedTierIds(null);
       setAttachments([]);
+      setScheduledDate(null);
       setIsOpen(false);
       
       // Refresh creator posts list with the correct query key
@@ -232,121 +240,140 @@ export function CreatePostForm() {
   const willBeNSFW = creatorProfile?.is_nsfw || false;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Create Post</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Post</DialogTitle>
-          <DialogDescription>
-            Share your thoughts, ideas, or content with your followers. Choose who can see your post.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button>Create Post</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Post</DialogTitle>
+            <DialogDescription>
+              Share your thoughts, ideas, or content with your followers. Choose who can see your post.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* NSFW Auto-Flag Notice */}
-        {willBeNSFW && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-amber-800">
-                <p className="font-medium">Automatic 18+ Content Flagging</p>
-                <p className="text-xs mt-1">
-                  Since you have 18+ content creation enabled in your settings, this post will automatically be flagged as mature content.
-                </p>
+          {/* NSFW Auto-Flag Notice */}
+          {willBeNSFW && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-medium">Automatic 18+ Content Flagging</p>
+                  <p className="text-xs mt-1">
+                    Since you have 18+ content creation enabled in your settings, this post will automatically be flagged as mature content.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter post title"
-              required
-              disabled={isLoading}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your post content..."
-              required
-              disabled={isLoading}
-              className="min-h-[150px]"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter post title"
+                required
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write your post content..."
+                required
+                disabled={isLoading}
+                className="min-h-[150px]"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="videoUrl" className="flex items-center gap-2">
-              <Video className="h-4 w-4" />
-              Video URL (Optional)
-            </Label>
-            <Input
-              id="videoUrl"
-              value={videoUrl}
-              onChange={(e) => setVideoUrl(e.target.value)}
-              placeholder="Paste YouTube, Vimeo, or other video URL..."
+            <div className="space-y-2">
+              <Label htmlFor="videoUrl" className="flex items-center gap-2">
+                <Video className="h-4 w-4" />
+                Video URL (Optional)
+              </Label>
+              <Input
+                id="videoUrl"
+                value={videoUrl}
+                onChange={(e) => setVideoUrl(e.target.value)}
+                placeholder="Paste YouTube, Vimeo, or other video URL..."
+                disabled={isLoading}
+              />
+              <p className="text-sm text-muted-foreground">
+                Supported platforms: YouTube, Vimeo, Dailymotion, Twitch
+              </p>
+            </div>
+            
+            <FileAttachment
+              attachments={attachments}
+              onAttachmentsChange={setAttachments}
               disabled={isLoading}
             />
-            <p className="text-sm text-muted-foreground">
-              Supported platforms: YouTube, Vimeo, Dailymotion, Twitch
-            </p>
-          </div>
-          
-          <FileAttachment
-            attachments={attachments}
-            onAttachmentsChange={setAttachments}
-            disabled={isLoading}
-          />
-          
-          <div className="space-y-2">
-            <Label>Post Visibility</Label>
-            <TierSelect
-              onSelect={handleTierSelect}
-              value={selectedTierIds}
-              disabled={isLoading}
-            />
-          </div>
-          
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading} className="min-w-[120px]">
-              {isLoading ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Publishing...
-                </>
-              ) : (
-                <>
-                  {selectedTierIds && selectedTierIds.length > 0 ? (
-                    <Lock className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Globe className="mr-2 h-4 w-4" />
-                  )}
-                  Publish {selectedTierIds && selectedTierIds.length > 0 ? "Premium" : "Public"} Post
-                  {willBeNSFW && " (18+)"}
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            
+            <div className="space-y-2">
+              <Label>Post Visibility</Label>
+              <TierSelect
+                onSelect={handleTierSelect}
+                value={selectedTierIds}
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsOpen(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsScheduleCalendarOpen(true)}
+                disabled={isLoading}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                Schedule Post
+              </Button>
+              <Button type="submit" disabled={isLoading} className="min-w-[120px]">
+                {isLoading ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Publishing...
+                  </>
+                ) : (
+                  <>
+                    {selectedTierIds && selectedTierIds.length > 0 ? (
+                      <Lock className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Globe className="mr-2 h-4 w-4" />
+                    )}
+                    Publish {selectedTierIds && selectedTierIds.length > 0 ? "Premium" : "Public"} Post
+                    {willBeNSFW && " (18+)"}
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <SchedulePostCalendar
+        isOpen={isScheduleCalendarOpen}
+        onOpenChange={setIsScheduleCalendarOpen}
+        onSchedulePost={handleSchedulePost}
+        postTitle={title}
+        postContent={content}
+      />
+    </>
   );
 }
