@@ -223,11 +223,11 @@ serve(async (req) => {
           .eq('id', tierId);
       }
 
-      // Create Stripe subscription with proper metadata
+      // Create Stripe subscription with 4% platform fee
       const subscription = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: stripePriceId }],
-        application_fee_percent: 5,
+        application_fee_percent: 4, // Updated to 4%
         transfer_data: { destination: tier.creators.stripe_account_id },
         payment_behavior: 'default_incomplete',
         payment_settings: { 
@@ -238,7 +238,8 @@ serve(async (req) => {
         metadata: {
           user_id: user.id,
           creator_id: creatorId,
-          tier_id: tierId
+          tier_id: tierId,
+          platform_fee_percent: '4'
         }
       });
 

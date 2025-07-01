@@ -214,7 +214,7 @@ export async function handleCreateSubscription(
       .eq('user_id', user.id)
       .eq('creator_id', creatorId);
 
-    // Create new Payment Intent
+    // Create new Payment Intent with updated platform fee calculation
     console.log('Creating new Payment Intent for amount:', paymentAmount);
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -234,7 +234,8 @@ export async function handleCreateSubscription(
         existing_tier_id: existingSubscription?.tier_id || '',
         current_period_end: existingSubscription?.current_period_end || '',
         full_tier_price: tier.price.toString(),
-        prorated_amount: isUpgrade ? proratedAmount.toString() : '0'
+        prorated_amount: isUpgrade ? proratedAmount.toString() : '0',
+        platform_fee_percent: '4'
       },
       setup_future_usage: 'off_session',
     });
