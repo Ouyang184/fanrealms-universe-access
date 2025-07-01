@@ -75,32 +75,16 @@ export function usePosts() {
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
           
-          // User information - safely access properties
-          users: userData ? {
-            id: userData.id,
-            username: userData.username,
-            profile_picture: userData.profile_picture
-          } : null,
+          // Set authorName and authorAvatar from the fetched user data
+          authorName: userData?.username || creatorData?.display_name || "Creator",
+          authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
           
-          // Creator information - safely access properties
-          creators: creatorData ? {
-            id: creatorData.id,
-            display_name: creatorData.display_name,
-            profile_image_url: creatorData.profile_image_url
-          } : null,
-          
-          // Tier information
-          membership_tiers: tierInfo,
-          post_tiers: postTiers,
-          
-          // Engagement
-          likes: Array.isArray(post.likes) ? post.likes : [],
-          comments: Array.isArray(post.comments) ? post.comments : [],
-          
-          // Computed properties
-          isPremium,
-          likeCount,
-          commentCount
+          // Add tags if they exist in the database (may need to be added to Post interface)
+          tags: post.title
+            ?.split(' ')
+            .filter(word => word.length > 3)
+            .slice(0, 3)
+            .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, '')) || []
         };
       });
     },
