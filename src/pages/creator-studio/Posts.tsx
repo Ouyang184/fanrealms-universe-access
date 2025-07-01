@@ -469,7 +469,12 @@ function PostCard({ post }: { post: CreatorPost }) {
                   {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                 </Badge>
                 {post.status === "scheduled" ? (
-                  <span>{post.scheduleDate ? format(new Date(post.scheduleDate), "MMMM d, yyyy") : "Scheduled"}</span>
+                  <span>
+                    {post.scheduleDate 
+                      ? `Publishes on ${format(new Date(post.scheduleDate), "MMM d, yyyy 'at' h:mm a")}`
+                      : "Scheduled"
+                    }
+                  </span>
                 ) : (
                   <span>{post.date}</span>
                 )}
@@ -597,7 +602,12 @@ function PostCard({ post }: { post: CreatorPost }) {
             {post.status === "scheduled" && (
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1" />
-                <span>Publishes on {post.scheduleDate ? format(new Date(post.scheduleDate), "MMM d") : "scheduled date"}</span>
+                <span>
+                  Publishes on {post.scheduleDate 
+                    ? format(new Date(post.scheduleDate), "MMM d 'at' h:mm a")
+                    : "scheduled date"
+                  }
+                </span>
               </div>
             )}
             {post.status === "draft" && (

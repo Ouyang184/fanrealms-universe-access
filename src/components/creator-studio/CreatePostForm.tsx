@@ -162,6 +162,11 @@ export function CreatePostForm() {
       // Automatically set NSFW flag based on creator settings
       const isNSFW = creatorProfile?.is_nsfw || false;
 
+      // Determine post status and scheduled time
+      const isScheduled = !!scheduleDate;
+      const postStatus = isScheduled ? 'scheduled' : 'published';
+      const scheduledFor = isScheduled ? scheduleDate.toISOString() : null;
+
       const postData = {
         title,
         content,
@@ -170,8 +175,8 @@ export function CreatePostForm() {
         tier_id: selectedTierIds && selectedTierIds.length === 1 ? selectedTierIds[0] : null,
         attachments: uploadedAttachments,
         is_nsfw: isNSFW,
-        scheduled_for: scheduleDate ? scheduleDate.toISOString() : null,
-        status: scheduleDate ? 'scheduled' : 'published'
+        scheduled_for: scheduledFor,
+        status: postStatus
       };
 
       console.log('[Creator Studio] Creating post with data:', postData);
