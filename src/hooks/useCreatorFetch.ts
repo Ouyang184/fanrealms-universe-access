@@ -78,7 +78,8 @@ export function useCreatorFetch(identifier?: string) {
         stripe_onboarding_complete: data.stripe_onboarding_complete || false,
         stripe_charges_enabled: data.stripe_charges_enabled || false,
         stripe_payouts_enabled: data.stripe_payouts_enabled || false,
-        username: data.users?.username || null
+        username: data.users?.username || null,
+        profile_picture: data.users?.profile_picture || null
       };
     },
     enabled: !!identifier
