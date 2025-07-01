@@ -1,3 +1,4 @@
+
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -45,7 +46,7 @@ export default function ExplorePage() {
   // Fetch real data from Supabase - these hooks now automatically filter NSFW content
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
-  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true);
+  const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(false); // Changed to false to include all creators
   
   // Post preview modal state
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -67,6 +68,7 @@ export default function ExplorePage() {
 
   console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
   console.log('Explore: Posts count after NSFW filtering:', posts.length);
+  console.log('Explore: Popular creators count:', popularCreators.length);
 
   // Helper function to check if creator matches category
   const creatorMatchesCategory = (creator, category) => {
@@ -87,7 +89,7 @@ export default function ExplorePage() {
   useEffect(() => {
     if (!popularCreators.length && !posts.length) return;
     
-    // Start with real creators only, from the popular creators query (which already excludes AI)
+    // Start with real creators only, from the popular creators query
     let creatorFilter = popularCreators;
     let postsFilter = posts; // Posts are already NSFW-filtered by the hook
     
@@ -161,7 +163,7 @@ export default function ExplorePage() {
         {/* Featured Creators - Display all creators when no category filter or "all" is selected */}
         <FeaturedCreators 
           creators={filteredCreators}
-          isLoading={isLoadingCreators || isLoadingPopular}
+          isLoading={isLoadingPopular}
           categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
 
@@ -171,7 +173,7 @@ export default function ExplorePage() {
           newReleases={filteredNewReleases}
           recommendedCreators={filteredRecommended}
           isLoadingPosts={isLoadingPosts}
-          isLoadingCreators={isLoadingCreators || isLoadingPopular}
+          isLoadingCreators={isLoadingPopular}
           onPostClick={handlePostClick}
         />
 
