@@ -50,9 +50,9 @@ export function usePosts() {
       console.log('[usePosts] Raw posts data:', data);
 
       return data.map((post): Post => {
-        // Safely handle user data
-        const userData = post.users || {};
-        const creatorData = post.creators || {};
+        // Safely handle user data with proper typing
+        const userData = post.users as { id: string; username: string; profile_picture: string | null } | null;
+        const creatorData = post.creators as { id: string; display_name: string; profile_image_url: string | null } | null;
         
         // Handle tier information
         const tierInfo = post.membership_tiers || null;
@@ -69,25 +69,25 @@ export function usePosts() {
           id: post.id,
           title: post.title,
           content: post.content,
-          author_id: post.author_id,
+          authorId: post.author_id, // Use authorId to match Post interface
           creator_id: post.creator_id,
           tier_id: post.tier_id,
-          created_at: post.created_at,
+          createdAt: post.created_at, // Use createdAt to match Post interface
           updated_at: post.updated_at,
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
           status: post.status || 'published',
           scheduled_for: post.scheduled_for,
           
-          // User information
-          users: userData.username ? {
+          // User information - safely access properties
+          users: userData ? {
             id: userData.id,
             username: userData.username,
             profile_picture: userData.profile_picture
           } : null,
           
-          // Creator information
-          creators: creatorData.display_name ? {
+          // Creator information - safely access properties
+          creators: creatorData ? {
             id: creatorData.id,
             display_name: creatorData.display_name,
             profile_image_url: creatorData.profile_image_url
