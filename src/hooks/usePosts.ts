@@ -9,6 +9,8 @@ export function usePosts() {
     queryFn: async (): Promise<Post[]> => {
       console.log('[usePosts] Fetching posts with scheduling filter');
       
+      const now = new Date().toISOString();
+      
       const { data, error } = await supabase
         .from('posts')
         .select(`
@@ -39,7 +41,7 @@ export function usePosts() {
           likes(count),
           comments(count)
         `)
-        .or(`status.eq.published,and(status.eq.scheduled,scheduled_for.lte.${new Date().toISOString()})`)
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_for.lte.${now})`)
         .order('created_at', { ascending: false });
 
       if (error) {

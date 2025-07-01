@@ -1,105 +1,110 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/hooks/use-toast";
-import { CreatorProfile } from "@/types";
+import { useAuth } from "@/contexts/AuthContext";
+import { Post, Creator } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
-import { 
-  cleanIdentifier,
-  findByCreatorId,
-  findByUsername,
-  findByUserId,
-  findByDisplayName,
-  findByAbbreviatedUserId
-} from "@/utils/creatorLookupStrategies";
 
 export function useCreatorFetch(identifier?: string) {
-  // Fetch creator profile by username or id
+  const { user } = useAuth();
+
+  // Fetch creator data
   const {
     data: creator,
     isLoading: isLoadingCreator,
     error: creatorError,
     refetch: refetchCreator
   } = useQuery({
-    queryKey: ['creatorProfile', identifier],
-    queryFn: async () => {
-      if (!identifier) {
-        console.log("No identifier provided to useCreatorFetch");
+    queryKey: ['creator', identifier],
+    queryFn: async (): Promise<Creator | null> => {
+      if (!identifier) return null;
+      
+      console.log('[useCreatorFetch] Fetching creator with identifier:', identifier);
+      
+      // Try to fetch by username first, then by creator ID
+      let query = supabase
+        .from('creators')
+        .select(`
+          *,
+          users!creators_user_id_fkey (
+            username,
+            profile_picture
+          )
+        `);
+      
+      // Check if identifier looks like a UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      
+      if (isUUID) {
+        query = query.eq('id', identifier);
+      } else {
+        // First try to find by username in the users table
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', identifier)
+          .single();
+        
+        if (userData) {
+          query = query.eq('user_id', userData.id);
+        } else {
+          // If no user found, return null
+          return null;
+        }
+      }
+      
+      const { data, error } = await query.single();
+      
+      if (error) {
+        console.error('[useCreatorFetch] Error fetching creator:', error);
         return null;
       }
       
-      console.log(`Fetching creator profile for identifier: "${identifier}"`);
+      console.log('[useCreatorFetch] Creator data:', data);
       
-      // Strategy 1: Try to find by creator.id first (most direct)
-      let creatorProfile = await findByCreatorId(identifier);
-      if (creatorProfile) {
-        console.log("Found creator by creator.id:", creatorProfile);
-        return creatorProfile;
-      }
-      
-      // Try different lookup strategies in sequence
-      const cleaned = cleanIdentifier(identifier);
-      
-      // Strategy 2: Try to find by username
-      creatorProfile = await findByUsername(cleaned);
-      if (creatorProfile) {
-        console.log("Found creator by username:", creatorProfile);
-        return creatorProfile;
-      }
-      
-      // Strategy 3: Try to find creator directly by user_id
-      creatorProfile = await findByUserId(cleaned);
-      if (creatorProfile) {
-        console.log("Found creator by user_id:", creatorProfile);
-        return creatorProfile;
-      }
-      
-      // Strategy 4: Try to find by display_name
-      creatorProfile = await findByDisplayName(cleaned);
-      if (creatorProfile) {
-        console.log("Found creator by display_name:", creatorProfile);
-        return creatorProfile;
-      }
-      
-      // Strategy 5: Try to find by abbreviated user ID
-      creatorProfile = await findByAbbreviatedUserId(identifier);
-      if (creatorProfile) {
-        console.log("Found creator by abbreviated user ID:", creatorProfile);
-        return creatorProfile;
-      }
-      
-      // If we've exhausted all lookup methods and still can't find the creator
-      console.error('Creator not found by any lookup method:', identifier);
-      return null;
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        display_name: data.display_name,
+        bio: data.bio,
+        profile_image_url: data.profile_image_url,
+        banner_url: data.banner_url,
+        website: data.website,
+        tags: data.tags || [],
+        follower_count: data.follower_count || 0,
+        is_nsfw: data.is_nsfw || false,
+        created_at: data.created_at,
+        stripe_account_id: data.stripe_account_id,
+        stripe_onboarding_complete: data.stripe_onboarding_complete || false,
+        stripe_charges_enabled: data.stripe_charges_enabled || false,
+        stripe_payouts_enabled: data.stripe_payouts_enabled || false,
+        username: data.users?.username || null,
+        profile_picture: data.users?.profile_picture || null
+      };
     },
-    enabled: !!identifier,
-    retry: 1,
-    staleTime: 30000, // Cache results for 30 seconds
-    refetchOnWindowFocus: false
+    enabled: !!identifier
   });
-  
-  // Fetch creator's posts (public and accessible ones)
+
+  // Fetch creator's posts
   const {
-    data: posts = [],
+    data: posts,
     isLoading: isLoadingPosts,
     refetch: refetchPosts
   } = useQuery({
-    queryKey: ['creatorPosts', creator?.user_id],
-    queryFn: async () => {
-      const creatorUserId = creator?.user_id;
-      if (!creatorUserId) {
-        console.log("No creator user ID available for fetching posts");
-        return [];
-      }
+    queryKey: ['creatorPosts', creator?.id],
+    queryFn: async (): Promise<Post[]> => {
+      if (!creator?.id) return [];
       
-      console.log(`[useCreatorFetch] Fetching ALL posts for creator user ID: ${creatorUserId}`);
+      console.log('[useCreatorFetch] Fetching posts for creator:', creator.id);
       
-      // Fetch ALL posts for this creator, including tier-restricted ones
-      const { data: postsData, error } = await supabase
+      const now = new Date().toISOString();
+      const isOwnCreator = user?.id === creator.user_id;
+      
+      let query = supabase
         .from('posts')
         .select(`
           *,
-          users:author_id (
+          users!posts_author_id_fkey (
             username,
             profile_picture
           ),
@@ -107,78 +112,65 @@ export function useCreatorFetch(identifier?: string) {
             id,
             title,
             price
-          )
+          ),
+          post_tiers (
+            tier_id,
+            membership_tiers (
+              id,
+              title,
+              price
+            )
+          ),
+          likes(count),
+          comments(count)
         `)
-        .eq('author_id', creatorUserId)
+        .eq('creator_id', creator.id)
         .order('created_at', { ascending: false });
+
+      // If viewing own creator profile, show all posts including scheduled ones
+      // If viewing someone else's profile, only show published posts and scheduled posts that have passed their time
+      if (!isOwnCreator) {
+        query = query.or(`status.eq.published,and(status.eq.scheduled,scheduled_for.lte.${now})`);
+      }
       
-      console.log(`[useCreatorFetch] Raw posts query result:`, { 
-        postsCount: postsData?.length, 
-        error,
-        samplePosts: postsData?.slice(0, 2).map(p => ({ 
-          id: p.id, 
-          title: p.title, 
-          tier_id: p.tier_id,
-          author_id: p.author_id // Log the raw author_id from database
-        }))
-      });
+      const { data, error } = await query;
       
       if (error) {
         console.error('[useCreatorFetch] Error fetching posts:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load posts",
-          variant: "destructive"
-        });
         return [];
       }
       
-      if (!postsData) {
-        console.log('[useCreatorFetch] No posts data returned');
-        return [];
-      }
-
-      // Log tier distribution for this creator
-      const tierStats = postsData.reduce((acc, post) => {
-        const tierType = post.tier_id ? 'premium' : 'public';
-        acc[tierType] = (acc[tierType] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      console.log('[useCreatorFetch] Posts data:', data);
       
-      console.log(`[useCreatorFetch] Creator ${creatorUserId} post tier distribution:`, tierStats);
-      
-      // CRITICAL FIX: Properly map author_id to authorId for frontend compatibility
-      return postsData.map((post: any) => {
-        const mappedPost = {
-          ...post,
-          authorId: post.author_id, // CRITICAL FIX: Map database field to frontend field
-          authorName: creator.display_name || post.users?.username || 'Unknown', 
-          authorAvatar: post.users?.profile_picture,
+      return data.map((post): Post => {
+        const userData = post.users as { username: string; profile_picture: string | null } | null;
+        
+        return {
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          authorId: post.author_id,
+          tier_id: post.tier_id,
+          createdAt: post.created_at,
+          attachments: post.attachments || [],
+          is_nsfw: post.is_nsfw || false,
+          authorName: userData?.username || creator.display_name || "Creator",
+          authorAvatar: userData?.profile_picture || creator.profile_image_url || null,
           date: formatRelativeDate(post.created_at),
-          tierInfo: post.membership_tiers
+          tags: post.title
+            ?.split(' ')
+            .filter(word => word.length > 3)
+            .slice(0, 3)
+            .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, '')) || []
         };
-        
-        console.log('[useCreatorFetch] ENHANCED Mapped post with creator access logic:', {
-          id: mappedPost.id,
-          title: mappedPost.title,
-          authorId: mappedPost.authorId,
-          authorIdType: typeof mappedPost.authorId,
-          authorIdValue: JSON.stringify(mappedPost.authorId),
-          tier_id: mappedPost.tier_id,
-          rawAuthorId: post.author_id,
-          message: 'Creator fetch post mapped with consistent authorId for creator access logic'
-        });
-        
-        return mappedPost;
       });
     },
-    enabled: !!creator?.user_id,
-    staleTime: 60000 // Cache results for 1 minute
+    enabled: !!creator?.id
   });
 
   return {
     creator,
-    posts,
+    posts: posts || [],
     isLoadingCreator,
     isLoadingPosts,
     creatorError,

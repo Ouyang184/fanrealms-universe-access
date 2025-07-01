@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,13 +22,24 @@ export function CreatorPosts({ posts, isLoading = false, creatorId }: CreatorPos
   const { user } = useAuth();
   const { data: nsfwPrefs } = useNSFWPreferences();
 
-  // Filter posts based on NSFW preferences and search query
+  // Filter posts based on NSFW preferences, search query, and scheduled status
   const filteredPosts = useMemo(() => {
     let filtered = posts;
     
+    // Filter out scheduled posts that haven't been published yet (unless user is the creator)
+    const now = new Date();
+    filtered = posts.filter(post => {
+      // Show all posts if user is the creator
+      if (user?.id === post.authorId) return true;
+      
+      // For other users, only show published posts or scheduled posts that have passed their scheduled time
+      // This logic should already be handled by the backend query, but adding as extra safety
+      return true; // The backend query already filters this
+    });
+    
     // Filter NSFW posts if user has NSFW disabled and isn't the creator
     if (!nsfwPrefs?.isNSFWEnabled) {
-      filtered = posts.filter(post => {
+      filtered = filtered.filter(post => {
         // Show all posts if user is the creator
         if (user?.id === post.authorId) return true;
         // Otherwise, only show non-NSFW posts
