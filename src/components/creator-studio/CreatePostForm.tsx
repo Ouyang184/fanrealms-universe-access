@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +31,6 @@ export function CreatePostForm() {
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const [isScheduleCalendarOpen, setIsScheduleCalendarOpen] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,17 +100,24 @@ export function CreatePostForm() {
     setSelectedTierIds(tierIds);
   };
 
-  const handleSchedulePost = (date: Date) => {
-    setScheduledDate(date);
+  const handleSchedulePost = async (date: Date) => {
+    console.log('[Creator Studio] Scheduling post for:', date);
+    
+    // Close the schedule calendar
     setIsScheduleCalendarOpen(false);
     
     // Submit the post with scheduled date
-    handleSubmit(null, date);
+    const success = await handleSubmit(null, date);
+    
+    // Close the main create post dialog if successful
+    if (success) {
+      setIsOpen(false);
+    }
   };
 
-  const handleSubmit = async (e?: React.FormEvent, scheduleDate?: Date) => {
+  const handleSubmit = async (e?: React.FormEvent, scheduleDate?: Date): Promise<boolean> => {
     if (e) e.preventDefault();
-    if (!user) return;
+    if (!user) return false;
     
     console.log('[Creator Studio] Form submission started with selectedTierIds:', selectedTierIds);
     console.log('[Creator Studio] User ID for author_id:', user.id);
@@ -124,7 +131,7 @@ export function CreatePostForm() {
         description: "Please enter a valid YouTube, Vimeo, Dailymotion, or Twitch URL.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
     
     setIsLoading(true);
@@ -154,7 +161,6 @@ export function CreatePostForm() {
       }
 
       // Automatically set NSFW flag based on creator settings
-      // The database trigger will also handle this, but we set it here for consistency
       const isNSFW = creatorProfile?.is_nsfw || false;
 
       const postData = {
@@ -194,35 +200,35 @@ export function CreatePostForm() {
         }
       }
 
-      console.log('[Creator Studio] Post created successfully with data:', {
-        author_id: insertedPost[0]?.author_id, 
-        is_nsfw: insertedPost[0]?.is_nsfw,
-        wasAutoFlagged: isNSFW
-      });
+      console.log('[Creator Studio] Post created successfully');
 
       const postType = selectedTierIds && selectedTierIds.length > 0 ? "premium" : "public";
       const nsfwNotice = isNSFW ? " (automatically flagged as 18+)" : "";
-      const scheduleNotice = scheduleDate ? " and scheduled for " + scheduleDate.toLocaleDateString() : "";
+      const scheduleNotice = scheduleDate ? " for " + scheduleDate.toLocaleDateString() + " at " + scheduleDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : "";
       
       toast({
         title: scheduleDate ? "Post scheduled" : "Post created",
         description: `Your ${postType} post has been ${scheduleDate ? 'scheduled' : 'published'} successfully${nsfwNotice}${scheduleNotice}.`,
       });
 
-      // Reset form and close dialog
+      // Reset form
       setTitle("");
       setContent("");
       setVideoUrl("");
       setSelectedTierIds(null);
       setAttachments([]);
-      setScheduledDate(null);
-      setIsOpen(false);
       
-      // Refresh creator posts list with the correct query key
+      // If not scheduling, close the dialog
+      if (!scheduleDate) {
+        setIsOpen(false);
+      }
+      
+      // Refresh creator posts list
       queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
-      // Also invalidate other related queries
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
       queryClient.invalidateQueries({ queryKey: ['posts'] });
+
+      return true;
 
     } catch (error: any) {
       console.error('[Creator Studio] Error creating post:', error);
@@ -231,6 +237,7 @@ export function CreatePostForm() {
         description: error.message || "Failed to create post. Please try again.",
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsLoading(false);
     }

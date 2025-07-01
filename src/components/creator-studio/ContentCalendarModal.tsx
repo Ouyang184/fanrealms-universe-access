@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar, FileText, ImageIcon, Video, Music } from "lucide-react";
 import { CreatorPost } from "@/types/creator-studio";
-import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, startOfWeek, endOfWeek } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, eachDayOfInterval, getDay, startOfWeek, endOfWeek, isSameMonth, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ContentCalendarModalProps {
@@ -15,13 +15,21 @@ interface ContentCalendarModalProps {
 }
 
 export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCalendarModalProps) {
-  const [viewMonth, setViewMonth] = useState<Date>(new Date(2025, 0, 1));
+  const [viewMonth, setViewMonth] = useState<Date>(new Date());
 
-  // Get posts for a specific date
+  // Get posts for a specific date - now includes scheduled posts
   const getPostsForDate = (date: Date) => {
     return posts.filter(post => {
-      const postDate = new Date(post.createdAt);
-      return isSameDay(postDate, date);
+      if (post.status === "scheduled" && post.scheduleDate) {
+        // For scheduled posts, use the scheduled date
+        const scheduledDate = new Date(post.scheduleDate);
+        return isSameDay(scheduledDate, date);
+      } else if (post.status === "published") {
+        // For published posts, use the created date
+        const postDate = new Date(post.createdAt);
+        return isSameDay(postDate, date);
+      }
+      return false;
     });
   };
 
@@ -63,8 +71,21 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
     }
   };
 
+  const getPostStatusColor = (status: string) => {
+    switch (status) {
+      case "published":
+        return "bg-green-600";
+      case "scheduled":
+        return "bg-blue-600";
+      case "draft":
+        return "bg-gray-600";
+      default:
+        return "bg-gray-600";
+    }
+  };
+
   const isCurrentMonth = (date: Date) => {
-    return date.getMonth() === viewMonth.getMonth();
+    return isSameMonth(date, viewMonth);
   };
 
   return (
@@ -122,17 +143,22 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
               {calendarDays.map((date, index) => {
                 const dayPosts = getPostsForDate(date);
                 const isInCurrentMonth = isCurrentMonth(date);
+                const isTodayDate = isToday(date);
                 
                 return (
                   <div
                     key={index}
                     className={cn(
                       "min-h-[120px] p-2 border border-gray-700 bg-gray-900 rounded",
-                      !isInCurrentMonth && "opacity-40"
+                      !isInCurrentMonth && "opacity-40",
+                      isTodayDate && "ring-2 ring-blue-500"
                     )}
                   >
                     {/* Day Number */}
-                    <div className="text-sm font-medium text-white mb-1">
+                    <div className={cn(
+                      "text-sm font-medium mb-1",
+                      isTodayDate ? "text-blue-400" : "text-white"
+                    )}>
                       {format(date, "d")}
                     </div>
                     
@@ -143,18 +169,19 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
                           key={post.id}
                           className={cn(
                             "text-xs px-2 py-1 rounded text-white truncate",
-                            post.status === "published" 
-                              ? "bg-blue-600" 
-                              : post.status === "scheduled" 
-                              ? "bg-indigo-600" 
-                              : "bg-gray-600"
+                            getPostStatusColor(post.status)
                           )}
-                          title={post.title}
+                          title={`${post.title} - ${post.status}`}
                         >
                           <div className="flex items-center gap-1">
                             {getPostTypeIcon(post.type)}
                             <span className="truncate">{post.title}</span>
                           </div>
+                          {post.status === "scheduled" && post.scheduleDate && (
+                            <div className="text-xs opacity-75 mt-1">
+                              {format(new Date(post.scheduleDate), "h:mm a")}
+                            </div>
+                          )}
                         </div>
                       ))}
                       
@@ -174,11 +201,11 @@ export function ContentCalendarModal({ isOpen, onOpenChange, posts }: ContentCal
           {/* Legend */}
           <div className="flex flex-wrap gap-4 text-sm text-gray-300">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-blue-600"></div>
+              <div className="w-3 h-3 rounded bg-green-600"></div>
               <span>Published</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-indigo-600"></div>
+              <div className="w-3 h-3 rounded bg-blue-600"></div>
               <span>Scheduled</span>
             </div>
             <div className="flex items-center gap-2">
