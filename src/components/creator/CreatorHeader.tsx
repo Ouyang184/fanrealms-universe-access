@@ -38,9 +38,9 @@ export function CreatorHeader({
   isOwnProfile = false
 }: CreatorHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const displayFollowerCount = optimisticFollowerCount !== null 
-    ? optimisticFollowerCount 
-    : creator.follower_count || 0;
+  
+  // Use the actual follower count from the database (no optimistic updates)
+  const displayFollowerCount = creator.follower_count || 0;
 
   const displayName = creator.display_name || creator.username || 'Creator';
   

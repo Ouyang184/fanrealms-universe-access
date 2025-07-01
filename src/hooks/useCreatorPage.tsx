@@ -32,12 +32,12 @@ export function useCreatorPage(identifier?: string) {
   } = useFollow();
   
   // Function to refresh creator data
-  const refreshCreatorData = useCallback(() => {
+  const refreshCreatorData = useCallback(async () => {
     if (identifier) {
-      refetchCreator();
-      if (creator?.id) {
-        refetchPosts();
-      }
+      await Promise.all([
+        refetchCreator(),
+        creator?.id && refetchPosts()
+      ]);
     }
   }, [identifier, creator?.id, refetchCreator, refetchPosts]);
 
@@ -50,14 +50,22 @@ export function useCreatorPage(identifier?: string) {
     }
   }, [creator?.id, user?.id, checkFollowStatus, setIsFollowing]);
 
-  // Handle follow toggle function
+  // Handle follow toggle function with automatic refresh
   const handleFollowToggle = async () => {
     if (!creator?.id) return;
     
-    if (isFollowing) {
-      await unfollowCreator(creator.id);
-    } else {
-      await followCreator(creator.id);
+    try {
+      if (isFollowing) {
+        await unfollowCreator(creator.id);
+      } else {
+        await followCreator(creator.id);
+      }
+      
+      // Refresh creator data to get updated follower count
+      await refreshCreatorData();
+      
+    } catch (error) {
+      console.error("Error in follow toggle:", error);
     }
   };
   

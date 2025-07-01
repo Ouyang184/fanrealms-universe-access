@@ -48,7 +48,7 @@ export function useFollowActions() {
     // Get current creator data
     const { data: creator, error } = await supabase
       .from("creators")
-      .select("user_id, display_name, users(username), follower_count")
+      .select("user_id, display_name, users(username)")
       .eq("id", creatorId)
       .single();
     
@@ -73,7 +73,7 @@ export function useFollowActions() {
       throw new Error("Cannot follow yourself");
     }
 
-    // Insert the follow relationship
+    // Insert the follow relationship - the trigger will handle follower count updates
     const { data: insertData, error: followError } = await supabase
       .from("follows")
       .insert([{
@@ -88,27 +88,13 @@ export function useFollowActions() {
         toast({
           description: "You're already following this creator",
         });
-        return { alreadyFollowing: true, currentFollowerCount: creator.follower_count || 0 };
+        return { alreadyFollowing: true };
       } else {
         console.error("Follow error:", followError);
         throw followError;
       }
     } else {
       console.log("Follow successful");
-      
-      // Update the follower count in the creators table
-      const newFollowerCount = (creator.follower_count || 0) + 1;
-      const { error: updateError } = await supabase
-        .from("creators")
-        .update({ follower_count: newFollowerCount })
-        .eq("id", creatorId);
-      
-      if (updateError) {
-        console.error("Error updating follower count:", updateError);
-        // Don't throw here as the follow was successful, just log the error
-      } else {
-        console.log("Follower count updated to:", newFollowerCount);
-      }
       
       toast({
         description: "You are now following this creator",
@@ -123,24 +109,12 @@ export function useFollowActions() {
         // Don't fail the follow action if notification creation fails
       }
       
-      return { alreadyFollowing: false, currentFollowerCount: newFollowerCount };
+      return { alreadyFollowing: false };
     }
   };
 
   const performUnfollowOperation = async (creatorId: string) => {
     if (!user) throw new Error("No user authenticated");
-    
-    // Get current follower count before unfollowing
-    const { data: creator, error: creatorError } = await supabase
-      .from("creators")
-      .select("follower_count")
-      .eq("id", creatorId)
-      .single();
-    
-    if (creatorError) {
-      console.error("Error fetching creator for unfollow:", creatorError);
-      throw creatorError;
-    }
     
     const { error } = await supabase
       .from("follows")
@@ -155,25 +129,11 @@ export function useFollowActions() {
     
     console.log("Unfollow successful");
     
-    // Update the follower count in the creators table
-    const newFollowerCount = Math.max((creator.follower_count || 0) - 1, 0);
-    const { error: updateError } = await supabase
-      .from("creators")
-      .update({ follower_count: newFollowerCount })
-      .eq("id", creatorId);
-    
-    if (updateError) {
-      console.error("Error updating follower count:", updateError);
-      // Don't throw here as the unfollow was successful, just log the error
-    } else {
-      console.log("Follower count updated to:", newFollowerCount);
-    }
-    
     toast({
       description: "You have unfollowed this creator",
     });
     
-    return { newFollowerCount };
+    return { success: true };
   };
 
   return {
