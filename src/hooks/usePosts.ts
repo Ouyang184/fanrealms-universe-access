@@ -72,7 +72,6 @@ export function usePosts() {
           authorId: post.author_id, // Use authorId to match Post interface
           tier_id: post.tier_id,
           createdAt: post.created_at, // Use createdAt to match Post interface
-          updated_at: post.updated_at,
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
           status: post.status || 'published',
