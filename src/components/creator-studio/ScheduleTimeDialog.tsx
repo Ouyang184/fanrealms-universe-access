@@ -58,58 +58,69 @@ export function ScheduleTimeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[380px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <Clock className="h-4 w-4" />
             Schedule Time
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Date Display */}
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Calendar className="h-4 w-4" />
-              Selected Date
+          <div className="p-2 bg-muted/50 rounded-md">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+              <Calendar className="h-3 w-3" />
+              Date
             </div>
-            <div className="font-medium">{formatSelectedDate()}</div>
+            <div className="text-sm font-medium">{formatSelectedDate()}</div>
           </div>
 
           {/* Post Preview */}
-          <div className="p-3 bg-muted/50 rounded-lg">
-            <div className="text-sm text-muted-foreground mb-1">Post:</div>
-            <div className="font-medium text-sm truncate">{postTitle || "Untitled Post"}</div>
+          <div className="p-2 bg-muted/50 rounded-md">
+            <div className="text-xs text-muted-foreground mb-1">Post:</div>
+            <div className="text-sm font-medium truncate">{postTitle || "Untitled Post"}</div>
           </div>
 
           {/* Time Selection */}
-          <div className="space-y-3">
-            <Label>Select Time</Label>
+          <div className="space-y-2">
+            <Label className="text-sm">Select Time</Label>
             <div className="flex items-center gap-2">
               {/* Hour */}
               <Select value={selectedHour} onValueChange={setSelectedHour}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-16 h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom" align="start" sideOffset={4}>
+                <SelectContent 
+                  side="bottom" 
+                  align="center" 
+                  sideOffset={4}
+                  className="max-h-[200px] overflow-y-auto"
+                  position="popper"
+                >
                   {hours.map((hour) => (
-                    <SelectItem key={hour} value={hour}>
+                    <SelectItem key={hour} value={hour} className="text-sm">
                       {hour}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <span className="text-lg font-medium">:</span>
+              <span className="text-sm font-medium">:</span>
 
               {/* Minute */}
               <Select value={selectedMinute} onValueChange={setSelectedMinute}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-16 h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom" align="start" sideOffset={4}>
+                <SelectContent 
+                  side="bottom" 
+                  align="center" 
+                  sideOffset={4}
+                  position="popper"
+                >
                   {minutes.map((minute) => (
-                    <SelectItem key={minute} value={minute}>
+                    <SelectItem key={minute} value={minute} className="text-sm">
                       {minute}
                     </SelectItem>
                   ))}
@@ -118,35 +129,41 @@ export function ScheduleTimeDialog({
 
               {/* AM/PM */}
               <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-20">
+                <SelectTrigger className="w-16 h-8 text-sm">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom" align="start" sideOffset={4}>
-                  <SelectItem value="AM">AM</SelectItem>
-                  <SelectItem value="PM">PM</SelectItem>
+                <SelectContent 
+                  side="bottom" 
+                  align="center" 
+                  sideOffset={4}
+                  position="popper"
+                >
+                  <SelectItem value="AM" className="text-sm">AM</SelectItem>
+                  <SelectItem value="PM" className="text-sm">PM</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Selected Time Preview */}
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-sm text-blue-600 mb-1">Scheduled for:</div>
-            <div className="font-medium text-blue-800">
+          <div className="p-2 bg-blue-50 rounded-md border border-blue-200">
+            <div className="text-xs text-blue-600 mb-1">Scheduled for:</div>
+            <div className="text-sm font-medium text-blue-800">
               {formatSelectedDate()} at {selectedHour}:{selectedMinute} {selectedPeriod}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-2 pt-2">
             <Button 
               variant="outline" 
+              size="sm"
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button onClick={handleSchedule}>
-              <Calendar className="mr-2 h-4 w-4" />
+            <Button size="sm" onClick={handleSchedule}>
+              <Calendar className="mr-1 h-3 w-3" />
               Schedule Post
             </Button>
           </div>
