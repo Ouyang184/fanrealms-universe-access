@@ -1,168 +1,74 @@
 
-import { useState } from "react";
+import React from "react";
 import { HeroSection } from "./HeroSection";
-import { ContentTabs } from "./ContentTabs";
 import { FeaturedCreators } from "./FeaturedCreators";
 import { CategoriesSection } from "./CategoriesSection";
 import { HowItWorks } from "./HowItWorks";
 import { HomeFooter } from "./HomeFooter";
-import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { usePosts } from "@/hooks/usePosts";
-import { usePostsByCategories } from "@/hooks/usePostsByCategories";
-import { useUserPreferences } from "@/hooks/useUserPreferences";
-import { usePopularCreators } from "@/hooks/usePopularCreators";
-import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { Post } from "@/types";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import PostCard from "@/components/PostCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function HomeContent() {
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [postModalOpen, setPostModalOpen] = useState(false);
-  
-  // Get NSFW preferences to trigger re-render when changed
-  const { data: nsfwPrefs } = useNSFWPreferences();
-  
-  // Get user preferences
-  const { data: userPreferences = [], isLoading: isLoadingPreferences } = useUserPreferences();
-  const categoryIds = userPreferences.map(pref => pref.category_id);
-  
-  // Get posts filtered by user preferences for "For You" section (with fallback to all posts)
-  // These hooks now automatically filter NSFW content based on preferences
-  const { data: forYouPosts = [], isLoading: isLoadingForYou } = usePostsByCategories(categoryIds);
-  
-  // Get all posts for trending and recent sections
-  const { data: allPosts = [], isLoading: isLoadingPosts } = usePosts();
-  const { data: creators = [], isLoading: isLoadingCreators } = usePopularCreators();
+  const { data: posts = [], isLoading } = usePosts();
 
-  // Fetch detailed creator information for all posts
-  const { data: creatorsMap = {} } = useQuery({
-    queryKey: ['home-creators-info', [...forYouPosts, ...allPosts].map(p => p.authorId)],
-    queryFn: async () => {
-      const allHomePosts = [...forYouPosts, ...allPosts];
-      if (allHomePosts.length === 0) return {};
-      
-      const authorIds = [...new Set(allHomePosts.map(post => post.authorId))];
-      
-      console.log('HomeContent: Fetching creator info for author IDs:', authorIds);
-      
-      const { data: creatorsData, error } = await supabase
-        .from('creators')
-        .select('user_id, display_name, profile_image_url')
-        .in('user_id', authorIds);
-      
-      if (error) {
-        console.error('HomeContent: Error fetching creators:', error);
-        return {};
-      }
-      
-      console.log('HomeContent: Fetched creators data:', creatorsData);
-      
-      // Create a map from user_id to creator info
-      const creatorsMap = creatorsData?.reduce((acc, creator) => {
-        acc[creator.user_id] = creator;
-        return acc;
-      }, {} as Record<string, any>) || {};
-      
-      console.log('HomeContent: Created creators map:', creatorsMap);
-      
-      return creatorsMap;
-    },
-    enabled: forYouPosts.length > 0 || allPosts.length > 0,
+  // Filter posts to only show published posts and scheduled posts that have reached their time
+  const visiblePosts = posts.filter(post => {
+    // For now, since we don't have status in the Post type, we assume all posts from usePosts are visible
+    // The filtering is already done in usePosts hook
+    return true;
   });
-
-  console.log('HomeContent: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
-  console.log('HomeContent: Posts count after NSFW filtering:', {
-    forYouPosts: forYouPosts.length,
-    allPosts: allPosts.length
-  });
-
-  const mapPostToContentItem = (post: Post) => {
-    const creatorInfo = creatorsMap[post.authorId];
-    
-    console.log('HomeContent: Mapping post to content item:', {
-      postId: post.id,
-      postTitle: post.title,
-      authorId: post.authorId,
-      creatorInfo,
-      finalName: creatorInfo?.display_name || post.authorName || 'Creator',
-      finalAvatar: creatorInfo?.profile_image_url || post.authorAvatar
-    });
-    
-    return {
-      id: post.id,
-      title: post.title,
-      content: post.content,
-      authorId: post.authorId,
-      authorName: creatorInfo?.display_name || post.authorName || 'Creator',
-      authorAvatar: creatorInfo?.profile_image_url || post.authorAvatar || null,
-      createdAt: post.createdAt,
-      date: post.date || formatRelativeDate(post.createdAt),
-      tier_id: post.tier_id,
-      attachments: post.attachments,
-    };
-  };
-
-  // Use filtered posts for "For You" (includes fallback) and regular posts for other sections
-  const hasForYouData = forYouPosts.length > 0;
-  const hasGeneralData = allPosts.length > 0;
-  
-  // Map to ContentItem format - ensuring creator info is properly passed
-  const forYouContentItems = hasForYouData ? forYouPosts.slice(0, 8).map(mapPostToContentItem) : [];
-  const trendingPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
-  const recentPosts = hasGeneralData ? allPosts.slice(0, 4).map(mapPostToContentItem) : [];
-
-  const handlePostClick = (post: Post) => {
-    console.log('HomeContent: Post clicked, opening modal for:', post.title);
-    
-    // Clear any existing modal state first
-    if (postModalOpen) {
-      setPostModalOpen(false);
-      setSelectedPost(null);
-    }
-    
-    // Small delay to ensure clean state before opening new modal
-    setTimeout(() => {
-      setSelectedPost(post);
-      setPostModalOpen(true);
-    }, 50);
-  };
-
-  const handleModalClose = (open: boolean) => {
-    console.log('HomeContent: Modal close triggered, open:', open);
-    setPostModalOpen(open);
-    if (!open) {
-      // Clear selected post when modal is closed
-      setTimeout(() => setSelectedPost(null), 200);
-    }
-  };
 
   return (
-    <div>
+    <div className="min-h-screen">
       <HeroSection />
+      <FeaturedCreators />
       
-      <ContentTabs 
-        forYouPosts={forYouContentItems}
-        trendingPosts={trendingPosts}
-        recentPosts={recentPosts}
-        onPostClick={handlePostClick}
-        isLoading={isLoadingForYou || isLoadingPosts}
-      />
+      {/* Recent Posts Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Latest Posts</h2>
+          
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : visiblePosts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {visiblePosts.slice(0, 6).map((post) => (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  title={post.title}
+                  content={post.content}
+                  authorName={post.authorName || 'Unknown'}
+                  authorAvatar={post.authorAvatar}
+                  createdAt={post.createdAt}
+                  date={post.date || post.createdAt}
+                  tier_id={post.tier_id}
+                  attachments={post.attachments}
+                  authorId={post.authorId}
+                  is_nsfw={post.is_nsfw}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No posts available yet.</p>
+            </div>
+          )}
+        </div>
+      </section>
       
-      <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
       <CategoriesSection />
       <HowItWorks />
       <HomeFooter />
-
-      {/* Single Post Preview Modal with proper state management */}
-      {selectedPost && (
-        <PostPreviewModal
-          open={postModalOpen}
-          onOpenChange={handleModalClose}
-          post={selectedPost}
-        />
-      )}
     </div>
   );
 }
