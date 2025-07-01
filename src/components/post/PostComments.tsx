@@ -28,7 +28,7 @@ export function PostComments({ postId }: PostCommentsProps) {
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     if (!newComment.trim() || !user) return;
     
     addComment(newComment.trim());
@@ -36,12 +36,12 @@ export function PostComments({ postId }: PostCommentsProps) {
   };
 
   const handleToggleComments = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     setShowComments(!showComments);
   };
 
   const handleDeleteComment = (e: React.MouseEvent, commentId: string) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     deleteComment(commentId);
   };
 
@@ -73,7 +73,7 @@ export function PostComments({ postId }: PostCommentsProps) {
 
       {showComments && (
         <div className="space-y-4 border-t pt-4" onClick={(e) => e.stopPropagation()}>
-          {/* Add comment form */}
+          {/* Add comment form - Available to all authenticated users */}
           {user && (
             <form onSubmit={handleSubmitComment} className="space-y-3">
               <Textarea
@@ -101,6 +101,18 @@ export function PostComments({ postId }: PostCommentsProps) {
                 </Button>
               </div>
             </form>
+          )}
+
+          {/* Login prompt for non-authenticated users */}
+          {!user && (
+            <div className="p-4 bg-muted/50 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">
+                Sign in to join the conversation
+              </p>
+              <Button variant="outline" size="sm" asChild>
+                <a href="/login">Sign In</a>
+              </Button>
+            </div>
           )}
 
           {/* Comments list */}
@@ -147,6 +159,7 @@ export function PostComments({ postId }: PostCommentsProps) {
                           </span>
                         </div>
                         
+                        {/* Allow users to delete their own comments */}
                         {user?.id === comment.user_id && (
                           <Button
                             variant="ghost"
