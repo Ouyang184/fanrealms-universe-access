@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { formatRelativeDate } from '@/utils/auth-helpers';
@@ -11,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNSFWPreferences } from '@/hooks/useNSFWPreferences';
 import { NSFWContentPlaceholder } from '@/components/nsfw/NSFWContentPlaceholder';
 import { Badge } from './ui/badge';
-import { Lock, Crown, Eye } from 'lucide-react';
+import { Lock, Crown, Eye, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { isVideoUrl } from '@/utils/videoUtils';
 import { generatePostBanner, hasMediaContent } from '@/utils/postBanners';
@@ -181,7 +182,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const postHasMedia = hasMediaContent(attachments);
 
   return (
-    <Card className={`w-full ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
+    <Card className={`w-full max-w-2xl mx-auto ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
       <CardHeader className="pb-3">
         <PostCardHeader
           authorName={displayAuthorName}
@@ -263,12 +264,6 @@ const PostCard: React.FC<PostCardProps> = ({
             </div>
           )}
           
-          {/* Show view count */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Eye className="h-4 w-4" />
-            <span>{viewCount} views</span>
-          </div>
-          
           {/* Show media/attachments based on access level and only if media exists */}
           {postHasMedia && hasFullAccess ? (
             <>
@@ -296,15 +291,50 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
         </div>
         
-        <PostInteractions 
-          postId={id} 
-          authorId={authorId}
-          postTitle={title}
-          postContent={content}
-          creatorName={displayAuthorName}
-          creatorUsername={users?.username}
-          isPublic={!isPremiumPost}
-        />
+        {/* Improved spacing for post metadata and interactions */}
+        <div className="pt-2 border-t space-y-3">
+          {/* Post type and view count with better spacing */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Badge 
+                variant="secondary" 
+                className={`${
+                  isPremiumPost 
+                    ? "bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200" 
+                    : "bg-green-50 text-green-700 border-green-200"
+                }`}
+              >
+                {isPremiumPost ? (
+                  <>
+                    <Crown className="h-3 w-3 mr-1" />
+                    Premium
+                  </>
+                ) : (
+                  <>
+                    <Globe className="h-3 w-3 mr-1" />
+                    Public
+                  </>
+                )}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Eye className="h-4 w-4" />
+              <span>{viewCount} views</span>
+            </div>
+          </div>
+          
+          {/* Post interactions with proper spacing */}
+          <PostInteractions 
+            postId={id} 
+            authorId={authorId}
+            postTitle={title}
+            postContent={content}
+            creatorName={displayAuthorName}
+            creatorUsername={users?.username}
+            isPublic={!isPremiumPost}
+          />
+        </div>
       </CardContent>
     </Card>
   );
