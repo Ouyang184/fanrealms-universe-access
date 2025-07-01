@@ -1,99 +1,113 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
-import type { Post } from "@/types";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
-import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { Post } from '@/types';
 
-export const usePosts = () => {
-  const { user } = useAuth();
-  const { data: nsfwPrefs } = useNSFWPreferences();
-  
+export function usePosts() {
   return useQuery({
-    queryKey: ["posts", "recent", nsfwPrefs?.isNSFWEnabled],
-    queryFn: async () => {
-      console.log('[usePosts] Fetching posts with NSFW filter:', nsfwPrefs?.isNSFWEnabled);
+    queryKey: ['posts'],
+    queryFn: async (): Promise<Post[]> => {
+      console.log('[usePosts] Fetching posts with scheduling filter');
       
-      // Fetch ALL posts, including tier-restricted ones
-      const { data: posts, error } = await supabase
+      const { data, error } = await supabase
         .from('posts')
         .select(`
           *,
           users!posts_author_id_fkey (
+            id,
             username,
             profile_picture
-          )
+          ),
+          creators!posts_creator_id_fkey (
+            id,
+            display_name,
+            profile_image_url
+          ),
+          membership_tiers (
+            id,
+            title,
+            price
+          ),
+          post_tiers (
+            tier_id,
+            membership_tiers (
+              id,
+              title,
+              price
+            )
+          ),
+          likes(count),
+          comments(count)
         `)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      console.log('[usePosts] Raw query result:', { posts, error, count: posts?.length });
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_for.lte.${new Date().toISOString()})`)
+        .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('[usePosts] Database error:', error);
+        console.error('Error fetching posts:', error);
         throw error;
       }
 
-      if (!posts) {
-        console.log('[usePosts] No posts returned from database');
-        return [];
-      }
+      console.log('[usePosts] Raw posts data:', data);
 
-      // Filter NSFW content based on user preferences
-      let filteredPosts = posts;
-      
-      if (!nsfwPrefs?.isNSFWEnabled) {
-        // Filter out NSFW posts if NSFW is disabled
-        filteredPosts = posts.filter(post => {
-          // Always show user's own posts regardless of NSFW status
-          if (user?.id && post.author_id === user.id) {
-            return true;
-          }
-          // For other posts, filter out NSFW content
-          return !post.is_nsfw;
-        });
+      return data.map((post): Post => {
+        // Safely handle user data
+        const userData = post.users || {};
+        const creatorData = post.creators || {};
         
-        console.log('[usePosts] Filtered out NSFW content:', {
-          originalCount: posts.length,
-          filteredCount: filteredPosts.length,
-          nsfwEnabled: nsfwPrefs?.isNSFWEnabled
-        });
-      }
+        // Handle tier information
+        const tierInfo = post.membership_tiers || null;
+        const postTiers = post.post_tiers || [];
+        
+        // Determine if this is a premium post
+        const isPremium = !!(post.tier_id || postTiers.length > 0);
+        
+        // Calculate engagement metrics
+        const likeCount = Array.isArray(post.likes) ? post.likes.length : 0;
+        const commentCount = Array.isArray(post.comments) ? post.comments.length : 0;
 
-      // Log tier distribution
-      const tierStats = filteredPosts.reduce((acc, post) => {
-        const tierType = post.tier_id ? 'premium' : 'public';
-        acc[tierType] = (acc[tierType] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      
-      console.log('[usePosts] Post tier distribution:', tierStats);
-
-      return filteredPosts.map((post): Post => {
-        const mappedPost = {
+        return {
           id: post.id,
           title: post.title,
           content: post.content,
-          authorId: post.author_id,
-          authorName: post.users?.username || 'Unknown',
-          authorAvatar: post.users?.profile_picture || null,
-          createdAt: post.created_at,
-          date: formatRelativeDate(post.created_at),
+          author_id: post.author_id,
+          creator_id: post.creator_id,
           tier_id: post.tier_id,
-          attachments: post.attachments,
-          is_nsfw: post.is_nsfw || false
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          attachments: post.attachments || [],
+          is_nsfw: post.is_nsfw || false,
+          status: post.status || 'published',
+          scheduled_for: post.scheduled_for,
+          
+          // User information
+          users: userData.username ? {
+            id: userData.id,
+            username: userData.username,
+            profile_picture: userData.profile_picture
+          } : null,
+          
+          // Creator information
+          creators: creatorData.display_name ? {
+            id: creatorData.id,
+            display_name: creatorData.display_name,
+            profile_image_url: creatorData.profile_image_url
+          } : null,
+          
+          // Tier information
+          membership_tiers: tierInfo,
+          post_tiers: postTiers,
+          
+          // Engagement
+          likes: Array.isArray(post.likes) ? post.likes : [],
+          comments: Array.isArray(post.comments) ? post.comments : [],
+          
+          // Computed properties
+          isPremium,
+          likeCount,
+          commentCount
         };
-        
-        console.log('[usePosts] Mapped post with NSFW filter:', {
-          id: mappedPost.id,
-          title: mappedPost.title,
-          is_nsfw: mappedPost.is_nsfw,
-          nsfwEnabled: nsfwPrefs?.isNSFWEnabled
-        });
-        
-        return mappedPost;
       });
-    }
+    },
+    staleTime: 30000, // 30 seconds
   });
-};
+}

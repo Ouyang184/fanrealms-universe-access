@@ -147,9 +147,28 @@ export function useCreatorPosts() {
           return ['published', 'scheduled', 'draft'].includes(status);
         };
         
-        const status: PostStatus = post.status && isValidStatus(post.status) 
-          ? post.status 
-          : "published";
+        let status: PostStatus = "published";
+        
+        // First check if the database status is valid
+        if (post.status && isValidStatus(post.status)) {
+          status = post.status;
+          
+          // Additional check: if status is 'scheduled' but scheduled_for time has passed, treat as published
+          if (status === 'scheduled' && post.scheduled_for) {
+            const scheduledTime = new Date(post.scheduled_for);
+            const now = new Date();
+            
+            // If the scheduled time has passed, this should be treated as published
+            // But since this is creator's own posts view, they can see all their posts regardless
+            if (scheduledTime <= now) {
+              console.log('[useCreatorPosts] Scheduled post time has passed, but keeping as scheduled for creator view:', {
+                postId: post.id,
+                scheduledFor: post.scheduled_for,
+                currentTime: now.toISOString()
+              });
+            }
+          }
+        }
         
         // Use REAL engagement data from the database
         const realEngagement = {
