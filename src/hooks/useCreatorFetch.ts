@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { Post, Creator } from "@/types";
+import { Post, CreatorProfile } from "@/types";
 import { formatRelativeDate } from "@/utils/auth-helpers";
 
 export function useCreatorFetch(identifier?: string) {
@@ -16,7 +16,7 @@ export function useCreatorFetch(identifier?: string) {
     refetch: refetchCreator
   } = useQuery({
     queryKey: ['creator', identifier],
-    queryFn: async (): Promise<Creator | null> => {
+    queryFn: async (): Promise<CreatorProfile | null> => {
       if (!identifier) return null;
       
       console.log('[useCreatorFetch] Fetching creator with identifier:', identifier);
