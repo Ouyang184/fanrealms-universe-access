@@ -1,3 +1,4 @@
+
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -145,9 +146,9 @@ export default function About() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button asChild variant="outline">
-                <a href="mailto:hello@fanrealms.com" className="flex items-center gap-2">
+                <a href="mailto:support@fanrealms.com" className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  hello@fanrealms.com
+                  support@fanrealms.com
                 </a>
               </Button>
               <div className="flex gap-2">
