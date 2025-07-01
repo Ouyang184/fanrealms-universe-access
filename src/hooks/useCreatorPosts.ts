@@ -142,10 +142,8 @@ export function useCreatorPosts() {
           }];
         }
 
-        // Determine post status
-        const isScheduled = post.title?.toLowerCase().includes('scheduled');
-        const isDraft = post.title?.toLowerCase().includes('draft');
-        const status: PostStatus = isScheduled ? "scheduled" : isDraft ? "draft" : "published";
+        // Determine post status from database
+        const status: PostStatus = post.status || "published";
         
         // Use REAL engagement data from the database
         const realEngagement = {
@@ -190,7 +188,7 @@ export function useCreatorPosts() {
           tags,
           engagement: realEngagement, // Use real engagement data
           availableTiers,
-          scheduleDate: isScheduled ? generateFutureDate() : undefined,
+          scheduleDate: post.scheduled_for || undefined,
           lastEdited: formatRelativeDate(post.created_at),
           type: postType,
           canView: canViewPost,
@@ -202,7 +200,9 @@ export function useCreatorPosts() {
           postId: transformedPost.id,
           authorId: transformedPost.authorId,
           availableTiers: transformedPost.availableTiers,
-          engagement: transformedPost.engagement
+          engagement: transformedPost.engagement,
+          status: transformedPost.status,
+          scheduleDate: transformedPost.scheduleDate
         });
           
         return transformedPost;
@@ -217,13 +217,6 @@ export function useCreatorPosts() {
     if (price < 5) return "blue";
     if (price < 15) return "purple";
     return "indigo";
-  }
-
-  // Helper function to generate future date for scheduled posts
-  function generateFutureDate(): string {
-    const date = new Date();
-    date.setDate(date.getDate() + Math.floor(Math.random() * 14) + 1);
-    return date.toISOString();
   }
 
   // Handle search

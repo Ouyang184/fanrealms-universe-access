@@ -643,6 +643,8 @@ export type Database = {
           creator_id: string | null
           id: string
           is_nsfw: boolean
+          scheduled_for: string | null
+          status: string | null
           tier_id: string | null
           title: string
           updated_at: string | null
@@ -655,6 +657,8 @@ export type Database = {
           creator_id?: string | null
           id?: string
           is_nsfw?: boolean
+          scheduled_for?: string | null
+          status?: string | null
           tier_id?: string | null
           title: string
           updated_at?: string | null
@@ -667,6 +671,8 @@ export type Database = {
           creator_id?: string | null
           id?: string
           is_nsfw?: boolean
+          scheduled_for?: string | null
+          status?: string | null
           tier_id?: string | null
           title?: string
           updated_at?: string | null
