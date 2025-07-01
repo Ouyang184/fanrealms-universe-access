@@ -30,19 +30,20 @@ export const usePostViews = (postId: string) => {
     queryFn: async () => {
       if (!user?.id) return false;
       
+      // Use select with limit(1) instead of single() to avoid 406 errors
       const { data, error } = await supabase
         .from('post_views')
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', user.id)
-        .single();
+        .limit(1);
       
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error checking view status:', error);
         return false;
       }
       
-      return !!data;
+      return data && data.length > 0;
     },
     enabled: !!user?.id
   });
