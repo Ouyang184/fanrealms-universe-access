@@ -24,7 +24,7 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
         .from('users')
         .select('is_nsfw_enabled')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching NSFW preference:', error);
@@ -54,7 +54,7 @@ export const useNSFWPreference = (options?: UseNSFWPreferenceOptions) => {
           .from('users')
           .select('age_verified')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         console.log('🔍 useNSFWPreference - Database age verification check:', { 
           userData, 

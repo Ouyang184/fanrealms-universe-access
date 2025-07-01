@@ -15,7 +15,7 @@ export const useNSFWPreferences = () => {
         .from('users')
         .select('is_nsfw_enabled')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching NSFW preferences:', error);
