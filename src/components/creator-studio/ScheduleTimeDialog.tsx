@@ -91,7 +91,7 @@ export function ScheduleTimeDialog({
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom">
+                <SelectContent side="bottom" align="start" sideOffset={4}>
                   {hours.map((hour) => (
                     <SelectItem key={hour} value={hour}>
                       {hour}
@@ -107,7 +107,7 @@ export function ScheduleTimeDialog({
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom">
+                <SelectContent side="bottom" align="start" sideOffset={4}>
                   {minutes.map((minute) => (
                     <SelectItem key={minute} value={minute}>
                       {minute}
@@ -121,7 +121,7 @@ export function ScheduleTimeDialog({
                 <SelectTrigger className="w-20">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent side="bottom">
+                <SelectContent side="bottom" align="start" sideOffset={4}>
                   <SelectItem value="AM">AM</SelectItem>
                   <SelectItem value="PM">PM</SelectItem>
                 </SelectContent>
