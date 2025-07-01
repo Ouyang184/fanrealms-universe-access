@@ -70,7 +70,6 @@ export function usePosts() {
           title: post.title,
           content: post.content,
           authorId: post.author_id, // Use authorId to match Post interface
-          creator_id: post.creator_id,
           tier_id: post.tier_id,
           createdAt: post.created_at, // Use createdAt to match Post interface
           updated_at: post.updated_at,
