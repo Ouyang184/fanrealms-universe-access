@@ -115,8 +115,8 @@ export default function FeedPage() {
 
   return (
     <MainLayout>
-      <div className="flex-1 overflow-auto">
-        <div className="flex min-h-screen">
+      <div className="w-full min-h-screen overflow-hidden">
+        <div className="flex h-screen">
           {/* Left Sidebar - Hidden on mobile */}
           <div className="hidden lg:block lg:w-80 flex-shrink-0">
             <FeedSidebar 
@@ -125,9 +125,9 @@ export default function FeedPage() {
             />
           </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-4 lg:px-6 py-6">
+          {/* Main Content Area - Full width on mobile */}
+          <div className="flex-1 overflow-x-auto overflow-y-auto w-full min-w-0">
+            <div className="w-full max-w-4xl mx-auto px-4 lg:px-6 py-6">
               {/* Main Feed Content */}
               <FeedMainContent
                 hasFollowedCreators={hasFollowedCreators}
