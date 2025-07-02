@@ -22,31 +22,50 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
   useEffect(() => {
     const fetchCommissionData = async () => {
       try {
-        // Fetch commission types
-        const { data: types } = await supabase
+        console.log('Fetching commission data for creator:', creator.id);
+        
+        // Fetch commission types using type assertion to bypass TypeScript issues
+        const { data: types, error: typesError } = await (supabase as any)
           .from('commission_types')
           .select('*')
           .eq('creator_id', creator.id)
           .eq('is_active', true)
           .order('base_price');
 
+        if (typesError) {
+          console.error('Error fetching commission types:', typesError);
+        } else {
+          console.log('Commission types fetched:', types);
+          setCommissionTypes(types || []);
+        }
+
         // Fetch portfolio images
-        const { data: portfolio } = await supabase
+        const { data: portfolio, error: portfolioError } = await (supabase as any)
           .from('commission_portfolios')
           .select('*')
           .eq('creator_id', creator.id)
           .order('display_order');
 
+        if (portfolioError) {
+          console.error('Error fetching portfolio:', portfolioError);
+        } else {
+          console.log('Portfolio fetched:', portfolio);
+          setPortfolioImages(portfolio || []);
+        }
+
         // Fetch commission tags
-        const { data: commissionTags } = await supabase
+        const { data: commissionTags, error: tagsError } = await (supabase as any)
           .from('commission_tags')
           .select('*')
           .eq('is_featured', true)
           .order('name');
 
-        setCommissionTypes(types || []);
-        setPortfolioImages(portfolio || []);
-        setTags(commissionTags || []);
+        if (tagsError) {
+          console.error('Error fetching tags:', tagsError);
+        } else {
+          console.log('Tags fetched:', commissionTags);
+          setTags(commissionTags || []);
+        }
       } catch (error) {
         console.error('Error fetching commission data:', error);
       } finally {
