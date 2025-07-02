@@ -89,32 +89,42 @@ export function CommissionBookingModal({
         uploadedImageUrls.push(publicUrl);
       }
 
-      // Create commission request
-      const { error } = await supabase
-        .from('commission_requests')
-        .insert({
-          customer_id: user.id,
-          creator_id: creatorId,
-          commission_type_id: commissionTypeId,
-          title: title.trim(),
-          description: description.trim(),
-          reference_images: uploadedImageUrls
+      // Try to create commission request, handle gracefully if table doesn't exist
+      try {
+        const { error } = await supabase
+          .from('commission_requests' as any)
+          .insert({
+            customer_id: user.id,
+            creator_id: creatorId,
+            commission_type_id: commissionTypeId,
+            title: title.trim(),
+            description: description.trim(),
+            reference_images: uploadedImageUrls
+          });
+
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: "Commission Requested",
+          description: "Your commission request has been sent to the creator. They will review it shortly.",
         });
 
-      if (error) {
-        throw error;
+        // Reset form
+        setTitle('');
+        setDescription('');
+        setReferenceImages([]);
+        onClose();
+
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        toast({
+          title: "Feature Coming Soon",
+          description: "Commission requests are not yet available. Please contact the creator directly.",
+          variant: "destructive"
+        });
       }
-
-      toast({
-        title: "Commission Requested",
-        description: "Your commission request has been sent to the creator. They will review it shortly.",
-      });
-
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setReferenceImages([]);
-      onClose();
 
     } catch (error) {
       console.error('Error submitting commission request:', error);

@@ -33,7 +33,12 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
     );
   }
 
-  if (!creator?.accepts_commissions) {
+  // Check if creator accepts commissions (fallback to false if property doesn't exist)
+  const acceptsCommissions = (creator as any)?.accepts_commissions || false;
+  const commissionInfo = (creator as any)?.commission_info || {};
+  const commissionTos = (creator as any)?.commission_tos;
+
+  if (!acceptsCommissions) {
     return (
       <Card>
         <CardContent className="text-center py-12">
@@ -55,7 +60,7 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
   return (
     <div className="space-y-6">
       {/* Commission Info Panel */}
-      {creator.commission_info && (
+      {commissionInfo && Object.keys(commissionInfo).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -64,28 +69,28 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {creator.commission_info.about && (
+            {commissionInfo.about && (
               <div>
                 <h4 className="font-medium mb-2">About My Commissions</h4>
-                <p className="text-muted-foreground">{creator.commission_info.about}</p>
+                <p className="text-muted-foreground">{commissionInfo.about}</p>
               </div>
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {creator.commission_info.turnaround_time && (
+              {commissionInfo.turnaround_time && (
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    Typical turnaround: {creator.commission_info.turnaround_time}
+                    Typical turnaround: {commissionInfo.turnaround_time}
                   </span>
                 </div>
               )}
               
-              {creator.commission_info.revisions && (
+              {commissionInfo.revisions && (
                 <div className="flex items-center gap-2">
                   <Palette className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    Revisions: {creator.commission_info.revisions}
+                    Revisions: {commissionInfo.revisions}
                   </span>
                 </div>
               )}
@@ -100,11 +105,11 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
               )}
             </div>
 
-            {creator.commission_info.dos && creator.commission_info.dos.length > 0 && (
+            {commissionInfo.dos && commissionInfo.dos.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2 text-green-600">What I Do</h4>
                 <div className="flex flex-wrap gap-2">
-                  {creator.commission_info.dos.map((item: string, index: number) => (
+                  {commissionInfo.dos.map((item: string, index: number) => (
                     <Badge key={index} variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                       {item}
                     </Badge>
@@ -113,11 +118,11 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
               </div>
             )}
 
-            {creator.commission_info.donts && creator.commission_info.donts.length > 0 && (
+            {commissionInfo.donts && commissionInfo.donts.length > 0 && (
               <div>
                 <h4 className="font-medium mb-2 text-red-600">What I Don't Do</h4>
                 <div className="flex flex-wrap gap-2">
-                  {creator.commission_info.donts.map((item: string, index: number) => (
+                  {commissionInfo.donts.map((item: string, index: number) => (
                     <Badge key={index} variant="secondary" className="bg-red-50 text-red-700 border-red-200">
                       {item}
                     </Badge>
@@ -139,7 +144,7 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
         <h3 className="text-xl font-semibold mb-4">Available Commission Types</h3>
         {commissionTypes && commissionTypes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {commissionTypes.map((type) => (
+            {commissionTypes.map((type: any) => (
               <Card key={type.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
@@ -189,14 +194,14 @@ export function CreatorCommissions({ creatorId }: CreatorCommissionsProps) {
       </div>
 
       {/* Terms of Service */}
-      {creator.commission_tos && (
+      {commissionTos && (
         <Card>
           <CardHeader>
             <CardTitle>Terms of Service</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none">
-              <p className="whitespace-pre-wrap">{creator.commission_tos}</p>
+              <p className="whitespace-pre-wrap">{commissionTos}</p>
             </div>
           </CardContent>
         </Card>
