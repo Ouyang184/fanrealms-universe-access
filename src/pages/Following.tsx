@@ -11,7 +11,6 @@ import {
   Search, 
   Users, 
   TrendingUp, 
-  Heart, 
   MessageSquare,
   MoreHorizontal 
 } from "lucide-react";
@@ -298,19 +297,11 @@ export default function FollowingPage() {
                                 {creator.bio || "Creator on the platform"}
                               </p>
                               
-                              {/* Metrics */}
+                              {/* Metrics - Changed to show followers only */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
                                   <Users className="h-4 w-4" />
-                                  <span>{(creator.follower_count || 0).toLocaleString()}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Heart className="h-4 w-4" />
-                                  <span>{Math.floor(Math.random() * 1000)}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <MessageSquare className="h-4 w-4" />
-                                  <span>{Math.floor(Math.random() * 100)}</span>
+                                  <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
                                 </div>
                               </div>
                               
@@ -393,11 +384,11 @@ export default function FollowingPage() {
                                 {creator.bio || "Creator on the platform"}
                               </p>
                               
-                              {/* Metrics */}
+                              {/* Metrics - Changed to show followers only */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
                                   <Users className="h-4 w-4" />
-                                  <span>{(creator.follower_count || 0).toLocaleString()}</span>
+                                  <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
                                 </div>
                               </div>
                               
