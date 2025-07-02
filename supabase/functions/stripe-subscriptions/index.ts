@@ -21,11 +21,11 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
     
-    console.log('Stripe subscriptions action:', action);
+    console.log('Stripe subscriptions action:', action, '(LIVE MODE)');
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    // Initialize Stripe with LIVE keys
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '', {
       apiVersion: '2023-10-16',
     });
 
@@ -44,11 +44,11 @@ serve(async (req) => {
 
       case 'cancel_subscription': {
         const { subscriptionId, immediate } = body;
-        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate);
+        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate, '(LIVE MODE)');
         
         // Ensure immediate is properly converted to boolean
         const immediateFlag = immediate === true || immediate === 'true' || immediate === 1;
-        console.log('Converted immediate flag to boolean:', immediateFlag);
+        console.log('Converted immediate flag to boolean:', immediateFlag, '(LIVE MODE)');
         
         return await handleCancelSubscription(stripe, supabaseService, user, subscriptionId, immediateFlag);
       }
@@ -84,7 +84,7 @@ serve(async (req) => {
         });
     }
   } catch (error) {
-    console.error('Stripe subscriptions error:', error);
+    console.error('Stripe subscriptions error (LIVE MODE):', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred' 
     }), {
