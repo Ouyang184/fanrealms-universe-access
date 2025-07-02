@@ -11,7 +11,7 @@ export function useCreatorProfileData() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
   
-  // Fetch creator's details including follower count
+  // Fetch creator's details including follower count and commission fields
   const { 
     data: creator, 
     isLoading: isLoadingCreator,
@@ -36,7 +36,7 @@ export function useCreatorProfileData() {
         return null;
       }
       
-      // Get the latest creator data including follower_count
+      // Get the latest creator data including all commission fields
       const { data: latestCreatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
@@ -49,7 +49,7 @@ export function useCreatorProfileData() {
       
       return {
         ...creatorProfile,
-        ...latestCreatorData, // This will include the latest follower_count
+        ...latestCreatorData, // This will include all commission fields
         username: userData.username,
         fullName: userData.username,
         displayName: latestCreatorData?.display_name || userData.username,
@@ -58,7 +58,13 @@ export function useCreatorProfileData() {
         banner_url: latestCreatorData?.banner_url || null,
         bio: latestCreatorData?.bio || "No bio provided yet.",
         display_name: latestCreatorData?.display_name || null,
-        follower_count: latestCreatorData?.follower_count || 0
+        follower_count: latestCreatorData?.follower_count || 0,
+        // Commission fields
+        accepts_commissions: latestCreatorData?.accepts_commissions || false,
+        commission_base_rate: latestCreatorData?.commission_base_rate,
+        commission_turnaround_days: latestCreatorData?.commission_turnaround_days,
+        commission_slots_available: latestCreatorData?.commission_slots_available,
+        commission_tos: latestCreatorData?.commission_tos
       } as CreatorProfile & { displayName: string };
     },
     enabled: !!user?.id && !!creatorProfile

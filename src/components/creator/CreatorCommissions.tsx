@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Clock, DollarSign, Star, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { CommissionType, CommissionPortfolio, CommissionTag } from "@/types/commission";
+import { CommissionType } from "@/types/commission";
 import { CreatorProfile } from "@/types";
 
 interface CreatorCommissionsProps {
@@ -15,8 +15,6 @@ interface CreatorCommissionsProps {
 
 export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
-  const [portfolioImages, setPortfolioImages] = useState<CommissionPortfolio[]>([]);
-  const [tags, setTags] = useState<CommissionTag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,8 +22,8 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
       try {
         console.log('Fetching commission data for creator:', creator.id);
         
-        // Fetch commission types using type assertion to bypass TypeScript issues
-        const { data: types, error: typesError } = await (supabase as any)
+        // Fetch commission types directly from the database
+        const { data: types, error: typesError } = await supabase
           .from('commission_types')
           .select('*')
           .eq('creator_id', creator.id)
@@ -37,34 +35,6 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
         } else {
           console.log('Commission types fetched:', types);
           setCommissionTypes(types || []);
-        }
-
-        // Fetch portfolio images
-        const { data: portfolio, error: portfolioError } = await (supabase as any)
-          .from('commission_portfolios')
-          .select('*')
-          .eq('creator_id', creator.id)
-          .order('display_order');
-
-        if (portfolioError) {
-          console.error('Error fetching portfolio:', portfolioError);
-        } else {
-          console.log('Portfolio fetched:', portfolio);
-          setPortfolioImages(portfolio || []);
-        }
-
-        // Fetch commission tags
-        const { data: commissionTags, error: tagsError } = await (supabase as any)
-          .from('commission_tags')
-          .select('*')
-          .eq('is_featured', true)
-          .order('name');
-
-        if (tagsError) {
-          console.error('Error fetching tags:', tagsError);
-        } else {
-          console.log('Tags fetched:', commissionTags);
-          setTags(commissionTags || []);
         }
       } catch (error) {
         console.error('Error fetching commission data:', error);
@@ -86,13 +56,25 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
     );
   }
 
-  if (!creator.accepts_commissions || commissionTypes.length === 0) {
+  if (!creator.accepts_commissions) {
     return (
       <div className="text-center py-12">
         <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No Commissions Available</h3>
+        <h3 className="text-lg font-semibold mb-2">Commissions Not Available</h3>
         <p className="text-muted-foreground">
           This creator is not currently accepting commissions.
+        </p>
+      </div>
+    );
+  }
+
+  if (commissionTypes.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No Commission Types Available</h3>
+        <p className="text-muted-foreground">
+          This creator hasn't set up any commission types yet.
         </p>
       </div>
     );
@@ -169,7 +151,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   )}
                 </div>
                 
-                {type.dos.length > 0 && (
+                {type.dos && type.dos.length > 0 && (
                   <div>
                     <h5 className="font-medium text-green-700 mb-2">✓ Will Do:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -180,7 +162,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   </div>
                 )}
                 
-                {type.donts.length > 0 && (
+                {type.donts && type.donts.length > 0 && (
                   <div>
                     <h5 className="font-medium text-red-700 mb-2">✗ Won't Do:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -199,53 +181,6 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           ))}
         </div>
       </div>
-
-      {/* Portfolio Gallery */}
-      {portfolioImages.length > 0 && (
-        <div className="space-y-6">
-          <h3 className="text-xl font-semibold">Commission Portfolio</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {portfolioImages.map((image) => (
-              <div key={image.id} className="group relative aspect-square overflow-hidden rounded-lg">
-                <img
-                  src={image.image_url}
-                  alt={image.title || 'Commission example'}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                />
-                {image.is_featured && (
-                  <Badge className="absolute top-2 left-2" variant="secondary">
-                    <Star className="h-3 w-3 mr-1" />
-                    Featured
-                  </Badge>
-                )}
-                {image.title && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
-                    <p className="text-sm font-medium truncate">{image.title}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Commission Tags */}
-      {tags.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Specialties</h3>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Badge
-                key={tag.id}
-                variant="outline"
-                style={{ borderColor: tag.color_hex, color: tag.color_hex }}
-              >
-                {tag.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
