@@ -51,6 +51,65 @@ export type Database = {
           },
         ]
       }
+      commission_types: {
+        Row: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          description: string | null
+          donts: string[] | null
+          dos: string[] | null
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number | null
+          price_per_revision: number | null
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          donts?: string[] | null
+          dos?: string[] | null
+          estimated_turnaround_days: number
+          id?: string
+          is_active?: boolean
+          max_revisions?: number
+          name: string
+          price_per_character?: number | null
+          price_per_revision?: number | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          donts?: string[] | null
+          dos?: string[] | null
+          estimated_turnaround_days?: number
+          id?: string
+          is_active?: boolean
+          max_revisions?: number
+          name?: string
+          price_per_character?: number | null
+          price_per_revision?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_types_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string | null
@@ -199,8 +258,13 @@ export type Database = {
       }
       creators: {
         Row: {
+          accepts_commissions: boolean | null
           banner_url: string | null
           bio: string | null
+          commission_base_rate: number | null
+          commission_slots_available: number | null
+          commission_tos: string | null
+          commission_turnaround_days: number | null
           created_at: string
           display_name: string | null
           follower_count: number
@@ -217,8 +281,13 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          accepts_commissions?: boolean | null
           banner_url?: string | null
           bio?: string | null
+          commission_base_rate?: number | null
+          commission_slots_available?: number | null
+          commission_tos?: string | null
+          commission_turnaround_days?: number | null
           created_at?: string
           display_name?: string | null
           follower_count?: number
@@ -235,8 +304,13 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          accepts_commissions?: boolean | null
           banner_url?: string | null
           bio?: string | null
+          commission_base_rate?: number | null
+          commission_slots_available?: number | null
+          commission_tos?: string | null
+          commission_turnaround_days?: number | null
           created_at?: string
           display_name?: string | null
           follower_count?: number
