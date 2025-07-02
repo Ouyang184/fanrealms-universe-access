@@ -18,9 +18,10 @@ import { usePostReads } from '@/hooks/usePostReads';
 
 interface NavigationMenuProps {
   collapsed?: boolean;
+  onMobileNavClick?: () => void;
 }
 
-export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
+export function NavigationMenu({ collapsed = false, onMobileNavClick }: NavigationMenuProps) {
   const location = useLocation();
   const { user } = useAuth();
   const { data: posts } = usePosts();
@@ -56,6 +57,7 @@ export function NavigationMenu({ collapsed = false }: NavigationMenuProps) {
             >
               <Link 
                 to={item.path}
+                onClick={onMobileNavClick}
                 className={cn(
                   "w-full flex items-center py-2.5 relative",
                   collapsed ? "px-2 justify-center" : "px-4 gap-3",

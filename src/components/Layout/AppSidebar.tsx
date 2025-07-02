@@ -24,7 +24,7 @@ import { Logo } from '@/components/Logo';
 
 export function AppSidebar() {
   const { loading, signOut } = useAuth();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const [initialRender, setInitialRender] = useState(true);
 
@@ -38,6 +38,13 @@ export function AppSidebar() {
       setInitialRender(false);
     }
   }, [isMobile, initialRender, toggleSidebar]);
+
+  // Close mobile sidebar when clicking on navigation items
+  const handleMobileNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   if (loading) {
     return <div>Loading sidebar...</div>;
@@ -71,18 +78,21 @@ export function AppSidebar() {
             "pb-6",
             isCollapsed ? "px-2" : "px-3"
           )}>
-            <NavigationMenu collapsed={isCollapsed} />
+            <NavigationMenu collapsed={isCollapsed} onMobileNavClick={handleMobileNavClick} />
             
             <SidebarSeparator className="my-3" />
             
-            <CreatorStudioMenu collapsed={isCollapsed} />
+            <CreatorStudioMenu collapsed={isCollapsed} onMobileNavClick={handleMobileNavClick} />
 
             <SidebarSeparator className="my-3" />
 
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
-                  onClick={signOut} 
+                  onClick={() => {
+                    signOut();
+                    if (isMobile) setOpenMobile(false);
+                  }}
                   className={cn(
                     "w-full justify-start py-2.5",
                     isCollapsed ? "px-2" : "px-4"

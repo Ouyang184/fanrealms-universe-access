@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Grid, 
@@ -20,9 +21,10 @@ import { useState, useEffect } from "react";
 
 interface CreatorStudioMenuProps {
   collapsed: boolean;
+  onMobileNavClick?: () => void;
 }
 
-export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
+export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudioMenuProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -58,6 +60,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
       return;
     }
     navigate('/complete-profile');
+    if (onMobileNavClick) onMobileNavClick();
   };
 
   // If still loading, show a placeholder
@@ -100,7 +103,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
     return (
       <div className="p-2">
         {studioItems.map((item) => (
-          <Link to={item.path} key={item.path}>
+          <Link to={item.path} key={item.path} onClick={onMobileNavClick}>
             <Button 
               variant={isActive(item.path) ? "secondary" : "ghost"}
               className={cn(
@@ -128,7 +131,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-2 space-y-1">
           {studioItems.map((item) => (
-            <Link to={item.path} key={item.path} className="block">
+            <Link to={item.path} key={item.path} className="block" onClick={onMobileNavClick}>
               <Button
                 variant={isActive(item.path) ? "secondary" : "ghost"}
                 className={cn(
