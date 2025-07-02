@@ -3,11 +3,12 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, DollarSign, Star, Image as ImageIcon } from "lucide-react";
+import { Calendar, Clock, DollarSign, Star, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CommissionType } from "@/types/commission";
 import { CreatorProfile } from "@/types";
+import { toast } from "@/hooks/use-toast";
 
 interface CreatorCommissionsProps {
   creator: CreatorProfile;
@@ -16,13 +17,27 @@ interface CreatorCommissionsProps {
 export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCommissionData = async () => {
       try {
-        console.log('Fetching commission data for creator:', creator.id);
+        setIsLoading(true);
+        setError(null);
         
-        // Fetch commission types directly from the database
+        console.log('[CreatorCommissions] Fetching commission data for creator:', {
+          creatorId: creator.id,
+          acceptsCommissions: creator.accepts_commissions,
+          creatorData: creator
+        });
+        
+        if (!creator.id) {
+          console.warn('[CreatorCommissions] No creator ID provided');
+          setError('Creator ID is missing');
+          return;
+        }
+        
+        // Fetch commission types with detailed error handling
         const { data: types, error: typesError } = await supabase
           .from('commission_types')
           .select('*')
@@ -30,14 +45,32 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           .eq('is_active', true)
           .order('base_price');
 
+        console.log('[CreatorCommissions] Commission types query result:', {
+          data: types,
+          error: typesError,
+          count: types?.length || 0
+        });
+
         if (typesError) {
-          console.error('Error fetching commission types:', typesError);
+          console.error('[CreatorCommissions] Error fetching commission types:', typesError);
+          setError(`Failed to load commission types: ${typesError.message}`);
+          toast({
+            title: "Error",
+            description: "Failed to load commission types",
+            variant: "destructive"
+          });
         } else {
-          console.log('Commission types fetched:', types);
+          console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
           setCommissionTypes(types || []);
         }
       } catch (error) {
-        console.error('Error fetching commission data:', error);
+        console.error('[CreatorCommissions] Unexpected error fetching commission data:', error);
+        setError('An unexpected error occurred while loading commissions');
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred while loading commissions",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -45,6 +78,9 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
 
     if (creator.id) {
       fetchCommissionData();
+    } else {
+      setIsLoading(false);
+      setError('No creator data available');
     }
   }, [creator.id]);
 
@@ -52,6 +88,23 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
     return (
       <div className="flex justify-center items-center py-8">
         <LoadingSpinner />
+        <span className="ml-2">Loading commission data...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Error Loading Commissions</h3>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline"
+        >
+          Retry
+        </Button>
       </div>
     );
   }
@@ -76,6 +129,11 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
         <p className="text-muted-foreground">
           This creator hasn't set up any commission types yet.
         </p>
+        <div className="mt-4 p-4 bg-muted rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            Debug info: Creator accepts commissions but no types found.
+          </p>
+        </div>
       </div>
     );
   }
@@ -118,7 +176,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
 
       {/* Available Commission Types */}
       <div className="space-y-6">
-        <h3 className="text-xl font-semibold">Available Commission Types</h3>
+        <h3 className="text-xl font-semibold">Available Commission Types ({commissionTypes.length})</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {commissionTypes.map((type) => (
             <Card key={type.id} className="hover:shadow-md transition-shadow">
