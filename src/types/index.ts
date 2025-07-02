@@ -8,9 +8,11 @@ export type DbSubscription = Database['public']['Tables']['subscriptions']['Row'
 export type DbTier = Database['public']['Tables']['membership_tiers']['Row'];
 export type DbUserSubscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type DbCreatorEarnings = Database['public']['Tables']['creator_earnings']['Row'];
-export type DbCommissionType = Database['public']['Tables']['commission_types']['Row'];
-export type DbCommissionRequest = Database['public']['Tables']['commission_requests']['Row'];
-export type DbCommissionSlot = Database['public']['Tables']['commission_slots']['Row'];
+
+// Commission types will be added once the database schema is updated
+// export type DbCommissionType = Database['public']['Tables']['commission_types']['Row'];
+// export type DbCommissionRequest = Database['public']['Tables']['commission_requests']['Row'];
+// export type DbCommissionSlot = Database['public']['Tables']['commission_slots']['Row'];
 
 export interface User {
   id: string;
