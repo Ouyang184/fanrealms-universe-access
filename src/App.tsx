@@ -1,3 +1,4 @@
+
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -35,6 +36,7 @@ import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
+import Commissions from "./pages/creator-studio/Commissions";
 import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
@@ -160,6 +162,13 @@ export default function App() {
                   <MainLayout>
                     <CreatorCheck>
                       <CreatorStudioPayouts />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
+                <Route path="/creator-studio/commissions" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <Commissions />
                     </CreatorCheck>
                   </MainLayout>
                 } />
