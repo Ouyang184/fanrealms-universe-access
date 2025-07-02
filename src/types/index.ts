@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type DbUser = Database['public']['Tables']['users']['Row'];
@@ -26,8 +27,8 @@ export interface Post {
   date?: string;
   tier_id?: string | null;
   attachments?: any;
-  tags?: string[]; // Added tags field for search functionality
-  is_nsfw?: boolean; // Added NSFW flag for content filtering
+  tags?: string[];
+  is_nsfw?: boolean;
 }
 
 export interface CreatorProfile {
@@ -52,6 +53,12 @@ export interface CreatorProfile {
   stripe_onboarding_complete?: boolean | null;
   stripe_charges_enabled?: boolean | null;
   stripe_payouts_enabled?: boolean | null;
+  // Commission-related fields
+  commission_slots_available?: number;
+  commission_base_rate?: number;
+  commission_turnaround_days?: number;
+  accepts_commissions?: boolean;
+  commission_tos?: string;
 }
 
 export interface Tier {
