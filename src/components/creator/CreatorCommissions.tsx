@@ -37,7 +37,8 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           return;
         }
         
-        // Fetch commission types with detailed error handling
+        // Always fetch commission types regardless of accepts_commissions flag
+        // This allows us to show what's available even if the flag is wrong
         const { data: types, error: typesError } = await supabase
           .from('commission_types')
           .select('*')
@@ -109,33 +110,35 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
     );
   }
 
-  if (!creator.accepts_commissions) {
-    return (
-      <div className="text-center py-12">
-        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">Commissions Not Available</h3>
-        <p className="text-muted-foreground">
-          This creator is not currently accepting commissions.
-        </p>
-      </div>
-    );
-  }
-
+  // Show commission types if they exist, regardless of accepts_commissions flag
   if (commissionTypes.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-semibold mb-2">No Commission Types Available</h3>
-        <p className="text-muted-foreground">
-          This creator hasn't set up any commission types yet.
-        </p>
-        <div className="mt-4 p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            Debug info: Creator accepts commissions but no types found.
+    // Only show "not accepting" if there are no commission types AND accepts_commissions is false
+    if (!creator.accepts_commissions) {
+      return (
+        <div className="text-center py-12">
+          <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Commissions Not Available</h3>
+          <p className="text-muted-foreground">
+            This creator is not currently accepting commissions.
           </p>
         </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <div className="text-center py-12">
+          <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No Commission Types Available</h3>
+          <p className="text-muted-foreground">
+            This creator hasn't set up any commission types yet.
+          </p>
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              Debug info: Creator accepts commissions: {creator.accepts_commissions ? 'Yes' : 'No'}, but no commission types found.
+            </p>
+          </div>
+        </div>
+      );
+    }
   }
 
   return (
@@ -146,6 +149,11 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5" />
             Commission Information
+            {!creator.accepts_commissions && (
+              <Badge variant="secondary" className="ml-2">
+                Currently Closed
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -176,7 +184,14 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
 
       {/* Available Commission Types */}
       <div className="space-y-6">
-        <h3 className="text-xl font-semibold">Available Commission Types ({commissionTypes.length})</h3>
+        <h3 className="text-xl font-semibold">
+          Available Commission Types ({commissionTypes.length})
+          {!creator.accepts_commissions && (
+            <span className="text-sm font-normal text-muted-foreground ml-2">
+              (Currently not accepting new commissions)
+            </span>
+          )}
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {commissionTypes.map((type) => (
             <Card key={type.id} className="hover:shadow-md transition-shadow">
@@ -231,8 +246,12 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   </div>
                 )}
                 
-                <Button className="w-full" size="sm">
-                  Request Commission
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  disabled={!creator.accepts_commissions}
+                >
+                  {creator.accepts_commissions ? 'Request Commission' : 'Currently Closed'}
                 </Button>
               </CardContent>
             </Card>
