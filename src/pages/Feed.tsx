@@ -115,28 +115,32 @@ export default function FeedPage() {
 
   return (
     <MainLayout>
-      <div className="flex min-h-screen">
-        {/* Left Sidebar */}
-        <FeedSidebar 
-          followedCreators={followedCreators}
-          hasFollowedCreators={hasFollowedCreators}
-        />
-
-        {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Main Feed Content */}
-            <FeedMainContent
+      <div className="flex-1 overflow-auto">
+        <div className="flex min-h-screen">
+          {/* Left Sidebar - Hidden on mobile */}
+          <div className="hidden lg:block lg:w-80 flex-shrink-0">
+            <FeedSidebar 
+              followedCreators={followedCreators}
               hasFollowedCreators={hasFollowedCreators}
-              hasPendingCancellations={hasPendingCancellations}
-              followedPosts={followedPosts}
-              unreadPosts={unreadPosts}
-              unreadCount={unreadCount}
-              readPostIds={readPostIds}
-              markAsRead={markAsRead}
-              creatorInfoMap={creatorInfoMap}
-              onPostClick={handlePostPreview}
             />
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-4 lg:px-6 py-6">
+              {/* Main Feed Content */}
+              <FeedMainContent
+                hasFollowedCreators={hasFollowedCreators}
+                hasPendingCancellations={hasPendingCancellations}
+                followedPosts={followedPosts}
+                unreadPosts={unreadPosts}
+                unreadCount={unreadCount}
+                readPostIds={readPostIds}
+                markAsRead={markAsRead}
+                creatorInfoMap={creatorInfoMap}
+                onPostClick={handlePostPreview}
+              />
+            </div>
           </div>
         </div>
       </div>
