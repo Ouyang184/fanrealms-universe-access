@@ -27,29 +27,64 @@ interface CommissionType {
   created_at: string;
 }
 
+interface CommissionStats {
+  activeTypes: number;
+  openSlots: number;
+  pendingRequests: number;
+  monthlyEarnings: number;
+}
+
 export default function Commissions() {
   const [activeTab, setActiveTab] = useState("overview");
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
+  const [stats, setStats] = useState<CommissionStats>({
+    activeTypes: 0,
+    openSlots: 0,
+    pendingRequests: 0,
+    monthlyEarnings: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const { creatorProfile } = useCreatorProfile();
 
-  const fetchCommissionTypes = async () => {
+  const fetchCommissionData = async () => {
     if (!creatorProfile?.id) return;
     
     try {
-      const { data, error } = await (supabase as any)
+      setIsLoading(true);
+
+      // Fetch commission types
+      const { data: types, error: typesError } = await supabase
         .from('commission_types')
         .select('*')
         .eq('creator_id', creatorProfile.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setCommissionTypes(data || []);
+      if (typesError) throw typesError;
+      
+      const commissionTypesData = types || [];
+      setCommissionTypes(commissionTypesData);
+
+      // Calculate stats
+      const activeTypes = commissionTypesData.filter(type => type.is_active).length;
+      const openSlots = creatorProfile.commission_slots_available || 0;
+      
+      // For now, we'll use mock data for pending requests and earnings
+      // since we don't have commission request tables yet
+      const pendingRequests = 0; // TODO: Fetch from commission_requests table when implemented
+      const monthlyEarnings = 0; // TODO: Calculate from actual commission earnings
+
+      setStats({
+        activeTypes,
+        openSlots,
+        pendingRequests,
+        monthlyEarnings
+      });
+
     } catch (error) {
-      console.error('Error fetching commission types:', error);
+      console.error('Error fetching commission data:', error);
       toast({
         title: "Error",
-        description: "Failed to load commission types",
+        description: "Failed to load commission data",
         variant: "destructive"
       });
     } finally {
@@ -59,13 +94,13 @@ export default function Commissions() {
 
   useEffect(() => {
     if (creatorProfile?.id) {
-      fetchCommissionTypes();
+      fetchCommissionData();
     }
   }, [creatorProfile?.id]);
 
   const handleDeleteCommissionType = async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('commission_types')
         .delete()
         .eq('id', id);
@@ -77,7 +112,7 @@ export default function Commissions() {
         description: "Commission type deleted successfully"
       });
       
-      fetchCommissionTypes();
+      fetchCommissionData();
     } catch (error) {
       console.error('Error deleting commission type:', error);
       toast({
@@ -88,11 +123,6 @@ export default function Commissions() {
     }
   };
 
-  const activeTypes = commissionTypes.filter(type => type.is_active);
-  const totalEarnings = 1250; // Mock data for now
-  const pendingRequests = 5; // Mock data for now
-  const openSlots = creatorProfile?.commission_slots_available || 0;
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -102,7 +132,7 @@ export default function Commissions() {
             Manage your commission types, slots, and requests
           </p>
         </div>
-        <CreateCommissionTypeModal onSuccess={fetchCommissionTypes}>
+        <CreateCommissionTypeModal onSuccess={fetchCommissionData}>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             New Commission Type
@@ -127,7 +157,9 @@ export default function Commissions() {
                 <Palette className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{activeTypes.length}</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "..." : stats.activeTypes}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Commission types available
                 </p>
@@ -140,7 +172,9 @@ export default function Commissions() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{openSlots}</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "..." : stats.openSlots}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Available booking slots
                 </p>
@@ -153,7 +187,9 @@ export default function Commissions() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{pendingRequests}</div>
+                <div className="text-2xl font-bold">
+                  {isLoading ? "..." : stats.pendingRequests}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Awaiting your response
                 </p>
@@ -166,7 +202,9 @@ export default function Commissions() {
                 <Settings className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${totalEarnings}</div>
+                <div className="text-2xl font-bold">
+                  ${isLoading ? "..." : stats.monthlyEarnings}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Commission earnings
                 </p>
@@ -180,29 +218,34 @@ export default function Commissions() {
               <CardTitle>Recent Commission Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">New commission request</p>
-                    <p className="text-sm text-muted-foreground">Character portrait from @user123</p>
-                  </div>
-                  <Badge variant="secondary">Pending</Badge>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner />
                 </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Commission completed</p>
-                    <p className="text-sm text-muted-foreground">DnD character for @fantasy_fan</p>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Completed</Badge>
+              ) : stats.activeTypes === 0 ? (
+                <div className="text-center py-12">
+                  <Palette className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Commission Activity Yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first commission type to start accepting orders
+                  </p>
+                  <CreateCommissionTypeModal onSuccess={fetchCommissionData}>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Commission Type
+                    </Button>
+                  </CreateCommissionTypeModal>
                 </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Payment received</p>
-                    <p className="text-sm text-muted-foreground">$85 for couple illustration</p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Commission request tracking coming soon!</p>
+                    <p className="text-sm mt-2">
+                      You have {stats.activeTypes} active commission type{stats.activeTypes !== 1 ? 's' : ''} available for booking.
+                    </p>
                   </div>
-                  <Badge className="bg-blue-100 text-blue-800">Paid</Badge>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
