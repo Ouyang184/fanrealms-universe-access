@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { MainLayout } from "@/components/Layout/MainLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,11 +51,9 @@ export default function FollowingPage() {
   // Loading state
   if (loadingCreators || loadingFollows) {
     return (
-      <MainLayout>
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <LoadingSpinner />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <LoadingSpinner />
+      </div>
     );
   }
 
@@ -126,301 +123,299 @@ export default function FollowingPage() {
   };
 
   return (
-    <MainLayout>
-      <div className="flex-1">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Following</h1>
-            <p className="text-muted-foreground">
-              Creators you follow and recommendations for you
-            </p>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search creators..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {categories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="capitalize"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Following</p>
-                    <p className="text-2xl font-bold">{followedCreators.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Followers</p>
-                    <p className="text-2xl font-bold">
-                      {totalFollowersCount.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Users className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Categories</p>
-                    <p className="text-2xl font-bold">{uniqueCategories.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabs */}
-          <Tabs defaultValue="following" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="following">Following ({followedCreators.length})</TabsTrigger>
-              <TabsTrigger value="recommended">Recommended ({recommendedCreators.length})</TabsTrigger>
-            </TabsList>
-
-            {/* Following Tab */}
-            <TabsContent value="following" className="space-y-6">
-              {filteredCreators.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No creators found</h3>
-                  <p className="text-muted-foreground">
-                    {searchTerm || selectedCategory !== "all" 
-                      ? "Try adjusting your search or filters"
-                      : "Start following creators to see them here"
-                    }
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCreators.map((creator) => {
-                    const displayName = creator.display_name || creator.username || 'Creator';
-                    return (
-                      <Card key={creator.id} className="overflow-hidden bg-card border">
-                        <CardContent className="p-0">
-                          {/* Banner - consistent with site design */}
-                          <div 
-                            className="h-20 bg-gradient-to-r from-primary/20 to-primary/10"
-                            style={{
-                              backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center'
-                            }}
-                          />
-                          
-                          {/* Profile Section */}
-                          <div className="px-4 pb-4">
-                            <div className="flex items-start justify-between -mt-8">
-                              <Avatar className="h-16 w-16 border-4 border-background">
-                                <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                                <AvatarFallback className="bg-muted text-lg font-semibold">
-                                  {displayName.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="mt-8 h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem 
-                                    onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
-                                  >
-                                    View Profile
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem>
-                                    Notification Settings
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    onClick={() => handleUnfollow(creator.id)}
-                                    className="text-destructive focus:text-destructive"
-                                  >
-                                    Unfollow
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                            
-                            {/* Creator Info */}
-                            <div className="mt-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-lg">{displayName}</h3>
-                                {creator.tags && creator.tags.length > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {creator.tags[0]}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                {creator.bio || "Creator on the platform"}
-                              </p>
-                              
-                              {/* Metrics - Changed to show followers only */}
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-4 w-4" />
-                                  <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
-                                </div>
-                              </div>
-                              
-                              {/* Action Buttons */}
-                              <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
-                                >
-                                  View Content
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                >
-                                  <MessageSquare className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Recommended Tab */}
-            <TabsContent value="recommended" className="space-y-6">
-              {recommendedCreators.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No recommendations available</h3>
-                  <p className="text-muted-foreground">
-                    You're already following all available creators or there are no other creators on the platform yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {recommendedCreators.map((creator) => {
-                    const displayName = creator.display_name || creator.username || 'Creator';
-                    return (
-                      <Card key={creator.id} className="overflow-hidden bg-card border">
-                        <CardContent className="p-0">
-                          {/* Banner */}
-                          <div 
-                            className="h-20 bg-gradient-to-r from-secondary/20 to-secondary/10"
-                            style={{
-                              backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
-                              backgroundSize: 'cover',
-                              backgroundPosition: 'center'
-                            }}
-                          />
-                          
-                          {/* Profile Section */}
-                          <div className="px-4 pb-4">
-                            <div className="flex items-start -mt-8">
-                              <Avatar className="h-16 w-16 border-4 border-background">
-                                <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
-                                <AvatarFallback className="bg-muted text-lg font-semibold">
-                                  {displayName.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                            </div>
-                            
-                            {/* Creator Info */}
-                            <div className="mt-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-lg">{displayName}</h3>
-                                {creator.tags && creator.tags.length > 0 && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    {creator.tags[0]}
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                {creator.bio || "Creator on the platform"}
-                              </p>
-                              
-                              {/* Metrics - Changed to show followers only */}
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-4 w-4" />
-                                  <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
-                                </div>
-                              </div>
-                              
-                              {/* Action Buttons */}
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  className="flex-1"
-                                  onClick={() => handleFollow(creator.id)}
-                                >
-                                  Follow
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
-                                >
-                                  View
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+    <div className="flex-1 overflow-auto">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-2">Following</h1>
+          <p className="text-muted-foreground">
+            Creators you follow and recommendations for you
+          </p>
         </div>
+
+        {/* Search and Filter */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search creators..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            {categories.map(category => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="capitalize"
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Following</p>
+                  <p className="text-2xl font-bold">{followedCreators.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Followers</p>
+                  <p className="text-2xl font-bold">
+                    {totalFollowersCount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Users className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Categories</p>
+                  <p className="text-2xl font-bold">{uniqueCategories.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="following" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="following">Following ({followedCreators.length})</TabsTrigger>
+            <TabsTrigger value="recommended">Recommended ({recommendedCreators.length})</TabsTrigger>
+          </TabsList>
+
+          {/* Following Tab */}
+          <TabsContent value="following" className="space-y-6">
+            {filteredCreators.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No creators found</h3>
+                <p className="text-muted-foreground">
+                  {searchTerm || selectedCategory !== "all" 
+                    ? "Try adjusting your search or filters"
+                    : "Start following creators to see them here"
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCreators.map((creator) => {
+                  const displayName = creator.display_name || creator.username || 'Creator';
+                  return (
+                    <Card key={creator.id} className="overflow-hidden bg-card border">
+                      <CardContent className="p-0">
+                        {/* Banner - consistent with site design */}
+                        <div 
+                          className="h-20 bg-gradient-to-r from-primary/20 to-primary/10"
+                          style={{
+                            backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                        
+                        {/* Profile Section */}
+                        <div className="px-4 pb-4">
+                          <div className="flex items-start justify-between -mt-8">
+                            <Avatar className="h-16 w-16 border-4 border-background">
+                              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                              <AvatarFallback className="bg-muted text-lg font-semibold">
+                                {displayName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="mt-8 h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                                >
+                                  View Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  Notification Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  onClick={() => handleUnfollow(creator.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  Unfollow
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          
+                          {/* Creator Info */}
+                          <div className="mt-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg">{displayName}</h3>
+                              {creator.tags && creator.tags.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {creator.tags[0]}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                              {creator.bio || "Creator on the platform"}
+                            </p>
+                            
+                            {/* Metrics - Changed to show followers only */}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-4 w-4" />
+                                <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
+                              </div>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                              >
+                                View Content
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Recommended Tab */}
+          <TabsContent value="recommended" className="space-y-6">
+            {recommendedCreators.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No recommendations available</h3>
+                <p className="text-muted-foreground">
+                  You're already following all available creators or there are no other creators on the platform yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedCreators.map((creator) => {
+                  const displayName = creator.display_name || creator.username || 'Creator';
+                  return (
+                    <Card key={creator.id} className="overflow-hidden bg-card border">
+                      <CardContent className="p-0">
+                        {/* Banner */}
+                        <div 
+                          className="h-20 bg-gradient-to-r from-secondary/20 to-secondary/10"
+                          style={{
+                            backgroundImage: creator.banner_url ? `url(${creator.banner_url})` : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                        
+                        {/* Profile Section */}
+                        <div className="px-4 pb-4">
+                          <div className="flex items-start -mt-8">
+                            <Avatar className="h-16 w-16 border-4 border-background">
+                              <AvatarImage src={creator.avatar_url || creator.profile_image_url || undefined} />
+                              <AvatarFallback className="bg-muted text-lg font-semibold">
+                                {displayName.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                          </div>
+                          
+                          {/* Creator Info */}
+                          <div className="mt-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-lg">{displayName}</h3>
+                              {creator.tags && creator.tags.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {creator.tags[0]}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                              {creator.bio || "Creator on the platform"}
+                            </p>
+                            
+                            {/* Metrics - Changed to show followers only */}
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-4 w-4" />
+                                <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
+                              </div>
+                            </div>
+                            
+                            {/* Action Buttons */}
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => handleFollow(creator.id)}
+                              >
+                                Follow
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
+                              >
+                                View
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
-    </MainLayout>
+    </div>
   );
 }
