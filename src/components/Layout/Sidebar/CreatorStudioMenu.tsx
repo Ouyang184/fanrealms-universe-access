@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Grid, 
@@ -17,6 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
+import { useSidebar } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface CreatorStudioMenuProps {
   collapsed: boolean;
@@ -27,10 +30,19 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { creatorProfile, isLoading } = useCreatorProfile();
+  const { setOpenMobile } = useSidebar();
+  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(true);
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleNavClick = () => {
+    // Auto-close sidebar on mobile when navigating
+    if (isMobile) {
+      setOpenMobile(false);
+    }
   };
 
   // Reset open state when creator status changes
@@ -58,6 +70,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
       return;
     }
     navigate('/complete-profile');
+    handleNavClick(); // Close mobile sidebar
   };
 
   // If still loading, show a placeholder
@@ -100,7 +113,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
     return (
       <div className="p-2">
         {studioItems.map((item) => (
-          <Link to={item.path} key={item.path}>
+          <Link to={item.path} key={item.path} onClick={handleNavClick}>
             <Button 
               variant={isActive(item.path) ? "secondary" : "ghost"}
               className={cn(
@@ -128,7 +141,7 @@ export function CreatorStudioMenu({ collapsed }: CreatorStudioMenuProps) {
         </CollapsibleTrigger>
         <CollapsibleContent className="pl-2 space-y-1">
           {studioItems.map((item) => (
-            <Link to={item.path} key={item.path} className="block">
+            <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
               <Button
                 variant={isActive(item.path) ? "secondary" : "ghost"}
                 className={cn(

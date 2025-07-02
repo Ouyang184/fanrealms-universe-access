@@ -24,7 +24,7 @@ import { Logo } from '@/components/Logo';
 
 export function AppSidebar() {
   const { loading, signOut } = useAuth();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const [initialRender, setInitialRender] = useState(true);
 
@@ -32,12 +32,25 @@ export function AppSidebar() {
   useEffect(() => {
     if (initialRender && isMobile !== undefined) {
       if (isMobile) {
-        // Force collapsed state on mobile
-        toggleSidebar();
+        // Force close mobile sidebar initially
+        setOpenMobile(false);
       }
       setInitialRender(false);
     }
-  }, [isMobile, initialRender, toggleSidebar]);
+  }, [isMobile, initialRender, setOpenMobile]);
+
+  // Auto-close sidebar when navigating on mobile
+  useEffect(() => {
+    if (isMobile) {
+      const handleRouteChange = () => {
+        setOpenMobile(false);
+      };
+      
+      // Listen for route changes to auto-close sidebar
+      window.addEventListener('popstate', handleRouteChange);
+      return () => window.removeEventListener('popstate', handleRouteChange);
+    }
+  }, [isMobile, setOpenMobile]);
 
   if (loading) {
     return <div>Loading sidebar...</div>;
