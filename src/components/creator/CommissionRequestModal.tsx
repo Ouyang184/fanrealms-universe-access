@@ -16,14 +16,20 @@ interface CommissionRequestModalProps {
   children: React.ReactNode;
   commissionTypes: CommissionType[];
   creatorId: string;
+  specificCommissionType?: CommissionType; // New prop for specific commission type
 }
 
-export function CommissionRequestModal({ children, commissionTypes, creatorId }: CommissionRequestModalProps) {
+export function CommissionRequestModal({ 
+  children, 
+  commissionTypes, 
+  creatorId, 
+  specificCommissionType 
+}: CommissionRequestModalProps) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    commission_type_id: '',
+    commission_type_id: specificCommissionType?.id || '',
     title: '',
     description: '',
     budget_range_min: '',
@@ -31,6 +37,16 @@ export function CommissionRequestModal({ children, commissionTypes, creatorId }:
     deadline: '',
     customer_notes: ''
   });
+
+  // Update form data when specific commission type changes
+  React.useEffect(() => {
+    if (specificCommissionType) {
+      setFormData(prev => ({
+        ...prev,
+        commission_type_id: specificCommissionType.id
+      }));
+    }
+  }, [specificCommissionType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +98,7 @@ export function CommissionRequestModal({ children, commissionTypes, creatorId }:
 
       // Reset form and close modal
       setFormData({
-        commission_type_id: '',
+        commission_type_id: specificCommissionType?.id || '',
         title: '',
         description: '',
         budget_range_min: '',
@@ -104,7 +120,7 @@ export function CommissionRequestModal({ children, commissionTypes, creatorId }:
     }
   };
 
-  const selectedType = commissionTypes.find(type => type.id === formData.commission_type_id);
+  const selectedType = specificCommissionType || commissionTypes.find(type => type.id === formData.commission_type_id);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -113,28 +129,36 @@ export function CommissionRequestModal({ children, commissionTypes, creatorId }:
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Request Commission</DialogTitle>
+          <DialogTitle>
+            {specificCommissionType 
+              ? `Request: ${specificCommissionType.name}` 
+              : 'Request Commission'
+            }
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="commission_type">Commission Type *</Label>
-            <Select 
-              value={formData.commission_type_id} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, commission_type_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a commission type" />
-              </SelectTrigger>
-              <SelectContent>
-                {commissionTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {type.name} - ${type.base_price}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Only show commission type selector if no specific type is provided */}
+          {!specificCommissionType && (
+            <div className="space-y-2">
+              <Label htmlFor="commission_type">Commission Type *</Label>
+              <Select 
+                value={formData.commission_type_id} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, commission_type_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a commission type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {commissionTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name} - ${type.base_price}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {selectedType && (
             <div className="p-4 bg-muted rounded-lg">

@@ -250,6 +250,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                 <CommissionRequestModal 
                   commissionTypes={commissionTypes} 
                   creatorId={creator.id}
+                  specificCommissionType={type}
                 >
                   <Button 
                     className="w-full" 
