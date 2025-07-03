@@ -109,7 +109,10 @@ export default function App() {
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
                 
-                {/* Shareable post route - must be before creator profile route */}
+                {/* Direct post route - must come before creator profile route */}
+                <Route path="/post/:postId" element={<ShareablePost />} />
+                
+                {/* Shareable post route with creator slug - must be before creator profile route */}
                 <Route path="/:creatorSlug/posts/:postId" element={<ShareablePost />} />
                 
                 {/* Creator profile page */}
