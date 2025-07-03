@@ -88,10 +88,13 @@ export default function Commissions() {
     }
   };
 
+  // Calculate real data from commission types
   const activeTypes = commissionTypes.filter(type => type.is_active);
-  const totalEarnings = 1250; // Mock data for now
-  const pendingRequests = 5; // Mock data for now
   const openSlots = creatorProfile?.commission_slots_available || 0;
+  
+  // These will be placeholders until we implement commission requests and earnings tracking
+  const pendingRequests = 0; // TODO: Fetch from commission_requests table when implemented
+  const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
 
   return (
     <div className="space-y-6">
@@ -119,7 +122,7 @@ export default function Commissions() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* Stats Cards */}
+          {/* Stats Cards with Real Data */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -166,7 +169,7 @@ export default function Commissions() {
                 <Settings className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${totalEarnings}</div>
+                <div className="text-2xl font-bold">${monthlyEarnings}</div>
                 <p className="text-xs text-muted-foreground">
                   Commission earnings
                 </p>
@@ -180,28 +183,12 @@ export default function Commissions() {
               <CardTitle>Recent Commission Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">New commission request</p>
-                    <p className="text-sm text-muted-foreground">Character portrait from @user123</p>
-                  </div>
-                  <Badge variant="secondary">Pending</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Commission completed</p>
-                    <p className="text-sm text-muted-foreground">DnD character for @fantasy_fan</p>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="space-y-1">
-                    <p className="font-medium">Payment received</p>
-                    <p className="text-sm text-muted-foreground">$85 for couple illustration</p>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">Paid</Badge>
-                </div>
+              <div className="text-center py-12">
+                <Eye className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Recent Activity</h3>
+                <p className="text-muted-foreground">
+                  Commission activity will appear here once you start receiving requests
+                </p>
               </div>
             </CardContent>
           </Card>
