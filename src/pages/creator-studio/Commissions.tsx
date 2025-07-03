@@ -369,24 +369,6 @@ export default function Commissions() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <Label htmlFor="accept-commissions">Accept Commissions</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {creatorProfile?.accepts_commissions 
-                        ? "Currently accepting commission requests" 
-                        : "Not accepting commission requests"
-                      }
-                    </p>
-                  </div>
-                  <Switch
-                    id="accept-commissions"
-                    checked={creatorProfile?.accepts_commissions || false}
-                    onCheckedChange={handleToggleCommissions}
-                    disabled={isUpdatingCommissionStatus}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
                     <p className="font-medium">Commission Terms</p>
                     <p className="text-sm text-muted-foreground">
                       {creatorProfile?.commission_tos 
