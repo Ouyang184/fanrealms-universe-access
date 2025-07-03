@@ -1,10 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Palette, Calendar, Settings, Eye, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import { CreateCommissionTypeModal } from "@/components/creator-studio/commissions/CreateCommissionTypeModal";
@@ -31,6 +32,7 @@ export default function Commissions() {
   const [activeTab, setActiveTab] = useState("overview");
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingCommissionStatus, setIsUpdatingCommissionStatus] = useState(false);
   const { creatorProfile } = useCreatorProfile();
 
   const fetchCommissionTypes = async () => {
@@ -85,6 +87,34 @@ export default function Commissions() {
         description: "Failed to delete commission type",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleToggleCommissions = async (enabled: boolean) => {
+    if (!creatorProfile?.id) return;
+    
+    setIsUpdatingCommissionStatus(true);
+    try {
+      const { error } = await (supabase as any)
+        .from('creators')
+        .update({ accepts_commissions: enabled })
+        .eq('id', creatorProfile.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: enabled ? "Commissions are now open" : "Commissions are now closed"
+      });
+    } catch (error) {
+      console.error('Error updating commission status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update commission status",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdatingCommissionStatus(false);
     }
   };
 
@@ -339,7 +369,7 @@ export default function Commissions() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="font-medium">Accept Commissions</p>
+                    <Label htmlFor="accept-commissions">Accept Commissions</Label>
                     <p className="text-sm text-muted-foreground">
                       {creatorProfile?.accepts_commissions 
                         ? "Currently accepting commission requests" 
@@ -347,11 +377,12 @@ export default function Commissions() {
                       }
                     </p>
                   </div>
-                  <CommissionSettingsModal>
-                    <Button variant="outline" size="sm">
-                      Configure
-                    </Button>
-                  </CommissionSettingsModal>
+                  <Switch
+                    id="accept-commissions"
+                    checked={creatorProfile?.accepts_commissions || false}
+                    onCheckedChange={handleToggleCommissions}
+                    disabled={isUpdatingCommissionStatus}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
