@@ -34,6 +34,7 @@ export const useCommissionRequests = () => {
           customer:users(username, profile_picture)
         `)
         .eq('creator_id', creatorProfile.id)
+        .neq('status', 'rejected') // Filter out rejected requests
         .order('created_at', { ascending: false });
 
       if (error) throw error;
