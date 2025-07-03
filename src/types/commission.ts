@@ -31,10 +31,9 @@ export interface CommissionSlot {
 
 export interface CommissionRequest {
   id: string;
-  slot_id: string;
+  commission_type_id: string;
   customer_id: string;
   creator_id: string;
-  commission_type_id: string;
   title: string;
   description: string;
   reference_images: string[];

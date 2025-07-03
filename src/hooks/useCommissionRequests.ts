@@ -1,0 +1,87 @@
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { useCreatorProfile } from '@/hooks/useCreatorProfile';
+import { toast } from '@/hooks/use-toast';
+
+export const useCommissionRequests = () => {
+  const { creatorProfile } = useCreatorProfile();
+  const queryClient = useQueryClient();
+
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ['commission-requests', creatorProfile?.id],
+    queryFn: async () => {
+      if (!creatorProfile?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('commission_requests')
+        .select(`
+          *,
+          commission_type:commission_types(name, base_price),
+          customer:users(username, profile_picture)
+        `)
+        .eq('creator_id', creatorProfile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!creatorProfile?.id,
+  });
+
+  const updateRequestMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { error } = await supabase
+        .from('commission_requests')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['commission-requests'] });
+      toast({
+        title: "Success",
+        description: "Commission request updated successfully"
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating commission request:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update commission request",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const acceptRequest = (id: string) => {
+    updateRequestMutation.mutate({
+      id,
+      updates: { status: 'accepted' }
+    });
+  };
+
+  const rejectRequest = (id: string) => {
+    updateRequestMutation.mutate({
+      id,
+      updates: { status: 'rejected' }
+    });
+  };
+
+  const updateRequestStatus = (id: string, status: string) => {
+    updateRequestMutation.mutate({
+      id,
+      updates: { status }
+    });
+  };
+
+  return {
+    requests,
+    isLoading,
+    acceptRequest,
+    rejectRequest,
+    updateRequestStatus,
+    isUpdating: updateRequestMutation.isPending,
+  };
+};

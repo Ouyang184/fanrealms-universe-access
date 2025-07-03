@@ -51,6 +51,85 @@ export type Database = {
           },
         ]
       }
+      commission_requests: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string
+          created_at: string
+          creator_id: string
+          creator_notes: string | null
+          customer_id: string
+          customer_notes: string | null
+          deadline: string | null
+          description: string
+          id: string
+          reference_images: string[] | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id: string
+          created_at?: string
+          creator_id: string
+          creator_notes?: string | null
+          customer_id: string
+          customer_notes?: string | null
+          deadline?: string | null
+          description: string
+          id?: string
+          reference_images?: string[] | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string
+          created_at?: string
+          creator_id?: string
+          creator_notes?: string | null
+          customer_id?: string
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string
+          id?: string
+          reference_images?: string[] | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_types: {
         Row: {
           base_price: number
