@@ -4,11 +4,39 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Inbox } from 'lucide-react';
 import { CommissionRequestCard } from './CommissionRequestCard';
-import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
+import { CommissionRequestStatus } from '@/types/commission';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
+interface CommissionRequestWithRelations {
+  id: string;
+  commission_type_id: string;
+  customer_id: string;
+  creator_id: string;
+  title: string;
+  description: string;
+  reference_images: string[];
+  budget_range_min?: number;
+  budget_range_max?: number;
+  agreed_price?: number;
+  status: CommissionRequestStatus;
+  deadline?: string;
+  customer_notes?: string;
+  creator_notes?: string;
+  stripe_payment_intent_id?: string;
+  created_at: string;
+  updated_at: string;
+  commission_type: {
+    name: string;
+    base_price: number;
+  };
+  customer: {
+    username: string;
+    profile_picture?: string;
+  };
+}
+
 interface RequestsTabProps {
-  requests: CommissionRequest[];
+  requests: CommissionRequestWithRelations[];
   isLoading: boolean;
   pendingRequests: number;
   onAcceptRequest: (id: string) => void;

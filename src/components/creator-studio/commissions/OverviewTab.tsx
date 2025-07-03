@@ -4,14 +4,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Palette, Calendar, Settings, Inbox } from 'lucide-react';
-import { CommissionRequest } from '@/types/commission';
+
+interface CommissionRequestWithRelations {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string;
+  customer?: {
+    username: string;
+    profile_picture?: string;
+  };
+}
 
 interface OverviewTabProps {
   activeTypes: number;
   pendingRequests: number;
   inProgressRequests: number;
   monthlyEarnings: number;
-  requests: CommissionRequest[];
+  requests: CommissionRequestWithRelations[];
   onViewAllRequests: () => void;
 }
 
@@ -93,7 +103,7 @@ export function OverviewTab({
                   <div>
                     <p className="font-medium">{request.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      by @{request.customer?.username} • {new Date(request.created_at).toLocaleDateString()}
+                      by @{request.customer?.username || 'Unknown'} • {new Date(request.created_at).toLocaleDateString()}
                     </p>
                   </div>
                   <Badge className={`${
