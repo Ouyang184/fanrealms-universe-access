@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, DollarSign, MessageSquare, User, FileText } from "lucide-react";
-import { CommissionRequest } from "@/types/commission";
+import { CommissionRequest, CommissionRequestStatus } from "@/types/commission";
 
 interface CommissionRequestCardProps {
   request: CommissionRequest & {
@@ -21,10 +21,10 @@ interface CommissionRequestCardProps {
   };
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
-  onUpdateStatus: (id: string, status: string) => void;
+  onUpdateStatus: (id: string, status: CommissionRequestStatus) => void;
 }
 
-const statusColors = {
+const statusColors: Record<CommissionRequestStatus, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   accepted: "bg-green-100 text-green-800",
   rejected: "bg-red-100 text-red-800",

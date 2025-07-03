@@ -29,6 +29,8 @@ export interface CommissionSlot {
   updated_at: string;
 }
 
+export type CommissionRequestStatus = 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+
 export interface CommissionRequest {
   id: string;
   commission_type_id: string;
@@ -40,7 +42,7 @@ export interface CommissionRequest {
   budget_range_min?: number;
   budget_range_max?: number;
   agreed_price?: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+  status: CommissionRequestStatus;
   deadline?: string;
   customer_notes?: string;
   creator_notes?: string;

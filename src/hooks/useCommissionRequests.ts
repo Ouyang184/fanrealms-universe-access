@@ -3,6 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { toast } from '@/hooks/use-toast';
+import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
+
+interface CommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
+  status: string; // This will be the raw status from the database
+  commission_type: {
+    name: string;
+    base_price: number;
+  };
+  customer: {
+    username: string;
+    profile_picture?: string;
+  };
+}
 
 export const useCommissionRequests = () => {
   const { creatorProfile } = useCreatorProfile();
@@ -24,7 +37,12 @@ export const useCommissionRequests = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to properly type the status field
+      return (data || []).map(request => ({
+        ...request,
+        status: request.status as CommissionRequestStatus
+      }));
     },
     enabled: !!creatorProfile?.id,
   });
@@ -69,7 +87,7 @@ export const useCommissionRequests = () => {
     });
   };
 
-  const updateRequestStatus = (id: string, status: string) => {
+  const updateRequestStatus = (id: string, status: CommissionRequestStatus) => {
     updateRequestMutation.mutate({
       id,
       updates: { status }
