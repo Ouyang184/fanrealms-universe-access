@@ -48,6 +48,14 @@ export function CommissionRequestModal({
     }
   }, [specificCommissionType]);
 
+  // Check if current user is the creator
+  const isOwnCreator = React.useMemo(() => {
+    if (!user) return false;
+    // Check if the user is the creator by comparing user IDs
+    // We need to check if the current user owns this creator profile
+    return false; // We'll need to pass creator user_id to make this work properly
+  }, [user, creatorId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     

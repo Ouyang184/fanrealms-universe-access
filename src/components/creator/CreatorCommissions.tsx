@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,15 +9,20 @@ import { CommissionType } from "@/types/commission";
 import { CreatorProfile } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { CommissionRequestModal } from "./CommissionRequestModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CreatorCommissionsProps {
   creator: CreatorProfile;
 }
 
 export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
+  const { user } = useAuth();
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Check if current user is the creator
+  const isOwnCreator = user?.id === creator.user_id;
 
   useEffect(() => {
     const fetchCommissionData = async () => {
@@ -255,9 +259,14 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   <Button 
                     className="w-full" 
                     size="sm"
-                    disabled={!creator.accepts_commissions}
+                    disabled={!creator.accepts_commissions || isOwnCreator}
                   >
-                    {creator.accepts_commissions ? 'Request Commission' : 'Currently Closed'}
+                    {isOwnCreator 
+                      ? 'Cannot Request Own Commission' 
+                      : creator.accepts_commissions 
+                        ? 'Request Commission' 
+                        : 'Currently Closed'
+                    }
                   </Button>
                 </CommissionRequestModal>
               </CardContent>
