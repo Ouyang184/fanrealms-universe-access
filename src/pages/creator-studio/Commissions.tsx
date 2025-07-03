@@ -131,6 +131,7 @@ export default function Commissions() {
   const activeTypes = commissionTypes.filter(type => type.is_active);
   const openSlots = creatorProfile?.commission_slots_available || 0;
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
+  const inProgressRequests = requests.filter(req => ['in_progress', 'delivered', 'under_review'].includes(req.status)).length;
   const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
 
   return (
@@ -183,20 +184,7 @@ export default function Commissions() {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Open Slots</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{openSlots}</div>
-                <p className="text-xs text-muted-foreground">
-                  Available booking slots
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
                 <Inbox className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -209,8 +197,21 @@ export default function Commissions() {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
                 <Settings className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{inProgressRequests}</div>
+                <p className="text-xs text-muted-foreground">
+                  Active commissions
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">This Month</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">${monthlyEarnings}</div>

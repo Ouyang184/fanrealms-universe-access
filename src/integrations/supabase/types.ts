@@ -51,6 +51,44 @@ export type Database = {
           },
         ]
       }
+      commission_deliverables: {
+        Row: {
+          commission_request_id: string
+          created_at: string
+          delivered_at: string
+          delivery_notes: string | null
+          file_urls: string[]
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_request_id: string
+          created_at?: string
+          delivered_at?: string
+          delivery_notes?: string | null
+          file_urls?: string[]
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_request_id?: string
+          created_at?: string
+          delivered_at?: string
+          delivery_notes?: string | null
+          file_urls?: string[]
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       commission_requests: {
         Row: {
           agreed_price: number | null

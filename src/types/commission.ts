@@ -1,4 +1,3 @@
-
 export interface CommissionType {
   id: string;
   creator_id: string;
@@ -29,7 +28,7 @@ export interface CommissionSlot {
   updated_at: string;
 }
 
-export type CommissionRequestStatus = 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+export type CommissionRequestStatus = 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'delivered' | 'under_review' | 'revision_requested' | 'cancelled';
 
 export interface CommissionRequest {
   id: string;
@@ -47,6 +46,16 @@ export interface CommissionRequest {
   customer_notes?: string;
   creator_notes?: string;
   stripe_payment_intent_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommissionDeliverable {
+  id: string;
+  commission_request_id: string;
+  file_urls: string[];
+  delivery_notes?: string;
+  delivered_at: string;
   created_at: string;
   updated_at: string;
 }
