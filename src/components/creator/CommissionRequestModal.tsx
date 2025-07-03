@@ -16,7 +16,7 @@ interface CommissionRequestModalProps {
   children: React.ReactNode;
   commissionTypes: CommissionType[];
   creatorId: string;
-  specificCommissionType?: CommissionType; // New prop for specific commission type
+  specificCommissionType?: CommissionType;
 }
 
 export function CommissionRequestModal({ 
@@ -160,7 +160,8 @@ export function CommissionRequestModal({
             </div>
           )}
 
-          {selectedType && (
+          {/* Only show commission type info if no specific type is provided */}
+          {selectedType && !specificCommissionType && (
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-medium mb-2">{selectedType.name}</h4>
               <p className="text-sm text-muted-foreground mb-2">{selectedType.description}</p>
