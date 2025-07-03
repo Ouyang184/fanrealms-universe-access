@@ -9,6 +9,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { CommissionType } from "@/types/commission";
 import { CreatorProfile } from "@/types";
 import { toast } from "@/hooks/use-toast";
+import { CommissionRequestModal } from "./CommissionRequestModal";
 
 interface CreatorCommissionsProps {
   creator: CreatorProfile;
@@ -246,13 +247,18 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   </div>
                 )}
                 
-                <Button 
-                  className="w-full" 
-                  size="sm"
-                  disabled={!creator.accepts_commissions}
+                <CommissionRequestModal 
+                  commissionTypes={commissionTypes} 
+                  creatorId={creator.id}
                 >
-                  {creator.accepts_commissions ? 'Request Commission' : 'Currently Closed'}
-                </Button>
+                  <Button 
+                    className="w-full" 
+                    size="sm"
+                    disabled={!creator.accepts_commissions}
+                  >
+                    {creator.accepts_commissions ? 'Request Commission' : 'Currently Closed'}
+                  </Button>
+                </CommissionRequestModal>
               </CardContent>
             </Card>
           ))}
