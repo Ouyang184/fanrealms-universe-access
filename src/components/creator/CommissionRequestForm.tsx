@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -68,17 +67,6 @@ export function CommissionRequestForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="title">Project Title *</Label>
-        <Input
-          id="title"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="Brief title for your commission"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="description">Project Description *</Label>
         <Textarea
           id="description"
@@ -90,49 +78,14 @@ export function CommissionRequestForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="budget_min">Budget Range Min ($)</Label>
-          <Input
-            id="budget_min"
-            type="number"
-            step="0.01"
-            value={formData.budget_range_min}
-            onChange={(e) => setFormData(prev => ({ ...prev, budget_range_min: e.target.value }))}
-            placeholder="Minimum budget"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="budget_max">Budget Range Max ($)</Label>
-          <Input
-            id="budget_max"
-            type="number"
-            step="0.01"
-            value={formData.budget_range_max}
-            onChange={(e) => setFormData(prev => ({ ...prev, budget_range_max: e.target.value }))}
-            placeholder="Maximum budget"
-          />
-        </div>
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="deadline">Preferred Deadline (Optional)</Label>
-        <Input
+        <input
           id="deadline"
           type="date"
           value={formData.deadline}
           onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">Additional Notes</Label>
-        <Textarea
-          id="notes"
-          value={formData.customer_notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, customer_notes: e.target.value }))}
-          placeholder="Any additional information or requirements"
-          rows={3}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
 

@@ -75,7 +75,7 @@ export function useCommissionRequestForm({
       return;
     }
 
-    if (!formData.commission_type_id || !formData.title || !formData.description) {
+    if (!formData.commission_type_id || !formData.description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -97,12 +97,12 @@ export function useCommissionRequestForm({
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
         creator_id: creatorId,
-        title: formData.title,
+        title: selectedType.name,
         description: formData.description,
-        budget_range_min: formData.budget_range_min ? parseFloat(formData.budget_range_min) : null,
-        budget_range_max: formData.budget_range_max ? parseFloat(formData.budget_range_max) : null,
+        budget_range_min: null,
+        budget_range_max: null,
         deadline: formData.deadline || null,
-        customer_notes: formData.customer_notes || null,
+        customer_notes: null,
         agreed_price: selectedType.base_price,
         status: 'pending'
       };
