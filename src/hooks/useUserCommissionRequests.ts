@@ -48,59 +48,27 @@ export const useUserCommissionRequests = () => {
 
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      console.log('Attempting to delete commission request:', requestId);
+      console.log('Attempting to delete commission request via edge function:', requestId);
       
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
-      
-      // First check if the request exists and belongs to the user
-      const { data: existingRequest, error: fetchError } = await supabase
-        .from('commission_requests')
-        .select('id, status, customer_id')
-        .eq('id', requestId)
-        .eq('customer_id', user.id)
-        .single();
 
-      if (fetchError) {
-        console.error('Error fetching request:', fetchError);
-        throw new Error('Request not found or access denied');
+      // Call the new delete edge function that handles Stripe session cancellation
+      const { data, error } = await supabase.functions.invoke('delete-commission-request', {
+        body: { commissionId: requestId }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to delete commission request');
       }
 
-      if (!existingRequest) {
-        throw new Error('Request not found');
+      if (!data?.success) {
+        throw new Error('Failed to delete commission request');
       }
 
-      console.log('Found request to delete:', existingRequest);
-
-      // Check if the request can be deleted (only pending or rejected requests)
-      if (!['pending', 'rejected'].includes(existingRequest.status)) {
-        throw new Error('Only pending or rejected requests can be deleted');
-      }
-
-      // Delete the request
-      const { error: deleteError, count } = await supabase
-        .from('commission_requests')
-        .delete()
-        .eq('id', requestId)
-        .eq('customer_id', user.id);
-
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-        // Check if it's an RLS policy violation
-        if (deleteError.message?.includes('row-level security policy')) {
-          throw new Error('You do not have permission to delete this request');
-        }
-        throw deleteError;
-      }
-
-      console.log('Successfully deleted request:', requestId, 'Affected rows:', count);
-      
-      // Verify the deletion actually happened
-      if (count === 0) {
-        throw new Error('Request could not be deleted - it may no longer exist or you lack permission');
-      }
-      
+      console.log('Successfully deleted request via edge function:', requestId);
       return requestId;
     },
     onMutate: async (requestId) => {
@@ -124,7 +92,7 @@ export const useUserCommissionRequests = () => {
       queryClient.refetchQueries({ queryKey: ['user-commission-requests'] });
       toast({
         title: "Success",
-        description: "Commission request deleted successfully"
+        description: "Commission request deleted successfully. Any associated payment session has been cancelled."
       });
     },
     onError: (error, requestId, context) => {

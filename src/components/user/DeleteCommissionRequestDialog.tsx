@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 
 interface DeleteCommissionRequestDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface DeleteCommissionRequestDialogProps {
   onConfirm: () => void;
   isDeleting: boolean;
   requestTitle: string;
+  hasPaymentSession?: boolean;
 }
 
 export function DeleteCommissionRequestDialog({ 
@@ -23,15 +25,29 @@ export function DeleteCommissionRequestDialog({
   onOpenChange, 
   onConfirm, 
   isDeleting,
-  requestTitle 
+  requestTitle,
+  hasPaymentSession = false
 }: DeleteCommissionRequestDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Commission Request</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete "{requestTitle}"? This action cannot be undone.
+          <AlertDialogTitle className="flex items-center gap-2">
+            {hasPaymentSession && <AlertTriangle className="h-5 w-5 text-orange-500" />}
+            Delete Commission Request
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <p>Are you sure you want to delete "{requestTitle}"?</p>
+            {hasPaymentSession && (
+              <div className="bg-orange-50 border border-orange-200 rounded-md p-3 text-orange-800">
+                <p className="font-medium">Payment Session Active</p>
+                <p className="text-sm">
+                  This request has an active payment session. Deleting it will automatically cancel 
+                  the payment session so you won't be charged.
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
