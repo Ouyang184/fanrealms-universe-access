@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
+import { CommissionRequestDetailsModal } from './CommissionRequestDetailsModal';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
   status: string;
@@ -83,6 +83,7 @@ export function UserCommissionRequestCard({
   isDeleting 
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const canDelete = ['pending', 'rejected', 'checkout_created', 'payment_pending'].includes(request.status);
   const hasPaymentSession = ['checkout_created', 'payment_pending'].includes(request.status);
 
@@ -170,7 +171,12 @@ export function UserCommissionRequestCard({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => setShowDetailsModal(true)}
+            >
               <Eye className="h-4 w-4" />
               View Details
             </Button>
@@ -198,6 +204,12 @@ export function UserCommissionRequestCard({
         isDeleting={isDeleting}
         requestTitle={request.title}
         hasPaymentSession={hasPaymentSession}
+      />
+
+      <CommissionRequestDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        request={request}
       />
     </>
   );
