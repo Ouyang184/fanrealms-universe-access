@@ -1,4 +1,3 @@
-
 import LandingPage from "./pages/Landing";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -54,6 +53,8 @@ import ShareablePost from "./pages/ShareablePost";
 import CompleteProfile from "./pages/CompleteProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import CommissionPayment from "./pages/CommissionPayment";
+import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -189,6 +190,10 @@ export default function App() {
                     </CreatorCheck>
                   </MainLayout>
                 } />
+                
+                {/* Commission payment routes - add before creator profile route */}
+                <Route path="/commissions/:requestId/pay" element={<CommissionPayment />} />
+                <Route path="/commissions/:requestId/payment-success" element={<CommissionPaymentSuccess />} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>
