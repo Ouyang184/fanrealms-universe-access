@@ -55,6 +55,13 @@ export function UserCommissionRequestCard({
 }: UserCommissionRequestCardProps) {
   const canDelete = request.status === 'pending' || request.status === 'rejected';
 
+  const handleDelete = () => {
+    console.log('Delete button clicked for request:', request.id);
+    if (window.confirm('Are you sure you want to delete this commission request? This action cannot be undone.')) {
+      onDelete(request.id);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-3">
@@ -87,7 +94,9 @@ export function UserCommissionRequestCard({
           </div>
           <div>
             <span className="font-medium">Price:</span>
-            <p className="text-muted-foreground">${request.commission_type.base_price}</p>
+            <p className="text-muted-foreground">
+              ${request.agreed_price?.toFixed(2) || request.commission_type.base_price.toFixed(2)}
+            </p>
           </div>
           <div>
             <span className="font-medium">Created:</span>
@@ -122,12 +131,12 @@ export function UserCommissionRequestCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onDelete(request.id)}
+              onClick={handleDelete}
               disabled={isDeleting}
-              className="flex items-center gap-2 text-red-600 hover:text-red-700"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />
-              Delete
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </Button>
           )}
         </div>

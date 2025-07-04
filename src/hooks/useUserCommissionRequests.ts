@@ -48,15 +48,48 @@ export const useUserCommissionRequests = () => {
 
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      const { error } = await supabase
+      console.log('Attempting to delete commission request:', requestId);
+      
+      // First check if the request exists and belongs to the user
+      const { data: existingRequest, error: fetchError } = await supabase
+        .from('commission_requests')
+        .select('id, status, customer_id')
+        .eq('id', requestId)
+        .eq('customer_id', user?.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching request:', fetchError);
+        throw new Error('Request not found or access denied');
+      }
+
+      if (!existingRequest) {
+        throw new Error('Request not found');
+      }
+
+      console.log('Found request to delete:', existingRequest);
+
+      // Check if the request can be deleted (only pending or rejected requests)
+      if (!['pending', 'rejected'].includes(existingRequest.status)) {
+        throw new Error('Only pending or rejected requests can be deleted');
+      }
+
+      // Delete the request
+      const { error: deleteError } = await supabase
         .from('commission_requests')
         .delete()
         .eq('id', requestId)
-        .eq('customer_id', user?.id); // Ensure user can only delete their own requests
+        .eq('customer_id', user?.id);
 
-      if (error) throw error;
+      if (deleteError) {
+        console.error('Delete error:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('Successfully deleted request:', requestId);
     },
-    onSuccess: () => {
+    onSuccess: (_, requestId) => {
+      console.log('Delete mutation successful for:', requestId);
       queryClient.invalidateQueries({ queryKey: ['user-commission-requests'] });
       toast({
         title: "Success",
@@ -65,15 +98,21 @@ export const useUserCommissionRequests = () => {
     },
     onError: (error) => {
       console.error('Error deleting commission request:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete commission request';
       toast({
         title: "Error",
-        description: "Failed to delete commission request",
+        description: errorMessage,
         variant: "destructive"
       });
     },
   });
 
   const deleteRequest = (requestId: string) => {
+    console.log('deleteRequest called with ID:', requestId);
+    if (!requestId) {
+      console.error('No request ID provided');
+      return;
+    }
     deleteRequestMutation.mutate(requestId);
   };
 
