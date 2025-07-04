@@ -3,7 +3,7 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 import { UserCommissionRequestCard } from '@/components/user/UserCommissionRequestCard';
 import { useUserCommissionRequests } from '@/hooks/useUserCommissionRequests';
 import { Card, CardContent } from '@/components/ui/card';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { FileText } from 'lucide-react';
 
 export default function Requests() {
