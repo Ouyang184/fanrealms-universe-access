@@ -34,6 +34,7 @@ export default function CommissionPayment() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (requestId) {
@@ -43,6 +44,7 @@ export default function CommissionPayment() {
 
   const fetchCommissionRequest = async () => {
     try {
+      setError(null);
       const { data, error } = await supabase
         .from('commission_requests')
         .select(`
@@ -68,6 +70,8 @@ export default function CommissionPayment() {
       if (data.status !== 'pending') {
         if (data.status === 'payment_pending') {
           setError('Payment is already being processed for this commission');
+        } else if (data.status === 'payment_authorized') {
+          setError('Payment has been authorized and is awaiting creator acceptance');
         } else if (data.status === 'accepted') {
           setError('This commission has already been accepted and paid');
         } else if (data.status === 'rejected') {
@@ -100,6 +104,7 @@ export default function CommissionPayment() {
 
     console.log('Starting payment process for commission:', commissionRequest.id);
     setIsProcessing(true);
+    setError(null);
     
     try {
       console.log('Calling create-commission-payment function...');
@@ -114,7 +119,7 @@ export default function CommissionPayment() {
 
       if (error) {
         console.error('Function error:', error);
-        throw error;
+        throw new Error(error.message || 'Failed to create payment session');
       }
 
       if (data?.url) {
@@ -123,18 +128,45 @@ export default function CommissionPayment() {
         window.location.href = data.url;
       } else {
         console.error('No payment URL received:', data);
-        throw new Error('No payment URL received');
+        throw new Error('No payment URL received from server');
       }
     } catch (error) {
       console.error('Error creating payment session:', error);
-      toast({
-        title: 'Payment Error',
-        description: 'Failed to initiate payment. Please try again.',
-        variant: 'destructive'
-      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initiate payment';
+      setError(errorMessage);
+      
+      // Show toast for specific error types
+      if (errorMessage.includes('Authentication')) {
+        toast({
+          title: 'Authentication Error',
+          description: 'Please log in again and try once more.',
+          variant: 'destructive'
+        });
+      } else if (errorMessage.includes('Commission request not found')) {
+        toast({
+          title: 'Commission Not Found',
+          description: 'This commission request may have been removed or modified.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Payment Error',
+          description: 'Failed to initiate payment. Please try again.',
+          variant: 'destructive'
+        });
+      }
+      
+      setRetryCount(prev => prev + 1);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setRetryCount(0);
+    fetchCommissionRequest();
   };
 
   if (isLoading) {
@@ -156,9 +188,16 @@ export default function CommissionPayment() {
             <p className="text-muted-foreground mb-4">
               {error || 'Commission request not found'}
             </p>
-            <Button onClick={() => navigate(-1)} variant="outline">
-              Go Back
-            </Button>
+            <div className="flex gap-2 justify-center">
+              {retryCount < 3 && (
+                <Button onClick={handleRetry} variant="outline">
+                  Try Again
+                </Button>
+              )}
+              <Button onClick={() => navigate(-1)} variant="outline">
+                Go Back
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -199,6 +238,15 @@ export default function CommissionPayment() {
           Payment will only be captured when the creator accepts your commission request.
         </AlertDescription>
       </Alert>
+
+      {error && (
+        <Alert className="mb-6 border-red-500 bg-red-950/50 text-red-100">
+          <AlertCircle className="h-4 w-4 text-red-400" />
+          <AlertDescription className="text-red-100">
+            <strong className="text-red-200">Error:</strong> {error}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card className="mb-6">
         <CardHeader>

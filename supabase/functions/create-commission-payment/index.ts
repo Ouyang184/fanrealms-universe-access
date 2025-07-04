@@ -14,9 +14,14 @@ serve(async (req) => {
   }
 
   try {
-    const { commissionId, customerId } = await req.json();
+    console.log('=== CREATE COMMISSION PAYMENT REQUEST ===');
     
-    console.log('Creating commission payment session for:', { commissionId, customerId });
+    const { commissionId, customerId } = await req.json();
+    console.log('Request data:', { commissionId, customerId });
+
+    if (!commissionId) {
+      throw new Error('Commission ID is required');
+    }
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -32,6 +37,7 @@ serve(async (req) => {
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header provided');
       throw new Error('Authorization header is required');
     }
 
@@ -39,7 +45,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('Authentication error:', authError);
+      console.error('Authentication failed:', authError);
       throw new Error('Authentication required');
     }
 
@@ -66,7 +72,12 @@ serve(async (req) => {
       throw new Error('Commission request not found or not accessible');
     }
 
-    console.log('Commission request found:', commissionRequest.id);
+    console.log('Commission request found:', {
+      id: commissionRequest.id,
+      title: commissionRequest.title,
+      agreed_price: commissionRequest.agreed_price,
+      status: commissionRequest.status
+    });
 
     if (!commissionRequest.agreed_price) {
       throw new Error('No agreed price set for this commission');
@@ -86,60 +97,67 @@ serve(async (req) => {
       console.log('No existing Stripe customer found, will create one in checkout');
     }
 
-    // Create PaymentIntent with manual capture for authorization only
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Create Stripe checkout session for one-time payment
+    const session = await stripe.checkout.sessions.create({
       customer: customerId_stripe,
-      amount: Math.round(commissionRequest.agreed_price * 100), // Convert to cents
-      currency: 'usd',
-      capture_method: 'manual', // Key change: only authorize, don't charge
-      payment_method_types: ['card'],
+      customer_email: customerId_stripe ? undefined : user.email,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Commission: ${commissionRequest.title}`,
+              description: `${commissionRequest.commission_type.name} commission by ${commissionRequest.creator.display_name}`,
+            },
+            unit_amount: Math.round(commissionRequest.agreed_price * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment', // One-time payment
+      success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
+      cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
       metadata: {
         commission_request_id: commissionId,
         customer_id: user.id,
         creator_id: commissionRequest.creator_id,
         type: 'commission_payment'
       },
+      payment_intent_data: {
+        capture_method: 'manual', // Authorize only, capture later
+        metadata: {
+          commission_request_id: commissionId,
+          customer_id: user.id,
+          creator_id: commissionRequest.creator_id,
+          type: 'commission_payment'
+        }
+      }
     });
 
-    console.log('Created PaymentIntent:', paymentIntent.id);
+    console.log('Created Stripe checkout session:', session.id);
 
-    // Update commission request with payment intent ID
+    // Update commission request with checkout session ID
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
-        stripe_payment_intent_id: paymentIntent.id,
+        stripe_payment_intent_id: session.id, // Store session ID for now
         status: 'payment_pending'
       })
       .eq('id', commissionId);
 
     if (updateError) {
       console.error('Failed to update commission request:', updateError);
-      // Cancel the payment intent if database update fails
-      await stripe.paymentIntents.cancel(paymentIntent.id);
+      // Cancel the checkout session if database update fails
+      try {
+        await stripe.checkout.sessions.expire(session.id);
+      } catch (expireError) {
+        console.error('Failed to expire checkout session:', expireError);
+      }
       throw new Error('Failed to create commission payment');
     }
 
     console.log('Updated commission request status to payment_pending');
-
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId_stripe,
-      customer_email: customerId_stripe ? undefined : user.email,
-      payment_intent_data: {
-        payment_intent: paymentIntent.id,
-      },
-      mode: 'payment',
-      success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
-      cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
-      metadata: {
-        commission_id: commissionId,
-        customer_id: user.id,
-        creator_id: commissionRequest.creator_id,
-        type: 'commission_payment'
-      },
-    });
-
-    console.log('Created Stripe session:', session.id);
+    console.log('=== SUCCESS: Returning checkout URL ===');
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -147,9 +165,14 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Commission payment error:', error);
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      details: 'Check function logs for more information'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

@@ -1,3 +1,4 @@
+
 export interface CommissionType {
   id: string;
   creator_id: string;
@@ -28,7 +29,20 @@ export interface CommissionSlot {
   updated_at: string;
 }
 
-export type CommissionRequestStatus = 'pending' | 'payment_pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'delivered' | 'under_review' | 'revision_requested' | 'cancelled' | 'refunded';
+export type CommissionRequestStatus = 
+  | 'pending' 
+  | 'payment_pending' 
+  | 'payment_authorized' 
+  | 'payment_failed' 
+  | 'accepted' 
+  | 'rejected' 
+  | 'in_progress' 
+  | 'completed' 
+  | 'delivered' 
+  | 'under_review' 
+  | 'revision_requested' 
+  | 'cancelled' 
+  | 'refunded';
 
 export interface CommissionRequest {
   id: string;

@@ -3,26 +3,51 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
   console.log('Processing commission webhook:', event.type);
 
   try {
-    if (event.type === 'payment_intent.canceled') {
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const commissionId = session.metadata?.commission_request_id;
+
+      if (commissionId && session.metadata?.type === 'commission_payment') {
+        console.log('Checkout session completed for commission:', commissionId);
+
+        // Update commission status to payment authorized (not captured yet)
+        const { error } = await supabase
+          .from('commission_requests')
+          .update({ 
+            status: 'payment_authorized',
+            stripe_payment_intent_id: session.payment_intent, // Now store the actual payment intent ID
+            creator_notes: 'Payment authorized - awaiting creator acceptance'
+          })
+          .eq('id', commissionId);
+
+        if (error) {
+          console.error('Failed to update commission on checkout completion:', error);
+        } else {
+          console.log('Commission marked as payment authorized');
+        }
+      }
+    }
+
+    if (event.type === 'payment_intent.payment_failed') {
       const paymentIntent = event.data.object;
       const commissionId = paymentIntent.metadata?.commission_request_id;
 
       if (commissionId && paymentIntent.metadata?.type === 'commission_payment') {
-        console.log('Payment intent canceled for commission:', commissionId);
+        console.log('Payment intent failed for commission:', commissionId);
 
-        // Update commission status to rejected
+        // Update commission status to failed
         const { error } = await supabase
           .from('commission_requests')
           .update({ 
-            status: 'rejected',
-            creator_notes: 'Payment canceled - commission rejected'
+            status: 'payment_failed',
+            creator_notes: 'Payment failed - please try again'
           })
           .eq('stripe_payment_intent_id', paymentIntent.id);
 
         if (error) {
-          console.error('Failed to update commission on payment cancellation:', error);
+          console.error('Failed to update commission on payment failure:', error);
         } else {
-          console.log('Commission marked as rejected due to payment cancellation');
+          console.log('Commission marked as payment failed');
         }
       }
     }
