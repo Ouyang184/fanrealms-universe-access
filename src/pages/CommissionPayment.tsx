@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, User, FileText, DollarSign, AlertCircle } from 'lucide-react';
+import { Loader2, CreditCard, User, FileText, DollarSign, AlertCircle, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -35,12 +35,32 @@ export default function CommissionPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [checkoutWindow, setCheckoutWindow] = useState<Window | null>(null);
 
   useEffect(() => {
     if (requestId) {
       fetchCommissionRequest();
     }
   }, [requestId]);
+
+  // Monitor checkout window
+  useEffect(() => {
+    if (!checkoutWindow) return;
+
+    const checkClosed = setInterval(() => {
+      if (checkoutWindow.closed) {
+        console.log('Checkout window was closed');
+        setIsProcessing(false);
+        clearInterval(checkClosed);
+        setCheckoutWindow(null);
+        
+        // Refresh the commission request to check if payment was completed
+        fetchCommissionRequest();
+      }
+    }, 1000);
+
+    return () => clearInterval(checkClosed);
+  }, [checkoutWindow]);
 
   const fetchCommissionRequest = async () => {
     try {
@@ -123,9 +143,23 @@ export default function CommissionPayment() {
       }
 
       if (data?.url) {
-        console.log('Redirecting to Stripe Checkout:', data.url);
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
+        console.log('Opening Stripe Checkout in new tab:', data.url);
+        
+        // Open Stripe checkout in a new tab instead of current window
+        const newWindow = window.open(data.url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+        
+        if (!newWindow) {
+          // Fallback if popup is blocked
+          throw new Error('Popup blocked. Please allow popups for this site and try again, or copy this link: ' + data.url);
+        }
+        
+        setCheckoutWindow(newWindow);
+        
+        toast({
+          title: 'Payment Window Opened',
+          description: 'Complete your payment in the new tab. This page will update automatically.',
+        });
+        
       } else {
         console.error('No payment URL received:', data);
         throw new Error('No payment URL received from server');
@@ -149,6 +183,12 @@ export default function CommissionPayment() {
           description: 'This commission request may have been removed or modified.',
           variant: 'destructive'
         });
+      } else if (errorMessage.includes('Popup blocked')) {
+        toast({
+          title: 'Popup Blocked',
+          description: 'Please allow popups for this site and try again.',
+          variant: 'destructive'
+        });
       } else {
         toast({
           title: 'Payment Error',
@@ -158,7 +198,6 @@ export default function CommissionPayment() {
       }
       
       setRetryCount(prev => prev + 1);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -244,6 +283,16 @@ export default function CommissionPayment() {
           <AlertCircle className="h-4 w-4 text-red-400" />
           <AlertDescription className="text-red-100">
             <strong className="text-red-200">Error:</strong> {error}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isProcessing && checkoutWindow && (
+        <Alert className="mb-6 border-green-500 bg-green-950/50 text-green-100">
+          <ExternalLink className="h-4 w-4 text-green-400" />
+          <AlertDescription className="text-green-100">
+            <strong className="text-green-200">Payment in Progress:</strong> Complete your payment in the new tab. 
+            This page will automatically update when you return.
           </AlertDescription>
         </Alert>
       )}
@@ -340,11 +389,12 @@ export default function CommissionPayment() {
           {isProcessing ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              {checkoutWindow ? 'Payment in Progress...' : 'Processing...'}
             </>
           ) : (
             <>
               <CreditCard className="mr-2 h-4 w-4" />
+              <ExternalLink className="mr-2 h-4 w-4" />
               Authorize ${commissionRequest.agreed_price.toFixed(2)}
             </>
           )}

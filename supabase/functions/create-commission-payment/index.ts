@@ -23,16 +23,27 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    // Initialize Stripe with proper environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY not found in environment');
+      throw new Error('Payment service configuration error');
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase
-    const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    );
+    // Initialize Supabase with proper environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase environment variables');
+      throw new Error('Database service configuration error');
+    }
+
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -97,6 +108,13 @@ serve(async (req) => {
       console.log('No existing Stripe customer found, will create one in checkout');
     }
 
+    // Get origin for redirect URLs
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
+    if (!origin) {
+      console.error('No origin header found');
+      throw new Error('Invalid request origin');
+    }
+
     // Create Stripe checkout session for standard one-time payment
     const session = await stripe.checkout.sessions.create({
       customer: customerId_stripe,
@@ -115,8 +133,8 @@ serve(async (req) => {
         },
       ],
       mode: 'payment', // Standard one-time payment
-      success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
-      cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
+      success_url: `${origin}/commissions/${commissionId}/payment-success`,
+      cancel_url: `${origin}/commissions/${commissionId}/pay`,
       metadata: {
         commission_request_id: commissionId,
         customer_id: user.id,
