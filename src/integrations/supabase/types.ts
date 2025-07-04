@@ -176,6 +176,7 @@ export type Database = {
           base_price: number
           created_at: string
           creator_id: string
+          custom_addons: Json | null
           description: string | null
           donts: string[] | null
           dos: string[] | null
@@ -192,6 +193,7 @@ export type Database = {
           base_price: number
           created_at?: string
           creator_id: string
+          custom_addons?: Json | null
           description?: string | null
           donts?: string[] | null
           dos?: string[] | null
@@ -208,6 +210,7 @@ export type Database = {
           base_price?: number
           created_at?: string
           creator_id?: string
+          custom_addons?: Json | null
           description?: string | null
           donts?: string[] | null
           dos?: string[] | null
