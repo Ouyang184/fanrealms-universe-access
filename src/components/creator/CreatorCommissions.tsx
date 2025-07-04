@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -228,6 +229,23 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                     </div>
                   )}
                 </div>
+                
+                {/* Display custom add-ons */}
+                {type.custom_addons && type.custom_addons.length > 0 && (
+                  <div>
+                    <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
+                    <div className="space-y-1">
+                      {type.custom_addons.map((addon, index) => (
+                        <div key={index} className="text-sm">
+                          <span className="font-medium">{addon.name}:</span> +${addon.price}
+                          {addon.description && (
+                            <span className="text-muted-foreground ml-2">({addon.description})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {type.dos && type.dos.length > 0 && (
                   <div>
