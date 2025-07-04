@@ -30,13 +30,20 @@ serve(async (req) => {
     );
 
     // Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authorization header is required');
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       throw new Error('Authentication required');
     }
+
+    console.log('User authenticated:', user.id);
 
     // Fetch commission request details
     const { data: commissionRequest, error: commissionError } = await supabaseService
@@ -55,8 +62,11 @@ serve(async (req) => {
       .single();
 
     if (commissionError || !commissionRequest) {
+      console.error('Commission request error:', commissionError);
       throw new Error('Commission request not found or not accessible');
     }
+
+    console.log('Commission request found:', commissionRequest.id);
 
     if (!commissionRequest.agreed_price) {
       throw new Error('No agreed price set for this commission');
@@ -71,6 +81,9 @@ serve(async (req) => {
     let customerId_stripe;
     if (customers.data.length > 0) {
       customerId_stripe = customers.data[0].id;
+      console.log('Found existing Stripe customer:', customerId_stripe);
+    } else {
+      console.log('No existing Stripe customer found, will create one in checkout');
     }
 
     // Create PaymentIntent with manual capture for authorization only
@@ -88,6 +101,8 @@ serve(async (req) => {
       },
     });
 
+    console.log('Created PaymentIntent:', paymentIntent.id);
+
     // Update commission request with payment intent ID
     const { error: updateError } = await supabaseService
       .from('commission_requests')
@@ -104,7 +119,7 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Created PaymentIntent with manual capture:', paymentIntent.id);
+    console.log('Updated commission request status to payment_pending');
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
