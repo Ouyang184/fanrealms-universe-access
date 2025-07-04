@@ -79,7 +79,7 @@ export const useUserCommissionRequests = () => {
       }
 
       // Delete the request
-      const { error: deleteError } = await supabase
+      const { error: deleteError, count } = await supabase
         .from('commission_requests')
         .delete()
         .eq('id', requestId)
@@ -87,22 +87,54 @@ export const useUserCommissionRequests = () => {
 
       if (deleteError) {
         console.error('Delete error:', deleteError);
+        // Check if it's an RLS policy violation
+        if (deleteError.message?.includes('row-level security policy')) {
+          throw new Error('You do not have permission to delete this request');
+        }
         throw deleteError;
       }
 
-      console.log('Successfully deleted request:', requestId);
+      console.log('Successfully deleted request:', requestId, 'Affected rows:', count);
+      
+      // Verify the deletion actually happened
+      if (count === 0) {
+        throw new Error('Request could not be deleted - it may no longer exist or you lack permission');
+      }
+      
       return requestId;
+    },
+    onMutate: async (requestId) => {
+      // Optimistic update - remove from UI immediately
+      console.log('Optimistically removing request from UI:', requestId);
+      
+      await queryClient.cancelQueries({ queryKey: ['user-commission-requests'] });
+      
+      const previousData = queryClient.getQueryData(['user-commission-requests', user?.id]);
+      
+      queryClient.setQueryData(['user-commission-requests', user?.id], (old: any) => {
+        if (!old) return old;
+        return old.filter((request: any) => request.id !== requestId);
+      });
+      
+      return { previousData };
     },
     onSuccess: (requestId) => {
       console.log('Delete mutation successful for:', requestId);
-      queryClient.invalidateQueries({ queryKey: ['user-commission-requests'] });
+      // Force refetch to ensure consistency
+      queryClient.refetchQueries({ queryKey: ['user-commission-requests'] });
       toast({
         title: "Success",
         description: "Commission request deleted successfully"
       });
     },
-    onError: (error) => {
+    onError: (error, requestId, context) => {
       console.error('Error deleting commission request:', error);
+      
+      // Revert optimistic update on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['user-commission-requests', user?.id], context.previousData);
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete commission request';
       toast({
         title: "Error",
@@ -116,6 +148,11 @@ export const useUserCommissionRequests = () => {
     console.log('deleteRequest called with ID:', requestId);
     if (!requestId) {
       console.error('No request ID provided');
+      toast({
+        title: "Error",
+        description: "Invalid request ID",
+        variant: "destructive"
+      });
       return;
     }
     deleteRequestMutation.mutate(requestId);
