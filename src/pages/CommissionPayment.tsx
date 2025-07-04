@@ -93,10 +93,16 @@ export default function CommissionPayment() {
   };
 
   const handlePayment = async () => {
-    if (!commissionRequest || !user) return;
+    if (!commissionRequest || !user) {
+      console.log('Missing required data:', { commissionRequest: !!commissionRequest, user: !!user });
+      return;
+    }
 
+    console.log('Starting payment process for commission:', commissionRequest.id);
     setIsProcessing(true);
+    
     try {
+      console.log('Calling create-commission-payment function...');
       const { data, error } = await supabase.functions.invoke('create-commission-payment', {
         body: {
           commissionId: commissionRequest.id,
@@ -104,12 +110,19 @@ export default function CommissionPayment() {
         }
       });
 
-      if (error) throw error;
+      console.log('Function response:', { data, error });
+
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
 
       if (data?.url) {
+        console.log('Redirecting to Stripe Checkout:', data.url);
         // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
+        console.error('No payment URL received:', data);
         throw new Error('No payment URL received');
       }
     } catch (error) {
@@ -266,12 +279,13 @@ export default function CommissionPayment() {
           onClick={() => navigate(-1)} 
           variant="outline" 
           className="flex-1"
+          disabled={isProcessing}
         >
           Cancel
         </Button>
         <Button 
           onClick={handlePayment}
-          disabled={isProcessing}
+          disabled={isProcessing || !commissionRequest}
           className="flex-1"
           size="lg"
         >
