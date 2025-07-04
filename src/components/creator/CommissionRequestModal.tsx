@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { CommissionType } from '@/types/commission';
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface CommissionRequestModalProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ export function CommissionRequestModal({
   specificCommissionType 
 }: CommissionRequestModalProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -93,9 +95,11 @@ export function CommissionRequestModal({
         status: 'pending'
       };
 
-      const { error } = await supabase
+      const { data: newRequest, error } = await supabase
         .from('commission_requests')
-        .insert([requestData]);
+        .insert([requestData])
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -115,6 +119,9 @@ export function CommissionRequestModal({
         customer_notes: ''
       });
       setOpen(false);
+
+      // Navigate to payment page
+      navigate(`/commissions/${newRequest.id}/pay`);
 
     } catch (error) {
       console.error('Error submitting commission request:', error);
