@@ -51,7 +51,7 @@ serve(async (req) => {
       `)
       .eq('id', commissionId)
       .eq('customer_id', user.id)
-      .eq('status', 'accepted')
+      .eq('status', 'pending')
       .single();
 
     if (commissionError || !commissionRequest) {
@@ -73,24 +73,47 @@ serve(async (req) => {
       customerId_stripe = customers.data[0].id;
     }
 
-    // Create Stripe checkout session for one-time payment
+    // Create PaymentIntent with manual capture for authorization only
+    const paymentIntent = await stripe.paymentIntents.create({
+      customer: customerId_stripe,
+      amount: Math.round(commissionRequest.agreed_price * 100), // Convert to cents
+      currency: 'usd',
+      capture_method: 'manual', // Key change: only authorize, don't charge
+      payment_method_types: ['card'],
+      metadata: {
+        commission_request_id: commissionId,
+        customer_id: user.id,
+        creator_id: commissionRequest.creator_id,
+        type: 'commission_payment'
+      },
+    });
+
+    // Update commission request with payment intent ID
+    const { error: updateError } = await supabaseService
+      .from('commission_requests')
+      .update({ 
+        stripe_payment_intent_id: paymentIntent.id,
+        status: 'payment_pending'
+      })
+      .eq('id', commissionId);
+
+    if (updateError) {
+      console.error('Failed to update commission request:', updateError);
+      // Cancel the payment intent if database update fails
+      await stripe.paymentIntents.cancel(paymentIntent.id);
+      throw new Error('Failed to create commission payment');
+    }
+
+    console.log('Created PaymentIntent with manual capture:', paymentIntent.id);
+
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId_stripe,
       customer_email: customerId_stripe ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
-            },
-            unit_amount: Math.round(commissionRequest.agreed_price * 100), // Convert to cents
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment', // One-time payment mode
+      payment_intent_data: {
+        payment_intent: paymentIntent.id,
+      },
+      mode: 'payment',
       success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
       cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
       metadata: {

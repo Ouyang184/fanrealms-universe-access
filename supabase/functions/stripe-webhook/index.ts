@@ -21,6 +21,7 @@ import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
 import { handleProductWebhook } from './handlers/product-webhook.ts';
 import { handlePaymentIntentWebhook } from './handlers/payment-intent-webhook.ts';
 import { handlePriceWebhook } from './handlers/price-webhook.ts';
+import { handleCommissionWebhook } from './handlers/commission-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -50,6 +51,14 @@ serve(async (req) => {
     }
 
     console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
+
+    // Handle commission-related webhooks
+    if (event.type === 'payment_intent.canceled' || 
+        event.type === 'payment_intent.succeeded' || 
+        event.type === 'charge.refunded') {
+      console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
+      await handleCommissionWebhook(event, supabase);
+    }
 
     // Handle payment intent webhooks for custom payment flow
     if (event.type === 'payment_intent.succeeded') {

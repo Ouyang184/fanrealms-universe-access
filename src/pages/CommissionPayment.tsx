@@ -4,10 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, User, FileText, DollarSign } from 'lucide-react';
+import { Loader2, CreditCard, User, FileText, DollarSign, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 interface CommissionRequest {
@@ -54,18 +55,32 @@ export default function CommissionPayment() {
           )
         `)
         .eq('id', requestId)
-        .eq('status', 'accepted')
+        .eq('customer_id', user?.id)
         .single();
 
       if (error) throw error;
 
       if (!data) {
-        setError('Commission request not found or not ready for payment');
+        setError('Commission request not found or not accessible');
+        return;
+      }
+
+      // Check if request is in correct status for payment
+      if (data.status !== 'pending') {
+        if (data.status === 'payment_pending') {
+          setError('Payment is already being processed for this commission');
+        } else if (data.status === 'accepted') {
+          setError('This commission has already been accepted and paid');
+        } else if (data.status === 'rejected') {
+          setError('This commission request has been rejected');
+        } else {
+          setError(`Commission is in ${data.status} status and cannot be paid`);
+        }
         return;
       }
 
       if (!data.agreed_price) {
-        setError('No agreed price set for this commission');
+        setError('No agreed price set for this commission. Please wait for the creator to set a price.');
         return;
       }
 
@@ -165,6 +180,14 @@ export default function CommissionPayment() {
         <p className="text-muted-foreground">Complete your commission payment</p>
       </div>
 
+      <Alert className="mb-6 border-blue-200 bg-blue-50">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Payment Authorization:</strong> Your card will be authorized but not charged immediately. 
+          Payment will only be captured when the creator accepts your commission request.
+        </AlertDescription>
+      </Alert>
+
       <Card className="mb-6">
         <CardHeader>
           <div className="flex items-center gap-4">
@@ -228,13 +251,13 @@ export default function CommissionPayment() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center text-lg">
-            <span className="font-medium">Total Amount:</span>
+            <span className="font-medium">Authorization Amount:</span>
             <span className="font-bold text-2xl">
               ${commissionRequest.agreed_price.toFixed(2)}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            One-time payment for commission work
+            Your card will be authorized for this amount. Payment will only be captured if the creator accepts your commission.
           </p>
         </CardContent>
       </Card>
@@ -261,7 +284,7 @@ export default function CommissionPayment() {
           ) : (
             <>
               <CreditCard className="mr-2 h-4 w-4" />
-              Pay ${commissionRequest.agreed_price.toFixed(2)}
+              Authorize ${commissionRequest.agreed_price.toFixed(2)}
             </>
           )}
         </Button>
