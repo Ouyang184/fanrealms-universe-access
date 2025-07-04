@@ -105,6 +105,7 @@ export type Database = {
           id: string
           reference_images: string[] | null
           status: string
+          stripe_payment_intent_id: string | null
           title: string
           updated_at: string
         }
@@ -123,6 +124,7 @@ export type Database = {
           id?: string
           reference_images?: string[] | null
           status?: string
+          stripe_payment_intent_id?: string | null
           title: string
           updated_at?: string
         }
@@ -141,6 +143,7 @@ export type Database = {
           id?: string
           reference_images?: string[] | null
           status?: string
+          stripe_payment_intent_id?: string | null
           title?: string
           updated_at?: string
         }
