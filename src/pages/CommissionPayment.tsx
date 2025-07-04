@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -180,10 +179,10 @@ export default function CommissionPayment() {
         <p className="text-muted-foreground">Complete your commission payment</p>
       </div>
 
-      <Alert className="mb-6 border-blue-200 bg-blue-50">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Payment Authorization:</strong> Your card will be authorized but not charged immediately. 
+      <Alert className="mb-6 border-blue-500 bg-blue-950/50 text-blue-100">
+        <AlertCircle className="h-4 w-4 text-blue-400" />
+        <AlertDescription className="text-blue-100">
+          <strong className="text-blue-200">Payment Authorization:</strong> Your card will be authorized but not charged immediately. 
           Payment will only be captured when the creator accepts your commission request.
         </AlertDescription>
       </Alert>
