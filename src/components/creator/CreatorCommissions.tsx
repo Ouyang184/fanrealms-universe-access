@@ -70,7 +70,14 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           // Transform the data to match our CommissionType interface
           const transformedTypes: CommissionType[] = (types || []).map(type => ({
             ...type,
-            custom_addons: Array.isArray(type.custom_addons) ? type.custom_addons : []
+            custom_addons: Array.isArray(type.custom_addons) 
+              ? type.custom_addons.map((addon: any) => ({
+                  id: addon.id || crypto.randomUUID(),
+                  name: addon.name || '',
+                  price: addon.price || 0,
+                  description: addon.description || undefined
+                }))
+              : []
           }));
           setCommissionTypes(transformedTypes);
         }
