@@ -55,6 +55,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import CommissionPayment from "./pages/CommissionPayment";
 import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
+import Requests from "./pages/Requests";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -122,6 +123,7 @@ export default function App() {
                 {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
+                <Route path="/requests" element={<MainLayout><Requests /></MainLayout>} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
