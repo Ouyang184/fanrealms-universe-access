@@ -50,12 +50,16 @@ export const useUserCommissionRequests = () => {
     mutationFn: async (requestId: string) => {
       console.log('Attempting to delete commission request:', requestId);
       
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       // First check if the request exists and belongs to the user
       const { data: existingRequest, error: fetchError } = await supabase
         .from('commission_requests')
         .select('id, status, customer_id')
         .eq('id', requestId)
-        .eq('customer_id', user?.id)
+        .eq('customer_id', user.id)
         .single();
 
       if (fetchError) {
@@ -79,7 +83,7 @@ export const useUserCommissionRequests = () => {
         .from('commission_requests')
         .delete()
         .eq('id', requestId)
-        .eq('customer_id', user?.id);
+        .eq('customer_id', user.id);
 
       if (deleteError) {
         console.error('Delete error:', deleteError);
@@ -87,8 +91,9 @@ export const useUserCommissionRequests = () => {
       }
 
       console.log('Successfully deleted request:', requestId);
+      return requestId;
     },
-    onSuccess: (_, requestId) => {
+    onSuccess: (requestId) => {
       console.log('Delete mutation successful for:', requestId);
       queryClient.invalidateQueries({ queryKey: ['user-commission-requests'] });
       toast({
