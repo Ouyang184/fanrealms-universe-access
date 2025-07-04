@@ -82,6 +82,13 @@ export function CommissionRequestModal({
     setIsSubmitting(true);
 
     try {
+      // Get the selected commission type to use its base price as the agreed price
+      const selectedType = specificCommissionType || commissionTypes.find(type => type.id === formData.commission_type_id);
+      
+      if (!selectedType) {
+        throw new Error("Commission type not found");
+      }
+
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -92,6 +99,7 @@ export function CommissionRequestModal({
         budget_range_max: formData.budget_range_max ? parseFloat(formData.budget_range_max) : null,
         deadline: formData.deadline || null,
         customer_notes: formData.customer_notes || null,
+        agreed_price: selectedType.base_price, // Automatically set agreed_price to base_price
         status: 'pending'
       };
 
