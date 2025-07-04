@@ -11,9 +11,17 @@ export interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  custom_addons?: CommissionAddon[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CommissionAddon {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
 }
 
 export interface CommissionSlot {
