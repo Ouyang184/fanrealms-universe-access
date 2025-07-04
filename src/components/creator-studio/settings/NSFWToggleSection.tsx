@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { CreatorSettings } from "@/types/creator-studio";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface NSFWToggleSectionProps {
-  settings: CreatorSettings;
+  settings: CreatorSettings | null;
   onSettingsChange: (name: string, value: boolean) => void;
   onSave?: () => Promise<void>;
   isSaving?: boolean;
@@ -22,7 +22,19 @@ export function NSFWToggleSection({
   isSaving = false, 
   hasChanges = false 
 }: NSFWToggleSectionProps) {
-  const [localNSFW, setLocalNSFW] = useState(settings.is_nsfw || false);
+  const [localNSFW, setLocalNSFW] = useState(false);
+
+  // Update local state when settings change
+  useEffect(() => {
+    if (settings) {
+      setLocalNSFW(settings.is_nsfw || false);
+    }
+  }, [settings]);
+
+  // Don't render if settings is null
+  if (!settings) {
+    return null;
+  }
 
   const handleToggle = (checked: boolean) => {
     setLocalNSFW(checked);
