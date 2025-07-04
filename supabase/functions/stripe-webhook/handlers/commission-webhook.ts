@@ -10,20 +10,20 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
       if (commissionId && session.metadata?.type === 'commission_payment') {
         console.log('Checkout session completed for commission:', commissionId);
 
-        // Update commission status to payment authorized (not captured yet)
+        // For standard payments, mark as accepted immediately since payment is captured
         const { error } = await supabase
           .from('commission_requests')
           .update({ 
-            status: 'payment_authorized',
-            stripe_payment_intent_id: session.payment_intent, // Now store the actual payment intent ID
-            creator_notes: 'Payment authorized - awaiting creator acceptance'
+            status: 'accepted',
+            stripe_payment_intent_id: session.payment_intent,
+            creator_notes: 'Payment completed successfully - commission accepted'
           })
           .eq('id', commissionId);
 
         if (error) {
           console.error('Failed to update commission on checkout completion:', error);
         } else {
-          console.log('Commission marked as payment authorized');
+          console.log('Commission marked as accepted after successful payment');
         }
       }
     }
@@ -48,30 +48,6 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
           console.error('Failed to update commission on payment failure:', error);
         } else {
           console.log('Commission marked as payment failed');
-        }
-      }
-    }
-
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object;
-      const commissionId = paymentIntent.metadata?.commission_request_id;
-
-      if (commissionId && paymentIntent.metadata?.type === 'commission_payment') {
-        console.log('Payment intent succeeded for commission:', commissionId);
-
-        // Update commission status to paid/accepted
-        const { error } = await supabase
-          .from('commission_requests')
-          .update({ 
-            status: 'accepted',
-            creator_notes: 'Payment captured - commission accepted'
-          })
-          .eq('stripe_payment_intent_id', paymentIntent.id);
-
-        if (error) {
-          console.error('Failed to update commission on payment success:', error);
-        } else {
-          console.log('Commission marked as accepted due to payment success');
         }
       }
     }

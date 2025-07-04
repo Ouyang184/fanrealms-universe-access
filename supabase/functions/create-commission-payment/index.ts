@@ -97,7 +97,7 @@ serve(async (req) => {
       console.log('No existing Stripe customer found, will create one in checkout');
     }
 
-    // Create Stripe checkout session for one-time payment
+    // Create Stripe checkout session for standard one-time payment
     const session = await stripe.checkout.sessions.create({
       customer: customerId_stripe,
       customer_email: customerId_stripe ? undefined : user.email,
@@ -109,12 +109,12 @@ serve(async (req) => {
               name: `Commission: ${commissionRequest.title}`,
               description: `${commissionRequest.commission_type.name} commission by ${commissionRequest.creator.display_name}`,
             },
-            unit_amount: Math.round(commissionRequest.agreed_price * 100), // Convert to cents
+            unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
           quantity: 1,
         },
       ],
-      mode: 'payment', // One-time payment
+      mode: 'payment', // Standard one-time payment
       success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
       cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
       metadata: {
@@ -122,26 +122,18 @@ serve(async (req) => {
         customer_id: user.id,
         creator_id: commissionRequest.creator_id,
         type: 'commission_payment'
-      },
-      payment_intent_data: {
-        capture_method: 'manual', // Authorize only, capture later
-        metadata: {
-          commission_request_id: commissionId,
-          customer_id: user.id,
-          creator_id: commissionRequest.creator_id,
-          type: 'commission_payment'
-        }
       }
     });
 
     console.log('Created Stripe checkout session:', session.id);
 
-    // Update commission request with checkout session ID
+    // Update commission request with checkout session ID and payment pending status
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
-        stripe_payment_intent_id: session.id, // Store session ID for now
-        status: 'payment_pending'
+        stripe_payment_intent_id: session.id,
+        status: 'payment_pending',
+        creator_notes: 'Payment session created - awaiting customer payment'
       })
       .eq('id', commissionId);
 
