@@ -1,16 +1,11 @@
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { EmbeddedCommissionPayment } from '@/components/creator/EmbeddedCommissionPayment';
+import { StripePaymentForm } from '@/components/creator/StripePaymentForm';
 import { Card, CardContent } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function CommissionPayment() {
   const params = useParams();
@@ -185,16 +180,14 @@ export default function CommissionPayment() {
           </p>
         </div>
 
-        <Elements stripe={stripePromise}>
-          <EmbeddedCommissionPayment
-            commissionId={commission.id}
-            amount={commission.agreed_price}
-            title={commission.title}
-            creatorName={commission.creator.display_name}
-            onSuccess={handlePaymentSuccess}
-            onCancel={handlePaymentCancel}
-          />
-        </Elements>
+        <StripePaymentForm
+          commissionId={commission.id}
+          amount={commission.agreed_price}
+          title={commission.title}
+          creatorName={commission.creator.display_name}
+          onSuccess={handlePaymentSuccess}
+          onCancel={handlePaymentCancel}
+        />
       </div>
     </div>
   );
