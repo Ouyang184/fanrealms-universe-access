@@ -13,17 +13,28 @@ import { AlertCircle } from 'lucide-react';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function CommissionPayment() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const commissionId = params.id; // Extract the commission ID from URL params
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  console.log('🔍 [CommissionPayment] Component initialized:', {
+    urlParams: params,
+    commissionId: commissionId,
+    user: user?.id,
+    route: window.location.pathname
+  });
+
   const { data: commission, isLoading, error } = useQuery({
-    queryKey: ['commission-payment', id],
+    queryKey: ['commission-payment', commissionId],
     queryFn: async () => {
-      if (!id) throw new Error('Commission ID is required');
+      if (!commissionId) {
+        console.error('❌ [CommissionPayment] No commission ID provided');
+        throw new Error('Commission ID is required');
+      }
       
       console.log('🔍 [CommissionPayment] Fetching commission request:', {
-        commissionId: id,
+        commissionId: commissionId,
         currentUser: user?.id,
         timestamp: new Date().toISOString()
       });
@@ -38,11 +49,11 @@ export default function CommissionPayment() {
             profile_image_url
           )
         `)
-        .eq('id', id)
+        .eq('id', commissionId)
         .single();
 
       console.log('📊 [CommissionPayment] Query result:', {
-        commissionId: id,
+        commissionId: commissionId,
         data: data,
         error: error,
         hasData: !!data,
@@ -51,18 +62,18 @@ export default function CommissionPayment() {
 
       if (error) {
         console.error('❌ [CommissionPayment] Database error:', {
-          commissionId: id,
+          commissionId: commissionId,
           error: error,
           code: error.code,
           message: error.message,
           details: error.details
         });
-        throw error;
+        throw new Error(`Failed to fetch commission: ${error.message}`);
       }
 
       if (!data) {
         console.error('❌ [CommissionPayment] No commission data found:', {
-          commissionId: id,
+          commissionId: commissionId,
           user: user?.id
         });
         throw new Error('Commission request not found');
@@ -71,7 +82,7 @@ export default function CommissionPayment() {
       // Only check permission if user is logged in
       if (user && data.customer_id !== user.id) {
         console.error('❌ [CommissionPayment] Permission denied:', {
-          commissionId: id,
+          commissionId: commissionId,
           currentUser: user.id,
           commissionCustomer: data.customer_id,
           userEmail: user.email
@@ -80,7 +91,7 @@ export default function CommissionPayment() {
       }
       
       console.log('✅ [CommissionPayment] Commission loaded successfully:', {
-        commissionId: id,
+        commissionId: commissionId,
         title: data.title,
         status: data.status,
         agreedPrice: data.agreed_price,
@@ -90,13 +101,13 @@ export default function CommissionPayment() {
       
       return data;
     },
-    enabled: !!id,
+    enabled: !!commissionId,
     retry: 3,
     retryDelay: 1000,
   });
 
   const handlePaymentSuccess = () => {
-    navigate(`/commissions/${id}/payment-success`);
+    navigate(`/commissions/${commissionId}/payment-success`);
   };
 
   const handlePaymentCancel = () => {
@@ -117,7 +128,8 @@ export default function CommissionPayment() {
     console.error('🚨 [CommissionPayment] Rendering error state:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       hasCommission: !!commission,
-      commissionId: id
+      commissionId: commissionId,
+      urlParams: params
     });
 
     return (
@@ -134,9 +146,11 @@ export default function CommissionPayment() {
             </p>
             <div className="mt-4 p-3 bg-muted rounded text-sm text-left">
               <p><strong>Debug Info:</strong></p>
-              <p>Commission ID: {id}</p>
+              <p>Commission ID: {commissionId || 'undefined'}</p>
+              <p>URL Params: {JSON.stringify(params)}</p>
               <p>User ID: {user?.id || 'Not logged in'}</p>
               <p>User Email: {user?.email || 'No email'}</p>
+              <p>Current URL: {window.location.pathname}</p>
             </div>
           </CardContent>
         </Card>
