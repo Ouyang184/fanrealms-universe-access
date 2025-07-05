@@ -117,18 +117,31 @@ export function CommissionTypesTab({
                 </div>
 
                 {/* Display custom add-ons */}
-                {type.custom_addons && type.custom_addons.length > 0 && (
+                {type.custom_addons && Array.isArray(type.custom_addons) && type.custom_addons.length > 0 && (
                   <div className="mt-4">
                     <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {type.custom_addons.map((addon, index) => (
-                        <div key={index} className="text-sm bg-blue-50 p-2 rounded">
-                          <span className="font-medium">{addon.name}:</span> +${addon.price}
+                        <div key={addon.id || index} className="text-sm bg-blue-50 p-3 rounded border">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{addon.name}</span>
+                            <Badge variant="secondary">+${Number(addon.price).toFixed(2)}</Badge>
+                          </div>
                           {addon.description && (
-                            <div className="text-muted-foreground text-xs">{addon.description}</div>
+                            <div className="text-muted-foreground text-xs mt-1">{addon.description}</div>
                           )}
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Show message when no custom add-ons */}
+                {(!type.custom_addons || !Array.isArray(type.custom_addons) || type.custom_addons.length === 0) && (
+                  <div className="mt-4">
+                    <h5 className="font-medium text-gray-500 mb-2">Custom Add-ons:</h5>
+                    <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded border">
+                      No custom add-ons defined for this commission type.
                     </div>
                   </div>
                 )}
