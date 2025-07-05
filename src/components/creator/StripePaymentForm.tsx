@@ -65,6 +65,15 @@ export function StripePaymentForm({
     }
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      // Fallback: navigate to the commissions page or back to the creator
+      window.history.back();
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -109,16 +118,14 @@ export function StripePaymentForm({
             )}
           </Button>
           
-          {onCancel && (
-            <Button 
-              onClick={onCancel}
-              variant="outline"
-              disabled={isProcessing}
-              className="w-full"
-            >
-              Cancel
-            </Button>
-          )}
+          <Button 
+            onClick={handleCancel}
+            variant="outline"
+            disabled={isProcessing}
+            className="w-full"
+          >
+            Cancel
+          </Button>
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
