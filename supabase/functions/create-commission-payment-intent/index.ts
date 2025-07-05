@@ -19,9 +19,9 @@ serve(async (req) => {
     const { commissionId, amount } = await req.json();
     console.log('Request data:', { commissionId, amount });
 
-    if (!commissionId || !amount) {
-      console.error('Missing required parameters');
-      throw new Error('Commission ID and amount are required');
+    if (!commissionId) {
+      console.error('Missing commission ID');
+      throw new Error('Commission ID is required');
     }
 
     // Initialize Stripe with TEST key for commissions
@@ -31,7 +31,7 @@ serve(async (req) => {
       throw new Error('Payment service configuration error - test mode not configured');
     }
 
-    console.log('Using Stripe TEST mode for commission payment intents');
+    console.log('Using Stripe TEST mode for commission payments');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
@@ -130,9 +130,9 @@ serve(async (req) => {
       console.log('Created new Stripe customer (TEST):', customerId_stripe);
     }
 
-    console.log('Creating Stripe payment intent (TEST MODE)');
+    console.log('Creating payment intent (TEST MODE)');
 
-    // Create payment intent
+    // Create payment intent for inline payment
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(commissionRequest.agreed_price * 100),
       currency: 'usd',
@@ -144,21 +144,18 @@ serve(async (req) => {
         creator_id: commissionRequest.creator_id,
         type: 'commission_payment',
         environment: 'test'
-      },
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      }
     });
 
-    console.log('Created Stripe payment intent (TEST):', paymentIntent.id);
+    console.log('Created payment intent (TEST):', paymentIntent.id);
 
-    // Update commission request with payment intent ID and status
+    // Update commission request with payment intent ID and payment_pending status
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: paymentIntent.id,
         status: 'payment_pending',
-        creator_notes: 'Payment intent created (TEST MODE) - customer is completing payment'
+        creator_notes: 'Payment intent created (TEST MODE) - awaiting customer payment'
       })
       .eq('id', commissionId);
 
@@ -174,11 +171,10 @@ serve(async (req) => {
     }
 
     console.log('Updated commission request status to payment_pending (TEST MODE)');
-    console.log('=== SUCCESS: Returning payment intent client secret (TEST) ===');
+    console.log('=== SUCCESS: Returning client secret (TEST) ===');
 
     return new Response(JSON.stringify({ 
-      client_secret: paymentIntent.client_secret,
-      payment_intent_id: paymentIntent.id
+      client_secret: paymentIntent.client_secret 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
