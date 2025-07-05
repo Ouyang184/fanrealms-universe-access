@@ -74,15 +74,14 @@ export default function Payment() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Complete Your Subscription</h1>
           <p className="text-muted-foreground">
-            Subscribe to {tier.creator?.display_name}'s {tier.name} tier
+            Subscribe to {tier.creator?.display_name}'s {tier.title} tier
           </p>
         </div>
 
         <MembershipPaymentForm
-          tier={tier}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-          stripePublishableKey={import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY}
+          clientSecret=""
+          tierName={tier.title}
+          amount={Math.round(tier.price * 100)}
         />
       </div>
     </div>
