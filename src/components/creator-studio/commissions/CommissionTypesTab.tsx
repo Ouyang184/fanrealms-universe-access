@@ -124,9 +124,13 @@ export function CommissionTypesTab({
                       {type.custom_addons
                         .filter(addon => addon && addon.name && addon.name.trim())
                         .map((addon, index) => (
-                          <div key={addon.id || index} className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border text-sm">
-                            <span className="font-medium">{addon.name}</span>
-                            <Badge variant="secondary" className="text-xs">+${Number(addon.price || 0).toFixed(2)}</Badge>
+                          <div key={addon.id || index} className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border text-sm min-w-0">
+                            <span className="font-medium text-blue-900 truncate" title={addon.name}>
+                              {addon.name}
+                            </span>
+                            <Badge variant="secondary" className="text-xs shrink-0 bg-blue-100 text-blue-800 border-blue-200">
+                              +${Number(addon.price || 0).toFixed(2)}
+                            </Badge>
                           </div>
                         ))}
                     </div>
