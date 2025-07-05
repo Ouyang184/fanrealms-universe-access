@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT INTENT (LIVE MODE) ===');
+    console.log('=== CREATE COMMISSION PAYMENT INTENT START ===');
     
     const { commissionId, amount } = await req.json();
     console.log('Request data:', { commissionId, amount });
@@ -24,14 +24,14 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe with LIVE key for commissions
+    // Initialize Stripe with the secret key
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
       console.error('STRIPE_SECRET_KEY not found in environment');
-      throw new Error('Payment service configuration error - live mode not configured');
+      throw new Error('Payment service configuration error');
     }
 
-    console.log('Using Stripe LIVE mode for commission payments');
+    console.log('Initializing Stripe with secret key');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
@@ -107,7 +107,7 @@ serve(async (req) => {
       throw new Error('No agreed price set for this commission');
     }
 
-    // Check if customer already exists in Stripe (LIVE mode)
+    // Check if customer already exists in Stripe
     const customers = await stripe.customers.list({ 
       email: user.email,
       limit: 1 
@@ -116,21 +116,20 @@ serve(async (req) => {
     let customerId_stripe;
     if (customers.data.length > 0) {
       customerId_stripe = customers.data[0].id;
-      console.log('Found existing Stripe customer (LIVE):', customerId_stripe);
+      console.log('Found existing Stripe customer:', customerId_stripe);
     } else {
       // Create new customer
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
-          user_id: user.id,
-          environment: 'live'
+          user_id: user.id
         }
       });
       customerId_stripe = customer.id;
-      console.log('Created new Stripe customer (LIVE):', customerId_stripe);
+      console.log('Created new Stripe customer:', customerId_stripe);
     }
 
-    console.log('Creating payment intent (LIVE MODE)');
+    console.log('Creating payment intent');
 
     // Create payment intent with capture_method: 'manual' for authorization hold
     const paymentIntent = await stripe.paymentIntents.create({
@@ -143,12 +142,11 @@ serve(async (req) => {
         commission_request_id: commissionId,
         customer_id: user.id,
         creator_id: commissionRequest.creator_id,
-        type: 'commission_payment',
-        environment: 'live'
+        type: 'commission_payment'
       }
     });
 
-    console.log('Created payment intent (LIVE MODE):', paymentIntent.id);
+    console.log('Created payment intent:', paymentIntent.id);
 
     // Update commission request with payment intent ID and payment_pending status
     const { error: updateError } = await supabaseService
@@ -156,7 +154,7 @@ serve(async (req) => {
       .update({ 
         stripe_payment_intent_id: paymentIntent.id,
         status: 'payment_pending',
-        creator_notes: 'Payment authorized (LIVE MODE) - funds held pending creator approval'
+        creator_notes: 'Payment authorized - funds held pending creator approval'
       })
       .eq('id', commissionId);
 
@@ -171,8 +169,8 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to payment_pending (LIVE MODE)');
-    console.log('=== SUCCESS: Returning client secret (LIVE MODE) ===');
+    console.log('Updated commission request status to payment_pending');
+    console.log('=== SUCCESS: Returning client secret ===');
 
     return new Response(JSON.stringify({ 
       client_secret: paymentIntent.client_secret 
@@ -182,7 +180,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT INTENT (LIVE MODE) ===');
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT INTENT ===');
     console.error('Error details:', error);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
