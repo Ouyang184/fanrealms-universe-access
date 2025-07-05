@@ -16,7 +16,17 @@ serve(async (req) => {
   try {
     console.log('=== CREATE COMMISSION PAYMENT INTENT START ===');
     
-    const { commissionId, amount } = await req.json();
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log('Request body parsed successfully:', requestBody);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      throw new Error('Invalid request body');
+    }
+
+    const { commissionId, amount } = requestBody;
     console.log('Request data:', { commissionId, amount });
 
     if (!commissionId) {
@@ -42,9 +52,15 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-      console.error('Missing Supabase environment variables');
+      console.error('Missing Supabase environment variables:', {
+        hasUrl: !!supabaseUrl,
+        hasAnonKey: !!supabaseAnonKey,
+        hasServiceKey: !!supabaseServiceKey
+      });
       throw new Error('Database service configuration error');
     }
+
+    console.log('Supabase environment variables found');
 
     // Create client with anon key for user authentication
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
@@ -56,45 +72,73 @@ serve(async (req) => {
       throw new Error('Authorization header is required');
     }
 
+    console.log('Authorization header found, authenticating user...');
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      throw new Error('Authentication required');
+    let user;
+    try {
+      const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser(token);
+      
+      if (authError) {
+        console.error('Authentication failed:', authError);
+        throw new Error(`Authentication failed: ${authError.message}`);
+      }
+      
+      if (!authUser) {
+        console.error('No user returned from authentication');
+        throw new Error('Authentication required - no user found');
+      }
+      
+      user = authUser;
+      console.log('User authenticated successfully:', user.id);
+    } catch (authError) {
+      console.error('Error during authentication:', authError);
+      throw new Error(`Authentication error: ${authError.message || 'Unknown auth error'}`);
     }
-
-    console.log('User authenticated:', user.id);
 
     // Now use service role key for database operations
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('Service client created for database operations');
 
     // Fetch commission request details
-    const { data: commissionRequest, error: commissionError } = await supabaseService
-      .from('commission_requests')
-      .select(`
-        *,
-        commission_type:commission_types(name, description),
-        creator:creators!commission_requests_creator_id_fkey(
-          display_name,
-          user_id
-        )
-      `)
-      .eq('id', commissionId)
-      .eq('customer_id', user.id)
-      .single();
+    console.log('Fetching commission request details for ID:', commissionId);
+    let commissionRequest;
+    try {
+      const { data, error: commissionError } = await supabaseService
+        .from('commission_requests')
+        .select(`
+          *,
+          commission_type:commission_types(name, description),
+          creator:creators!commission_requests_creator_id_fkey(
+            display_name,
+            user_id
+          )
+        `)
+        .eq('id', commissionId)
+        .eq('customer_id', user.id)
+        .single();
 
-    if (commissionError || !commissionRequest) {
-      console.error('Commission request error:', commissionError);
-      throw new Error('Commission request not found or not accessible');
+      if (commissionError) {
+        console.error('Commission request query error:', commissionError);
+        throw new Error(`Database query failed: ${commissionError.message}`);
+      }
+
+      if (!data) {
+        console.error('No commission request found for ID:', commissionId, 'and user:', user.id);
+        throw new Error('Commission request not found or not accessible');
+      }
+
+      commissionRequest = data;
+      console.log('Commission request found:', {
+        id: commissionRequest.id,
+        title: commissionRequest.title,
+        agreed_price: commissionRequest.agreed_price,
+        status: commissionRequest.status
+      });
+    } catch (dbError) {
+      console.error('Database operation failed:', dbError);
+      throw new Error(`Database error: ${dbError.message || 'Unknown database error'}`);
     }
-
-    console.log('Commission request found:', {
-      id: commissionRequest.id,
-      title: commissionRequest.title,
-      agreed_price: commissionRequest.agreed_price,
-      status: commissionRequest.status
-    });
 
     // Check if request is in correct status for payment
     if (!['pending', 'checkout_created'].includes(commissionRequest.status)) {
@@ -107,69 +151,89 @@ serve(async (req) => {
       throw new Error('No agreed price set for this commission');
     }
 
-    // Check if customer already exists in Stripe
-    const customers = await stripe.customers.list({ 
-      email: user.email,
-      limit: 1 
-    });
+    console.log('Commission validation passed, proceeding with Stripe operations');
 
+    // Check if customer already exists in Stripe
     let customerId_stripe;
-    if (customers.data.length > 0) {
-      customerId_stripe = customers.data[0].id;
-      console.log('Found existing Stripe customer:', customerId_stripe);
-    } else {
-      // Create new customer
-      const customer = await stripe.customers.create({
+    try {
+      const customers = await stripe.customers.list({ 
         email: user.email,
-        metadata: {
-          user_id: user.id
-        }
+        limit: 1 
       });
-      customerId_stripe = customer.id;
-      console.log('Created new Stripe customer:', customerId_stripe);
+
+      if (customers.data.length > 0) {
+        customerId_stripe = customers.data[0].id;
+        console.log('Found existing Stripe customer:', customerId_stripe);
+      } else {
+        // Create new customer
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            user_id: user.id
+          }
+        });
+        customerId_stripe = customer.id;
+        console.log('Created new Stripe customer:', customerId_stripe);
+      }
+    } catch (stripeError) {
+      console.error('Stripe customer operation failed:', stripeError);
+      throw new Error(`Stripe customer error: ${stripeError.message || 'Unknown Stripe error'}`);
     }
 
     console.log('Creating payment intent');
 
     // Create payment intent with capture_method: 'manual' for authorization hold
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(commissionRequest.agreed_price * 100),
-      currency: 'usd',
-      customer: customerId_stripe,
-      capture_method: 'manual', // This is key - authorizes but doesn't capture
-      description: `Commission: ${commissionRequest.title}`,
-      metadata: {
-        commission_request_id: commissionId,
-        customer_id: user.id,
-        creator_id: commissionRequest.creator_id,
-        type: 'commission_payment'
-      }
-    });
+    let paymentIntent;
+    try {
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(commissionRequest.agreed_price * 100),
+        currency: 'usd',
+        customer: customerId_stripe,
+        capture_method: 'manual', // This is key - authorizes but doesn't capture
+        description: `Commission: ${commissionRequest.title}`,
+        metadata: {
+          commission_request_id: commissionId,
+          customer_id: user.id,
+          creator_id: commissionRequest.creator_id,
+          type: 'commission_payment'
+        }
+      });
 
-    console.log('Created payment intent:', paymentIntent.id);
-
-    // Update commission request with payment intent ID and payment_pending status
-    const { error: updateError } = await supabaseService
-      .from('commission_requests')
-      .update({ 
-        stripe_payment_intent_id: paymentIntent.id,
-        status: 'payment_pending',
-        creator_notes: 'Payment authorized - funds held pending creator approval'
-      })
-      .eq('id', commissionId);
-
-    if (updateError) {
-      console.error('Failed to update commission request:', updateError);
-      // Cancel the payment intent if database update fails
-      try {
-        await stripe.paymentIntents.cancel(paymentIntent.id);
-      } catch (cancelError) {
-        console.error('Failed to cancel payment intent:', cancelError);
-      }
-      throw new Error('Failed to create commission payment');
+      console.log('Created payment intent:', paymentIntent.id);
+    } catch (stripeError) {
+      console.error('Payment intent creation failed:', stripeError);
+      throw new Error(`Payment intent error: ${stripeError.message || 'Unknown payment intent error'}`);
     }
 
-    console.log('Updated commission request status to payment_pending');
+    // Update commission request with payment intent ID and payment_pending status
+    try {
+      const { error: updateError } = await supabaseService
+        .from('commission_requests')
+        .update({ 
+          stripe_payment_intent_id: paymentIntent.id,
+          status: 'payment_pending',
+          creator_notes: 'Payment authorized - funds held pending creator approval'
+        })
+        .eq('id', commissionId);
+
+      if (updateError) {
+        console.error('Failed to update commission request:', updateError);
+        // Cancel the payment intent if database update fails
+        try {
+          await stripe.paymentIntents.cancel(paymentIntent.id);
+          console.log('Payment intent cancelled due to database update failure');
+        } catch (cancelError) {
+          console.error('Failed to cancel payment intent:', cancelError);
+        }
+        throw new Error(`Database update failed: ${updateError.message}`);
+      }
+
+      console.log('Updated commission request status to payment_pending');
+    } catch (updateError) {
+      console.error('Commission request update failed:', updateError);
+      throw new Error(`Update error: ${updateError.message || 'Unknown update error'}`);
+    }
+
     console.log('=== SUCCESS: Returning client secret ===');
 
     return new Response(JSON.stringify({ 
