@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface StripePaymentFormProps {
   commissionId: string;
@@ -24,6 +25,7 @@ export function StripePaymentForm({
   onCancel
 }: StripePaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
   const handlePayment = async () => {
     try {
@@ -50,7 +52,7 @@ export function StripePaymentForm({
 
       console.log('Payment session created, redirecting to:', data.url);
 
-      // Redirect in the same window instead of opening new tab
+      // Redirect to Stripe checkout
       window.location.href = data.url;
 
     } catch (error) {
@@ -66,11 +68,12 @@ export function StripePaymentForm({
   };
 
   const handleCancel = () => {
+    console.log('Cancel button clicked');
     if (onCancel) {
       onCancel();
     } else {
-      // Fallback: navigate to the commissions page or back to the creator
-      window.history.back();
+      // Navigate back to the creator page or previous page
+      navigate(-1);
     }
   };
 
