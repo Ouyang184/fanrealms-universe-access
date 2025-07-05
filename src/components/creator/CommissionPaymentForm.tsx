@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -8,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, Clock, User, DollarSign } from 'lucide-react';
+import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle } from 'lucide-react';
 
 // Use TEST Stripe publishable key for commissions
 const stripePromise = loadStripe('pk_test_51QSXfpP8KqSCVhQsaEPa7YXm3v7sJ7Ae6HqgE1DdLUe9ePDCZ7i8M0Wj6xZlPjt4uESkzIxKsP2N2hJB8tD9NQKZ00aw1YRqvF');
@@ -35,6 +36,7 @@ function formatCurrency(amount: number): string {
 function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   const stripe = useStripe();
   const elements = useElements();
   const { user } = useAuth();
@@ -50,11 +52,18 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
 
     setIsProcessing(true);
     setError('');
+    setDebugInfo(null);
 
     try {
       console.log('🔄 Creating payment intent for commission:', commission.id);
+      console.log('🔍 Request payload:', {
+        commissionId: commission.id,
+        amount: commission.agreed_price,
+        userId: user.id,
+        userEmail: user.email
+      });
       
-      // Create payment intent using the edge function
+      // Create payment intent using the edge function with enhanced error handling
       const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
         body: { 
           commissionId: commission.id,
@@ -65,17 +74,34 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
         }
       });
 
+      console.log('📊 Edge function response:', { data, error });
+
       if (error) {
         console.error('❌ Payment intent creation failed:', error);
+        setDebugInfo({ 
+          type: 'edge_function_error', 
+          error,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(error.message || 'Failed to create payment intent');
       }
 
       if (!data?.client_secret) {
         console.error('❌ No client secret received:', data);
+        setDebugInfo({ 
+          type: 'invalid_response', 
+          data,
+          timestamp: new Date().toISOString()
+        });
         throw new Error('Invalid response from payment service');
       }
 
       console.log('✅ Payment intent created successfully');
+      setDebugInfo({ 
+        type: 'success', 
+        debug_info: data.debug_info,
+        timestamp: new Date().toISOString()
+      });
 
       // Confirm the payment with Stripe
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
@@ -92,6 +118,11 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
 
       if (confirmError) {
         console.error('❌ Payment confirmation failed:', confirmError);
+        setDebugInfo({ 
+          type: 'stripe_confirmation_error', 
+          error: confirmError,
+          timestamp: new Date().toISOString()
+        });
         throw new Error(confirmError.message || 'Payment failed');
       }
 
@@ -104,6 +135,11 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
         onSuccess();
       } else {
         console.error('❌ Unexpected payment status:', paymentIntent?.status);
+        setDebugInfo({ 
+          type: 'unexpected_payment_status', 
+          status: paymentIntent?.status,
+          timestamp: new Date().toISOString()
+        });
         throw new Error('Payment was not processed correctly');
       }
 
@@ -135,6 +171,7 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
           <Badge variant="outline">
             {commission.commission_type?.name}
           </Badge>
+          <Badge variant="secondary">TEST MODE</Badge>
         </div>
 
         <div className="text-sm text-muted-foreground">
@@ -178,12 +215,28 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
               </CardContent>
             </Card>
             {error && (
-              <p className="text-sm text-red-500 mt-2">
-                <AlertCircle className="mr-2 inline-block h-4 w-4" />
-                {error}
-              </p>
+              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600 flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  {error}
+                </p>
+              </div>
             )}
           </div>
+
+          {/* Debug Information Panel */}
+          {debugInfo && (
+            <Card className="border-orange-200 bg-orange-50">
+              <CardHeader>
+                <CardTitle className="text-sm text-orange-800">Debug Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs text-orange-700 whitespace-pre-wrap overflow-auto max-h-40">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex justify-between">
             <Button variant="secondary" onClick={onCancel}>
@@ -201,7 +254,7 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
               ) : (
                 <>
                   <DollarSign className="mr-2 h-4 w-4" />
-                  Confirm Payment
+                  Confirm Payment (TEST)
                 </>
               )}
             </Button>
@@ -211,8 +264,6 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
     </Card>
   );
 }
-
-import { AlertCircle } from 'lucide-react';
 
 export function CommissionPaymentForm(props: CommissionPaymentFormProps) {
   return (
