@@ -116,32 +116,19 @@ export function CommissionTypesTab({
                   )}
                 </div>
 
-                {/* Display custom add-ons */}
-                {type.custom_addons && Array.isArray(type.custom_addons) && type.custom_addons.length > 0 && (
+                {/* Display custom add-ons only if they exist and have content */}
+                {type.custom_addons && Array.isArray(type.custom_addons) && type.custom_addons.length > 0 && type.custom_addons.some(addon => addon && addon.name) && (
                   <div className="mt-4">
                     <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {type.custom_addons.map((addon, index) => (
-                        <div key={addon.id || index} className="text-sm bg-blue-50 p-3 rounded border">
-                          <div className="flex justify-between items-center">
+                    <div className="flex flex-wrap gap-2">
+                      {type.custom_addons
+                        .filter(addon => addon && addon.name && addon.name.trim())
+                        .map((addon, index) => (
+                          <div key={addon.id || index} className="inline-flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full border text-sm">
                             <span className="font-medium">{addon.name}</span>
-                            <Badge variant="secondary">+${Number(addon.price).toFixed(2)}</Badge>
+                            <Badge variant="secondary" className="text-xs">+${Number(addon.price || 0).toFixed(2)}</Badge>
                           </div>
-                          {addon.description && (
-                            <div className="text-muted-foreground text-xs mt-1">{addon.description}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Show message when no custom add-ons */}
-                {(!type.custom_addons || !Array.isArray(type.custom_addons) || type.custom_addons.length === 0) && (
-                  <div className="mt-4">
-                    <h5 className="font-medium text-gray-500 mb-2">Custom Add-ons:</h5>
-                    <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded border">
-                      No custom add-ons defined for this commission type.
+                        ))}
                     </div>
                   </div>
                 )}
