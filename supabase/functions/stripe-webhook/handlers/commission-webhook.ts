@@ -28,6 +28,31 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
       }
     }
 
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      const commissionId = paymentIntent.metadata?.commission_request_id;
+
+      if (commissionId && paymentIntent.metadata?.type === 'commission_payment') {
+        console.log('Payment intent succeeded for commission:', commissionId);
+
+        // Update commission status to payment_authorized
+        const { error } = await supabase
+          .from('commission_requests')
+          .update({ 
+            status: 'payment_authorized',
+            stripe_payment_intent_id: paymentIntent.id,
+            creator_notes: 'Payment completed successfully - ready for creator approval (TEST MODE)'
+          })
+          .eq('id', commissionId);
+
+        if (error) {
+          console.error('Failed to update commission on payment success:', error);
+        } else {
+          console.log('Commission marked as payment_authorized after successful payment intent');
+        }
+      }
+    }
+
     if (event.type === 'payment_intent.payment_failed') {
       const paymentIntent = event.data.object;
       const commissionId = paymentIntent.metadata?.commission_request_id;

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,12 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  CreditCard
+  CreditCard,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { CommissionRequestStatus } from '@/types/commission';
+import { supabase } from '@/lib/supabase';
 
 interface CommissionRequestWithRelations {
   id: string;
@@ -51,31 +54,60 @@ interface CommissionRequestCardProps {
 }
 
 export function CommissionRequestCard({
-  request,
+  request: initialRequest,
   onAccept,
   onReject,
   onUpdateStatus
 }: CommissionRequestCardProps) {
+  const [request, setRequest] = useState(initialRequest);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Set up real-time subscription for this specific commission request
+  useEffect(() => {
+    const channel = supabase
+      .channel(`commission-${request.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'commission_requests',
+          filter: `id=eq.${request.id}`
+        },
+        (payload) => {
+          console.log('Commission request updated:', payload);
+          setRequest(prev => ({ ...prev, ...payload.new }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [request.id]);
+
   const getStatusColor = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'checkout_created':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'payment_pending':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'payment_authorized':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'payment_failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'accepted':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'completed':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -85,10 +117,12 @@ export function CommissionRequestCard({
         return <Clock className="h-4 w-4" />;
       case 'checkout_created':
         return <CreditCard className="h-4 w-4" />;
+      case 'payment_pending':
+        return <Loader2 className="h-4 w-4 animate-spin" />;
       case 'payment_authorized':
-        return <CreditCard className="h-4 w-4" />;
+        return <CheckCircle className="h-4 w-4" />;
       case 'payment_failed':
-        return <XCircle className="h-4 w-4" />;
+        return <AlertCircle className="h-4 w-4" />;
       case 'accepted':
         return <CheckCircle className="h-4 w-4" />;
       case 'rejected':
@@ -103,9 +137,11 @@ export function CommissionRequestCard({
       case 'pending':
         return 'Pending Review';
       case 'checkout_created':
-        return 'Payment Pending';
+        return 'Payment Session Created';
+      case 'payment_pending':
+        return 'Payment in Progress';
       case 'payment_authorized':
-        return 'Payment Received - Awaiting Approval';
+        return 'Payment Received - Ready to Accept';
       case 'payment_failed':
         return 'Payment Failed';
       case 'accepted':
@@ -122,10 +158,28 @@ export function CommissionRequestCard({
   };
 
   const canAcceptOrReject = request.status === 'payment_authorized' || request.status === 'pending';
-  const showPaymentInfo = ['checkout_created', 'payment_authorized', 'payment_failed'].includes(request.status);
+  const showPaymentInfo = ['checkout_created', 'payment_pending', 'payment_authorized', 'payment_failed'].includes(request.status);
+
+  const handleAccept = async () => {
+    setIsUpdating(true);
+    try {
+      await onAccept(request.id);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleReject = async () => {
+    setIsUpdating(true);
+    try {
+      await onReject(request.id);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -137,7 +191,7 @@ export function CommissionRequestCard({
               <span>{new Date(request.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
+          <Badge className={`${getStatusColor(request.status)} flex items-center gap-1 border`}>
             {getStatusIcon(request.status)}
             {getStatusText(request.status)}
           </Badge>
@@ -162,14 +216,24 @@ export function CommissionRequestCard({
         )}
 
         {showPaymentInfo && (
-          <div className="p-3 bg-muted rounded-lg">
+          <div className={`p-3 rounded-lg border ${
+            request.status === 'payment_authorized' ? 'bg-green-50 border-green-200' :
+            request.status === 'payment_pending' ? 'bg-orange-50 border-orange-200' :
+            request.status === 'payment_failed' ? 'bg-red-50 border-red-200' :
+            'bg-muted border-muted'
+          }`}>
             <h4 className="font-medium mb-1 flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Payment Status
             </h4>
             {request.status === 'checkout_created' && (
               <p className="text-sm text-muted-foreground">
-                Customer has started payment process but hasn't completed it yet.
+                💳 Customer has started payment process but hasn't completed it yet.
+              </p>
+            )}
+            {request.status === 'payment_pending' && (
+              <p className="text-sm text-orange-700">
+                ⏳ Customer is currently completing their payment. This will update automatically when done.
               </p>
             )}
             {request.status === 'payment_authorized' && (
@@ -225,19 +289,28 @@ export function CommissionRequestCard({
         {canAcceptOrReject && (
           <div className="flex gap-2 pt-4 border-t">
             <Button
-              onClick={() => onAccept(request.id)}
+              onClick={handleAccept}
               className="flex-1"
-              disabled={request.status !== 'payment_authorized' && request.status !== 'pending'}
+              disabled={isUpdating || (request.status !== 'payment_authorized' && request.status !== 'pending')}
             >
-              <CheckCircle className="h-4 w-4 mr-2" />
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
               Accept Commission
             </Button>
             <Button
-              onClick={() => onReject(request.id)}
+              onClick={handleReject}
               variant="outline"
               className="flex-1"
+              disabled={isUpdating}
             >
-              <XCircle className="h-4 w-4 mr-2" />
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
               Reject
             </Button>
           </div>
@@ -248,6 +321,7 @@ export function CommissionRequestCard({
             <Button
               onClick={() => onUpdateStatus(request.id, 'in_progress')}
               className="flex-1"
+              disabled={isUpdating}
             >
               Mark as In Progress
             </Button>
@@ -259,6 +333,7 @@ export function CommissionRequestCard({
             <Button
               onClick={() => onUpdateStatus(request.id, 'completed')}
               className="flex-1"
+              disabled={isUpdating}
             >
               Mark as Completed
             </Button>
