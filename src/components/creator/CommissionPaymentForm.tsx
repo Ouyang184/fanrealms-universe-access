@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -11,8 +10,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle, Bug } from 'lucide-react';
 
-// Use TEST Stripe publishable key for commissions
-const stripePromise = loadStripe('pk_test_51QSXfpP8KqSCVhQsaEPa7YXm3v7sJ7Ae6HqgE1DdLUe9ePDCZ7i8M0Wj6xZlPjt4uESkzIxKsP2N2hJB8tD9NQKZ00aw1YRqvF');
+// Use the correct TEST Stripe publishable key for commissions
+// This should match the STRIPE_SECRET_KEY_TEST used in the backend
+const stripePromise = loadStripe('pk_test_51QSXfpP8KqSCVhQsaEPa7YXm3v7sJ7Ae6HqgE1DdLUe9ePDCZ7i8M0Wj6xZlPjt4uESkzIxKsP2N2hJB8tD9NQKZ00YrS0cxjF');
 
 interface CommissionPaymentFormProps {
   commission: any;
@@ -155,6 +155,8 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
         debug_info: data.debug_info,
         timestamp: new Date().toISOString()
       });
+
+      console.log('🔑 Using Stripe instance for payment confirmation (TEST MODE)');
 
       // Confirm the payment with Stripe
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
