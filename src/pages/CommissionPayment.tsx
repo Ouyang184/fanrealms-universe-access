@@ -14,7 +14,8 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 
 export default function CommissionPayment() {
   const params = useParams();
-  const commissionId = params.id; // Extract the commission ID from URL params
+  // Fix: Extract requestId from URL params (not id)
+  const commissionId = params.requestId;
   const { user } = useAuth();
   const navigate = useNavigate();
 
