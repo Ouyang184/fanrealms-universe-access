@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -117,6 +118,11 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCancel = () => {
+    console.log('Cancel button clicked');
+    onCancel();
   };
 
   // Safely handle custom_addons which might be Json type
@@ -320,7 +326,7 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
         <Button
           type="button"
           variant="outline"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={isProcessing}
           size="lg"
         >
