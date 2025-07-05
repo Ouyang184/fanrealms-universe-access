@@ -20,7 +20,7 @@ interface CommissionData {
   commission_type: {
     name: string;
     description: string;
-    custom_addons?: any[];
+    custom_addons?: any; // Changed from any[] to any to handle Json type
   };
   creator: {
     display_name: string;
@@ -91,7 +91,10 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
     }
   };
 
-  const addOns = commission.commission_type.custom_addons || [];
+  // Safely handle custom_addons which might be Json type
+  const addOns = Array.isArray(commission.commission_type.custom_addons) 
+    ? commission.commission_type.custom_addons 
+    : [];
   const totalAddOnPrice = addOns.reduce((sum: number, addon: any) => sum + (addon.price || 0), 0);
 
   return (
