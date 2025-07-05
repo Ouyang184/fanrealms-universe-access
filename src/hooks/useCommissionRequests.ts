@@ -24,17 +24,7 @@ export const useCommissionRequests = () => {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['commission-requests', creatorProfile?.id],
     queryFn: async () => {
-      if (!creatorProfile?.id) {
-        console.log('[useCommissionRequests] No creator profile ID, returning empty array');
-        return [];
-      }
-      
-      console.log('[useCommissionRequests] Fetching commission requests for creator:', creatorProfile.id);
-      console.log('[useCommissionRequests] Query details:', {
-        creator_id: creatorProfile.id,
-        filters: 'status != rejected',
-        order: 'created_at DESC'
-      });
+      if (!creatorProfile?.id) return [];
       
       const { data, error } = await supabase
         .from('commission_requests')
@@ -47,33 +37,7 @@ export const useCommissionRequests = () => {
         .neq('status', 'rejected') // Filter out rejected requests
         .order('created_at', { ascending: false });
 
-      console.log('[useCommissionRequests] Query result:', {
-        data: data,
-        error: error,
-        count: data?.length || 0,
-        rawQuery: `SELECT * FROM commission_requests WHERE creator_id = '${creatorProfile.id}' AND status != 'rejected' ORDER BY created_at DESC`
-      });
-
-      if (error) {
-        console.error('[useCommissionRequests] Error fetching commission requests:', error);
-        throw error;
-      }
-      
-      console.log(`[useCommissionRequests] Successfully fetched ${data?.length || 0} commission requests for creator ${creatorProfile.id}`);
-      
-      // Log each request for debugging
-      if (data && data.length > 0) {
-        data.forEach((request, index) => {
-          console.log(`[useCommissionRequests] Request ${index + 1}:`, {
-            id: request.id,
-            title: request.title,
-            status: request.status,
-            customer_id: request.customer_id,
-            creator_id: request.creator_id,
-            created_at: request.created_at
-          });
-        });
-      }
+      if (error) throw error;
       
       // Transform the data to properly type the status field
       return (data || []).map(request => ({
@@ -86,22 +50,12 @@ export const useCommissionRequests = () => {
 
   const updateRequestMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      console.log('[useCommissionRequests] Updating commission request:', {
-        id,
-        updates
-      });
-      
       const { error } = await supabase
         .from('commission_requests')
         .update(updates)
         .eq('id', id);
 
-      if (error) {
-        console.error('[useCommissionRequests] Error updating commission request:', error);
-        throw error;
-      }
-      
-      console.log('[useCommissionRequests] Successfully updated commission request:', id);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commission-requests'] });
@@ -121,7 +75,6 @@ export const useCommissionRequests = () => {
   });
 
   const acceptRequest = (id: string) => {
-    console.log('[useCommissionRequests] Accepting request:', id);
     updateRequestMutation.mutate({
       id,
       updates: { status: 'accepted' }
@@ -129,7 +82,6 @@ export const useCommissionRequests = () => {
   };
 
   const rejectRequest = (id: string) => {
-    console.log('[useCommissionRequests] Rejecting request:', id);
     updateRequestMutation.mutate({
       id,
       updates: { status: 'rejected' }
@@ -137,10 +89,6 @@ export const useCommissionRequests = () => {
   };
 
   const updateRequestStatus = (id: string, status: CommissionRequestStatus) => {
-    console.log('[useCommissionRequests] Updating request status:', {
-      id,
-      status
-    });
     updateRequestMutation.mutate({
       id,
       updates: { status }

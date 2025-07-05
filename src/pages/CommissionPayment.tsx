@@ -12,44 +12,6 @@ import { AlertCircle } from 'lucide-react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
-// Retry logic for fetching commission with exponential backoff
-const fetchCommissionWithRetry = async (id: string, retryCount = 0): Promise<any> => {
-  const maxRetries = 3;
-  const baseDelay = 1000; // 1 second
-
-  console.log(`Fetching commission request (attempt ${retryCount + 1}):`, id);
-
-  const { data, error } = await supabase
-    .from('commission_requests')
-    .select(`
-      *,
-      commission_type:commission_types(name, description, base_price),
-      creator:creators!commission_requests_creator_id_fkey(
-        display_name,
-        profile_image_url
-      )
-    `)
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error(`Error fetching commission (attempt ${retryCount + 1}):`, error);
-    
-    if (retryCount < maxRetries && (error.code === 'PGRST116' || error.message.includes('No rows'))) {
-      // Wait with exponential backoff before retrying
-      const delay = baseDelay * Math.pow(2, retryCount);
-      console.log(`Retrying in ${delay}ms...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-      return fetchCommissionWithRetry(id, retryCount + 1);
-    }
-    
-    throw error;
-  }
-
-  console.log('Commission data fetched successfully:', data);
-  return data;
-};
-
 export default function CommissionPayment() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -60,15 +22,36 @@ export default function CommissionPayment() {
     queryFn: async () => {
       if (!id) throw new Error('Commission ID is required');
       
+      console.log('Fetching commission request:', id);
       console.log('Current user:', user?.id);
-      console.log('Commission ID:', id);
       
-      // Remove the manual permission check - let RLS handle it
-      // RLS policies already ensure proper access control
-      return await fetchCommissionWithRetry(id);
+      const { data, error } = await supabase
+        .from('commission_requests')
+        .select(`
+          *,
+          commission_type:commission_types(name, description, base_price),
+          creator:creators!commission_requests_creator_id_fkey(
+            display_name,
+            profile_image_url
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching commission:', error);
+        throw error;
+      }
+      
+      // Check if user has permission to access this commission
+      if (!user || data.customer_id !== user.id) {
+        throw new Error('You do not have permission to access this commission');
+      }
+      
+      console.log('Commission data:', data);
+      return data;
     },
     enabled: !!id && !!user,
-    retry: false, // We handle retry logic manually
   });
 
   const handlePaymentSuccess = () => {
