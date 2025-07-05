@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -121,7 +122,7 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
   };
 
   const handleCancel = () => {
-    console.log('Cancel button clicked');
+    console.log('Back button clicked');
     onCancel();
   };
 
@@ -330,7 +331,7 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
           disabled={isProcessing}
           size="lg"
         >
-          Cancel
+          Back
         </Button>
       </div>
     </form>
@@ -344,3 +345,4 @@ export function CommissionPaymentForm({ commission, onSuccess, onCancel }: Commi
     </Elements>
   );
 }
+
