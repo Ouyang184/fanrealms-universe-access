@@ -22,8 +22,11 @@ export default function CommissionPayment() {
     queryFn: async () => {
       if (!id) throw new Error('Commission ID is required');
       
-      console.log('Fetching commission request:', id);
-      console.log('Current user:', user?.id);
+      console.log('🔍 [CommissionPayment] Fetching commission request:', {
+        commissionId: id,
+        currentUser: user?.id,
+        timestamp: new Date().toISOString()
+      });
       
       const { data, error } = await supabase
         .from('commission_requests')
@@ -38,20 +41,58 @@ export default function CommissionPayment() {
         .eq('id', id)
         .single();
 
+      console.log('📊 [CommissionPayment] Query result:', {
+        commissionId: id,
+        data: data,
+        error: error,
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : null
+      });
+
       if (error) {
-        console.error('Error fetching commission:', error);
+        console.error('❌ [CommissionPayment] Database error:', {
+          commissionId: id,
+          error: error,
+          code: error.code,
+          message: error.message,
+          details: error.details
+        });
         throw error;
       }
+
+      if (!data) {
+        console.error('❌ [CommissionPayment] No commission data found:', {
+          commissionId: id,
+          user: user?.id
+        });
+        throw new Error('Commission request not found');
+      }
       
-      // Check if user has permission to access this commission
-      if (!user || data.customer_id !== user.id) {
+      // Only check permission if user is logged in
+      if (user && data.customer_id !== user.id) {
+        console.error('❌ [CommissionPayment] Permission denied:', {
+          commissionId: id,
+          currentUser: user.id,
+          commissionCustomer: data.customer_id,
+          userEmail: user.email
+        });
         throw new Error('You do not have permission to access this commission');
       }
       
-      console.log('Commission data:', data);
+      console.log('✅ [CommissionPayment] Commission loaded successfully:', {
+        commissionId: id,
+        title: data.title,
+        status: data.status,
+        agreedPrice: data.agreed_price,
+        customerId: data.customer_id,
+        creatorName: data.creator?.display_name
+      });
+      
       return data;
     },
-    enabled: !!id && !!user,
+    enabled: !!id,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handlePaymentSuccess = () => {
@@ -73,6 +114,12 @@ export default function CommissionPayment() {
   }
 
   if (error || !commission) {
+    console.error('🚨 [CommissionPayment] Rendering error state:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      hasCommission: !!commission,
+      commissionId: id
+    });
+
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-md mx-auto">
@@ -85,6 +132,12 @@ export default function CommissionPayment() {
             <p className="text-sm text-muted-foreground">
               Error: {error instanceof Error ? error.message : 'Unknown error'}
             </p>
+            <div className="mt-4 p-3 bg-muted rounded text-sm text-left">
+              <p><strong>Debug Info:</strong></p>
+              <p>Commission ID: {id}</p>
+              <p>User ID: {user?.id || 'Not logged in'}</p>
+              <p>User Email: {user?.email || 'No email'}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
