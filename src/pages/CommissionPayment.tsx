@@ -108,7 +108,8 @@ export default function CommissionPayment() {
   };
 
   const handlePaymentCancel = () => {
-    console.log('Payment cancelled, navigating back');
+    console.log('Back button clicked, navigating back');
+    // Navigate back to the creator page or previous location
     navigate(-1);
   };
 
