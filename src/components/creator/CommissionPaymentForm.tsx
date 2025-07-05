@@ -1,407 +1,348 @@
 
-import { useState } from 'react';
+
+import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle, Bug } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Safely get Stripe publishable key without throwing at module level
-const getStripePublishableKey = () => {
-  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  if (!key) {
-    console.warn('VITE_STRIPE_PUBLISHABLE_KEY environment variable is not set');
-    return null;
-  }
-  console.log('🔑 Using Stripe publishable key from environment:', key.substring(0, 20) + '...');
-  return key;
-};
+// Initialize Stripe with the publishable key from Supabase secrets
+const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
+const stripePromise = loadStripe(stripePublishableKey);
 
-// Only create stripe promise if key exists
-const createStripePromise = () => {
-  const key = getStripePublishableKey();
-  return key ? loadStripe(key) : null;
-};
-
-const stripePromise = createStripePromise();
+interface CommissionData {
+  id: string;
+  title: string;
+  description: string;
+  agreed_price: number;
+  commission_type: {
+    name: string;
+    description: string;
+    custom_addons?: any; // Changed from any[] to any to handle Json type
+  };
+  creator: {
+    display_name: string;
+    profile_image_url?: string;
+  };
+}
 
 interface CommissionPaymentFormProps {
-  commission: any;
+  commission: CommissionData;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-interface PaymentFormProps {
-  commission: any;
-  onSuccess: () => void;
-  onCancel: () => void;
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
-// Configuration Error Component (rendered when Stripe is not configured)
-function StripeConfigurationError({ onCancel }: { onCancel: () => void }) {
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Configuration Error</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex items-center">
-            <AlertCircle className="mr-2 h-4 w-4 text-red-600" />
-            <h3 className="text-sm font-medium text-red-800">Stripe Not Configured</h3>
-          </div>
-          <p className="text-sm text-red-700 mt-2">
-            The VITE_STRIPE_PUBLISHABLE_KEY environment variable is not set. Please configure your Stripe keys to enable payments.
-          </p>
-        </div>
-        <div className="flex justify-between">
-          <Button variant="secondary" onClick={onCancel}>
-            Back
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isDebugging, setIsDebugging] = useState(false);
-  const [error, setError] = useState('');
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const handleDebug = async () => {
-    if (!user) {
-      console.error('User not authenticated for debug');
-      return;
-    }
-
-    setIsDebugging(true);
-    setError('');
-
-    try {
-      console.log('🔍 Running debug check...');
-      
-      const { data, error } = await supabase.functions.invoke('debug-commission-payment', {
-        body: { 
-          commissionId: commission.id,
-          amount: commission.agreed_price,
-          testMode: true
-        }
-      });
-
-      console.log('🔧 Debug response:', { data, error });
-
-      if (error) {
-        console.error('❌ Debug function error:', error);
-        setDebugInfo({ 
-          type: 'debug_function_error', 
-          error,
-          timestamp: new Date().toISOString()
-        });
-        setError(`Debug function failed: ${error.message}`);
-      } else {
-        console.log('✅ Debug function successful');
-        setDebugInfo({ 
-          type: 'debug_success', 
-          debug_data: data,
-          timestamp: new Date().toISOString()
-        });
-        toast({
-          title: "Debug Complete",
-          description: "Check the debug information panel below for details.",
-        });
-      }
-
-    } catch (err) {
-      console.error('💥 Debug error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Debug check failed';
-      setError(errorMessage);
-      setDebugInfo({ 
-        type: 'debug_exception', 
-        error: errorMessage,
-        timestamp: new Date().toISOString()
-      });
-    } finally {
-      setIsDebugging(false);
-    }
-  };
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Payment form fields
+  const [cardholderName, setCardholderName] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [country, setCountry] = useState('US');
+  const [state, setState] = useState('');
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    
-    if (!stripe || !elements || !user) {
-      console.error('Stripe not loaded or user not authenticated');
+
+    if (!stripe || !elements || !confirmed) {
+      return;
+    }
+
+    if (!cardholderName.trim()) {
+      setError('Cardholder name is required');
+      return;
+    }
+
+    if (!postalCode.trim()) {
+      setError('Postal code is required');
       return;
     }
 
     setIsProcessing(true);
-    setError('');
-    setDebugInfo(null);
+    setError(null);
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError('Card element not found');
+      setIsProcessing(false);
+      return;
+    }
 
     try {
-      console.log('🔄 Creating payment intent for commission:', commission.id);
-      
-      const requestPayload = {
-        commissionId: commission.id,
-        amount: commission.agreed_price
-      };
-      
-      console.log('🔍 Request payload:', requestPayload);
-      
-      // Create payment intent using the edge function with proper JSON body
-      const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
-        body: requestPayload
+      // Create payment intent on the server
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-commission-payment-intent', {
+        body: { 
+          commissionId: commission.id,
+          amount: commission.agreed_price 
+        }
       });
 
-      console.log('📊 Edge function response:', { data, error });
-
-      if (error) {
-        console.error('❌ Payment intent creation failed:', error);
-        setDebugInfo({ 
-          type: 'edge_function_error', 
-          error,
-          timestamp: new Date().toISOString()
-        });
-        throw new Error(error.message || 'Failed to create payment intent');
+      if (paymentError) {
+        throw new Error(paymentError.message);
       }
 
-      if (!data?.client_secret) {
-        console.error('❌ No client secret received:', data);
-        setDebugInfo({ 
-          type: 'invalid_response', 
-          data,
-          timestamp: new Date().toISOString()
-        });
-        throw new Error('Invalid response from payment service');
-      }
-
-      console.log('✅ Payment intent created successfully');
-      setDebugInfo({ 
-        type: 'success', 
-        debug_info: data.debug_info,
-        timestamp: new Date().toISOString()
-      });
-
-      console.log('🔑 Using Stripe TEST mode - publishable key from environment variable');
-
-      // Confirm the payment with Stripe
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-        data.client_secret,
-        {
-          payment_method: {
-            card: elements.getElement(CardElement)!,
-            billing_details: {
-              email: user.email,
+      // Confirm payment with Stripe including billing details
+      const { error: confirmError } = await stripe.confirmCardPayment(paymentData.client_secret, {
+        payment_method: {
+          card: cardElement,
+          billing_details: {
+            name: cardholderName,
+            address: {
+              postal_code: postalCode,
+              country: country,
+              state: state,
             },
           },
-        }
-      );
+        },
+      });
 
       if (confirmError) {
-        console.error('❌ Payment confirmation failed:', confirmError);
-        setDebugInfo({ 
-          type: 'stripe_confirmation_error', 
-          error: confirmError,
-          timestamp: new Date().toISOString()
-        });
-        throw new Error(confirmError.message || 'Payment failed');
-      }
-
-      if (paymentIntent?.status === 'requires_capture') {
-        console.log('✅ Payment authorized successfully - funds held for creator approval');
-        toast({
-          title: "Payment Authorized! 🎉",
-          description: "Your payment has been authorized and funds are held securely. The creator will be notified to review your commission.",
-        });
-        onSuccess();
+        setError(confirmError.message || 'Payment failed');
       } else {
-        console.error('❌ Unexpected payment status:', paymentIntent?.status);
-        setDebugInfo({ 
-          type: 'unexpected_payment_status', 
-          status: paymentIntent?.status,
-          timestamp: new Date().toISOString()
-        });
-        throw new Error('Payment was not processed correctly');
+        toast({ title: "Payment successful!", description: "Your commission payment has been processed." });
+        onSuccess();
       }
-
     } catch (err) {
-      console.error('💥 Payment error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      toast({
-        title: "Payment Failed",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handleCancel = () => {
+    console.log('Back button clicked');
+    onCancel();
+  };
+
+  // Safely handle custom_addons which might be Json type
+  const addOns = Array.isArray(commission.commission_type.custom_addons) 
+    ? commission.commission_type.custom_addons 
+    : [];
+  const totalAddOnPrice = addOns.reduce((sum: number, addon: any) => sum + (addon.price || 0), 0);
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Payment Details</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center space-x-2">
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">
-            {formatCurrency(commission.agreed_price)}
-          </h2>
-          <Badge variant="outline">
-            {commission.commission_type?.name}
-          </Badge>
-          <Badge variant="secondary">TEST MODE</Badge>
-        </div>
-
-        <div className="text-sm text-muted-foreground">
-          <User className="mr-2 inline-block h-4 w-4" />
-          {commission.creator?.display_name}
-          <Separator orientation="vertical" className="mx-2 h-4" />
-          <Clock className="mr-2 inline-block h-4 w-4" />
-          Created on {new Date(commission.created_at).toLocaleDateString()}
-        </div>
-
-        <Separator />
-
-        {/* Debug Section */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-yellow-800">Debug Tools</h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDebug}
-              disabled={isDebugging}
-            >
-              {isDebugging ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running Debug...
-                </>
-              ) : (
-                <>
-                  <Bug className="mr-2 h-4 w-4" />
-                  Run Debug Check
-                </>
-              )}
-            </Button>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Commission Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Commission Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-4">
+            {commission.creator.profile_image_url && (
+              <img
+                src={commission.creator.profile_image_url}
+                alt={commission.creator.display_name}
+                className="w-12 h-12 rounded-full"
+              />
+            )}
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{commission.title}</h3>
+              <p className="text-sm text-muted-foreground">by {commission.creator.display_name}</p>
+              <p className="text-sm mt-2">{commission.description}</p>
+            </div>
           </div>
-          <p className="text-xs text-yellow-700">
-            Run this debug check to test environment variables, Stripe connection, and database access before attempting payment.
-          </p>
-        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Card className="border-2 border-primary/50">
-              <CardHeader>
-                <CardTitle>Credit Card Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <fieldset className="space-y-2">
-                  <CardElement
-                    options={{
-                      style: {
-                        base: {
-                          fontSize: '16px',
-                          color: '#424770',
-                          '::placeholder': {
-                            color: '#aab7c4',
-                          },
-                        },
-                        invalid: {
-                          color: '#9e2146',
-                        },
-                      },
-                    }}
-                    onChange={(e) => {
-                      setError(e.error?.message || '');
-                    }}
-                  />
-                </fieldset>
-              </CardContent>
-            </Card>
-            {error && (
-              <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600 flex items-center">
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  {error}
-                </p>
-              </div>
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-2">Commission Type</h4>
+            <p className="text-sm font-medium">{commission.commission_type.name}</p>
+            {commission.commission_type.description && (
+              <p className="text-sm text-muted-foreground">{commission.commission_type.description}</p>
             )}
           </div>
 
-          {/* Debug Information Panel */}
-          {debugInfo && (
-            <Card className="border-orange-200 bg-orange-50">
-              <CardHeader>
-                <CardTitle className="text-sm text-orange-800">Debug Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className="text-xs text-orange-700 whitespace-pre-wrap overflow-auto max-h-40">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
+          {addOns.length > 0 && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-2">Add-ons</h4>
+              <div className="space-y-2">
+                {addOns.map((addon: any, index: number) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{addon.name}</span>
+                    <span>${addon.price}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
-          <div className="flex justify-between">
-            <Button variant="secondary" onClick={onCancel}>
-              Back
-            </Button>
-            <Button
-              type="submit"
-              disabled={isProcessing || !stripe || !elements}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing Payment...
-                </>
-              ) : (
-                <>
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Confirm Payment (TEST)
-                </>
-              )}
-            </Button>
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Base Price:</span>
+              <span>${commission.agreed_price - totalAddOnPrice}</span>
+            </div>
+            {totalAddOnPrice > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Add-ons:</span>
+                <span>${totalAddOnPrice}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center text-lg font-bold border-t pt-2 mt-2">
+              <span>Total:</span>
+              <span>${commission.agreed_price}</span>
+            </div>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Payment Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Cardholder Name */}
+          <div className="space-y-2">
+            <Label htmlFor="cardholderName">Cardholder Name</Label>
+            <Input
+              id="cardholderName"
+              type="text"
+              placeholder="John Doe"
+              value={cardholderName}
+              onChange={(e) => setCardholderName(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Card Details */}
+          <div className="space-y-2">
+            <Label>Card Details</Label>
+            <div className="p-4 border rounded-md">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Billing Address */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="US">United States</SelectItem>
+                  <SelectItem value="CA">Canada</SelectItem>
+                  <SelectItem value="GB">United Kingdom</SelectItem>
+                  <SelectItem value="AU">Australia</SelectItem>
+                  <SelectItem value="DE">Germany</SelectItem>
+                  <SelectItem value="FR">France</SelectItem>
+                  <SelectItem value="JP">Japan</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="state">State/Province</Label>
+              <Input
+                id="state"
+                type="text"
+                placeholder="CA"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="postalCode">Postal/ZIP Code</Label>
+            <Input
+              id="postalCode"
+              type="text"
+              placeholder="90210"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+              required
+            />
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="confirmation"
+              checked={confirmed}
+              onCheckedChange={(checked) => setConfirmed(checked as boolean)}
+            />
+            <label htmlFor="confirmation" className="text-sm">
+              I confirm that I want to purchase this commission for ${commission.agreed_price}
+            </label>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Action Buttons */}
+      <div className="flex gap-4">
+        <Button
+          type="submit"
+          disabled={!stripe || !confirmed || isProcessing}
+          className="flex-1"
+          size="lg"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Processing Payment...
+            </>
+          ) : (
+            <>
+              <CreditCard className="h-4 w-4 mr-2" />
+              Pay ${commission.agreed_price}
+            </>
+          )}
+        </Button>
+        
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          disabled={isProcessing}
+          size="lg"
+        >
+          Back
+        </Button>
+      </div>
+    </form>
   );
 }
 
-export function CommissionPaymentForm(props: CommissionPaymentFormProps) {
-  // Check if Stripe is properly configured
-  const stripeKey = getStripePublishableKey();
-  if (!stripeKey || !stripePromise) {
-    return <StripeConfigurationError onCancel={props.onCancel} />;
-  }
-
+export function CommissionPaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormProps) {
   return (
     <Elements stripe={stripePromise}>
-      <PaymentFormContent {...props} />
+      <PaymentForm commission={commission} onSuccess={onSuccess} onCancel={onCancel} />
     </Elements>
   );
 }
+
