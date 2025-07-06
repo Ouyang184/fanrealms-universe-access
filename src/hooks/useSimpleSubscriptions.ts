@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +31,7 @@ export const useSimpleSubscriptions = () => {
     refetchInterval: 60000
   });
 
-  // Create subscription - calls the correct stripe-subscriptions function
+  // Create subscription - calls the stripe-subscriptions function
   const createSubscription = async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
     if (!user || isProcessing) return null;
 
@@ -48,16 +47,15 @@ export const useSimpleSubscriptions = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[useSimpleSubscriptions] Edge function error:', error);
+        throw new Error(`Edge function error: ${error.message}`);
+      }
       
       console.log('[useSimpleSubscriptions] Response:', data);
       
       if (data?.error) {
-        toast({
-          title: "Subscription Error",
-          description: data.error,
-          variant: "destructive"
-        });
+        console.error('[useSimpleSubscriptions] Subscription creation error:', data.error);
         
         if (data.shouldRefresh) {
           // Refresh subscription data if user is already subscribed
@@ -74,11 +72,6 @@ export const useSimpleSubscriptions = () => {
       return data;
     } catch (error) {
       console.error('[useSimpleSubscriptions] Create subscription error:', error);
-      toast({
-        title: "Subscription Failed",
-        description: error instanceof Error ? error.message : 'Failed to create subscription',
-        variant: "destructive"
-      });
       throw error;
     } finally {
       setIsProcessing(false);

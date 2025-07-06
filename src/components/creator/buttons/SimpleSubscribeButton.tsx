@@ -36,21 +36,47 @@ export function SimpleSubscribeButton({
     }
 
     try {
+      console.log('[SimpleSubscribeButton] Creating subscription for tier:', tierId, 'creator:', creatorId);
+      
       const result = await createSubscription({ 
         tierId, 
         creatorId 
       });
       
       if (result?.error) {
-        return; // Error already handled in hook
+        console.error('[SimpleSubscribeButton] Subscription error:', result.error);
+        toast({
+          title: "Subscription Error",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
       }
       
       if (result?.url) {
+        console.log('[SimpleSubscribeButton] Redirecting to Stripe Checkout:', result.url);
         // Open Stripe checkout in a new tab
         window.open(result.url, '_blank');
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "Please complete your payment to activate the subscription.",
+        });
+      } else {
+        console.error('[SimpleSubscribeButton] No checkout URL received');
+        toast({
+          title: "Error",
+          description: "Failed to create checkout session. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Subscription error:', error);
+      console.error('[SimpleSubscribeButton] Subscription error:', error);
+      toast({
+        title: "Subscription Failed",
+        description: error instanceof Error ? error.message : 'Failed to create subscription',
+        variant: "destructive"
+      });
     }
   };
 
@@ -72,7 +98,7 @@ export function SimpleSubscribeButton({
       {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Starting payment...
+          Creating checkout...
         </>
       ) : (
         `Subscribe for $${price}/month`

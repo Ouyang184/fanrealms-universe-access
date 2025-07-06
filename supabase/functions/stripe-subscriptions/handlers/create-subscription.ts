@@ -116,11 +116,14 @@ export async function handleCreateSubscription(
       throw new Error(`Customer setup failed: ${customerError.message}`);
     }
 
-    // Create or get Stripe price
-    let stripePriceId = tier.stripe_price_id;
-    
-    if (!stripePriceId) {
-      try {
+    // Create Stripe Checkout Session instead of subscription with payment intent
+    try {
+      log('Creating Stripe Checkout Session...');
+      
+      // Get or create Stripe price
+      let stripePriceId = tier.stripe_price_id;
+      
+      if (!stripePriceId) {
         log('Creating new Stripe price...');
         const price = await stripe.prices.create({
           unit_amount: Math.round(tier.price * 100),
@@ -141,107 +144,47 @@ export async function handleCreateSubscription(
           .eq('id', tierId);
         
         log('Tier updated with price ID');
-      } catch (priceError) {
-        log('Stripe price creation error', priceError);
-        throw new Error(`Failed to create price: ${priceError.message}`);
       }
-    }
 
-    // Create Stripe subscription
-    let subscription;
-    try {
-      log('Creating Stripe subscription...');
-      subscription = await stripe.subscriptions.create({
+      // Create Stripe Checkout Session
+      const session = await stripe.checkout.sessions.create({
         customer: stripeCustomerId,
-        items: [{ price: stripePriceId }],
+        line_items: [{
+          price: stripePriceId,
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/subscriptions?success=true`,
+        cancel_url: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/creator/${tier.creators.display_name}?canceled=true`,
         application_fee_percent: 4,
-        transfer_data: { destination: tier.creators.stripe_account_id },
-        payment_behavior: 'default_incomplete',
-        payment_settings: { 
-          save_default_payment_method: 'on_subscription',
-          payment_method_types: ['card']
-        },
-        expand: ['latest_invoice.payment_intent'],
-        metadata: {
-          user_id: user.id,
-          creator_id: creatorId,
-          tier_id: tierId,
-          platform_fee_percent: '4'
-        }
-      });
-
-      log('Stripe subscription created', { 
-        subscriptionId: subscription.id, 
-        status: subscription.status 
-      });
-    } catch (stripeError) {
-      log('Stripe subscription creation error', stripeError);
-      throw new Error(`Stripe error: ${stripeError.message}`);
-    }
-
-    // Handle subscription status
-    if (subscription.status === 'incomplete') {
-      const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-      
-      if (!clientSecret) {
-        log('No client secret found for incomplete subscription');
-        throw new Error('Payment setup failed - no client secret');
-      }
-
-      // Store subscription in database
-      try {
-        log('Storing subscription in database...');
-        const { error: insertError } = await supabase
-          .from('user_subscriptions')
-          .insert({
+        subscription_data: {
+          application_fee_percent: 4,
+          transfer_data: {
+            destination: tier.creators.stripe_account_id,
+          },
+          metadata: {
             user_id: user.id,
             creator_id: creatorId,
             tier_id: tierId,
-            stripe_subscription_id: subscription.id,
-            stripe_customer_id: stripeCustomerId,
-            status: 'incomplete',
-            amount: tier.price,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (insertError) {
-          log('Database insertion error', insertError);
-          // Try to cancel the Stripe subscription
-          try {
-            await stripe.subscriptions.del(subscription.id);
-            log('Stripe subscription cancelled due to DB error');
-          } catch (cancelError) {
-            log('Error canceling subscription after DB error', cancelError);
+            platform_fee_percent: '4'
           }
-          throw new Error(`Database error: ${insertError.message}`);
         }
+      });
 
-        log('Subscription stored successfully');
-      } catch (dbError) {
-        throw new Error(`Failed to store subscription: ${dbError.message}`);
-      }
+      log('Stripe Checkout Session created', { 
+        sessionId: session.id, 
+        url: session.url 
+      });
 
       return {
-        useCustomPaymentPage: true,
-        clientSecret,
-        subscriptionId: subscription.id,
-        amount: tier.price * 100,
-        tierName: tier.title,
-        tierId,
-        creatorId
+        url: session.url,
+        sessionId: session.id
       };
-    }
 
-    // If subscription is active immediately
-    log('Subscription is immediately active');
-    return {
-      success: true,
-      subscriptionId: subscription.id,
-      message: 'Subscription created successfully'
-    };
+    } catch (stripeError) {
+      log('Stripe error', stripeError);
+      throw new Error(`Stripe error: ${stripeError.message}`);
+    }
 
   } catch (error) {
     log('Error in handleCreateSubscription', { 
