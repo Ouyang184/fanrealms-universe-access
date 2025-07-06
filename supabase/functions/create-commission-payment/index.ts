@@ -58,10 +58,14 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Fetch commission request
+    // Fetch commission request with all needed data
     const { data: commissionRequest, error: commissionError } = await supabaseService
       .from('commission_requests')
-      .select('*')
+      .select(`
+        *,
+        commission_types!inner(name, description),
+        creators!inner(display_name, user_id)
+      `)
       .eq('id', commissionId)
       .eq('customer_id', user.id)
       .single();
@@ -78,31 +82,7 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Fetch commission type for details
-    const { data: commissionType, error: typeError } = await supabaseService
-      .from('commission_types')
-      .select('name, description')
-      .eq('id', commissionRequest.commission_type_id)
-      .single();
-
-    if (typeError) {
-      console.error('Commission type error:', typeError);
-      throw new Error('Commission type not found');
-    }
-
-    // Fetch creator details
-    const { data: creator, error: creatorError } = await supabaseService
-      .from('creators')
-      .select('display_name, user_id')
-      .eq('id', commissionRequest.creator_id)
-      .single();
-
-    if (creatorError) {
-      console.error('Creator error:', creatorError);
-      throw new Error('Creator not found');
-    }
-
-    // Check if commission is in accepted status and has agreed price
+    // Verify commission is in the correct status for payment
     if (commissionRequest.status !== 'accepted') {
       throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
@@ -145,7 +125,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionType.name} by ${creator.display_name}`,
+              description: `${commissionRequest.commission_types.name} by ${commissionRequest.creators.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
@@ -171,7 +151,7 @@ serve(async (req) => {
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        creator_notes: 'Payment session created - customer can now complete payment (TEST MODE)'
+        creator_notes: 'Payment session created - awaiting customer payment (TEST MODE)'
       })
       .eq('id', commissionId);
 

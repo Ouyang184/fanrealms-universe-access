@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Trash2, Eye, Clock, CheckCircle, XCircle, CreditCard } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
@@ -31,9 +31,9 @@ interface UserCommissionRequestCardProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-yellow-100 text-yellow-800';
     case 'accepted':
-      return 'bg-green-100 text-green-800';
+      return 'bg-blue-100 text-blue-800';
     case 'paid':
       return 'bg-emerald-100 text-emerald-800';
     case 'rejected':
@@ -51,16 +51,19 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getStatusDescription = (status: string) => {
+const getStatusDescription = (status: string, hasPaymentSession: boolean) => {
   switch (status) {
     case 'pending':
-      return 'Payment authorized - awaiting creator decision';
+      return 'Waiting for creator to review your request';
     case 'accepted':
-      return 'Creator accepted - payment captured, work will begin';
+      if (hasPaymentSession) {
+        return 'Payment session created - complete payment to begin work';
+      }
+      return 'Creator accepted - payment required to begin work';
     case 'paid':
       return 'Payment completed - work in progress';
     case 'rejected':
-      return 'Commission declined - you have been refunded';
+      return 'Commission declined by creator';
     case 'in_progress':
       return 'Creator is working on your commission';
     case 'completed':
@@ -77,9 +80,9 @@ const getStatusDescription = (status: string) => {
 const getStatusIcon = (status: string) => {
   switch (status) {
     case 'pending':
-      return <Shield className="h-4 w-4" />;
+      return <Clock className="h-4 w-4" />;
     case 'accepted':
-      return <CheckCircle className="h-4 w-4" />;
+      return <CreditCard className="h-4 w-4" />;
     case 'paid':
       return <CheckCircle className="h-4 w-4" />;
     case 'rejected':
@@ -98,6 +101,7 @@ export function UserCommissionRequestCard({
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
   const canDelete = ['rejected'].includes(request.status);
+  const hasPaymentSession = !!request.stripe_payment_intent_id;
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -134,40 +138,39 @@ export function UserCommissionRequestCard({
                 {getStatusIcon(request.status)}
                 {request.status.replace('_', ' ').toUpperCase()}
               </Badge>
-              {request.status === 'pending' && (
-                <Badge variant="outline" className="text-blue-600 border-blue-200">
-                  Funds Held
-                </Badge>
-              )}
             </div>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            {getStatusDescription(request.status)}
+            {getStatusDescription(request.status, hasPaymentSession)}
           </div>
 
           {request.status === 'pending' && (
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+            <div className="p-3 rounded-lg bg-yellow-50 border border-yellow-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-blue-900">Payment Authorized</p>
-                  <p className="text-sm text-blue-700">Your payment is secured with Stripe. The creator has 7 days to respond.</p>
+                  <p className="font-medium text-yellow-900">Under Review</p>
+                  <p className="text-sm text-yellow-700">The creator will review your request and respond soon.</p>
                 </div>
-                <Shield className="h-5 w-5 text-blue-600" />
+                <Clock className="h-5 w-5 text-yellow-600" />
               </div>
             </div>
           )}
 
           {request.status === 'accepted' && (
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-green-900">Commission Accepted!</p>
-                  <p className="text-sm text-green-700">Payment captured and work has begun.</p>
+                  <p className="font-medium text-blue-900">Commission Accepted!</p>
+                  <p className="text-sm text-blue-700">
+                    {hasPaymentSession 
+                      ? 'Complete your payment to begin work.' 
+                      : 'Payment will be required to begin work.'}
+                  </p>
                 </div>
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CreditCard className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           )}
@@ -177,7 +180,7 @@ export function UserCommissionRequestCard({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-red-900">Commission Declined</p>
-                  <p className="text-sm text-red-700">You have been automatically refunded.</p>
+                  <p className="text-sm text-red-700">The creator was unable to take on this commission.</p>
                 </div>
                 <XCircle className="h-5 w-5 text-red-600" />
               </div>
@@ -251,7 +254,7 @@ export function UserCommissionRequestCard({
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         requestTitle={request.title}
-        hasPaymentSession={false}
+        hasPaymentSession={hasPaymentSession}
       />
 
       <CommissionRequestDetailsModal

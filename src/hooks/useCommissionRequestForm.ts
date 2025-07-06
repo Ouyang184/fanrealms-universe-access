@@ -99,11 +99,10 @@ export function useCommissionRequestForm({
         creator_id: creatorId,
         title: selectedType.name,
         description: formData.description,
-        agreed_price: selectedType.base_price,
-        status: 'accepted' // Changed from 'pending' to 'accepted' for fixed-price commissions
+        status: 'pending' // Always start as pending - let creator accept first
       });
 
-      // Create the commission request with accepted status for immediate payment
+      // Create the commission request with pending status
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -115,8 +114,8 @@ export function useCommissionRequestForm({
         deadline: formData.deadline || null,
         customer_notes: formData.customer_notes || null,
         agreed_price: selectedType.base_price,
-        status: 'accepted', // Set to accepted since we have a fixed price
-        creator_notes: 'Commission auto-accepted with fixed price - payment required to begin work'
+        status: 'pending', // Start as pending
+        creator_notes: null
       };
 
       const { data: newRequest, error } = await supabase
@@ -132,32 +131,13 @@ export function useCommissionRequestForm({
 
       console.log('Commission request created successfully:', newRequest);
 
-      // Now create the payment session
-      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-commission-payment', {
-        body: { commissionId: newRequest.id }
-      });
-
-      if (paymentError) {
-        console.error('Payment creation error:', paymentError);
-        // Clean up the commission request if payment fails
-        await supabase.from('commission_requests').delete().eq('id', newRequest.id);
-        throw new Error(paymentError.message || 'Failed to create payment session');
-      }
-
-      if (!paymentData?.url) {
-        throw new Error('No payment URL received');
-      }
-
       toast({
-        title: "Commission Accepted!",
-        description: "Complete payment to begin work on your commission"
+        title: "Commission Request Submitted!",
+        description: "The creator will review your request and respond soon."
       });
 
       resetForm();
       onSuccess();
-      
-      // Redirect to payment
-      window.open(paymentData.url, '_blank');
 
     } catch (error) {
       console.error('Error submitting commission request:', error);
