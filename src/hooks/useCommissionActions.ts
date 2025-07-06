@@ -8,11 +8,21 @@ export const useCommissionActions = () => {
 
   const handleCommissionAction = useMutation({
     mutationFn: async ({ commissionId, action }: { commissionId: string; action: 'accept' | 'reject' }) => {
+      console.log('Calling handle-commission-action with:', { commissionId, action });
+      
       const { data, error } = await supabase.functions.invoke('handle-commission-action', {
         body: { commissionId, action }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to process commission action');
+      }
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Commission action failed');
+      }
+      
       return data;
     },
     onSuccess: (data, variables) => {
@@ -21,7 +31,7 @@ export const useCommissionActions = () => {
       const actionText = variables.action === 'accept' ? 'accepted' : 'rejected';
       const message = variables.action === 'accept' 
         ? 'Commission accepted and payment captured successfully!'
-        : 'Commission rejected and payment refunded to customer.';
+        : 'Commission rejected and payment authorization canceled.';
       
       toast({
         title: `Commission ${actionText}`,
@@ -32,7 +42,7 @@ export const useCommissionActions = () => {
       console.error('Error handling commission action:', error);
       toast({
         title: "Error",
-        description: "Failed to process commission action. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to process commission action. Please try again.",
         variant: "destructive"
       });
     },

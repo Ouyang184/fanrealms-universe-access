@@ -13,10 +13,12 @@ import {
   Clock,
   CreditCard,
   AlertCircle,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { CommissionRequestStatus } from '@/types/commission';
 import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
 
 interface CommissionRequestWithRelations {
   id: string;
@@ -61,6 +63,7 @@ export function CommissionRequestCard({
 }: CommissionRequestCardProps) {
   const [request, setRequest] = useState(initialRequest);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
 
   // Set up real-time subscription for this specific commission request
   useEffect(() => {
@@ -85,6 +88,45 @@ export function CommissionRequestCard({
       supabase.removeChannel(channel);
     };
   }, [request.id]);
+
+  const checkPaymentStatus = async () => {
+    if (!request.stripe_payment_intent_id) return;
+    
+    setIsCheckingPayment(true);
+    try {
+      // Call a simple function to check payment status - we'll need to create this
+      const { data, error } = await supabase.functions.invoke('check-payment-status', {
+        body: { 
+          paymentIntentId: request.stripe_payment_intent_id,
+          commissionId: request.id 
+        }
+      });
+
+      if (error) {
+        console.error('Error checking payment status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to check payment status",
+          variant: "destructive"
+        });
+      } else if (data?.status) {
+        toast({
+          title: "Payment Status Updated",
+          description: `Payment status: ${data.status}`,
+        });
+        // The real-time subscription will handle the update
+      }
+    } catch (error) {
+      console.error('Payment status check failed:', error);
+      toast({
+        title: "Error",
+        description: "Failed to check payment status",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCheckingPayment(false);
+    }
+  };
 
   const getStatusColor = (status: CommissionRequestStatus) => {
     switch (status) {
@@ -222,10 +264,27 @@ export function CommissionRequestCard({
             request.status === 'payment_failed' ? 'bg-red-50 border-red-200' :
             'bg-muted border-muted'
           }`}>
-            <h4 className="font-medium mb-1 flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Payment Status
-            </h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Payment Status
+              </h4>
+              {request.status === 'payment_pending' && (
+                <Button
+                  onClick={checkPaymentStatus}
+                  disabled={isCheckingPayment}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isCheckingPayment ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  Check Status
+                </Button>
+              )}
+            </div>
             {request.status === 'checkout_created' && (
               <p className="text-sm text-muted-foreground">
                 💳 Customer has started payment process but hasn't completed it yet.
@@ -233,7 +292,7 @@ export function CommissionRequestCard({
             )}
             {request.status === 'payment_pending' && (
               <p className="text-sm text-orange-700">
-                ⏳ Customer is currently completing their payment. This will update automatically when done.
+                ⏳ Customer is currently completing their payment. This will update automatically when done. You can click "Check Status" to manually refresh.
               </p>
             )}
             {request.status === 'payment_authorized' && (
