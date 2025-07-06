@@ -34,6 +34,17 @@ export const useCreateSubscription = () => {
       return null;
     }
 
+    // Validate required fields
+    if (!tierId || !creatorId) {
+      console.error('useCreateSubscription: Missing required fields:', { tierId, creatorId });
+      toast({
+        title: "Invalid Request",
+        description: "Missing required subscription information. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
     const lockKey = `${user.id}-${creatorId}-${tierId}`;
     
     // Check if this subscription is locked (already being processed)
@@ -79,23 +90,55 @@ export const useCreateSubscription = () => {
     console.log('useCreateSubscription: Starting subscription creation for:', { tierId, creatorId, userId: user.id });
     
     try {
+      const requestPayload = {
+        action: 'create_subscription',
+        tierId: tierId,
+        creatorId: creatorId
+      };
+
+      console.log('useCreateSubscription: Sending request payload:', requestPayload);
+
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
-        body: {
-          action: 'create_subscription',
-          tierId: tierId,
-          creatorId: creatorId
-        }
+        body: requestPayload
       });
 
       console.log('useCreateSubscription: Edge function response:', { data, error });
 
       if (error) {
         console.error('useCreateSubscription: Edge function error:', error);
-        throw new Error(error.message || 'Failed to invoke subscription function');
+        
+        // Show more specific error messages
+        let errorMessage = 'Failed to create subscription. Please try again.';
+        if (error.message) {
+          if (error.message.includes('authentication')) {
+            errorMessage = 'Authentication failed. Please log in again.';
+          } else if (error.message.includes('configuration')) {
+            errorMessage = 'Payment system configuration error. Please contact support.';
+          } else if (error.message.includes('Stripe')) {
+            errorMessage = `Payment error: ${error.message}`;
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
+        toast({
+          title: "Subscription Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+
+        return { error: errorMessage };
       }
 
       if (data?.error) {
         console.error('useCreateSubscription: Function returned error:', data.error);
+        
+        toast({
+          title: "Subscription Error",
+          description: data.error,
+          variant: data.shouldRefresh ? "default" : "destructive"
+        });
+
         return { 
           error: data.error,
           shouldRefresh: data.shouldRefresh || false
@@ -104,7 +147,12 @@ export const useCreateSubscription = () => {
 
       if (!data) {
         console.error('useCreateSubscription: No data returned from function');
-        throw new Error('No response from subscription service');
+        toast({
+          title: "Subscription Failed",
+          description: "No response from subscription service. Please try again.",
+          variant: "destructive"
+        });
+        return { error: 'No response from subscription service' };
       }
 
       // Check if we should use custom payment page
@@ -162,19 +210,37 @@ export const useCreateSubscription = () => {
         return data;
       }
 
-      // Fallback to checkout URL (shouldn't happen with new flow)
-      if (data.checkout_url) {
-        console.log('useCreateSubscription: Redirecting to Stripe Checkout');
-        window.location.href = data.checkout_url;
+      // Handle successful subscription creation
+      if (data.success || data.subscriptionId) {
+        console.log('useCreateSubscription: Subscription creation successful');
+        
+        toast({
+          title: data.isUpgrade ? "Subscription Updated!" : "Subscription Created!",
+          description: data.message || (data.isUpgrade ? "Your subscription tier has been updated." : "Your subscription is now active."),
+        });
+
         return data;
       }
 
-      console.log('useCreateSubscription: Subscription creation successful');
+      // Fallback case
+      console.log('useCreateSubscription: Unexpected response format:', data);
       return data;
 
     } catch (error) {
-      console.error('useCreateSubscription: Failed to create subscription:', error);
-      throw error;
+      console.error('useCreateSubscription: Unexpected error:', error);
+      
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: "Subscription Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+
+      return { error: errorMessage };
     } finally {
       setIsProcessing(false);
       // Unlock after a delay to prevent rapid clicking
