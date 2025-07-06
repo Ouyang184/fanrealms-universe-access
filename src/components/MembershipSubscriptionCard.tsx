@@ -7,8 +7,7 @@ import { Check, Star, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscriptionEvents } from "@/hooks/useSubscriptionEvents";
-import { useCreateSubscription } from "@/hooks/stripe/useCreateSubscription";
-import { useNavigate } from "react-router-dom";
+import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions";
 
 interface MembershipTier {
   id: string;
@@ -45,8 +44,7 @@ export function MembershipSubscriptionCard({
   const { user } = useAuth();
   const { toast } = useToast();
   const { triggerSubscriptionSuccess } = useSubscriptionEvents();
-  const { createSubscription, isProcessing } = useCreateSubscription();
-  const navigate = useNavigate();
+  const { createSubscription, isProcessing } = useSimpleSubscriptions();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -70,38 +68,14 @@ export function MembershipSubscriptionCard({
         return; // Error already handled in hook
       }
 
-      if (result?.clientSecret) {
-        // Navigate to payment page
-        navigate('/payment', {
-          state: {
-            clientSecret: result.clientSecret,
-            amount: Math.round(tier.price * 100),
-            tierName: tier.name,
-            tierId: tier.id,
-            creatorId
-          }
-        });
+      if (result?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(result.url, '_blank');
         
         toast({
           title: "Redirecting to Payment",
           description: "Please complete your payment to activate the subscription.",
         });
-      } else if (result?.subscriptionId) {
-        // Subscription created successfully
-        toast({
-          title: "Subscription successful!",
-          description: `You are now subscribed to ${tier.name}.`,
-        });
-
-        // Trigger subscription success events
-        triggerSubscriptionSuccess({
-          tierId: tier.id,
-          creatorId,
-          tierName: tier.name
-        });
-
-        // Call the callback if provided
-        onSubscriptionChange?.();
       }
 
     } catch (error: any) {

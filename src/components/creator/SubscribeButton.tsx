@@ -4,7 +4,7 @@ import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { SubscribedButton } from './buttons/SubscribedButton';
 import { PaymentUnavailableButton } from './buttons/PaymentUnavailableButton';
-import { ActiveSubscribeButton } from './buttons/ActiveSubscribeButton';
+import { SimpleSubscribeButton } from './buttons/SimpleSubscribeButton';
 
 interface SubscribeButtonProps {
   tierId: string;
@@ -33,10 +33,10 @@ export function SubscribeButton({
   // Use external subscription data if provided, otherwise use hook data
   const finalSubscriptionData = externalSubscriptionData || subscriptionData;
   
-  // FIXED: Use subscription check result with proper validation
+  // Use subscription check result with proper validation
   const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
-  console.log('[SubscribeButton] FIXED Render state:', {
+  console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
     tierName,
@@ -54,7 +54,7 @@ export function SubscribeButton({
     );
   }
 
-  // FIXED: Check subscription status properly
+  // Check subscription status properly
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
   
   // Check if user has an active subscription (including those scheduled to cancel but still in period)
@@ -92,9 +92,9 @@ export function SubscribeButton({
     return <PaymentUnavailableButton />;
   }
 
-  console.log('[SubscribeButton] Showing ActiveSubscribeButton - no active subscription');
+  console.log('[SubscribeButton] Showing SimpleSubscribeButton - no active subscription');
   return (
-    <ActiveSubscribeButton
+    <SimpleSubscribeButton
       tierId={tierId}
       creatorId={creatorId}
       tierName={tierName}

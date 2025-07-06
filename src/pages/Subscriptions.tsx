@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Filter, CreditCard, RefreshCw } from "lucide-react"
-import { useSubscriptions } from "@/hooks/useSubscriptions"
+import { useSimpleSubscriptions } from "@/hooks/useSimpleSubscriptions"
 import { useEffect, useState, useCallback } from "react"
 import LoadingSpinner from "@/components/LoadingSpinner"
 import { useToast } from "@/hooks/use-toast"
@@ -14,7 +14,7 @@ import { useSubscriptionEventManager } from "@/hooks/useSubscriptionEventManager
 import { MainLayout } from "@/components/Layout/MainLayout"
 
 export default function SubscriptionsPage() {
-  const { userSubscriptions, subscriptionsLoading, cancelSubscription, refetchSubscriptions } = useSubscriptions();
+  const { userSubscriptions, subscriptionsLoading, refetchSubscriptions } = useSimpleSubscriptions();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const { triggerSubscriptionCancellation, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
@@ -79,12 +79,13 @@ export default function SubscriptionsPage() {
     }
   };
 
-  const handleCancelSubscription = async (subscriptionId: string) => {
+  const handleCancelSubscription = async (tierId: string, creatorId: string) => {
     try {
-      await cancelSubscription(subscriptionId);
+      const { cancelSubscription } = useSimpleSubscriptions();
+      await cancelSubscription(tierId, creatorId);
       
       // Trigger cancellation event
-      triggerSubscriptionCancellation({ subscriptionId });
+      triggerSubscriptionCancellation({ tierId, creatorId });
       
       // Force refresh
       await invalidateAllSubscriptionQueries();
@@ -192,7 +193,7 @@ export default function SubscriptionsPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              onClick={() => handleCancelSubscription(subscription.id)}
+                              onClick={() => handleCancelSubscription(subscription.tier_id, subscription.creator_id)}
                               className="w-full"
                             >
                               Cancel Subscription

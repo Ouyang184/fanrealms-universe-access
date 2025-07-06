@@ -32,7 +32,7 @@ export const useSimpleSubscriptions = () => {
     refetchInterval: 60000
   });
 
-  // Create subscription - now returns checkout URL for redirect
+  // Create subscription - calls the correct stripe-subscriptions function
   const createSubscription = async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
     if (!user || isProcessing) return null;
 
@@ -43,8 +43,8 @@ export const useSimpleSubscriptions = () => {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'create_subscription',
-          tier_id: tierId,
-          creator_id: creatorId
+          tierId: tierId,
+          creatorId: creatorId
         }
       });
 
@@ -53,6 +53,12 @@ export const useSimpleSubscriptions = () => {
       console.log('[useSimpleSubscriptions] Response:', data);
       
       if (data?.error) {
+        toast({
+          title: "Subscription Error",
+          description: data.error,
+          variant: "destructive"
+        });
+        
         if (data.shouldRefresh) {
           // Refresh subscription data if user is already subscribed
           await Promise.all([
@@ -80,14 +86,16 @@ export const useSimpleSubscriptions = () => {
   };
 
   // Cancel subscription
-  const cancelSubscription = async (subscriptionId: string) => {
+  const cancelSubscription = async (tierId: string, creatorId: string, immediate = false) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
-          subscriptionId
+          tierId,
+          creatorId,
+          immediate
         }
       });
 
@@ -95,7 +103,7 @@ export const useSimpleSubscriptions = () => {
 
       toast({
         title: "Subscription Cancelled",
-        description: "Your subscription has been cancelled successfully.",
+        description: immediate ? "Your subscription has been cancelled immediately." : "Your subscription will end at the current period.",
       });
 
       // Refresh data
@@ -107,7 +115,7 @@ export const useSimpleSubscriptions = () => {
 
       // Dispatch event for other components
       window.dispatchEvent(new CustomEvent('subscriptionCancelled', {
-        detail: { subscriptionId }
+        detail: { tierId, creatorId }
       }));
 
     } catch (error) {

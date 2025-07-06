@@ -2,11 +2,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
+import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 interface SimpleSubscribeButtonProps {
   tierId: string;
@@ -22,10 +21,9 @@ export function SimpleSubscribeButton({
   price 
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing } = useCreateSubscription();
+  const { createSubscription, isProcessing } = useSimpleSubscriptions();
   const { subscriptionData } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -47,16 +45,9 @@ export function SimpleSubscribeButton({
         return; // Error already handled in hook
       }
       
-      if (result?.clientSecret) {
-        navigate('/payment', {
-          state: {
-            clientSecret: result.clientSecret,
-            amount: price * 100,
-            tierName,
-            tierId,
-            creatorId
-          }
-        });
+      if (result?.url) {
+        // Open Stripe checkout in a new tab
+        window.open(result.url, '_blank');
       }
     } catch (error) {
       console.error('Subscription error:', error);
