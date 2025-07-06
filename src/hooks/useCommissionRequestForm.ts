@@ -103,6 +103,7 @@ export function useCommissionRequestForm({
         status: 'pending'
       });
 
+      // First create the commission request
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -130,18 +131,32 @@ export function useCommissionRequestForm({
 
       console.log('Commission request created successfully:', newRequest);
 
+      // Now create the payment authorization
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-commission-payment', {
+        body: { commissionId: newRequest.id }
+      });
+
+      if (paymentError) {
+        console.error('Payment creation error:', paymentError);
+        // Clean up the commission request if payment fails
+        await supabase.from('commission_requests').delete().eq('id', newRequest.id);
+        throw new Error(paymentError.message || 'Failed to create payment authorization');
+      }
+
+      if (!paymentData?.url) {
+        throw new Error('No payment URL received');
+      }
+
       toast({
-        title: "Success!",
-        description: "Your commission request has been submitted successfully"
+        title: "Commission Request Created!",
+        description: "Complete payment authorization to submit your request to the creator"
       });
 
       resetForm();
       onSuccess();
       
-      // Navigate to payment page after a short delay
-      setTimeout(() => {
-        navigate(`/commissions/${newRequest.id}/pay`);
-      }, 500);
+      // Redirect to payment authorization
+      window.open(paymentData.url, '_blank');
 
     } catch (error) {
       console.error('Error submitting commission request:', error);

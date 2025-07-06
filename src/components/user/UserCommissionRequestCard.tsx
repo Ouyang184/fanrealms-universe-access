@@ -4,13 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, CreditCard } from 'lucide-react';
+import { Trash2, Eye, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 import { CommissionRequestDetailsModal } from './CommissionRequestDetailsModal';
-import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
   status: string;
@@ -33,11 +31,11 @@ interface UserCommissionRequestCardProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'accepted':
       return 'bg-blue-100 text-blue-800';
-    case 'paid':
+    case 'accepted':
       return 'bg-green-100 text-green-800';
+    case 'paid':
+      return 'bg-emerald-100 text-emerald-800';
     case 'rejected':
       return 'bg-red-100 text-red-800';
     case 'in_progress':
@@ -56,13 +54,13 @@ const getStatusColor = (status: string) => {
 const getStatusDescription = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'Waiting for creator response';
+      return 'Payment authorized - awaiting creator decision';
     case 'accepted':
-      return 'Accepted - payment required to start work';
+      return 'Creator accepted - payment captured, work will begin';
     case 'paid':
-      return 'Payment completed - work will begin soon';
+      return 'Payment completed - work in progress';
     case 'rejected':
-      return 'Commission declined by creator';
+      return 'Commission declined - you have been refunded';
     case 'in_progress':
       return 'Creator is working on your commission';
     case 'completed':
@@ -76,6 +74,21 @@ const getStatusDescription = (status: string) => {
   }
 };
 
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return <Shield className="h-4 w-4" />;
+    case 'accepted':
+      return <CheckCircle className="h-4 w-4" />;
+    case 'paid':
+      return <CheckCircle className="h-4 w-4" />;
+    case 'rejected':
+      return <XCircle className="h-4 w-4" />;
+    default:
+      return <Clock className="h-4 w-4" />;
+  }
+};
+
 export function UserCommissionRequestCard({ 
   request, 
   onDelete, 
@@ -83,10 +96,8 @@ export function UserCommissionRequestCard({
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   
-  const canDelete = ['pending', 'rejected'].includes(request.status);
-  const needsPayment = request.status === 'accepted';
+  const canDelete = ['rejected'].includes(request.status);
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -97,43 +108,6 @@ export function UserCommissionRequestCard({
     console.log('Delete confirmed for request:', request.id);
     onDelete(request.id);
     setShowDeleteDialog(false);
-  };
-
-  const handlePayNow = async () => {
-    setIsCreatingPayment(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('create-commission-payment', {
-        body: { commissionId: request.id }
-      });
-
-      if (error) {
-        console.error('Payment creation error:', error);
-        toast({
-          title: "Payment Error",
-          description: error.message || "Failed to create payment session",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (data?.url) {
-        // Open payment in new tab
-        window.open(data.url, '_blank');
-        toast({
-          title: "Payment Session Created",
-          description: "Complete your payment in the new tab to start the commission.",
-        });
-      }
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create payment session. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingPayment(false);
-    }
   };
 
   return (
@@ -156,12 +130,13 @@ export function UserCommissionRequestCard({
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <Badge className={getStatusColor(request.status)}>
+              <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
+                {getStatusIcon(request.status)}
                 {request.status.replace('_', ' ').toUpperCase()}
               </Badge>
-              {needsPayment && (
+              {request.status === 'pending' && (
                 <Badge variant="outline" className="text-blue-600 border-blue-200">
-                  Payment Required
+                  Funds Held
                 </Badge>
               )}
             </div>
@@ -173,27 +148,38 @@ export function UserCommissionRequestCard({
             {getStatusDescription(request.status)}
           </div>
 
-          {needsPayment && (
+          {request.status === 'pending' && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-blue-900">Ready for Payment</p>
-                  <p className="text-sm text-blue-700">Creator accepted your commission! Pay now to start work.</p>
+                  <p className="font-medium text-blue-900">Payment Authorized</p>
+                  <p className="text-sm text-blue-700">Your payment is secured with Stripe. The creator has 7 days to respond.</p>
                 </div>
-                <Button 
-                  onClick={handlePayNow}
-                  disabled={isCreatingPayment}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {isCreatingPayment ? (
-                    'Creating...'
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Pay Now
-                    </>
-                  )}
-                </Button>
+                <Shield className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+          )}
+
+          {request.status === 'accepted' && (
+            <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-green-900">Commission Accepted!</p>
+                  <p className="text-sm text-green-700">Payment captured and work has begun.</p>
+                </div>
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+            </div>
+          )}
+
+          {request.status === 'rejected' && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-red-900">Commission Declined</p>
+                  <p className="text-sm text-red-700">You have been automatically refunded.</p>
+                </div>
+                <XCircle className="h-5 w-5 text-red-600" />
               </div>
             </div>
           )}

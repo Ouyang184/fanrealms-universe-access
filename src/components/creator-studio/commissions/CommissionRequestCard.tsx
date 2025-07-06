@@ -11,7 +11,7 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  CreditCard,
+  Shield,
   AlertCircle,
   Loader2
 } from 'lucide-react';
@@ -91,11 +91,11 @@ export function CommissionRequestCard({
   const getStatusColor = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'accepted':
         return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'paid':
+      case 'accepted':
         return 'bg-green-100 text-green-800 border-green-200';
+      case 'paid':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'in_progress':
@@ -110,9 +110,9 @@ export function CommissionRequestCard({
   const getStatusIcon = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
-        return <Clock className="h-4 w-4" />;
+        return <Shield className="h-4 w-4" />;
       case 'accepted':
-        return <AlertCircle className="h-4 w-4" />;
+        return <CheckCircle className="h-4 w-4" />;
       case 'paid':
         return <CheckCircle className="h-4 w-4" />;
       case 'rejected':
@@ -125,13 +125,13 @@ export function CommissionRequestCard({
   const getStatusText = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
-        return 'Pending Review';
+        return 'Payment Authorized - Awaiting Decision';
       case 'accepted':
-        return 'Accepted - Awaiting Payment';
+        return 'Accepted - Payment Captured';
       case 'paid':
-        return 'Paid - Ready to Start';
+        return 'Paid - Work in Progress';
       case 'rejected':
-        return 'Rejected';
+        return 'Rejected - Customer Refunded';
       case 'in_progress':
         return 'In Progress';
       case 'completed':
@@ -142,8 +142,7 @@ export function CommissionRequestCard({
   };
 
   const canAcceptOrReject = request.status === 'pending';
-  const canCreatePayment = request.status === 'accepted';
-  const canMarkInProgress = request.status === 'paid';
+  const canMarkInProgress = request.status === 'accepted' || request.status === 'paid';
 
   const handleAccept = async () => {
     setIsUpdating(true);
@@ -158,15 +157,6 @@ export function CommissionRequestCard({
     setIsUpdating(true);
     try {
       await onReject(request.id);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleCreatePayment = async () => {
-    setIsUpdating(true);
-    try {
-      await onCreatePayment(request.id);
     } finally {
       setIsUpdating(false);
     }
@@ -205,45 +195,47 @@ export function CommissionRequestCard({
         {request.agreed_price && (
           <div className="flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-green-600" />
-            <span className="font-medium">Agreed Price: ${request.agreed_price}</span>
+            <span className="font-medium">Price: ${request.agreed_price}</span>
           </div>
         )}
 
-        {request.status === 'accepted' && (
+        {request.status === 'pending' && (
           <div className="p-3 rounded-lg border bg-blue-50 border-blue-200">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Payment Required
+                <Shield className="h-4 w-4" />
+                Payment Authorized
               </h4>
-              <Button
-                onClick={handleCreatePayment}
-                disabled={isUpdating}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isUpdating ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <CreditCard className="h-3 w-3" />
-                )}
-                Create Payment Link
-              </Button>
             </div>
             <p className="text-sm text-blue-700">
-              ✅ Commission accepted! Create a payment link for the customer to complete payment.
+              💰 Customer has paid and funds are held by Stripe. Accept to capture payment and start work, or reject to refund the customer.
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              Note: Funds will be automatically released if no action is taken within 7 days.
             </p>
           </div>
         )}
 
-        {request.status === 'paid' && (
+        {request.status === 'accepted' && (
           <div className="p-3 rounded-lg border bg-green-50 border-green-200">
             <h4 className="font-medium flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4" />
-              Payment Completed
+              Commission Accepted
             </h4>
             <p className="text-sm text-green-700">
-              💰 Payment received! You can now start working on this commission.
+              ✅ Payment captured successfully! You can now start working on this commission.
+            </p>
+          </div>
+        )}
+
+        {request.status === 'rejected' && (
+          <div className="p-3 rounded-lg border bg-red-50 border-red-200">
+            <h4 className="font-medium flex items-center gap-2 mb-2">
+              <XCircle className="h-4 w-4" />
+              Commission Rejected
+            </h4>
+            <p className="text-sm text-red-700">
+              ❌ Commission declined and customer has been refunded.
             </p>
           </div>
         )}
@@ -297,7 +289,7 @@ export function CommissionRequestCard({
               ) : (
                 <CheckCircle className="h-4 w-4 mr-2" />
               )}
-              Accept Commission
+              Accept & Capture Payment
             </Button>
             <Button
               onClick={handleReject}
@@ -310,7 +302,7 @@ export function CommissionRequestCard({
               ) : (
                 <XCircle className="h-4 w-4 mr-2" />
               )}
-              Reject
+              Reject & Refund
             </Button>
           </div>
         )}
