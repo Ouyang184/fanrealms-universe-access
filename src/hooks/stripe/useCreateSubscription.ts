@@ -162,24 +162,9 @@ export const useCreateSubscription = () => {
         return { error: 'No response from subscription service' };
       }
 
-      // Handle Stripe checkout URL response
-      if (data.checkout_url) {
-        log('Redirecting to Stripe checkout', { checkoutUrl: data.checkout_url });
-        
-        toast({
-          title: "Redirecting to Payment",
-          description: "Opening Stripe checkout in a new tab...",
-        });
-        
-        // Open Stripe checkout in a new tab
-        window.open(data.checkout_url, '_blank');
-        
-        return data;
-      }
-
-      // Check if we should use custom payment page (fallback)
+      // Check if we should use custom payment page
       if (data.useCustomPaymentPage && data.clientSecret) {
-        log('Navigating to custom payment page');
+        log('Navigating to custom payment page', { clientSecret: data.clientSecret });
         
         // Cache the session data
         const sessionData = {
@@ -217,18 +202,10 @@ export const useCreateSubscription = () => {
           }
         });
         
-        // Show appropriate message
-        if (data.reusedSession) {
-          toast({
-            title: "Returning to Payment",
-            description: "Returning you to your existing payment session.",
-          });
-        } else {
-          toast({
-            title: "Redirecting to Payment",
-            description: "Please complete your payment to activate the subscription.",
-          });
-        }
+        toast({
+          title: "Redirecting to Payment",
+          description: "Please complete your payment to activate the subscription.",
+        });
         
         return data;
       }

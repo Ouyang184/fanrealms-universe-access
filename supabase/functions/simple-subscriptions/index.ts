@@ -154,45 +154,33 @@ serve(async (req) => {
         log('Created new customer', { customerId });
       }
 
-      // Create Stripe checkout session
-      log('Creating Stripe checkout session');
-      const origin = req.headers.get('origin') || 'http://localhost:3000';
-      
-      const session = await stripe.checkout.sessions.create({
+      // Create payment intent for subscription
+      log('Creating payment intent for subscription');
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(tier.price * 100), // Convert to cents
+        currency: 'usd',
         customer: customerId,
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${tier.title} Subscription`,
-              description: tier.description || `Monthly subscription to ${tier.title}`,
-            },
-            unit_amount: Math.round(tier.price * 100), // Convert to cents
-            recurring: {
-              interval: 'month',
-            },
-          },
-          quantity: 1,
-        }],
-        mode: 'subscription',
-        success_url: `${origin}/creator/${creatorId}?tab=membership&success=true`,
-        cancel_url: `${origin}/creator/${creatorId}?tab=membership&canceled=true`,
+        setup_future_usage: 'off_session',
         metadata: {
           user_id: user.id,
           creator_id: creatorId,
           tier_id: tierId,
+          type: 'subscription',
         },
       });
 
-      log('Checkout session created', { sessionId: session.id, url: session.url });
+      log('Payment intent created', { paymentIntentId: paymentIntent.id, clientSecret: paymentIntent.client_secret });
 
-      // Return the checkout URL for redirect
+      // Return data for custom payment page
       return new Response(JSON.stringify({
         success: true,
-        checkout_url: session.url,
-        session_id: session.id,
-        message: 'Redirecting to payment...'
+        useCustomPaymentPage: true,
+        clientSecret: paymentIntent.client_secret,
+        amount: Math.round(tier.price * 100),
+        tierName: tier.title,
+        tierId: tierId,
+        creatorId: creatorId,
+        message: 'Redirecting to payment page...'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
