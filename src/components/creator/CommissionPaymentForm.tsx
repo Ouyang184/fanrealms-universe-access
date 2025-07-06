@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -49,7 +48,6 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
   
   // Payment form fields
   const [cardholderName, setCardholderName] = useState('');
-  const [postalCode, setPostalCode] = useState('');
   const [country, setCountry] = useState('US');
   const [state, setState] = useState('');
 
@@ -62,11 +60,6 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
 
     if (!cardholderName.trim()) {
       setError('Cardholder name is required');
-      return;
-    }
-
-    if (!postalCode.trim()) {
-      setError('Postal code is required');
       return;
     }
 
@@ -100,7 +93,6 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
           billing_details: {
             name: cardholderName,
             address: {
-              postal_code: postalCode,
               country: country,
               state: state,
             },
@@ -271,18 +263,6 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="postalCode">Postal/ZIP Code</Label>
-            <Input
-              id="postalCode"
-              type="text"
-              placeholder="90210"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              required
-            />
-          </div>
-
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -345,4 +325,3 @@ export function CommissionPaymentForm({ commission, onSuccess, onCancel }: Commi
     </Elements>
   );
 }
-
