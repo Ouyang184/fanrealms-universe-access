@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -13,8 +12,8 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Initialize Stripe with the publishable key from Supabase secrets
-const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
+// Use the provided test publishable key
+const stripePublishableKey = 'pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL';
 const stripePromise = loadStripe(stripePublishableKey);
 
 interface CommissionData {
