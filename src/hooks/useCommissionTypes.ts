@@ -29,13 +29,13 @@ export const useCommissionTypes = () => {
           try {
             // Handle various possible formats of custom_addons
             if (!item.custom_addons) return [];
-            if (Array.isArray(item.custom_addons)) return item.custom_addons as CommissionAddon[];
+            if (Array.isArray(item.custom_addons)) return item.custom_addons as unknown as CommissionAddon[];
             if (typeof item.custom_addons === 'string') {
               const parsed = JSON.parse(item.custom_addons);
               return Array.isArray(parsed) ? parsed : [];
             }
             if (typeof item.custom_addons === 'object') {
-              return Array.isArray(item.custom_addons) ? item.custom_addons : [];
+              return Array.isArray(item.custom_addons) ? item.custom_addons as unknown as CommissionAddon[] : [];
             }
             return [];
           } catch (error) {
