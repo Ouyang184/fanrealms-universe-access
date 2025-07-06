@@ -7,7 +7,7 @@ export async function handleCreateSubscription(
   user: any,
   { tierId, creatorId }: { tierId: string; creatorId: string }
 ) {
-  console.log('[SimpleSubscriptions] Action: create_subscription, TierId:', tierId, 'CreatorId:', creatorId);
+  console.log('[SimpleSubscriptions] Action: create_subscription, TierId:', tierId, 'CreatorId:', creatorId, '(LIVE MODE)');
 
   // CRITICAL: Check for existing active subscriptions to the same creator (any tier)
   console.log('[SimpleSubscriptions] Checking for existing active subscriptions to creator:', creatorId);
@@ -41,12 +41,12 @@ export async function handleCreateSubscription(
     return await handleTierUpdate(stripe, supabase, user, existingSubscription, tierId);
   }
 
-  console.log('[SimpleSubscriptions] No conflicting active subscriptions found, proceeding with creation...');
+  console.log('[SimpleSubscriptions] No conflicting active subscriptions found, proceeding with creation... (LIVE MODE)');
   return await createNewSubscription(stripe, supabase, user, tierId, creatorId);
 }
 
 async function handleTierUpdate(stripe: any, supabase: any, user: any, existingSubscription: any, tierId: string) {
-  console.log('[SimpleSubscriptions] Updating existing subscription to new tier with proration');
+  console.log('[SimpleSubscriptions] Updating existing subscription to new tier with proration (LIVE MODE)');
   
   // Get new tier details
   const { data: newTier, error: tierError } = await supabase
@@ -108,7 +108,7 @@ async function handleTierUpdate(stripe: any, supabase: any, user: any, existingS
       })
       .eq('id', existingSubscription.id);
 
-    console.log('[SimpleSubscriptions] Successfully updated subscription tier with proration');
+    console.log('[SimpleSubscriptions] Successfully updated subscription tier with proration (LIVE MODE)');
     
     return {
       success: true,
@@ -132,7 +132,7 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
     .neq('status', 'active');
 
   // Clean up ALL records from legacy subscriptions table for this user/creator
-  console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table');
+  console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table (LIVE MODE)');
   await supabase
     .from('subscriptions')
     .delete()
@@ -199,11 +199,11 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
 
   // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
   if (subscription.status === 'incomplete') {
-    console.log('[SimpleSubscriptions] Subscription created with incomplete status, auto-deleting...');
+    console.log('[SimpleSubscriptions] Subscription created with incomplete status, auto-deleting... (LIVE MODE)');
     
     try {
       await stripe.subscriptions.del(subscription.id);
-      console.log('[SimpleSubscriptions] Auto-deleted incomplete subscription:', subscription.id);
+      console.log('[SimpleSubscriptions] Auto-deleted incomplete subscription (LIVE MODE):', subscription.id);
       
       return { 
         error: 'Payment setup incomplete. Please try again with valid payment information.' 
@@ -214,7 +214,7 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
   }
 
   // Store subscription in user_subscriptions table
-  console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
+  console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only (LIVE MODE)');
   const { error: insertError } = await supabase
     .from('user_subscriptions')
     .insert({
