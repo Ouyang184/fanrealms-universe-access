@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { toast } from '@/hooks/use-toast';
+import { CommissionType, CommissionAddon } from '@/types/commission';
 
 export const useCommissionTypes = () => {
   const { creatorProfile } = useCreatorProfile();
@@ -20,7 +21,31 @@ export const useCommissionTypes = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to properly type custom_addons
+      const transformedData: CommissionType[] = (data || []).map(item => ({
+        ...item,
+        custom_addons: (() => {
+          try {
+            // Handle various possible formats of custom_addons
+            if (!item.custom_addons) return [];
+            if (Array.isArray(item.custom_addons)) return item.custom_addons as CommissionAddon[];
+            if (typeof item.custom_addons === 'string') {
+              const parsed = JSON.parse(item.custom_addons);
+              return Array.isArray(parsed) ? parsed : [];
+            }
+            if (typeof item.custom_addons === 'object') {
+              return Array.isArray(item.custom_addons) ? item.custom_addons : [];
+            }
+            return [];
+          } catch (error) {
+            console.warn('Failed to parse custom_addons:', error);
+            return [];
+          }
+        })()
+      }));
+      
+      return transformedData;
     },
     enabled: !!creatorProfile?.id,
   });
