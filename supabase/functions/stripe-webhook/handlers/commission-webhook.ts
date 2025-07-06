@@ -86,7 +86,7 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
       // Find commission by payment intent ID
       const { data: commissionRequest, error: fetchError } = await supabase
         .from('commission_requests')
-        .select('id')
+        .select('id, creator_id, agreed_price')
         .eq('stripe_payment_intent_id', paymentIntentId)
         .single();
 
@@ -98,7 +98,7 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
       console.log('Charge captured for commission:', commissionRequest.id);
 
       // Update commission status to accepted (payment fully processed)
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('commission_requests')
         .update({ 
           status: 'accepted',
@@ -106,10 +106,33 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
         })
         .eq('id', commissionRequest.id);
 
-      if (error) {
-        console.error('Failed to update commission on charge capture:', error);
+      if (updateError) {
+        console.error('Failed to update commission on charge capture:', updateError);
+        return;
+      }
+
+      // Record the commission earning
+      const amount = charge.amount / 100; // Convert from cents
+      const platformFee = amount * 0.04; // 4% for commissions
+      const netAmount = amount - platformFee;
+
+      const { error: earningError } = await supabase
+        .from('creator_earnings')
+        .insert({
+          creator_id: commissionRequest.creator_id,
+          commission_id: commissionRequest.id,
+          amount: amount,
+          platform_fee: platformFee,
+          net_amount: netAmount,
+          stripe_transfer_id: charge.id,
+          payment_date: new Date().toISOString(),
+          earning_type: 'commission'
+        });
+
+      if (earningError) {
+        console.error('Failed to record commission earning:', earningError);
       } else {
-        console.log('Commission marked as accepted after successful payment capture');
+        console.log('Commission earning recorded successfully');
       }
     }
 
