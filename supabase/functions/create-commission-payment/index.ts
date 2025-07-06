@@ -81,16 +81,59 @@ serve(async (req) => {
       id: commissionRequest.id,
       title: commissionRequest.title,
       agreed_price: commissionRequest.agreed_price,
-      status: commissionRequest.status
+      status: commissionRequest.status,
+      existing_stripe_id: commissionRequest.stripe_payment_intent_id
     });
 
-    // Check if request is in accepted status
-    if (commissionRequest.status !== 'accepted') {
+    // Handle different commission statuses
+    if (commissionRequest.status === 'completed') {
+      // Check if this commission already has a payment
+      if (commissionRequest.stripe_payment_intent_id) {
+        throw new Error('This commission has already been completed and paid. Cannot create another payment session.');
+      } else {
+        // Reset status to accepted if no payment exists (data inconsistency)
+        console.log('Commission marked as completed but no payment found. Resetting status to accepted.');
+        const { error: resetError } = await supabaseService
+          .from('commission_requests')
+          .update({ 
+            status: 'accepted',
+            creator_notes: 'Status reset to accepted for payment processing'
+          })
+          .eq('id', commissionId);
+
+        if (resetError) {
+          console.error('Failed to reset commission status:', resetError);
+          throw new Error('Failed to reset commission status for payment');
+        }
+      }
+    } else if (commissionRequest.status === 'paid' || commissionRequest.status === 'in_progress') {
+      throw new Error(`This commission is already ${commissionRequest.status}. Cannot create another payment session.`);
+    } else if (commissionRequest.status !== 'accepted') {
       throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
 
     if (!commissionRequest.agreed_price) {
       throw new Error('No agreed price set for this commission');
+    }
+
+    // Check if there's already an active checkout session
+    if (commissionRequest.stripe_payment_intent_id && commissionRequest.stripe_payment_intent_id.startsWith('cs_')) {
+      try {
+        const existingSession = await stripe.checkout.sessions.retrieve(commissionRequest.stripe_payment_intent_id);
+        if (existingSession.status === 'open') {
+          console.log('Returning existing active checkout session:', existingSession.id);
+          return new Response(JSON.stringify({ 
+            url: existingSession.url 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        } else if (existingSession.payment_status === 'paid') {
+          throw new Error('This commission has already been paid. Please refresh the page to see the updated status.');
+        }
+      } catch (stripeError) {
+        console.log('Previous session not found or expired, creating new one');
+      }
     }
 
     // Check if customer already exists in Stripe
@@ -116,7 +159,7 @@ serve(async (req) => {
       console.log('Created new Stripe customer:', customerId);
     }
 
-    console.log('Creating payment session');
+    console.log('Creating new payment session');
 
     // Create checkout session for immediate payment
     const session = await stripe.checkout.sessions.create({
@@ -146,14 +189,15 @@ serve(async (req) => {
       }
     });
 
-    console.log('Created payment session:', session.id);
+    console.log('Created new payment session:', session.id);
 
-    // Update commission request with session ID
+    // Update commission request with new session ID and reset status if needed
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        creator_notes: 'Payment session created - customer can now complete payment'
+        status: 'accepted', // Ensure status is correct for payment
+        creator_notes: 'New payment session created - customer can now complete payment'
       })
       .eq('id', commissionId);
 
@@ -162,7 +206,7 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment session');
     }
 
-    console.log('Updated commission request with session ID');
+    console.log('Updated commission request with new session ID');
     console.log('=== SUCCESS ===');
 
     return new Response(JSON.stringify({ 
