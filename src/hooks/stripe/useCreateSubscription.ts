@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -118,7 +119,8 @@ export const useCreateSubscription = () => {
 
       log('Sending request to edge function', requestPayload);
 
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      // FIXED: Call the correct 'simple-subscriptions' function instead of 'stripe-subscriptions'
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: requestPayload
       });
 
