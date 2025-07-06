@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -15,10 +14,11 @@ serve(async (req) => {
 
   try {
     const { action, creatorId, accountId } = await req.json()
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    // Use TEST Stripe secret key for Stripe Connect
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST')
 
     if (!stripeSecretKey) {
-      console.error('Missing Stripe secret key')
+      console.error('Missing Stripe test secret key')
       return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -32,10 +32,10 @@ serve(async (req) => {
 
     const origin = req.headers.get('origin') || 'http://localhost:3000'
     console.log('Origin:', origin)
-    console.log('Action:', action)
+    console.log('Action:', action, '(TEST MODE)')
 
     if (action === 'create_account') {
-      console.log('Creating account for creator:', creatorId)
+      console.log('Creating account for creator:', creatorId, '(TEST MODE)')
       
       // First check if creator already has a Stripe account
       const { data: existingCreator, error: fetchError } = await supabase
@@ -102,7 +102,7 @@ serve(async (req) => {
       })
 
     } else if (action === 'sync_account_status') {
-      console.log('Syncing account status for:', accountId)
+      console.log('Syncing account status for:', accountId, '(TEST MODE)')
       
       if (!accountId) {
         return new Response(JSON.stringify({ error: 'Account ID is required' }), { 
@@ -112,9 +112,9 @@ serve(async (req) => {
       }
 
       try {
-        // Retrieve account status from Stripe
+        // Retrieve account status from Stripe (TEST)
         const account = await stripe.accounts.retrieve(accountId)
-        console.log('Account status retrieved:', {
+        console.log('Account status retrieved (TEST MODE):', {
           id: account.id,
           charges_enabled: account.charges_enabled,
           payouts_enabled: account.payouts_enabled,
@@ -139,7 +139,7 @@ serve(async (req) => {
           })
         }
 
-        console.log('Successfully updated creator account status')
+        console.log('Successfully updated creator account status (TEST MODE)')
 
         return new Response(JSON.stringify({ 
           success: true,
@@ -154,7 +154,7 @@ serve(async (req) => {
         })
 
       } catch (stripeError) {
-        console.error('Error retrieving Stripe account:', stripeError)
+        console.error('Error retrieving Stripe account (TEST MODE):', stripeError)
         return new Response(JSON.stringify({ error: 'Failed to retrieve account status from Stripe' }), { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -162,7 +162,7 @@ serve(async (req) => {
       }
 
     } else if (action === 'create_login_link') {
-      console.log('Creating login link for account:', accountId)
+      console.log('Creating login link for account:', accountId, '(TEST MODE)')
       
       // Check if account has completed onboarding
       const account = await stripe.accounts.retrieve(accountId)
@@ -188,7 +188,7 @@ serve(async (req) => {
       })
 
     } else if (action === 'get_balance') {
-      console.log('Getting balance for account:', accountId)
+      console.log('Getting balance for account:', accountId, '(TEST MODE)')
       
       // Get account balance
       const balance = await stripe.balance.retrieve({
@@ -206,7 +206,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Stripe Connect error:', error)
+    console.error('Stripe Connect error (TEST MODE):', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
