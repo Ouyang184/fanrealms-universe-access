@@ -310,8 +310,10 @@ export type Database = {
       creator_earnings: {
         Row: {
           amount: number
+          commission_id: string | null
           created_at: string | null
           creator_id: string
+          earning_type: string | null
           id: string
           net_amount: number
           payment_date: string | null
@@ -321,8 +323,10 @@ export type Database = {
         }
         Insert: {
           amount: number
+          commission_id?: string | null
           created_at?: string | null
           creator_id: string
+          earning_type?: string | null
           id?: string
           net_amount: number
           payment_date?: string | null
@@ -332,8 +336,10 @@ export type Database = {
         }
         Update: {
           amount?: number
+          commission_id?: string | null
           created_at?: string | null
           creator_id?: string
+          earning_type?: string | null
           id?: string
           net_amount?: number
           payment_date?: string | null
@@ -342,6 +348,20 @@ export type Database = {
           subscription_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "creator_earnings_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_commission_id_fkey"
+            columns: ["commission_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "creator_earnings_creator_id_fkey"
             columns: ["creator_id"]

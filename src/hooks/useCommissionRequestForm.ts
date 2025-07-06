@@ -100,10 +100,10 @@ export function useCommissionRequestForm({
         title: selectedType.name,
         description: formData.description,
         agreed_price: selectedType.base_price,
-        status: 'pending'
+        status: 'accepted' // Changed from 'pending' to 'accepted' for fixed-price commissions
       });
 
-      // First create the commission request
+      // Create the commission request with accepted status for immediate payment
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -115,7 +115,8 @@ export function useCommissionRequestForm({
         deadline: formData.deadline || null,
         customer_notes: formData.customer_notes || null,
         agreed_price: selectedType.base_price,
-        status: 'pending'
+        status: 'accepted', // Set to accepted since we have a fixed price
+        creator_notes: 'Commission auto-accepted with fixed price - payment required to begin work'
       };
 
       const { data: newRequest, error } = await supabase
@@ -131,7 +132,7 @@ export function useCommissionRequestForm({
 
       console.log('Commission request created successfully:', newRequest);
 
-      // Now create the payment authorization
+      // Now create the payment session
       const { data: paymentData, error: paymentError } = await supabase.functions.invoke('create-commission-payment', {
         body: { commissionId: newRequest.id }
       });
@@ -140,7 +141,7 @@ export function useCommissionRequestForm({
         console.error('Payment creation error:', paymentError);
         // Clean up the commission request if payment fails
         await supabase.from('commission_requests').delete().eq('id', newRequest.id);
-        throw new Error(paymentError.message || 'Failed to create payment authorization');
+        throw new Error(paymentError.message || 'Failed to create payment session');
       }
 
       if (!paymentData?.url) {
@@ -148,14 +149,14 @@ export function useCommissionRequestForm({
       }
 
       toast({
-        title: "Commission Request Created!",
-        description: "Complete payment authorization to submit your request to the creator"
+        title: "Commission Accepted!",
+        description: "Complete payment to begin work on your commission"
       });
 
       resetForm();
       onSuccess();
       
-      // Redirect to payment authorization
+      // Redirect to payment
       window.open(paymentData.url, '_blank');
 
     } catch (error) {

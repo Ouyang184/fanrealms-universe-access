@@ -23,7 +23,7 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe
+    // Initialize Stripe with TEST key
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured');
@@ -58,18 +58,12 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Fetch commission request details
+    // Fetch commission request
     const { data: commissionRequest, error: commissionError } = await supabaseService
       .from('commission_requests')
-      .select(`
-        *,
-        commission_type:commission_types(name, description),
-        creator:creators!commission_requests_creator_id_fkey(
-          display_name,
-          user_id
-        )
-      `)
+      .select('*')
       .eq('id', commissionId)
+      .eq('customer_id', user.id)
       .single();
 
     if (commissionError || !commissionRequest) {
@@ -84,7 +78,31 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Check if request is in accepted status
+    // Fetch commission type for details
+    const { data: commissionType, error: typeError } = await supabaseService
+      .from('commission_types')
+      .select('name, description')
+      .eq('id', commissionRequest.commission_type_id)
+      .single();
+
+    if (typeError) {
+      console.error('Commission type error:', typeError);
+      throw new Error('Commission type not found');
+    }
+
+    // Fetch creator details
+    const { data: creator, error: creatorError } = await supabaseService
+      .from('creators')
+      .select('display_name, user_id')
+      .eq('id', commissionRequest.creator_id)
+      .single();
+
+    if (creatorError) {
+      console.error('Creator error:', creatorError);
+      throw new Error('Creator not found');
+    }
+
+    // Check if commission is in accepted status and has agreed price
     if (commissionRequest.status !== 'accepted') {
       throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
@@ -127,7 +145,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
+              description: `${commissionType.name} by ${creator.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
@@ -153,7 +171,7 @@ serve(async (req) => {
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        creator_notes: 'Payment session created - customer can now complete payment'
+        creator_notes: 'Payment session created - customer can now complete payment (TEST MODE)'
       })
       .eq('id', commissionId);
 
