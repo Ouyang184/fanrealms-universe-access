@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +20,15 @@ const sessionCache = new Map<string, {
 
 const SESSION_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
+// Helper function for consistent logging
+const log = (step: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [useCreateSubscription] ${step}`);
+  if (data) {
+    console.log(`[${timestamp}] [useCreateSubscription] Data:`, JSON.stringify(data, null, 2));
+  }
+};
+
 export const useCreateSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -29,17 +37,31 @@ export const useCreateSubscription = () => {
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+    log('Starting subscription creation', { tierId, creatorId, userId: user?.id });
+
     if (!user || isProcessing) {
-      console.log('Cannot create subscription: user not authenticated or already processing');
+      log('Cannot create subscription: user not authenticated or already processing');
       return null;
     }
 
     // Validate required fields
     if (!tierId || !creatorId) {
-      console.error('useCreateSubscription: Missing required fields:', { tierId, creatorId });
+      log('Missing required fields', { tierId, creatorId });
       toast({
         title: "Invalid Request",
         description: "Missing required subscription information. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tierId) || !uuidRegex.test(creatorId)) {
+      log('Invalid UUID format', { tierId, creatorId });
+      toast({
+        title: "Invalid Request",
+        description: "Invalid subscription parameters. Please try again.",
         variant: "destructive"
       });
       return null;
@@ -49,7 +71,7 @@ export const useCreateSubscription = () => {
     
     // Check if this subscription is locked (already being processed)
     if (lockedSubscriptions.has(lockKey)) {
-      console.log('Subscription already being processed for:', lockKey);
+      log('Subscription already being processed', { lockKey });
       toast({
         title: "Payment in Progress",
         description: "Please wait, your payment is already being processed.",
@@ -63,7 +85,7 @@ export const useCreateSubscription = () => {
     const cachedSession = sessionCache.get(cacheKey);
     
     if (cachedSession && (Date.now() - cachedSession.timestamp) < SESSION_CACHE_DURATION) {
-      console.log('useCreateSubscription: Using cached session for:', cacheKey);
+      log('Using cached session', { cacheKey });
       
       // Navigate to payment page with cached data
       navigate('/payment', {
@@ -87,8 +109,6 @@ export const useCreateSubscription = () => {
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
     
-    console.log('useCreateSubscription: Starting subscription creation for:', { tierId, creatorId, userId: user.id });
-    
     try {
       const requestPayload = {
         action: 'create_subscription',
@@ -96,29 +116,39 @@ export const useCreateSubscription = () => {
         creatorId: creatorId
       };
 
-      console.log('useCreateSubscription: Sending request payload:', requestPayload);
+      log('Sending request to edge function', requestPayload);
 
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: requestPayload
       });
 
-      console.log('useCreateSubscription: Edge function response:', { data, error });
+      log('Edge function response received', { data, error });
 
+      // Handle edge function errors
       if (error) {
-        console.error('useCreateSubscription: Edge function error:', error);
+        log('Edge function error', error);
         
-        // Show more specific error messages
         let errorMessage = 'Failed to create subscription. Please try again.';
+        
+        // Parse error response if it's a structured error
         if (error.message) {
-          if (error.message.includes('authentication')) {
-            errorMessage = 'Authentication failed. Please log in again.';
-          } else if (error.message.includes('configuration')) {
-            errorMessage = 'Payment system configuration error. Please contact support.';
-          } else if (error.message.includes('Stripe')) {
-            errorMessage = `Payment error: ${error.message}`;
-          } else {
+          try {
+            const parsedError = JSON.parse(error.message);
+            errorMessage = parsedError.error || error.message;
+          } catch {
             errorMessage = error.message;
           }
+        }
+
+        // Provide specific error messages based on error type
+        if (errorMessage.includes('authentication') || errorMessage.includes('auth')) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (errorMessage.includes('configuration') || errorMessage.includes('environment')) {
+          errorMessage = 'Payment system configuration error. Please contact support.';
+        } else if (errorMessage.includes('Stripe')) {
+          // Keep Stripe errors as they are usually user-friendly
+        } else if (errorMessage.includes('database')) {
+          errorMessage = 'Database error. Please try again or contact support.';
         }
 
         toast({
@@ -130,8 +160,9 @@ export const useCreateSubscription = () => {
         return { error: errorMessage };
       }
 
+      // Handle structured error responses from the function
       if (data?.error) {
-        console.error('useCreateSubscription: Function returned error:', data.error);
+        log('Function returned error', data);
         
         toast({
           title: "Subscription Error",
@@ -146,7 +177,7 @@ export const useCreateSubscription = () => {
       }
 
       if (!data) {
-        console.error('useCreateSubscription: No data returned from function');
+        log('No data returned from function');
         toast({
           title: "Subscription Failed",
           description: "No response from subscription service. Please try again.",
@@ -157,7 +188,7 @@ export const useCreateSubscription = () => {
 
       // Check if we should use custom payment page
       if (data.useCustomPaymentPage && data.clientSecret) {
-        console.log('useCreateSubscription: Navigating to custom payment page');
+        log('Navigating to custom payment page');
         
         // Cache the session data
         const sessionData = {
@@ -212,7 +243,7 @@ export const useCreateSubscription = () => {
 
       // Handle successful subscription creation
       if (data.success || data.subscriptionId) {
-        console.log('useCreateSubscription: Subscription creation successful');
+        log('Subscription creation successful');
         
         toast({
           title: data.isUpgrade ? "Subscription Updated!" : "Subscription Created!",
@@ -223,15 +254,25 @@ export const useCreateSubscription = () => {
       }
 
       // Fallback case
-      console.log('useCreateSubscription: Unexpected response format:', data);
+      log('Unexpected response format', data);
       return data;
 
     } catch (error) {
-      console.error('useCreateSubscription: Unexpected error:', error);
+      log('Unexpected error', { 
+        error: error.message, 
+        stack: error.stack,
+        name: error.name 
+      });
       
       let errorMessage = 'An unexpected error occurred. Please try again.';
+      
       if (error instanceof Error) {
         errorMessage = error.message;
+        
+        // Handle network errors
+        if (error.message.includes('fetch') || error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        }
       }
 
       toast({
@@ -260,7 +301,7 @@ export const useCreateSubscription = () => {
     
     const cacheKey = `${user.id}-${creatorId}-${tierId}`;
     sessionCache.delete(cacheKey);
-    console.log('Cleared subscription cache for:', cacheKey);
+    log('Cleared subscription cache', { cacheKey });
   }, [user]);
 
   return {

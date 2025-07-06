@@ -1,11 +1,20 @@
 
+// Helper function for consistent logging
+const log = (step: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [CreateSubscription] ${step}`);
+  if (data) {
+    console.log(`[${timestamp}] [CreateSubscription] Data:`, JSON.stringify(data, null, 2));
+  }
+};
+
 export async function handleCreateSubscription(
   stripe: any,
   supabase: any,
   user: any,
   { tierId, creatorId }: { tierId: string; creatorId: string }
 ) {
-  console.log('[CreateSubscription] Starting subscription creation for user:', user.id, 'tier:', tierId, 'creator:', creatorId);
+  log('Starting subscription creation', { userId: user.id, tierId, creatorId });
 
   try {
     // Validate inputs
@@ -17,26 +26,36 @@ export async function handleCreateSubscription(
       throw new Error('Invalid user data: missing id or email');
     }
 
-    // Check for existing active subscriptions to the same creator
-    console.log('[CreateSubscription] Checking for existing subscriptions...');
-    const { data: existingSubscriptions, error: existingError } = await supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('creator_id', creatorId)
-      .in('status', ['active', 'trialing']);
+    log('Input validation passed');
 
-    if (existingError) {
-      console.error('[CreateSubscription] Error checking existing subscriptions:', existingError);
-      throw new Error(`Database error: ${existingError.message}`);
+    // Check for existing active subscriptions to the same creator
+    let existingSubscriptions;
+    try {
+      log('Checking for existing subscriptions...');
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .in('status', ['active', 'trialing']);
+
+      if (error) {
+        log('Database error checking subscriptions', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      existingSubscriptions = data;
+      log('Existing subscriptions check completed', { count: existingSubscriptions?.length || 0 });
+    } catch (dbError) {
+      throw new Error(`Failed to check existing subscriptions: ${dbError.message}`);
     }
 
     if (existingSubscriptions && existingSubscriptions.length > 0) {
       const existingSub = existingSubscriptions[0];
-      console.log('[CreateSubscription] Found existing subscription:', existingSub.id);
+      log('Found existing subscription', { subscriptionId: existingSub.id, status: existingSub.status });
       
       if (existingSub.tier_id === tierId) {
-        console.log('[CreateSubscription] User already subscribed to this tier');
+        log('User already subscribed to this tier');
         return { 
           error: 'You already have an active subscription to this tier.',
           shouldRefresh: true
@@ -44,50 +63,65 @@ export async function handleCreateSubscription(
       }
 
       // Handle tier upgrade/downgrade
-      console.log('[CreateSubscription] Handling tier change from', existingSub.tier_id, 'to', tierId);
+      log('Handling tier change', { from: existingSub.tier_id, to: tierId });
       return await handleTierChange(stripe, supabase, user, existingSub, tierId);
     }
 
-    // Get tier details
-    console.log('[CreateSubscription] Fetching tier details...');
-    const { data: tier, error: tierError } = await supabase
-      .from('membership_tiers')
-      .select(`
-        *,
-        creators!inner(stripe_account_id, display_name)
-      `)
-      .eq('id', tierId)
-      .single();
+    // Get tier details with creator information
+    let tier;
+    try {
+      log('Fetching tier details...');
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select(`
+          *,
+          creators!inner(stripe_account_id, display_name)
+        `)
+        .eq('id', tierId)
+        .single();
 
-    if (tierError) {
-      console.error('[CreateSubscription] Error fetching tier:', tierError);
-      throw new Error(`Failed to fetch tier: ${tierError.message}`);
+      if (error) {
+        log('Database error fetching tier', error);
+        throw new Error(`Failed to fetch tier: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Membership tier not found');
+      }
+
+      tier = data;
+      log('Tier details fetched', { 
+        tierTitle: tier.title, 
+        price: tier.price,
+        creatorName: tier.creators?.display_name,
+        hasStripeAccount: !!tier.creators?.stripe_account_id
+      });
+    } catch (tierError) {
+      throw new Error(`Failed to fetch tier details: ${tierError.message}`);
     }
 
-    if (!tier) {
-      console.error('[CreateSubscription] Tier not found:', tierId);
-      throw new Error('Membership tier not found');
-    }
-
+    // Validate creator has Stripe setup
     if (!tier.creators?.stripe_account_id) {
-      console.error('[CreateSubscription] Creator stripe account not set up:', creatorId);
+      log('Creator stripe account not set up');
       throw new Error('Creator payments not set up. Please contact the creator.');
     }
 
-    console.log('[CreateSubscription] Tier found:', tier.title, 'Price:', tier.price);
-
     // Get or create Stripe customer
-    console.log('[CreateSubscription] Getting or creating Stripe customer...');
-    const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabase, user);
-    console.log('[CreateSubscription] Stripe customer ID:', stripeCustomerId);
+    let stripeCustomerId;
+    try {
+      log('Getting or creating Stripe customer...');
+      stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabase, user);
+      log('Stripe customer ready', { customerId: stripeCustomerId });
+    } catch (customerError) {
+      throw new Error(`Customer setup failed: ${customerError.message}`);
+    }
 
     // Create or get Stripe price
-    console.log('[CreateSubscription] Creating or getting Stripe price...');
     let stripePriceId = tier.stripe_price_id;
     
     if (!stripePriceId) {
-      console.log('[CreateSubscription] Creating new Stripe price...');
       try {
+        log('Creating new Stripe price...');
         const price = await stripe.prices.create({
           unit_amount: Math.round(tier.price * 100),
           currency: 'usd',
@@ -98,23 +132,26 @@ export async function handleCreateSubscription(
           }
         });
         stripePriceId = price.id;
-        console.log('[CreateSubscription] Created Stripe price:', stripePriceId);
+        log('Stripe price created', { priceId: stripePriceId });
 
         // Update tier with price ID
         await supabase
           .from('membership_tiers')
           .update({ stripe_price_id: stripePriceId })
           .eq('id', tierId);
+        
+        log('Tier updated with price ID');
       } catch (priceError) {
-        console.error('[CreateSubscription] Error creating Stripe price:', priceError);
+        log('Stripe price creation error', priceError);
         throw new Error(`Failed to create price: ${priceError.message}`);
       }
     }
 
     // Create Stripe subscription
-    console.log('[CreateSubscription] Creating Stripe subscription...');
+    let subscription;
     try {
-      const subscription = await stripe.subscriptions.create({
+      log('Creating Stripe subscription...');
+      subscription = await stripe.subscriptions.create({
         customer: stripeCustomerId,
         items: [{ price: stripePriceId }],
         application_fee_percent: 4,
@@ -133,19 +170,27 @@ export async function handleCreateSubscription(
         }
       });
 
-      console.log('[CreateSubscription] Stripe subscription created:', subscription.id, 'Status:', subscription.status);
+      log('Stripe subscription created', { 
+        subscriptionId: subscription.id, 
+        status: subscription.status 
+      });
+    } catch (stripeError) {
+      log('Stripe subscription creation error', stripeError);
+      throw new Error(`Stripe error: ${stripeError.message}`);
+    }
 
-      // Check if subscription is incomplete and needs payment
-      if (subscription.status === 'incomplete') {
-        const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
-        
-        if (!clientSecret) {
-          console.error('[CreateSubscription] No client secret found for incomplete subscription');
-          throw new Error('Payment setup failed - no client secret');
-        }
+    // Handle subscription status
+    if (subscription.status === 'incomplete') {
+      const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
+      
+      if (!clientSecret) {
+        log('No client secret found for incomplete subscription');
+        throw new Error('Payment setup failed - no client secret');
+      }
 
-        // Store subscription in database
-        console.log('[CreateSubscription] Storing subscription in database...');
+      // Store subscription in database
+      try {
+        log('Storing subscription in database...');
         const { error: insertError } = await supabase
           .from('user_subscriptions')
           .insert({
@@ -163,49 +208,56 @@ export async function handleCreateSubscription(
           });
 
         if (insertError) {
-          console.error('[CreateSubscription] Error inserting subscription:', insertError);
+          log('Database insertion error', insertError);
           // Try to cancel the Stripe subscription
           try {
             await stripe.subscriptions.del(subscription.id);
+            log('Stripe subscription cancelled due to DB error');
           } catch (cancelError) {
-            console.error('[CreateSubscription] Error canceling subscription after DB error:', cancelError);
+            log('Error canceling subscription after DB error', cancelError);
           }
           throw new Error(`Database error: ${insertError.message}`);
         }
 
-        console.log('[CreateSubscription] Subscription stored successfully');
-        return {
-          useCustomPaymentPage: true,
-          clientSecret,
-          subscriptionId: subscription.id,
-          amount: tier.price * 100,
-          tierName: tier.title,
-          tierId,
-          creatorId
-        };
+        log('Subscription stored successfully');
+      } catch (dbError) {
+        throw new Error(`Failed to store subscription: ${dbError.message}`);
       }
 
-      // If subscription is active immediately (shouldn't happen with payment_behavior: 'default_incomplete')
-      console.log('[CreateSubscription] Subscription is immediately active');
       return {
-        success: true,
+        useCustomPaymentPage: true,
+        clientSecret,
         subscriptionId: subscription.id,
-        message: 'Subscription created successfully'
+        amount: tier.price * 100,
+        tierName: tier.title,
+        tierId,
+        creatorId
       };
-
-    } catch (stripeError) {
-      console.error('[CreateSubscription] Stripe subscription creation error:', stripeError);
-      throw new Error(`Stripe error: ${stripeError.message}`);
     }
 
+    // If subscription is active immediately
+    log('Subscription is immediately active');
+    return {
+      success: true,
+      subscriptionId: subscription.id,
+      message: 'Subscription created successfully'
+    };
+
   } catch (error) {
-    console.error('[CreateSubscription] Error in handleCreateSubscription:', error);
+    log('Error in handleCreateSubscription', { 
+      error: error.message, 
+      stack: error.stack 
+    });
     throw error;
   }
 }
 
 async function handleTierChange(stripe: any, supabase: any, user: any, existingSubscription: any, newTierId: string) {
-  console.log('[CreateSubscription] Handling tier change...');
+  log('Handling tier change', { 
+    from: existingSubscription.tier_id, 
+    to: newTierId,
+    subscriptionId: existingSubscription.stripe_subscription_id 
+  });
   
   try {
     // Get new tier details
@@ -219,8 +271,10 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
       .single();
 
     if (tierError || !newTier) {
-      throw new Error('New tier not found');
+      throw new Error(`New tier not found: ${tierError?.message || 'No tier data'}`);
     }
+
+    log('New tier fetched', { tierTitle: newTier.title, price: newTier.price });
 
     // Create new price if needed
     let newStripePriceId = newTier.stripe_price_id;
@@ -240,14 +294,19 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
         .from('membership_tiers')
         .update({ stripe_price_id: newStripePriceId })
         .eq('id', newTierId);
+      
+      log('New price created and tier updated', { priceId: newStripePriceId });
     }
 
+    // Get current subscription from Stripe to get items
+    const currentSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id);
+    
     // Update the existing Stripe subscription
     const updatedSubscription = await stripe.subscriptions.update(
       existingSubscription.stripe_subscription_id,
       {
         items: [{
-          id: (await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id)).items.data[0].id,
+          id: currentSubscription.items.data[0].id,
           price: newStripePriceId,
         }],
         proration_behavior: 'always_invoice',
@@ -260,6 +319,8 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
       }
     );
 
+    log('Stripe subscription updated', { subscriptionId: updatedSubscription.id });
+
     // Update database record
     await supabase
       .from('user_subscriptions')
@@ -270,7 +331,8 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
       })
       .eq('id', existingSubscription.id);
 
-    console.log('[CreateSubscription] Tier change completed successfully');
+    log('Database record updated');
+
     return {
       success: true,
       message: 'Subscription tier updated successfully with proration applied',
@@ -279,13 +341,13 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
     };
 
   } catch (error) {
-    console.error('[CreateSubscription] Error handling tier change:', error);
+    log('Error handling tier change', { error: error.message });
     throw new Error(`Failed to update subscription tier: ${error.message}`);
   }
 }
 
 async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) {
-  console.log('[CreateSubscription] Getting or creating Stripe customer for user:', user.id);
+  log('Getting or creating Stripe customer', { userId: user.id, email: user.email });
   
   try {
     // Check if customer already exists in our database
@@ -296,31 +358,42 @@ async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) 
       .single();
 
     if (existingCustomer?.stripe_customer_id) {
-      console.log('[CreateSubscription] Found existing customer:', existingCustomer.stripe_customer_id);
-      return existingCustomer.stripe_customer_id;
+      log('Found existing customer in database', { customerId: existingCustomer.stripe_customer_id });
+      
+      // Verify customer exists in Stripe
+      try {
+        await stripe.customers.retrieve(existingCustomer.stripe_customer_id);
+        return existingCustomer.stripe_customer_id;
+      } catch (stripeError) {
+        log('Customer not found in Stripe, will create new one', { error: stripeError.message });
+      }
     }
 
     // Create new Stripe customer
-    console.log('[CreateSubscription] Creating new Stripe customer...');
+    log('Creating new Stripe customer...');
     const customer = await stripe.customers.create({
       email: user.email,
       metadata: { user_id: user.id }
     });
 
-    console.log('[CreateSubscription] Created Stripe customer:', customer.id);
+    log('Stripe customer created', { customerId: customer.id });
 
     // Store customer ID in database
     await supabase
       .from('stripe_customers')
-      .insert({
+      .upsert({
         user_id: user.id,
         stripe_customer_id: customer.id
+      }, {
+        onConflict: 'user_id'
       });
+
+    log('Customer stored in database');
 
     return customer.id;
 
   } catch (error) {
-    console.error('[CreateSubscription] Error getting/creating Stripe customer:', error);
+    log('Error getting/creating Stripe customer', { error: error.message });
     throw new Error(`Customer creation failed: ${error.message}`);
   }
 }
