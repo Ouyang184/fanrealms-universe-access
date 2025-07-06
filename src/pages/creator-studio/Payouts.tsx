@@ -1,249 +1,244 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Clock, Table as TableIcon, DollarSign, ExternalLink, TrendingUp, RefreshCw } from "lucide-react";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useStripeConnect } from "@/hooks/useStripeConnect";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCreatorProfile } from "@/hooks/useCreatorProfile";
+import { toast } from "@/hooks/use-toast";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStripeConnect } from '@/hooks/useStripeConnect';
-import { useCreatorProfile } from '@/hooks/useCreatorProfile';
-import { EarningsBreakdown } from '@/components/creator-studio/EarningsBreakdown';
-import { WebhookDiagnostics } from '@/components/creator-studio/WebhookDiagnostics';
-import { 
-  DollarSign, 
-  RefreshCw, 
-  ExternalLink, 
-  AlertCircle, 
-  CheckCircle, 
-  CreditCard,
-  TrendingUp,
-  Webhook
-} from 'lucide-react';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
-
-export default function Payouts() {
+export default function CreatorStudioPayouts() {
+  const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
-  const { toast } = useToast();
-  const [isSyncing, setIsSyncing] = useState(false);
-  const { 
-    connectStatus, 
-    statusLoading, 
-    createLoginLink, 
-    syncAccountStatus,
-    balance,
-    refetchBalance,
-    isLoading
-  } = useStripeConnect();
+  const { connectStatus, balance, createLoginLink } = useStripeConnect();
+  const queryClient = useQueryClient();
 
-  const handleSyncEarnings = async () => {
-    if (!connectStatus?.stripe_account_id) {
-      toast({
-        title: "Error",
-        description: "No Stripe account connected. Please connect your Stripe account first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
+  // Manual sync mutation
+  const { mutate: syncEarnings, isPending: isSyncing } = useMutation({
+    mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('sync-stripe-earnings');
-      
       if (error) throw error;
-      
-      // Refresh balance after sync
-      await refetchBalance();
-      
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['creatorEarnings'] });
+      queryClient.invalidateQueries({ queryKey: ['stripeBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['stripeConnectStatus'] });
       toast({
-        title: "Earnings Synced",
-        description: `Synced ${data.syncedCount} earnings (${data.commissionCount} commissions, ${data.subscriptionCount} subscriptions)`,
+        title: "Sync completed",
+        description: `${data?.syncedCount || 0} new earnings synced from Stripe.`,
       });
-    } catch (error) {
-      console.error('Error syncing earnings:', error);
+    },
+    onError: (error) => {
+      console.error('Sync error:', error);
       toast({
-        title: "Sync Failed",
-        description: "Failed to sync earnings. Please try again.",
+        title: "Sync failed",
+        description: "Failed to sync earnings from Stripe. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsSyncing(false);
     }
-  };
+  });
 
-  if (statusLoading) {
+  // Fetch creator earnings
+  const { data: earnings = [], isLoading: earningsLoading } = useQuery({
+    queryKey: ['creatorEarnings', creatorProfile?.id],
+    queryFn: async () => {
+      if (!creatorProfile?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('creator_earnings')
+        .select('*')
+        .eq('creator_id', creatorProfile.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!creatorProfile?.id
+  });
+
+  // Calculate totals
+  const totalEarnings = earnings.reduce((sum, earning) => sum + (earning.net_amount || 0), 0);
+  const monthlyEarnings = earnings
+    .filter(earning => {
+      const earningDate = new Date(earning.created_at);
+      const now = new Date();
+      return earningDate.getMonth() === now.getMonth() && earningDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, earning) => sum + (earning.net_amount || 0), 0);
+
+  const availableBalance = balance?.available?.[0]?.amount ? balance.available[0].amount / 100 : 0;
+
+  if (earningsLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-center py-8">
-          <LoadingSpinner />
-        </div>
+      <div className="flex justify-center py-12">
+        <LoadingSpinner />
       </div>
     );
   }
 
-  const isConnected = connectStatus?.stripe_account_id;
-  const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
-  const canReceivePayments = connectStatus?.stripe_charges_enabled;
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Payouts</h1>
-          <p className="text-muted-foreground">
-            Manage your earnings and payout settings (TEST MODE)
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
+          <p className="text-muted-foreground">Manage your earnings and payouts from Stripe</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => syncEarnings()}
+            disabled={isSyncing}
+            variant="outline"
+            size="sm"
+          >
+            {isSyncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync from Stripe
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Connection Status Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Stripe Connect Status
-          </CardTitle>
-          <CardDescription>
-            Your payout account connection status
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="flex items-center gap-3">
-              {canReceivePayments ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              ) : (
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-              )}
-              <div>
-                <p className="font-medium">
-                  {isConnected 
-                    ? isOnboardingComplete 
-                      ? 'Ready to receive payments'
-                      : 'Complete onboarding to receive payments'
-                    : 'No Stripe account connected'
-                  }
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isConnected ? 'Stripe account connected' : 'Connect your Stripe account to start receiving payments'}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Badge variant={canReceivePayments ? "default" : "secondary"}>
-                {canReceivePayments ? "Active" : "Setup Required"}
-              </Badge>
-              {canReceivePayments && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => createLoginLink(connectStatus.stripe_account_id)}
-                  disabled={isLoading}
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Stripe Dashboard
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {canReceivePayments ? (
-        <Tabs defaultValue="earnings" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="balance">Account Balance</TabsTrigger>
-            <TabsTrigger value="diagnostics">Webhook Diagnostics</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="earnings" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Earnings Overview
-              </h2>
-              <Button
-                onClick={handleSyncEarnings}
-                disabled={isSyncing}
-                variant="outline"
-              >
-                {isSyncing ? (
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Sync Earnings
-              </Button>
-            </div>
-            <EarningsBreakdown />
-          </TabsContent>
-
-          <TabsContent value="balance" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Stripe Account Balance (TEST MODE)
-                </CardTitle>
-                <CardDescription>
-                  Your current account balance in Stripe
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {balance ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Available</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        ${(balance.available?.[0]?.amount || 0) / 100}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Ready for payout
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold text-orange-600">
-                        ${(balance.pending?.[0]?.amount || 0) / 100}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Being processed
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">
-                    Unable to load balance information. Please try refreshing or check your Stripe connection.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="diagnostics" className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Webhook className="h-5 w-5" />
-              <h2 className="text-xl font-semibold">Webhook Diagnostics</h2>
-            </div>
-            <WebhookDiagnostics />
-          </TabsContent>
-        </Tabs>
-      ) : (
+      {/* Sync Status Alert */}
+      {connectStatus?.stripe_account_id && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-semibold mb-1">Webhook Status</div>
+            Your earnings are automatically synced via webhooks. If you notice missing data or status issues, 
+            use the "Sync from Stripe" button above to manually refresh your account status and earnings.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardContent className="py-12 text-center">
-            <AlertCircle className="h-12 w-12 text-yellow-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Complete Stripe Setup</h3>
-            <p className="text-muted-foreground mb-4">
-              You need to complete your Stripe account setup before you can view earnings and payouts.
-            </p>
-            <Button
-              onClick={() => window.location.href = '/creator-studio/settings'}
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Available Balance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+              <span className="text-2xl font-bold">${availableBalance.toFixed(2)}</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Earnings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <TrendingUp className="h-4 w-4 text-muted-foreground mr-1" />
+              <span className="text-2xl font-bold">${monthlyEarnings.toFixed(2)}</span>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center">
+              <DollarSign className="h-4 w-4 text-muted-foreground mr-1" />
+              <span className="text-2xl font-bold">${totalEarnings.toFixed(2)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stripe Dashboard Access */}
+      {connectStatus?.stripe_account_id && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Stripe Dashboard</CardTitle>
+            <CardDescription>Access your full Stripe dashboard for detailed analytics and payout management</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              className="flex items-center gap-2"
             >
-              Complete Setup
+              <ExternalLink className="h-4 w-4" />
+              Open Stripe Dashboard
             </Button>
           </CardContent>
         </Card>
+      )}
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Recent Earnings</CardTitle>
+            <CardDescription>View your recent earnings and transactions</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableCaption>A list of your recent earnings</TableCaption>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Gross Amount</TableHead>
+                <TableHead>Platform Fee</TableHead>
+                <TableHead className="text-right">Net Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {earnings.length > 0 ? (
+                earnings.map((earning) => (
+                  <TableRow key={earning.id}>
+                    <TableCell>
+                      {new Date(earning.payment_date || earning.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>Subscription Payment</TableCell>
+                    <TableCell>${earning.amount.toFixed(2)}</TableCell>
+                    <TableCell>-${earning.platform_fee.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      ${earning.net_amount.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow className="bg-muted/50">
+                  <TableCell colSpan={5} className="text-center py-6">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <TableIcon className="h-10 w-10 mb-2" />
+                      <p>No earnings found</p>
+                      <p className="text-sm">Your earnings will appear here when you receive payments</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {!connectStatus?.stripe_onboarding_complete && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-semibold mb-1">Stripe Setup Required</div>
+            To receive payouts, you need to complete your Stripe Connect onboarding. 
+            Go to Settings → Payments to get started.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );

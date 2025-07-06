@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Manual sync earnings function called (TEST MODE)');
+    console.log('Manual sync earnings function called');
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
@@ -60,11 +60,10 @@ serve(async (req) => {
 
     console.log('Creator found:', creator.id, 'Stripe Account:', creator.stripe_account_id);
 
-    // Use TEST Stripe secret key for earnings sync
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST')
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
     if (!stripeSecretKey) {
-      console.log('ERROR: Missing Stripe test secret key');
-      return new Response(JSON.stringify({ error: 'Missing Stripe test configuration' }), { 
+      console.log('ERROR: Missing Stripe secret key');
+      return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -73,19 +72,20 @@ serve(async (req) => {
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    // Update Stripe Connect account status
-    console.log('Fetching Stripe account details for:', creator.stripe_account_id, '(TEST MODE)');
+    // 1. FIRST: Update Stripe Connect account status
+    console.log('Fetching Stripe account details for:', creator.stripe_account_id);
     let accountUpdateSuccess = false;
     
     try {
       const account = await stripe.accounts.retrieve(creator.stripe_account_id);
-      console.log('Account details retrieved (TEST MODE):', {
+      console.log('Account details retrieved:', {
         id: account.id,
         charges_enabled: account.charges_enabled,
         payouts_enabled: account.payouts_enabled,
         details_submitted: account.details_submitted
       });
 
+      // Update creator account status in database
       const { error: updateError } = await supabaseService
         .from('creators')
         .update({
@@ -98,45 +98,36 @@ serve(async (req) => {
       if (updateError) {
         console.error('Error updating creator account status:', updateError);
       } else {
-        console.log('Successfully updated creator account status (TEST MODE)');
+        console.log('Successfully updated creator account status');
         accountUpdateSuccess = true;
       }
     } catch (accountError) {
-      console.error('Error fetching/updating Stripe account (TEST MODE):', accountError);
+      console.error('Error fetching/updating Stripe account:', accountError);
     }
 
-    // Sync earnings from both Payment Intents and Checkout Sessions
-    console.log('Fetching charges from Stripe (TEST MODE)...');
+    // 2. SECOND: Sync earnings (existing logic)
+    console.log('Fetching charges from Stripe...');
     const charges = await stripe.charges.list({
       limit: 50, // Get last 50 charges
       stripeAccount: creator.stripe_account_id
     });
 
-    console.log('Fetching checkout sessions from Stripe (TEST MODE)...');
-    const checkoutSessions = await stripe.checkout.sessions.list({
-      limit: 50, // Get last 50 sessions
-      stripeAccount: creator.stripe_account_id
-    });
-
-    console.log(`Found ${charges.data.length} charges and ${checkoutSessions.data.length} checkout sessions (TEST MODE)`);
+    console.log(`Found ${charges.data.length} charges`);
 
     let syncedCount = 0;
-    let commissionCount = 0;
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Process charges (existing logic)
     for (const charge of charges.data) {
+      // Only sync successful charges from the last 30 days
       if (!charge.paid || charge.amount <= 0) continue;
       
       const chargeDate = new Date(charge.created * 1000);
       if (chargeDate < thirtyDaysAgo) continue;
 
-      const amount = charge.amount / 100;
-      const isCommission = charge.metadata?.type === 'commission_payment';
-      const platformFee = isCommission ? amount * 0.04 : amount * 0.05;
+      const amount = charge.amount / 100; // Convert from cents
+      const platformFee = amount * 0.05; // 5% platform fee
       const netAmount = amount - platformFee;
-      const earningType = isCommission ? 'commission' : 'subscription';
 
       // Check if we already have this earning recorded
       const { data: existingEarning } = await supabaseService
@@ -147,6 +138,7 @@ serve(async (req) => {
         .single();
 
       if (!existingEarning) {
+        // Insert new earning record
         const { error: insertError } = await supabaseService
           .from('creator_earnings')
           .insert({
@@ -156,84 +148,30 @@ serve(async (req) => {
             net_amount: netAmount,
             stripe_transfer_id: charge.id,
             payment_date: chargeDate.toISOString(),
-            earning_type: earningType,
-            commission_id: charge.metadata?.commission_request_id || null
           });
 
         if (insertError) {
-          console.error('Error inserting earning from charge (TEST MODE):', insertError);
+          console.error('Error inserting earning:', insertError);
         } else {
           syncedCount++;
-          if (isCommission) commissionCount++;
-          console.log(`Synced ${earningType} charge (TEST MODE): ${charge.id} - $${amount}`);
+          console.log(`Synced charge: ${charge.id} - $${amount}`);
         }
       }
     }
 
-    // Process checkout sessions (new logic for commissions)
-    for (const session of checkoutSessions.data) {
-      if (session.payment_status !== 'paid' || !session.amount_total || session.amount_total <= 0) continue;
-      
-      const sessionDate = new Date(session.created * 1000);
-      if (sessionDate < thirtyDaysAgo) continue;
-
-      // Only process commission checkout sessions
-      const isCommission = session.metadata?.type === 'commission_payment';
-      if (!isCommission) continue;
-
-      const amount = session.amount_total / 100;
-      const platformFee = amount * 0.04; // 4% for commissions
-      const netAmount = amount - platformFee;
-
-      // Check if we already have this earning recorded
-      const { data: existingEarning } = await supabaseService
-        .from('creator_earnings')
-        .select('id')
-        .eq('creator_id', creator.id)
-        .eq('stripe_transfer_id', session.id)
-        .single();
-
-      if (!existingEarning) {
-        const { error: insertError } = await supabaseService
-          .from('creator_earnings')
-          .insert({
-            creator_id: creator.id,
-            amount: amount,
-            platform_fee: platformFee,
-            net_amount: netAmount,
-            stripe_transfer_id: session.id,
-            payment_date: sessionDate.toISOString(),
-            earning_type: 'commission',
-            commission_id: session.metadata?.commission_request_id || null
-          });
-
-        if (insertError) {
-          console.error('Error inserting earning from checkout session (TEST MODE):', insertError);
-        } else {
-          syncedCount++;
-          commissionCount++;
-          console.log(`Synced commission checkout session (TEST MODE): ${session.id} - $${amount}`);
-        }
-      }
-    }
-
-    console.log(`Sync completed (TEST MODE). ${syncedCount} new earnings synced (${commissionCount} commissions, ${syncedCount - commissionCount} subscriptions). Account status updated: ${accountUpdateSuccess}`);
+    console.log(`Sync completed. ${syncedCount} new earnings synced. Account status updated: ${accountUpdateSuccess}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
       syncedCount,
-      commissionCount,
-      subscriptionCount: syncedCount - commissionCount,
       totalCharges: charges.data.length,
-      totalCheckoutSessions: checkoutSessions.data.length,
-      accountStatusUpdated: accountUpdateSuccess,
-      testMode: true
+      accountStatusUpdated: accountUpdateSuccess
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
   } catch (error) {
-    console.error('Sync earnings error (TEST MODE):', error)
+    console.error('Sync earnings error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

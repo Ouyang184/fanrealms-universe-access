@@ -58,12 +58,16 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Fetch commission request details with simplified query
+    // Fetch commission request details
     const { data: commissionRequest, error: commissionError } = await supabaseService
       .from('commission_requests')
       .select(`
         *,
-        commission_type:commission_types(name, description)
+        commission_type:commission_types(name, description),
+        creator:creators!commission_requests_creator_id_fkey(
+          display_name,
+          user_id
+        )
       `)
       .eq('id', commissionId)
       .single();
@@ -77,74 +81,16 @@ serve(async (req) => {
       id: commissionRequest.id,
       title: commissionRequest.title,
       agreed_price: commissionRequest.agreed_price,
-      status: commissionRequest.status,
-      creator_id: commissionRequest.creator_id,
-      existing_stripe_id: commissionRequest.stripe_payment_intent_id
+      status: commissionRequest.status
     });
 
-    // Fetch creator details separately
-    const { data: creator, error: creatorError } = await supabaseService
-      .from('creators')
-      .select('display_name, user_id')
-      .eq('id', commissionRequest.creator_id)
-      .single();
-
-    if (creatorError || !creator) {
-      console.error('Creator error:', creatorError);
-      throw new Error('Creator not found');
-    }
-
-    console.log('Creator found:', creator.display_name);
-
-    // Handle different commission statuses
-    if (commissionRequest.status === 'completed') {
-      // Check if this commission already has a payment
-      if (commissionRequest.stripe_payment_intent_id) {
-        throw new Error('This commission has already been completed and paid. Cannot create another payment session.');
-      } else {
-        // Reset status to accepted if no payment exists (data inconsistency)
-        console.log('Commission marked as completed but no payment found. Resetting status to accepted.');
-        const { error: resetError } = await supabaseService
-          .from('commission_requests')
-          .update({ 
-            status: 'accepted',
-            creator_notes: 'Status reset to accepted for payment processing'
-          })
-          .eq('id', commissionId);
-
-        if (resetError) {
-          console.error('Failed to reset commission status:', resetError);
-          throw new Error('Failed to reset commission status for payment');
-        }
-      }
-    } else if (commissionRequest.status === 'paid' || commissionRequest.status === 'in_progress') {
-      throw new Error(`This commission is already ${commissionRequest.status}. Cannot create another payment session.`);
-    } else if (commissionRequest.status !== 'accepted') {
+    // Check if request is in accepted status
+    if (commissionRequest.status !== 'accepted') {
       throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
 
     if (!commissionRequest.agreed_price) {
       throw new Error('No agreed price set for this commission');
-    }
-
-    // Check if there's already an active checkout session
-    if (commissionRequest.stripe_payment_intent_id && commissionRequest.stripe_payment_intent_id.startsWith('cs_')) {
-      try {
-        const existingSession = await stripe.checkout.sessions.retrieve(commissionRequest.stripe_payment_intent_id);
-        if (existingSession.status === 'open') {
-          console.log('Returning existing active checkout session:', existingSession.id);
-          return new Response(JSON.stringify({ 
-            url: existingSession.url 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          });
-        } else if (existingSession.payment_status === 'paid') {
-          throw new Error('This commission has already been paid. Please refresh the page to see the updated status.');
-        }
-      } catch (stripeError) {
-        console.log('Previous session not found or expired, creating new one');
-      }
     }
 
     // Check if customer already exists in Stripe
@@ -170,7 +116,7 @@ serve(async (req) => {
       console.log('Created new Stripe customer:', customerId);
     }
 
-    console.log('Creating new payment session');
+    console.log('Creating payment session');
 
     // Create checkout session for immediate payment
     const session = await stripe.checkout.sessions.create({
@@ -181,7 +127,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} by ${creator.display_name}`,
+              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
@@ -200,15 +146,14 @@ serve(async (req) => {
       }
     });
 
-    console.log('Created new payment session:', session.id);
+    console.log('Created payment session:', session.id);
 
-    // Update commission request with new session ID and reset status if needed
+    // Update commission request with session ID
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        status: 'accepted', // Ensure status is correct for payment
-        creator_notes: 'New payment session created - customer can now complete payment'
+        creator_notes: 'Payment session created - customer can now complete payment'
       })
       .eq('id', commissionId);
 
@@ -217,7 +162,7 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment session');
     }
 
-    console.log('Updated commission request with new session ID');
+    console.log('Updated commission request with session ID');
     console.log('=== SUCCESS ===');
 
     return new Response(JSON.stringify({ 
@@ -230,11 +175,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
     console.error('Error details:', error);
-    console.error('Error stack:', error.stack);
     
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
-      details: error instanceof Error ? error.stack : 'No additional details available'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

@@ -92,18 +92,7 @@ export const useCommissionActions = () => {
 
       if (error) {
         console.error('Payment session creation error:', error);
-        const errorMessage = error.message || 'Failed to create payment session';
-        
-        // Handle specific error cases
-        if (errorMessage.includes('already been completed')) {
-          throw new Error('This commission has already been completed and paid.');
-        } else if (errorMessage.includes('already paid')) {
-          throw new Error('This commission has already been paid. Please refresh the page.');
-        } else if (errorMessage.includes('must be accepted')) {
-          throw new Error('This commission needs to be accepted by the creator first.');
-        } else {
-          throw new Error(errorMessage);
-        }
+        throw new Error(error.message || 'Failed to create payment session');
       }
       
       if (!data?.url) {

@@ -40,9 +40,7 @@ export interface CommissionSlot {
 export type CommissionRequestStatus = 
   | 'pending'           // Initial request, no payment
   | 'accepted'          // Creator accepted, awaiting payment
-  | 'paid'              // Customer completed payment (checkout session)
-  | 'payment_authorized' // Payment authorized but not captured (payment intent)
-  | 'payment_failed'    // Payment failed
+  | 'paid'              // Customer completed payment
   | 'rejected' 
   | 'in_progress' 
   | 'completed' 
