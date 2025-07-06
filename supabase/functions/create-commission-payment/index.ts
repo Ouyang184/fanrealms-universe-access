@@ -58,16 +58,12 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Fetch commission request details
+    // Fetch commission request details with simplified query
     const { data: commissionRequest, error: commissionError } = await supabaseService
       .from('commission_requests')
       .select(`
         *,
-        commission_type:commission_types(name, description),
-        creator:creators!commission_requests_creator_id_fkey(
-          display_name,
-          user_id
-        )
+        commission_type:commission_types(name, description)
       `)
       .eq('id', commissionId)
       .single();
@@ -82,8 +78,23 @@ serve(async (req) => {
       title: commissionRequest.title,
       agreed_price: commissionRequest.agreed_price,
       status: commissionRequest.status,
+      creator_id: commissionRequest.creator_id,
       existing_stripe_id: commissionRequest.stripe_payment_intent_id
     });
+
+    // Fetch creator details separately
+    const { data: creator, error: creatorError } = await supabaseService
+      .from('creators')
+      .select('display_name, user_id')
+      .eq('id', commissionRequest.creator_id)
+      .single();
+
+    if (creatorError || !creator) {
+      console.error('Creator error:', creatorError);
+      throw new Error('Creator not found');
+    }
+
+    console.log('Creator found:', creator.display_name);
 
     // Handle different commission statuses
     if (commissionRequest.status === 'completed') {
@@ -170,7 +181,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
+              description: `${commissionRequest.commission_type.name} by ${creator.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
@@ -219,9 +230,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
     console.error('Error details:', error);
+    console.error('Error stack:', error.stack);
     
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      details: error instanceof Error ? error.stack : 'No additional details available'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
