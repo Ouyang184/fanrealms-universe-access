@@ -3,6 +3,69 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
   console.log('Processing commission webhook:', event.type);
 
   try {
+    // Handle checkout.session.completed for immediate commission payments
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const commissionId = session.metadata?.commission_request_id;
+
+      if (commissionId && session.metadata?.type === 'commission_payment') {
+        console.log('Checkout session completed for commission:', commissionId);
+
+        // For checkout sessions, payment is immediate - update status to paid
+        const { error: updateError } = await supabase
+          .from('commission_requests')
+          .update({ 
+            status: 'paid',
+            stripe_payment_intent_id: session.id,
+            creator_notes: 'Payment completed successfully via checkout (TEST MODE)'
+          })
+          .eq('id', commissionId);
+
+        if (updateError) {
+          console.error('Failed to update commission on checkout completion:', updateError);
+          return;
+        }
+
+        // Get commission details for earnings calculation
+        const { data: commissionRequest, error: fetchError } = await supabase
+          .from('commission_requests')
+          .select('id, creator_id, agreed_price')
+          .eq('id', commissionId)
+          .single();
+
+        if (fetchError) {
+          console.error('Failed to fetch commission details:', fetchError);
+          return;
+        }
+
+        // Record the commission earning immediately
+        const amount = session.amount_total / 100; // Convert from cents
+        const platformFee = amount * 0.04; // 4% for commissions
+        const netAmount = amount - platformFee;
+
+        const { error: earningError } = await supabase
+          .from('creator_earnings')
+          .insert({
+            creator_id: commissionRequest.creator_id,
+            commission_id: commissionRequest.id,
+            amount: amount,
+            platform_fee: platformFee,
+            net_amount: netAmount,
+            stripe_transfer_id: session.id,
+            payment_date: new Date().toISOString(),
+            earning_type: 'commission'
+          });
+
+        if (earningError) {
+          console.error('Failed to record commission earning from checkout:', earningError);
+        } else {
+          console.log('Commission earning recorded successfully from checkout session');
+        }
+
+        return;
+      }
+    }
+
     if (event.type === 'payment_intent.succeeded') {
       const paymentIntent = event.data.object;
       const commissionId = paymentIntent.metadata?.commission_request_id;

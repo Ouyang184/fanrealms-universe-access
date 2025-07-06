@@ -73,7 +73,7 @@ serve(async (req) => {
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
     const supabaseService = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    // 1. FIRST: Update Stripe Connect account status
+    // Update Stripe Connect account status
     console.log('Fetching Stripe account details for:', creator.stripe_account_id, '(TEST MODE)');
     let accountUpdateSuccess = false;
     
@@ -86,7 +86,6 @@ serve(async (req) => {
         details_submitted: account.details_submitted
       });
 
-      // Update creator account status in database
       const { error: updateError } = await supabaseService
         .from('creators')
         .update({
@@ -106,32 +105,36 @@ serve(async (req) => {
       console.error('Error fetching/updating Stripe account (TEST MODE):', accountError);
     }
 
-    // 2. SECOND: Sync subscription earnings (existing logic)
-    console.log('Fetching subscription charges from Stripe (TEST MODE)...');
+    // Sync earnings from both Payment Intents and Checkout Sessions
+    console.log('Fetching charges from Stripe (TEST MODE)...');
     const charges = await stripe.charges.list({
       limit: 50, // Get last 50 charges
       stripeAccount: creator.stripe_account_id
     });
 
-    console.log(`Found ${charges.data.length} charges (TEST MODE)`);
+    console.log('Fetching checkout sessions from Stripe (TEST MODE)...');
+    const checkoutSessions = await stripe.checkout.sessions.list({
+      limit: 50, // Get last 50 sessions
+      stripeAccount: creator.stripe_account_id
+    });
+
+    console.log(`Found ${charges.data.length} charges and ${checkoutSessions.data.length} checkout sessions (TEST MODE)`);
 
     let syncedCount = 0;
     let commissionCount = 0;
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    // Process charges (existing logic)
     for (const charge of charges.data) {
-      // Only sync successful charges from the last 30 days
       if (!charge.paid || charge.amount <= 0) continue;
       
       const chargeDate = new Date(charge.created * 1000);
       if (chargeDate < thirtyDaysAgo) continue;
 
-      const amount = charge.amount / 100; // Convert from cents
+      const amount = charge.amount / 100;
       const isCommission = charge.metadata?.type === 'commission_payment';
-      
-      // Different fee structure for commissions vs subscriptions
-      const platformFee = isCommission ? amount * 0.04 : amount * 0.05; // 4% for commissions, 5% for subscriptions
+      const platformFee = isCommission ? amount * 0.04 : amount * 0.05;
       const netAmount = amount - platformFee;
       const earningType = isCommission ? 'commission' : 'subscription';
 
@@ -144,7 +147,6 @@ serve(async (req) => {
         .single();
 
       if (!existingEarning) {
-        // Insert new earning record
         const { error: insertError } = await supabaseService
           .from('creator_earnings')
           .insert({
@@ -159,11 +161,58 @@ serve(async (req) => {
           });
 
         if (insertError) {
-          console.error('Error inserting earning (TEST MODE):', insertError);
+          console.error('Error inserting earning from charge (TEST MODE):', insertError);
         } else {
           syncedCount++;
           if (isCommission) commissionCount++;
           console.log(`Synced ${earningType} charge (TEST MODE): ${charge.id} - $${amount}`);
+        }
+      }
+    }
+
+    // Process checkout sessions (new logic for commissions)
+    for (const session of checkoutSessions.data) {
+      if (session.payment_status !== 'paid' || !session.amount_total || session.amount_total <= 0) continue;
+      
+      const sessionDate = new Date(session.created * 1000);
+      if (sessionDate < thirtyDaysAgo) continue;
+
+      // Only process commission checkout sessions
+      const isCommission = session.metadata?.type === 'commission_payment';
+      if (!isCommission) continue;
+
+      const amount = session.amount_total / 100;
+      const platformFee = amount * 0.04; // 4% for commissions
+      const netAmount = amount - platformFee;
+
+      // Check if we already have this earning recorded
+      const { data: existingEarning } = await supabaseService
+        .from('creator_earnings')
+        .select('id')
+        .eq('creator_id', creator.id)
+        .eq('stripe_transfer_id', session.id)
+        .single();
+
+      if (!existingEarning) {
+        const { error: insertError } = await supabaseService
+          .from('creator_earnings')
+          .insert({
+            creator_id: creator.id,
+            amount: amount,
+            platform_fee: platformFee,
+            net_amount: netAmount,
+            stripe_transfer_id: session.id,
+            payment_date: sessionDate.toISOString(),
+            earning_type: 'commission',
+            commission_id: session.metadata?.commission_request_id || null
+          });
+
+        if (insertError) {
+          console.error('Error inserting earning from checkout session (TEST MODE):', insertError);
+        } else {
+          syncedCount++;
+          commissionCount++;
+          console.log(`Synced commission checkout session (TEST MODE): ${session.id} - $${amount}`);
         }
       }
     }
@@ -176,6 +225,7 @@ serve(async (req) => {
       commissionCount,
       subscriptionCount: syncedCount - commissionCount,
       totalCharges: charges.data.length,
+      totalCheckoutSessions: checkoutSessions.data.length,
       accountStatusUpdated: accountUpdateSuccess,
       testMode: true
     }), {
