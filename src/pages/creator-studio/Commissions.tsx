@@ -1,7 +1,10 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCommissionRequests } from '@/hooks/useCommissionRequests';
 import { useCommissionActions } from '@/hooks/useCommissionActions';
+import { useCommissionTypes } from '@/hooks/useCommissionTypes';
+import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { RequestsTab } from '@/components/creator-studio/commissions/RequestsTab';
 import { OverviewTab } from '@/components/creator-studio/commissions/OverviewTab';
 import { CommissionTypesTab } from '@/components/creator-studio/commissions/CommissionTypesTab';
@@ -10,6 +13,8 @@ import { SettingsTab } from '@/components/creator-studio/commissions/SettingsTab
 export default function Commissions() {
   const [activeTab, setActiveTab] = useState('overview');
   const { requests, isLoading } = useCommissionRequests();
+  const { commissionTypes, isLoading: typesLoading, deleteCommissionType, refetchCommissionTypes } = useCommissionTypes();
+  const { creatorProfile } = useCreatorProfile();
   const { 
     acceptCommission, 
     rejectCommission, 
@@ -20,6 +25,15 @@ export default function Commissions() {
 
   // Count pending requests (now only truly pending ones, not payment-pending)
   const pendingRequests = requests.filter(r => r.status === 'pending').length;
+  const inProgressRequests = requests.filter(r => ['accepted', 'paid', 'in_progress'].includes(r.status)).length;
+  const activeTypes = commissionTypes.filter(t => t.is_active).length;
+  
+  // Calculate monthly earnings (placeholder for now)
+  const monthlyEarnings = 0;
+
+  const handleViewAllRequests = () => {
+    setActiveTab('requests');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -46,7 +60,14 @@ export default function Commissions() {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewTab />
+          <OverviewTab
+            activeTypes={activeTypes}
+            pendingRequests={pendingRequests}
+            inProgressRequests={inProgressRequests}
+            monthlyEarnings={monthlyEarnings}
+            requests={requests}
+            onViewAllRequests={handleViewAllRequests}
+          />
         </TabsContent>
         
         <TabsContent value="requests">
@@ -62,11 +83,16 @@ export default function Commissions() {
         </TabsContent>
 
         <TabsContent value="types">
-          <CommissionTypesTab />
+          <CommissionTypesTab
+            commissionTypes={commissionTypes}
+            isLoading={typesLoading}
+            onDeleteCommissionType={deleteCommissionType}
+            onRefetchCommissionTypes={refetchCommissionTypes}
+          />
         </TabsContent>
 
         <TabsContent value="settings">
-          <SettingsTab />
+          <SettingsTab creatorProfile={creatorProfile} />
         </TabsContent>
       </Tabs>
     </div>
