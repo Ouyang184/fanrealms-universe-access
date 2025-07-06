@@ -41,6 +41,12 @@ export function StripeConnectSection() {
   const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
   const canReceivePayments = connectStatus?.stripe_charges_enabled;
 
+  const handleStripeConnect = () => {
+    if (creatorProfile) {
+      createConnectAccount(creatorProfile.id);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -86,22 +92,20 @@ export function StripeConnectSection() {
         <div className="flex gap-2">
           {!isConnected ? (
             <Button 
-              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              onClick={handleStripeConnect}
               disabled={!creatorProfile}
             >
               <CreditCard className="mr-2 h-4 w-4" />
               Connect Stripe Account
             </Button>
           ) : !isOnboardingComplete ? (
-            // Show Complete Onboarding button for connected but incomplete accounts
             <Button 
-              onClick={() => creatorProfile && createConnectAccount(creatorProfile.id)}
+              onClick={handleStripeConnect}
               variant="default"
             >
               Complete Onboarding
             </Button>
           ) : (
-            // Only show dashboard access for fully onboarded accounts
             <Button
               variant="outline"
               onClick={() => createLoginLink(connectStatus.stripe_account_id)}
@@ -112,6 +116,15 @@ export function StripeConnectSection() {
             </Button>
           )}
         </div>
+
+        {/* Important Note */}
+        {(!isConnected || !isOnboardingComplete) && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Note:</strong> Clicking the button will open Stripe in a new tab to complete the setup process.
+            </p>
+          </div>
+        )}
 
         {/* Balance Display */}
         {canReceivePayments && balance && (

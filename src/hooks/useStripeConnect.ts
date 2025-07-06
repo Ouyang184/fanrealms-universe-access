@@ -40,8 +40,8 @@ export const useStripeConnect = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Redirect to Stripe onboarding
-      window.location.href = data.onboardingUrl;
+      // Open Stripe onboarding in a new tab to avoid CSP issues
+      window.open(data.onboardingUrl, '_blank');
     },
     onError: (error) => {
       console.error('Error creating Stripe account:', error);
