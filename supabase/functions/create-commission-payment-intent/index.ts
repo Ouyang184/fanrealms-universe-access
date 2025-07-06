@@ -96,8 +96,8 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Check if request is in correct status for payment
-    if (!['pending', 'checkout_created'].includes(commissionRequest.status)) {
+    // Check if request is in correct status for payment - allow payment_pending for retries
+    if (!['pending', 'checkout_created', 'payment_pending'].includes(commissionRequest.status)) {
       console.error('Commission request in wrong status:', commissionRequest.status);
       throw new Error(`Commission is in ${commissionRequest.status} status and cannot be paid`);
     }
@@ -105,6 +105,26 @@ serve(async (req) => {
     if (!commissionRequest.agreed_price) {
       console.error('No agreed price set');
       throw new Error('No agreed price set for this commission');
+    }
+
+    // If there's already a payment intent and it's not expired, return it
+    if (commissionRequest.stripe_payment_intent_id && commissionRequest.status === 'payment_pending') {
+      try {
+        const existingPaymentIntent = await stripe.paymentIntents.retrieve(commissionRequest.stripe_payment_intent_id);
+        
+        // If the payment intent is still valid and requires payment method, return its client secret
+        if (existingPaymentIntent.status === 'requires_payment_method' || existingPaymentIntent.status === 'requires_confirmation') {
+          console.log('Returning existing payment intent:', existingPaymentIntent.id);
+          return new Response(JSON.stringify({ 
+            client_secret: existingPaymentIntent.client_secret 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          });
+        }
+      } catch (retrieveError) {
+        console.log('Could not retrieve existing payment intent, creating new one:', retrieveError);
+      }
     }
 
     // Check if customer already exists in Stripe (TEST mode)
