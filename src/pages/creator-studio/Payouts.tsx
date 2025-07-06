@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStripeConnect } from '@/hooks/useStripeConnect';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { EarningsBreakdown } from '@/components/creator-studio/EarningsBreakdown';
+import { WebhookDiagnostics } from '@/components/creator-studio/WebhookDiagnostics';
 import { 
   DollarSign, 
   RefreshCw, 
@@ -14,7 +15,8 @@ import {
   AlertCircle, 
   CheckCircle, 
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  Webhook
 } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { supabase } from '@/lib/supabase';
@@ -152,6 +154,7 @@ export default function Payouts() {
           <TabsList>
             <TabsTrigger value="earnings">Earnings</TabsTrigger>
             <TabsTrigger value="balance">Account Balance</TabsTrigger>
+            <TabsTrigger value="diagnostics">Webhook Diagnostics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="earnings" className="space-y-6">
@@ -216,6 +219,14 @@ export default function Payouts() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="diagnostics" className="space-y-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Webhook className="h-5 w-5" />
+              <h2 className="text-xl font-semibold">Webhook Diagnostics</h2>
+            </div>
+            <WebhookDiagnostics />
           </TabsContent>
         </Tabs>
       ) : (
