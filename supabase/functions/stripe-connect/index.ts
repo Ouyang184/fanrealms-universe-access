@@ -101,6 +101,66 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
 
+    } else if (action === 'sync_account_status') {
+      console.log('Syncing account status for:', accountId)
+      
+      if (!accountId) {
+        return new Response(JSON.stringify({ error: 'Account ID is required' }), { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      try {
+        // Retrieve account status from Stripe
+        const account = await stripe.accounts.retrieve(accountId)
+        console.log('Account status retrieved:', {
+          id: account.id,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          details_submitted: account.details_submitted
+        })
+
+        // Update creator record with latest status
+        const { error: updateError } = await supabase
+          .from('creators')
+          .update({
+            stripe_onboarding_complete: account.details_submitted && account.charges_enabled,
+            stripe_charges_enabled: account.charges_enabled,
+            stripe_payouts_enabled: account.payouts_enabled,
+          })
+          .eq('stripe_account_id', accountId)
+
+        if (updateError) {
+          console.error('Error updating creator status:', updateError)
+          return new Response(JSON.stringify({ error: 'Database update failed' }), { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        console.log('Successfully updated creator account status')
+
+        return new Response(JSON.stringify({ 
+          success: true,
+          account_status: {
+            charges_enabled: account.charges_enabled,
+            payouts_enabled: account.payouts_enabled,
+            details_submitted: account.details_submitted,
+            onboarding_complete: account.details_submitted && account.charges_enabled
+          }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+
+      } catch (stripeError) {
+        console.error('Error retrieving Stripe account:', stripeError)
+        return new Response(JSON.stringify({ error: 'Failed to retrieve account status from Stripe' }), { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
     } else if (action === 'create_login_link') {
       console.log('Creating login link for account:', accountId)
       

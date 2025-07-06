@@ -10,9 +10,10 @@ export const useStripeConnect = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Get creator's Stripe Connect status
-  const { data: connectStatus, isLoading: statusLoading } = useQuery({
+  const { data: connectStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
     queryKey: ['stripeConnectStatus', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -52,6 +53,38 @@ export const useStripeConnect = () => {
       });
     }
   });
+
+  // Sync account status with Stripe
+  const syncAccountStatus = async (accountId: string) => {
+    setIsSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-connect', {
+        body: { action: 'sync_account_status', accountId }
+      });
+
+      if (error) throw error;
+      
+      // Refresh the status after sync
+      await refetchStatus();
+      
+      toast({
+        title: "Status Updated",
+        description: "Your Stripe account status has been refreshed.",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error syncing account status:', error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync account status. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Create login link to Stripe Dashboard
   const createLoginLink = async (accountId: string) => {
@@ -98,8 +131,11 @@ export const useStripeConnect = () => {
     statusLoading,
     createConnectAccount,
     createLoginLink,
+    syncAccountStatus,
     balance,
     refetchBalance,
-    isLoading
+    refetchStatus,
+    isLoading,
+    isSyncing
   };
 };

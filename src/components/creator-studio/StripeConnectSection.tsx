@@ -1,23 +1,54 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useStripeConnect } from '@/hooks/useStripeConnect';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
-import { ExternalLink, CreditCard, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
+import { ExternalLink, CreditCard, DollarSign, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useToast } from '@/hooks/use-toast';
 
 export function StripeConnectSection() {
   const { creatorProfile } = useCreatorProfile();
+  const { toast } = useToast();
   const { 
     connectStatus, 
     statusLoading, 
     createConnectAccount, 
     createLoginLink, 
+    syncAccountStatus,
     balance,
-    isLoading 
+    isLoading,
+    isSyncing
   } = useStripeConnect();
+
+  // Check for return from Stripe onboarding
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stripeSuccess = urlParams.get('stripe_success');
+    const stripeRefresh = urlParams.get('stripe_refresh');
+    
+    if ((stripeSuccess === 'true' || stripeRefresh === 'true') && connectStatus?.stripe_account_id) {
+      console.log('Returned from Stripe onboarding, syncing status...');
+      
+      // Auto-sync status when returning from Stripe
+      syncAccountStatus(connectStatus.stripe_account_id).then(() => {
+        // Clean up URL parameters
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+        
+        if (stripeSuccess === 'true') {
+          toast({
+            title: "Welcome back!",
+            description: "We've updated your Stripe account status.",
+          });
+        }
+      }).catch(error => {
+        console.error('Auto-sync failed:', error);
+      });
+    }
+  }, [connectStatus, syncAccountStatus, toast]);
 
   if (statusLoading) {
     return (
@@ -44,6 +75,12 @@ export function StripeConnectSection() {
   const handleStripeConnect = () => {
     if (creatorProfile) {
       createConnectAccount(creatorProfile.id);
+    }
+  };
+
+  const handleSyncStatus = () => {
+    if (connectStatus?.stripe_account_id) {
+      syncAccountStatus(connectStatus.stripe_account_id);
     }
   };
 
@@ -89,7 +126,7 @@ export function StripeConnectSection() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {!isConnected ? (
             <Button 
               onClick={handleStripeConnect}
@@ -99,21 +136,49 @@ export function StripeConnectSection() {
               Connect Stripe Account
             </Button>
           ) : !isOnboardingComplete ? (
-            <Button 
-              onClick={handleStripeConnect}
-              variant="default"
-            >
-              Complete Onboarding
-            </Button>
+            <>
+              <Button 
+                onClick={handleStripeConnect}
+                variant="default"
+              >
+                Complete Onboarding
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSyncStatus}
+                disabled={isSyncing}
+              >
+                {isSyncing ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Refresh Status
+              </Button>
+            </>
           ) : (
-            <Button
-              variant="outline"
-              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
-              disabled={isLoading}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Open Stripe Dashboard
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+                disabled={isLoading}
+              >
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Open Stripe Dashboard
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSyncStatus}
+                disabled={isSyncing}
+              >
+                {isSyncing ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Refresh Status
+              </Button>
+            </>
           )}
         </div>
 
@@ -121,7 +186,10 @@ export function StripeConnectSection() {
         {(!isConnected || !isOnboardingComplete) && (
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-700">
-              <strong>Note:</strong> Clicking the button will open Stripe in a new tab to complete the setup process.
+              <strong>Note:</strong> {!isConnected 
+                ? "Clicking the button will open Stripe in a new tab to complete the setup process."
+                : "If you've completed onboarding but still see 'Setup Required', click 'Refresh Status' to update your account status."
+              }
             </p>
           </div>
         )}
