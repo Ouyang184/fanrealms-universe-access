@@ -71,7 +71,7 @@ serve(async (req) => {
       log('ERROR: No user found');
       throw new Error('User not authenticated');
     }
-    log('User authenticated', { userId: user.id });
+    log('User authenticated', { userId: user.id, email: user.email });
 
     // Parse request body
     let requestBody;
@@ -86,7 +86,6 @@ serve(async (req) => {
     const { action, tierId, creatorId } = requestBody;
     log('Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
 
-    // For now, let's just return a simple response to test basic functionality
     if (action === 'create_subscription') {
       // Basic validation
       if (!tierId || !creatorId) {
@@ -114,12 +113,86 @@ serve(async (req) => {
 
       log('Tier found', { tierTitle: tier.title, tierPrice: tier.price });
 
-      // For now, return a test response
+      // Check if user already has subscription to this creator
+      const { data: existingSub } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('status', 'active')
+        .single();
+
+      if (existingSub) {
+        log('User already has active subscription');
+        return new Response(JSON.stringify({
+          error: 'You already have an active subscription to this creator',
+          shouldRefresh: true
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Create or get Stripe customer
+      log('Creating/getting Stripe customer');
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1
+      });
+
+      let customerId;
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        log('Found existing customer', { customerId });
+      } else {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            user_id: user.id
+          }
+        });
+        customerId = customer.id;
+        log('Created new customer', { customerId });
+      }
+
+      // Create Stripe checkout session
+      log('Creating Stripe checkout session');
+      const origin = req.headers.get('origin') || 'http://localhost:3000';
+      
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${tier.title} Subscription`,
+              description: tier.description || `Monthly subscription to ${tier.title}`,
+            },
+            unit_amount: Math.round(tier.price * 100), // Convert to cents
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: `${origin}/creator/${creatorId}?tab=membership&success=true`,
+        cancel_url: `${origin}/creator/${creatorId}?tab=membership&canceled=true`,
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier_id: tierId,
+        },
+      });
+
+      log('Checkout session created', { sessionId: session.id, url: session.url });
+
+      // Return the checkout URL for redirect
       return new Response(JSON.stringify({
-        message: 'Function is working',
-        tier: tier.title,
-        price: tier.price,
-        debug: 'Basic validation passed'
+        success: true,
+        checkout_url: session.url,
+        session_id: session.id,
+        message: 'Redirecting to payment...'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -81,31 +80,6 @@ export const useCreateSubscription = () => {
       return null;
     }
 
-    // Check cache first
-    const cacheKey = `${user.id}-${creatorId}-${tierId}`;
-    const cachedSession = sessionCache.get(cacheKey);
-    
-    if (cachedSession && (Date.now() - cachedSession.timestamp) < SESSION_CACHE_DURATION) {
-      log('Using cached session', { cacheKey });
-      
-      // Navigate to payment page with cached data
-      navigate('/payment', {
-        state: {
-          clientSecret: cachedSession.clientSecret,
-          amount: cachedSession.amount,
-          tierName: cachedSession.tierName,
-          tierId: cachedSession.tierId,
-          creatorId: cachedSession.creatorId,
-          isUpgrade: cachedSession.isUpgrade,
-          currentTierName: cachedSession.currentTierName,
-          proratedAmount: cachedSession.proratedAmount,
-          fullTierPrice: cachedSession.fullTierPrice
-        }
-      });
-      
-      return cachedSession;
-    }
-
     // Lock this subscription
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
@@ -119,7 +93,7 @@ export const useCreateSubscription = () => {
 
       log('Sending request to edge function', requestPayload);
 
-      // FIXED: Call the correct 'simple-subscriptions' function instead of 'stripe-subscriptions'
+      // Call the simple-subscriptions function
       const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: requestPayload
       });
@@ -188,7 +162,22 @@ export const useCreateSubscription = () => {
         return { error: 'No response from subscription service' };
       }
 
-      // Check if we should use custom payment page
+      // Handle Stripe checkout URL response
+      if (data.checkout_url) {
+        log('Redirecting to Stripe checkout', { checkoutUrl: data.checkout_url });
+        
+        toast({
+          title: "Redirecting to Payment",
+          description: "Opening Stripe checkout in a new tab...",
+        });
+        
+        // Open Stripe checkout in a new tab
+        window.open(data.checkout_url, '_blank');
+        
+        return data;
+      }
+
+      // Check if we should use custom payment page (fallback)
       if (data.useCustomPaymentPage && data.clientSecret) {
         log('Navigating to custom payment page');
         
@@ -206,6 +195,7 @@ export const useCreateSubscription = () => {
           fullTierPrice: data.fullTierPrice
         };
         
+        const cacheKey = `${user.id}-${creatorId}-${tierId}`;
         sessionCache.set(cacheKey, sessionData);
         
         // Set cache cleanup
