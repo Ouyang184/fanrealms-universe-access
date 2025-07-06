@@ -59,10 +59,6 @@ export const useCommissionRequests = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commission-requests'] });
-      toast({
-        title: "Success",
-        description: "Commission request updated successfully"
-      });
     },
     onError: (error) => {
       console.error('Error updating commission request:', error);
@@ -77,14 +73,20 @@ export const useCommissionRequests = () => {
   const acceptRequest = (id: string) => {
     updateRequestMutation.mutate({
       id,
-      updates: { status: 'accepted' }
+      updates: { 
+        status: 'accepted',
+        creator_notes: 'Commission accepted! Please proceed with payment to begin work.'
+      }
     });
   };
 
   const rejectRequest = (id: string) => {
     updateRequestMutation.mutate({
       id,
-      updates: { status: 'rejected' }
+      updates: { 
+        status: 'rejected',
+        creator_notes: 'Commission request has been declined.'
+      }
     });
   };
 

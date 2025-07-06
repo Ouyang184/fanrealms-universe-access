@@ -14,60 +14,49 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT REQUEST (TEST MODE) ===');
+    console.log('=== CREATE COMMISSION PAYMENT SESSION ===');
     
-    const { commissionId, customerId } = await req.json();
-    console.log('Request data:', { commissionId, customerId });
+    const { commissionId } = await req.json();
+    console.log('Request data:', { commissionId });
 
     if (!commissionId) {
-      console.error('Missing commission ID');
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe with TEST key for commissions
+    // Initialize Stripe
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
     if (!stripeSecretKey) {
-      console.error('STRIPE_SECRET_KEY_TEST not found in environment');
-      throw new Error('Payment service configuration error - test mode not configured');
+      throw new Error('Stripe secret key not configured');
     }
 
-    console.log('Using Stripe TEST mode for commission payments');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
     // Initialize Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
-      console.error('Missing Supabase environment variables');
-      throw new Error('Database service configuration error');
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Supabase configuration missing');
     }
 
-    // Create client with anon key for user authentication
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header provided');
       throw new Error('Authorization header is required');
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('Authentication failed:', authError);
       throw new Error('Authentication required');
     }
 
     console.log('User authenticated:', user.id);
-
-    // Now use service role key for database operations
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch commission request details
     const { data: commissionRequest, error: commissionError } = await supabaseService
@@ -81,12 +70,11 @@ serve(async (req) => {
         )
       `)
       .eq('id', commissionId)
-      .eq('customer_id', user.id)
       .single();
 
     if (commissionError || !commissionRequest) {
       console.error('Commission request error:', commissionError);
-      throw new Error('Commission request not found or not accessible');
+      throw new Error('Commission request not found');
     }
 
     console.log('Commission request found:', {
@@ -96,61 +84,59 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Check if request is in correct status for payment
-    if (!['pending', 'checkout_created'].includes(commissionRequest.status)) {
-      console.error('Commission request in wrong status:', commissionRequest.status);
-      throw new Error(`Commission is in ${commissionRequest.status} status and cannot be paid`);
+    // Check if request is in accepted status
+    if (commissionRequest.status !== 'accepted') {
+      throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
 
     if (!commissionRequest.agreed_price) {
-      console.error('No agreed price set');
       throw new Error('No agreed price set for this commission');
     }
 
-    // Check if customer already exists in Stripe (TEST mode)
+    // Check if customer already exists in Stripe
     const customers = await stripe.customers.list({ 
       email: user.email,
       limit: 1 
     });
 
-    let customerId_stripe;
+    let customerId;
     if (customers.data.length > 0) {
-      customerId_stripe = customers.data[0].id;
-      console.log('Found existing Stripe customer (TEST):', customerId_stripe);
+      customerId = customers.data[0].id;
+      console.log('Found existing Stripe customer:', customerId);
     } else {
-      console.log('No existing Stripe customer found (TEST), will create one in checkout');
+      // Create new customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          user_id: user.id,
+          environment: 'test'
+        }
+      });
+      customerId = customer.id;
+      console.log('Created new Stripe customer:', customerId);
     }
 
-    // Get origin for redirect URLs
-    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
-    if (!origin) {
-      console.error('No origin header found');
-      throw new Error('Invalid request origin');
-    }
+    console.log('Creating payment session');
 
-    console.log('Creating Stripe checkout session (TEST MODE) with origin:', origin);
-
-    // Create Stripe checkout session for standard one-time payment
+    // Create checkout session for immediate payment
     const session = await stripe.checkout.sessions.create({
-      customer: customerId_stripe,
-      customer_email: customerId_stripe ? undefined : user.email,
+      customer: customerId,
       line_items: [
         {
           price_data: {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} commission by ${commissionRequest.creator.display_name}`,
+              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
           quantity: 1,
         },
       ],
-      mode: 'payment', // Standard one-time payment
-      success_url: `${origin}/commissions/${commissionId}/payment-success`,
-      cancel_url: `${origin}/commissions/${commissionId}/pay`,
-      expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+      mode: 'payment',
+      success_url: `${req.headers.get('origin')}/commission-payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.get('origin')}/requests`,
       metadata: {
         commission_request_id: commissionId,
         customer_id: user.id,
@@ -160,46 +146,38 @@ serve(async (req) => {
       }
     });
 
-    console.log('Created Stripe checkout session (TEST):', session.id);
+    console.log('Created payment session:', session.id);
 
-    // Update commission request with checkout session ID and checkout_created status
+    // Update commission request with session ID
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        status: 'checkout_created',
-        creator_notes: 'Checkout session created (TEST MODE) - awaiting customer payment'
+        creator_notes: 'Payment session created - customer can now complete payment'
       })
       .eq('id', commissionId);
 
     if (updateError) {
       console.error('Failed to update commission request:', updateError);
-      // Cancel the checkout session if database update fails
-      try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (expireError) {
-        console.error('Failed to expire checkout session:', expireError);
-      }
-      throw new Error('Failed to create commission payment');
+      throw new Error('Failed to create commission payment session');
     }
 
-    console.log('Updated commission request status to checkout_created (TEST MODE)');
-    console.log('=== SUCCESS: Returning checkout URL (TEST) ===');
+    console.log('Updated commission request with session ID');
+    console.log('=== SUCCESS ===');
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      url: session.url 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT (TEST MODE) ===');
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
     console.error('Error details:', error);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
-      details: 'Check function logs for more information'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

@@ -48,27 +48,25 @@ export const useUserCommissionRequests = () => {
 
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      console.log('Attempting to delete commission request via edge function:', requestId);
+      console.log('Attempting to delete commission request:', requestId);
       
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
-      // Call the new delete edge function that handles Stripe session cancellation
-      const { data, error } = await supabase.functions.invoke('delete-commission-request', {
-        body: { commissionId: requestId }
-      });
+      // Direct delete for pending/rejected requests (no payment involved)
+      const { error } = await supabase
+        .from('commission_requests')
+        .delete()
+        .eq('id', requestId)
+        .eq('customer_id', user.id);
 
       if (error) {
-        console.error('Edge function error:', error);
+        console.error('Delete error:', error);
         throw new Error(error.message || 'Failed to delete commission request');
       }
 
-      if (!data?.success) {
-        throw new Error('Failed to delete commission request');
-      }
-
-      console.log('Successfully deleted request via edge function:', requestId);
+      console.log('Successfully deleted request:', requestId);
       return requestId;
     },
     onMutate: async (requestId) => {
@@ -88,11 +86,10 @@ export const useUserCommissionRequests = () => {
     },
     onSuccess: (requestId) => {
       console.log('Delete mutation successful for:', requestId);
-      // Force refetch to ensure consistency
       queryClient.refetchQueries({ queryKey: ['user-commission-requests'] });
       toast({
         title: "Success",
-        description: "Commission request deleted successfully. Any associated payment session has been cancelled."
+        description: "Commission request deleted successfully."
       });
     },
     onError: (error, requestId, context) => {

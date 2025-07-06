@@ -1,13 +1,16 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, AlertTriangle } from 'lucide-react';
+import { Trash2, Eye, CreditCard } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 import { CommissionRequestDetailsModal } from './CommissionRequestDetailsModal';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/hooks/use-toast';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
   status: string;
@@ -31,11 +34,9 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
       return 'bg-yellow-100 text-yellow-800';
-    case 'checkout_created':
-      return 'bg-blue-100 text-blue-800';
-    case 'payment_pending':
-      return 'bg-orange-100 text-orange-800';
     case 'accepted':
+      return 'bg-blue-100 text-blue-800';
+    case 'paid':
       return 'bg-green-100 text-green-800';
     case 'rejected':
       return 'bg-red-100 text-red-800';
@@ -56,12 +57,10 @@ const getStatusDescription = (status: string) => {
   switch (status) {
     case 'pending':
       return 'Waiting for creator response';
-    case 'checkout_created':
-      return 'Payment session ready - you can pay when ready';
-    case 'payment_pending':
-      return 'Payment being processed';
     case 'accepted':
-      return 'Commission accepted and paid';
+      return 'Accepted - payment required to start work';
+    case 'paid':
+      return 'Payment completed - work will begin soon';
     case 'rejected':
       return 'Commission declined by creator';
     case 'in_progress':
@@ -84,8 +83,10 @@ export function UserCommissionRequestCard({
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const canDelete = ['pending', 'rejected', 'checkout_created', 'payment_pending'].includes(request.status);
-  const hasPaymentSession = ['checkout_created', 'payment_pending'].includes(request.status);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
+  
+  const canDelete = ['pending', 'rejected'].includes(request.status);
+  const needsPayment = request.status === 'accepted';
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -96,6 +97,43 @@ export function UserCommissionRequestCard({
     console.log('Delete confirmed for request:', request.id);
     onDelete(request.id);
     setShowDeleteDialog(false);
+  };
+
+  const handlePayNow = async () => {
+    setIsCreatingPayment(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-commission-payment', {
+        body: { commissionId: request.id }
+      });
+
+      if (error) {
+        console.error('Payment creation error:', error);
+        toast({
+          title: "Payment Error",
+          description: error.message || "Failed to create payment session",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data?.url) {
+        // Open payment in new tab
+        window.open(data.url, '_blank');
+        toast({
+          title: "Payment Session Created",
+          description: "Complete your payment in the new tab to start the commission.",
+        });
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create payment session. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingPayment(false);
+    }
   };
 
   return (
@@ -121,11 +159,10 @@ export function UserCommissionRequestCard({
               <Badge className={getStatusColor(request.status)}>
                 {request.status.replace('_', ' ').toUpperCase()}
               </Badge>
-              {hasPaymentSession && (
-                <div className="flex items-center gap-1 text-xs text-orange-600">
-                  <AlertTriangle className="h-3 w-3" />
-                  <span>Payment session active</span>
-                </div>
+              {needsPayment && (
+                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                  Payment Required
+                </Badge>
               )}
             </div>
           </div>
@@ -135,6 +172,31 @@ export function UserCommissionRequestCard({
           <div className="text-sm text-muted-foreground">
             {getStatusDescription(request.status)}
           </div>
+
+          {needsPayment && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-blue-900">Ready for Payment</p>
+                  <p className="text-sm text-blue-700">Creator accepted your commission! Pay now to start work.</p>
+                </div>
+                <Button 
+                  onClick={handlePayNow}
+                  disabled={isCreatingPayment}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isCreatingPayment ? (
+                    'Creating...'
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pay Now
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -203,7 +265,7 @@ export function UserCommissionRequestCard({
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         requestTitle={request.title}
-        hasPaymentSession={hasPaymentSession}
+        hasPaymentSession={false}
       />
 
       <CommissionRequestDetailsModal

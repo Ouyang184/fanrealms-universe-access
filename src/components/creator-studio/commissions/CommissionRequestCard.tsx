@@ -13,12 +13,10 @@ import {
   Clock,
   CreditCard,
   AlertCircle,
-  Loader2,
-  RefreshCw
+  Loader2
 } from 'lucide-react';
 import { CommissionRequestStatus } from '@/types/commission';
 import { supabase } from '@/lib/supabase';
-import { toast } from '@/hooks/use-toast';
 
 interface CommissionRequestWithRelations {
   id: string;
@@ -52,6 +50,7 @@ interface CommissionRequestCardProps {
   request: CommissionRequestWithRelations;
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
+  onCreatePayment: (id: string) => void;
   onUpdateStatus: (id: string, status: CommissionRequestStatus) => void;
 }
 
@@ -59,11 +58,11 @@ export function CommissionRequestCard({
   request: initialRequest,
   onAccept,
   onReject,
+  onCreatePayment,
   onUpdateStatus
 }: CommissionRequestCardProps) {
   const [request, setRequest] = useState(initialRequest);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
 
   // Set up real-time subscription for this specific commission request
   useEffect(() => {
@@ -89,65 +88,20 @@ export function CommissionRequestCard({
     };
   }, [request.id]);
 
-  const checkPaymentStatus = async () => {
-    if (!request.stripe_payment_intent_id) return;
-    
-    setIsCheckingPayment(true);
-    try {
-      // Call a simple function to check payment status - we'll need to create this
-      const { data, error } = await supabase.functions.invoke('check-payment-status', {
-        body: { 
-          paymentIntentId: request.stripe_payment_intent_id,
-          commissionId: request.id 
-        }
-      });
-
-      if (error) {
-        console.error('Error checking payment status:', error);
-        toast({
-          title: "Error",
-          description: "Failed to check payment status",
-          variant: "destructive"
-        });
-      } else if (data?.status) {
-        toast({
-          title: "Payment Status Updated",
-          description: `Payment status: ${data.status}`,
-        });
-        // The real-time subscription will handle the update
-      }
-    } catch (error) {
-      console.error('Payment status check failed:', error);
-      toast({
-        title: "Error",
-        description: "Failed to check payment status",
-        variant: "destructive"
-      });
-    } finally {
-      setIsCheckingPayment(false);
-    }
-  };
-
   const getStatusColor = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'checkout_created':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'payment_pending':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'payment_authorized':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'payment_failed':
-        return 'bg-red-100 text-red-800 border-red-200';
       case 'accepted':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'paid':
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'in_progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed':
         return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'completed':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -157,15 +111,9 @@ export function CommissionRequestCard({
     switch (status) {
       case 'pending':
         return <Clock className="h-4 w-4" />;
-      case 'checkout_created':
-        return <CreditCard className="h-4 w-4" />;
-      case 'payment_pending':
-        return <Loader2 className="h-4 w-4 animate-spin" />;
-      case 'payment_authorized':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'payment_failed':
-        return <AlertCircle className="h-4 w-4" />;
       case 'accepted':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'paid':
         return <CheckCircle className="h-4 w-4" />;
       case 'rejected':
         return <XCircle className="h-4 w-4" />;
@@ -178,16 +126,10 @@ export function CommissionRequestCard({
     switch (status) {
       case 'pending':
         return 'Pending Review';
-      case 'checkout_created':
-        return 'Payment Session Created';
-      case 'payment_pending':
-        return 'Payment in Progress';
-      case 'payment_authorized':
-        return 'Payment Received - Ready to Accept';
-      case 'payment_failed':
-        return 'Payment Failed';
       case 'accepted':
-        return 'Accepted';
+        return 'Accepted - Awaiting Payment';
+      case 'paid':
+        return 'Paid - Ready to Start';
       case 'rejected':
         return 'Rejected';
       case 'in_progress':
@@ -199,8 +141,9 @@ export function CommissionRequestCard({
     }
   };
 
-  const canAcceptOrReject = request.status === 'payment_authorized' || request.status === 'pending';
-  const showPaymentInfo = ['checkout_created', 'payment_pending', 'payment_authorized', 'payment_failed'].includes(request.status);
+  const canAcceptOrReject = request.status === 'pending';
+  const canCreatePayment = request.status === 'accepted';
+  const canMarkInProgress = request.status === 'paid';
 
   const handleAccept = async () => {
     setIsUpdating(true);
@@ -215,6 +158,15 @@ export function CommissionRequestCard({
     setIsUpdating(true);
     try {
       await onReject(request.id);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCreatePayment = async () => {
+    setIsUpdating(true);
+    try {
+      await onCreatePayment(request.id);
     } finally {
       setIsUpdating(false);
     }
@@ -257,54 +209,42 @@ export function CommissionRequestCard({
           </div>
         )}
 
-        {showPaymentInfo && (
-          <div className={`p-3 rounded-lg border ${
-            request.status === 'payment_authorized' ? 'bg-green-50 border-green-200' :
-            request.status === 'payment_pending' ? 'bg-orange-50 border-orange-200' :
-            request.status === 'payment_failed' ? 'bg-red-50 border-red-200' :
-            'bg-muted border-muted'
-          }`}>
+        {request.status === 'accepted' && (
+          <div className="p-3 rounded-lg border bg-blue-50 border-blue-200">
             <div className="flex items-center justify-between mb-2">
               <h4 className="font-medium flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Payment Status
+                <AlertCircle className="h-4 w-4" />
+                Payment Required
               </h4>
-              {request.status === 'payment_pending' && (
-                <Button
-                  onClick={checkPaymentStatus}
-                  disabled={isCheckingPayment}
-                  size="sm"
-                  variant="outline"
-                >
-                  {isCheckingPayment ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-3 w-3" />
-                  )}
-                  Check Status
-                </Button>
-              )}
+              <Button
+                onClick={handleCreatePayment}
+                disabled={isUpdating}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isUpdating ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CreditCard className="h-3 w-3" />
+                )}
+                Create Payment Link
+              </Button>
             </div>
-            {request.status === 'checkout_created' && (
-              <p className="text-sm text-muted-foreground">
-                💳 Customer has started payment process but hasn't completed it yet.
-              </p>
-            )}
-            {request.status === 'payment_pending' && (
-              <p className="text-sm text-orange-700">
-                ⏳ Customer is currently completing their payment. This will update automatically when done. You can click "Check Status" to manually refresh.
-              </p>
-            )}
-            {request.status === 'payment_authorized' && (
-              <p className="text-sm text-green-700">
-                ✅ Payment received successfully! You can now accept or reject this commission.
-              </p>
-            )}
-            {request.status === 'payment_failed' && (
-              <p className="text-sm text-red-700">
-                ❌ Payment failed. Customer needs to try payment again.
-              </p>
-            )}
+            <p className="text-sm text-blue-700">
+              ✅ Commission accepted! Create a payment link for the customer to complete payment.
+            </p>
+          </div>
+        )}
+
+        {request.status === 'paid' && (
+          <div className="p-3 rounded-lg border bg-green-50 border-green-200">
+            <h4 className="font-medium flex items-center gap-2 mb-2">
+              <CheckCircle className="h-4 w-4" />
+              Payment Completed
+            </h4>
+            <p className="text-sm text-green-700">
+              💰 Payment received! You can now start working on this commission.
+            </p>
           </div>
         )}
 
@@ -350,7 +290,7 @@ export function CommissionRequestCard({
             <Button
               onClick={handleAccept}
               className="flex-1"
-              disabled={isUpdating || (request.status !== 'payment_authorized' && request.status !== 'pending')}
+              disabled={isUpdating}
             >
               {isUpdating ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -375,7 +315,7 @@ export function CommissionRequestCard({
           </div>
         )}
 
-        {request.status === 'accepted' && (
+        {canMarkInProgress && (
           <div className="flex gap-2 pt-4 border-t">
             <Button
               onClick={() => onUpdateStatus(request.id, 'in_progress')}
