@@ -16,10 +16,16 @@ serve(async (req) => {
   try {
     const { commissionId, action } = await req.json();
     
-    console.log('Handling commission action:', { commissionId, action });
+    console.log('Handling commission action (AUTHORIZATION MODE - TEST):', { commissionId, action });
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    // Initialize Stripe with TEST key for commissions
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY_TEST not found in environment');
+      throw new Error('Payment service configuration error - test mode not configured');
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
@@ -67,73 +73,87 @@ serve(async (req) => {
     }
 
     if (action === 'accept') {
-      console.log('Accepting commission and capturing payment:', paymentIntentId);
+      console.log('Accepting commission and capturing authorized payment (TEST MODE):', paymentIntentId);
       
-      // Capture the authorized payment
-      const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
-      
-      // Update commission status to accepted and paid
-      const { error: updateError } = await supabaseService
-        .from('commission_requests')
-        .update({ 
-          status: 'accepted',
-          creator_notes: 'Commission accepted and payment captured'
-        })
-        .eq('id', commissionId);
+      try {
+        // Capture the authorized payment
+        const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        console.log('Payment captured successfully (TEST MODE):', paymentIntent.id);
+        
+        // Update commission status to accepted
+        const { error: updateError } = await supabaseService
+          .from('commission_requests')
+          .update({ 
+            status: 'accepted',
+            creator_notes: 'Commission accepted and payment captured (TEST MODE)'
+          })
+          .eq('id', commissionId);
 
-      if (updateError) {
-        console.error('Failed to update commission status:', updateError);
-        throw new Error('Failed to update commission status');
+        if (updateError) {
+          console.error('Failed to update commission status:', updateError);
+          throw new Error('Failed to update commission status');
+        }
+
+        console.log('Commission accepted and payment captured successfully (TEST MODE)');
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Commission accepted and payment captured (TEST MODE)',
+          paymentIntentId: paymentIntentId 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+
+      } catch (stripeError) {
+        console.error('Failed to capture payment:', stripeError);
+        throw new Error('Failed to capture payment - authorization may have expired');
       }
-
-      console.log('Commission accepted and payment captured successfully');
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Commission accepted and payment captured',
-        paymentIntent: paymentIntent.id 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
 
     } else if (action === 'reject') {
-      console.log('Rejecting commission and canceling payment:', paymentIntentId);
+      console.log('Rejecting commission and canceling authorized payment (TEST MODE):', paymentIntentId);
       
-      // Cancel the authorized payment (refunds to customer)
-      const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
-      
-      // Update commission status to rejected
-      const { error: updateError } = await supabaseService
-        .from('commission_requests')
-        .update({ 
-          status: 'rejected',
-          creator_notes: 'Commission rejected and payment canceled'
-        })
-        .eq('id', commissionId);
+      try {
+        // Cancel the authorized payment (this will release the hold)
+        const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+        console.log('Payment authorization canceled (TEST MODE):', paymentIntent.id);
+        
+        // Update commission status to rejected
+        const { error: updateError } = await supabaseService
+          .from('commission_requests')
+          .update({ 
+            status: 'rejected',
+            creator_notes: 'Commission rejected and payment authorization canceled (TEST MODE)'
+          })
+          .eq('id', commissionId);
 
-      if (updateError) {
-        console.error('Failed to update commission status:', updateError);
-        throw new Error('Failed to update commission status');
+        if (updateError) {
+          console.error('Failed to update commission status:', updateError);
+          throw new Error('Failed to update commission status');
+        }
+
+        console.log('Commission rejected and payment authorization canceled successfully (TEST MODE)');
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Commission rejected and payment authorization canceled (TEST MODE)',
+          paymentIntentId: paymentIntentId 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+
+      } catch (stripeError) {
+        console.error('Failed to cancel payment authorization:', stripeError);
+        throw new Error('Failed to cancel payment authorization');
       }
-
-      console.log('Commission rejected and payment canceled successfully');
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Commission rejected and payment canceled',
-        paymentIntent: paymentIntent.id 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
 
     } else {
       throw new Error('Invalid action. Must be "accept" or "reject"');
     }
 
   } catch (error) {
-    console.error('Commission action error:', error);
+    console.error('Commission action error (AUTHORIZATION MODE - TEST):', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred' 
     }), {

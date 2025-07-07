@@ -1,22 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { 
-  Check, 
-  X, 
-  Clock, 
+  Calendar, 
   DollarSign, 
   User, 
-  MessageSquare, 
-  RefreshCw,
-  AlertTriangle
+  MessageCircle, 
+  CheckCircle, 
+  XCircle,
+  Clock,
+  CreditCard,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { CommissionRequestStatus } from '@/types/commission';
-import { useCommissionActions } from '@/hooks/useCommissionActions';
+import { supabase } from '@/lib/supabase';
 
 interface CommissionRequestWithRelations {
   id: string;
@@ -54,228 +54,291 @@ interface CommissionRequestCardProps {
 }
 
 export function CommissionRequestCard({
-  request,
+  request: initialRequest,
   onAccept,
   onReject,
   onUpdateStatus
 }: CommissionRequestCardProps) {
-  const [refundReason, setRefundReason] = useState('');
-  const [showRefundDialog, setShowRefundDialog] = useState(false);
-  
-  const { acceptCommission, rejectCommission, processRefund, isProcessing } = useCommissionActions();
+  const [request, setRequest] = useState(initialRequest);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const getStatusColor = (status: string) => {
+  // Set up real-time subscription for this specific commission request
+  useEffect(() => {
+    const channel = supabase
+      .channel(`commission-${request.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'commission_requests',
+          filter: `id=eq.${request.id}`
+        },
+        (payload) => {
+          console.log('Commission request updated:', payload);
+          setRequest(prev => ({ ...prev, ...payload.new }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [request.id]);
+
+  const getStatusColor = (status: CommissionRequestStatus) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-500';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'checkout_created':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'payment_pending':
-        return 'bg-blue-500';
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'payment_authorized':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'payment_failed':
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'accepted':
-        return 'bg-green-500';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'rejected':
-        return 'bg-red-500';
-      case 'refunded':
-        return 'bg-orange-500';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'in_progress':
-        return 'bg-purple-500';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'completed':
-        return 'bg-emerald-500';
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return 'bg-gray-500';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusIcon = (status: CommissionRequestStatus) => {
     switch (status) {
+      case 'pending':
+        return <Clock className="h-4 w-4" />;
+      case 'checkout_created':
+        return <CreditCard className="h-4 w-4" />;
       case 'payment_pending':
-        return 'Awaiting Payment';
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+      case 'payment_authorized':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'payment_failed':
+        return <AlertCircle className="h-4 w-4" />;
+      case 'accepted':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusText = (status: CommissionRequestStatus) => {
+    switch (status) {
+      case 'pending':
+        return 'Pending Review';
+      case 'checkout_created':
+        return 'Payment Session Created';
+      case 'payment_pending':
+        return 'Payment in Progress';
+      case 'payment_authorized':
+        return 'Payment Received - Ready to Accept';
+      case 'payment_failed':
+        return 'Payment Failed';
+      case 'accepted':
+        return 'Accepted';
+      case 'rejected':
+        return 'Rejected';
       case 'in_progress':
         return 'In Progress';
+      case 'completed':
+        return 'Completed';
       default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
+        return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
 
-  const handleAccept = () => {
-    acceptCommission(request.id);
+  const canAcceptOrReject = request.status === 'payment_authorized' || request.status === 'pending';
+  const showPaymentInfo = ['checkout_created', 'payment_pending', 'payment_authorized', 'payment_failed'].includes(request.status);
+
+  const handleAccept = async () => {
+    setIsUpdating(true);
+    try {
+      await onAccept(request.id);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleReject = () => {
-    rejectCommission(request.id);
+  const handleReject = async () => {
+    setIsUpdating(true);
+    try {
+      await onReject(request.id);
+    } finally {
+      setIsUpdating(false);
+    }
   };
-
-  const handleRefund = () => {
-    processRefund(request.id, refundReason);
-    setShowRefundDialog(false);
-    setRefundReason('');
-  };
-
-  const canAcceptOrReject = request.status === 'payment_pending';
-  const canRefund = ['accepted', 'in_progress'].includes(request.status) && request.stripe_payment_intent_id;
 
   return (
-    <Card className="border-l-4 border-l-blue-500">
+    <Card className="relative">
       <CardHeader>
         <div className="flex justify-between items-start">
-          <div className="space-y-2">
+          <div>
             <CardTitle className="text-lg">{request.title}</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
               <User className="h-4 w-4" />
-              <span className="text-sm text-muted-foreground">
-                {request.customer.username}
-              </span>
-              <Badge className={getStatusColor(request.status)}>
-                {getStatusText(request.status)}
-              </Badge>
+              <span>{request.customer.username}</span>
+              <Calendar className="h-4 w-4 ml-2" />
+              <span>{new Date(request.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="text-right">
-            <div className="flex items-center gap-1 text-lg font-semibold">
-              <DollarSign className="h-4 w-4" />
-              ${request.agreed_price?.toFixed(2) || request.commission_type.base_price.toFixed(2)}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {request.commission_type.name}
-            </p>
-          </div>
+          <Badge className={`${getStatusColor(request.status)} flex items-center gap-1 border`}>
+            {getStatusIcon(request.status)}
+            {getStatusText(request.status)}
+          </Badge>
         </div>
       </CardHeader>
-
       <CardContent className="space-y-4">
         <div>
-          <h4 className="font-medium mb-2">Description:</h4>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-            {request.description}
-          </p>
+          <h4 className="font-medium mb-2">Commission Type</h4>
+          <p className="text-sm text-muted-foreground">{request.commission_type.name}</p>
         </div>
+
+        <div>
+          <h4 className="font-medium mb-2">Description</h4>
+          <p className="text-sm text-muted-foreground">{request.description}</p>
+        </div>
+
+        {request.agreed_price && (
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-green-600" />
+            <span className="font-medium">Agreed Price: ${request.agreed_price}</span>
+          </div>
+        )}
+
+        {showPaymentInfo && (
+          <div className={`p-3 rounded-lg border ${
+            request.status === 'payment_authorized' ? 'bg-green-50 border-green-200' :
+            request.status === 'payment_pending' ? 'bg-orange-50 border-orange-200' :
+            request.status === 'payment_failed' ? 'bg-red-50 border-red-200' :
+            'bg-muted border-muted'
+          }`}>
+            <h4 className="font-medium mb-1 flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Payment Status
+            </h4>
+            {request.status === 'checkout_created' && (
+              <p className="text-sm text-muted-foreground">
+                💳 Customer has started payment process but hasn't completed it yet.
+              </p>
+            )}
+            {request.status === 'payment_pending' && (
+              <p className="text-sm text-orange-700">
+                ⏳ Customer is currently completing their payment. This will update automatically when done.
+              </p>
+            )}
+            {request.status === 'payment_authorized' && (
+              <p className="text-sm text-green-700">
+                ✅ Payment received successfully! You can now accept or reject this commission.
+              </p>
+            )}
+            {request.status === 'payment_failed' && (
+              <p className="text-sm text-red-700">
+                ❌ Payment failed. Customer needs to try payment again.
+              </p>
+            )}
+          </div>
+        )}
 
         {request.customer_notes && (
           <div>
             <h4 className="font-medium mb-2 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Customer Notes:
+              <MessageCircle className="h-4 w-4" />
+              Customer Notes
             </h4>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
               {request.customer_notes}
+            </p>
+          </div>
+        )}
+
+        {request.creator_notes && (
+          <div>
+            <h4 className="font-medium mb-2">Your Notes</h4>
+            <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+              {request.creator_notes}
             </p>
           </div>
         )}
 
         {request.reference_images && request.reference_images.length > 0 && (
           <div>
-            <h4 className="font-medium mb-2">Reference Images:</h4>
-            <div className="flex gap-2 flex-wrap">
+            <h4 className="font-medium mb-2">Reference Images</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {request.reference_images.map((image, index) => (
                 <img
                   key={index}
                   src={image}
                   alt={`Reference ${index + 1}`}
-                  className="w-20 h-20 object-cover rounded border"
+                  className="w-full h-20 object-cover rounded border"
                 />
               ))}
             </div>
           </div>
         )}
 
-        {request.deadline && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            Deadline: {new Date(request.deadline).toLocaleDateString()}
+        {canAcceptOrReject && (
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              onClick={handleAccept}
+              className="flex-1"
+              disabled={isUpdating || (request.status !== 'payment_authorized' && request.status !== 'pending')}
+            >
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4 mr-2" />
+              )}
+              Accept Commission
+            </Button>
+            <Button
+              onClick={handleReject}
+              variant="outline"
+              className="flex-1"
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Reject
+            </Button>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-4 border-t">
-          {canAcceptOrReject && (
-            <>
-              <Button 
-                onClick={handleAccept}
-                disabled={isProcessing}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Accept & Capture Payment
-              </Button>
-              <Button 
-                onClick={handleReject}
-                disabled={isProcessing}
-                variant="destructive"
-                className="flex-1"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Reject & Refund
-              </Button>
-            </>
-          )}
+        {request.status === 'accepted' && (
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              onClick={() => onUpdateStatus(request.id, 'in_progress')}
+              className="flex-1"
+              disabled={isUpdating}
+            >
+              Mark as In Progress
+            </Button>
+          </div>
+        )}
 
-          {canRefund && (
-            <Dialog open={showRefundDialog} onOpenChange={setShowRefundDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Issue Refund
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Issue Manual Refund
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    This will refund ${request.agreed_price?.toFixed(2)} to the customer 
-                    and mark the commission as refunded.
-                  </p>
-                  <div>
-                    <label className="text-sm font-medium">Reason for refund (optional):</label>
-                    <Textarea
-                      value={refundReason}
-                      onChange={(e) => setRefundReason(e.target.value)}
-                      placeholder="Enter reason for refund..."
-                      className="mt-1"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleRefund}
-                      disabled={isProcessing}
-                      variant="destructive"
-                      className="flex-1"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Confirm Refund
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      onClick={() => setShowRefundDialog(false)}
-                      variant="outline"
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-
-          {request.status === 'pending' && (
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Waiting for customer to complete payment
-            </p>
-          )}
-        </div>
+        {request.status === 'in_progress' && (
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              onClick={() => onUpdateStatus(request.id, 'completed')}
+              className="flex-1"
+              disabled={isUpdating}
+            >
+              Mark as Completed
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

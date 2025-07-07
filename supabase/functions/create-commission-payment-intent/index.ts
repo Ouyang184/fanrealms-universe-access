@@ -14,10 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT REQUEST (TEST MODE) ===');
+    console.log('=== CREATE COMMISSION PAYMENT INTENT (AUTHORIZATION MODE) ===');
     
-    const { commissionId, customerId } = await req.json();
-    console.log('Request data:', { commissionId, customerId });
+    const { commissionId, amount } = await req.json();
+    console.log('Request data:', { commissionId, amount });
 
     if (!commissionId) {
       console.error('Missing commission ID');
@@ -31,7 +31,7 @@ serve(async (req) => {
       throw new Error('Payment service configuration error - test mode not configured');
     }
 
-    console.log('Using Stripe TEST mode for commission payments');
+    console.log('Using Stripe TEST mode for commission payments (AUTHORIZATION MODE)');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
@@ -118,39 +118,27 @@ serve(async (req) => {
       customerId_stripe = customers.data[0].id;
       console.log('Found existing Stripe customer (TEST):', customerId_stripe);
     } else {
-      console.log('No existing Stripe customer found (TEST), will create one in checkout');
+      // Create new customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          user_id: user.id,
+          environment: 'test'
+        }
+      });
+      customerId_stripe = customer.id;
+      console.log('Created new Stripe customer (TEST):', customerId_stripe);
     }
 
-    // Get origin for redirect URLs
-    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
-    if (!origin) {
-      console.error('No origin header found');
-      throw new Error('Invalid request origin');
-    }
+    console.log('Creating payment intent (AUTHORIZATION MODE - TEST)');
 
-    console.log('Creating Stripe checkout session (TEST MODE) with origin:', origin);
-
-    // Create Stripe checkout session for standard one-time payment
-    const session = await stripe.checkout.sessions.create({
+    // Create payment intent with capture_method: 'manual' for authorization hold
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(commissionRequest.agreed_price * 100),
+      currency: 'usd',
       customer: customerId_stripe,
-      customer_email: customerId_stripe ? undefined : user.email,
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} commission by ${commissionRequest.creator.display_name}`,
-            },
-            unit_amount: Math.round(commissionRequest.agreed_price * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment', // Standard one-time payment
-      success_url: `${origin}/commissions/${commissionId}/payment-success`,
-      cancel_url: `${origin}/commissions/${commissionId}/pay`,
-      expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
+      capture_method: 'manual', // This is key - authorizes but doesn't capture
+      description: `Commission: ${commissionRequest.title}`,
       metadata: {
         commission_request_id: commissionId,
         customer_id: user.id,
@@ -160,39 +148,41 @@ serve(async (req) => {
       }
     });
 
-    console.log('Created Stripe checkout session (TEST):', session.id);
+    console.log('Created payment intent (AUTHORIZATION MODE - TEST):', paymentIntent.id);
 
-    // Update commission request with checkout session ID and checkout_created status
+    // Update commission request with payment intent ID and payment_pending status
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
-        stripe_payment_intent_id: session.id,
-        status: 'checkout_created',
-        creator_notes: 'Checkout session created (TEST MODE) - awaiting customer payment'
+        stripe_payment_intent_id: paymentIntent.id,
+        status: 'payment_pending',
+        creator_notes: 'Payment authorized (TEST MODE) - funds held pending creator approval'
       })
       .eq('id', commissionId);
 
     if (updateError) {
       console.error('Failed to update commission request:', updateError);
-      // Cancel the checkout session if database update fails
+      // Cancel the payment intent if database update fails
       try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (expireError) {
-        console.error('Failed to expire checkout session:', expireError);
+        await stripe.paymentIntents.cancel(paymentIntent.id);
+      } catch (cancelError) {
+        console.error('Failed to cancel payment intent:', cancelError);
       }
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to checkout_created (TEST MODE)');
-    console.log('=== SUCCESS: Returning checkout URL (TEST) ===');
+    console.log('Updated commission request status to payment_pending (AUTHORIZATION MODE - TEST)');
+    console.log('=== SUCCESS: Returning client secret (AUTHORIZATION MODE - TEST) ===');
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      client_secret: paymentIntent.client_secret 
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT (TEST MODE) ===');
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT INTENT (AUTHORIZATION MODE - TEST) ===');
     console.error('Error details:', error);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');

@@ -10,6 +10,8 @@ import { Plus, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import { toast } from "@/hooks/use-toast";
+import { CustomAddonsSection } from "./CustomAddOnsSection";
+import { CommissionAddon } from "@/types/commission";
 
 interface CreateCommissionTypeModalProps {
   onSuccess: () => void;
@@ -25,7 +27,6 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
     name: "",
     description: "",
     base_price: "",
-    price_per_character: "",
     price_per_revision: "",
     estimated_turnaround_days: "",
     max_revisions: "",
@@ -33,6 +34,7 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
   
   const [dos, setDos] = useState<string[]>([]);
   const [donts, setDonts] = useState<string[]>([]);
+  const [customAddons, setCustomAddons] = useState<CommissionAddon[]>([]);
   const [newDo, setNewDo] = useState("");
   const [newDont, setNewDont] = useState("");
 
@@ -49,12 +51,12 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
           name: formData.name,
           description: formData.description || null,
           base_price: parseFloat(formData.base_price),
-          price_per_character: formData.price_per_character ? parseFloat(formData.price_per_character) : null,
           price_per_revision: formData.price_per_revision ? parseFloat(formData.price_per_revision) : null,
           estimated_turnaround_days: parseInt(formData.estimated_turnaround_days),
           max_revisions: parseInt(formData.max_revisions),
           dos: dos,
           donts: donts,
+          custom_addons: customAddons,
           is_active: true
         });
 
@@ -73,13 +75,13 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
         name: "",
         description: "",
         base_price: "",
-        price_per_character: "",
         price_per_revision: "",
         estimated_turnaround_days: "",
         max_revisions: "",
       });
       setDos([]);
       setDonts([]);
+      setCustomAddons([]);
     } catch (error) {
       console.error('Error creating commission type:', error);
       toast({
@@ -119,7 +121,7 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Commission Type</DialogTitle>
         </DialogHeader>
@@ -161,19 +163,13 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
             />
           </div>
 
+          {/* Custom Add-Ons Section */}
+          <CustomAddonsSection 
+            addons={customAddons}
+            onAddonsChange={setCustomAddons}
+          />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price_per_character">Price per Extra Character ($)</Label>
-              <Input
-                id="price_per_character"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.price_per_character}
-                onChange={(e) => setFormData({ ...formData, price_per_character: e.target.value })}
-                placeholder="25.00"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="price_per_revision">Price per Extra Revision ($)</Label>
               <Input
@@ -186,9 +182,6 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
                 placeholder="10.00"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="estimated_turnaround_days">Turnaround (days) *</Label>
               <Input
@@ -201,18 +194,20 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="max_revisions">Max Revisions *</Label>
-              <Input
-                id="max_revisions"
-                type="number"
-                min="0"
-                value={formData.max_revisions}
-                onChange={(e) => setFormData({ ...formData, max_revisions: e.target.value })}
-                placeholder="3"
-                required
-              />
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max_revisions">Max Revisions *</Label>
+            <Input
+              id="max_revisions"
+              type="number"
+              min="0"
+              value={formData.max_revisions}
+              onChange={(e) => setFormData({ ...formData, max_revisions: e.target.value })}
+              placeholder="3"
+              required
+              className="max-w-xs"
+            />
           </div>
 
           {/* Will Do Section */}

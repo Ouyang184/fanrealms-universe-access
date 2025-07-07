@@ -18,6 +18,7 @@ interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  custom_addons?: any[];
   is_active: boolean;
   created_at: string;
 }
@@ -114,6 +115,27 @@ export function CommissionTypesTab({
                     </div>
                   )}
                 </div>
+
+                {/* Display custom add-ons only if they exist and have content */}
+                {type.custom_addons && Array.isArray(type.custom_addons) && type.custom_addons.length > 0 && type.custom_addons.some(addon => addon && addon.name) && (
+                  <div className="mt-4">
+                    <h5 className="font-medium text-white mb-2">Custom Add-ons:</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {type.custom_addons
+                        .filter(addon => addon && addon.name && addon.name.trim())
+                        .map((addon, index) => (
+                          <div key={addon.id || index} className="flex items-center gap-2 text-sm">
+                            <span className="font-medium text-white" title={addon.name}>
+                              {addon.name}
+                            </span>
+                            <span className="text-white">
+                              +${Number(addon.price || 0).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
                 
                 {(type.dos.length > 0 || type.donts.length > 0) && (
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">

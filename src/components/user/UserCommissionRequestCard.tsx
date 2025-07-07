@@ -1,13 +1,13 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye } from 'lucide-react';
+import { Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
+import { CommissionRequestDetailsModal } from './CommissionRequestDetailsModal';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
   status: string;
@@ -31,8 +31,10 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
       return 'bg-yellow-100 text-yellow-800';
-    case 'payment_pending':
+    case 'checkout_created':
       return 'bg-blue-100 text-blue-800';
+    case 'payment_pending':
+      return 'bg-orange-100 text-orange-800';
     case 'accepted':
       return 'bg-green-100 text-green-800';
     case 'rejected':
@@ -50,13 +52,40 @@ const getStatusColor = (status: string) => {
   }
 };
 
+const getStatusDescription = (status: string) => {
+  switch (status) {
+    case 'pending':
+      return 'Waiting for creator response';
+    case 'checkout_created':
+      return 'Payment session ready - you can pay when ready';
+    case 'payment_pending':
+      return 'Payment being processed';
+    case 'accepted':
+      return 'Commission accepted and paid';
+    case 'rejected':
+      return 'Commission declined by creator';
+    case 'in_progress':
+      return 'Creator is working on your commission';
+    case 'completed':
+      return 'Commission completed';
+    case 'delivered':
+      return 'Commission delivered to you';
+    case 'cancelled':
+      return 'Commission cancelled';
+    default:
+      return status.replace('_', ' ');
+  }
+};
+
 export function UserCommissionRequestCard({ 
   request, 
   onDelete, 
   isDeleting 
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const canDelete = request.status === 'pending' || request.status === 'rejected';
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const canDelete = ['pending', 'rejected', 'checkout_created', 'payment_pending'].includes(request.status);
+  const hasPaymentSession = ['checkout_created', 'payment_pending'].includes(request.status);
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -88,13 +117,25 @@ export function UserCommissionRequestCard({
                 </span>
               </div>
             </div>
-            <Badge className={getStatusColor(request.status)}>
-              {request.status.replace('_', ' ').toUpperCase()}
-            </Badge>
+            <div className="flex flex-col items-end gap-2">
+              <Badge className={getStatusColor(request.status)}>
+                {request.status.replace('_', ' ').toUpperCase()}
+              </Badge>
+              {hasPaymentSession && (
+                <div className="flex items-center gap-1 text-xs text-orange-600">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Payment session active</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            {getStatusDescription(request.status)}
+          </div>
+
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Commission Type:</span>
@@ -130,7 +171,12 @@ export function UserCommissionRequestCard({
           </div>
 
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => setShowDetailsModal(true)}
+            >
               <Eye className="h-4 w-4" />
               View Details
             </Button>
@@ -157,6 +203,13 @@ export function UserCommissionRequestCard({
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         requestTitle={request.title}
+        hasPaymentSession={hasPaymentSession}
+      />
+
+      <CommissionRequestDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        request={request}
       />
     </>
   );

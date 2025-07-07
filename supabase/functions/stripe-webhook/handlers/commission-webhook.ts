@@ -3,27 +3,28 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
   console.log('Processing commission webhook:', event.type);
 
   try {
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object;
-      const commissionId = session.metadata?.commission_request_id;
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      const commissionId = paymentIntent.metadata?.commission_request_id;
 
-      if (commissionId && session.metadata?.type === 'commission_payment') {
-        console.log('Checkout session completed for commission:', commissionId);
+      if (commissionId && paymentIntent.metadata?.type === 'commission_payment') {
+        console.log('Payment intent succeeded for commission (AUTHORIZATION):', commissionId);
 
-        // For standard payments, mark as accepted immediately since payment is captured
+        // For manual capture, payment_intent.succeeded means authorization succeeded
+        // Update commission status to payment_authorized (funds are held, awaiting creator decision)
         const { error } = await supabase
           .from('commission_requests')
           .update({ 
-            status: 'accepted',
-            stripe_payment_intent_id: session.payment_intent,
-            creator_notes: 'Payment completed successfully - commission accepted'
+            status: 'payment_authorized',
+            stripe_payment_intent_id: paymentIntent.id,
+            creator_notes: 'Payment authorized successfully - funds held pending your approval (TEST MODE)'
           })
           .eq('id', commissionId);
 
         if (error) {
-          console.error('Failed to update commission on checkout completion:', error);
+          console.error('Failed to update commission on payment authorization:', error);
         } else {
-          console.log('Commission marked as accepted after successful payment');
+          console.log('Commission marked as payment_authorized - funds held for creator approval');
         }
       }
     }
@@ -40,7 +41,7 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
           .from('commission_requests')
           .update({ 
             status: 'payment_failed',
-            creator_notes: 'Payment failed - please try again'
+            creator_notes: 'Payment authorization failed - please try again (TEST MODE)'
           })
           .eq('stripe_payment_intent_id', paymentIntent.id);
 
@@ -49,6 +50,66 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
         } else {
           console.log('Commission marked as payment failed');
         }
+      }
+    }
+
+    if (event.type === 'payment_intent.canceled') {
+      const paymentIntent = event.data.object;
+      const commissionId = paymentIntent.metadata?.commission_request_id;
+
+      if (commissionId && paymentIntent.metadata?.type === 'commission_payment') {
+        console.log('Payment intent canceled for commission:', commissionId);
+
+        // Update commission status back to pending
+        const { error } = await supabase
+          .from('commission_requests')
+          .update({ 
+            status: 'rejected',
+            stripe_payment_intent_id: paymentIntent.id,
+            creator_notes: 'Commission rejected - payment authorization canceled (TEST MODE)'
+          })
+          .eq('id', commissionId);
+
+        if (error) {
+          console.error('Failed to update commission on payment cancellation:', error);
+        } else {
+          console.log('Commission marked as rejected after payment cancellation');
+        }
+      }
+    }
+
+    // Handle charge.captured for when creator accepts and payment is captured
+    if (event.type === 'charge.captured') {
+      const charge = event.data.object;
+      const paymentIntentId = charge.payment_intent;
+
+      // Find commission by payment intent ID
+      const { data: commissionRequest, error: fetchError } = await supabase
+        .from('commission_requests')
+        .select('id')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .single();
+
+      if (fetchError) {
+        console.log('No commission found for captured charge:', paymentIntentId);
+        return;
+      }
+
+      console.log('Charge captured for commission:', commissionRequest.id);
+
+      // Update commission status to accepted (payment fully processed)
+      const { error } = await supabase
+        .from('commission_requests')
+        .update({ 
+          status: 'accepted',
+          creator_notes: 'Commission accepted and payment captured successfully (TEST MODE)'
+        })
+        .eq('id', commissionRequest.id);
+
+      if (error) {
+        console.error('Failed to update commission on charge capture:', error);
+      } else {
+        console.log('Commission marked as accepted after successful payment capture');
       }
     }
 
@@ -75,7 +136,7 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
         .from('commission_requests')
         .update({ 
           status: 'refunded',
-          creator_notes: 'Payment refunded'
+          creator_notes: 'Payment refunded (TEST MODE)'
         })
         .eq('id', commissionRequest.id);
 
