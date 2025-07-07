@@ -37,10 +37,10 @@ export default function CommissionPayment() {
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (requestId) {
-      fetchCommissionRequest();
-    }
-  }, [requestId]);
+  if (requestId && user?.id) {
+    fetchCommissionRequest();
+  }
+}, [requestId, user]);
 
   const fetchCommissionRequest = async () => {
     try {
