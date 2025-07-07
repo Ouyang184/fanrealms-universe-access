@@ -1,3 +1,4 @@
+
 import { corsHeaders } from '../utils/cors.ts';
 
 export async function handleCancelSubscription(
@@ -93,18 +94,15 @@ export async function handleCancelSubscription(
           console.log('Successfully cancelled Stripe subscription');
         } catch (stripeError) {
           console.error('Stripe immediate cancel error:', stripeError);
-          return new Response(JSON.stringify({
-            error: stripeError?.message || 'Stripe cancellation failed',
-          }), {
-            headers: corsHeaders,
-            status: stripeError?.statusCode || 502,
-          });
+          // For immediate cancellation, we'll still proceed to delete from database
+          // even if Stripe cancellation fails
+          console.log('Stripe cancellation failed, but proceeding with database deletion for immediate cancellation');
         }
       } else {
-        console.log('No Stripe subscription ID found, skipping Stripe cancellation');
+        console.log('No Stripe subscription ID found, proceeding with database-only cancellation');
       }
 
-      // Always delete from our database for immediate cancellation
+      // Delete from our database for immediate cancellation
       const { error: deleteError } = await supabaseService
         .from('user_subscriptions')
         .delete()
@@ -120,11 +118,14 @@ export async function handleCancelSubscription(
         });
       }
 
+      console.log('Successfully deleted subscription from database');
+
       return new Response(JSON.stringify({
         success: true,
         message: 'Subscription cancelled immediately',
         status: 'canceled',
-        canceled_at: cancelledSubscription?.canceled_at || new Date().toISOString(),
+        canceled_at: cancelledSubscription?.canceled_at || Math.floor(Date.now() / 1000),
+        immediate: true
       }), {
         headers: corsHeaders,
         status: 200,
@@ -193,6 +194,7 @@ export async function handleCancelSubscription(
         message: 'Subscription will cancel at period end',
         status: 'active',
         cancel_at: cancelAt,
+        immediate: false
       }), {
         headers: corsHeaders,
         status: 200,

@@ -267,7 +267,7 @@ export function SubscribedButton({
           onOptimisticUpdate(false);
         }
       } else {
-        const cancelDate = data.cancelAt ? formatCancelDate(data.cancelAt) : getNextBillingDate();
+        const cancelDate = data.cancel_at ? formatCancelDate(data.cancel_at) : getNextBillingDate();
         toast({
           title: "Subscription Will End",
           description: `Your subscription to ${tierName} will automatically end on ${cancelDate}. You'll continue to have access until then.`,
