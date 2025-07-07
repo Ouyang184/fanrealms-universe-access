@@ -19,10 +19,12 @@ export async function handleCreateSubscription(
   try {
     // Validate inputs
     if (!tierId || !creatorId) {
+      log('ERROR: Missing required parameters');
       throw new Error('Missing required parameters: tierId and creatorId');
     }
 
     if (!user?.id || !user?.email) {
+      log('ERROR: Invalid user data');
       throw new Error('Invalid user data: missing id or email');
     }
 
@@ -47,6 +49,7 @@ export async function handleCreateSubscription(
       existingSubscriptions = data;
       log('Existing subscriptions check completed', { count: existingSubscriptions?.length || 0 });
     } catch (dbError) {
+      log('ERROR: Failed to check existing subscriptions', dbError);
       throw new Error(`Failed to check existing subscriptions: ${dbError.message}`);
     }
 
@@ -86,6 +89,7 @@ export async function handleCreateSubscription(
       }
 
       if (!data) {
+        log('ERROR: Tier not found');
         throw new Error('Membership tier not found');
       }
 
@@ -97,12 +101,13 @@ export async function handleCreateSubscription(
         hasStripeAccount: !!tier.creators?.stripe_account_id
       });
     } catch (tierError) {
+      log('ERROR: Failed to fetch tier details', tierError);
       throw new Error(`Failed to fetch tier details: ${tierError.message}`);
     }
 
     // Validate creator has Stripe setup
     if (!tier.creators?.stripe_account_id) {
-      log('Creator stripe account not set up');
+      log('ERROR: Creator stripe account not set up');
       throw new Error('Creator payments not set up. Please contact the creator.');
     }
 
@@ -113,10 +118,11 @@ export async function handleCreateSubscription(
       stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabase, user);
       log('Stripe customer ready', { customerId: stripeCustomerId });
     } catch (customerError) {
+      log('ERROR: Customer setup failed', customerError);
       throw new Error(`Customer setup failed: ${customerError.message}`);
     }
 
-    // Create Stripe Checkout Session instead of subscription with payment intent
+    // Create Stripe Checkout Session
     try {
       log('Creating Stripe Checkout Session...');
       
@@ -182,12 +188,12 @@ export async function handleCreateSubscription(
       };
 
     } catch (stripeError) {
-      log('Stripe error', stripeError);
+      log('ERROR: Stripe error', stripeError);
       throw new Error(`Stripe error: ${stripeError.message}`);
     }
 
   } catch (error) {
-    log('Error in handleCreateSubscription', { 
+    log('ERROR: Exception in handleCreateSubscription', { 
       error: error.message, 
       stack: error.stack 
     });
@@ -214,6 +220,7 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
       .single();
 
     if (tierError || !newTier) {
+      log('ERROR: New tier not found', tierError);
       throw new Error(`New tier not found: ${tierError?.message || 'No tier data'}`);
     }
 
@@ -284,7 +291,7 @@ async function handleTierChange(stripe: any, supabase: any, user: any, existingS
     };
 
   } catch (error) {
-    log('Error handling tier change', { error: error.message });
+    log('ERROR: Failed to handle tier change', { error: error.message });
     throw new Error(`Failed to update subscription tier: ${error.message}`);
   }
 }
@@ -336,7 +343,7 @@ async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) 
     return customer.id;
 
   } catch (error) {
-    log('Error getting/creating Stripe customer', { error: error.message });
+    log('ERROR: Failed to get/create Stripe customer', { error: error.message });
     throw new Error(`Customer creation failed: ${error.message}`);
   }
 }

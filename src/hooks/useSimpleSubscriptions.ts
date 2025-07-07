@@ -49,13 +49,34 @@ export const useSimpleSubscriptions = () => {
 
       if (error) {
         console.error('[useSimpleSubscriptions] Edge function error:', error);
-        throw new Error(`Edge function error: ${error.message}`);
+        
+        // Show more specific error message
+        let errorMessage = 'Failed to create subscription';
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        toast({
+          title: "Subscription Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        
+        throw new Error(`Edge function error: ${errorMessage}`);
       }
       
       console.log('[useSimpleSubscriptions] Response:', data);
       
       if (data?.error) {
         console.error('[useSimpleSubscriptions] Subscription creation error:', data.error);
+        
+        toast({
+          title: "Subscription Error",
+          description: data.error,
+          variant: "destructive"
+        });
         
         if (data.shouldRefresh) {
           // Refresh subscription data if user is already subscribed
@@ -72,6 +93,15 @@ export const useSimpleSubscriptions = () => {
       return data;
     } catch (error) {
       console.error('[useSimpleSubscriptions] Create subscription error:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({
+        title: "Subscription Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      
       throw error;
     } finally {
       setIsProcessing(false);

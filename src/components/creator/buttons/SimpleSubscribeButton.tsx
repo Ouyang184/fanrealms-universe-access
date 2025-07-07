@@ -45,11 +45,7 @@ export function SimpleSubscribeButton({
       
       if (result?.error) {
         console.error('[SimpleSubscribeButton] Subscription error:', result.error);
-        toast({
-          title: "Subscription Error",
-          description: result.error,
-          variant: "destructive"
-        });
+        // Error already handled in hook
         return;
       }
       
@@ -72,11 +68,7 @@ export function SimpleSubscribeButton({
       }
     } catch (error) {
       console.error('[SimpleSubscribeButton] Subscription error:', error);
-      toast({
-        title: "Subscription Failed",
-        description: error instanceof Error ? error.message : 'Failed to create subscription',
-        variant: "destructive"
-      });
+      // Error already handled in hook, just log here
     }
   };
 
