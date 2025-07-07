@@ -31,13 +31,13 @@ serve(async (req) => {
     console.log('[StripeSubscriptions] Action:', action);
     console.log('[StripeSubscriptions] Full request body:', JSON.stringify(body, null, 2));
 
-    // Use LIVE keys consistently
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+    // Use available Stripe secret key
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY');
     
     if (!stripeSecretKey) {
-      console.error('STRIPE_SECRET_KEY_LIVE not found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));
+      console.error('No Stripe secret key found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));
       return new Response(JSON.stringify({ 
-        error: 'Stripe live secret key not configured' 
+        error: 'Stripe secret key not configured' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
