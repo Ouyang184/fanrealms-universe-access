@@ -3,13 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import { stripePromise, isStripeConfigured } from '@/lib/stripe';
 import { EmbeddedCommissionPayment } from '@/components/creator/EmbeddedCommissionPayment';
 import { Card, CardContent } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function CommissionPayment() {
   const { id } = useParams<{ id: string }>();
@@ -82,6 +80,23 @@ export default function CommissionPayment() {
             <h3 className="text-lg font-semibold mb-2">Price Not Set</h3>
             <p className="text-muted-foreground mb-4">
               The creator hasn't set a price for this commission yet. Please wait for them to review and price your request.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error if Stripe is not configured
+  if (!isStripeConfigured()) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Payment Configuration Error</h3>
+            <p className="text-muted-foreground mb-4">
+              Stripe payment system is not properly configured. The publishable key is missing.
             </p>
           </CardContent>
         </Card>
