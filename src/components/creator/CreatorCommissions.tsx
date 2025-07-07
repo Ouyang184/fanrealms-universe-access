@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,19 +68,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           });
         } else {
           console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
-          // Transform the data to match our CommissionType interface
-          const transformedTypes: CommissionType[] = (types || []).map(type => ({
-            ...type,
-            custom_addons: Array.isArray(type.custom_addons) 
-              ? type.custom_addons.map((addon: any) => ({
-                  id: addon.id || crypto.randomUUID(),
-                  name: addon.name || '',
-                  price: addon.price || 0,
-                  description: addon.description || undefined
-                }))
-              : []
-          }));
-          setCommissionTypes(transformedTypes);
+          setCommissionTypes(types || []);
         }
       } catch (error) {
         console.error('[CreatorCommissions] Unexpected error fetching commission data:', error);

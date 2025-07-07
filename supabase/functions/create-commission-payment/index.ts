@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT REQUEST (TEST MODE) ===');
+    console.log('=== CREATE COMMISSION PAYMENT REQUEST ===');
     
     const { commissionId, customerId } = await req.json();
     console.log('Request data:', { commissionId, customerId });
@@ -24,19 +24,18 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe with TEST key for commissions
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    // Initialize Stripe with proper environment variables
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
-      console.error('STRIPE_SECRET_KEY_TEST not found in environment');
-      throw new Error('Payment service configuration error - test mode not configured');
+      console.error('STRIPE_SECRET_KEY not found in environment');
+      throw new Error('Payment service configuration error');
     }
 
-    console.log('Using Stripe TEST mode for commission payments');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase
+    // Initialize Supabase - use anon key first for user authentication
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -66,7 +65,7 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Now use service role key for database operations
+    // Now use service role key for database operations to bypass RLS if needed
     const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch commission request details
@@ -107,7 +106,7 @@ serve(async (req) => {
       throw new Error('No agreed price set for this commission');
     }
 
-    // Check if customer already exists in Stripe (TEST mode)
+    // Check if customer already exists in Stripe
     const customers = await stripe.customers.list({ 
       email: user.email,
       limit: 1 
@@ -116,9 +115,9 @@ serve(async (req) => {
     let customerId_stripe;
     if (customers.data.length > 0) {
       customerId_stripe = customers.data[0].id;
-      console.log('Found existing Stripe customer (TEST):', customerId_stripe);
+      console.log('Found existing Stripe customer:', customerId_stripe);
     } else {
-      console.log('No existing Stripe customer found (TEST), will create one in checkout');
+      console.log('No existing Stripe customer found, will create one in checkout');
     }
 
     // Get origin for redirect URLs
@@ -128,7 +127,7 @@ serve(async (req) => {
       throw new Error('Invalid request origin');
     }
 
-    console.log('Creating Stripe checkout session (TEST MODE) with origin:', origin);
+    console.log('Creating Stripe checkout session with origin:', origin);
 
     // Create Stripe checkout session for standard one-time payment
     const session = await stripe.checkout.sessions.create({
@@ -155,12 +154,11 @@ serve(async (req) => {
         commission_request_id: commissionId,
         customer_id: user.id,
         creator_id: commissionRequest.creator_id,
-        type: 'commission_payment',
-        environment: 'test'
+        type: 'commission_payment'
       }
     });
 
-    console.log('Created Stripe checkout session (TEST):', session.id);
+    console.log('Created Stripe checkout session:', session.id);
 
     // Update commission request with checkout session ID and checkout_created status
     const { error: updateError } = await supabaseService
@@ -168,7 +166,7 @@ serve(async (req) => {
       .update({ 
         stripe_payment_intent_id: session.id,
         status: 'checkout_created',
-        creator_notes: 'Checkout session created (TEST MODE) - awaiting customer payment'
+        creator_notes: 'Checkout session created - awaiting customer payment'
       })
       .eq('id', commissionId);
 
@@ -183,8 +181,8 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to checkout_created (TEST MODE)');
-    console.log('=== SUCCESS: Returning checkout URL (TEST) ===');
+    console.log('Updated commission request status to checkout_created');
+    console.log('=== SUCCESS: Returning checkout URL ===');
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -192,7 +190,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT (TEST MODE) ===');
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
     console.error('Error details:', error);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
