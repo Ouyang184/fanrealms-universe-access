@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT INTENT (AUTHORIZATION MODE) ===');
+    console.log('=== CREATE COMMISSION PAYMENT INTENT (TEST MODE) ===');
     
     const { commissionId, amount } = await req.json();
     console.log('Request data:', { commissionId, amount });
@@ -31,7 +31,7 @@ serve(async (req) => {
       throw new Error('Payment service configuration error - test mode not configured');
     }
 
-    console.log('Using Stripe TEST mode for commission payments (AUTHORIZATION MODE)');
+    console.log('Using Stripe TEST mode for commission payments');
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
@@ -130,14 +130,13 @@ serve(async (req) => {
       console.log('Created new Stripe customer (TEST):', customerId_stripe);
     }
 
-    console.log('Creating payment intent (AUTHORIZATION MODE - TEST)');
+    console.log('Creating payment intent (TEST MODE)');
 
-    // Create payment intent with capture_method: 'manual' for authorization hold
+    // Create payment intent for inline payment
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(commissionRequest.agreed_price * 100),
       currency: 'usd',
       customer: customerId_stripe,
-      capture_method: 'manual', // This is key - authorizes but doesn't capture
       description: `Commission: ${commissionRequest.title}`,
       metadata: {
         commission_request_id: commissionId,
@@ -148,7 +147,7 @@ serve(async (req) => {
       }
     });
 
-    console.log('Created payment intent (AUTHORIZATION MODE - TEST):', paymentIntent.id);
+    console.log('Created payment intent (TEST):', paymentIntent.id);
 
     // Update commission request with payment intent ID and payment_pending status
     const { error: updateError } = await supabaseService
@@ -156,7 +155,7 @@ serve(async (req) => {
       .update({ 
         stripe_payment_intent_id: paymentIntent.id,
         status: 'payment_pending',
-        creator_notes: 'Payment authorized (TEST MODE) - funds held pending creator approval'
+        creator_notes: 'Payment intent created (TEST MODE) - awaiting customer payment'
       })
       .eq('id', commissionId);
 
@@ -171,8 +170,8 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to payment_pending (AUTHORIZATION MODE - TEST)');
-    console.log('=== SUCCESS: Returning client secret (AUTHORIZATION MODE - TEST) ===');
+    console.log('Updated commission request status to payment_pending (TEST MODE)');
+    console.log('=== SUCCESS: Returning client secret (TEST) ===');
 
     return new Response(JSON.stringify({ 
       client_secret: paymentIntent.client_secret 
@@ -182,7 +181,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT INTENT (AUTHORIZATION MODE - TEST) ===');
+    console.error('=== ERROR IN CREATE COMMISSION PAYMENT INTENT (TEST MODE) ===');
     console.error('Error details:', error);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
