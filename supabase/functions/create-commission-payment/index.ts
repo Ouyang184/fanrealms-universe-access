@@ -134,12 +134,11 @@ serve(async (req) => {
 
     console.log('Created Stripe checkout session:', session.id);
 
-    // Update commission request with checkout session ID and payment pending status
+    // Update commission request with checkout session ID but keep status as pending
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        status: 'payment_pending',
         creator_notes: 'Payment session created - awaiting customer payment'
       })
       .eq('id', commissionId);
@@ -155,7 +154,7 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to payment_pending');
+    console.log('Updated commission request with checkout session ID');
     console.log('=== SUCCESS: Returning checkout URL ===');
 
     return new Response(JSON.stringify({ url: session.url }), {
