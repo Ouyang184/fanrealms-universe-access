@@ -11,18 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle, Bug } from 'lucide-react';
 
-// Use the environment variable for Stripe publishable key
-const getStripePublishableKey = () => {
-  const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-  if (!key) {
-    console.error('VITE_STRIPE_PUBLISHABLE_KEY environment variable is not set');
-    throw new Error('Stripe configuration missing - please check environment variables');
-  }
-  console.log('🔑 Using Stripe publishable key from environment:', key.substring(0, 20) + '...');
-  return key;
-};
-
-const stripePromise = loadStripe(getStripePublishableKey());
+// Use the correct TEST Stripe publishable key for commissions that matches STRIPE_SECRET_KEY_TEST
+const stripePromise = loadStripe('pk_test_51QSXfpP8KqSCVhQsaEPa7YXm3v7sJ7Ae6HqgE1DdLUe9ePDCZ7i8M0Wj6xZlPjt4uESkzIxKsP2N2hJB8tD9NQKZ00YrS0cxjF');
 
 interface CommissionPaymentFormProps {
   commission: any;
@@ -166,7 +156,7 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
         timestamp: new Date().toISOString()
       });
 
-      console.log('🔑 Using Stripe TEST mode - publishable key from environment variable');
+      console.log('🔑 Using Stripe TEST publishable key that matches backend TEST secret key');
 
       // Confirm the payment with Stripe
       const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
