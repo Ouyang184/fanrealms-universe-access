@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -5,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Use the correct Stripe test publishable key from environment
+// Initialize Stripe with the publishable key from Supabase secrets
 const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
 const stripePromise = loadStripe(stripePublishableKey);
 
@@ -44,27 +42,11 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Payment form fields
-  const [cardholderName, setCardholderName] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [country, setCountry] = useState('US');
-  const [state, setState] = useState('');
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!stripe || !elements || !confirmed) {
-      return;
-    }
-
-    if (!cardholderName.trim()) {
-      setError('Cardholder name is required');
-      return;
-    }
-
-    if (!postalCode.trim()) {
-      setError('Postal code is required');
       return;
     }
 
@@ -91,18 +73,10 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
         throw new Error(paymentError.message);
       }
 
-      // Confirm payment with Stripe including billing details
+      // Confirm payment with Stripe
       const { error: confirmError } = await stripe.confirmCardPayment(paymentData.client_secret, {
         payment_method: {
           card: cardElement,
-          billing_details: {
-            name: cardholderName,
-            address: {
-              postal_code: postalCode,
-              country: country,
-              state: state,
-            },
-          },
         },
       });
 
@@ -117,11 +91,6 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleCancel = () => {
-    console.log('Back button clicked');
-    onCancel();
   };
 
   // Safely handle custom_addons which might be Json type
@@ -203,81 +172,19 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
           <CardTitle>Payment Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Cardholder Name */}
-          <div className="space-y-2">
-            <Label htmlFor="cardholderName">Cardholder Name</Label>
-            <Input
-              id="cardholderName"
-              type="text"
-              placeholder="John Doe"
-              value={cardholderName}
-              onChange={(e) => setCardholderName(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Card Details */}
-          <div className="space-y-2">
-            <Label>Card Details</Label>
-            <div className="p-4 border rounded-md">
-              <CardElement
-                options={{
-                  style: {
-                    base: {
-                      fontSize: '16px',
-                      color: '#424770',
-                      '::placeholder': {
-                        color: '#aab7c4',
-                      },
+          <div className="p-4 border rounded-md">
+            <CardElement
+              options={{
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#424770',
+                    '::placeholder': {
+                      color: '#aab7c4',
                     },
                   },
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Billing Address */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select value={country} onValueChange={setCountry}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="US">United States</SelectItem>
-                  <SelectItem value="CA">Canada</SelectItem>
-                  <SelectItem value="GB">United Kingdom</SelectItem>
-                  <SelectItem value="AU">Australia</SelectItem>
-                  <SelectItem value="DE">Germany</SelectItem>
-                  <SelectItem value="FR">France</SelectItem>
-                  <SelectItem value="JP">Japan</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="state">State/Province</Label>
-              <Input
-                id="state"
-                type="text"
-                placeholder="CA"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="postalCode">Postal/ZIP Code</Label>
-            <Input
-              id="postalCode"
-              type="text"
-              placeholder="90210"
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              required
+                },
+              }}
             />
           </div>
 
@@ -325,11 +232,11 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
         <Button
           type="button"
           variant="outline"
-          onClick={handleCancel}
+          onClick={onCancel}
           disabled={isProcessing}
           size="lg"
         >
-          Back
+          Cancel
         </Button>
       </div>
     </form>
