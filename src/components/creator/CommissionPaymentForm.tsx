@@ -60,6 +60,9 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
           commissionId: commission.id,
           amount: commission.agreed_price,
           testMode: true
+        },
+        headers: {
+          'Content-Type': 'application/json',
         }
       });
 
@@ -114,17 +117,22 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
 
     try {
       console.log('🔄 Creating payment intent for commission:', commission.id);
-      
-      const requestPayload = {
+      console.log('🔍 Request payload:', {
         commissionId: commission.id,
-        amount: commission.agreed_price
-      };
+        amount: commission.agreed_price,
+        userId: user.id,
+        userEmail: user.email
+      });
       
-      console.log('🔍 Request payload:', requestPayload);
-      
-      // Create payment intent using the edge function with proper JSON body
+      // Create payment intent using the edge function with enhanced error handling
       const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
-        body: requestPayload
+        body: { 
+          commissionId: commission.id,
+          amount: commission.agreed_price 
+        },
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       console.log('📊 Edge function response:', { data, error });
