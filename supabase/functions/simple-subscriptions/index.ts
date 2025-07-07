@@ -69,8 +69,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[SimpleSubscriptions] Error (LIVE MODE):', error);
+    console.error('[SimpleSubscriptions] Error stack:', error.stack);
+    console.error('[SimpleSubscriptions] Error details:', JSON.stringify(error, null, 2));
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: error.message || 'Internal server error',
+      details: error.stack || 'No stack trace available'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
