@@ -28,7 +28,7 @@ interface CommissionRequest {
 
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [commissionRequest, setCommissionRequest] = useState<CommissionRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,10 +37,12 @@ export default function CommissionPayment() {
   const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-  if (requestId && user?.id) {
-    fetchCommissionRequest();
-  }
-}, [requestId, user]);
+    if (requestId && user?.id && !loading) {
+      fetchCommissionRequest();
+    } else if (!loading && !user) {
+      setIsLoading(false);
+    }
+  }, [requestId, user, loading]);
 
   const fetchCommissionRequest = async () => {
     try {
