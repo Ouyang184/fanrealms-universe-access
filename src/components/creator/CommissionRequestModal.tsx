@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CommissionType } from '@/types/commission';
 import { useCommissionRequestForm } from '@/hooks/useCommissionRequestForm';
 import { CommissionRequestForm } from './CommissionRequestForm';
@@ -43,7 +43,7 @@ export function CommissionRequestModal({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="commission-request-description">
         <DialogHeader>
           <DialogTitle>
             {specificCommissionType 
@@ -51,6 +51,12 @@ export function CommissionRequestModal({
               : 'Request Commission'
             }
           </DialogTitle>
+          <DialogDescription id="commission-request-description">
+            {specificCommissionType 
+              ? `Submit a request for ${specificCommissionType.name} commission. Fill out the form below with your requirements.`
+              : 'Submit a commission request to this creator. Choose a commission type and provide your requirements.'
+            }
+          </DialogDescription>
         </DialogHeader>
         
         <CommissionRequestForm

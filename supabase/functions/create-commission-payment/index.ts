@@ -23,8 +23,15 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    // Initialize Stripe with LIVE key for commission payments
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+    if (!stripeKey) {
+      console.error('STRIPE_SECRET_KEY_LIVE not found');
+      throw new Error('Stripe live secret key not configured');
+    }
+    
+    console.log('Using Stripe LIVE key for commission payment');
+    const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
     });
 

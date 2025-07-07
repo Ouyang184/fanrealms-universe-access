@@ -102,7 +102,15 @@ export default function CommissionPayment() {
       return;
     }
 
+    // Check if we're in an iframe (to prevent "payment not allowed in this document" error)
+    if (window.self !== window.top) {
+      console.error('Payment attempted from within iframe - this is not allowed');
+      setError('Payment cannot be processed from this context. Please navigate to the page directly.');
+      return;
+    }
+
     console.log('Starting payment process for commission:', commissionRequest.id);
+    console.log('Document context check passed - not in iframe');
     setIsProcessing(true);
     setError(null);
     
@@ -119,13 +127,21 @@ export default function CommissionPayment() {
 
       if (error) {
         console.error('Function error:', error);
+        // Handle specific API key errors
+        if (error.message?.includes('stripe') || error.message?.includes('secret key')) {
+          throw new Error('Payment service configuration error. Please contact support.');
+        }
         throw new Error(error.message || 'Failed to create payment session');
       }
 
       if (data?.url) {
         console.log('Redirecting to Stripe Checkout:', data.url);
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
+        // Ensure we're redirecting in the top-level window
+        if (window.top) {
+          window.top.location.href = data.url;
+        } else {
+          window.location.href = data.url;
+        }
       } else {
         console.error('No payment URL received:', data);
         throw new Error('No payment URL received from server');
