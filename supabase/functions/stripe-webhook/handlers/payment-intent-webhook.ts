@@ -171,8 +171,7 @@ export async function handlePaymentIntentWebhook(
         customer: paymentIntent.customer,
         items: [{ price: stripePriceId }],
         default_payment_method: paymentMethod.id,
-        application_fee_percent: 5,
-        transfer_data: { destination: tier.creators.stripe_account_id },
+        expand: ['latest_invoice.payment_intent'],
         metadata: {
           user_id,
           creator_id,
@@ -191,7 +190,7 @@ export async function handlePaymentIntentWebhook(
         tier_id,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: subscription.customer,
-        status: subscription.status === 'active' ? 'active' : subscription.status,
+        status: 'active', // Set to active since payment already succeeded
         amount: tier.price,
         current_period_start: subscription.current_period_start ? 
           new Date(subscription.current_period_start * 1000).toISOString() : null,
