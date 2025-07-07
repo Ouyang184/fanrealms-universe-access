@@ -93,16 +93,6 @@ export function useCommissionRequestForm({
         throw new Error("Commission type not found");
       }
 
-      console.log('Creating commission request with data:', {
-        commission_type_id: formData.commission_type_id,
-        customer_id: user.id,
-        creator_id: creatorId,
-        title: selectedType.name,
-        description: formData.description,
-        agreed_price: selectedType.base_price,
-        status: 'pending'
-      });
-
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -112,7 +102,7 @@ export function useCommissionRequestForm({
         budget_range_min: null,
         budget_range_max: null,
         deadline: formData.deadline || null,
-        customer_notes: formData.customer_notes || null,
+        customer_notes: null,
         agreed_price: selectedType.base_price,
         status: 'pending'
       };
@@ -123,12 +113,7 @@ export function useCommissionRequestForm({
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating commission request:', error);
-        throw error;
-      }
-
-      console.log('Commission request created successfully:', newRequest);
+      if (error) throw error;
 
       toast({
         title: "Success!",
@@ -137,17 +122,13 @@ export function useCommissionRequestForm({
 
       resetForm();
       onSuccess();
-      
-      // Navigate to payment page after a short delay
-      setTimeout(() => {
-        navigate(`/commissions/${newRequest.id}/pay`);
-      }, 500);
+      navigate(`/commissions/${newRequest.id}/pay`);
 
     } catch (error) {
       console.error('Error submitting commission request:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to submit commission request. Please try again.",
+        description: "Failed to submit commission request. Please try again.",
         variant: "destructive"
       });
     } finally {

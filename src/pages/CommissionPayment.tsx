@@ -2,7 +2,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCommissionPayment } from '@/components/creator/EmbeddedCommissionPayment';
@@ -14,16 +13,12 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 
 export default function CommissionPayment() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const { data: commission, isLoading, error } = useQuery({
     queryKey: ['commission-payment', id],
     queryFn: async () => {
       if (!id) throw new Error('Commission ID is required');
-      
-      console.log('Fetching commission request:', id);
-      console.log('Current user:', user?.id);
       
       const { data, error } = await supabase
         .from('commission_requests')
@@ -38,20 +33,10 @@ export default function CommissionPayment() {
         .eq('id', id)
         .single();
 
-      if (error) {
-        console.error('Error fetching commission:', error);
-        throw error;
-      }
-      
-      // Check if user has permission to access this commission
-      if (!user || data.customer_id !== user.id) {
-        throw new Error('You do not have permission to access this commission');
-      }
-      
-      console.log('Commission data:', data);
+      if (error) throw error;
       return data;
     },
-    enabled: !!id && !!user,
+    enabled: !!id,
   });
 
   const handlePaymentSuccess = () => {
@@ -81,9 +66,6 @@ export default function CommissionPayment() {
             <h3 className="text-lg font-semibold mb-2">Commission Not Found</h3>
             <p className="text-muted-foreground mb-4">
               The commission request could not be found or you don't have permission to access it.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Error: {error instanceof Error ? error.message : 'Unknown error'}
             </p>
           </CardContent>
         </Card>
