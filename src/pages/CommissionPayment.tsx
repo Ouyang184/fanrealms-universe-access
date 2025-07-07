@@ -104,15 +104,7 @@ export default function CommissionPayment() {
       return;
     }
 
-    // Check if we're in an iframe (to prevent "payment not allowed in this document" error)
-    if (window.self !== window.top) {
-      console.error('Payment attempted from within iframe - this is not allowed');
-      setError('Payment cannot be processed from this context. Please navigate to the page directly.');
-      return;
-    }
-
     console.log('Starting payment process for commission:', commissionRequest.id);
-    console.log('Document context check passed - not in iframe');
     setIsProcessing(true);
     setError(null);
     
