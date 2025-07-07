@@ -43,19 +43,17 @@ export async function handleCreateSubscription(
     return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
   }
 
-  let isUpgrade = false;
-  let existingSubscription = null;
-  let proratedAmount = 0;
-
-  // If user has existing active subscription to this creator, check if it's an upgrade
+  // If user has existing active subscription to this creator, return error
   if (existingSubscriptions && existingSubscriptions.length > 0) {
-    existingSubscription = existingSubscriptions[0];
+    const existingSubscription = existingSubscriptions[0];
     console.log('Found existing active subscription:', existingSubscription);
     
-    // Check if user is trying to subscribe to a different tier (upgrade/downgrade)
+    // Check if user is trying to subscribe to a different tier
     if (existingSubscription.tier_id !== tierId) {
-      isUpgrade = true;
-      console.log('Detected tier upgrade/change from:', existingSubscription.tier_id, 'to:', tierId);
+      return createJsonResponse({ 
+        error: 'You already have an active subscription to this creator. Please cancel your current subscription first to change tiers.',
+        shouldRefresh: true
+      }, 200);
     } else {
       // Same tier - return error
       return createJsonResponse({ 
@@ -64,8 +62,6 @@ export async function handleCreateSubscription(
       }, 200);
     }
   }
-
-  console.log('Subscription type:', isUpgrade ? 'UPGRADE' : 'NEW');
 
   // Get tier and creator details
   console.log('Fetching tier and creator details...');
@@ -102,98 +98,11 @@ export async function handleCreateSubscription(
     }, 400);
   }
 
-  // Calculate prorated amount for upgrades
-  if (isUpgrade && existingSubscription) {
-    const currentTierPrice = existingSubscription.membership_tiers.price;
-    const newTierPrice = tier.price;
-    proratedAmount = newTierPrice - currentTierPrice;
-    
-    console.log('Prorated calculation:', {
-      currentTierPrice,
-      newTierPrice,
-      proratedAmount
-    });
-
-    // Don't allow downgrades to negative amounts
-    if (proratedAmount < 0) {
-      return createJsonResponse({ 
-        error: 'Downgrades are not currently supported. Please contact support.' 
-      }, 400);
-    }
-
-    // Free upgrade case
-    if (proratedAmount === 0) {
-      return createJsonResponse({ 
-        error: 'This tier has the same price as your current subscription.' 
-      }, 400);
-    }
-  }
-
   try {
     // Create or get Stripe customer
     console.log('Creating/getting Stripe customer...');
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
-
-    // Check for existing pending payment intent for this user/creator/tier combination
-    console.log('Checking for existing payment intents...');
-    const paymentIntents = await stripe.paymentIntents.list({
-      customer: stripeCustomerId,
-      limit: 10
-    });
-
-    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
-    const targetAmount = Math.round(paymentAmount * 100); // Convert to cents
-
-    // Look for existing payment intent with same metadata that's still valid
-    let existingPaymentIntent = null;
-    for (const pi of paymentIntents.data) {
-      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
-        const metadata = pi.metadata || {};
-        if (metadata.creator_id === creatorId && 
-            metadata.user_id === user.id && 
-            metadata.tier_id === tierId &&
-            metadata.is_upgrade === (isUpgrade ? 'true' : 'false') &&
-            pi.amount === targetAmount) {
-          existingPaymentIntent = pi;
-          console.log('Found reusable payment intent:', pi.id);
-          break;
-        }
-      }
-    }
-
-    // If we found a reusable payment intent, return it
-    if (existingPaymentIntent) {
-      console.log('Reusing existing payment intent:', existingPaymentIntent.id);
-      
-      return createJsonResponse({
-        clientSecret: existingPaymentIntent.client_secret,
-        amount: existingPaymentIntent.amount,
-        tierName: tier.title,
-        tierId: tierId,
-        creatorId: creatorId,
-        paymentIntentId: existingPaymentIntent.id,
-        useCustomPaymentPage: true,
-        isUpgrade: isUpgrade,
-        currentTierName: existingSubscription?.membership_tiers?.title || null,
-        proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
-        fullTierPrice: Math.round(tier.price * 100),
-        currentPeriodEnd: existingSubscription?.current_period_end || null,
-        reusedSession: true
-      });
-    }
-
-    // Cancel any old pending payment intents to clean up
-    console.log('Cleaning up old payment intents...');
-    for (const pi of paymentIntents.data) {
-      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
-        const metadata = pi.metadata || {};
-        if (metadata.creator_id === creatorId && metadata.user_id === user.id) {
-          console.log('Cancelling old payment intent:', pi.id);
-          await stripe.paymentIntents.cancel(pi.id);
-        }
-      }
-    }
 
     // Clean up old pending/incomplete subscriptions
     console.log('Cleaning up old pending subscriptions...');
@@ -214,48 +123,54 @@ export async function handleCreateSubscription(
       .eq('user_id', user.id)
       .eq('creator_id', creatorId);
 
-    // Create new Payment Intent with updated platform fee calculation
-    console.log('Creating new Payment Intent for amount:', paymentAmount);
+    // Get the request origin for redirect URLs
+    const origin = Deno.env.get('SITE_URL') || 'http://localhost:5173';
+    console.log('Using origin for redirects:', origin);
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Create Stripe Checkout Session for subscription
+    console.log('Creating Stripe Checkout Session...');
+    const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      amount: targetAmount,
-      currency: 'usd',
-      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: tier.stripe_price_id,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/creator/${creatorId}`,
       metadata: {
         user_id: user.id,
         creator_id: creatorId,
         tier_id: tierId,
         tier_name: tier.title,
         creator_name: tier.creators.display_name,
-        type: 'subscription_setup',
-        is_upgrade: isUpgrade ? 'true' : 'false',
-        existing_subscription_id: existingSubscription?.stripe_subscription_id || '',
-        existing_tier_id: existingSubscription?.tier_id || '',
-        current_period_end: existingSubscription?.current_period_end || '',
-        full_tier_price: tier.price.toString(),
-        prorated_amount: isUpgrade ? proratedAmount.toString() : '0',
+        type: 'subscription',
         platform_fee_percent: '4'
       },
-      setup_future_usage: 'off_session',
+      subscription_data: {
+        application_fee_percent: 4,
+        transfer_data: {
+          destination: tier.creators.stripe_account_id,
+        },
+        metadata: {
+          user_id: user.id,
+          creator_id: creatorId,
+          tier_id: tierId,
+          platform_fee_percent: '4'
+        }
+      }
     });
 
-    console.log('Payment Intent created:', paymentIntent.id);
+    console.log('Checkout Session created:', session.id);
 
     return createJsonResponse({
-      clientSecret: paymentIntent.client_secret,
-      amount: targetAmount,
+      checkout_url: session.url,
+      sessionId: session.id,
       tierName: tier.title,
-      tierId: tierId,
-      creatorId: creatorId,
-      paymentIntentId: paymentIntent.id,
-      useCustomPaymentPage: true,
-      isUpgrade: isUpgrade,
-      currentTierName: existingSubscription?.membership_tiers?.title || null,
-      proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
-      fullTierPrice: Math.round(tier.price * 100),
-      currentPeriodEnd: existingSubscription?.current_period_end || null,
-      reusedSession: false
+      creatorName: tier.creators.display_name,
+      useCheckoutRedirect: true
     });
 
   } catch (error) {
