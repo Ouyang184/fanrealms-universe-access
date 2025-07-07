@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -10,7 +11,6 @@ import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts
 import { handleGetSubscriberCount } from './handlers/get-subscriber-count.ts';
 import { handleVerifySubscription } from './handlers/verify-subscription.ts';
 import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
-import { handleCompleteSubscription } from './handlers/complete-subscription.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,11 +21,11 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
     
-    console.log('Stripe subscriptions action:', action, '(TEST MODE)');
+    console.log('Stripe subscriptions action:', action, '(LIVE MODE)');
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Initialize Stripe with TEST keys for subscriptions
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') || '', {
+    // Initialize Stripe with LIVE keys
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '', {
       apiVersion: '2023-10-16',
     });
 
@@ -42,18 +42,13 @@ serve(async (req) => {
       case 'create_subscription':
         return await handleCreateSubscription(stripe, supabaseService, user, body);
 
-      case 'complete_subscription': {
-        const { setupIntentId } = body;
-        return await handleCompleteSubscription(stripe, supabaseService, user, { setupIntentId });
-      }
-
       case 'cancel_subscription': {
         const { subscriptionId, immediate } = body;
-        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate, '(TEST MODE)');
+        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate, '(LIVE MODE)');
         
         // Ensure immediate is properly converted to boolean
         const immediateFlag = immediate === true || immediate === 'true' || immediate === 1;
-        console.log('Converted immediate flag to boolean:', immediateFlag, '(TEST MODE)');
+        console.log('Converted immediate flag to boolean:', immediateFlag, '(LIVE MODE)');
         
         return await handleCancelSubscription(stripe, supabaseService, user, subscriptionId, immediateFlag);
       }
@@ -89,7 +84,7 @@ serve(async (req) => {
         });
     }
   } catch (error) {
-    console.error('Stripe subscriptions error (TEST MODE):', error);
+    console.error('Stripe subscriptions error (LIVE MODE):', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred' 
     }), {

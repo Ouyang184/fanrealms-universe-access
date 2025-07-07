@@ -13,7 +13,6 @@ interface UsePaymentProcessingProps {
   creatorId: string;
   tierName: string;
   isUpgrade: boolean;
-  setupIntentId?: string;
 }
 
 export function usePaymentProcessing({
@@ -21,8 +20,7 @@ export function usePaymentProcessing({
   tierId,
   creatorId,
   tierName,
-  isUpgrade,
-  setupIntentId
+  isUpgrade
 }: UsePaymentProcessingProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -81,110 +79,83 @@ export function usePaymentProcessing({
         throw new Error('Card element not found');
       }
 
-      console.log('Confirming setup intent with client secret:', clientSecret);
+      console.log('Confirming payment with client secret:', clientSecret);
 
-      // Use confirmSetupIntent instead of confirmCardPayment for subscriptions
-      const { error, setupIntent } = await stripe.confirmSetupIntent(clientSecret, {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: cardElement,
         }
       });
 
       if (error) {
-        console.error('Setup intent failed:', error);
+        console.error('Payment failed:', error);
         toast({
           title: "Payment Failed",
-          description: error.message || 'Payment method could not be saved',
+          description: error.message || 'Payment could not be processed',
           variant: "destructive"
         });
-      } else if (setupIntent?.status === 'succeeded') {
-        console.log('Setup intent succeeded:', setupIntent.id);
+      } else if (paymentIntent?.status === 'succeeded') {
+        console.log('Payment succeeded:', paymentIntent.id);
+        setPaymentSucceeded(true);
+        setIsVerifying(true);
         
-        // Clear the cache since setup succeeded
+        // Clear the cache since payment succeeded
         clearSubscriptionCache(tierId, creatorId);
         
-        toast({
-          title: "Payment Method Saved!",
-          description: "Creating your subscription...",
-        });
-
-        // Now complete the subscription using the setup intent
-        console.log('Completing subscription with setup intent:', setupIntent.id);
+        const successMessage = isUpgrade 
+          ? `Successfully upgraded to ${tierName}!`
+          : `Payment successful! Processing your subscription to ${tierName}...`;
         
-        const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke('stripe-subscriptions', {
-          body: {
-            action: 'complete_subscription',
-            setupIntentId: setupIntent.id
-          }
+        toast({
+          title: isUpgrade ? "Upgrade Successful!" : "Payment Successful!",
+          description: successMessage,
         });
 
-        if (subscriptionError || subscriptionData?.error) {
-          console.error('Subscription completion failed:', subscriptionError || subscriptionData?.error);
-          toast({
-            title: "Subscription Error",
-            description: subscriptionData?.error || subscriptionError?.message || 'Failed to create subscription',
-            variant: "destructive"
+        console.log('Waiting for webhook processing...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const verified = await verifySubscriptionInDB();
+        
+        if (verified) {
+          console.log('Subscription verified in database');
+          
+          triggerSubscriptionSuccess({
+            tierId,
+            creatorId,
+            paymentIntentId: paymentIntent.id
           });
+          
+          await invalidateAllSubscriptionQueries();
+          
+          toast({
+            title: isUpgrade ? "Upgrade Complete!" : "Subscription Active!",
+            description: isUpgrade 
+              ? `You've successfully upgraded to ${tierName}`
+              : `You've successfully subscribed to ${tierName}`,
+          });
+
+          setTimeout(() => {
+            navigate('/subscriptions');
+          }, 1500);
         } else {
-          console.log('Subscription created successfully:', subscriptionData);
-          setPaymentSucceeded(true);
-          setIsVerifying(true);
+          console.warn('Payment succeeded but subscription not found in database');
           
-          const successMessage = isUpgrade 
-            ? `Successfully upgraded to ${tierName}!`
-            : `Subscription to ${tierName} created successfully!`;
+          triggerSubscriptionSuccess({
+            tierId,
+            creatorId,
+            paymentIntentId: paymentIntent.id
+          });
+          
+          await invalidateAllSubscriptionQueries();
           
           toast({
-            title: isUpgrade ? "Upgrade Complete!" : "Subscription Created!",
-            description: successMessage,
+            title: "Payment Processed",
+            description: "Your payment was successful. Your subscription should be active shortly. Please check your subscriptions page.",
           });
 
-          console.log('Waiting for webhook processing...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-
-          const verified = await verifySubscriptionInDB();
-          
-          if (verified) {
-            console.log('Subscription verified in database');
-            
-            triggerSubscriptionSuccess({
-              tierId,
-              creatorId,
-              paymentIntentId: subscriptionData.subscriptionId
-            });
-            
-            await invalidateAllSubscriptionQueries();
-            
-            toast({
-              title: isUpgrade ? "Upgrade Active!" : "Subscription Active!",
-              description: isUpgrade 
-                ? `You've successfully upgraded to ${tierName}`
-                : `You've successfully subscribed to ${tierName}`,
-            });
-
-            setTimeout(() => {
-              navigate('/subscriptions');
-            }, 1500);
-          } else {
-            console.warn('Subscription created but not found in database yet');
-            
-            triggerSubscriptionSuccess({
-              tierId,
-              creatorId,
-              paymentIntentId: subscriptionData.subscriptionId
-            });
-            
-            await invalidateAllSubscriptionQueries();
-            
-            toast({
-              title: "Subscription Created",
-              description: "Your subscription was created successfully. It should be active shortly. Please check your subscriptions page.",
-            });
-
-            setTimeout(() => {
-              navigate('/subscriptions');
-            }, 2000);
-          }
+          setTimeout(() => {
+            navigate('/subscriptions');
+          }, 2000);
         }
         
         setIsVerifying(false);

@@ -3,11 +3,10 @@ import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useLocation } from 'react-router-dom';
-import { PatreonStylePaymentForm } from '@/components/payment/PatreonStylePaymentForm';
+import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
-// Use TEST publishable key for subscriptions
 const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 export default function Payment() {
@@ -17,10 +16,7 @@ export default function Payment() {
     tierName, 
     tierId, 
     creatorId, 
-    isUpgrade,
-    amount,
-    creatorName,
-    setupIntentId
+    isUpgrade 
   } = location.state || {};
 
   const {
@@ -31,8 +27,7 @@ export default function Payment() {
     tierId: tierId || '',
     creatorId: creatorId || '',
     tierName: tierName || '',
-    isUpgrade: isUpgrade || false,
-    setupIntentId: setupIntentId
+    isUpgrade: isUpgrade || false
   });
 
   if (paymentSucceeded) {
@@ -58,13 +53,7 @@ export default function Payment() {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <PatreonStylePaymentForm
-        clientSecret={clientSecret}
-        tierName={tierName}
-        amount={amount || 0}
-        isUpgrade={isUpgrade}
-        creatorName={creatorName}
-      />
+      <PaymentForm />
     </Elements>
   );
 }

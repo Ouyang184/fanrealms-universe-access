@@ -24,131 +24,37 @@ export async function handleSubscriptionWebhook(
     return createJsonResponse({ error: 'Missing required metadata' }, 400);
   }
 
-  // Handle specific subscription events
-  switch (event.type) {
-    case 'customer.subscription.created':
-      console.log('[WebhookHandler] Processing subscription creation:', subscription.id);
-      return await handleSubscriptionCreated(subscription, supabaseService);
+  // Handle immediate cancellations (subscription deleted)
+  if (event.type === 'customer.subscription.deleted' || subscription.status === 'canceled') {
+    console.log('[WebhookHandler] Processing immediate cancellation:', subscription.id);
+    
+    try {
+      // Remove from database for immediate cancellations
+      const { error: deleteError } = await supabaseService
+        .from('user_subscriptions')
+        .delete()
+        .eq('stripe_subscription_id', subscription.id);
+
+      if (deleteError) {
+        console.error('[WebhookHandler] Error deleting canceled subscription:', deleteError);
+        throw deleteError;
+      }
+
+      console.log('[WebhookHandler] Successfully removed immediately canceled subscription from database:', subscription.id);
       
-    case 'customer.subscription.paused':
-      console.log('[WebhookHandler] Processing subscription pause:', subscription.id);
-      return await handleSubscriptionPaused(subscription, supabaseService);
-      
-    case 'customer.subscription.resumed':
-      console.log('[WebhookHandler] Processing subscription resume:', subscription.id);
-      return await handleSubscriptionResumed(subscription, supabaseService);
-      
-    case 'customer.subscription.deleted':
-      console.log('[WebhookHandler] Processing subscription deletion:', subscription.id);
-      return await handleSubscriptionDeleted(subscription, supabaseService);
-      
-    case 'customer.subscription.updated':
-      console.log('[WebhookHandler] Processing subscription update:', subscription.id);
-      return await handleSubscriptionUpdated(subscription, supabaseService, stripe);
-      
-    default:
-      console.log('[WebhookHandler] Fallback processing for event:', event.type);
-      return await handleSubscriptionUpdated(subscription, supabaseService, stripe);
+      // Clean up legacy subscriptions table
+      await supabaseService
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user_id)
+        .eq('creator_id', creator_id);
+
+      return createJsonResponse({ success: true });
+    } catch (error) {
+      console.error('[WebhookHandler] Error processing immediate cancellation:', error);
+      return createJsonResponse({ error: 'Failed to process immediate cancellation' }, 500);
+    }
   }
-}
-
-async function handleSubscriptionCreated(subscription: any, supabaseService: any) {
-  const { user_id, creator_id, tier_id } = subscription.metadata;
-  
-  const subscriptionData = {
-    stripe_subscription_id: subscription.id,
-    stripe_customer_id: subscription.customer,
-    status: 'active',
-    cancel_at_period_end: false,
-    current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
-      subscription.items.data[0].price.unit_amount / 100 : 5,
-    creator_id,
-    tier_id,
-    user_id,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-
-  const { error } = await supabaseService
-    .from('user_subscriptions')
-    .insert(subscriptionData);
-
-  if (error) {
-    console.error('[WebhookHandler] Error creating subscription:', error);
-    return createJsonResponse({ error: 'Failed to create subscription' }, 500);
-  }
-
-  console.log('[WebhookHandler] Successfully created subscription:', subscription.id);
-  return createJsonResponse({ success: true, action: 'created' });
-}
-
-async function handleSubscriptionPaused(subscription: any, supabaseService: any) {
-  const { error } = await supabaseService
-    .from('user_subscriptions')
-    .update({ 
-      status: 'paused',
-      updated_at: new Date().toISOString()
-    })
-    .eq('stripe_subscription_id', subscription.id);
-
-  if (error) {
-    console.error('[WebhookHandler] Error pausing subscription:', error);
-    return createJsonResponse({ error: 'Failed to pause subscription' }, 500);
-  }
-
-  console.log('[WebhookHandler] Successfully paused subscription:', subscription.id);
-  return createJsonResponse({ success: true, action: 'paused' });
-}
-
-async function handleSubscriptionResumed(subscription: any, supabaseService: any) {
-  const { error } = await supabaseService
-    .from('user_subscriptions')
-    .update({ 
-      status: 'active',
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .eq('stripe_subscription_id', subscription.id);
-
-  if (error) {
-    console.error('[WebhookHandler] Error resuming subscription:', error);
-    return createJsonResponse({ error: 'Failed to resume subscription' }, 500);
-  }
-
-  console.log('[WebhookHandler] Successfully resumed subscription:', subscription.id);
-  return createJsonResponse({ success: true, action: 'resumed' });
-}
-
-async function handleSubscriptionDeleted(subscription: any, supabaseService: any) {
-  const { user_id, creator_id } = subscription.metadata;
-
-  // Remove from database for immediate cancellations
-  const { error: deleteError } = await supabaseService
-    .from('user_subscriptions')
-    .delete()
-    .eq('stripe_subscription_id', subscription.id);
-
-  if (deleteError) {
-    console.error('[WebhookHandler] Error deleting canceled subscription:', deleteError);
-    return createJsonResponse({ error: 'Failed to delete subscription' }, 500);
-  }
-
-  // Clean up legacy subscriptions table
-  await supabaseService
-    .from('subscriptions')
-    .delete()
-    .eq('user_id', user_id)
-    .eq('creator_id', creator_id);
-
-  console.log('[WebhookHandler] Successfully deleted subscription:', subscription.id);
-  return createJsonResponse({ success: true, action: 'deleted' });
-}
-
-async function handleSubscriptionUpdated(subscription: any, supabaseService: any, stripe: any) {
-  const { user_id, creator_id, tier_id } = subscription.metadata;
 
   // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
   if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
@@ -175,7 +81,7 @@ async function handleSubscriptionUpdated(subscription: any, supabaseService: any
       console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
     }
 
-    return createJsonResponse({ success: true, action: 'incomplete_deleted' });
+    return createJsonResponse({ success: true });
   }
 
   // Map Stripe status to our valid statuses

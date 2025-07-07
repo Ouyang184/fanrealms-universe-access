@@ -17,7 +17,6 @@ const sessionCache = new Map<string, {
   currentTierName?: string;
   proratedAmount?: number;
   fullTierPrice?: number;
-  setupIntentId?: string;
 }>();
 
 const SESSION_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
@@ -66,8 +65,7 @@ export const useCreateSubscription = () => {
           isUpgrade: cachedSession.isUpgrade,
           currentTierName: cachedSession.currentTierName,
           proratedAmount: cachedSession.proratedAmount,
-          fullTierPrice: cachedSession.fullTierPrice,
-          setupIntentId: cachedSession.setupIntentId
+          fullTierPrice: cachedSession.fullTierPrice
         }
       });
       
@@ -124,8 +122,7 @@ export const useCreateSubscription = () => {
           isUpgrade: data.isUpgrade,
           currentTierName: data.currentTierName,
           proratedAmount: data.proratedAmount,
-          fullTierPrice: data.fullTierPrice,
-          setupIntentId: data.setupIntentId
+          fullTierPrice: data.fullTierPrice
         };
         
         sessionCache.set(cacheKey, sessionData);
@@ -145,8 +142,7 @@ export const useCreateSubscription = () => {
             isUpgrade: data.isUpgrade,
             currentTierName: data.currentTierName,
             proratedAmount: data.proratedAmount,
-            fullTierPrice: data.fullTierPrice,
-            setupIntentId: data.setupIntentId
+            fullTierPrice: data.fullTierPrice
           }
         });
         

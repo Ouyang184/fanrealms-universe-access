@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, Shield, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
@@ -31,11 +30,13 @@ interface UserCommissionRequestCardProps {
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'checkout_created':
       return 'bg-blue-100 text-blue-800';
+    case 'payment_pending':
+      return 'bg-orange-100 text-orange-800';
     case 'accepted':
       return 'bg-green-100 text-green-800';
-    case 'paid':
-      return 'bg-emerald-100 text-emerald-800';
     case 'rejected':
       return 'bg-red-100 text-red-800';
     case 'in_progress':
@@ -54,13 +55,15 @@ const getStatusColor = (status: string) => {
 const getStatusDescription = (status: string) => {
   switch (status) {
     case 'pending':
-      return 'Payment authorized - awaiting creator decision';
+      return 'Waiting for creator response';
+    case 'checkout_created':
+      return 'Payment session ready - you can pay when ready';
+    case 'payment_pending':
+      return 'Payment being processed';
     case 'accepted':
-      return 'Creator accepted - payment captured, work will begin';
-    case 'paid':
-      return 'Payment completed - work in progress';
+      return 'Commission accepted and paid';
     case 'rejected':
-      return 'Commission declined - you have been refunded';
+      return 'Commission declined by creator';
     case 'in_progress':
       return 'Creator is working on your commission';
     case 'completed':
@@ -74,21 +77,6 @@ const getStatusDescription = (status: string) => {
   }
 };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'pending':
-      return <Shield className="h-4 w-4" />;
-    case 'accepted':
-      return <CheckCircle className="h-4 w-4" />;
-    case 'paid':
-      return <CheckCircle className="h-4 w-4" />;
-    case 'rejected':
-      return <XCircle className="h-4 w-4" />;
-    default:
-      return <Clock className="h-4 w-4" />;
-  }
-};
-
 export function UserCommissionRequestCard({ 
   request, 
   onDelete, 
@@ -96,8 +84,8 @@ export function UserCommissionRequestCard({
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  
-  const canDelete = ['rejected'].includes(request.status);
+  const canDelete = ['pending', 'rejected', 'checkout_created', 'payment_pending'].includes(request.status);
+  const hasPaymentSession = ['checkout_created', 'payment_pending'].includes(request.status);
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -130,14 +118,14 @@ export function UserCommissionRequestCard({
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <Badge className={`${getStatusColor(request.status)} flex items-center gap-1`}>
-                {getStatusIcon(request.status)}
+              <Badge className={getStatusColor(request.status)}>
                 {request.status.replace('_', ' ').toUpperCase()}
               </Badge>
-              {request.status === 'pending' && (
-                <Badge variant="outline" className="text-blue-600 border-blue-200">
-                  Funds Held
-                </Badge>
+              {hasPaymentSession && (
+                <div className="flex items-center gap-1 text-xs text-orange-600">
+                  <AlertTriangle className="h-3 w-3" />
+                  <span>Payment session active</span>
+                </div>
               )}
             </div>
           </div>
@@ -147,42 +135,6 @@ export function UserCommissionRequestCard({
           <div className="text-sm text-muted-foreground">
             {getStatusDescription(request.status)}
           </div>
-
-          {request.status === 'pending' && (
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-blue-900">Payment Authorized</p>
-                  <p className="text-sm text-blue-700">Your payment is secured with Stripe. The creator has 7 days to respond.</p>
-                </div>
-                <Shield className="h-5 w-5 text-blue-600" />
-              </div>
-            </div>
-          )}
-
-          {request.status === 'accepted' && (
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-green-900">Commission Accepted!</p>
-                  <p className="text-sm text-green-700">Payment captured and work has begun.</p>
-                </div>
-                <CheckCircle className="h-5 w-5 text-green-600" />
-              </div>
-            </div>
-          )}
-
-          {request.status === 'rejected' && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-red-900">Commission Declined</p>
-                  <p className="text-sm text-red-700">You have been automatically refunded.</p>
-                </div>
-                <XCircle className="h-5 w-5 text-red-600" />
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
@@ -251,7 +203,7 @@ export function UserCommissionRequestCard({
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         requestTitle={request.title}
-        hasPaymentSession={false}
+        hasPaymentSession={hasPaymentSession}
       />
 
       <CommissionRequestDetailsModal

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -11,15 +10,13 @@ interface ActiveSubscribeButtonProps {
   creatorId: string;
   tierName: string;
   price: number;
-  creatorName?: string;
 }
 
 export function ActiveSubscribeButton({ 
   tierId, 
   creatorId, 
   tierName, 
-  price,
-  creatorName 
+  price 
 }: ActiveSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isProcessing } = useCreateSubscription();

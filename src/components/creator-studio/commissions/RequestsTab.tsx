@@ -41,7 +41,6 @@ interface RequestsTabProps {
   pendingRequests: number;
   onAcceptRequest: (id: string) => void;
   onRejectRequest: (id: string) => void;
-  onCreatePayment: (id: string) => void;
   onUpdateStatus: (id: string, status: CommissionRequestStatus) => void;
 }
 
@@ -51,7 +50,6 @@ export function RequestsTab({
   pendingRequests,
   onAcceptRequest,
   onRejectRequest,
-  onCreatePayment,
   onUpdateStatus
 }: RequestsTabProps) {
   return (
@@ -89,7 +87,6 @@ export function RequestsTab({
                 request={request}
                 onAccept={onAcceptRequest}
                 onReject={onRejectRequest}
-                onCreatePayment={onCreatePayment}
                 onUpdateStatus={onUpdateStatus}
               />
             ))}

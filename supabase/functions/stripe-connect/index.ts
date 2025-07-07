@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -14,11 +15,10 @@ serve(async (req) => {
 
   try {
     const { action, creatorId, accountId } = await req.json()
-    // Use TEST Stripe secret key for Stripe Connect
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST')
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
 
     if (!stripeSecretKey) {
-      console.error('Missing Stripe test secret key')
+      console.error('Missing Stripe secret key')
       return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -32,10 +32,10 @@ serve(async (req) => {
 
     const origin = req.headers.get('origin') || 'http://localhost:3000'
     console.log('Origin:', origin)
-    console.log('Action:', action, '(TEST MODE)')
+    console.log('Action:', action)
 
     if (action === 'create_account') {
-      console.log('Creating account for creator:', creatorId, '(TEST MODE)')
+      console.log('Creating account for creator:', creatorId)
       
       // First check if creator already has a Stripe account
       const { data: existingCreator, error: fetchError } = await supabase
@@ -101,68 +101,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
 
-    } else if (action === 'sync_account_status') {
-      console.log('Syncing account status for:', accountId, '(TEST MODE)')
-      
-      if (!accountId) {
-        return new Response(JSON.stringify({ error: 'Account ID is required' }), { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      try {
-        // Retrieve account status from Stripe (TEST)
-        const account = await stripe.accounts.retrieve(accountId)
-        console.log('Account status retrieved (TEST MODE):', {
-          id: account.id,
-          charges_enabled: account.charges_enabled,
-          payouts_enabled: account.payouts_enabled,
-          details_submitted: account.details_submitted
-        })
-
-        // Update creator record with latest status
-        const { error: updateError } = await supabase
-          .from('creators')
-          .update({
-            stripe_onboarding_complete: account.details_submitted && account.charges_enabled,
-            stripe_charges_enabled: account.charges_enabled,
-            stripe_payouts_enabled: account.payouts_enabled,
-          })
-          .eq('stripe_account_id', accountId)
-
-        if (updateError) {
-          console.error('Error updating creator status:', updateError)
-          return new Response(JSON.stringify({ error: 'Database update failed' }), { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          })
-        }
-
-        console.log('Successfully updated creator account status (TEST MODE)')
-
-        return new Response(JSON.stringify({ 
-          success: true,
-          account_status: {
-            charges_enabled: account.charges_enabled,
-            payouts_enabled: account.payouts_enabled,
-            details_submitted: account.details_submitted,
-            onboarding_complete: account.details_submitted && account.charges_enabled
-          }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-
-      } catch (stripeError) {
-        console.error('Error retrieving Stripe account (TEST MODE):', stripeError)
-        return new Response(JSON.stringify({ error: 'Failed to retrieve account status from Stripe' }), { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
     } else if (action === 'create_login_link') {
-      console.log('Creating login link for account:', accountId, '(TEST MODE)')
+      console.log('Creating login link for account:', accountId)
       
       // Check if account has completed onboarding
       const account = await stripe.accounts.retrieve(accountId)
@@ -188,7 +128,7 @@ serve(async (req) => {
       })
 
     } else if (action === 'get_balance') {
-      console.log('Getting balance for account:', accountId, '(TEST MODE)')
+      console.log('Getting balance for account:', accountId)
       
       // Get account balance
       const balance = await stripe.balance.retrieve({
@@ -206,7 +146,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Stripe Connect error (TEST MODE):', error)
+    console.error('Stripe Connect error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
