@@ -11,9 +11,12 @@ const corsHeaders = {
 };
 
 // Use LIVE Stripe keys
-const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || ''
-);
+const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY');
+if (!stripeKey) {
+  console.error('[SimpleSubscriptions] CRITICAL: No Stripe key found in environment variables');
+}
+
+const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeKey || '');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -21,15 +24,39 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const authHeader = req.headers.get('Authorization')!;
+    console.log('[SimpleSubscriptions] Function invoked, checking environment...');
+    
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const authHeader = req.headers.get('Authorization');
+
+    if (!supabaseUrl) {
+      throw new Error('SUPABASE_URL environment variable not set');
+    }
+    if (!supabaseServiceKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable not set');
+    }
+    if (!authHeader) {
+      throw new Error('Authorization header missing');
+    }
+    if (!stripeKey) {
+      throw new Error('Stripe key not configured - check STRIPE_SECRET_KEY_LIVE or STRIPE_SECRET_KEY');
+    }
+
+    console.log('[SimpleSubscriptions] Environment variables validated');
 
     // Create clients
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const userSupabase = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    if (!supabaseAnonKey) {
+      throw new Error('SUPABASE_ANON_KEY environment variable not set');
+    }
+    
+    const userSupabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } }
     });
+
+    console.log('[SimpleSubscriptions] Supabase clients created successfully');
 
     // Get authenticated user
     const { data: { user }, error: authError } = await userSupabase.auth.getUser();
