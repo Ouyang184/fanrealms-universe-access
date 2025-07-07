@@ -30,15 +30,45 @@ serve(async (req) => {
 
   try {
     console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
+    console.log('Request method:', req.method);
+    console.log('Request URL:', req.url);
     
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+
+    console.log('Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      hasWebhookSecret: !!webhookSecret,
+      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 10) + '...' : 'NOT_SET'
+    });
+
+    if (!supabaseUrl || !supabaseServiceKey || !webhookSecret) {
+      console.error('Missing required environment variables:', {
+        SUPABASE_URL: !!supabaseUrl,
+        SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey,
+        STRIPE_WEBHOOK_SECRET: !!webhookSecret
+      });
+      return new Response('Server configuration error', { status: 500, headers: corsHeaders });
+    }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.text();
-    const signature = req.headers.get('stripe-signature')!;
+    const signature = req.headers.get('stripe-signature');
+    
+    console.log('Webhook data:', {
+      bodyLength: body.length,
+      hasSignature: !!signature,
+      signaturePrefix: signature ? signature.substring(0, 20) + '...' : 'NO_SIGNATURE'
+    });
+
+    if (!signature) {
+      console.error('No stripe-signature header found');
+      return new Response('Missing stripe-signature header', { status: 400, headers: corsHeaders });
+    }
 
     let event;
     try {
@@ -46,8 +76,20 @@ serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       console.log('Webhook signature verified successfully (LIVE MODE)');
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
-      return new Response('Webhook signature verification failed', { status: 400 });
+      console.error('===== WEBHOOK SIGNATURE VERIFICATION FAILED =====');
+      console.error('Error details:', err);
+      console.error('Error message:', err.message);
+      console.error('Error type:', err.type);
+      console.error('Webhook secret used:', webhookSecret ? 'SET (length: ' + webhookSecret.length + ')' : 'NOT_SET');
+      console.error('Signature received:', signature);
+      console.error('Body preview:', body.substring(0, 200) + '...');
+      return new Response(JSON.stringify({ 
+        error: 'Webhook signature verification failed',
+        details: err.message 
+      }), { 
+        status: 400, 
+        headers: corsHeaders 
+      });
     }
 
     console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
