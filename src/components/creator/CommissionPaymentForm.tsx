@@ -12,8 +12,8 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Use the Stripe publishable key that matches your STRIPE_SECRET_KEY
-const stripePublishableKey = 'pk_live_51QNdNxJGOZE2FiKMATdS9GXTFpBgr7vdlW8AO8OWQGgHkFmYsJaDgKqxHqhAGTW8wfXZAA9WBa7KpG6IXtFGOSGk00fL5JgIX3';
+// Use the correct Stripe test publishable key from environment
+const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
 const stripePromise = loadStripe(stripePublishableKey);
 
 interface CommissionData {
