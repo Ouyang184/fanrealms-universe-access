@@ -13,7 +13,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
 
       console.log('[useCreatorSubscribers] Fetching subscribers for creator:', creatorId);
 
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'get_creator_subscribers',
           creatorId

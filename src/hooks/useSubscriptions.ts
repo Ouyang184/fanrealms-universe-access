@@ -60,7 +60,7 @@ export const useSubscriptions = () => {
     mutationFn: async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
       console.log('Creating subscription for tier:', tierId, 'creator:', creatorId);
       
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'create_subscription',
           tierId,
@@ -97,7 +97,7 @@ export const useSubscriptions = () => {
     mutationFn: async (subscriptionId: string) => {
       console.log('Cancelling subscription:', subscriptionId);
       
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'cancel_subscription',
           subscriptionId
