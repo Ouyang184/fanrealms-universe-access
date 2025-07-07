@@ -11,6 +11,7 @@ interface SubscribeButtonProps {
   creatorId: string;
   tierName: string;
   price: number;
+  creatorName?: string;
   isSubscribed?: boolean;
   subscriptionData?: any;
   onSubscriptionSuccess?: () => void;
@@ -21,7 +22,8 @@ export function SubscribeButton({
   tierId, 
   creatorId, 
   tierName, 
-  price, 
+  price,
+  creatorName,
   isSubscribed = false,
   subscriptionData: externalSubscriptionData,
   onSubscriptionSuccess,
@@ -99,6 +101,7 @@ export function SubscribeButton({
       creatorId={creatorId}
       tierName={tierName}
       price={price}
+      creatorName={creatorName}
     />
   );
 }

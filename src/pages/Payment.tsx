@@ -3,7 +3,7 @@ import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useLocation } from 'react-router-dom';
-import { PaymentForm } from '@/components/payment/PaymentForm';
+import { PatreonStylePaymentForm } from '@/components/payment/PatreonStylePaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
@@ -17,7 +17,9 @@ export default function Payment() {
     tierName, 
     tierId, 
     creatorId, 
-    isUpgrade 
+    isUpgrade,
+    amount,
+    creatorName 
   } = location.state || {};
 
   const {
@@ -54,7 +56,13 @@ export default function Payment() {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <PaymentForm />
+      <PatreonStylePaymentForm
+        clientSecret={clientSecret}
+        tierName={tierName}
+        amount={amount || 0}
+        isUpgrade={isUpgrade}
+        creatorName={creatorName}
+      />
     </Elements>
   );
 }

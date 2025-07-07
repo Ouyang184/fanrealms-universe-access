@@ -13,13 +13,15 @@ interface SimpleSubscribeButtonProps {
   creatorId: string;
   tierName: string;
   price: number;
+  creatorName?: string;
 }
 
 export function SimpleSubscribeButton({ 
   tierId, 
   creatorId, 
   tierName, 
-  price 
+  price,
+  creatorName 
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
   const { createSubscription, isProcessing } = useCreateSubscription();
@@ -54,7 +56,8 @@ export function SimpleSubscribeButton({
             amount: price * 100,
             tierName,
             tierId,
-            creatorId
+            creatorId,
+            creatorName
           }
         });
       }
