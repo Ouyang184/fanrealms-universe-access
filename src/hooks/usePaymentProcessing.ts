@@ -33,34 +33,58 @@ export function usePaymentProcessing({
   const [isVerifying, setIsVerifying] = useState(false);
 
   const verifySubscriptionInDB = async (maxRetries = 10, retryDelay = 1500) => {
-    console.log('Verifying subscription in database...');
+    console.log('===== STARTING SUBSCRIPTION VERIFICATION =====');
+    console.log('Looking for subscription with:', { tierId, creatorId });
     
     for (let i = 0; i < maxRetries; i++) {
       try {
-        console.log(`Verification attempt ${i + 1}/${maxRetries}`);
+        console.log(`===== VERIFICATION ATTEMPT ${i + 1}/${maxRetries} =====`);
         
+        // First, check all subscriptions for this user to see what's in the DB
+        const { data: allUserSubs, error: allSubsError } = await supabase
+          .from('user_subscriptions')
+          .select('*');
+          
+        console.log('All user subscriptions in DB:', JSON.stringify(allUserSubs, null, 2));
+        if (allSubsError) {
+          console.error('Error fetching all subscriptions:', allSubsError);
+        }
+        
+        // Now check specifically for our subscription
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('tier_id', tierId)
           .eq('creator_id', creatorId)
-          .eq('status', 'active')
-          .maybeSingle();
+          .eq('status', 'active');
+
+        console.log('Query for specific subscription returned:', { data, error });
+        console.log('Number of matching subscriptions:', data?.length || 0);
 
         if (error) {
-          console.error('DB verification error:', error);
-        } else if (data) {
-          console.log('Subscription found in user_subscriptions table:', data);
+          console.error('===== DB VERIFICATION ERROR =====');
+          console.error('Error details:', JSON.stringify(error, null, 2));
+        } else if (data && data.length > 0) {
+          console.log('===== SUBSCRIPTION FOUND IN DATABASE =====');
+          console.log('Found subscription:', JSON.stringify(data[0], null, 2));
           return true;
+        } else {
+          console.log('===== NO MATCHING SUBSCRIPTION FOUND =====');
+          console.log(`No active subscription found for tier_id: ${tierId}, creator_id: ${creatorId}`);
         }
         
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        if (i < maxRetries - 1) {
+          console.log(`Waiting ${retryDelay}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
       } catch (error) {
-        console.error('Error verifying subscription in DB:', error);
+        console.error('===== VERIFICATION ATTEMPT ERROR =====');
+        console.error('Error during verification attempt:', error);
       }
     }
     
-    console.log('Subscription not found in database after all retries');
+    console.log('===== SUBSCRIPTION VERIFICATION FAILED =====');
+    console.log(`Subscription not found in database after ${maxRetries} retries`);
     return false;
   };
 

@@ -202,14 +202,28 @@ export async function handlePaymentIntentWebhook(
         updated_at: new Date().toISOString(),
       };
 
-      console.log('[PaymentIntentHandler] Creating subscription record:', subscriptionData);
+      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION DATA TO INSERT =====');
+      console.log('[PaymentIntentHandler] user_id:', user_id);
+      console.log('[PaymentIntentHandler] creator_id:', creator_id);
+      console.log('[PaymentIntentHandler] tier_id:', tier_id);
+      console.log('[PaymentIntentHandler] stripe_subscription_id:', subscription.id);
+      console.log('[PaymentIntentHandler] amount:', tier.price);
+      console.log('[PaymentIntentHandler] status:', subscription.status);
+      console.log('[PaymentIntentHandler] Full subscription data:', JSON.stringify(subscriptionData, null, 2));
 
-      const { error: insertError } = await supabaseService
+      const { data: insertedData, error: insertError } = await supabaseService
         .from('user_subscriptions')
-        .insert(subscriptionData);
+        .insert(subscriptionData)
+        .select('*')
+        .single();
 
       if (insertError) {
-        console.error('[PaymentIntentHandler] Error creating subscription record:', insertError);
+        console.error('[PaymentIntentHandler] ===== DATABASE INSERT ERROR =====');
+        console.error('[PaymentIntentHandler] Error details:', JSON.stringify(insertError, null, 2));
+        console.error('[PaymentIntentHandler] Error code:', insertError.code);
+        console.error('[PaymentIntentHandler] Error message:', insertError.message);
+        console.error('[PaymentIntentHandler] Error hint:', insertError.hint);
+        
         // If we can't create the record, cancel the Stripe subscription
         try {
           await stripe.subscriptions.cancel(subscription.id);
@@ -220,7 +234,24 @@ export async function handlePaymentIntentWebhook(
         throw insertError;
       }
 
-      console.log('[PaymentIntentHandler] Successfully created subscription record');
+      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION SUCCESSFULLY CREATED =====');
+      console.log('[PaymentIntentHandler] Inserted subscription record:', JSON.stringify(insertedData, null, 2));
+      console.log('[PaymentIntentHandler] Subscription ID in DB:', insertedData?.id);
+      
+      // Verify the record was actually inserted by querying it back
+      const { data: verifyData, error: verifyError } = await supabaseService
+        .from('user_subscriptions')
+        .select('*')
+        .eq('stripe_subscription_id', subscription.id)
+        .single();
+        
+      if (verifyError) {
+        console.error('[PaymentIntentHandler] ===== VERIFICATION ERROR =====');
+        console.error('[PaymentIntentHandler] Could not verify inserted record:', verifyError);
+      } else {
+        console.log('[PaymentIntentHandler] ===== VERIFICATION SUCCESS =====');
+        console.log('[PaymentIntentHandler] Verified subscription exists:', JSON.stringify(verifyData, null, 2));
+      }
     }
 
     // Clean up legacy subscriptions table

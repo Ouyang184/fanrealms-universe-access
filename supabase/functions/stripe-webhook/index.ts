@@ -62,8 +62,14 @@ serve(async (req) => {
 
     // Handle payment intent webhooks for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
+      console.log('===== PAYMENT INTENT SUCCEEDED WEBHOOK RECEIVED =====');
+      console.log('Event ID:', event.id);
+      console.log('Payment Intent ID:', event.data.object.id);
+      console.log('Payment Intent metadata:', JSON.stringify(event.data.object.metadata, null, 2));
       console.log('Processing payment_intent.succeeded (LIVE MODE)');
-      await handlePaymentIntentWebhook(event, supabase, stripe);
+      
+      const result = await handlePaymentIntentWebhook(event, supabase, stripe);
+      console.log('Payment intent webhook result:', result);
     }
 
     // Handle price webhooks
