@@ -135,7 +135,6 @@ serve(async (req) => {
       mode: 'payment', // Standard one-time payment
       success_url: `${origin}/commissions/${commissionId}/payment-success`,
       cancel_url: `${origin}/commissions/${commissionId}/pay`,
-      expires_at: Math.floor(Date.now() / 1000) + (24 * 60 * 60), // 24 hours
       metadata: {
         commission_request_id: commissionId,
         customer_id: user.id,
@@ -146,13 +145,13 @@ serve(async (req) => {
 
     console.log('Created Stripe checkout session:', session.id);
 
-    // Update commission request with checkout session ID and checkout_created status
+    // Update commission request with checkout session ID and payment pending status
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        status: 'checkout_created',
-        creator_notes: 'Checkout session created - awaiting customer payment'
+        status: 'payment_pending',
+        creator_notes: 'Payment session created - awaiting customer payment'
       })
       .eq('id', commissionId);
 
@@ -167,7 +166,7 @@ serve(async (req) => {
       throw new Error('Failed to create commission payment');
     }
 
-    console.log('Updated commission request status to checkout_created');
+    console.log('Updated commission request status to payment_pending');
     console.log('=== SUCCESS: Returning checkout URL ===');
 
     return new Response(JSON.stringify({ url: session.url }), {

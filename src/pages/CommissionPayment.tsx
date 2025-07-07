@@ -87,9 +87,9 @@ export default function CommissionPayment() {
       }
 
       // Check if request is in correct status for payment
-      if (!['pending', 'checkout_created'].includes(data.status)) {
+      if (data.status !== 'pending') {
         if (data.status === 'payment_pending') {
-          setError('Payment is currently being processed for this commission');
+          setError('Payment is already being processed for this commission');
         } else if (data.status === 'payment_authorized') {
           setError('Payment has been authorized and is awaiting creator acceptance');
         } else if (data.status === 'accepted') {
@@ -278,16 +278,6 @@ export default function CommissionPayment() {
         </AlertDescription>
       </Alert>
 
-      {commissionRequest?.status === 'checkout_created' && (
-        <Alert className="mb-6 border-yellow-500 bg-yellow-950/50 text-yellow-100">
-          <AlertCircle className="h-4 w-4 text-yellow-400" />
-          <AlertDescription className="text-yellow-100">
-            <strong className="text-yellow-200">Payment Session Ready:</strong> A payment session has been created for this commission. 
-            You can complete the payment below, or delete the request if you no longer want to proceed.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {error && (
         <Alert className="mb-6 border-red-500 bg-red-950/50 text-red-100">
           <AlertCircle className="h-4 w-4 text-red-400" />
@@ -405,7 +395,7 @@ export default function CommissionPayment() {
             <>
               <CreditCard className="mr-2 h-4 w-4" />
               <ExternalLink className="mr-2 h-4 w-4" />
-              {commissionRequest?.status === 'checkout_created' ? 'Continue Payment' : 'Authorize'} ${commissionRequest?.agreed_price?.toFixed(2)}
+              Authorize ${commissionRequest.agreed_price.toFixed(2)}
             </>
           )}
         </Button>
