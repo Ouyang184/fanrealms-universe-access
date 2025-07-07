@@ -56,6 +56,7 @@ import ResetPassword from "./pages/ResetPassword";
 import CommissionPayment from "./pages/CommissionPayment";
 import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
 import Requests from "./pages/Requests";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -108,8 +109,9 @@ export default function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
                 
-                {/* Payment route */}
+                {/* Payment routes */}
                 <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
                 
                 {/* Direct post route - must come before creator profile route */}
                 <Route path="/post/:postId" element={<ShareablePost />} />

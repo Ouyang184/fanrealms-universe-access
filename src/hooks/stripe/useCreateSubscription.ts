@@ -3,28 +3,10 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-
-// Cache for payment sessions to prevent duplicate creations
-const sessionCache = new Map<string, {
-  clientSecret: string;
-  amount: number;
-  tierName: string;
-  tierId: string;
-  creatorId: string;
-  timestamp: number;
-  isUpgrade?: boolean;
-  currentTierName?: string;
-  proratedAmount?: number;
-  fullTierPrice?: number;
-}>();
-
-const SESSION_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 export const useCreateSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
@@ -45,31 +27,6 @@ export const useCreateSubscription = () => {
         variant: "default"
       });
       return null;
-    }
-
-    // Check cache first
-    const cacheKey = `${user.id}-${creatorId}-${tierId}`;
-    const cachedSession = sessionCache.get(cacheKey);
-    
-    if (cachedSession && (Date.now() - cachedSession.timestamp) < SESSION_CACHE_DURATION) {
-      console.log('useCreateSubscription: Using cached session for:', cacheKey);
-      
-      // Navigate to payment page with cached data
-      navigate('/payment', {
-        state: {
-          clientSecret: cachedSession.clientSecret,
-          amount: cachedSession.amount,
-          tierName: cachedSession.tierName,
-          tierId: cachedSession.tierId,
-          creatorId: cachedSession.creatorId,
-          isUpgrade: cachedSession.isUpgrade,
-          currentTierName: cachedSession.currentTierName,
-          proratedAmount: cachedSession.proratedAmount,
-          fullTierPrice: cachedSession.fullTierPrice
-        }
-      });
-      
-      return cachedSession;
     }
 
     // Lock this subscription
@@ -107,50 +64,15 @@ export const useCreateSubscription = () => {
         throw new Error('No response from subscription service');
       }
 
-      // Check if we should use custom payment page
-      if (data.useCustomPaymentPage && data.clientSecret) {
-        console.log('useCreateSubscription: Navigating to custom payment page');
-        
-        // Cache the session data
-        const sessionData = {
-          clientSecret: data.clientSecret,
-          amount: data.amount,
-          tierName: data.tierName,
-          tierId: data.tierId,
-          creatorId: data.creatorId,
-          timestamp: Date.now(),
-          isUpgrade: data.isUpgrade,
-          currentTierName: data.currentTierName,
-          proratedAmount: data.proratedAmount,
-          fullTierPrice: data.fullTierPrice
-        };
-        
-        sessionCache.set(cacheKey, sessionData);
-        
-        // Set cache cleanup
-        setTimeout(() => {
-          sessionCache.delete(cacheKey);
-        }, SESSION_CACHE_DURATION);
-
-        navigate('/payment', {
-          state: {
-            clientSecret: data.clientSecret,
-            amount: data.amount,
-            tierName: data.tierName,
-            tierId: data.tierId,
-            creatorId: data.creatorId,
-            isUpgrade: data.isUpgrade,
-            currentTierName: data.currentTierName,
-            proratedAmount: data.proratedAmount,
-            fullTierPrice: data.fullTierPrice
-          }
-        });
+      // Redirect to Stripe Checkout
+      if (data.checkout_url) {
+        console.log('useCreateSubscription: Redirecting to Stripe Checkout');
         
         // Show appropriate message
-        if (data.reusedSession) {
+        if (data.isUpgrade) {
           toast({
-            title: "Returning to Payment",
-            description: "Returning you to your existing payment session.",
+            title: "Redirecting to Payment",
+            description: `Upgrading from ${data.currentTierName} to ${data.tierName}. Please complete your payment.`,
           });
         } else {
           toast({
@@ -159,13 +81,9 @@ export const useCreateSubscription = () => {
           });
         }
         
-        return data;
-      }
-
-      // Fallback to checkout URL (shouldn't happen with new flow)
-      if (data.checkout_url) {
-        console.log('useCreateSubscription: Redirecting to Stripe Checkout');
+        // Redirect to Stripe Checkout
         window.location.href = data.checkout_url;
+        
         return data;
       }
 
@@ -174,6 +92,11 @@ export const useCreateSubscription = () => {
 
     } catch (error) {
       console.error('useCreateSubscription: Failed to create subscription:', error);
+      toast({
+        title: "Subscription Failed",
+        description: error instanceof Error ? error.message : 'Failed to create subscription',
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsProcessing(false);
@@ -186,16 +109,12 @@ export const useCreateSubscription = () => {
         });
       }, 2000);
     }
-  }, [user, isProcessing, navigate, toast, lockedSubscriptions]);
+  }, [user, isProcessing, toast, lockedSubscriptions]);
 
   // Function to clear cache when user cancels payment
   const clearSubscriptionCache = useCallback((tierId: string, creatorId: string) => {
-    if (!user) return;
-    
-    const cacheKey = `${user.id}-${creatorId}-${tierId}`;
-    sessionCache.delete(cacheKey);
-    console.log('Cleared subscription cache for:', cacheKey);
-  }, [user]);
+    console.log('Cache clearing not needed for checkout flow');
+  }, []);
 
   return {
     createSubscription,
