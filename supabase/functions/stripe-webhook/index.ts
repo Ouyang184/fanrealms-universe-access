@@ -7,18 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe properly for Deno with async crypto provider - USING LIVE KEYS FOR MAIN SYSTEM
+// Initialize Stripe properly for Deno with async crypto provider - USING LIVE KEYS
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
   Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '',
-  {
-    apiVersion: '2023-10-16',
-    httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
-  }
-);
-
-// Initialize TEST Stripe for commission webhooks
-const stripeTest = new (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_TEST') || '',
   {
     apiVersion: '2023-10-16',
     httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
@@ -38,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED ===');
+    console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -50,40 +41,25 @@ serve(async (req) => {
     const signature = req.headers.get('stripe-signature')!;
 
     let event;
-    let isCommissionWebhook = false;
-    
     try {
-      // First try to verify with live webhook secret
+      // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook verified with LIVE secret');
-    } catch (liveError) {
-      // If live verification fails, it might be a test webhook for commissions
-      try {
-        const testWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET_TEST');
-        if (testWebhookSecret) {
-          event = await stripeTest.webhooks.constructEventAsync(body, signature, testWebhookSecret);
-          isCommissionWebhook = true;
-          console.log('Webhook verified with TEST secret (commission webhook)');
-        } else {
-          throw liveError;
-        }
-      } catch (testError) {
-        console.error('Webhook signature verification failed for both live and test:', { liveError, testError });
-        return new Response('Webhook signature verification failed', { status: 400 });
-      }
+      console.log('Webhook signature verified successfully (LIVE MODE)');
+    } catch (err) {
+      console.error('Webhook signature verification failed:', err);
+      return new Response('Webhook signature verification failed', { status: 400 });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id);
+    console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
 
-    // Handle commission-related webhooks (from test environment)
-    if (isCommissionWebhook || event.data.object.metadata?.type === 'commission_payment') {
-      console.log('Processing commission webhook:', event.type);
+    // Handle commission-related webhooks
+    if (event.type === 'payment_intent.canceled' || 
+        event.type === 'payment_intent.succeeded' || 
+        event.type === 'charge.refunded') {
+      console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
       await handleCommissionWebhook(event, supabase);
-      return new Response('OK', { status: 200, headers: corsHeaders });
     }
 
-    // Handle regular webhooks (live environment)
-    
     // Handle payment intent webhooks for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
       console.log('Processing payment_intent.succeeded (LIVE MODE)');
@@ -148,11 +124,11 @@ serve(async (req) => {
       }
     }
 
-    console.log('=== WEBHOOK PROCESSING COMPLETE ===');
+    console.log('=== WEBHOOK PROCESSING COMPLETE (LIVE MODE) ===');
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Webhook error (LIVE MODE):', error);
     return new Response('Webhook error', { status: 500, headers: corsHeaders });
   }
 });
