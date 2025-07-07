@@ -197,21 +197,8 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
     }
   });
 
-  // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
-  if (subscription.status === 'incomplete') {
-    console.log('[SimpleSubscriptions] Subscription created with incomplete status, auto-deleting...');
-    
-    try {
-      await stripe.subscriptions.del(subscription.id);
-      console.log('[SimpleSubscriptions] Auto-deleted incomplete subscription:', subscription.id);
-      
-      return { 
-        error: 'Payment setup incomplete. Please try again with valid payment information.' 
-      };
-    } catch (deleteError) {
-      console.error('[SimpleSubscriptions] Error auto-deleting incomplete subscription:', deleteError);
-    }
-  }
+  // Allow incomplete subscriptions for payment confirmation flow
+  console.log('[SimpleSubscriptions] Subscription created with status:', subscription.status);
 
   // Store subscription in user_subscriptions table
   console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
