@@ -122,7 +122,12 @@ export function useCommissionRequestForm({
 
       resetForm();
       onSuccess();
-      navigate(`/commissions/${newRequest.id}/pay`);
+      
+      // Use setTimeout to ensure modal closes before navigation
+      setTimeout(() => {
+        // Use window.location.href to ensure top-level navigation (not in iframe context)
+        window.location.href = `/commissions/${newRequest.id}/pay`;
+      }, 100);
 
     } catch (error) {
       console.error('Error submitting commission request:', error);
