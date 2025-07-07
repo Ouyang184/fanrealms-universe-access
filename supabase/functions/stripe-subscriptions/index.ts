@@ -1,22 +1,16 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-
-// Import handlers
-import { handleCreateSubscription } from './handlers/create-subscription.ts';
-import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
-import { StripeCustomerService } from './services/stripe-customer.ts';
+import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from './utils/cors.ts';
 import { authenticateUser } from './utils/auth.ts';
-
-// Initialize Stripe with TEST key to match commission payments
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_TEST') || '', {
-  apiVersion: '2023-10-16',
-});
-
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+import { handleCreateSubscription } from './handlers/create-subscription.ts';
+import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
+import { handleReactivateSubscription } from './handlers/reactivate-subscription.ts';
+import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts';
+import { handleGetSubscriberCount } from './handlers/get-subscriber-count.ts';
+import { handleVerifySubscription } from './handlers/verify-subscription.ts';
+import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -24,48 +18,78 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== STRIPE SUBSCRIPTIONS REQUEST (TEST MODE) ===');
+    const body = await req.json();
+    const { action } = body;
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { action, ...requestData } = await req.json();
-    
-    console.log('Action:', action, 'Data:', requestData);
+    console.log('Stripe subscriptions action:', action, '(LIVE MODE)');
+    console.log('Request body received:', JSON.stringify(body, null, 2));
+
+    // Initialize Stripe with LIVE keys
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '', {
+      apiVersion: '2023-10-16',
+    });
+
+    // Initialize Supabase (service role for admin operations)
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') || '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    );
 
     // Authenticate user for most actions
-    let user = null;
-    if (action !== 'get-subscriber-count') {
-      user = await authenticateUser(req, supabase);
-      if (!user) {
-        return new Response(JSON.stringify({ error: 'Authentication required' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-    }
-
-    const customerService = new StripeCustomerService(stripe, supabase);
+    const user = await authenticateUser(req, supabaseService);
 
     switch (action) {
-      case 'create-subscription':
-        return await handleCreateSubscription(requestData, stripe, supabase, user, customerService);
-      
-      case 'cancel-subscription':
-        return await handleCancelSubscription(requestData, stripe, supabase, user);
-      
+      case 'create_subscription':
+        return await handleCreateSubscription(stripe, supabaseService, user, body);
+
+      case 'cancel_subscription': {
+        const { subscriptionId, immediate } = body;
+        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate, '(LIVE MODE)');
+        
+        // Ensure immediate is properly converted to boolean
+        const immediateFlag = immediate === true || immediate === 'true' || immediate === 1;
+        console.log('Converted immediate flag to boolean:', immediateFlag, '(LIVE MODE)');
+        
+        return await handleCancelSubscription(stripe, supabaseService, user, subscriptionId, immediateFlag);
+      }
+
+      case 'reactivate_subscription': {
+        const { subscriptionId } = body;
+        return await handleReactivateSubscription(stripe, supabaseService, user, subscriptionId);
+      }
+
+      case 'get_user_subscriptions': {
+        const { userId } = body;
+        return await handleGetUserSubscriptions(supabaseService, user, userId);
+      }
+
+      case 'get_subscriber_count': {
+        const { creatorId } = body;
+        return await handleGetSubscriberCount(supabaseService, creatorId);
+      }
+
+      case 'verify_subscription': {
+        const { subscriptionId } = body;
+        return await handleVerifySubscription(stripe, supabaseService, subscriptionId);
+      }
+
+      case 'sync_all_subscriptions': {
+        return await handleSyncAllSubscriptions(stripe, supabaseService);
+      }
+
       default:
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
     }
-
   } catch (error) {
-    console.error('Subscription error (TEST MODE):', error);
+    console.error('Stripe subscriptions error (LIVE MODE):', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred' 
     }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
