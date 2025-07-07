@@ -1,349 +1,267 @@
 
-// Helper function for consistent logging
-const log = (step: string, data?: any) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [CreateSubscription] ${step}`);
-  if (data) {
-    console.log(`[${timestamp}] [CreateSubscription] Data:`, JSON.stringify(data, null, 2));
-  }
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getOrCreateStripeCustomer } from '../services/stripe-customer.ts';
+import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleCreateSubscription(
   stripe: any,
   supabase: any,
   user: any,
-  { tierId, creatorId }: { tierId: string; creatorId: string }
+  body: any
 ) {
-  log('Starting subscription creation', { userId: user.id, tierId, creatorId });
+  console.log('Creating subscription for user:', user.id);
+  console.log('Request body:', JSON.stringify(body, null, 2));
 
-  try {
-    // Validate inputs
-    if (!tierId || !creatorId) {
-      log('ERROR: Missing required parameters');
-      throw new Error('Missing required parameters: tierId and creatorId');
-    }
+  // Extract parameters from body - handle both formats
+  const tierId = body.tierId || body.tier_id;
+  const creatorId = body.creatorId || body.creator_id;
 
-    if (!user?.id || !user?.email) {
-      log('ERROR: Invalid user data');
-      throw new Error('Invalid user data: missing id or email');
-    }
+  console.log('Extracted params:', { tierId, creatorId });
 
-    log('Input validation passed');
-
-    // Check for existing active subscriptions to the same creator
-    let existingSubscriptions;
-    try {
-      log('Checking for existing subscriptions...');
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .in('status', ['active', 'trialing']);
-
-      if (error) {
-        log('Database error checking subscriptions', error);
-        throw new Error(`Database error: ${error.message}`);
-      }
-
-      existingSubscriptions = data;
-      log('Existing subscriptions check completed', { count: existingSubscriptions?.length || 0 });
-    } catch (dbError) {
-      log('ERROR: Failed to check existing subscriptions', dbError);
-      throw new Error(`Failed to check existing subscriptions: ${dbError.message}`);
-    }
-
-    if (existingSubscriptions && existingSubscriptions.length > 0) {
-      const existingSub = existingSubscriptions[0];
-      log('Found existing subscription', { subscriptionId: existingSub.id, status: existingSub.status });
-      
-      if (existingSub.tier_id === tierId) {
-        log('User already subscribed to this tier');
-        return { 
-          error: 'You already have an active subscription to this tier.',
-          shouldRefresh: true
-        };
-      }
-
-      // Handle tier upgrade/downgrade
-      log('Handling tier change', { from: existingSub.tier_id, to: tierId });
-      return await handleTierChange(stripe, supabase, user, existingSub, tierId);
-    }
-
-    // Get tier details with creator information
-    let tier;
-    try {
-      log('Fetching tier details...');
-      const { data, error } = await supabase
-        .from('membership_tiers')
-        .select(`
-          *,
-          creators!inner(stripe_account_id, display_name)
-        `)
-        .eq('id', tierId)
-        .single();
-
-      if (error) {
-        log('Database error fetching tier', error);
-        throw new Error(`Failed to fetch tier: ${error.message}`);
-      }
-
-      if (!data) {
-        log('ERROR: Tier not found');
-        throw new Error('Membership tier not found');
-      }
-
-      tier = data;
-      log('Tier details fetched', { 
-        tierTitle: tier.title, 
-        price: tier.price,
-        creatorName: tier.creators?.display_name,
-        hasStripeAccount: !!tier.creators?.stripe_account_id
-      });
-    } catch (tierError) {
-      log('ERROR: Failed to fetch tier details', tierError);
-      throw new Error(`Failed to fetch tier details: ${tierError.message}`);
-    }
-
-    // Validate creator has Stripe setup
-    if (!tier.creators?.stripe_account_id) {
-      log('ERROR: Creator stripe account not set up');
-      throw new Error('Creator payments not set up. Please contact the creator.');
-    }
-
-    // Get or create Stripe customer
-    let stripeCustomerId;
-    try {
-      log('Getting or creating Stripe customer...');
-      stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabase, user);
-      log('Stripe customer ready', { customerId: stripeCustomerId });
-    } catch (customerError) {
-      log('ERROR: Customer setup failed', customerError);
-      throw new Error(`Customer setup failed: ${customerError.message}`);
-    }
-
-    // Create Stripe Checkout Session
-    try {
-      log('Creating Stripe Checkout Session...');
-      
-      // Get or create Stripe price
-      let stripePriceId = tier.stripe_price_id;
-      
-      if (!stripePriceId) {
-        log('Creating new Stripe price...');
-        const price = await stripe.prices.create({
-          unit_amount: Math.round(tier.price * 100),
-          currency: 'usd',
-          recurring: { interval: 'month' },
-          product_data: { 
-            name: `${tier.creators.display_name} - ${tier.title}`,
-            description: tier.description 
-          }
-        });
-        stripePriceId = price.id;
-        log('Stripe price created', { priceId: stripePriceId });
-
-        // Update tier with price ID
-        await supabase
-          .from('membership_tiers')
-          .update({ stripe_price_id: stripePriceId })
-          .eq('id', tierId);
-        
-        log('Tier updated with price ID');
-      }
-
-      // Create Stripe Checkout Session
-      const session = await stripe.checkout.sessions.create({
-        customer: stripeCustomerId,
-        line_items: [{
-          price: stripePriceId,
-          quantity: 1,
-        }],
-        mode: 'subscription',
-        success_url: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/subscriptions?success=true`,
-        cancel_url: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/creator/${tier.creators.display_name}?canceled=true`,
-        application_fee_percent: 4,
-        subscription_data: {
-          application_fee_percent: 4,
-          transfer_data: {
-            destination: tier.creators.stripe_account_id,
-          },
-          metadata: {
-            user_id: user.id,
-            creator_id: creatorId,
-            tier_id: tierId,
-            platform_fee_percent: '4'
-          }
-        }
-      });
-
-      log('Stripe Checkout Session created', { 
-        sessionId: session.id, 
-        url: session.url 
-      });
-
-      return {
-        url: session.url,
-        sessionId: session.id
-      };
-
-    } catch (stripeError) {
-      log('ERROR: Stripe error', stripeError);
-      throw new Error(`Stripe error: ${stripeError.message}`);
-    }
-
-  } catch (error) {
-    log('ERROR: Exception in handleCreateSubscription', { 
-      error: error.message, 
-      stack: error.stack 
-    });
-    throw error;
+  if (!tierId || !creatorId) {
+    console.log('ERROR: Missing tierId or creatorId', { tierId, creatorId });
+    return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
   }
-}
 
-async function handleTierChange(stripe: any, supabase: any, user: any, existingSubscription: any, newTierId: string) {
-  log('Handling tier change', { 
-    from: existingSubscription.tier_id, 
-    to: newTierId,
-    subscriptionId: existingSubscription.stripe_subscription_id 
-  });
-  
-  try {
-    // Get new tier details
-    const { data: newTier, error: tierError } = await supabase
-      .from('membership_tiers')
-      .select(`
-        *,
-        creators!inner(stripe_account_id, display_name)
-      `)
-      .eq('id', newTierId)
-      .single();
+  // Create service client for database operations
+  const supabaseService = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-    if (tierError || !newTier) {
-      log('ERROR: New tier not found', tierError);
-      throw new Error(`New tier not found: ${tierError?.message || 'No tier data'}`);
-    }
+  // Check for existing active subscriptions to the same creator
+  console.log('Checking for existing active subscriptions to creator:', creatorId);
+  const { data: existingSubscriptions, error: checkError } = await supabaseService
+    .from('user_subscriptions')
+    .select('*, membership_tiers!inner(title, price)')
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId)
+    .in('status', ['active', 'trialing']);
 
-    log('New tier fetched', { tierTitle: newTier.title, price: newTier.price });
+  if (checkError) {
+    console.error('Error checking existing subscriptions:', checkError);
+    return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
+  }
 
-    // Create new price if needed
-    let newStripePriceId = newTier.stripe_price_id;
-    if (!newStripePriceId) {
-      const price = await stripe.prices.create({
-        unit_amount: Math.round(newTier.price * 100),
-        currency: 'usd',
-        recurring: { interval: 'month' },
-        product_data: { 
-          name: `${newTier.creators.display_name} - ${newTier.title}`,
-          description: newTier.description 
-        }
-      });
-      newStripePriceId = price.id;
+  let isUpgrade = false;
+  let existingSubscription = null;
+  let proratedAmount = 0;
 
-      await supabase
-        .from('membership_tiers')
-        .update({ stripe_price_id: newStripePriceId })
-        .eq('id', newTierId);
-      
-      log('New price created and tier updated', { priceId: newStripePriceId });
-    }
-
-    // Get current subscription from Stripe to get items
-    const currentSubscription = await stripe.subscriptions.retrieve(existingSubscription.stripe_subscription_id);
+  // If user has existing active subscription to this creator, check if it's an upgrade
+  if (existingSubscriptions && existingSubscriptions.length > 0) {
+    existingSubscription = existingSubscriptions[0];
+    console.log('Found existing active subscription:', existingSubscription);
     
-    // Update the existing Stripe subscription
-    const updatedSubscription = await stripe.subscriptions.update(
-      existingSubscription.stripe_subscription_id,
-      {
-        items: [{
-          id: currentSubscription.items.data[0].id,
-          price: newStripePriceId,
-        }],
-        proration_behavior: 'always_invoice',
-        metadata: {
-          user_id: user.id,
-          creator_id: existingSubscription.creator_id,
-          tier_id: newTierId,
-          platform_fee_percent: '4'
-        }
-      }
-    );
-
-    log('Stripe subscription updated', { subscriptionId: updatedSubscription.id });
-
-    // Update database record
-    await supabase
-      .from('user_subscriptions')
-      .update({
-        tier_id: newTierId,
-        amount: newTier.price,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existingSubscription.id);
-
-    log('Database record updated');
-
-    return {
-      success: true,
-      message: 'Subscription tier updated successfully with proration applied',
-      subscriptionId: updatedSubscription.id,
-      isUpgrade: true
-    };
-
-  } catch (error) {
-    log('ERROR: Failed to handle tier change', { error: error.message });
-    throw new Error(`Failed to update subscription tier: ${error.message}`);
+    // Check if user is trying to subscribe to a different tier (upgrade/downgrade)
+    if (existingSubscription.tier_id !== tierId) {
+      isUpgrade = true;
+      console.log('Detected tier upgrade/change from:', existingSubscription.tier_id, 'to:', tierId);
+    } else {
+      // Same tier - return error
+      return createJsonResponse({ 
+        error: 'You already have an active subscription to this tier.',
+        shouldRefresh: true
+      }, 200);
+    }
   }
-}
 
-async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) {
-  log('Getting or creating Stripe customer', { userId: user.id, email: user.email });
-  
+  console.log('Subscription type:', isUpgrade ? 'UPGRADE' : 'NEW');
+
+  // Get tier and creator details
+  console.log('Fetching tier and creator details...');
+  const { data: tier, error: tierError } = await supabase
+    .from('membership_tiers')
+    .select(`
+      *,
+      creators!inner(
+        stripe_account_id,
+        display_name
+      )
+    `)
+    .eq('id', tierId)
+    .single();
+
+  if (tierError || !tier) {
+    console.log('ERROR: Tier not found:', tierError);
+    return createJsonResponse({ error: 'Membership tier not found' }, 404);
+  }
+
+  console.log('Tier found:', tier.title, 'Price:', tier.price);
+
+  if (!tier.creators.stripe_account_id) {
+    console.log('ERROR: Creator not connected to Stripe');
+    return createJsonResponse({ 
+      error: 'This creator has not set up payments yet. Please try again later.' 
+    }, 400);
+  }
+
+  if (!tier.stripe_price_id) {
+    console.log('ERROR: Tier missing stripe_price_id');
+    return createJsonResponse({ 
+      error: 'This membership tier is not properly configured. Please contact the creator.' 
+    }, 400);
+  }
+
+  // Calculate prorated amount for upgrades
+  if (isUpgrade && existingSubscription) {
+    const currentTierPrice = existingSubscription.membership_tiers.price;
+    const newTierPrice = tier.price;
+    proratedAmount = newTierPrice - currentTierPrice;
+    
+    console.log('Prorated calculation:', {
+      currentTierPrice,
+      newTierPrice,
+      proratedAmount
+    });
+
+    // Don't allow downgrades to negative amounts
+    if (proratedAmount < 0) {
+      return createJsonResponse({ 
+        error: 'Downgrades are not currently supported. Please contact support.' 
+      }, 400);
+    }
+
+    // Free upgrade case
+    if (proratedAmount === 0) {
+      return createJsonResponse({ 
+        error: 'This tier has the same price as your current subscription.' 
+      }, 400);
+    }
+  }
+
   try {
-    // Check if customer already exists in our database
-    const { data: existingCustomer } = await supabase
-      .from('stripe_customers')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .single();
+    // Create or get Stripe customer
+    console.log('Creating/getting Stripe customer...');
+    const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
+    console.log('Stripe customer ID:', stripeCustomerId);
 
-    if (existingCustomer?.stripe_customer_id) {
-      log('Found existing customer in database', { customerId: existingCustomer.stripe_customer_id });
-      
-      // Verify customer exists in Stripe
-      try {
-        await stripe.customers.retrieve(existingCustomer.stripe_customer_id);
-        return existingCustomer.stripe_customer_id;
-      } catch (stripeError) {
-        log('Customer not found in Stripe, will create new one', { error: stripeError.message });
+    // Check for existing pending payment intent for this user/creator/tier combination
+    console.log('Checking for existing payment intents...');
+    const paymentIntents = await stripe.paymentIntents.list({
+      customer: stripeCustomerId,
+      limit: 10
+    });
+
+    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
+    const targetAmount = Math.round(paymentAmount * 100); // Convert to cents
+
+    // Look for existing payment intent with same metadata that's still valid
+    let existingPaymentIntent = null;
+    for (const pi of paymentIntents.data) {
+      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
+        const metadata = pi.metadata || {};
+        if (metadata.creator_id === creatorId && 
+            metadata.user_id === user.id && 
+            metadata.tier_id === tierId &&
+            metadata.is_upgrade === (isUpgrade ? 'true' : 'false') &&
+            pi.amount === targetAmount) {
+          existingPaymentIntent = pi;
+          console.log('Found reusable payment intent:', pi.id);
+          break;
+        }
       }
     }
 
-    // Create new Stripe customer
-    log('Creating new Stripe customer...');
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: { user_id: user.id }
+    // If we found a reusable payment intent, return it
+    if (existingPaymentIntent) {
+      console.log('Reusing existing payment intent:', existingPaymentIntent.id);
+      
+      return createJsonResponse({
+        clientSecret: existingPaymentIntent.client_secret,
+        amount: existingPaymentIntent.amount,
+        tierName: tier.title,
+        tierId: tierId,
+        creatorId: creatorId,
+        paymentIntentId: existingPaymentIntent.id,
+        useCustomPaymentPage: true,
+        isUpgrade: isUpgrade,
+        currentTierName: existingSubscription?.membership_tiers?.title || null,
+        proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
+        fullTierPrice: Math.round(tier.price * 100),
+        currentPeriodEnd: existingSubscription?.current_period_end || null,
+        reusedSession: true
+      });
+    }
+
+    // Cancel any old pending payment intents to clean up
+    console.log('Cleaning up old payment intents...');
+    for (const pi of paymentIntents.data) {
+      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
+        const metadata = pi.metadata || {};
+        if (metadata.creator_id === creatorId && metadata.user_id === user.id) {
+          console.log('Cancelling old payment intent:', pi.id);
+          await stripe.paymentIntents.cancel(pi.id);
+        }
+      }
+    }
+
+    // Clean up old pending/incomplete subscriptions
+    console.log('Cleaning up old pending subscriptions...');
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    
+    await supabaseService
+      .from('user_subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('creator_id', creatorId)
+      .in('status', ['pending', 'incomplete'])
+      .lt('created_at', oneHourAgo);
+
+    // Clean up ALL records from legacy subscriptions table
+    await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('creator_id', creatorId);
+
+    // Create new Payment Intent with updated platform fee calculation
+    console.log('Creating new Payment Intent for amount:', paymentAmount);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      customer: stripeCustomerId,
+      amount: targetAmount,
+      currency: 'usd',
+      payment_method_types: ['card'],
+      metadata: {
+        user_id: user.id,
+        creator_id: creatorId,
+        tier_id: tierId,
+        tier_name: tier.title,
+        creator_name: tier.creators.display_name,
+        type: 'subscription_setup',
+        is_upgrade: isUpgrade ? 'true' : 'false',
+        existing_subscription_id: existingSubscription?.stripe_subscription_id || '',
+        existing_tier_id: existingSubscription?.tier_id || '',
+        current_period_end: existingSubscription?.current_period_end || '',
+        full_tier_price: tier.price.toString(),
+        prorated_amount: isUpgrade ? proratedAmount.toString() : '0',
+        platform_fee_percent: '4'
+      },
+      setup_future_usage: 'off_session',
     });
 
-    log('Stripe customer created', { customerId: customer.id });
+    console.log('Payment Intent created:', paymentIntent.id);
 
-    // Store customer ID in database
-    await supabase
-      .from('stripe_customers')
-      .upsert({
-        user_id: user.id,
-        stripe_customer_id: customer.id
-      }, {
-        onConflict: 'user_id'
-      });
-
-    log('Customer stored in database');
-
-    return customer.id;
+    return createJsonResponse({
+      clientSecret: paymentIntent.client_secret,
+      amount: targetAmount,
+      tierName: tier.title,
+      tierId: tierId,
+      creatorId: creatorId,
+      paymentIntentId: paymentIntent.id,
+      useCustomPaymentPage: true,
+      isUpgrade: isUpgrade,
+      currentTierName: existingSubscription?.membership_tiers?.title || null,
+      proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
+      fullTierPrice: Math.round(tier.price * 100),
+      currentPeriodEnd: existingSubscription?.current_period_end || null,
+      reusedSession: false
+    });
 
   } catch (error) {
-    log('ERROR: Failed to get/create Stripe customer', { error: error.message });
-    throw new Error(`Customer creation failed: ${error.message}`);
+    console.error('Error in create subscription:', error);
+    return createJsonResponse({ 
+      error: 'Failed to create subscription. Please try again later.' 
+    }, 500);
   }
 }

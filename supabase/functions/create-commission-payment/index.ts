@@ -23,7 +23,7 @@ serve(async (req) => {
       throw new Error('Commission ID is required');
     }
 
-    // Initialize Stripe with TEST key
+    // Initialize Stripe
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
     if (!stripeSecretKey) {
       throw new Error('Stripe secret key not configured');
@@ -58,16 +58,18 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
-    // Fetch commission request with all needed data
+    // Fetch commission request details
     const { data: commissionRequest, error: commissionError } = await supabaseService
       .from('commission_requests')
       .select(`
         *,
-        commission_types!inner(name, description),
-        creators!inner(display_name, user_id)
+        commission_type:commission_types(name, description),
+        creator:creators!commission_requests_creator_id_fkey(
+          display_name,
+          user_id
+        )
       `)
       .eq('id', commissionId)
-      .eq('customer_id', user.id)
       .single();
 
     if (commissionError || !commissionRequest) {
@@ -82,7 +84,7 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Verify commission is in the correct status for payment
+    // Check if request is in accepted status
     if (commissionRequest.status !== 'accepted') {
       throw new Error(`Commission must be accepted before payment. Current status: ${commissionRequest.status}`);
     }
@@ -125,7 +127,7 @@ serve(async (req) => {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_types.name} by ${commissionRequest.creators.display_name}`,
+              description: `${commissionRequest.commission_type.name} by ${commissionRequest.creator.display_name}`,
             },
             unit_amount: Math.round(commissionRequest.agreed_price * 100),
           },
@@ -151,7 +153,7 @@ serve(async (req) => {
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        creator_notes: 'Payment session created - awaiting customer payment (TEST MODE)'
+        creator_notes: 'Payment session created - customer can now complete payment'
       })
       .eq('id', commissionId);
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,7 +19,7 @@ export function ActiveSubscribeButton({
   price 
 }: ActiveSubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing } = useSimpleSubscriptions();
+  const { createSubscription, isProcessing } = useCreateSubscription();
   const { toast } = useToast();
   const [isButtonLocked, setIsButtonLocked] = useState(false);
 
@@ -51,11 +51,7 @@ export function ActiveSubscribeButton({
         return;
       }
       
-      if (result?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(result.url, '_blank');
-      }
-      
+      // If we get here, the user was redirected to payment page
       // Keep button locked for a bit to prevent rapid clicking
       setTimeout(() => {
         setIsButtonLocked(false);

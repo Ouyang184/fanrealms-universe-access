@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,7 +32,7 @@ export const useSimpleSubscriptions = () => {
     refetchInterval: 60000
   });
 
-  // Create subscription - calls the stripe-subscriptions function
+  // Create subscription - now returns checkout URL for redirect
   const createSubscription = async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
     if (!user || isProcessing) return null;
 
@@ -42,42 +43,16 @@ export const useSimpleSubscriptions = () => {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'create_subscription',
-          tierId: tierId,
-          creatorId: creatorId
+          tier_id: tierId,
+          creator_id: creatorId
         }
       });
 
-      if (error) {
-        console.error('[useSimpleSubscriptions] Edge function error:', error);
-        
-        // Show more specific error message
-        let errorMessage = 'Failed to create subscription';
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        }
-        
-        toast({
-          title: "Subscription Error",
-          description: errorMessage,
-          variant: "destructive"
-        });
-        
-        throw new Error(`Edge function error: ${errorMessage}`);
-      }
+      if (error) throw error;
       
       console.log('[useSimpleSubscriptions] Response:', data);
       
       if (data?.error) {
-        console.error('[useSimpleSubscriptions] Subscription creation error:', data.error);
-        
-        toast({
-          title: "Subscription Error",
-          description: data.error,
-          variant: "destructive"
-        });
-        
         if (data.shouldRefresh) {
           // Refresh subscription data if user is already subscribed
           await Promise.all([
@@ -93,15 +68,11 @@ export const useSimpleSubscriptions = () => {
       return data;
     } catch (error) {
       console.error('[useSimpleSubscriptions] Create subscription error:', error);
-      
-      // Show user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       toast({
         title: "Subscription Failed",
-        description: errorMessage,
+        description: error instanceof Error ? error.message : 'Failed to create subscription',
         variant: "destructive"
       });
-      
       throw error;
     } finally {
       setIsProcessing(false);
@@ -109,16 +80,14 @@ export const useSimpleSubscriptions = () => {
   };
 
   // Cancel subscription
-  const cancelSubscription = async (tierId: string, creatorId: string, immediate = false) => {
+  const cancelSubscription = async (subscriptionId: string) => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
           action: 'cancel_subscription',
-          tierId,
-          creatorId,
-          immediate
+          subscriptionId
         }
       });
 
@@ -126,7 +95,7 @@ export const useSimpleSubscriptions = () => {
 
       toast({
         title: "Subscription Cancelled",
-        description: immediate ? "Your subscription has been cancelled immediately." : "Your subscription will end at the current period.",
+        description: "Your subscription has been cancelled successfully.",
       });
 
       // Refresh data
@@ -138,7 +107,7 @@ export const useSimpleSubscriptions = () => {
 
       // Dispatch event for other components
       window.dispatchEvent(new CustomEvent('subscriptionCancelled', {
-        detail: { tierId, creatorId }
+        detail: { subscriptionId }
       }));
 
     } catch (error) {

@@ -11,8 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Use LIVE publishable key for subscription payments
-const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
+// Use TEST publishable key for subscriptions
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 interface MembershipPaymentFormProps {
   clientSecret: string;
@@ -106,8 +106,6 @@ function PaymentFormContent({ clientSecret, tierName, amount, isUpgrade = false 
               </div>
               <p className="text-sm text-gray-400">
                 {isUpgrade ? 'Upgrade your membership' : 'Join this tier'} to unlock exclusive content and perks.
-                <br />
-                <span className="text-xs text-green-400">LIVE MODE - Real payment processing</span>
               </p>
             </CardContent>
           </Card>

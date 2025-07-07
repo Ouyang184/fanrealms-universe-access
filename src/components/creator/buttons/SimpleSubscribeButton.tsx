@@ -2,10 +2,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { useSimpleSubscriptions } from '@/hooks/useSimpleSubscriptions';
+import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SimpleSubscribeButtonProps {
   tierId: string;
@@ -21,9 +22,10 @@ export function SimpleSubscribeButton({
   price 
 }: SimpleSubscribeButtonProps) {
   const { user } = useAuth();
-  const { createSubscription, isProcessing } = useSimpleSubscriptions();
+  const { createSubscription, isProcessing } = useCreateSubscription();
   const { subscriptionData } = useSimpleSubscriptionCheck(tierId, creatorId);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubscribe = async () => {
     if (!user) {
@@ -36,39 +38,28 @@ export function SimpleSubscribeButton({
     }
 
     try {
-      console.log('[SimpleSubscribeButton] Creating subscription for tier:', tierId, 'creator:', creatorId);
-      
       const result = await createSubscription({ 
         tierId, 
         creatorId 
       });
       
       if (result?.error) {
-        console.error('[SimpleSubscribeButton] Subscription error:', result.error);
-        // Error already handled in hook
-        return;
+        return; // Error already handled in hook
       }
       
-      if (result?.url) {
-        console.log('[SimpleSubscribeButton] Redirecting to Stripe Checkout:', result.url);
-        // Open Stripe checkout in a new tab
-        window.open(result.url, '_blank');
-        
-        toast({
-          title: "Redirecting to Payment",
-          description: "Please complete your payment to activate the subscription.",
-        });
-      } else {
-        console.error('[SimpleSubscribeButton] No checkout URL received');
-        toast({
-          title: "Error",
-          description: "Failed to create checkout session. Please try again.",
-          variant: "destructive"
+      if (result?.clientSecret) {
+        navigate('/payment', {
+          state: {
+            clientSecret: result.clientSecret,
+            amount: price * 100,
+            tierName,
+            tierId,
+            creatorId
+          }
         });
       }
     } catch (error) {
-      console.error('[SimpleSubscribeButton] Subscription error:', error);
-      // Error already handled in hook, just log here
+      console.error('Subscription error:', error);
     }
   };
 
@@ -90,7 +81,7 @@ export function SimpleSubscribeButton({
       {isProcessing ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Creating checkout...
+          Starting payment...
         </>
       ) : (
         `Subscribe for $${price}/month`

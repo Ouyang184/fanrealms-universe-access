@@ -14,7 +14,7 @@ export const useCommissionActions = () => {
         .from('commission_requests')
         .update({ 
           status: 'accepted',
-          creator_notes: 'Commission accepted! Please complete payment to begin work.'
+          creator_notes: 'Commission accepted! Please proceed with payment to begin work.'
         })
         .eq('id', commissionId)
         .select()
@@ -85,21 +85,6 @@ export const useCommissionActions = () => {
   const createPaymentSessionMutation = useMutation({
     mutationFn: async (commissionId: string) => {
       console.log('Creating payment session for commission:', commissionId);
-      
-      // First verify the commission is in accepted status
-      const { data: commission, error: fetchError } = await supabase
-        .from('commission_requests')
-        .select('status')
-        .eq('id', commissionId)
-        .single();
-
-      if (fetchError || !commission) {
-        throw new Error('Commission not found');
-      }
-
-      if (commission.status !== 'accepted') {
-        throw new Error('Commission must be accepted before payment can be processed');
-      }
       
       const { data, error } = await supabase.functions.invoke('create-commission-payment', {
         body: { commissionId }

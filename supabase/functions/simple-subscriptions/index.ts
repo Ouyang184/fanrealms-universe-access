@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { handleCreateSubscription } from './handlers/subscription-handler.ts';
+import { handleCancelSubscription } from './handlers/cancellation-handler.ts';
+import { handleGetUserSubscriptions, handleGetCreatorSubscribers } from './handlers/data-handler.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,47 +15,15 @@ const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
   Deno.env.get('STRIPE_SECRET_KEY_LIVE') || ''
 );
 
-// Helper function for consistent logging
-const log = (step: string, data?: any) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [SimpleSubscriptions] ${step}`);
-  if (data) {
-    console.log(`[${timestamp}] [SimpleSubscriptions] Data:`, JSON.stringify(data, null, 2));
-  }
-};
-
-// MAIN SERVE FUNCTION
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    log('Function started', { method: req.method, url: req.url });
-
-    // Check if Stripe key exists
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE');
-    if (!stripeKey) {
-      log('ERROR: STRIPE_SECRET_KEY_LIVE not found');
-      throw new Error('Stripe secret key not configured');
-    }
-    log('Stripe key found');
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      log('ERROR: Missing Supabase environment variables');
-      throw new Error('Supabase configuration missing');
-    }
-    log('Supabase config found');
-
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      log('ERROR: No authorization header');
-      throw new Error('Authorization header missing');
-    }
-    log('Auth header found');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const authHeader = req.headers.get('Authorization')!;
 
     // Create clients
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -61,144 +32,45 @@ serve(async (req) => {
     });
 
     // Get authenticated user
-    log('Getting authenticated user');
     const { data: { user }, error: authError } = await userSupabase.auth.getUser();
-    if (authError) {
-      log('Auth error:', authError);
-      throw new Error(`Authentication failed: ${authError.message}`);
-    }
-    if (!user) {
-      log('ERROR: No user found');
-      throw new Error('User not authenticated');
-    }
-    log('User authenticated', { userId: user.id, email: user.email });
-
-    // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      log('Request body parsed', requestBody);
-    } catch (parseError) {
-      log('ERROR: Failed to parse request body', parseError);
-      throw new Error('Invalid request body');
+    if (authError || !user) {
+      throw new Error('Authentication required');
     }
 
-    const { action, tierId, creatorId } = requestBody;
-    log('Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId);
+    const { action, tierId, creatorId, subscriptionId, paymentIntentId, immediate } = await req.json();
+    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate, '(LIVE MODE)');
 
-    if (action === 'create_subscription') {
-      // Basic validation
-      if (!tierId || !creatorId) {
-        log('ERROR: Missing required fields');
-        throw new Error('Missing tierId or creatorId');
-      }
+    let result;
 
-      // Check if tier exists
-      log('Checking if tier exists');
-      const { data: tier, error: tierError } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('id', tierId)
-        .single();
+    switch (action) {
+      case 'create_subscription':
+        result = await handleCreateSubscription(stripe, supabase, user, { tierId, creatorId });
+        break;
 
-      if (tierError) {
-        log('ERROR: Tier query failed', tierError);
-        throw new Error(`Failed to fetch tier: ${tierError.message}`);
-      }
+      case 'cancel_subscription':
+        result = await handleCancelSubscription(stripe, supabase, user, { tierId, creatorId, immediate });
+        break;
 
-      if (!tier) {
-        log('ERROR: Tier not found');
-        throw new Error('Membership tier not found');
-      }
+      case 'get_user_subscriptions':
+        result = await handleGetUserSubscriptions(supabase, user);
+        break;
 
-      log('Tier found', { tierTitle: tier.title, tierPrice: tier.price });
+      case 'get_creator_subscribers':
+        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId);
+        break;
 
-      // Check if user already has subscription to this creator
-      const { data: existingSub } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('creator_id', creatorId)
-        .eq('status', 'active')
-        .single();
-
-      if (existingSub) {
-        log('User already has active subscription');
-        return new Response(JSON.stringify({
-          error: 'You already have an active subscription to this creator',
-          shouldRefresh: true
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
-      // Create or get Stripe customer
-      log('Creating/getting Stripe customer');
-      const customers = await stripe.customers.list({
-        email: user.email,
-        limit: 1
-      });
-
-      let customerId;
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-        log('Found existing customer', { customerId });
-      } else {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          metadata: {
-            user_id: user.id
-          }
-        });
-        customerId = customer.id;
-        log('Created new customer', { customerId });
-      }
-
-      // Create payment intent for subscription
-      log('Creating payment intent for subscription');
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(tier.price * 100), // Convert to cents
-        currency: 'usd',
-        customer: customerId,
-        setup_future_usage: 'off_session',
-        metadata: {
-          user_id: user.id,
-          creator_id: creatorId,
-          tier_id: tierId,
-          type: 'subscription',
-        },
-      });
-
-      log('Payment intent created', { paymentIntentId: paymentIntent.id, clientSecret: paymentIntent.client_secret });
-
-      // Return data for custom payment page
-      return new Response(JSON.stringify({
-        success: true,
-        useCustomPaymentPage: true,
-        clientSecret: paymentIntent.client_secret,
-        amount: Math.round(tier.price * 100),
-        tierName: tier.title,
-        tierId: tierId,
-        creatorId: creatorId,
-        message: 'Redirecting to payment page...'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      default:
+        throw new Error('Invalid action');
     }
 
-    // Default response for other actions
-    return new Response(JSON.stringify({
-      message: 'Function reached end',
-      action: action
-    }), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    log('ERROR (LIVE MODE):', error);
+    console.error('[SimpleSubscriptions] Error (LIVE MODE):', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error',
-      debug: 'Check function logs for details'
+      error: error.message || 'Internal server error' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
