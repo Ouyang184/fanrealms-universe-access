@@ -133,16 +133,15 @@ serve(async (req) => {
         id: commissionRequest.id,
         title: commissionRequest.title,
         agreed_price: commissionRequest.agreed_price,
-        status: commissionRequest.status,
-        stripe_payment_intent_id: commissionRequest.stripe_payment_intent_id
+        status: commissionRequest.status
       });
     } catch (dbError) {
       console.error('Database operation failed:', dbError);
       throw new Error(`Database error: ${dbError.message || 'Unknown database error'}`);
     }
 
-    // Check if request is in correct status for payment - now allowing payment_pending for retries
-    if (!['pending', 'checkout_created', 'payment_pending', 'payment_failed'].includes(commissionRequest.status)) {
+    // Check if request is in correct status for payment
+    if (!['pending', 'checkout_created'].includes(commissionRequest.status)) {
       console.error('Commission request in wrong status:', commissionRequest.status);
       throw new Error(`Commission is in ${commissionRequest.status} status and cannot be paid`);
     }
@@ -153,34 +152,6 @@ serve(async (req) => {
     }
 
     console.log('Commission validation passed, proceeding with Stripe operations');
-
-    // Handle existing payment intent if present
-    let existingPaymentIntent = null;
-    if (commissionRequest.stripe_payment_intent_id) {
-      try {
-        console.log('Checking existing payment intent:', commissionRequest.stripe_payment_intent_id);
-        existingPaymentIntent = await stripe.paymentIntents.retrieve(commissionRequest.stripe_payment_intent_id);
-        console.log('Existing payment intent status:', existingPaymentIntent.status);
-        
-        // If existing payment intent is still usable, return it
-        if (['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(existingPaymentIntent.status)) {
-          console.log('Reusing existing payment intent');
-          return new Response(JSON.stringify({ 
-            client_secret: existingPaymentIntent.client_secret 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          });
-        }
-        
-        // If payment intent failed or was canceled, we'll create a new one
-        if (['canceled', 'payment_failed'].includes(existingPaymentIntent.status)) {
-          console.log('Previous payment intent failed, creating new one');
-        }
-      } catch (stripeError) {
-        console.log('Could not retrieve existing payment intent, creating new one:', stripeError.message);
-      }
-    }
 
     // Check if customer already exists in Stripe
     let customerId_stripe;
@@ -209,7 +180,7 @@ serve(async (req) => {
       throw new Error(`Stripe customer error: ${stripeError.message || 'Unknown Stripe error'}`);
     }
 
-    console.log('Creating new payment intent');
+    console.log('Creating payment intent');
 
     // Create payment intent with capture_method: 'manual' for authorization hold
     let paymentIntent;
