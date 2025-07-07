@@ -24,15 +24,42 @@ export async function handleCancelSubscription(
   }
 
   try {
-    // 1. Look up user subscription in Supabase
-    const { data: userSubscription, error: findError } = await supabaseService
+    // 1. Look up user subscription in Supabase - handle both cases
+    let userSubscription;
+    let findError;
+
+    // First try to find by stripe_subscription_id
+    const { data: subscriptionByStripeId, error: stripeIdError } = await supabaseService
       .from('user_subscriptions')
       .select('*')
       .eq('stripe_subscription_id', subscriptionId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (findError || !userSubscription) {
+    if (subscriptionByStripeId) {
+      userSubscription = subscriptionByStripeId;
+      console.log('Found subscription by Stripe ID');
+    } else {
+      console.log('No subscription found by Stripe ID, trying fallback lookup...');
+      
+      // Fallback: treat subscriptionId as our internal subscription ID
+      const { data: subscriptionById, error: internalIdError } = await supabaseService
+        .from('user_subscriptions')
+        .select('*')
+        .eq('id', subscriptionId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (subscriptionById) {
+        userSubscription = subscriptionById;
+        console.log('Found subscription by internal ID');
+      } else {
+        findError = internalIdError || 'No active subscription found';
+      }
+    }
+
+    if (!userSubscription) {
       console.error('Subscription not found:', findError || 'No matching record');
       return new Response(JSON.stringify({
         error: 'Subscription not found',
@@ -42,6 +69,13 @@ export async function handleCancelSubscription(
       });
     }
 
+    console.log('Found subscription:', {
+      id: userSubscription.id,
+      stripe_subscription_id: userSubscription.stripe_subscription_id,
+      creator_id: userSubscription.creator_id,
+      tier_id: userSubscription.tier_id
+    });
+
     // 2. Decide cancellation type
     const isImmediate = immediate === true || immediate === 'true' || immediate === 1;
 
@@ -49,21 +83,28 @@ export async function handleCancelSubscription(
       // === IMMEDIATE CANCELLATION ===
       console.log('=== EXECUTING IMMEDIATE CANCELLATION ===');
 
-      let cancelledSubscription;
-      try {
-        cancelledSubscription = await stripe.subscriptions.cancel(subscriptionId);
-      } catch (stripeError) {
-        console.error('Stripe immediate cancel error:', stripeError);
-        return new Response(JSON.stringify({
-          error: stripeError?.message || 'Stripe cancellation failed',
-        }), {
-          headers: corsHeaders,
-          status: stripeError?.statusCode || 502,
-        });
+      let cancelledSubscription = null;
+      
+      // Only try to cancel in Stripe if we have a Stripe subscription ID
+      if (userSubscription.stripe_subscription_id) {
+        try {
+          console.log('Cancelling Stripe subscription:', userSubscription.stripe_subscription_id);
+          cancelledSubscription = await stripe.subscriptions.cancel(userSubscription.stripe_subscription_id);
+          console.log('Successfully cancelled Stripe subscription');
+        } catch (stripeError) {
+          console.error('Stripe immediate cancel error:', stripeError);
+          return new Response(JSON.stringify({
+            error: stripeError?.message || 'Stripe cancellation failed',
+          }), {
+            headers: corsHeaders,
+            status: stripeError?.statusCode || 502,
+          });
+        }
+      } else {
+        console.log('No Stripe subscription ID found, skipping Stripe cancellation');
       }
 
-      console.log('Cancelled subscription:', cancelledSubscription.id);
-
+      // Always delete from our database for immediate cancellation
       const { error: deleteError } = await supabaseService
         .from('user_subscriptions')
         .delete()
@@ -83,7 +124,7 @@ export async function handleCancelSubscription(
         success: true,
         message: 'Subscription cancelled immediately',
         status: 'canceled',
-        canceled_at: cancelledSubscription.canceled_at,
+        canceled_at: cancelledSubscription?.canceled_at || new Date().toISOString(),
       }), {
         headers: corsHeaders,
         status: 200,
@@ -93,24 +134,38 @@ export async function handleCancelSubscription(
       // === DELAYED CANCELLATION ===
       console.log('=== EXECUTING DELAYED CANCELLATION ===');
 
-      let updatedSubscription;
-      try {
-        updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-          cancel_at_period_end: true,
-        });
-      } catch (stripeError) {
-        console.error('Stripe delayed cancel error:', stripeError);
-        return new Response(JSON.stringify({
-          error: stripeError?.message || 'Stripe update failed',
-        }), {
-          headers: corsHeaders,
-          status: stripeError?.statusCode || 502,
-        });
+      let updatedSubscription = null;
+      let currentPeriodEnd = userSubscription.current_period_end;
+
+      // Only try to update in Stripe if we have a Stripe subscription ID
+      if (userSubscription.stripe_subscription_id) {
+        try {
+          console.log('Updating Stripe subscription for delayed cancellation:', userSubscription.stripe_subscription_id);
+          updatedSubscription = await stripe.subscriptions.update(userSubscription.stripe_subscription_id, {
+            cancel_at_period_end: true,
+          });
+          currentPeriodEnd = new Date(updatedSubscription.current_period_end * 1000).toISOString();
+          console.log('Successfully updated Stripe subscription');
+        } catch (stripeError) {
+          console.error('Stripe delayed cancel error:', stripeError);
+          return new Response(JSON.stringify({
+            error: stripeError?.message || 'Stripe update failed',
+          }), {
+            headers: corsHeaders,
+            status: stripeError?.statusCode || 502,
+          });
+        }
+      } else {
+        console.log('No Stripe subscription ID found, updating local subscription only');
+        // For subscriptions without Stripe IDs, use the existing period end or default to 30 days
+        if (!currentPeriodEnd) {
+          currentPeriodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        }
       }
 
       const updateData = {
         cancel_at_period_end: true,
-        current_period_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
+        current_period_end: currentPeriodEnd,
         updated_at: new Date().toISOString(),
       };
 
@@ -129,11 +184,15 @@ export async function handleCancelSubscription(
         });
       }
 
+      const cancelAt = updatedSubscription ? 
+        updatedSubscription.current_period_end * 1000 : 
+        new Date(currentPeriodEnd).getTime();
+
       return new Response(JSON.stringify({
         success: true,
         message: 'Subscription will cancel at period end',
         status: 'active',
-        cancel_at: updatedSubscription.current_period_end * 1000,
+        cancel_at: cancelAt,
       }), {
         headers: corsHeaders,
         status: 200,

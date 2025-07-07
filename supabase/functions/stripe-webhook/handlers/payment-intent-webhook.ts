@@ -46,13 +46,60 @@ export async function handlePaymentIntentWebhook(
 
     console.log('[PaymentIntentWebhook] Tier details:', { tierName, tierPrice });
 
+    // Create a Stripe subscription for future management
+    let stripeSubscriptionId = null;
+    try {
+      console.log('[PaymentIntentWebhook] Creating Stripe subscription for customer:', paymentIntent.customer);
+      
+      // First, find or create a price for this tier
+      const priceData = {
+        currency: 'usd',
+        unit_amount: Math.round(tierPrice * 100), // Convert to cents
+        recurring: { interval: 'month' },
+        product_data: {
+          name: `${tierName} Membership`,
+          metadata: {
+            tier_id,
+            creator_id
+          }
+        },
+        metadata: {
+          tier_id,
+          creator_id
+        }
+      };
+
+      const stripePrice = await stripe.prices.create(priceData);
+      console.log('[PaymentIntentWebhook] Created Stripe price:', stripePrice.id);
+
+      // Create the subscription
+      const stripeSubscription = await stripe.subscriptions.create({
+        customer: paymentIntent.customer,
+        items: [{ price: stripePrice.id }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          user_id,
+          creator_id,
+          tier_id
+        }
+      });
+
+      stripeSubscriptionId = stripeSubscription.id;
+      console.log('[PaymentIntentWebhook] Created Stripe subscription:', stripeSubscriptionId);
+    } catch (subscriptionError) {
+      console.error('[PaymentIntentWebhook] Error creating Stripe subscription:', subscriptionError);
+      // Continue without Stripe subscription - the payment already succeeded
+    }
+
     // Create subscription record with active status
     const subscriptionData = {
       user_id,
       creator_id,
       tier_id,
       stripe_customer_id: paymentIntent.customer,
-      stripe_subscription_id: null, // Payment intent doesn't have subscription ID
+      stripe_subscription_id: stripeSubscriptionId,
       status: 'active',
       amount: tierPrice,
       current_period_start: new Date().toISOString(),
