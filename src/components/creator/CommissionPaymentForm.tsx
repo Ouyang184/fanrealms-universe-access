@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -49,33 +48,6 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// Configuration Error Component (rendered when Stripe is not configured)
-function StripeConfigurationError({ onCancel }: { onCancel: () => void }) {
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Configuration Error</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="flex items-center">
-            <AlertCircle className="mr-2 h-4 w-4 text-red-600" />
-            <h3 className="text-sm font-medium text-red-800">Stripe Not Configured</h3>
-          </div>
-          <p className="text-sm text-red-700 mt-2">
-            The VITE_STRIPE_PUBLISHABLE_KEY environment variable is not set. Please configure your Stripe keys to enable payments.
-          </p>
-        </div>
-        <div className="flex justify-between">
-          <Button variant="secondary" onClick={onCancel}>
-            Back
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDebugging, setIsDebugging] = useState(false);
@@ -85,6 +57,34 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
   const elements = useElements();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Check if Stripe is properly configured
+  const stripeKey = getStripePublishableKey();
+  if (!stripeKey) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Configuration Error</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex items-center">
+              <AlertCircle className="mr-2 h-4 w-4 text-red-600" />
+              <h3 className="text-sm font-medium text-red-800">Stripe Not Configured</h3>
+            </div>
+            <p className="text-sm text-red-700 mt-2">
+              The VITE_STRIPE_PUBLISHABLE_KEY environment variable is not set. Please configure your Stripe keys to enable payments.
+            </p>
+          </div>
+          <div className="flex justify-between">
+            <Button variant="secondary" onClick={onCancel}>
+              Back
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleDebug = async () => {
     if (!user) {
@@ -393,10 +393,9 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
 }
 
 export function CommissionPaymentForm(props: CommissionPaymentFormProps) {
-  // Check if Stripe is properly configured
-  const stripeKey = getStripePublishableKey();
-  if (!stripeKey || !stripePromise) {
-    return <StripeConfigurationError onCancel={props.onCancel} />;
+  // Check if Stripe is available before rendering Elements
+  if (!stripePromise) {
+    return <PaymentFormContent {...props} />;
   }
 
   return (
