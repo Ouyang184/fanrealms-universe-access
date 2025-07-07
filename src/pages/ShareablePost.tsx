@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { usePostViewTracking } from '@/hooks/usePostViews';
 
 export default function ShareablePost() {
-  const { creatorSlug, postId } = useParams<{ creatorSlug?: string; postId: string }>();
+  const { creatorSlug, postId } = useParams<{ creatorSlug: string; postId: string }>();
   const { user } = useAuth();
   const { recordView } = usePostViewTracking();
 

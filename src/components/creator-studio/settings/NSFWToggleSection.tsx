@@ -2,49 +2,17 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { CreatorSettings } from "@/types/creator-studio";
-import { useState, useEffect } from "react";
 
 interface NSFWToggleSectionProps {
-  settings: CreatorSettings | null;
+  settings: CreatorSettings;
   onSettingsChange: (name: string, value: boolean) => void;
-  onSave?: () => Promise<void>;
-  isSaving?: boolean;
-  hasChanges?: boolean;
 }
 
-export function NSFWToggleSection({ 
-  settings, 
-  onSettingsChange, 
-  onSave, 
-  isSaving = false, 
-  hasChanges = false 
-}: NSFWToggleSectionProps) {
-  const [localNSFW, setLocalNSFW] = useState(false);
-
-  // Update local state when settings change
-  useEffect(() => {
-    if (settings) {
-      setLocalNSFW(settings.is_nsfw || false);
-    }
-  }, [settings]);
-
-  // Don't render if settings is null
-  if (!settings) {
-    return null;
-  }
-
+export function NSFWToggleSection({ settings, onSettingsChange }: NSFWToggleSectionProps) {
   const handleToggle = (checked: boolean) => {
-    setLocalNSFW(checked);
     onSettingsChange('is_nsfw', checked);
-  };
-
-  const handleSave = async () => {
-    if (onSave) {
-      await onSave();
-    }
   };
 
   return (
@@ -70,13 +38,12 @@ export function NSFWToggleSection({
           </div>
           <Switch
             id="nsfw-toggle"
-            checked={localNSFW}
+            checked={settings.is_nsfw || false}
             onCheckedChange={handleToggle}
-            disabled={isSaving}
           />
         </div>
         
-        {localNSFW && (
+        {settings.is_nsfw && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -90,18 +57,6 @@ export function NSFWToggleSection({
                 </ul>
               </div>
             </div>
-          </div>
-        )}
-
-        {hasChanges && onSave && (
-          <div className="flex justify-end pt-4 border-t">
-            <Button 
-              onClick={handleSave} 
-              disabled={isSaving}
-              size="sm"
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
           </div>
         )}
       </CardContent>

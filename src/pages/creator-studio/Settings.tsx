@@ -17,13 +17,10 @@ export default function CreatorStudioSettings() {
   const { settings, isLoading, updateSettings, uploadProfileImage, isUploading } = useCreatorSettings();
   const [profileData, setProfileData] = useState<CreatorSettingsData | null>(null);
   const [bannerData, setBannerData] = useState<CreatorSettingsData | null>(null);
-  const [nsfwData, setNsfwData] = useState<CreatorSettingsData | null>(null);
   const [profileHasChanges, setProfileHasChanges] = useState(false);
   const [bannerHasChanges, setBannerHasChanges] = useState(false);
-  const [nsfwHasChanges, setNsfwHasChanges] = useState(false);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isBannerSaving, setIsBannerSaving] = useState(false);
-  const [isNsfwSaving, setIsNsfwSaving] = useState(false);
   const { toast } = useToast();
 
   // Initialize data when settings load
@@ -31,10 +28,8 @@ export default function CreatorStudioSettings() {
     if (settings) {
       setProfileData({ ...settings });
       setBannerData({ ...settings });
-      setNsfwData({ ...settings });
       setProfileHasChanges(false);
       setBannerHasChanges(false);
-      setNsfwHasChanges(false);
     }
   }, [settings]);
 
@@ -57,14 +52,6 @@ export default function CreatorStudioSettings() {
       setBannerHasChanges(hasBannerChanges);
     }
   }, [bannerData, settings]);
-
-  // Track NSFW changes
-  useEffect(() => {
-    if (nsfwData && settings) {
-      const hasNsfwChanges = nsfwData.is_nsfw !== settings.is_nsfw;
-      setNsfwHasChanges(hasNsfwChanges);
-    }
-  }, [nsfwData, settings]);
 
   if (isLoading) {
     return (
@@ -94,12 +81,6 @@ export default function CreatorStudioSettings() {
   const handleBannerUpdate = (bannerUrl: string) => {
     if (bannerData) {
       setBannerData({ ...bannerData, banner_url: bannerUrl });
-    }
-  };
-
-  const handleNsfwSettingsChange = (name: string, value: boolean) => {
-    if (nsfwData) {
-      setNsfwData({ ...nsfwData, [name]: value });
     }
   };
 
@@ -175,32 +156,6 @@ export default function CreatorStudioSettings() {
     }
   };
 
-  const handleNsfwSave = async () => {
-    if (!nsfwHasChanges || !nsfwData) return;
-
-    setIsNsfwSaving(true);
-    try {
-      await updateSettings({
-        is_nsfw: nsfwData.is_nsfw,
-      } as Partial<CreatorSettingsData>);
-      
-      setNsfwHasChanges(false);
-      toast({
-        title: "Content rating saved",
-        description: "Your content rating has been updated successfully.",
-      });
-    } catch (error) {
-      console.error('Failed to save NSFW setting:', error);
-      toast({
-        title: "Error saving content rating",
-        description: "Failed to save your content rating. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsNsfwSaving(false);
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-8">
       <div>
@@ -243,11 +198,10 @@ export default function CreatorStudioSettings() {
 
         {/* NSFW Content Toggle */}
         <NSFWToggleSection 
-          settings={nsfwData as CreatorSettingsData}
-          onSettingsChange={handleNsfwSettingsChange}
-          onSave={handleNsfwSave}
-          isSaving={isNsfwSaving}
-          hasChanges={nsfwHasChanges}
+          settings={settings}
+          onSettingsChange={(name, value) => {
+            // Handle NSFW toggle separately since it's independent
+          }}
         />
 
         <Separator />

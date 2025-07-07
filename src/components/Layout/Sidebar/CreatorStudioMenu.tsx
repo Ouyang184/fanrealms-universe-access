@@ -10,8 +10,7 @@ import {
   ChevronDown,
   PlusCircle,
   User,
-  Bell,
-  Palette
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,7 +48,6 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
     { path: "/creator-studio/notifications", icon: Bell, label: "Notifications" },
     { path: "/creator-studio/membership-tiers", icon: Award, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: UserCheck, label: "Subscribers" },
-    { path: "/creator-studio/commissions", icon: Palette, label: "Commissions" },
     { path: "/creator-studio/payouts", icon: DollarSign, label: "Payouts" },
     { path: "/creator-studio/creator-profile", icon: User, label: "Creator Profile" },
     { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },

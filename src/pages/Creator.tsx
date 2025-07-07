@@ -11,7 +11,6 @@ import { CreatorHeader } from "@/components/creator/CreatorHeader";
 import { CreatorPosts } from "@/components/creator/CreatorPosts";
 import { CreatorMembership } from "@/components/creator/CreatorMembership";
 import { CreatorAbout } from "@/components/creator/CreatorAbout";
-import { CreatorCommissions } from "@/components/creator/CreatorCommissions";
 import { toast } from "@/hooks/use-toast";
 
 const CreatorPage: React.FC = () => {
@@ -45,7 +44,7 @@ const CreatorPage: React.FC = () => {
   // Check for tab query parameter and set active tab
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['posts', 'membership', 'commissions', 'about'].includes(tabParam)) {
+    if (tabParam && ['posts', 'membership', 'about'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams, setActiveTab]);
@@ -87,12 +86,14 @@ const CreatorPage: React.FC = () => {
   const handleUnfollow = async () => {
     if (creator?.id) {
       console.log("Unfollow button clicked");
+      // Fix: Remove the second argument that was causing the error
       await unfollowCreator(creator.id);
     }
   };
 
   const handleNavigateToAbout = () => {
     setActiveTab("about");
+    // Scroll to the tabs section after a short delay to ensure the tab content is rendered
     setTimeout(() => {
       const tabsElement = document.querySelector('[role="tablist"]');
       if (tabsElement) {
@@ -146,10 +147,9 @@ const CreatorPage: React.FC = () => {
         <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
           <div className="px-6 py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 max-w-lg mx-auto h-11">
+              <TabsList className="grid grid-cols-3 max-w-md mx-auto h-11">
                 <TabsTrigger value="posts" className="text-sm font-medium">Posts</TabsTrigger>
                 <TabsTrigger value="membership" className="text-sm font-medium">Membership</TabsTrigger>
-                <TabsTrigger value="commissions" className="text-sm font-medium">Commissions</TabsTrigger>
                 <TabsTrigger value="about" className="text-sm font-medium">About</TabsTrigger>
               </TabsList>
               
@@ -162,12 +162,6 @@ const CreatorPage: React.FC = () => {
               <TabsContent value="membership" className="pt-6 px-0">
                 <div className="px-6">
                   <CreatorMembership creatorId={creator?.id || ''} />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="commissions" className="pt-6 px-0">
-                <div className="px-6">
-                  <CreatorCommissions creator={creator} />
                 </div>
               </TabsContent>
               

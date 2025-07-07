@@ -7,8 +7,7 @@ import {
   Settings,
   Home,
   Rss,
-  Users,
-  FileText
+  Users
 } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
@@ -40,7 +39,6 @@ export function NavigationMenu({ collapsed = false, onMobileNavClick }: Navigati
     { icon: Users, label: 'Following', path: '/following' },
     { icon: GalleryHorizontal, label: 'Explore', path: '/explore' },
     { icon: MessageSquare, label: 'Direct Messages', path: '/messages' },
-    { icon: FileText, label: 'Requests', path: '/requests' },
     { icon: ShoppingCart, label: 'Purchases', path: '/purchases' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
