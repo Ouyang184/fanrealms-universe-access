@@ -37,7 +37,6 @@ import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
 import Commissions from "./pages/creator-studio/Commissions";
 import PaymentPage from "./pages/Payment";
-import PaymentSuccess from "./pages/PaymentSuccess";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
 import AllCreatorsPage from "./pages/AllCreators";
@@ -109,9 +108,8 @@ export default function App() {
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
                 
-                {/* Payment routes */}
+                {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
                 
                 {/* Direct post route - must come before creator profile route */}
                 <Route path="/post/:postId" element={<ShareablePost />} />
