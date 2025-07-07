@@ -32,7 +32,7 @@ export function usePaymentProcessing({
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const verifySubscriptionInDB = async (maxRetries = 10, retryDelay = 1500) => {
+  const verifySubscriptionInDB = async (maxRetries = 12, retryDelay = 2000) => {
     console.log('===== STARTING SUBSCRIPTION VERIFICATION =====');
     console.log('Looking for subscription with:', { tierId, creatorId });
     
@@ -40,17 +40,7 @@ export function usePaymentProcessing({
       try {
         console.log(`===== VERIFICATION ATTEMPT ${i + 1}/${maxRetries} =====`);
         
-        // First, check all subscriptions for this user to see what's in the DB
-        const { data: allUserSubs, error: allSubsError } = await supabase
-          .from('user_subscriptions')
-          .select('*');
-          
-        console.log('All user subscriptions in DB:', JSON.stringify(allUserSubs, null, 2));
-        if (allSubsError) {
-          console.error('Error fetching all subscriptions:', allSubsError);
-        }
-        
-        // Now check specifically for our subscription
+        // Check specifically for our subscription
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -126,43 +116,31 @@ export function usePaymentProcessing({
         // Clear the cache since payment succeeded
         clearSubscriptionCache(tierId, creatorId);
         
-        const successMessage = isUpgrade 
-          ? `Successfully upgraded to ${tierName}!`
-          : `Payment successful! Processing your subscription to ${tierName}...`;
-        
+        // Show immediate success notification
         toast({
-          title: isUpgrade ? "Upgrade Successful!" : "Payment Successful!",
-          description: successMessage,
+          title: "🎉 Payment Successful!",
+          description: isUpgrade 
+            ? `Payment confirmed! Processing your upgrade to ${tierName}...`
+            : `Payment confirmed! Activating your subscription to ${tierName}...`,
+          duration: 4000,
         });
 
         console.log('Waiting for webhook processing...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         const verified = await verifySubscriptionInDB();
         
         if (verified) {
           console.log('Subscription verified in database');
           
-          triggerSubscriptionSuccess({
-            tierId,
-            creatorId,
-            paymentIntentId: paymentIntent.id
-          });
-          
-          await invalidateAllSubscriptionQueries();
-          
+          // Show success notification
           toast({
-            title: isUpgrade ? "Upgrade Complete!" : "Subscription Active!",
+            title: "✅ Subscription Activated!",
             description: isUpgrade 
-              ? `You've successfully upgraded to ${tierName}`
-              : `You've successfully subscribed to ${tierName}`,
+              ? `Successfully upgraded to ${tierName}! Your new benefits are now active.`
+              : `Successfully subscribed to ${tierName}! Welcome aboard!`,
+            duration: 6000,
           });
-
-          setTimeout(() => {
-            navigate('/subscriptions');
-          }, 1500);
-        } else {
-          console.warn('Payment succeeded but subscription not found in database');
           
           triggerSubscriptionSuccess({
             tierId,
@@ -171,15 +149,31 @@ export function usePaymentProcessing({
           });
           
           await invalidateAllSubscriptionQueries();
-          
-          toast({
-            title: "Payment Processed",
-            description: "Your payment was successful. Your subscription should be active shortly. Please check your subscriptions page.",
-          });
 
           setTimeout(() => {
             navigate('/subscriptions');
           }, 2000);
+        } else {
+          console.warn('Payment succeeded but subscription not found in database');
+          
+          // Still show success but with note about delay
+          toast({
+            title: "💳 Payment Processed",
+            description: "Your payment was successful! Your subscription should be active shortly. Please check your subscriptions page.",
+            duration: 8000,
+          });
+          
+          triggerSubscriptionSuccess({
+            tierId,
+            creatorId,
+            paymentIntentId: paymentIntent.id
+          });
+          
+          await invalidateAllSubscriptionQueries();
+
+          setTimeout(() => {
+            navigate('/subscriptions');
+          }, 3000);
         }
         
         setIsVerifying(false);
