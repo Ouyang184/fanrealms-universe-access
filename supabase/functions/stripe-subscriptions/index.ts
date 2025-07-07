@@ -24,22 +24,22 @@ serve(async (req) => {
     console.log('Stripe subscriptions action:', action);
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Use TEST keys consistently
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    // Use LIVE keys consistently
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE');
     
     if (!stripeSecretKey) {
-      console.error('STRIPE_SECRET_KEY_TEST not found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));
+      console.error('STRIPE_SECRET_KEY_LIVE not found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));
       return new Response(JSON.stringify({ 
-        error: 'Stripe test secret key not configured' 
+        error: 'Stripe live secret key not configured' 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
 
-    console.log('Using Stripe TEST key starting with:', stripeSecretKey.substring(0, 12) + '...');
+    console.log('Using Stripe LIVE key starting with:', stripeSecretKey.substring(0, 12) + '...');
 
-    // Initialize Stripe with TEST key
+    // Initialize Stripe with LIVE key
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
