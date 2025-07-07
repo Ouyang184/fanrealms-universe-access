@@ -147,10 +147,11 @@ export const useSimpleSubscriptionCheck = (tierId?: string, creatorId?: string) 
       };
     },
     enabled: !!user?.id && !!tierId && !!creatorId,
-    staleTime: 5000, // 5 seconds - shorter cache for real-time updates
+    staleTime: 0, // Force refresh - no cache for subscription updates
     gcTime: 15000,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    refetchInterval: 10000, // Refetch every 10 seconds
   });
 
   return {
