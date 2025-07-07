@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -93,31 +94,7 @@ serve(async (req) => {
 
     console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
 
-    // Handle subscription-related webhooks FIRST - these are critical for subscription creation
-    if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
-      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
-      try {
-        const result = await handleSubscriptionWebhook(event, supabase, stripe);
-        console.log('Subscription webhook result:', result);
-        
-        // If this was a subscription creation/update, return the result immediately
-        if (event.type === 'customer.subscription.created' || 
-            event.type === 'customer.subscription.updated') {
-          return result;
-        }
-      } catch (error) {
-        console.error('Subscription webhook error:', error);
-        return new Response(JSON.stringify({ 
-          error: 'Subscription webhook failed',
-          details: error.message 
-        }), { 
-          status: 500, 
-          headers: corsHeaders 
-        });
-      }
-    }
-
-    // Handle payment intent webhooks for custom payment flow
+    // Handle payment intent webhooks FIRST - these are critical for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
       console.log('===== PAYMENT INTENT SUCCEEDED WEBHOOK RECEIVED =====');
       console.log('Event ID:', event.id);
@@ -128,8 +105,35 @@ serve(async (req) => {
       try {
         const result = await handlePaymentIntentWebhook(event, supabase, stripe);
         console.log('Payment intent webhook result:', result);
+        return result;
       } catch (error) {
         console.error('Payment intent webhook error:', error);
+        return new Response(JSON.stringify({ 
+          error: 'Payment intent webhook failed',
+          details: error.message 
+        }), { 
+          status: 500, 
+          headers: corsHeaders 
+        });
+      }
+    }
+
+    // Handle subscription-related webhooks 
+    if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
+      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
+      try {
+        const result = await handleSubscriptionWebhook(event, supabase, stripe);
+        console.log('Subscription webhook result:', result);
+        return result;
+      } catch (error) {
+        console.error('Subscription webhook error:', error);
+        return new Response(JSON.stringify({ 
+          error: 'Subscription webhook failed',
+          details: error.message 
+        }), { 
+          status: 500, 
+          headers: corsHeaders 
+        });
       }
     }
 
@@ -145,7 +149,6 @@ serve(async (req) => {
 
     // Handle commission-related webhooks
     if (event.type === 'payment_intent.canceled' || 
-        event.type === 'payment_intent.succeeded' || 
         event.type === 'charge.refunded') {
       console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
       try {
@@ -172,46 +175,6 @@ serve(async (req) => {
         await handleProductWebhook(event, supabase);
       } catch (error) {
         console.error('Product webhook error:', error);
-      }
-    }
-
-    // Keep existing invoice payment handling for earnings
-    if (event.type === 'invoice.payment_succeeded') {
-      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED FOR EARNINGS (LIVE MODE) ===');
-      
-      const invoice = event.data.object as any;
-      console.log('Processing invoice payment succeeded:', invoice.id, '(LIVE MODE)');
-
-      let subscriptionId = invoice.subscription;
-      
-      if (subscriptionId) {
-        const amountPaid = invoice.amount_paid / 100;
-        const platformFee = amountPaid * 0.05;
-        const creatorEarnings = amountPaid - platformFee;
-        
-        console.log('Payment details (LIVE MODE):', { amountPaid, platformFee, creatorEarnings });
-
-        try {
-          // Record the payment in creator_earnings
-          const { error: earningsError } = await supabase
-            .from('creator_earnings')
-            .insert({
-              creator_id: invoice.metadata?.creator_id,
-              subscription_id: subscriptionId,
-              amount: amountPaid,
-              platform_fee: platformFee,
-              net_amount: creatorEarnings,
-              payment_date: new Date().toISOString()
-            });
-
-          if (earningsError) {
-            console.error('Error recording creator earnings (LIVE MODE):', earningsError);
-          } else {
-            console.log('Successfully recorded creator earnings (LIVE MODE)');
-          }
-        } catch (error) {
-          console.error('Creator earnings processing error:', error);
-        }
       }
     }
 
