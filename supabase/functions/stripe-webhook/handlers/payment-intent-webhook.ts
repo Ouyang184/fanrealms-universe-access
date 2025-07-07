@@ -29,10 +29,10 @@ export async function handlePaymentIntentWebhook(
   }
 
   try {
-    // Get tier details to ensure we have proper pricing and Stripe price ID
+    // Get tier details to ensure we have proper pricing
     const { data: tierData, error: tierError } = await supabaseService
       .from('membership_tiers')
-      .select('title, price, stripe_price_id')
+      .select('title, price')
       .eq('id', tier_id)
       .single();
 
@@ -43,63 +43,20 @@ export async function handlePaymentIntentWebhook(
 
     const tierPrice = tierData?.price || 5;
     const tierName = tierData?.title || 'Unknown Tier';
-    let stripePriceId = tierData?.stripe_price_id;
 
-    console.log('[PaymentIntentWebhook] Tier details:', { tierName, tierPrice, stripePriceId });
+    console.log('[PaymentIntentWebhook] Tier details:', { tierName, tierPrice });
 
-    // Create Stripe price if it doesn't exist
-    if (!stripePriceId) {
-      console.log('[PaymentIntentWebhook] Creating Stripe price for tier:', tierName);
-      const price = await stripe.prices.create({
-        unit_amount: Math.round(tierPrice * 100),
-        currency: 'usd',
-        recurring: { interval: 'month' },
-        product_data: {
-          name: tierName,
-          description: `${tierName} membership`
-        }
-      });
-      
-      stripePriceId = price.id;
-      
-      // Update tier with stripe price ID
-      await supabaseService
-        .from('membership_tiers')
-        .update({ stripe_price_id: stripePriceId })
-        .eq('id', tier_id);
-      
-      console.log('[PaymentIntentWebhook] Created and saved Stripe price:', stripePriceId);
-    }
-
-    // NOW CREATE THE ACTUAL STRIPE SUBSCRIPTION
-    console.log('[PaymentIntentWebhook] Creating Stripe subscription for customer:', paymentIntent.customer);
-    
-    const stripeSubscription = await stripe.subscriptions.create({
-      customer: paymentIntent.customer,
-      items: [{ price: stripePriceId }],
-      metadata: {
-        user_id,
-        creator_id,
-        tier_id,
-        tier_name: tierName,
-        type: 'subscription'
-      },
-      expand: ['latest_invoice.payment_intent']
-    });
-
-    console.log('[PaymentIntentWebhook] Stripe subscription created:', stripeSubscription.id);
-
-    // Create subscription record with Stripe subscription ID
+    // Create subscription record with active status
     const subscriptionData = {
       user_id,
       creator_id,
       tier_id,
       stripe_customer_id: paymentIntent.customer,
-      stripe_subscription_id: stripeSubscription.id,
+      stripe_subscription_id: null, // Payment intent doesn't have subscription ID
       status: 'active',
       amount: tierPrice,
-      current_period_start: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+      current_period_start: new Date().toISOString(),
+      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
       cancel_at_period_end: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
