@@ -69,7 +69,7 @@ export async function handleCreateSubscription(
 
   // Get tier and creator details
   console.log('Fetching tier and creator details...');
-  const { data: tier, error: tierError } = await supabase
+  const { data: tier, error: tierError } = await supabaseService
     .from('membership_tiers')
     .select(`
       *,
