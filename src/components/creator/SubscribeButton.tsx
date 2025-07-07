@@ -54,27 +54,12 @@ export function SubscribeButton({
     );
   }
 
-  // FIXED: Check subscription status properly
+  // FIXED: Check subscription status properly - ONLY consider 'active' status as subscribed
   const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
   
-  // Check if user has an active subscription (including those scheduled to cancel but still in period)
-  if (subscription && (subscription.status === 'active' || subscription.isActive)) {
+  // Check if user has an active subscription - MUST be 'active' status
+  if (subscription && subscription.status === 'active') {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
-    return (
-      <SubscribedButton
-        tierName={tierName}
-        subscriptionData={subscription}
-        tierId={tierId}
-        creatorId={creatorId}
-        onOptimisticUpdate={onOptimisticUpdate}
-        onSubscriptionSuccess={onSubscriptionSuccess}
-      />
-    );
-  }
-
-  // Fallback check for isUserSubscribed
-  if (isUserSubscribed) {
-    console.log('[SubscribeButton] Showing SubscribedButton - fallback for subscribed user');
     return (
       <SubscribedButton
         tierName={tierName}

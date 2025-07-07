@@ -79,6 +79,7 @@ export function SubscribedButton({
     if (subscription?.current_period_end) {
       return formatCancelDate(subscription.current_period_end);
     }
+    // If no current_period_end, calculate next month from now
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     return formatCancelDate(nextMonth.toISOString());
