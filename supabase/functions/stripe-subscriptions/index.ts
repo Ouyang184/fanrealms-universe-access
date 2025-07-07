@@ -21,11 +21,10 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
     
-    console.log('=== STRIPE SUBSCRIPTIONS FUNCTION CALLED ===');
     console.log('Stripe subscriptions action:', action);
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Get Stripe secret key - prioritize test key for development
+    // Get Stripe secret key - check both test and live keys
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 
                            Deno.env.get('STRIPE_SECRET_KEY_TEST') || 
                            Deno.env.get('STRIPE_SECRET_KEY_LIVE');
@@ -55,11 +54,9 @@ serve(async (req) => {
 
     // Authenticate user for most actions
     const user = await authenticateUser(req, supabaseService);
-    console.log('User authenticated:', user.id, user.email);
 
     switch (action) {
       case 'create_subscription':
-        console.log('Processing create_subscription action');
         return await handleCreateSubscription(stripe, supabaseService, user, body);
 
       case 'cancel_subscription': {
@@ -98,16 +95,13 @@ serve(async (req) => {
       }
 
       default:
-        console.log('Invalid action received:', action);
         return new Response(JSON.stringify({ error: 'Invalid action' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
         });
     }
   } catch (error) {
-    console.error('=== STRIPE SUBSCRIPTIONS FUNCTION ERROR ===');
-    console.error('Error:', error);
-    console.error('Error message:', error.message);
+    console.error('Stripe subscriptions error:', error);
     console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
