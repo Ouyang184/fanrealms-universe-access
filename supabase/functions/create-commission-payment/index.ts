@@ -20,7 +20,6 @@ serve(async (req) => {
     console.log('Request data:', { commissionId, customerId });
 
     if (!commissionId) {
-      console.error('Missing commission ID');
       throw new Error('Commission ID is required');
     }
 
@@ -35,18 +34,16 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase - use anon key first for user authentication
+    // Initialize Supabase with proper environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables');
       throw new Error('Database service configuration error');
     }
 
-    // Create client with anon key for user authentication
-    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
@@ -56,7 +53,7 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
       console.error('Authentication failed:', authError);
@@ -64,9 +61,6 @@ serve(async (req) => {
     }
 
     console.log('User authenticated:', user.id);
-
-    // Now use service role key for database operations to bypass RLS if needed
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch commission request details
     const { data: commissionRequest, error: commissionError } = await supabaseService
@@ -81,6 +75,7 @@ serve(async (req) => {
       `)
       .eq('id', commissionId)
       .eq('customer_id', user.id)
+      .eq('status', 'pending')
       .single();
 
     if (commissionError || !commissionRequest) {
@@ -95,14 +90,7 @@ serve(async (req) => {
       status: commissionRequest.status
     });
 
-    // Check if request is in correct status for payment
-    if (!['pending', 'checkout_created'].includes(commissionRequest.status)) {
-      console.error('Commission request in wrong status:', commissionRequest.status);
-      throw new Error(`Commission is in ${commissionRequest.status} status and cannot be paid`);
-    }
-
     if (!commissionRequest.agreed_price) {
-      console.error('No agreed price set');
       throw new Error('No agreed price set for this commission');
     }
 
@@ -126,8 +114,6 @@ serve(async (req) => {
       console.error('No origin header found');
       throw new Error('Invalid request origin');
     }
-
-    console.log('Creating Stripe checkout session with origin:', origin);
 
     // Create Stripe checkout session for standard one-time payment
     const session = await stripe.checkout.sessions.create({
