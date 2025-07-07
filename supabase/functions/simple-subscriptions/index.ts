@@ -10,9 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use LIVE Stripe keys consistently
+// Use TEST Stripe keys for development
 const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || ''
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') || ''
 );
 
 serve(async (req) => {

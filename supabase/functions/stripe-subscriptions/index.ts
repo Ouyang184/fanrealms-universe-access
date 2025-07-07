@@ -35,8 +35,8 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
-    // Validate environment variables
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+    // Validate environment variables - using TEST key for development
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
