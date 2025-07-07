@@ -1,11 +1,13 @@
 
 import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
-import { stripePromise, isStripeConfigured } from '@/lib/stripe';
+import { loadStripe } from '@stripe/stripe-js';
 import { useLocation } from 'react-router-dom';
 import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
+
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
 
 export default function Payment() {
   const location = useLocation();
@@ -44,17 +46,6 @@ export default function Payment() {
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Payment Error</h1>
           <p className="text-gray-400">No payment information found. Please try subscribing again.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isStripeConfigured()) {
-    return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Payment Configuration Error</h1>
-          <p className="text-gray-400">Stripe publishable key is missing. Please check your environment configuration.</p>
         </div>
       </div>
     );
