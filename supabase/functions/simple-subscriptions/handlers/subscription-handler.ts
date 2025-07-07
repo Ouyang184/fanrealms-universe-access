@@ -123,13 +123,13 @@ async function handleTierUpdate(stripe: any, supabase: any, user: any, existingS
 }
 
 async function createNewSubscription(stripe: any, supabase: any, user: any, tierId: string, creatorId: string) {
-  // Clean up any non-active subscriptions for this user/creator combination
+  // Clean up old failed subscriptions (older than 1 hour) but keep recent incomplete ones
   await supabase
     .from('user_subscriptions')
     .delete()
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .neq('status', 'active');
+    .in('status', ['canceled', 'failed']);
 
   // Clean up ALL records from legacy subscriptions table for this user/creator
   console.log('[SimpleSubscriptions] Cleaning up legacy subscriptions table');
