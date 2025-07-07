@@ -196,12 +196,14 @@ export async function handlePaymentIntentWebhook(
         }
       }
 
-      // Create the subscription in Stripe
+      // Create the subscription in Stripe as active (since payment already succeeded)
       const subscription = await stripe.subscriptions.create({
         customer: paymentIntent.customer,
         items: [{ price: stripePriceId }],
         default_payment_method: paymentMethod.id,
         expand: ['latest_invoice.payment_intent'],
+        collection_method: 'charge_automatically',
+        payment_behavior: 'allow_incomplete',
         metadata: {
           user_id,
           creator_id,
