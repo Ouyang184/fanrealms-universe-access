@@ -19,9 +19,13 @@ export async function handlePaymentIntentWebhook(
     return createJsonResponse({ success: true });
   }
 
-  // Check if this is a subscription setup payment
-  if (paymentIntent.metadata.type !== 'subscription_setup') {
-    console.log('[PaymentIntentHandler] Not a subscription setup payment, skipping');
+  // Check if this is a subscription setup payment OR if it's linked to a subscription
+  const isSubscriptionPayment = paymentIntent.metadata.type === 'subscription_setup' || 
+                                paymentIntent.invoice || 
+                                paymentIntent.description?.includes('subscription');
+  
+  if (!isSubscriptionPayment) {
+    console.log('[PaymentIntentHandler] Not a subscription-related payment, skipping');
     return createJsonResponse({ success: true });
   }
 
@@ -125,22 +129,42 @@ export async function handlePaymentIntentWebhook(
       }
 
     } else {
-      // Handle new subscription: Create new Stripe subscription
+      // Handle new subscription: Check if subscription already exists from invoice
       console.log('[PaymentIntentHandler] Processing new subscription');
 
-      // Check if subscription already exists to avoid duplicates
-      const { data: existingRecord, error: checkError } = await supabaseService
-        .from('user_subscriptions')
-        .select('*')
-        .eq('user_id', user_id)
-        .eq('creator_id', creator_id)
-        .eq('tier_id', tier_id)
-        .single();
+      // First, check if this payment intent is linked to an existing subscription
+      let existingStripeSubscriptionId = null;
+      
+      if (paymentIntent.invoice) {
+        console.log('[PaymentIntentHandler] Payment has invoice, fetching subscription:', paymentIntent.invoice);
+        try {
+          const invoice = await stripe.invoices.retrieve(paymentIntent.invoice);
+          existingStripeSubscriptionId = invoice.subscription;
+          console.log('[PaymentIntentHandler] Found subscription from invoice:', existingStripeSubscriptionId);
+        } catch (invoiceError) {
+          console.error('[PaymentIntentHandler] Error fetching invoice:', invoiceError);
+        }
+      }
 
-      if (!checkError && existingRecord) {
-        console.log('[PaymentIntentHandler] Subscription record already exists, updating status to active:', existingRecord.id);
+      // Check if subscription record already exists in database
+      let existingRecord = null;
+      if (existingStripeSubscriptionId) {
+        const { data: dbRecord, error: checkError } = await supabaseService
+          .from('user_subscriptions')
+          .select('*')
+          .eq('stripe_subscription_id', existingStripeSubscriptionId)
+          .single();
         
-        // Update existing record to active
+        if (!checkError && dbRecord) {
+          existingRecord = dbRecord;
+          console.log('[PaymentIntentHandler] Found existing database record:', existingRecord.id);
+        }
+      }
+
+      // If we have an existing record, just update it to active
+      if (existingRecord) {
+        console.log('[PaymentIntentHandler] Updating existing subscription to active:', existingRecord.id);
+        
         const { error: updateError } = await supabaseService
           .from('user_subscriptions')
           .update({ 
@@ -158,77 +182,48 @@ export async function handlePaymentIntentWebhook(
         return createJsonResponse({ success: true });
       }
 
-      // Use existing Stripe price ID or create one if it doesn't exist
-      let stripePriceId = tier.stripe_price_id;
+      // If no existing subscription, we need to create one (this shouldn't happen with proper Stripe checkout)
+      console.log('[PaymentIntentHandler] No existing subscription found, this indicates a checkout flow issue');
       
-      if (!stripePriceId) {
-        console.log('[PaymentIntentHandler] Creating new Stripe price for tier:', tier.title);
-        
-        try {
-          const price = await stripe.prices.create({
-            unit_amount: Math.round(tier.price * 100),
-            currency: 'usd',
-            recurring: { interval: 'month' },
-            product_data: { 
-              name: tier.title,
-              metadata: {
-                tier_id: tier_id,
-                creator_id: creator_id
-              }
-            }
-          });
-          stripePriceId = price.id;
-          console.log('[PaymentIntentHandler] Created new price:', stripePriceId);
-
-          // Update tier with the new stripe_price_id
-          await supabaseService
-            .from('membership_tiers')
-            .update({ 
-              stripe_price_id: stripePriceId,
-              stripe_product_id: price.product 
-            })
-            .eq('id', tier_id);
-            
-          console.log('[PaymentIntentHandler] Updated tier with new price and product IDs');
-        } catch (priceError) {
-          console.error('[PaymentIntentHandler] Error creating price:', priceError);
-          throw new Error('Failed to create Stripe price');
+      // Get Stripe subscription by customer and check recent subscriptions
+      const recentSubscriptions = await stripe.subscriptions.list({
+        customer: paymentIntent.customer,
+        limit: 5,
+        created: {
+          gte: Math.floor(Date.now() / 1000) - 3600, // Last hour
+        }
+      });
+      
+      let targetSubscription = null;
+      for (const sub of recentSubscriptions.data) {
+        if (sub.metadata.user_id === user_id && 
+            sub.metadata.creator_id === creator_id && 
+            sub.metadata.tier_id === tier_id) {
+          targetSubscription = sub;
+          console.log('[PaymentIntentHandler] Found matching recent subscription:', sub.id);
+          break;
         }
       }
 
-      // Create the subscription in Stripe as active (since payment already succeeded)
-      const subscription = await stripe.subscriptions.create({
-        customer: paymentIntent.customer,
-        items: [{ price: stripePriceId }],
-        default_payment_method: paymentMethod.id,
-        expand: ['latest_invoice.payment_intent'],
-        collection_method: 'charge_automatically',
-        payment_behavior: 'allow_incomplete',
-        metadata: {
-          user_id,
-          creator_id,
-          tier_id,
-          tier_name,
-          creator_name
-        }
-      });
+      if (!targetSubscription) {
+        console.error('[PaymentIntentHandler] No matching subscription found in Stripe for this payment');
+        return createJsonResponse({ error: 'No matching subscription found' }, 400);
+      }
 
-      console.log('[PaymentIntentHandler] Stripe subscription created:', subscription.id);
-
-      // Create subscription record in database
+      // Create subscription record in database using the found subscription
       const subscriptionData = {
         user_id,
         creator_id,
         tier_id,
-        stripe_subscription_id: subscription.id,
-        stripe_customer_id: subscription.customer,
+        stripe_subscription_id: targetSubscription.id,
+        stripe_customer_id: targetSubscription.customer,
         status: 'active', // Set to active since payment already succeeded
         amount: tier.price,
-        current_period_start: subscription.current_period_start ? 
-          new Date(subscription.current_period_start * 1000).toISOString() : null,
-        current_period_end: subscription.current_period_end ? 
-          new Date(subscription.current_period_end * 1000).toISOString() : null,
-        cancel_at_period_end: subscription.cancel_at_period_end || false,
+        current_period_start: targetSubscription.current_period_start ? 
+          new Date(targetSubscription.current_period_start * 1000).toISOString() : null,
+        current_period_end: targetSubscription.current_period_end ? 
+          new Date(targetSubscription.current_period_end * 1000).toISOString() : null,
+        cancel_at_period_end: targetSubscription.cancel_at_period_end || false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -237,9 +232,9 @@ export async function handlePaymentIntentWebhook(
       console.log('[PaymentIntentHandler] user_id:', user_id);
       console.log('[PaymentIntentHandler] creator_id:', creator_id);
       console.log('[PaymentIntentHandler] tier_id:', tier_id);
-      console.log('[PaymentIntentHandler] stripe_subscription_id:', subscription.id);
+      console.log('[PaymentIntentHandler] stripe_subscription_id:', targetSubscription.id);
       console.log('[PaymentIntentHandler] amount:', tier.price);
-      console.log('[PaymentIntentHandler] Stripe subscription status:', subscription.status);
+      console.log('[PaymentIntentHandler] Stripe subscription status:', targetSubscription.status);
       console.log('[PaymentIntentHandler] Setting status to: active (overriding Stripe status since payment succeeded)');
       console.log('[PaymentIntentHandler] Full subscription data:', JSON.stringify(subscriptionData, null, 2));
 
@@ -256,13 +251,8 @@ export async function handlePaymentIntentWebhook(
         console.error('[PaymentIntentHandler] Error message:', insertError.message);
         console.error('[PaymentIntentHandler] Error hint:', insertError.hint);
         
-        // If we can't create the record, cancel the Stripe subscription
-        try {
-          await stripe.subscriptions.cancel(subscription.id);
-          console.log('[PaymentIntentHandler] Cancelled Stripe subscription due to database error');
-        } catch (cancelError) {
-          console.error('[PaymentIntentHandler] Error cancelling subscription:', cancelError);
-        }
+        // Log the error but don't cancel the subscription since it already exists in Stripe
+        console.error('[PaymentIntentHandler] Could not create database record for existing subscription:', targetSubscription.id);
         throw insertError;
       }
 
@@ -274,7 +264,7 @@ export async function handlePaymentIntentWebhook(
       const { data: verifyData, error: verifyError } = await supabaseService
         .from('user_subscriptions')
         .select('*')
-        .eq('stripe_subscription_id', subscription.id)
+        .eq('stripe_subscription_id', targetSubscription.id)
         .single();
         
       if (verifyError) {

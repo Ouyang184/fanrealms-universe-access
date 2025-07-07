@@ -56,8 +56,11 @@ export async function handleSubscriptionWebhook(
     }
   }
 
-  // AUTO-DELETE INCOMPLETE SUBSCRIPTIONS
-  if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
+  // For new subscriptions, create the database record immediately
+  if (event.type === 'customer.subscription.created' || 
+      (event.type === 'customer.subscription.updated' && subscription.status === 'active')) {
+    console.log('[WebhookHandler] Creating/updating subscription record for:', subscription.id);
+  } else if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
     console.log('[WebhookHandler] Subscription is incomplete, deleting from Stripe and database:', subscription.id);
     
     try {
@@ -160,6 +163,12 @@ export async function handleSubscriptionWebhook(
     } else {
       console.log('[WebhookHandler] Creating new subscription record');
       
+      // For new subscriptions, ensure we have all required data
+      if (!user_id || !creator_id || !tier_id) {
+        console.error('[WebhookHandler] Missing required metadata for new subscription');
+        throw new Error('Missing required metadata for subscription creation');
+      }
+      
       const { error: insertError } = await supabaseService
         .from('user_subscriptions')
         .insert({
@@ -171,6 +180,8 @@ export async function handleSubscriptionWebhook(
         console.error('[WebhookHandler] Error inserting subscription:', insertError);
         throw insertError;
       }
+      
+      console.log('[WebhookHandler] Successfully created new subscription record');
     }
 
     // Clean up legacy subscriptions table

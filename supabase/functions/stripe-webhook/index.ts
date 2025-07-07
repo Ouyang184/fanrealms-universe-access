@@ -132,10 +132,11 @@ serve(async (req) => {
       await handleCheckoutWebhook(event, supabase, stripe);
     }
 
-    // Handle subscription-related webhooks
+    // Handle subscription-related webhooks - PROCESS THESE FIRST
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
       console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
-      await handleSubscriptionWebhook(event, supabase, stripe);
+      const result = await handleSubscriptionWebhook(event, supabase, stripe);
+      console.log('Subscription webhook result:', result);
     }
 
     // Keep existing invoice payment handling for earnings
