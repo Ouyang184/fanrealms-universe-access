@@ -46,7 +46,7 @@ export function SubscribedButton({
 
   const subscription = subscriptionData;
   
-  // Updated logic to properly check subscription status
+  // CRITICAL: Only consider 'active' status as truly subscribed
   const isActive = subscription?.status === 'active';
   const willCancel = subscription?.cancel_at_period_end === true;
   const isCanceled = subscription?.status === 'canceled';
@@ -62,6 +62,8 @@ export function SubscribedButton({
   });
 
   const formatCancelDate = (dateString: string | number) => {
+    if (!dateString) return 'end of current period';
+    
     let date;
     if (typeof dateString === 'number') {
       date = new Date(dateString * 1000);

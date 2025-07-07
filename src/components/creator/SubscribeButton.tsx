@@ -33,17 +33,17 @@ export function SubscribeButton({
   // Use external subscription data if provided, otherwise use hook data
   const finalSubscriptionData = externalSubscriptionData || subscriptionData;
   
-  // FIXED: Use subscription check result with proper validation
-  const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
+  // Get the subscription object
+  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
 
-  console.log('[SubscribeButton] FIXED Render state:', {
+  console.log('[SubscribeButton] Render state:', {
     tierId,
     creatorId,
     tierName,
     isSubscribedProp: isSubscribed,
     subscriptionData: finalSubscriptionData,
-    hookIsSubscribed: subscriptionData?.isSubscribed,
-    finalIsUserSubscribed: isUserSubscribed,
+    subscription: subscription,
+    subscriptionStatus: subscription?.status,
     isLoading,
     isCreatorStripeReady
   });
@@ -54,10 +54,8 @@ export function SubscribeButton({
     );
   }
 
-  // FIXED: Check subscription status properly - ONLY consider 'active' status as subscribed
-  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
-  
-  // Check if user has an active subscription - MUST be 'active' status
+  // CRITICAL: Only show SubscribedButton for ACTIVE subscriptions
+  // Incomplete subscriptions should show ActiveSubscribeButton so user can complete payment
   if (subscription && subscription.status === 'active') {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
     return (
@@ -70,6 +68,11 @@ export function SubscribeButton({
         onSubscriptionSuccess={onSubscriptionSuccess}
       />
     );
+  }
+
+  // For incomplete subscriptions or no subscription, show subscribe button
+  if (subscription && subscription.status === 'incomplete') {
+    console.log('[SubscribeButton] Subscription is incomplete, showing subscribe button to complete payment');
   }
 
   if (!isCreatorStripeReady) {
