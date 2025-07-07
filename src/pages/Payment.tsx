@@ -1,59 +1,89 @@
 
-import React from 'react';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useLocation } from 'react-router-dom';
-import { PaymentForm } from '@/components/payment/PaymentForm';
-import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
-import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
-
-const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { MembershipPaymentForm } from '@/components/payment/MembershipPaymentForm';
+import { Card, CardContent } from '@/components/ui/card';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { AlertCircle } from 'lucide-react';
 
 export default function Payment() {
-  const location = useLocation();
-  const { 
-    clientSecret, 
-    tierName, 
-    tierId, 
-    creatorId, 
-    isUpgrade 
-  } = location.state || {};
+  const params = useParams();
+  const tierId = params.tierId;
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const {
-    paymentSucceeded,
-    isVerifying
-  } = usePaymentProcessing({
-    clientSecret: clientSecret || '',
-    tierId: tierId || '',
-    creatorId: creatorId || '',
-    tierName: tierName || '',
-    isUpgrade: isUpgrade || false
+  const { data: tier, isLoading, error } = useQuery({
+    queryKey: ['membership-tier', tierId],
+    queryFn: async () => {
+      if (!tierId) throw new Error('Tier ID is required');
+      
+      const { data, error } = await supabase
+        .from('membership_tiers')
+        .select(`
+          *,
+          creator:creators(display_name, profile_image_url)
+        `)
+        .eq('id', tierId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!tierId,
   });
 
-  if (paymentSucceeded) {
-    return (
-      <PaymentSuccess
-        isUpgrade={isUpgrade}
-        tierName={tierName}
-        isVerifying={isVerifying}
-      />
-    );
-  }
+  const handlePaymentSuccess = () => {
+    navigate('/subscriptions');
+  };
 
-  if (!clientSecret) {
+  const handlePaymentCancel = () => {
+    navigate(-1);
+  };
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Payment Error</h1>
-          <p className="text-gray-400">No payment information found. Please try subscribing again.</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <LoadingSpinner />
         </div>
       </div>
     );
   }
 
+  if (error || !tier) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-md mx-auto">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Tier Not Found</h3>
+            <p className="text-muted-foreground mb-4">
+              The membership tier could not be found.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret }}>
-      <PaymentForm />
-    </Elements>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">Complete Your Subscription</h1>
+          <p className="text-muted-foreground">
+            Subscribe to {tier.creator?.display_name}'s {tier.title} tier
+          </p>
+        </div>
+
+        <MembershipPaymentForm
+          clientSecret=""
+          tierName={tier.title}
+          amount={Math.round(tier.price * 100)}
+        />
+      </div>
+    </div>
   );
 }
