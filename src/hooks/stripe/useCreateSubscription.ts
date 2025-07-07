@@ -29,16 +29,29 @@ export const useCreateSubscription = () => {
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
+    console.log('[useCreateSubscription] Starting subscription creation with params:', {
+      tierId,
+      creatorId,
+      userId: user?.id,
+      userEmail: user?.email,
+      isProcessing,
+      timestamp: new Date().toISOString()
+    });
+
     if (!user || isProcessing) {
-      console.log('Cannot create subscription: user not authenticated or already processing');
+      console.log('[useCreateSubscription] Cannot create subscription: user not authenticated or already processing', {
+        hasUser: !!user,
+        isProcessing
+      });
       return null;
     }
 
     const lockKey = `${user.id}-${creatorId}-${tierId}`;
+    console.log('[useCreateSubscription] Generated lock key:', lockKey);
     
     // Check if this subscription is locked (already being processed)
     if (lockedSubscriptions.has(lockKey)) {
-      console.log('Subscription already being processed for:', lockKey);
+      console.log('[useCreateSubscription] Subscription already being processed for:', lockKey);
       toast({
         title: "Payment in Progress",
         description: "Please wait, your payment is already being processed.",
@@ -50,9 +63,10 @@ export const useCreateSubscription = () => {
     // Check cache first
     const cacheKey = `${user.id}-${creatorId}-${tierId}`;
     const cachedSession = sessionCache.get(cacheKey);
+    console.log('[useCreateSubscription] Checking cache for:', cacheKey, 'found:', !!cachedSession);
     
     if (cachedSession && (Date.now() - cachedSession.timestamp) < SESSION_CACHE_DURATION) {
-      console.log('useCreateSubscription: Using cached session for:', cacheKey);
+      console.log('[useCreateSubscription] Using cached session for:', cacheKey, cachedSession);
       
       // Navigate to payment page with cached data
       navigate('/payment', {
@@ -75,8 +89,13 @@ export const useCreateSubscription = () => {
     // Lock this subscription
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
+    console.log('[useCreateSubscription] Locked subscription and set processing state');
     
-    console.log('useCreateSubscription: Starting subscription creation for:', { tierId, creatorId, userId: user.id });
+    console.log('[useCreateSubscription] About to call stripe-subscriptions edge function with body:', {
+      action: 'create_subscription',
+      tierId: tierId,
+      creatorId: creatorId
+    });
     
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
@@ -87,15 +106,31 @@ export const useCreateSubscription = () => {
         }
       });
 
-      console.log('useCreateSubscription: Edge function response:', { data, error });
+      console.log('[useCreateSubscription] Edge function response received:', { 
+        data, 
+        error,
+        hasData: !!data,
+        hasError: !!error,
+        dataKeys: data ? Object.keys(data) : null
+      });
 
       if (error) {
-        console.error('useCreateSubscription: Edge function error:', error);
+        console.error('[useCreateSubscription] Edge function error:', error);
+        toast({
+          title: "Network Error",
+          description: `Failed to connect to subscription service: ${error.message}`,
+          variant: "destructive"
+        });
         throw new Error(error.message || 'Failed to invoke subscription function');
       }
 
       if (data?.error) {
-        console.error('useCreateSubscription: Function returned error:', data.error);
+        console.error('[useCreateSubscription] Function returned error:', data.error);
+        toast({
+          title: "Subscription Error", 
+          description: data.error,
+          variant: "destructive"
+        });
         return { 
           error: data.error,
           shouldRefresh: data.shouldRefresh || false
@@ -103,9 +138,16 @@ export const useCreateSubscription = () => {
       }
 
       if (!data) {
-        console.error('useCreateSubscription: No data returned from function');
+        console.error('[useCreateSubscription] No data returned from function');
+        toast({
+          title: "Service Error",
+          description: "No response from subscription service",
+          variant: "destructive"
+        });
         throw new Error('No response from subscription service');
       }
+
+      console.log('[useCreateSubscription] Function returned valid data:', data);
 
       // Check if we should use custom payment page
       if (data.useCustomPaymentPage && data.clientSecret) {

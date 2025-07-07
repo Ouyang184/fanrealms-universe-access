@@ -9,14 +9,22 @@ export async function handleCreateSubscription(
   user: any,
   body: any
 ) {
-  console.log('Creating subscription for user:', user.id);
-  console.log('Request body:', JSON.stringify(body, null, 2));
+  console.log('[CreateSubscription] === STARTING SUBSCRIPTION CREATION ===');
+  console.log('[CreateSubscription] User ID:', user.id);
+  console.log('[CreateSubscription] User email:', user.email);
+  console.log('[CreateSubscription] Request body:', JSON.stringify(body, null, 2));
 
   // Extract parameters from body - handle both formats
   const tierId = body.tierId || body.tier_id;
   const creatorId = body.creatorId || body.creator_id;
 
-  console.log('Extracted params:', { tierId, creatorId });
+  console.log('[CreateSubscription] Extracted params:', { tierId, creatorId });
+  console.log('[CreateSubscription] Parameter validation:', {
+    hasTierId: !!tierId,
+    hasCreatorId: !!creatorId,
+    tierIdType: typeof tierId,
+    creatorIdType: typeof creatorId
+  });
 
   if (!tierId || !creatorId) {
     console.log('ERROR: Missing tierId or creatorId', { tierId, creatorId });

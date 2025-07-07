@@ -13,16 +13,23 @@ import { handleVerifySubscription } from './handlers/verify-subscription.ts';
 import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
 
 serve(async (req) => {
+  console.log('[StripeSubscriptions] === NEW REQUEST RECEIVED ===');
+  console.log('[StripeSubscriptions] Method:', req.method);
+  console.log('[StripeSubscriptions] URL:', req.url);
+  console.log('[StripeSubscriptions] Headers:', Object.fromEntries(req.headers.entries()));
+  
   if (req.method === 'OPTIONS') {
+    console.log('[StripeSubscriptions] Handling OPTIONS request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    console.log('[StripeSubscriptions] Parsing request body...');
     const body = await req.json();
     const { action } = body;
     
-    console.log('Stripe subscriptions action:', action);
-    console.log('Request body received:', JSON.stringify(body, null, 2));
+    console.log('[StripeSubscriptions] Action:', action);
+    console.log('[StripeSubscriptions] Full request body:', JSON.stringify(body, null, 2));
 
     // Use LIVE keys consistently
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE');
