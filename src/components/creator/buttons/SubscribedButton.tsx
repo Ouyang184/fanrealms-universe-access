@@ -160,12 +160,12 @@ export function SubscribedButton({
                           subscription?.subscription_id;
 
     if (!subscriptionId) {
-      console.log('No subscription ID found, trying to cancel via simple-subscriptions');
+      console.log('No subscription ID found, trying to cancel via stripe-subscriptions');
       
       try {
         setIsCancelling(true);
         
-        const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+        const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
           body: {
             action: 'cancel_subscription',
             tierId: tierId,
@@ -175,7 +175,7 @@ export function SubscribedButton({
         });
 
         if (error) {
-          console.error('Error from simple-subscriptions:', error);
+          console.error('Error from stripe-subscriptions:', error);
           throw error;
         }
 
@@ -184,7 +184,7 @@ export function SubscribedButton({
           throw new Error(data.error);
         }
 
-        console.log('Successfully cancelled subscription via simple-subscriptions');
+        console.log('Successfully cancelled subscription via stripe-subscriptions');
         
         if (cancellationType === 'immediate') {
           toast({
@@ -212,7 +212,7 @@ export function SubscribedButton({
         
         return;
       } catch (error) {
-        console.error('Error with simple-subscriptions:', error);
+        console.error('Error with stripe-subscriptions:', error);
         toast({
           title: "Error",
           description: error instanceof Error ? error.message : "Failed to cancel subscription. Please try again.",
