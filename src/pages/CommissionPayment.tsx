@@ -129,12 +129,11 @@ export default function CommissionPayment() {
       }
 
       if (data?.url) {
-        console.log('Redirecting to Stripe Checkout:', data.url);
-        // Ensure we're redirecting in the top-level window
-        if (window.top) {
-          window.top.location.href = data.url;
-        } else {
-          window.location.href = data.url;
+        console.log('Opening Stripe Checkout in new tab:', data.url);
+        // Open Stripe checkout in a new tab to avoid iframe navigation restrictions
+        const newWindow = window.open(data.url, '_blank');
+        if (!newWindow) {
+          throw new Error('Payment popup was blocked. Please allow popups and try again.');
         }
       } else {
         console.error('No payment URL received:', data);
