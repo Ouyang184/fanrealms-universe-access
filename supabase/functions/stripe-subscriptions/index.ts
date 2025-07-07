@@ -24,8 +24,10 @@ serve(async (req) => {
     console.log('Stripe subscriptions action:', action);
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Use test key for development - check both env vars
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    // Get Stripe secret key - check both test and live keys
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || 
+                           Deno.env.get('STRIPE_SECRET_KEY_TEST') || 
+                           Deno.env.get('STRIPE_SECRET_KEY_LIVE');
     
     if (!stripeSecretKey) {
       console.error('No Stripe secret key found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));

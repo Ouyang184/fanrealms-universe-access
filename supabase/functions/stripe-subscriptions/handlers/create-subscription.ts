@@ -95,13 +95,6 @@ export async function handleCreateSubscription(
     }, 400);
   }
 
-  if (!tier.stripe_price_id) {
-    console.log('ERROR: Tier missing stripe_price_id');
-    return createJsonResponse({ 
-      error: 'This membership tier is not properly configured. Please contact the creator.' 
-    }, 400);
-  }
-
   // Calculate prorated amount for upgrades
   if (isUpgrade && existingSubscription) {
     const currentTierPrice = existingSubscription.membership_tiers.price;
@@ -134,6 +127,32 @@ export async function handleCreateSubscription(
     console.log('Creating/getting Stripe customer...');
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
+
+    // Create or get Stripe price for this tier
+    let stripePriceId = tier.stripe_price_id;
+    
+    if (!stripePriceId) {
+      console.log('Creating Stripe price for tier:', tier.title);
+      const price = await stripe.prices.create({
+        unit_amount: Math.round(tier.price * 100),
+        currency: 'usd',
+        recurring: { interval: 'month' },
+        product_data: {
+          name: tier.title,
+          description: tier.description || `${tier.title} membership`
+        }
+      });
+      
+      stripePriceId = price.id;
+      
+      // Update tier with stripe price ID
+      await supabaseService
+        .from('membership_tiers')
+        .update({ stripe_price_id: stripePriceId })
+        .eq('id', tierId);
+      
+      console.log('Created and saved Stripe price:', stripePriceId);
+    }
 
     // Check for existing pending payment intent for this user/creator/tier combination
     console.log('Checking for existing payment intents...');
@@ -253,7 +272,7 @@ export async function handleCreateSubscription(
       isUpgrade: isUpgrade,
       currentTierName: existingSubscription?.membership_tiers?.title || null,
       proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
-      fullTierPrice: Math.round(tier.price * 100),
+      fullTierPrice: Math.round(tier.price * 100),  
       currentPeriodEnd: existingSubscription?.current_period_end || null,
       reusedSession: false
     });

@@ -1,75 +1,56 @@
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-export async function getOrCreateStripeCustomer(
-  stripe: any,
-  supabaseService: any,
-  user: any
-): Promise<string> {
-  console.log('Checking for existing Stripe customer...');
+export async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) {
+  console.log('Getting or creating Stripe customer for user:', user.id);
   
-  let stripeCustomerId;
-  const { data: existingCustomer } = await supabaseService
+  // Check if customer already exists in our database
+  const { data: existingCustomer, error: fetchError } = await supabase
     .from('stripe_customers')
     .select('stripe_customer_id')
     .eq('user_id', user.id)
     .single();
 
-  if (existingCustomer) {
-    stripeCustomerId = existingCustomer.stripe_customer_id;
-    console.log('Found existing customer:', stripeCustomerId);
+  if (existingCustomer && !fetchError) {
+    console.log('Found existing Stripe customer:', existingCustomer.stripe_customer_id);
+    return existingCustomer.stripe_customer_id;
+  }
+
+  // Check if customer exists in Stripe by email
+  const customers = await stripe.customers.list({
+    email: user.email,
+    limit: 1
+  });
+
+  let customerId;
+  
+  if (customers.data.length > 0) {
+    customerId = customers.data[0].id;
+    console.log('Found existing customer in Stripe:', customerId);
   } else {
-    console.log('Creating new Stripe customer...');
+    // Create new customer in Stripe
     const customer = await stripe.customers.create({
       email: user.email,
       metadata: {
-        user_id: user.id,
-      },
+        user_id: user.id
+      }
     });
-    stripeCustomerId = customer.id;
-    console.log('Created new customer:', stripeCustomerId);
-
-    // Store customer in database
-    await supabaseService
-      .from('stripe_customers')
-      .insert({
-        user_id: user.id,
-        stripe_customer_id: stripeCustomerId,
-      });
+    customerId = customer.id;
+    console.log('Created new Stripe customer:', customerId);
   }
 
-  return stripeCustomerId;
-}
-
-export async function getOrCreateStripePrice(
-  stripe: any,
-  supabaseService: any,
-  tier: any,
-  tierId: string
-): Promise<string> {
-  console.log('Checking Stripe price...');
-  
-  let stripePriceId = tier.stripe_price_id;
-  if (!stripePriceId) {
-    console.log('Creating new Stripe price...');
-    const price = await stripe.prices.create({
-      unit_amount: Math.round(tier.price * 100), // Convert to cents
-      currency: 'usd',
-      recurring: { interval: 'month' },
-      product_data: {
-        name: tier.title,
-      },
+  // Store the customer ID in our database
+  const { error: insertError } = await supabase
+    .from('stripe_customers')
+    .upsert({
+      user_id: user.id,
+      stripe_customer_id: customerId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
-    stripePriceId = price.id;
-    console.log('Created price:', stripePriceId);
 
-    // Update tier with price ID
-    await supabaseService
-      .from('membership_tiers')
-      .update({ stripe_price_id: stripePriceId })
-      .eq('id', tierId);
+  if (insertError) {
+    console.error('Error storing customer ID:', insertError);
+    // Don't throw error, just log it - the customer ID still works
   }
 
-  console.log('Using price ID:', stripePriceId);
-  return stripePriceId;
+  return customerId;
 }
