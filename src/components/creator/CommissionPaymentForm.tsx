@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle, Bug } from 'lucide-react';
+import { Loader2, CreditCard, Clock, User, DollarSign, AlertCircle } from 'lucide-react';
 
 // Use TEST Stripe publishable key for commissions
 const stripePromise = loadStripe('pk_test_51QSXfpP8KqSCVhQsaEPa7YXm3v7sJ7Ae6HqgE1DdLUe9ePDCZ7i8M0Wj6xZlPjt4uESkzIxKsP2N2hJB8tD9NQKZ00aw1YRqvF');
@@ -35,73 +35,12 @@ function formatCurrency(amount: number): string {
 
 function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isDebugging, setIsDebugging] = useState(false);
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const stripe = useStripe();
   const elements = useElements();
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const handleDebug = async () => {
-    if (!user) {
-      console.error('User not authenticated for debug');
-      return;
-    }
-
-    setIsDebugging(true);
-    setError('');
-
-    try {
-      console.log('🔍 Running debug check...');
-      
-      const { data, error } = await supabase.functions.invoke('debug-commission-payment', {
-        body: { 
-          commissionId: commission.id,
-          amount: commission.agreed_price,
-          testMode: true
-        },
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      console.log('🔧 Debug response:', { data, error });
-
-      if (error) {
-        console.error('❌ Debug function error:', error);
-        setDebugInfo({ 
-          type: 'debug_function_error', 
-          error,
-          timestamp: new Date().toISOString()
-        });
-        setError(`Debug function failed: ${error.message}`);
-      } else {
-        console.log('✅ Debug function successful');
-        setDebugInfo({ 
-          type: 'debug_success', 
-          debug_data: data,
-          timestamp: new Date().toISOString()
-        });
-        toast({
-          title: "Debug Complete",
-          description: "Check the debug information panel below for details.",
-        });
-      }
-
-    } catch (err) {
-      console.error('💥 Debug error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Debug check failed';
-      setError(errorMessage);
-      setDebugInfo({ 
-        type: 'debug_exception', 
-        error: errorMessage,
-        timestamp: new Date().toISOString()
-      });
-    } finally {
-      setIsDebugging(false);
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -244,35 +183,6 @@ function PaymentFormContent({ commission, onSuccess, onCancel }: PaymentFormProp
         </div>
 
         <Separator />
-
-        {/* Debug Section */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-yellow-800">Debug Tools</h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleDebug}
-              disabled={isDebugging}
-            >
-              {isDebugging ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running Debug...
-                </>
-              ) : (
-                <>
-                  <Bug className="mr-2 h-4 w-4" />
-                  Run Debug Check
-                </>
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-yellow-700">
-            Run this debug check to test environment variables, Stripe connection, and database access before attempting payment.
-          </p>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
