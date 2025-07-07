@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -12,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Use the correct Stripe test publishable key from environment
+// Initialize Stripe with the publishable key from Supabase secrets
 const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
 const stripePromise = loadStripe(stripePublishableKey);
 
@@ -343,3 +345,4 @@ export function CommissionPaymentForm({ commission, onSuccess, onCancel }: Commi
     </Elements>
   );
 }
+
