@@ -12,6 +12,44 @@ import { AlertCircle } from 'lucide-react';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
+// Retry logic for fetching commission with exponential backoff
+const fetchCommissionWithRetry = async (id: string, retryCount = 0): Promise<any> => {
+  const maxRetries = 3;
+  const baseDelay = 1000; // 1 second
+
+  console.log(`Fetching commission request (attempt ${retryCount + 1}):`, id);
+
+  const { data, error } = await supabase
+    .from('commission_requests')
+    .select(`
+      *,
+      commission_type:commission_types(name, description, base_price),
+      creator:creators!commission_requests_creator_id_fkey(
+        display_name,
+        profile_image_url
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error(`Error fetching commission (attempt ${retryCount + 1}):`, error);
+    
+    if (retryCount < maxRetries && (error.code === 'PGRST116' || error.message.includes('No rows'))) {
+      // Wait with exponential backoff before retrying
+      const delay = baseDelay * Math.pow(2, retryCount);
+      console.log(`Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchCommissionWithRetry(id, retryCount + 1);
+    }
+    
+    throw error;
+  }
+
+  console.log('Commission data fetched successfully:', data);
+  return data;
+};
+
 export default function CommissionPayment() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
@@ -22,77 +60,15 @@ export default function CommissionPayment() {
     queryFn: async () => {
       if (!id) throw new Error('Commission ID is required');
       
-      console.log('🔍 [CommissionPayment] Fetching commission request:', {
-        commissionId: id,
-        currentUser: user?.id,
-        timestamp: new Date().toISOString()
-      });
+      console.log('Current user:', user?.id);
+      console.log('Commission ID:', id);
       
-      const { data, error } = await supabase
-        .from('commission_requests')
-        .select(`
-          *,
-          commission_type:commission_types(name, description, base_price),
-          creator:creators!commission_requests_creator_id_fkey(
-            display_name,
-            profile_image_url
-          )
-        `)
-        .eq('id', id)
-        .single();
-
-      console.log('📊 [CommissionPayment] Query result:', {
-        commissionId: id,
-        data: data,
-        error: error,
-        hasData: !!data,
-        dataKeys: data ? Object.keys(data) : null
-      });
-
-      if (error) {
-        console.error('❌ [CommissionPayment] Database error:', {
-          commissionId: id,
-          error: error,
-          code: error.code,
-          message: error.message,
-          details: error.details
-        });
-        throw error;
-      }
-
-      if (!data) {
-        console.error('❌ [CommissionPayment] No commission data found:', {
-          commissionId: id,
-          user: user?.id
-        });
-        throw new Error('Commission request not found');
-      }
-      
-      // Only check permission if user is logged in
-      if (user && data.customer_id !== user.id) {
-        console.error('❌ [CommissionPayment] Permission denied:', {
-          commissionId: id,
-          currentUser: user.id,
-          commissionCustomer: data.customer_id,
-          userEmail: user.email
-        });
-        throw new Error('You do not have permission to access this commission');
-      }
-      
-      console.log('✅ [CommissionPayment] Commission loaded successfully:', {
-        commissionId: id,
-        title: data.title,
-        status: data.status,
-        agreedPrice: data.agreed_price,
-        customerId: data.customer_id,
-        creatorName: data.creator?.display_name
-      });
-      
-      return data;
+      // Remove the manual permission check - let RLS handle it
+      // RLS policies already ensure proper access control
+      return await fetchCommissionWithRetry(id);
     },
-    enabled: !!id,
-    retry: 3,
-    retryDelay: 1000,
+    enabled: !!id && !!user,
+    retry: false, // We handle retry logic manually
   });
 
   const handlePaymentSuccess = () => {
@@ -114,12 +90,6 @@ export default function CommissionPayment() {
   }
 
   if (error || !commission) {
-    console.error('🚨 [CommissionPayment] Rendering error state:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      hasCommission: !!commission,
-      commissionId: id
-    });
-
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-md mx-auto">
@@ -132,12 +102,6 @@ export default function CommissionPayment() {
             <p className="text-sm text-muted-foreground">
               Error: {error instanceof Error ? error.message : 'Unknown error'}
             </p>
-            <div className="mt-4 p-3 bg-muted rounded text-sm text-left">
-              <p><strong>Debug Info:</strong></p>
-              <p>Commission ID: {id}</p>
-              <p>User ID: {user?.id || 'Not logged in'}</p>
-              <p>User Email: {user?.email || 'No email'}</p>
-            </div>
           </CardContent>
         </Card>
       </div>

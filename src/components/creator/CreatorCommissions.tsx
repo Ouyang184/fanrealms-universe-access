@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,12 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           return;
         }
         
+        // Log the exact query we're making
+        console.log('[CreatorCommissions] About to query commission_types with:', {
+          creator_id: creator.id,
+          is_active: true
+        });
+        
         // Always fetch commission types regardless of accepts_commissions flag
         // This allows us to show what's available even if the flag is wrong
         const { data: types, error: typesError } = await supabase
@@ -54,7 +61,8 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
         console.log('[CreatorCommissions] Commission types query result:', {
           data: types,
           error: typesError,
-          count: types?.length || 0
+          count: types?.length || 0,
+          rawQuery: `SELECT * FROM commission_types WHERE creator_id = '${creator.id}' AND is_active = true ORDER BY base_price`
         });
 
         if (typesError) {
@@ -66,7 +74,21 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
             variant: "destructive"
           });
         } else {
-          console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
+          console.log(`[CreatorCommissions] Successfully loaded ${types?.length || 0} commission types for creator ${creator.id}`);
+          
+          // Log each commission type for debugging
+          if (types && types.length > 0) {
+            types.forEach((type, index) => {
+              console.log(`[CreatorCommissions] Commission type ${index + 1}:`, {
+                id: type.id,
+                name: type.name,
+                base_price: type.base_price,
+                is_active: type.is_active,
+                creator_id: type.creator_id
+              });
+            });
+          }
+          
           // Transform the data to match our CommissionType interface
           const transformedTypes: CommissionType[] = (types || []).map(type => ({
             ...type,
@@ -95,8 +117,10 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
     };
 
     if (creator.id) {
+      console.log('[CreatorCommissions] Creator ID present, triggering fetch:', creator.id);
       fetchCommissionData();
     } else {
+      console.warn('[CreatorCommissions] No creator ID, skipping fetch');
       setIsLoading(false);
       setError('No creator data available');
     }
