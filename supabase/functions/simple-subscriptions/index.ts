@@ -10,9 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use LIVE Stripe keys
+// Use TEST Stripe keys consistently
 const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || ''
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') || ''
 );
 
 serve(async (req) => {
@@ -38,7 +38,7 @@ serve(async (req) => {
     }
 
     const { action, tierId, creatorId, subscriptionId, paymentIntentId, immediate } = await req.json();
-    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate, '(LIVE MODE)');
+    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate, '(TEST MODE)');
 
     let result;
 
@@ -68,7 +68,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[SimpleSubscriptions] Error (LIVE MODE):', error);
+    console.error('[SimpleSubscriptions] Error (TEST MODE):', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Internal server error' 
     }), {

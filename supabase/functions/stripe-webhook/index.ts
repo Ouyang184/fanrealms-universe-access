@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe properly for Deno with async crypto provider - USING LIVE KEYS
+// Initialize Stripe properly for Deno with async crypto provider - USING TEST KEYS
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '',
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') || '',
   {
     apiVersion: '2023-10-16',
     httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
@@ -29,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
+    console.log('=== WEBHOOK EVENT RECEIVED (TEST MODE) ===');
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     console.log('Request method:', req.method);
     console.log('Request URL:', req.url);
@@ -74,7 +74,7 @@ serve(async (req) => {
     try {
       // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook signature verified successfully (LIVE MODE)');
+      console.log('Webhook signature verified successfully (TEST MODE)');
     } catch (err) {
       console.error('===== WEBHOOK SIGNATURE VERIFICATION FAILED =====');
       console.error('Error details:', err);
@@ -92,7 +92,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
+    console.log('Webhook event type:', event.type, 'ID:', event.id, '(TEST MODE)');
 
     // Handle payment intent webhooks FIRST - these are critical for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
@@ -100,7 +100,7 @@ serve(async (req) => {
       console.log('Event ID:', event.id);
       console.log('Payment Intent ID:', event.data.object.id);
       console.log('Payment Intent metadata:', JSON.stringify(event.data.object.metadata, null, 2));
-      console.log('Processing payment_intent.succeeded (LIVE MODE)');
+      console.log('Processing payment_intent.succeeded (TEST MODE)');
       
       try {
         const result = await handlePaymentIntentWebhook(event, supabase, stripe);
@@ -120,7 +120,7 @@ serve(async (req) => {
 
     // Handle subscription-related webhooks 
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
-      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing subscription webhook:', event.type, '(TEST MODE)');
       try {
         const result = await handleSubscriptionWebhook(event, supabase, stripe);
         console.log('Subscription webhook result:', result);
@@ -139,7 +139,7 @@ serve(async (req) => {
 
     // Handle checkout session completed events
     if (event.type === 'checkout.session.completed') {
-      console.log('Processing checkout.session.completed (LIVE MODE)');
+      console.log('Processing checkout.session.completed (TEST MODE)');
       try {
         await handleCheckoutWebhook(event, supabase, stripe);
       } catch (error) {
@@ -150,7 +150,7 @@ serve(async (req) => {
     // Handle commission-related webhooks
     if (event.type === 'payment_intent.canceled' || 
         event.type === 'charge.refunded') {
-      console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing commission webhook:', event.type, '(TEST MODE)');
       try {
         await handleCommissionWebhook(event, supabase);
       } catch (error) {
@@ -160,7 +160,7 @@ serve(async (req) => {
 
     // Handle price webhooks
     if (event.type.startsWith('price.')) {
-      console.log('Processing price webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing price webhook:', event.type, '(TEST MODE)');
       try {
         await handlePriceWebhook(event, supabase);
       } catch (error) {
@@ -170,7 +170,7 @@ serve(async (req) => {
 
     // Handle product webhooks
     if (event.type.startsWith('product.')) {
-      console.log('Processing product webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing product webhook:', event.type, '(TEST MODE)');
       try {
         await handleProductWebhook(event, supabase);
       } catch (error) {
@@ -178,11 +178,11 @@ serve(async (req) => {
       }
     }
 
-    console.log('=== WEBHOOK PROCESSING COMPLETE (LIVE MODE) ===');
+    console.log('=== WEBHOOK PROCESSING COMPLETE (TEST MODE) ===');
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Webhook error (LIVE MODE):', error);
+    console.error('Webhook error (TEST MODE):', error);
     console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: 'Webhook processing failed',
