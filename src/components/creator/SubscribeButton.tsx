@@ -33,17 +33,17 @@ export function SubscribeButton({
   // Use external subscription data if provided, otherwise use hook data
   const finalSubscriptionData = externalSubscriptionData || subscriptionData;
   
-  // Get the subscription object
-  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
+  // FIXED: Use subscription check result with proper validation
+  const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
-  console.log('[SubscribeButton] Render state:', {
+  console.log('[SubscribeButton] FIXED Render state:', {
     tierId,
     creatorId,
     tierName,
     isSubscribedProp: isSubscribed,
     subscriptionData: finalSubscriptionData,
-    subscription: subscription,
-    subscriptionStatus: subscription?.status,
+    hookIsSubscribed: subscriptionData?.isSubscribed,
+    finalIsUserSubscribed: isUserSubscribed,
     isLoading,
     isCreatorStripeReady
   });
@@ -54,9 +54,11 @@ export function SubscribeButton({
     );
   }
 
-  // CRITICAL: Only show SubscribedButton for ACTIVE subscriptions
-  // Incomplete subscriptions should show ActiveSubscribeButton so user can complete payment
-  if (subscription && subscription.status === 'active') {
+  // FIXED: Check subscription status properly
+  const subscription = finalSubscriptionData?.subscription || finalSubscriptionData;
+  
+  // Check if user has an active subscription (including those scheduled to cancel but still in period)
+  if (subscription && (subscription.status === 'active' || subscription.isActive)) {
     console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
     return (
       <SubscribedButton
@@ -70,9 +72,19 @@ export function SubscribeButton({
     );
   }
 
-  // For incomplete subscriptions or no subscription, show subscribe button
-  if (subscription && subscription.status === 'incomplete') {
-    console.log('[SubscribeButton] Subscription is incomplete, showing subscribe button to complete payment');
+  // Fallback check for isUserSubscribed
+  if (isUserSubscribed) {
+    console.log('[SubscribeButton] Showing SubscribedButton - fallback for subscribed user');
+    return (
+      <SubscribedButton
+        tierName={tierName}
+        subscriptionData={subscription}
+        tierId={tierId}
+        creatorId={creatorId}
+        onOptimisticUpdate={onOptimisticUpdate}
+        onSubscriptionSuccess={onSubscriptionSuccess}
+      />
+    );
   }
 
   if (!isCreatorStripeReady) {

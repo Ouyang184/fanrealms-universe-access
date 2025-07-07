@@ -46,7 +46,7 @@ export function SubscribedButton({
 
   const subscription = subscriptionData;
   
-  // CRITICAL: Only consider 'active' status as truly subscribed
+  // Updated logic to properly check subscription status
   const isActive = subscription?.status === 'active';
   const willCancel = subscription?.cancel_at_period_end === true;
   const isCanceled = subscription?.status === 'canceled';
@@ -62,8 +62,6 @@ export function SubscribedButton({
   });
 
   const formatCancelDate = (dateString: string | number) => {
-    if (!dateString) return 'end of current period';
-    
     let date;
     if (typeof dateString === 'number') {
       date = new Date(dateString * 1000);
@@ -81,7 +79,6 @@ export function SubscribedButton({
     if (subscription?.current_period_end) {
       return formatCancelDate(subscription.current_period_end);
     }
-    // If no current_period_end, calculate next month from now
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     return formatCancelDate(nextMonth.toISOString());
@@ -163,12 +160,12 @@ export function SubscribedButton({
                           subscription?.subscription_id;
 
     if (!subscriptionId) {
-      console.log('No subscription ID found, trying to cancel via simple-subscriptions');
+      console.log('No subscription ID found, trying to cancel via stripe-subscriptions');
       
       try {
         setIsCancelling(true);
         
-        const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
+        const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
           body: {
             action: 'cancel_subscription',
             tierId: tierId,
@@ -178,7 +175,7 @@ export function SubscribedButton({
         });
 
         if (error) {
-          console.error('Error from simple-subscriptions:', error);
+          console.error('Error from stripe-subscriptions:', error);
           throw error;
         }
 
@@ -187,7 +184,7 @@ export function SubscribedButton({
           throw new Error(data.error);
         }
 
-        console.log('Successfully cancelled subscription via simple-subscriptions');
+        console.log('Successfully cancelled subscription via stripe-subscriptions');
         
         if (cancellationType === 'immediate') {
           toast({
@@ -215,7 +212,7 @@ export function SubscribedButton({
         
         return;
       } catch (error) {
-        console.error('Error with simple-subscriptions:', error);
+        console.error('Error with stripe-subscriptions:', error);
         toast({
           title: "Error",
           description: error instanceof Error ? error.message : "Failed to cancel subscription. Please try again.",

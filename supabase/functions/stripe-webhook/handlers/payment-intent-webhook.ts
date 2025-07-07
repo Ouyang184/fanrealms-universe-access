@@ -105,11 +105,11 @@ export async function handlePaymentIntentWebhook(
         const subscriptionData = {
           tier_id,
           amount: tier.price,
-          status: 'active', // CRITICAL: Always set to active after successful payment
+          status: updatedSubscription.status === 'active' ? 'active' : updatedSubscription.status,
           updated_at: new Date().toISOString(),
         };
 
-        console.log('[PaymentIntentHandler] Updating subscription record with active status:', subscriptionData);
+        console.log('[PaymentIntentHandler] Updating subscription record:', subscriptionData);
 
         const { error: updateError } = await supabaseService
           .from('user_subscriptions')
@@ -121,7 +121,7 @@ export async function handlePaymentIntentWebhook(
           throw updateError;
         }
 
-        console.log('[PaymentIntentHandler] Successfully updated subscription record for upgrade to active status');
+        console.log('[PaymentIntentHandler] Successfully updated subscription record for upgrade');
 
       } catch (error) {
         console.error('[PaymentIntentHandler] Error processing upgrade:', error);
@@ -161,7 +161,7 @@ export async function handlePaymentIntentWebhook(
         }
       }
 
-      // CRITICAL FIX: Always set to active after successful payment
+      // If we have an existing record, just update it to active
       if (existingRecord) {
         console.log('[PaymentIntentHandler] Updating existing subscription to active:', existingRecord.id);
         
@@ -174,7 +174,7 @@ export async function handlePaymentIntentWebhook(
           .eq('id', existingRecord.id);
 
         if (updateError) {
-          console.error('[PaymentIntentHandler] Error updating existing subscription to active:', updateError);
+          console.error('[PaymentIntentHandler] Error updating existing subscription:', updateError);
         } else {
           console.log('[PaymentIntentHandler] Successfully updated existing subscription to active');
         }
@@ -182,13 +182,13 @@ export async function handlePaymentIntentWebhook(
         return createJsonResponse({ success: true });
       }
 
-      // If no existing subscription, we need to find or create one
-      console.log('[PaymentIntentHandler] No existing subscription found, searching Stripe for recent subscriptions');
+      // If no existing subscription, we need to create one (this shouldn't happen with proper Stripe checkout)
+      console.log('[PaymentIntentHandler] No existing subscription found, this indicates a checkout flow issue');
       
       // Get Stripe subscription by customer and check recent subscriptions
       const recentSubscriptions = await stripe.subscriptions.list({
         customer: paymentIntent.customer,
-        limit: 10,
+        limit: 5,
         created: {
           gte: Math.floor(Date.now() / 1000) - 3600, // Last hour
         }
@@ -217,7 +217,7 @@ export async function handlePaymentIntentWebhook(
         tier_id,
         stripe_subscription_id: targetSubscription.id,
         stripe_customer_id: targetSubscription.customer,
-        status: 'active', // CRITICAL: Set to active since payment already succeeded
+        status: 'active', // Set to active since payment already succeeded
         amount: tier.price,
         current_period_start: targetSubscription.current_period_start ? 
           new Date(targetSubscription.current_period_start * 1000).toISOString() : null,
@@ -228,13 +228,14 @@ export async function handlePaymentIntentWebhook(
         updated_at: new Date().toISOString(),
       };
 
-      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION DATA TO INSERT WITH ACTIVE STATUS =====');
+      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION DATA TO INSERT =====');
       console.log('[PaymentIntentHandler] user_id:', user_id);
       console.log('[PaymentIntentHandler] creator_id:', creator_id);
       console.log('[PaymentIntentHandler] tier_id:', tier_id);
       console.log('[PaymentIntentHandler] stripe_subscription_id:', targetSubscription.id);
       console.log('[PaymentIntentHandler] amount:', tier.price);
-      console.log('[PaymentIntentHandler] Setting status to: active (payment succeeded)');
+      console.log('[PaymentIntentHandler] Stripe subscription status:', targetSubscription.status);
+      console.log('[PaymentIntentHandler] Setting status to: active (overriding Stripe status since payment succeeded)');
       console.log('[PaymentIntentHandler] Full subscription data:', JSON.stringify(subscriptionData, null, 2));
 
       const { data: insertedData, error: insertError } = await supabaseService
@@ -250,10 +251,12 @@ export async function handlePaymentIntentWebhook(
         console.error('[PaymentIntentHandler] Error message:', insertError.message);
         console.error('[PaymentIntentHandler] Error hint:', insertError.hint);
         
+        // Log the error but don't cancel the subscription since it already exists in Stripe
+        console.error('[PaymentIntentHandler] Could not create database record for existing subscription:', targetSubscription.id);
         throw insertError;
       }
 
-      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION SUCCESSFULLY CREATED AS ACTIVE =====');
+      console.log('[PaymentIntentHandler] ===== SUBSCRIPTION SUCCESSFULLY CREATED =====');
       console.log('[PaymentIntentHandler] Inserted subscription record:', JSON.stringify(insertedData, null, 2));
       console.log('[PaymentIntentHandler] Subscription ID in DB:', insertedData?.id);
       
@@ -269,7 +272,7 @@ export async function handlePaymentIntentWebhook(
         console.error('[PaymentIntentHandler] Could not verify inserted record:', verifyError);
       } else {
         console.log('[PaymentIntentHandler] ===== VERIFICATION SUCCESS =====');
-        console.log('[PaymentIntentHandler] Verified subscription exists with status:', verifyData.status);
+        console.log('[PaymentIntentHandler] Verified subscription exists:', JSON.stringify(verifyData, null, 2));
       }
     }
 
