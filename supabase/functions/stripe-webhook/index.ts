@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe properly for Deno with async crypto provider - USING LIVE KEYS
+// Initialize Stripe properly for Deno with async crypto provider
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '',
+  Deno.env.get('STRIPE_SECRET_KEY') || '',
   {
     apiVersion: '2023-10-16',
     httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
@@ -28,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
+    console.log('=== WEBHOOK EVENT RECEIVED ===');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -43,50 +43,50 @@ serve(async (req) => {
     try {
       // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook signature verified successfully (LIVE MODE)');
+      console.log('Webhook signature verified successfully');
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return new Response('Webhook signature verification failed', { status: 400 });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
+    console.log('Webhook event type:', event.type, 'ID:', event.id);
 
     // Handle payment intent webhooks for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
-      console.log('Processing payment_intent.succeeded (LIVE MODE)');
+      console.log('Processing payment_intent.succeeded');
       await handlePaymentIntentWebhook(event, supabase, stripe);
     }
 
     // Handle price webhooks
     if (event.type.startsWith('price.')) {
-      console.log('Processing price webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing price webhook:', event.type);
       await handlePriceWebhook(event, supabase);
     }
 
     // Handle product webhooks
     if (event.type.startsWith('product.')) {
-      console.log('Processing product webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing product webhook:', event.type);
       await handleProductWebhook(event, supabase);
     }
 
     // Handle checkout session completed events FIRST
     if (event.type === 'checkout.session.completed') {
-      console.log('Processing checkout.session.completed (LIVE MODE)');
+      console.log('Processing checkout.session.completed');
       await handleCheckoutWebhook(event, supabase, stripe);
     }
 
     // Handle subscription-related webhooks
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
-      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
+      console.log('Processing subscription webhook:', event.type);
       await handleSubscriptionWebhook(event, supabase, stripe);
     }
 
     // Keep existing invoice payment handling for earnings
     if (event.type === 'invoice.payment_succeeded') {
-      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED FOR EARNINGS (LIVE MODE) ===');
+      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED FOR EARNINGS ===');
       
       const invoice = event.data.object as any;
-      console.log('Processing invoice payment succeeded:', invoice.id, '(LIVE MODE)');
+      console.log('Processing invoice payment succeeded:', invoice.id);
 
       let subscriptionId = invoice.subscription;
       
@@ -95,7 +95,7 @@ serve(async (req) => {
         const platformFee = amountPaid * 0.05;
         const creatorEarnings = amountPaid - platformFee;
         
-        console.log('Payment details (LIVE MODE):', { amountPaid, platformFee, creatorEarnings });
+        console.log('Payment details:', { amountPaid, platformFee, creatorEarnings });
 
         // Record the payment in creator_earnings
         const { error: earningsError } = await supabase
@@ -110,16 +110,16 @@ serve(async (req) => {
           });
 
         if (earningsError) {
-          console.error('Error recording creator earnings (LIVE MODE):', earningsError);
+          console.error('Error recording creator earnings:', earningsError);
         }
       }
     }
 
-    console.log('=== WEBHOOK PROCESSING COMPLETE (LIVE MODE) ===');
+    console.log('=== WEBHOOK PROCESSING COMPLETE ===');
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Webhook error (LIVE MODE):', error);
+    console.error('Webhook error:', error);
     return new Response('Webhook error', { status: 500, headers: corsHeaders });
   }
 });
