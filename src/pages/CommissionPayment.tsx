@@ -3,13 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { StripePaymentForm } from '@/components/creator/StripePaymentForm';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { EmbeddedCommissionPayment } from '@/components/creator/EmbeddedCommissionPayment';
 import { Card, CardContent } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
 
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+
 export default function CommissionPayment() {
   const params = useParams();
+  // Fix: Extract requestId from URL params (not id)
   const commissionId = params.requestId;
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -107,7 +112,6 @@ export default function CommissionPayment() {
   };
 
   const handlePaymentCancel = () => {
-    console.log('Payment cancelled, navigating back');
     navigate(-1);
   };
 
@@ -141,6 +145,14 @@ export default function CommissionPayment() {
             <p className="text-sm text-muted-foreground">
               Error: {error instanceof Error ? error.message : 'Unknown error'}
             </p>
+            <div className="mt-4 p-3 bg-muted rounded text-sm text-left">
+              <p><strong>Debug Info:</strong></p>
+              <p>Commission ID: {commissionId || 'undefined'}</p>
+              <p>URL Params: {JSON.stringify(params)}</p>
+              <p>User ID: {user?.id || 'Not logged in'}</p>
+              <p>User Email: {user?.email || 'No email'}</p>
+              <p>Current URL: {window.location.pathname}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -173,14 +185,16 @@ export default function CommissionPayment() {
           </p>
         </div>
 
-        <StripePaymentForm
-          commissionId={commission.id}
-          amount={commission.agreed_price}
-          title={commission.title}
-          creatorName={commission.creator.display_name}
-          onSuccess={handlePaymentSuccess}
-          onCancel={handlePaymentCancel}
-        />
+        <Elements stripe={stripePromise}>
+          <EmbeddedCommissionPayment
+            commissionId={commission.id}
+            amount={commission.agreed_price}
+            title={commission.title}
+            creatorName={commission.creator.display_name}
+            onSuccess={handlePaymentSuccess}
+            onCancel={handlePaymentCancel}
+          />
+        </Elements>
       </div>
     </div>
   );

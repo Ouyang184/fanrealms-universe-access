@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 interface StripePaymentFormProps {
   commissionId: string;
@@ -25,7 +24,6 @@ export function StripePaymentForm({
   onCancel
 }: StripePaymentFormProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const navigate = useNavigate();
 
   const handlePayment = async () => {
     try {
@@ -52,7 +50,7 @@ export function StripePaymentForm({
 
       console.log('Payment session created, redirecting to:', data.url);
 
-      // Redirect to Stripe checkout
+      // Redirect in the same window instead of opening new tab
       window.location.href = data.url;
 
     } catch (error) {
@@ -64,16 +62,6 @@ export function StripePaymentForm({
         description: error instanceof Error ? error.message : "Failed to start payment process. Please try again.",
         variant: "destructive"
       });
-    }
-  };
-
-  const handleCancel = () => {
-    console.log('Cancel button clicked');
-    if (onCancel) {
-      onCancel();
-    } else {
-      // Navigate back to the creator page or previous page
-      navigate(-1);
     }
   };
 
@@ -121,14 +109,16 @@ export function StripePaymentForm({
             )}
           </Button>
           
-          <Button 
-            onClick={handleCancel}
-            variant="outline"
-            disabled={isProcessing}
-            className="w-full"
-          >
-            Cancel
-          </Button>
+          {onCancel && (
+            <Button 
+              onClick={onCancel}
+              variant="outline"
+              disabled={isProcessing}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          )}
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
