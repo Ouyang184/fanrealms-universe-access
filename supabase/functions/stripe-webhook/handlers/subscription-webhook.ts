@@ -100,10 +100,11 @@ export async function handleSubscriptionWebhook(
         console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
       }
     } else {
-      // For incomplete (but not expired), just update the status
-      console.log('[WebhookHandler] Updating incomplete subscription status');
+      // For incomplete (but not expired), only update if not already active
+      console.log('[WebhookHandler] Checking incomplete subscription status');
       
-      if (existingSubscription) {
+      if (existingSubscription && existingSubscription.status !== 'active') {
+        console.log('[WebhookHandler] Updating incomplete subscription status (not active)');
         const { error: updateError } = await supabaseService
           .from('user_subscriptions')
           .update({
@@ -115,6 +116,8 @@ export async function handleSubscriptionWebhook(
         if (updateError) {
           console.error('[WebhookHandler] Error updating incomplete subscription:', updateError);
         }
+      } else if (existingSubscription && existingSubscription.status === 'active') {
+        console.log('[WebhookHandler] Subscription already active, skipping incomplete update:', subscription.id);
       }
     }
 
