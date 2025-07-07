@@ -1,5 +1,9 @@
-// MINIMAL TEST VERSION - Step-by-step debugging
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
+import Stripe from 'https://esm.sh/stripe@14.21.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { authenticateUser } from './utils/auth.ts';
+import { handleCreateSubscription } from './handlers/create-subscription.ts';
+import { createJsonResponse } from './utils/cors.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,123 +11,84 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 [MINIMAL-TEST] Function started successfully');
+  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started');
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
-    console.log('📋 [MINIMAL-TEST] Handling CORS preflight');
+    console.log('📋 [STRIPE-SUBSCRIPTIONS] Handling CORS preflight');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('📥 [MINIMAL-TEST] Processing request:', {
+    console.log('📥 [STRIPE-SUBSCRIPTIONS] Processing request:', {
       method: req.method,
-      url: req.url,
-      headers: Object.fromEntries(req.headers.entries())
+      url: req.url
     });
 
-    // Test 1: Basic function execution
-    console.log('✅ [MINIMAL-TEST] Test 1 PASSED: Function executes');
-
-    // Test 2: Request body parsing
+    // Parse request body
     let body;
     try {
       body = await req.json();
-      console.log('✅ [MINIMAL-TEST] Test 2 PASSED: Request body parsed:', body);
+      console.log('📦 [STRIPE-SUBSCRIPTIONS] Request body parsed:', body);
     } catch (parseError) {
-      console.log('❌ [MINIMAL-TEST] Test 2 FAILED: Body parse error:', parseError.message);
-      return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Body parse error:', parseError.message);
+      return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
-    // Test 3: Environment variables check
+    // Validate environment variables
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET_KEY_LIVE');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('🔑 [MINIMAL-TEST] Environment check:', {
+    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check:', {
       hasStripeKey: !!stripeKey,
       hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey,
-      stripeKeyLength: stripeKey?.length || 0
+      hasServiceKey: !!supabaseServiceKey
     });
 
     if (!stripeKey) {
-      console.log('❌ [MINIMAL-TEST] Test 3 FAILED: Missing Stripe key');
-      return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe key');
+      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.log('❌ [MINIMAL-TEST] Test 3 FAILED: Missing Supabase config');
-      return new Response(JSON.stringify({ error: 'Missing Supabase configuration' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Supabase config');
+      return createJsonResponse({ error: 'Missing Supabase configuration' }, 500);
     }
 
-    console.log('✅ [MINIMAL-TEST] Test 3 PASSED: Environment variables present');
+    // Initialize clients
+    const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized');
 
-    // Test 4: Authentication header check
-    const authHeader = req.headers.get('Authorization');
-    console.log('🔐 [MINIMAL-TEST] Auth header check:', {
-      hasAuthHeader: !!authHeader,
-      authHeaderLength: authHeader?.length || 0
-    });
+    // Authenticate user
+    const user = await authenticateUser(req, supabase);
+    console.log('👤 [STRIPE-SUBSCRIPTIONS] User authenticated:', user.id);
 
-    if (!authHeader) {
-      console.log('❌ [MINIMAL-TEST] Test 4 FAILED: Missing auth header');
-      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // Handle different actions
+    const action = body.action;
+    console.log('🎯 [STRIPE-SUBSCRIPTIONS] Action:', action);
+
+    switch (action) {
+      case 'create_subscription':
+        return await handleCreateSubscription(stripe, supabase, user, body);
+        
+      default:
+        console.log('❌ [STRIPE-SUBSCRIPTIONS] Unknown action:', action);
+        return createJsonResponse({ error: `Unknown action: ${action}` }, 400);
     }
-
-    console.log('✅ [MINIMAL-TEST] Test 4 PASSED: Auth header present');
-
-    // Success response
-    const result = {
-      success: true,
-      message: 'All basic tests passed!',
-      tests: {
-        functionExecution: true,
-        bodyParsing: true,
-        environmentVariables: true,
-        authenticationHeader: true
-      },
-      receivedData: {
-        action: body.action,
-        tierId: body.tierId,
-        creatorId: body.creatorId
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    console.log('🎉 [MINIMAL-TEST] All tests passed! Returning success response:', result);
-
-    return new Response(JSON.stringify(result), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
 
   } catch (error) {
-    console.log('💥 [MINIMAL-TEST] CRITICAL ERROR:', {
+    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR:', {
       message: error.message,
       stack: error.stack,
       name: error.name
     });
 
-    return new Response(JSON.stringify({ 
-      error: 'Critical function error',
-      details: error.message,
-      type: error.name
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    return createJsonResponse({ 
+      error: 'Internal server error',
+      details: error.message
+    }, 500);
   }
 });
