@@ -79,7 +79,7 @@ export const useCreateSubscription = () => {
     console.log('useCreateSubscription: Starting subscription creation for:', { tierId, creatorId, userId: user.id });
     
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+      const { data, error } = await supabase.functions.invoke('simple-subscriptions', {
         body: {
           action: 'create_subscription',
           tierId: tierId,

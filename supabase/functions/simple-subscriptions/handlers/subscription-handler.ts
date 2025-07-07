@@ -229,7 +229,16 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
     clientSecret,
     subscriptionId: subscription.id,
     amount: tier.price * 100,
-    tierName: tier.title
+    tierName: tier.title,
+    tierId: tierId,
+    creatorId: creatorId,
+    useCustomPaymentPage: true,
+    isUpgrade: false,
+    currentTierName: null,
+    proratedAmount: 0,
+    fullTierPrice: tier.price * 100,
+    currentPeriodEnd: null,
+    reusedSession: false
   };
 }
 
