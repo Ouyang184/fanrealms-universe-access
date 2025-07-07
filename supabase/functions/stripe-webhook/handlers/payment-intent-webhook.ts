@@ -128,6 +128,36 @@ export async function handlePaymentIntentWebhook(
       // Handle new subscription: Create new Stripe subscription
       console.log('[PaymentIntentHandler] Processing new subscription');
 
+      // Check if subscription already exists to avoid duplicates
+      const { data: existingRecord, error: checkError } = await supabaseService
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user_id)
+        .eq('creator_id', creator_id)
+        .eq('tier_id', tier_id)
+        .single();
+
+      if (!checkError && existingRecord) {
+        console.log('[PaymentIntentHandler] Subscription record already exists, updating status to active:', existingRecord.id);
+        
+        // Update existing record to active
+        const { error: updateError } = await supabaseService
+          .from('user_subscriptions')
+          .update({ 
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingRecord.id);
+
+        if (updateError) {
+          console.error('[PaymentIntentHandler] Error updating existing subscription:', updateError);
+        } else {
+          console.log('[PaymentIntentHandler] Successfully updated existing subscription to active');
+        }
+        
+        return createJsonResponse({ success: true });
+      }
+
       // Use existing Stripe price ID or create one if it doesn't exist
       let stripePriceId = tier.stripe_price_id;
       
@@ -207,7 +237,8 @@ export async function handlePaymentIntentWebhook(
       console.log('[PaymentIntentHandler] tier_id:', tier_id);
       console.log('[PaymentIntentHandler] stripe_subscription_id:', subscription.id);
       console.log('[PaymentIntentHandler] amount:', tier.price);
-      console.log('[PaymentIntentHandler] status:', subscription.status);
+      console.log('[PaymentIntentHandler] Stripe subscription status:', subscription.status);
+      console.log('[PaymentIntentHandler] Setting status to: active (overriding Stripe status since payment succeeded)');
       console.log('[PaymentIntentHandler] Full subscription data:', JSON.stringify(subscriptionData, null, 2));
 
       const { data: insertedData, error: insertError } = await supabaseService
