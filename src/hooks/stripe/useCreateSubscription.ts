@@ -65,7 +65,8 @@ export const useCreateSubscription = () => {
           isUpgrade: cachedSession.isUpgrade,
           currentTierName: cachedSession.currentTierName,
           proratedAmount: cachedSession.proratedAmount,
-          fullTierPrice: cachedSession.fullTierPrice
+          fullTierPrice: cachedSession.fullTierPrice,
+          setupIntentId: cachedSession.setupIntentId
         }
       });
       
@@ -122,7 +123,8 @@ export const useCreateSubscription = () => {
           isUpgrade: data.isUpgrade,
           currentTierName: data.currentTierName,
           proratedAmount: data.proratedAmount,
-          fullTierPrice: data.fullTierPrice
+          fullTierPrice: data.fullTierPrice,
+          setupIntentId: data.setupIntentId
         };
         
         sessionCache.set(cacheKey, sessionData);
@@ -142,7 +144,8 @@ export const useCreateSubscription = () => {
             isUpgrade: data.isUpgrade,
             currentTierName: data.currentTierName,
             proratedAmount: data.proratedAmount,
-            fullTierPrice: data.fullTierPrice
+            fullTierPrice: data.fullTierPrice,
+            setupIntentId: data.setupIntentId
           }
         });
         

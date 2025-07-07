@@ -135,44 +135,40 @@ export async function handleCreateSubscription(
     const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabaseService, user);
     console.log('Stripe customer ID:', stripeCustomerId);
 
-    // Check for existing pending payment intent for this user/creator/tier combination
-    console.log('Checking for existing payment intents...');
-    const paymentIntents = await stripe.paymentIntents.list({
+    // Check for existing pending setup intents for this user/creator/tier combination
+    console.log('Checking for existing setup intents...');
+    const setupIntents = await stripe.setupIntents.list({
       customer: stripeCustomerId,
       limit: 10
     });
 
-    const paymentAmount = isUpgrade ? proratedAmount : tier.price;
-    const targetAmount = Math.round(paymentAmount * 100); // Convert to cents
-
-    // Look for existing payment intent with same metadata that's still valid
-    let existingPaymentIntent = null;
-    for (const pi of paymentIntents.data) {
-      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
-        const metadata = pi.metadata || {};
+    // Look for existing setup intent with same metadata that's still valid
+    let existingSetupIntent = null;
+    for (const si of setupIntents.data) {
+      if (si.status === 'requires_payment_method' || si.status === 'requires_confirmation') {
+        const metadata = si.metadata || {};
         if (metadata.creator_id === creatorId && 
             metadata.user_id === user.id && 
             metadata.tier_id === tierId &&
-            metadata.is_upgrade === (isUpgrade ? 'true' : 'false') &&
-            pi.amount === targetAmount) {
-          existingPaymentIntent = pi;
-          console.log('Found reusable payment intent:', pi.id);
+            metadata.is_upgrade === (isUpgrade ? 'true' : 'false')) {
+          existingSetupIntent = si;
+          console.log('Found reusable setup intent:', si.id);
           break;
         }
       }
     }
 
-    // If we found a reusable payment intent, return it
-    if (existingPaymentIntent) {
-      console.log('Reusing existing payment intent:', existingPaymentIntent.id);
+    // If we found a reusable setup intent, return it
+    if (existingSetupIntent) {
+      console.log('Reusing existing setup intent:', existingSetupIntent.id);
       
       return createJsonResponse({
-        clientSecret: existingPaymentIntent.client_secret,
-        amount: existingPaymentIntent.amount,
+        clientSecret: existingSetupIntent.client_secret,
+        amount: Math.round((isUpgrade ? proratedAmount : tier.price) * 100),
         tierName: tier.title,
         tierId: tierId,
         creatorId: creatorId,
-        paymentIntentId: existingPaymentIntent.id,
+        setupIntentId: existingSetupIntent.id,
         useCustomPaymentPage: true,
         isUpgrade: isUpgrade,
         currentTierName: existingSubscription?.membership_tiers?.title || null,
@@ -183,14 +179,14 @@ export async function handleCreateSubscription(
       });
     }
 
-    // Cancel any old pending payment intents to clean up
-    console.log('Cleaning up old payment intents...');
-    for (const pi of paymentIntents.data) {
-      if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
-        const metadata = pi.metadata || {};
+    // Cancel any old pending setup intents to clean up
+    console.log('Cleaning up old setup intents...');
+    for (const si of setupIntents.data) {
+      if (si.status === 'requires_payment_method' || si.status === 'requires_confirmation') {
+        const metadata = si.metadata || {};
         if (metadata.creator_id === creatorId && metadata.user_id === user.id) {
-          console.log('Cancelling old payment intent:', pi.id);
-          await stripe.paymentIntents.cancel(pi.id);
+          console.log('Cancelling old setup intent:', si.id);
+          await stripe.setupIntents.cancel(si.id);
         }
       }
     }
@@ -214,14 +210,13 @@ export async function handleCreateSubscription(
       .eq('user_id', user.id)
       .eq('creator_id', creatorId);
 
-    // Create new Payment Intent with updated platform fee calculation
-    console.log('Creating new Payment Intent for amount:', paymentAmount);
+    // Create new Setup Intent for saving payment method
+    console.log('Creating new Setup Intent');
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const setupIntent = await stripe.setupIntents.create({
       customer: stripeCustomerId,
-      amount: targetAmount,
-      currency: 'usd',
       payment_method_types: ['card'],
+      usage: 'off_session',
       metadata: {
         user_id: user.id,
         creator_id: creatorId,
@@ -235,20 +230,19 @@ export async function handleCreateSubscription(
         current_period_end: existingSubscription?.current_period_end || '',
         full_tier_price: tier.price.toString(),
         prorated_amount: isUpgrade ? proratedAmount.toString() : '0',
-        platform_fee_percent: '4'
-      },
-      setup_future_usage: 'off_session',
+        stripe_price_id: tier.stripe_price_id
+      }
     });
 
-    console.log('Payment Intent created:', paymentIntent.id);
+    console.log('Setup Intent created:', setupIntent.id);
 
     return createJsonResponse({
-      clientSecret: paymentIntent.client_secret,
-      amount: targetAmount,
+      clientSecret: setupIntent.client_secret,
+      amount: Math.round((isUpgrade ? proratedAmount : tier.price) * 100),
       tierName: tier.title,
       tierId: tierId,
       creatorId: creatorId,
-      paymentIntentId: paymentIntent.id,
+      setupIntentId: setupIntent.id,
       useCustomPaymentPage: true,
       isUpgrade: isUpgrade,
       currentTierName: existingSubscription?.membership_tiers?.title || null,

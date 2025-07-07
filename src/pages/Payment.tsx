@@ -19,7 +19,8 @@ export default function Payment() {
     creatorId, 
     isUpgrade,
     amount,
-    creatorName 
+    creatorName,
+    setupIntentId
   } = location.state || {};
 
   const {
@@ -30,7 +31,8 @@ export default function Payment() {
     tierId: tierId || '',
     creatorId: creatorId || '',
     tierName: tierName || '',
-    isUpgrade: isUpgrade || false
+    isUpgrade: isUpgrade || false,
+    setupIntentId: setupIntentId
   });
 
   if (paymentSucceeded) {

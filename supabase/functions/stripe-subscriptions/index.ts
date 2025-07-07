@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -11,6 +10,7 @@ import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts
 import { handleGetSubscriberCount } from './handlers/get-subscriber-count.ts';
 import { handleVerifySubscription } from './handlers/verify-subscription.ts';
 import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
+import { handleCompleteSubscription } from './handlers/complete-subscription.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -41,6 +41,11 @@ serve(async (req) => {
     switch (action) {
       case 'create_subscription':
         return await handleCreateSubscription(stripe, supabaseService, user, body);
+
+      case 'complete_subscription': {
+        const { setupIntentId } = body;
+        return await handleCompleteSubscription(stripe, supabaseService, user, { setupIntentId });
+      }
 
       case 'cancel_subscription': {
         const { subscriptionId, immediate } = body;
