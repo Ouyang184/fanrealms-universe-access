@@ -18,23 +18,6 @@ export function CommissionTypeDisplay({ commissionType }: CommissionTypeDisplayP
           <div>Per Character: +${commissionType.price_per_character}</div>
         )}
       </div>
-      
-      {/* Display custom add-ons */}
-      {commissionType.custom_addons && commissionType.custom_addons.length > 0 && (
-        <div className="mt-4">
-          <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
-          <div className="space-y-1">
-            {commissionType.custom_addons.map((addon, index) => (
-              <div key={index} className="text-sm">
-                <span className="font-medium">{addon.name}:</span> +${addon.price}
-                {addon.description && (
-                  <span className="text-muted-foreground ml-2">({addon.description})</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

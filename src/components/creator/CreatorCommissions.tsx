@@ -67,12 +67,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           });
         } else {
           console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
-          // Transform the data to match our CommissionType interface
-          const transformedTypes: CommissionType[] = (types || []).map(type => ({
-            ...type,
-            custom_addons: Array.isArray(type.custom_addons) ? type.custom_addons : []
-          }));
-          setCommissionTypes(transformedTypes);
+          setCommissionTypes(types || []);
         }
       } catch (error) {
         console.error('[CreatorCommissions] Unexpected error fetching commission data:', error);
@@ -233,23 +228,6 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                     </div>
                   )}
                 </div>
-                
-                {/* Display custom add-ons */}
-                {type.custom_addons && type.custom_addons.length > 0 && (
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
-                    <div className="space-y-1">
-                      {type.custom_addons.map((addon, index) => (
-                        <div key={index} className="text-sm">
-                          <span className="font-medium">{addon.name}:</span> +${addon.price}
-                          {addon.description && (
-                            <span className="text-muted-foreground ml-2">({addon.description})</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 
                 {type.dos && type.dos.length > 0 && (
                   <div>
