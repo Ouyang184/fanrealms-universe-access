@@ -1,4 +1,3 @@
-
 export async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) {
   console.log('Getting or creating Stripe customer for user:', user.id);
   

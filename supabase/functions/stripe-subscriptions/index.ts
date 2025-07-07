@@ -1,15 +1,213 @@
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { corsHeaders } from './utils/cors.ts';
-import { authenticateUser } from './utils/auth.ts';
-import { handleCreateSubscription } from './handlers/create-subscription.ts';
-import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
-import { handleReactivateSubscription } from './handlers/reactivate-subscription.ts';
-import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts';
-import { handleGetSubscriberCount } from './handlers/get-subscriber-count.ts';
-import { handleVerifySubscription } from './handlers/verify-subscription.ts';
-import { handleSyncAllSubscriptions } from './handlers/sync-all-subscriptions.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const createJsonResponse = (data: any, status = 200) => {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    status,
+  });
+};
+
+// Authentication function
+async function authenticateUser(req: Request, supabase: any) {
+  console.log('[Auth] Starting authentication...');
+  
+  try {
+    const authHeader = req.headers.get('Authorization');
+    console.log('[Auth] Authorization header present:', !!authHeader);
+    
+    if (!authHeader) {
+      console.error('[Auth] No authorization header provided');
+      throw new Error('Authorization header required');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    console.log('[Auth] Extracted token length:', token.length);
+    
+    console.log('[Auth] Calling supabase.auth.getUser...');
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    console.log('[Auth] Auth response:', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      userEmail: user?.email,
+      hasError: !!error,
+      errorMessage: error?.message 
+    });
+    
+    if (error || !user) {
+      console.error('[Auth] Authentication error:', error);
+      throw new Error(`Authentication failed: ${error?.message || 'User not found'}`);
+    }
+
+    console.log('[Auth] Authentication successful for user:', user.id);
+    return user;
+  } catch (authError) {
+    console.error('[Auth] CRITICAL AUTH ERROR:', authError);
+    console.error('[Auth] Error type:', authError.constructor?.name);
+    console.error('[Auth] Error message:', authError.message);
+    throw authError;
+  }
+}
+
+// Stripe customer service
+async function getOrCreateStripeCustomer(stripe: any, supabase: any, user: any) {
+  console.log('Getting or creating Stripe customer for user:', user.id);
+  
+  // Check if customer already exists in our database
+  const { data: existingCustomer, error: fetchError } = await supabase
+    .from('stripe_customers')
+    .select('stripe_customer_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (existingCustomer && !fetchError) {
+    console.log('Found existing Stripe customer:', existingCustomer.stripe_customer_id);
+    return existingCustomer.stripe_customer_id;
+  }
+
+  // Check if customer exists in Stripe by email
+  const customers = await stripe.customers.list({
+    email: user.email,
+    limit: 1
+  });
+
+  let customerId;
+  
+  if (customers.data.length > 0) {
+    customerId = customers.data[0].id;
+    console.log('Found existing customer in Stripe:', customerId);
+  } else {
+    // Create new customer in Stripe
+    const customer = await stripe.customers.create({
+      email: user.email,
+      metadata: {
+        user_id: user.id
+      }
+    });
+    customerId = customer.id;
+    console.log('Created new Stripe customer:', customerId);
+  }
+
+  // Store the customer ID in our database
+  const { error: insertError } = await supabase
+    .from('stripe_customers')
+    .upsert({
+      user_id: user.id,
+      stripe_customer_id: customerId,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+  if (insertError) {
+    console.error('Error storing customer ID:', insertError);
+    // Don't throw error, just log it - the customer ID still works
+  }
+
+  return customerId;
+}
+
+// Create subscription handler
+async function handleCreateSubscription(stripe: any, supabase: any, user: any, body: any) {
+  console.log('[CreateSubscription] === STARTING SUBSCRIPTION CREATION ===');
+  console.log('[CreateSubscription] User ID:', user.id);
+  console.log('[CreateSubscription] User email:', user.email);
+  console.log('[CreateSubscription] Request body:', JSON.stringify(body, null, 2));
+
+  // Extract parameters from body - handle both formats
+  const tierId = body.tierId || body.tier_id;
+  const creatorId = body.creatorId || body.creator_id;
+
+  console.log('[CreateSubscription] Extracted params:', { tierId, creatorId });
+
+  if (!tierId || !creatorId) {
+    console.log('ERROR: Missing tierId or creatorId', { tierId, creatorId });
+    return createJsonResponse({ error: 'Missing tierId or creatorId' }, 400);
+  }
+
+  try {
+    // Get tier details
+    console.log('Fetching tier and creator details...');
+    const { data: tier, error: tierError } = await supabase
+      .from('membership_tiers')
+      .select(`
+        *,
+        creators!inner(
+          stripe_account_id,
+          display_name
+        )
+      `)
+      .eq('id', tierId)
+      .single();
+
+    if (tierError || !tier) {
+      console.log('ERROR: Tier not found:', tierError);
+      return createJsonResponse({ error: 'Membership tier not found' }, 404);
+    }
+
+    console.log('Tier found:', tier.title, 'Price:', tier.price);
+
+    if (!tier.creators.stripe_account_id) {
+      console.log('ERROR: Creator not connected to Stripe');
+      return createJsonResponse({ 
+        error: 'This creator has not set up payments yet. Please try again later.' 
+      }, 400);
+    }
+
+    // Create or get Stripe customer
+    console.log('Creating/getting Stripe customer...');
+    const stripeCustomerId = await getOrCreateStripeCustomer(stripe, supabase, user);
+    console.log('Stripe customer ID:', stripeCustomerId);
+
+    // Create Payment Intent
+    console.log('Creating Payment Intent for amount:', tier.price);
+    const targetAmount = Math.round(tier.price * 100); // Convert to cents
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      customer: stripeCustomerId,
+      amount: targetAmount,
+      currency: 'usd',
+      payment_method_types: ['card'],
+      metadata: {
+        user_id: user.id,
+        creator_id: creatorId,
+        tier_id: tierId,
+        tier_name: tier.title,
+        creator_name: tier.creators.display_name,
+        type: 'subscription_setup',
+        full_tier_price: tier.price.toString(),
+        platform_fee_percent: '4'
+      },
+      setup_future_usage: 'off_session',
+    });
+
+    console.log('Payment Intent created:', paymentIntent.id);
+
+    return createJsonResponse({
+      clientSecret: paymentIntent.client_secret,
+      amount: targetAmount,
+      tierName: tier.title,
+      tierId: tierId,
+      creatorId: creatorId,
+      paymentIntentId: paymentIntent.id,
+      useCustomPaymentPage: true,
+      fullTierPrice: targetAmount,
+      reusedSession: false
+    });
+
+  } catch (error) {
+    console.error('Error in create subscription:', error);
+    return createJsonResponse({ 
+      error: 'Failed to create subscription. Please try again later.' 
+    }, 500);
+  }
+}
 
 serve(async (req) => {
   console.log('[StripeSubscriptions] === NEW REQUEST RECEIVED ===');
@@ -83,47 +281,9 @@ serve(async (req) => {
         console.log('[StripeSubscriptions] Calling handleCreateSubscription...');
         return await handleCreateSubscription(stripe, supabaseService, user, body);
 
-      case 'cancel_subscription': {
-        const { subscriptionId, immediate } = body;
-        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate);
-        
-        // Ensure immediate is properly converted to boolean
-        const immediateFlag = immediate === true || immediate === 'true' || immediate === 1;
-        console.log('Converted immediate flag to boolean:', immediateFlag);
-        
-        return await handleCancelSubscription(stripe, supabaseService, user, subscriptionId, immediateFlag);
-      }
-
-      case 'reactivate_subscription': {
-        const { subscriptionId } = body;
-        return await handleReactivateSubscription(stripe, supabaseService, user, subscriptionId);
-      }
-
-      case 'get_user_subscriptions': {
-        const { userId } = body;
-        return await handleGetUserSubscriptions(supabaseService, user, userId);
-      }
-
-      case 'get_subscriber_count': {
-        const { creatorId } = body;
-        return await handleGetSubscriberCount(supabaseService, creatorId);
-      }
-
-      case 'verify_subscription': {
-        const { subscriptionId } = body;
-        return await handleVerifySubscription(stripe, supabaseService, subscriptionId);
-      }
-
-      case 'sync_all_subscriptions': {
-        return await handleSyncAllSubscriptions(stripe, supabaseService);
-      }
-
       default:
         console.log('[StripeSubscriptions] ERROR: Invalid action provided:', action);
-        return new Response(JSON.stringify({ error: 'Invalid action' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        });
+        return createJsonResponse({ error: 'Invalid action' }, 400);
     }
   } catch (error) {
     console.error('[StripeSubscriptions] === CRITICAL ERROR OCCURRED ===');
@@ -131,50 +291,38 @@ serve(async (req) => {
     console.error('[StripeSubscriptions] Error message:', error.message);
     console.error('[StripeSubscriptions] Error stack:', error.stack);
     
-    // Detailed error analysis
-    if (error.message.includes('JSON')) {
+    // Detailed error analysis with enhanced logging
+    if (error.message?.includes('JSON')) {
       console.error('[StripeSubscriptions] JSON parsing error - malformed request body');
-      return new Response(JSON.stringify({ 
+      return createJsonResponse({ 
         error: 'Invalid request format',
         details: 'Request body must be valid JSON'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+      }, 400);
     }
     
-    if (error.message.includes('Authentication') || error.message.includes('Authorization')) {
+    if (error.message?.includes('Authentication') || error.message?.includes('Authorization')) {
       console.error('[StripeSubscriptions] Authentication error detected');
-      return new Response(JSON.stringify({ 
+      return createJsonResponse({ 
         error: 'Authentication failed - please log in again',
         details: error.message
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
+      }, 401);
     }
     
-    if (error.message.includes('Stripe') || error.type) {
+    if (error.message?.includes('Stripe') || error.type) {
       console.error('[StripeSubscriptions] Stripe API error detected');
-      return new Response(JSON.stringify({ 
+      return createJsonResponse({ 
         error: 'Payment service error',
         details: error.message
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 402,
-      });
+      }, 402);
     }
     
     // Generic server error with full details
     console.error('[StripeSubscriptions] Unhandled server error');
-    return new Response(JSON.stringify({ 
+    return createJsonResponse({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred',
       details: error instanceof Error ? error.stack : 'No stack trace available',
       errorType: error.constructor?.name || 'Unknown',
       timestamp: new Date().toISOString()
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    }, 500);
   }
 });
