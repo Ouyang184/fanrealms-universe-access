@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe properly for Deno with async crypto provider
+// Initialize Stripe properly for Deno with async crypto provider - USING LIVE KEYS
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECRET_KEY') || '',
+  Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '',
   {
     apiVersion: '2023-10-16',
     httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
@@ -21,6 +21,7 @@ import { handleCheckoutWebhook } from './handlers/checkout-webhook.ts';
 import { handleProductWebhook } from './handlers/product-webhook.ts';
 import { handlePaymentIntentWebhook } from './handlers/payment-intent-webhook.ts';
 import { handlePriceWebhook } from './handlers/price-webhook.ts';
+import { handleCommissionWebhook } from './handlers/commission-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -28,7 +29,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED ===');
+    console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -43,50 +44,58 @@ serve(async (req) => {
     try {
       // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook signature verified successfully');
+      console.log('Webhook signature verified successfully (LIVE MODE)');
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return new Response('Webhook signature verification failed', { status: 400 });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id);
+    console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
+
+    // Handle commission-related webhooks
+    if (event.type === 'payment_intent.canceled' || 
+        event.type === 'payment_intent.succeeded' || 
+        event.type === 'charge.refunded') {
+      console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
+      await handleCommissionWebhook(event, supabase);
+    }
 
     // Handle payment intent webhooks for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
-      console.log('Processing payment_intent.succeeded');
+      console.log('Processing payment_intent.succeeded (LIVE MODE)');
       await handlePaymentIntentWebhook(event, supabase, stripe);
     }
 
     // Handle price webhooks
     if (event.type.startsWith('price.')) {
-      console.log('Processing price webhook:', event.type);
+      console.log('Processing price webhook:', event.type, '(LIVE MODE)');
       await handlePriceWebhook(event, supabase);
     }
 
     // Handle product webhooks
     if (event.type.startsWith('product.')) {
-      console.log('Processing product webhook:', event.type);
+      console.log('Processing product webhook:', event.type, '(LIVE MODE)');
       await handleProductWebhook(event, supabase);
     }
 
     // Handle checkout session completed events FIRST
     if (event.type === 'checkout.session.completed') {
-      console.log('Processing checkout.session.completed');
+      console.log('Processing checkout.session.completed (LIVE MODE)');
       await handleCheckoutWebhook(event, supabase, stripe);
     }
 
     // Handle subscription-related webhooks
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
-      console.log('Processing subscription webhook:', event.type);
+      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
       await handleSubscriptionWebhook(event, supabase, stripe);
     }
 
     // Keep existing invoice payment handling for earnings
     if (event.type === 'invoice.payment_succeeded') {
-      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED FOR EARNINGS ===');
+      console.log('=== PROCESSING INVOICE PAYMENT SUCCEEDED FOR EARNINGS (LIVE MODE) ===');
       
       const invoice = event.data.object as any;
-      console.log('Processing invoice payment succeeded:', invoice.id);
+      console.log('Processing invoice payment succeeded:', invoice.id, '(LIVE MODE)');
 
       let subscriptionId = invoice.subscription;
       
@@ -95,7 +104,7 @@ serve(async (req) => {
         const platformFee = amountPaid * 0.05;
         const creatorEarnings = amountPaid - platformFee;
         
-        console.log('Payment details:', { amountPaid, platformFee, creatorEarnings });
+        console.log('Payment details (LIVE MODE):', { amountPaid, platformFee, creatorEarnings });
 
         // Record the payment in creator_earnings
         const { error: earningsError } = await supabase
@@ -110,16 +119,16 @@ serve(async (req) => {
           });
 
         if (earningsError) {
-          console.error('Error recording creator earnings:', earningsError);
+          console.error('Error recording creator earnings (LIVE MODE):', earningsError);
         }
       }
     }
 
-    console.log('=== WEBHOOK PROCESSING COMPLETE ===');
+    console.log('=== WEBHOOK PROCESSING COMPLETE (LIVE MODE) ===');
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('Webhook error (LIVE MODE):', error);
     return new Response('Webhook error', { status: 500, headers: corsHeaders });
   }
 });

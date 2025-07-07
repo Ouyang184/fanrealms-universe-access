@@ -12,8 +12,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Load Stripe with your actual publishable key
-const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
+// Load Stripe with LIVE publishable key
+const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB0085bYdPzC');
 
 interface PaymentFormProps {
   clientSecret: string;

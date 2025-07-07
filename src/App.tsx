@@ -35,6 +35,7 @@ import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
+import Commissions from "./pages/creator-studio/Commissions";
 import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
@@ -52,6 +53,9 @@ import ShareablePost from "./pages/ShareablePost";
 import CompleteProfile from "./pages/CompleteProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import CommissionPayment from "./pages/CommissionPayment";
+import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
+import Requests from "./pages/Requests";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -107,7 +111,10 @@ export default function App() {
                 {/* Payment route */}
                 <Route path="/payment" element={<PaymentPage />} />
                 
-                {/* Shareable post route - must be before creator profile route */}
+                {/* Direct post route - must come before creator profile route */}
+                <Route path="/post/:postId" element={<ShareablePost />} />
+                
+                {/* Shareable post route with creator slug - must be before creator profile route */}
                 <Route path="/:creatorSlug/posts/:postId" element={<ShareablePost />} />
                 
                 {/* Creator profile page */}
@@ -116,6 +123,7 @@ export default function App() {
                 {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<SubscriptionsPage />} />
+                <Route path="/requests" element={<MainLayout><Requests /></MainLayout>} />
                 <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
                 <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
                 <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
@@ -163,6 +171,13 @@ export default function App() {
                     </CreatorCheck>
                   </MainLayout>
                 } />
+                <Route path="/creator-studio/commissions" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <Commissions />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
                 <Route path="/creator-studio/settings" element={
                   <MainLayout>
                     <CreatorCheck>
@@ -177,6 +192,10 @@ export default function App() {
                     </CreatorCheck>
                   </MainLayout>
                 } />
+                
+                {/* Commission payment routes - add before creator profile route */}
+                <Route path="/commissions/:requestId/pay" element={<CommissionPayment />} />
+                <Route path="/commissions/:requestId/payment-success" element={<CommissionPaymentSuccess />} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>

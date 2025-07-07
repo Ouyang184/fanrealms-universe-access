@@ -78,6 +78,12 @@ export function useCreatorFetch(identifier?: string) {
         stripe_onboarding_complete: data.stripe_onboarding_complete || false,
         stripe_charges_enabled: data.stripe_charges_enabled || false,
         stripe_payouts_enabled: data.stripe_payouts_enabled || false,
+        // Include commission fields
+        accepts_commissions: data.accepts_commissions || false,
+        commission_base_rate: data.commission_base_rate,
+        commission_turnaround_days: data.commission_turnaround_days,
+        commission_slots_available: data.commission_slots_available,
+        commission_tos: data.commission_tos,
         username: data.users?.username || null
       };
     },

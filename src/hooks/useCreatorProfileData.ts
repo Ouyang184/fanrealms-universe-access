@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,14 +10,17 @@ export function useCreatorProfileData() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProfile();
   
-  // Fetch creator's details including follower count
+  // Fetch creator's details including follower count and commission fields
   const { 
     data: creator, 
     isLoading: isLoadingCreator,
+    error: creatorError
   } = useQuery({
     queryKey: ['creatorProfileDetails', user?.id],
     queryFn: async () => {
       if (!user?.id || !creatorProfile) return null;
+      
+      console.log('[useCreatorProfileData] Fetching creator profile details for user:', user.id);
       
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -27,7 +29,7 @@ export function useCreatorProfileData() {
         .single();
       
       if (userError || !userData) {
-        console.error('Error fetching user:', userError);
+        console.error('[useCreatorProfileData] Error fetching user:', userError);
         toast({
           title: "Error",
           description: "Failed to load user profile",
@@ -36,7 +38,7 @@ export function useCreatorProfileData() {
         return null;
       }
       
-      // Get the latest creator data including follower_count
+      // Get the latest creator data including all commission fields
       const { data: latestCreatorData, error: creatorError } = await supabase
         .from('creators')
         .select('*')
@@ -44,12 +46,12 @@ export function useCreatorProfileData() {
         .single();
       
       if (creatorError) {
-        console.error('Error fetching latest creator data:', creatorError);
+        console.error('[useCreatorProfileData] Error fetching latest creator data:', creatorError);
       }
       
-      return {
+      const creatorProfileData = {
         ...creatorProfile,
-        ...latestCreatorData, // This will include the latest follower_count
+        ...latestCreatorData, // This will include all commission fields
         username: userData.username,
         fullName: userData.username,
         displayName: latestCreatorData?.display_name || userData.username,
@@ -58,10 +60,27 @@ export function useCreatorProfileData() {
         banner_url: latestCreatorData?.banner_url || null,
         bio: latestCreatorData?.bio || "No bio provided yet.",
         display_name: latestCreatorData?.display_name || null,
-        follower_count: latestCreatorData?.follower_count || 0
+        follower_count: latestCreatorData?.follower_count || 0,
+        // Commission fields - ensure they're properly mapped
+        accepts_commissions: latestCreatorData?.accepts_commissions || false,
+        commission_base_rate: latestCreatorData?.commission_base_rate,
+        commission_turnaround_days: latestCreatorData?.commission_turnaround_days,
+        commission_slots_available: latestCreatorData?.commission_slots_available,
+        commission_tos: latestCreatorData?.commission_tos
       } as CreatorProfile & { displayName: string };
+      
+      console.log('[useCreatorProfileData] Creator profile data assembled:', {
+        id: creatorProfileData.id,
+        accepts_commissions: creatorProfileData.accepts_commissions,
+        commission_base_rate: creatorProfileData.commission_base_rate,
+        hasCommissionData: !!(creatorProfileData.accepts_commissions || creatorProfileData.commission_base_rate)
+      });
+      
+      return creatorProfileData;
     },
-    enabled: !!user?.id && !!creatorProfile
+    enabled: !!user?.id && !!creatorProfile,
+    retry: 3,
+    retryDelay: 1000
   });
   
   // Fetch all creator's posts (including public ones)
@@ -188,12 +207,18 @@ export function useCreatorProfileData() {
     enabled: !!creatorProfile?.id
   });
   
+  // Log any errors for debugging
+  if (creatorError) {
+    console.error('[useCreatorProfileData] Creator query error:', creatorError);
+  }
+  
   return {
     creator,
     posts,
     tiers,
     isLoadingCreator,
     isLoadingPosts,
-    isLoadingTiers
+    isLoadingTiers,
+    error: creatorError
   };
 }
