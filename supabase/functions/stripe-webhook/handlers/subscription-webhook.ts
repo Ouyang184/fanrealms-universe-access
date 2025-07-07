@@ -60,13 +60,13 @@ export async function handleSubscriptionWebhook(
   if (event.type === 'customer.subscription.created' || 
       (event.type === 'customer.subscription.updated' && subscription.status === 'active')) {
     console.log('[WebhookHandler] Creating/updating subscription record for:', subscription.id);
-  } else if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
-    console.log('[WebhookHandler] Subscription is incomplete, deleting from Stripe and database:', subscription.id);
+  } else if (subscription.status === 'incomplete_expired') {
+    console.log('[WebhookHandler] Subscription is incomplete_expired, deleting from Stripe and database:', subscription.id);
     
     try {
       // Delete from Stripe first
       await stripe.subscriptions.del(subscription.id);
-      console.log('[WebhookHandler] Successfully deleted incomplete subscription from Stripe:', subscription.id);
+      console.log('[WebhookHandler] Successfully deleted incomplete_expired subscription from Stripe:', subscription.id);
     } catch (stripeError) {
       console.error('[WebhookHandler] Error deleting subscription from Stripe:', stripeError);
       // Continue to clean up database even if Stripe deletion fails
@@ -79,12 +79,16 @@ export async function handleSubscriptionWebhook(
         .delete()
         .eq('stripe_subscription_id', subscription.id);
       
-      console.log('[WebhookHandler] Successfully deleted incomplete subscription from database:', subscription.id);
+      console.log('[WebhookHandler] Successfully deleted incomplete_expired subscription from database:', subscription.id);
     } catch (dbError) {
       console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
     }
 
     return createJsonResponse({ success: true });
+  } else if (subscription.status === 'incomplete') {
+    console.log('[WebhookHandler] Subscription is incomplete, allowing payment flow to continue:', subscription.id);
+    // Don't delete incomplete subscriptions immediately - let the payment flow continue
+    // They will be handled by the payment success webhook or expire naturally
   }
 
   // Map Stripe status to our valid statuses
