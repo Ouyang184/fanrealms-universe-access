@@ -56,39 +56,35 @@ export async function handleSubscriptionWebhook(
     }
   }
 
-  // For new subscriptions, create the database record immediately
+  // For subscription creation or updates to active status
   if (event.type === 'customer.subscription.created' || 
-      (event.type === 'customer.subscription.updated' && subscription.status === 'active')) {
+      event.type === 'customer.subscription.updated') {
     console.log('[WebhookHandler] Creating/updating subscription record for:', subscription.id);
-  } else if (subscription.status === 'incomplete_expired') {
-    console.log('[WebhookHandler] Subscription is incomplete_expired, deleting from Stripe and database:', subscription.id);
     
-    try {
-      // Delete from Stripe first
-      await stripe.subscriptions.del(subscription.id);
-      console.log('[WebhookHandler] Successfully deleted incomplete_expired subscription from Stripe:', subscription.id);
-    } catch (stripeError) {
-      console.error('[WebhookHandler] Error deleting subscription from Stripe:', stripeError);
-      // Continue to clean up database even if Stripe deletion fails
-    }
-
-    try {
-      // Remove from database
-      await supabaseService
-        .from('user_subscriptions')
-        .delete()
-        .eq('stripe_subscription_id', subscription.id);
+    // Handle incomplete_expired subscriptions by cleaning them up
+    if (subscription.status === 'incomplete_expired') {
+      console.log('[WebhookHandler] Subscription is incomplete_expired, cleaning up:', subscription.id);
       
-      console.log('[WebhookHandler] Successfully deleted incomplete_expired subscription from database:', subscription.id);
-    } catch (dbError) {
-      console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
+      try {
+        // Clean up database record
+        await supabaseService
+          .from('user_subscriptions')
+          .delete()
+          .eq('stripe_subscription_id', subscription.id);
+        
+        console.log('[WebhookHandler] Successfully cleaned up incomplete_expired subscription:', subscription.id);
+      } catch (dbError) {
+        console.error('[WebhookHandler] Error cleaning up incomplete_expired subscription:', dbError);
+      }
+
+      return createJsonResponse({ success: true });
     }
 
-    return createJsonResponse({ success: true });
-  } else if (subscription.status === 'incomplete') {
-    console.log('[WebhookHandler] Subscription is incomplete, allowing payment flow to continue:', subscription.id);
-    // Don't delete incomplete subscriptions immediately - let the payment flow continue
-    // They will be handled by the payment success webhook or expire naturally
+    // Handle incomplete subscriptions - don't create records yet
+    if (subscription.status === 'incomplete') {
+      console.log('[WebhookHandler] Subscription is incomplete, waiting for payment completion:', subscription.id);
+      return createJsonResponse({ success: true });
+    }
   }
 
   // Map Stripe status to our valid statuses
@@ -109,16 +105,29 @@ export async function handleSubscriptionWebhook(
   console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'with cancel_at_period_end:', subscription.cancel_at_period_end, 'to DB status:', dbStatus);
 
   try {
+    // Get tier details to ensure we have proper pricing
+    const { data: tierData, error: tierError } = await supabaseService
+      .from('membership_tiers')
+      .select('price')
+      .eq('id', tier_id)
+      .single();
+
+    if (tierError) {
+      console.error('[WebhookHandler] Error fetching tier data:', tierError);
+    }
+
+    const tierPrice = tierData?.price || 5; // Default fallback price
+
     // Check if subscription record exists
     const { data: existingSubscription, error: fetchError } = await supabaseService
       .from('user_subscriptions')
       .select('*')
       .eq('stripe_subscription_id', subscription.id)
-      .single();
+      .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
+    if (fetchError) {
       console.error('[WebhookHandler] Error fetching existing subscription:', fetchError);
-      throw fetchError;
+      // Continue with creation if fetch fails
     }
 
     const updateData = {
@@ -131,7 +140,7 @@ export async function handleSubscriptionWebhook(
       current_period_end: subscription.current_period_end ? 
         new Date(subscription.current_period_end * 1000).toISOString() : null,
       amount: subscription.items?.data?.[0]?.price?.unit_amount ? 
-        subscription.items.data[0].price.unit_amount / 100 : 5,
+        subscription.items.data[0].price.unit_amount / 100 : tierPrice,
       updated_at: new Date().toISOString(),
       creator_id,
       tier_id,
@@ -153,8 +162,6 @@ export async function handleSubscriptionWebhook(
         creatorId: existingSubscription.creator_id
       });
 
-      console.log('[WebhookHandler] Update data being applied:', updateData);
-
       const { error: updateError } = await supabaseService
         .from('user_subscriptions')
         .update(updateData)
@@ -164,6 +171,8 @@ export async function handleSubscriptionWebhook(
         console.error('[WebhookHandler] Error updating subscription:', updateError);
         throw updateError;
       }
+
+      console.log('[WebhookHandler] Successfully updated existing subscription record');
     } else {
       console.log('[WebhookHandler] Creating new subscription record');
       
@@ -173,19 +182,31 @@ export async function handleSubscriptionWebhook(
         throw new Error('Missing required metadata for subscription creation');
       }
       
-      const { error: insertError } = await supabaseService
+      const insertData = {
+        ...updateData,
+        created_at: new Date().toISOString()
+      };
+
+      console.log('[WebhookHandler] Inserting subscription data:', insertData);
+
+      const { data: insertedData, error: insertError } = await supabaseService
         .from('user_subscriptions')
-        .insert({
-          ...updateData,
-          created_at: new Date().toISOString()
-        });
+        .insert(insertData)
+        .select()
+        .single();
 
       if (insertError) {
         console.error('[WebhookHandler] Error inserting subscription:', insertError);
+        console.error('[WebhookHandler] Insert error details:', {
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details,
+          hint: insertError.hint
+        });
         throw insertError;
       }
       
-      console.log('[WebhookHandler] Successfully created new subscription record');
+      console.log('[WebhookHandler] Successfully created new subscription record:', insertedData);
     }
 
     // Clean up legacy subscriptions table
@@ -201,6 +222,10 @@ export async function handleSubscriptionWebhook(
 
   } catch (error) {
     console.error('[WebhookHandler] Error processing subscription webhook:', error);
-    return createJsonResponse({ error: 'Failed to process subscription webhook' }, 500);
+    console.error('[WebhookHandler] Error stack:', error.stack);
+    return createJsonResponse({ 
+      error: 'Failed to process subscription webhook',
+      details: error.message 
+    }, 500);
   }
 }
