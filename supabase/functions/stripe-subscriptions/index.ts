@@ -21,11 +21,26 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
     
-    console.log('Stripe subscriptions action:', action, '(LIVE MODE)');
+    console.log('Stripe subscriptions action:', action);
     console.log('Request body received:', JSON.stringify(body, null, 2));
 
-    // Initialize Stripe with LIVE keys
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '', {
+    // Use test key for development - check both env vars
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') || Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    
+    if (!stripeSecretKey) {
+      console.error('No Stripe secret key found. Available env vars:', Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE')));
+      return new Response(JSON.stringify({ 
+        error: 'Stripe secret key not configured' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    console.log('Using Stripe key starting with:', stripeSecretKey.substring(0, 12) + '...');
+
+    // Initialize Stripe with the available secret key
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
@@ -44,11 +59,11 @@ serve(async (req) => {
 
       case 'cancel_subscription': {
         const { subscriptionId, immediate } = body;
-        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate, '(LIVE MODE)');
+        console.log('Processing cancel_subscription with immediate flag:', immediate, 'type:', typeof immediate);
         
         // Ensure immediate is properly converted to boolean
         const immediateFlag = immediate === true || immediate === 'true' || immediate === 1;
-        console.log('Converted immediate flag to boolean:', immediateFlag, '(LIVE MODE)');
+        console.log('Converted immediate flag to boolean:', immediateFlag);
         
         return await handleCancelSubscription(stripe, supabaseService, user, subscriptionId, immediateFlag);
       }
@@ -84,9 +99,11 @@ serve(async (req) => {
         });
     }
   } catch (error) {
-    console.error('Stripe subscriptions error (LIVE MODE):', error);
+    console.error('Stripe subscriptions error:', error);
+    console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      details: error instanceof Error ? error.stack : 'No stack trace available'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

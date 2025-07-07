@@ -84,6 +84,13 @@ export type Database = {
             foreignKeyName: "commission_deliverables_commission_request_id_fkey"
             columns: ["commission_request_id"]
             isOneToOne: false
+            referencedRelation: "commission"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
             referencedRelation: "commission_requests"
             referencedColumns: ["id"]
           },
@@ -176,6 +183,7 @@ export type Database = {
           base_price: number
           created_at: string
           creator_id: string
+          custom_addons: Json | null
           description: string | null
           donts: string[] | null
           dos: string[] | null
@@ -192,6 +200,7 @@ export type Database = {
           base_price: number
           created_at?: string
           creator_id: string
+          custom_addons?: Json | null
           description?: string | null
           donts?: string[] | null
           dos?: string[] | null
@@ -208,6 +217,7 @@ export type Database = {
           base_price?: number
           created_at?: string
           creator_id?: string
+          custom_addons?: Json | null
           description?: string | null
           donts?: string[] | null
           dos?: string[] | null
@@ -1099,7 +1109,88 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      commission: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          creator_notes: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          reference_images: string[] | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          reference_images?: string[] | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          reference_images?: string[] | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_post_view_count: {
