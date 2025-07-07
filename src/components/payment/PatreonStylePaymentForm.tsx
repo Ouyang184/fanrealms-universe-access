@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle, Check } from 'lucide-react';
+import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
 interface PatreonStylePaymentFormProps {
   clientSecret: string;
@@ -15,6 +16,9 @@ interface PatreonStylePaymentFormProps {
   amount: number;
   isUpgrade?: boolean;
   creatorName?: string;
+  tierId?: string;
+  creatorId?: string;
+  setupIntentId?: string;
 }
 
 function PaymentFormContent({ 
@@ -22,15 +26,31 @@ function PaymentFormContent({
   tierName, 
   amount, 
   isUpgrade = false,
-  creatorName = "Creator"
+  creatorName = "Creator",
+  tierId = "",
+  creatorId = "",
+  setupIntentId = ""
 }: PatreonStylePaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [billingFrequency, setBillingFrequency] = useState<'monthly' | 'annual'>('monthly');
+  
+  const {
+    isProcessing,
+    paymentSucceeded,
+    isVerifying,
+    handlePayment,
+    handleCancel
+  } = usePaymentProcessing({
+    clientSecret,
+    tierId,
+    creatorId,
+    tierName,
+    isUpgrade,
+    setupIntentId
+  });
   
   // Calculate pricing
   const monthlyPrice = amount / 100;
@@ -41,39 +61,32 @@ function PaymentFormContent({
   const currentPrice = billingFrequency === 'monthly' ? monthlyPrice : annualPrice;
   const totalDueToday = currentPrice + salesTax;
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripe || !elements || !confirmed) {
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) {
-      setError('Card element not found');
-      setIsProcessing(false);
-      return;
-    }
-
-    try {
-      const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
-      });
-
-      if (confirmError) {
-        setError(confirmError.message || 'Payment failed');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsProcessing(false);
-    }
+  const onSubmit = (event: React.FormEvent) => {
+    handlePayment(stripe, elements, event);
   };
+
+  if (paymentSucceeded) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">
+            {isUpgrade ? 'Upgrade Complete!' : 'Subscription Created!'}
+          </h1>
+          <p className="text-gray-400">
+            {isVerifying ? 'Verifying your subscription...' : 'Your subscription is now active!'}
+          </p>
+          {isVerifying && (
+            <div className="mt-4">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -163,13 +176,6 @@ function PaymentFormContent({
                     }}
                   />
                 </div>
-
-                {error && (
-                  <Alert variant="destructive" className="bg-red-900/20 border-red-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-red-200">{error}</AlertDescription>
-                  </Alert>
-                )}
               </CardContent>
             </Card>
 
@@ -189,21 +195,33 @@ function PaymentFormContent({
             </div>
 
             {/* Subscribe Button */}
-            <Button
-              onClick={handleSubmit}
-              disabled={!stripe || !confirmed || isProcessing}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 text-lg"
-              size="lg"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                `Join for $${totalDueToday.toFixed(2)}`
-              )}
-            </Button>
+            <div className="flex gap-4">
+              <Button
+                onClick={onSubmit}
+                disabled={!stripe || !confirmed || isProcessing}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-4 text-lg"
+                size="lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  `Join for $${totalDueToday.toFixed(2)}`
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleCancel}
+                disabled={isProcessing}
+                variant="outline"
+                className="px-6 py-4 border-gray-600 text-gray-300 hover:bg-gray-800"
+                size="lg"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
 
           {/* Right Column - Order Summary */}

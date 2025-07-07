@@ -17,6 +17,7 @@ const sessionCache = new Map<string, {
   currentTierName?: string;
   proratedAmount?: number;
   fullTierPrice?: number;
+  setupIntentId?: string;
 }>();
 
 const SESSION_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
