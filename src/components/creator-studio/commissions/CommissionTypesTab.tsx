@@ -116,23 +116,19 @@ export function CommissionTypesTab({
                   )}
                 </div>
 
-                {/* Display custom add-ons only if they exist and have content */}
-                {type.custom_addons && Array.isArray(type.custom_addons) && type.custom_addons.length > 0 && type.custom_addons.some(addon => addon && addon.name) && (
+                {/* Display custom add-ons */}
+                {type.custom_addons && type.custom_addons.length > 0 && (
                   <div className="mt-4">
                     <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {type.custom_addons
-                        .filter(addon => addon && addon.name && addon.name.trim())
-                        .map((addon, index) => (
-                          <div key={addon.id || index} className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border text-sm min-w-0">
-                            <span className="font-medium text-blue-900 truncate" title={addon.name}>
-                              {addon.name}
-                            </span>
-                            <Badge variant="secondary" className="text-xs shrink-0 bg-blue-100 text-blue-800 border-blue-200">
-                              +${Number(addon.price || 0).toFixed(2)}
-                            </Badge>
-                          </div>
-                        ))}
+                    <div className="grid grid-cols-2 gap-2">
+                      {type.custom_addons.map((addon, index) => (
+                        <div key={index} className="text-sm bg-blue-50 p-2 rounded">
+                          <span className="font-medium">{addon.name}:</span> +${addon.price}
+                          {addon.description && (
+                            <div className="text-muted-foreground text-xs">{addon.description}</div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
