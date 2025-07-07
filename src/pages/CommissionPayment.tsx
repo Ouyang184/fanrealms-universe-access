@@ -1,10 +1,9 @@
 
-
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { CommissionPaymentForm } from '@/components/creator/CommissionPaymentForm';
+import { StripePaymentForm } from '@/components/creator/StripePaymentForm';
 import { Card, CardContent } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
@@ -40,7 +39,7 @@ export default function CommissionPayment() {
         .from('commission_requests')
         .select(`
           *,
-          commission_type:commission_types(name, description, base_price, custom_addons),
+          commission_type:commission_types(name, description, base_price),
           creator:creators!commission_requests_creator_id_fkey(
             display_name,
             profile_image_url
@@ -170,12 +169,15 @@ export default function CommissionPayment() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Complete Your Commission Payment</h1>
           <p className="text-muted-foreground">
-            Review your commission details and complete your secure payment
+            Secure payment for your commission request
           </p>
         </div>
 
-        <CommissionPaymentForm
-          commission={commission}
+        <StripePaymentForm
+          commissionId={commission.id}
+          amount={commission.agreed_price}
+          title={commission.title}
+          creatorName={commission.creator.display_name}
           onSuccess={handlePaymentSuccess}
           onCancel={handlePaymentCancel}
         />
