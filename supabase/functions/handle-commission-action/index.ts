@@ -16,10 +16,16 @@ serve(async (req) => {
   try {
     const { commissionId, action } = await req.json();
     
-    console.log('Handling commission action:', { commissionId, action });
+    console.log('Handling commission action (TEST MODE):', { commissionId, action });
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    // Initialize Stripe with TEST key for commissions
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    if (!stripeSecretKey) {
+      console.error('STRIPE_SECRET_KEY_TEST not found in environment');
+      throw new Error('Payment service configuration error - test mode not configured');
+    }
+
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     });
 
@@ -67,17 +73,32 @@ serve(async (req) => {
     }
 
     if (action === 'accept') {
-      console.log('Accepting commission and capturing payment:', paymentIntentId);
+      console.log('Accepting commission and capturing payment (TEST MODE):', paymentIntentId);
       
-      // Capture the authorized payment
-      const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+      // For checkout sessions, we need to retrieve the payment intent
+      try {
+        // Try to get as checkout session first
+        const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
+        if (session.payment_intent) {
+          // Capture the payment intent from the session
+          const paymentIntent = await stripe.paymentIntents.capture(session.payment_intent as string);
+          console.log('Payment captured successfully (TEST MODE):', paymentIntent.id);
+        } else {
+          throw new Error('No payment intent found in checkout session');
+        }
+      } catch (sessionError) {
+        // If it's not a session, try as payment intent directly
+        console.log('Attempting direct payment intent capture (TEST MODE)');
+        const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        console.log('Payment captured successfully (TEST MODE):', paymentIntent.id);
+      }
       
       // Update commission status to accepted and paid
       const { error: updateError } = await supabaseService
         .from('commission_requests')
         .update({ 
           status: 'accepted',
-          creator_notes: 'Commission accepted and payment captured'
+          creator_notes: 'Commission accepted and payment captured (TEST MODE)'
         })
         .eq('id', commissionId);
 
@@ -86,29 +107,37 @@ serve(async (req) => {
         throw new Error('Failed to update commission status');
       }
 
-      console.log('Commission accepted and payment captured successfully');
+      console.log('Commission accepted and payment captured successfully (TEST MODE)');
       
       return new Response(JSON.stringify({ 
         success: true, 
-        message: 'Commission accepted and payment captured',
-        paymentIntent: paymentIntent.id 
+        message: 'Commission accepted and payment captured (TEST MODE)',
+        paymentIntentId: paymentIntentId 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       });
 
     } else if (action === 'reject') {
-      console.log('Rejecting commission and canceling payment:', paymentIntentId);
+      console.log('Rejecting commission and canceling payment (TEST MODE):', paymentIntentId);
       
-      // Cancel the authorized payment (refunds to customer)
-      const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+      try {
+        // Try to expire the checkout session
+        const session = await stripe.checkout.sessions.expire(paymentIntentId);
+        console.log('Checkout session expired (TEST MODE):', session.id);
+      } catch (sessionError) {
+        // If it's not a session, try as payment intent
+        console.log('Attempting to cancel payment intent (TEST MODE)');
+        const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+        console.log('Payment intent canceled (TEST MODE):', paymentIntent.id);
+      }
       
       // Update commission status to rejected
       const { error: updateError } = await supabaseService
         .from('commission_requests')
         .update({ 
           status: 'rejected',
-          creator_notes: 'Commission rejected and payment canceled'
+          creator_notes: 'Commission rejected and payment canceled (TEST MODE)'
         })
         .eq('id', commissionId);
 
@@ -117,12 +146,12 @@ serve(async (req) => {
         throw new Error('Failed to update commission status');
       }
 
-      console.log('Commission rejected and payment canceled successfully');
+      console.log('Commission rejected and payment canceled successfully (TEST MODE)');
       
       return new Response(JSON.stringify({ 
         success: true, 
-        message: 'Commission rejected and payment canceled',
-        paymentIntent: paymentIntent.id 
+        message: 'Commission rejected and payment canceled (TEST MODE)',
+        paymentIntentId: paymentIntentId 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
@@ -133,7 +162,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Commission action error:', error);
+    console.error('Commission action error (TEST MODE):', error);
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'An unexpected error occurred' 
     }), {

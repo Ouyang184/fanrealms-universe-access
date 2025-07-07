@@ -67,15 +67,14 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           });
         } else {
           console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
-          // Transform the data to match CommissionType interface
+          // Transform the data to match our CommissionType interface
           const transformedTypes: CommissionType[] = (types || []).map(type => ({
             ...type,
             custom_addons: Array.isArray(type.custom_addons) 
-              ? type.custom_addons.filter((addon: any) => 
-                  addon && typeof addon === 'object' && 'name' in addon && 'price' in addon
-                ).map((addon: any) => ({
-                  name: addon.name,
-                  price: addon.price,
+              ? type.custom_addons.map((addon: any) => ({
+                  id: addon.id || crypto.randomUUID(),
+                  name: addon.name || '',
+                  price: addon.price || 0,
                   description: addon.description || undefined
                 }))
               : []
