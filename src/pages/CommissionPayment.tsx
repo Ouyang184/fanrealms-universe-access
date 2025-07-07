@@ -1,3 +1,5 @@
+
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -106,9 +108,8 @@ export default function CommissionPayment() {
   };
 
   const handlePaymentCancel = () => {
-    console.log('Back button clicked, navigating to requests page');
-    // Navigate to the user's commission requests page
-    navigate('/requests');
+    console.log('Payment cancelled, navigating back');
+    navigate(-1);
   };
 
   if (isLoading) {
