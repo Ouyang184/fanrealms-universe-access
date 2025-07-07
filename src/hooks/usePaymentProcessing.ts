@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +31,7 @@ export function usePaymentProcessing({
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const verifySubscriptionInDB = async (maxRetries = 10, retryDelay = 1500) => {
+  const verifySubscriptionInDB = async (maxRetries = 12, retryDelay = 2000) => {
     console.log('===== STARTING SUBSCRIPTION VERIFICATION =====');
     console.log('Looking for subscription with:', { tierId, creatorId });
     
@@ -40,17 +39,7 @@ export function usePaymentProcessing({
       try {
         console.log(`===== VERIFICATION ATTEMPT ${i + 1}/${maxRetries} =====`);
         
-        // First, check all subscriptions for this user to see what's in the DB
-        const { data: allUserSubs, error: allSubsError } = await supabase
-          .from('user_subscriptions')
-          .select('*');
-          
-        console.log('All user subscriptions in DB:', JSON.stringify(allUserSubs, null, 2));
-        if (allSubsError) {
-          console.error('Error fetching all subscriptions:', allSubsError);
-        }
-        
-        // Now check specifically for our subscription
+        // Check specifically for our subscription in user_subscriptions table
         const { data, error } = await supabase
           .from('user_subscriptions')
           .select('*')
@@ -136,7 +125,8 @@ export function usePaymentProcessing({
         });
 
         console.log('Waiting for webhook processing...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Give webhook more time to process
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
         const verified = await verifySubscriptionInDB();
         
@@ -162,7 +152,10 @@ export function usePaymentProcessing({
             navigate('/subscriptions');
           }, 1500);
         } else {
-          console.warn('Payment succeeded but subscription not found in database');
+          console.warn('Payment succeeded but subscription not found in database - forcing refresh');
+          
+          // Force a refresh of subscription data
+          await invalidateAllSubscriptionQueries();
           
           triggerSubscriptionSuccess({
             tierId,
@@ -170,11 +163,9 @@ export function usePaymentProcessing({
             paymentIntentId: paymentIntent.id
           });
           
-          await invalidateAllSubscriptionQueries();
-          
           toast({
             title: "Payment Processed",
-            description: "Your payment was successful. Your subscription should be active shortly. Please check your subscriptions page.",
+            description: "Your payment was successful. Your subscription should be active now. Redirecting to subscriptions page.",
           });
 
           setTimeout(() => {

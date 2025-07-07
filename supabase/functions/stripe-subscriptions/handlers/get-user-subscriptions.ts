@@ -2,92 +2,63 @@
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleGetUserSubscriptions(
-  stripe: any,
   supabaseService: any,
-  userId: string,
-  creatorId: string
+  user: any,
+  userId?: string
 ) {
-  console.log('Getting user subscriptions for user:', userId, 'creator:', creatorId);
+  const targetUserId = userId || user?.id;
+  
+  if (!targetUserId) {
+    return createJsonResponse({ error: 'User ID required' }, 400);
+  }
+
+  console.log('Getting user subscriptions for user:', targetUserId);
 
   try {
-    // Get all subscription records for this user and creator
-    const [creatorSubsResult, basicSubsResult] = await Promise.all([
-      supabaseService
-        .from('creator_subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('creator_id', creatorId),
-      supabaseService
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('creator_id', creatorId)
-    ]);
+    // Get all active subscriptions from user_subscriptions table
+    const { data: userSubscriptions, error: userSubsError } = await supabaseService
+      .from('user_subscriptions')
+      .select(`
+        *,
+        creator:creators (
+          id,
+          display_name,
+          profile_image_url,
+          users (
+            username
+          )
+        ),
+        tier:membership_tiers (
+          id,
+          title,
+          description,
+          price
+        )
+      `)
+      .eq('user_id', targetUserId)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
 
-    if (creatorSubsResult.error) {
-      console.error('Error fetching creator subscriptions:', creatorSubsResult.error);
+    if (userSubsError) {
+      console.error('Error fetching user subscriptions:', userSubsError);
+      throw userSubsError;
     }
 
-    if (basicSubsResult.error) {
-      console.error('Error fetching basic subscriptions:', basicSubsResult.error);
+    console.log('Active subscriptions found:', userSubscriptions?.length || 0);
+
+    // Clean up legacy subscriptions table entries
+    const { error: cleanupError } = await supabaseService
+      .from('subscriptions')
+      .delete()
+      .eq('user_id', targetUserId);
+
+    if (cleanupError) {
+      console.warn('Warning: Could not clean up legacy subscriptions:', cleanupError);
     }
-
-    const allSubs = [
-      ...(creatorSubsResult.data || []),
-      ...(basicSubsResult.data || [])
-    ];
-
-    // Verify each subscription with Stripe
-    const activeSubscriptions = [];
-    const staleRecords = [];
-
-    for (const sub of allSubs) {
-      if ('stripe_subscription_id' in sub && sub.stripe_subscription_id) {
-        try {
-          const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
-          
-          if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
-            activeSubscriptions.push({
-              ...sub,
-              status: 'active',
-              stripe_status: stripeSubscription.status
-            });
-          } else {
-            staleRecords.push(sub);
-          }
-        } catch (stripeError) {
-          console.error('Stripe subscription not found:', sub.stripe_subscription_id);
-          staleRecords.push(sub);
-        }
-      } else {
-        // Basic subscription without Stripe - consider stale
-        staleRecords.push(sub);
-      }
-    }
-
-    // Clean up stale records
-    for (const staleRecord of staleRecords) {
-      console.log('Cleaning up stale subscription record:', staleRecord.id);
-      
-      if ('stripe_subscription_id' in staleRecord) {
-        await supabaseService
-          .from('creator_subscriptions')
-          .delete()
-          .eq('id', staleRecord.id);
-      } else {
-        await supabaseService
-          .from('subscriptions')
-          .delete()
-          .eq('id', staleRecord.id);
-      }
-    }
-
-    console.log('Active subscriptions found:', activeSubscriptions.length);
 
     return createJsonResponse({
-      subscriptions: activeSubscriptions,
-      userId,
-      creatorId
+      subscriptions: userSubscriptions || [],
+      userId: targetUserId
     });
 
   } catch (error) {

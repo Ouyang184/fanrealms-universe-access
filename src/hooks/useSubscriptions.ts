@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,7 +8,7 @@ export const useSubscriptions = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get user's active subscriptions
+  // Get user's active subscriptions from user_subscriptions table only
   const { data: userSubscriptions, isLoading: subscriptionsLoading, refetch } = useQuery({
     queryKey: ['user-subscriptions', user?.id],
     queryFn: async () => {
@@ -17,41 +16,55 @@ export const useSubscriptions = () => {
       
       console.log('Fetching subscriptions for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('user_subscriptions')
-        .select(`
-          *,
-          creator:creators (
-            id,
-            display_name,
-            profile_image_url,
-            users (
-              username
-            )
-          ),
-          tier:membership_tiers (
-            id,
-            title,
-            description,
-            price
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+        body: {
+          action: 'get_user_subscriptions',
+          userId: user.id
+        }
+      });
 
       if (error) {
-        console.error('Error fetching subscriptions:', error);
-        return [];
+        console.error('Error fetching subscriptions via edge function:', error);
+        
+        // Fallback to direct database query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('user_subscriptions')
+          .select(`
+            *,
+            creator:creators (
+              id,
+              display_name,
+              profile_image_url,
+              users (
+                username
+              )
+            ),
+            tier:membership_tiers (
+              id,
+              title,
+              description,
+              price
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
+
+        if (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+          return [];
+        }
+
+        console.log('Fallback query successful, found subscriptions:', fallbackData?.length || 0);
+        return fallbackData || [];
       }
 
-      console.log('Raw subscription data from DB:', data);
-      console.log('Found subscriptions count:', data?.length || 0);
-      return data || [];
+      console.log('Edge function successful, found subscriptions:', data?.subscriptions?.length || 0);
+      return data?.subscriptions || [];
     },
     enabled: !!user?.id,
     staleTime: 0,
-    refetchOnWindowFocus: false, // Prevent auto-refresh on focus
+    refetchOnWindowFocus: true,
     refetchOnMount: true
   });
 
@@ -133,13 +146,15 @@ export const useSubscriptions = () => {
     }
   });
 
-  // Manual refresh function with controlled cache clearing
+  // Manual refresh function with improved cache clearing
   const refreshSubscriptions = async () => {
     console.log('Manually refreshing subscriptions...');
     
-    // Clear caches and refetch
+    // Clear all related caches
     queryClient.removeQueries({ queryKey: ['user-subscriptions'] });
-    queryClient.removeQueries({ queryKey: ['subscription-check'] });
+    queryClient.removeQueries({ queryKey: ['simple-subscription-check'] });
+    queryClient.removeQueries({ queryKey: ['simple-creator-subscribers'] });
+    queryClient.removeQueries({ queryKey: ['userActiveSubscriptions'] });
     
     await refetch();
   };
