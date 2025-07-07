@@ -26,7 +26,7 @@ export function usePaymentProcessing({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { triggerSubscriptionSuccess, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
-  const { clearSubscriptionCache } = useCreateSubscription();
+  const { clearSubscriptionLock } = useCreateSubscription();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
@@ -99,8 +99,8 @@ export function usePaymentProcessing({
         setPaymentSucceeded(true);
         setIsVerifying(true);
         
-        // Clear the cache since payment succeeded
-        clearSubscriptionCache(tierId, creatorId);
+        // Clear the lock since payment succeeded
+        clearSubscriptionLock(tierId, creatorId);
         
         const successMessage = isUpgrade 
           ? `Successfully upgraded to ${tierName}!`
@@ -175,8 +175,8 @@ export function usePaymentProcessing({
   const handleCancel = () => {
     console.log('User cancelled payment, navigating back');
     
-    // Clear the cache when user cancels
-    clearSubscriptionCache(tierId, creatorId);
+    // Clear the lock when user cancels
+    clearSubscriptionLock(tierId, creatorId);
     
     setIsProcessing(false);
     setPaymentSucceeded(false);

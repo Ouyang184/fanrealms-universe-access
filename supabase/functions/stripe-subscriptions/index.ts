@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from './utils/cors.ts';
 import { authenticateUser } from './utils/auth.ts';
 import { handleCreateSubscription } from './handlers/create-subscription.ts';
+import { handleVerifyCheckoutSession } from './handlers/verify-checkout-session.ts';
 import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
 import { handleReactivateSubscription } from './handlers/reactivate-subscription.ts';
 import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts';
@@ -41,6 +42,9 @@ serve(async (req) => {
     switch (action) {
       case 'create_subscription':
         return await handleCreateSubscription(stripe, supabaseService, user, body);
+
+      case 'verify_checkout_session':
+        return await handleVerifyCheckoutSession(stripe, supabaseService, user, body);
 
       case 'cancel_subscription': {
         const { subscriptionId, immediate } = body;
