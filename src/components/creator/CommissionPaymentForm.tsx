@@ -10,8 +10,8 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Initialize Stripe with the publishable key from Supabase secrets
-const stripePublishableKey = 'pk_test_51QNdNxJGOZE2FiKMuZhIgS3mHdcB0gJKU29WzSAPE1k3G7xIi98dHf3QaxJ8FBhJJOwKepCGrh6NaNhLrKcCDYDT00QEVF7i6E';
+// Initialize Stripe with a fallback for missing key
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51234567890abcdef';
 const stripePromise = loadStripe(stripePublishableKey);
 
 interface CommissionData {
@@ -43,8 +43,17 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Check if Stripe is properly configured
+  const isStripeConfigured = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY && 
+    import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.startsWith('pk_');
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!isStripeConfigured) {
+      setError('Payment system is not properly configured. Please contact support.');
+      return;
+    }
 
     if (!stripe || !elements || !confirmed) {
       return;
@@ -101,6 +110,16 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Show configuration error if Stripe is not set up */}
+      {!isStripeConfigured && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Payment system is not configured. The VITE_STRIPE_PUBLISHABLE_KEY environment variable is missing or invalid.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Commission Details */}
       <Card>
         <CardHeader>
@@ -172,21 +191,27 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
           <CardTitle>Payment Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-4 border rounded-md">
-            <CardElement
-              options={{
-                style: {
-                  base: {
-                    fontSize: '16px',
-                    color: '#424770',
-                    '::placeholder': {
-                      color: '#aab7c4',
+          {isStripeConfigured ? (
+            <div className="p-4 border rounded-md">
+              <CardElement
+                options={{
+                  style: {
+                    base: {
+                      fontSize: '16px',
+                      color: '#424770',
+                      '::placeholder': {
+                        color: '#aab7c4',
+                      },
                     },
                   },
-                },
-              }}
-            />
-          </div>
+                }}
+              />
+            </div>
+          ) : (
+            <div className="p-4 border rounded-md bg-gray-50">
+              <p className="text-sm text-gray-500">Payment form unavailable - configuration required</p>
+            </div>
+          )}
 
           {error && (
             <Alert variant="destructive">
@@ -200,6 +225,7 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
               id="confirmation"
               checked={confirmed}
               onCheckedChange={(checked) => setConfirmed(checked as boolean)}
+              disabled={!isStripeConfigured}
             />
             <label htmlFor="confirmation" className="text-sm">
               I confirm that I want to purchase this commission for ${commission.agreed_price}
@@ -212,7 +238,7 @@ function PaymentForm({ commission, onSuccess, onCancel }: CommissionPaymentFormP
       <div className="flex gap-4">
         <Button
           type="submit"
-          disabled={!stripe || !confirmed || isProcessing}
+          disabled={!stripe || !confirmed || isProcessing || !isStripeConfigured}
           className="flex-1"
           size="lg"
         >
