@@ -61,30 +61,56 @@ export async function handleSubscriptionWebhook(
       (event.type === 'customer.subscription.updated' && subscription.status === 'active')) {
     console.log('[WebhookHandler] Creating/updating subscription record for:', subscription.id);
   } else if (subscription.status === 'incomplete' || subscription.status === 'incomplete_expired') {
-    console.log('[WebhookHandler] Subscription is incomplete, deleting from Stripe and database:', subscription.id);
+    console.log('[WebhookHandler] Subscription appears incomplete, checking if payment was already processed...');
     
-    try {
-      // Delete from Stripe first
-      await stripe.subscriptions.del(subscription.id);
-      console.log('[WebhookHandler] Successfully deleted incomplete subscription from Stripe:', subscription.id);
-    } catch (stripeError) {
-      console.error('[WebhookHandler] Error deleting subscription from Stripe:', stripeError);
-      // Continue to clean up database even if Stripe deletion fails
-    }
-
-    try {
-      // Remove from database
-      await supabaseService
-        .from('user_subscriptions')
-        .delete()
-        .eq('stripe_subscription_id', subscription.id);
+    // CRITICAL FIX: Check if payment intent webhook already activated this subscription
+    const { data: existingRecord, error: checkError } = await supabaseService
+      .from('user_subscriptions')
+      .select('*')
+      .eq('stripe_subscription_id', subscription.id)
+      .single();
+    
+    if (!checkError && existingRecord && existingRecord.status === 'active') {
+      console.log('[WebhookHandler] PREVENTING DELETION: Subscription already activated by payment intent webhook, skipping incomplete handling');
+      // Continue with normal processing instead of deleting
+    } else {
+      console.log('[WebhookHandler] Subscription is truly incomplete, deleting from Stripe and database:', subscription.id);
       
-      console.log('[WebhookHandler] Successfully deleted incomplete subscription from database:', subscription.id);
-    } catch (dbError) {
-      console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
-    }
+      try {
+        // Delete from Stripe first
+        await stripe.subscriptions.del(subscription.id);
+        console.log('[WebhookHandler] Successfully deleted incomplete subscription from Stripe:', subscription.id);
+      } catch (stripeError) {
+        console.error('[WebhookHandler] Error deleting subscription from Stripe:', stripeError);
+        // Continue to clean up database even if Stripe deletion fails
+      }
 
-    return createJsonResponse({ success: true });
+      try {
+        // Remove from database
+        await supabaseService
+          .from('user_subscriptions')
+          .delete()
+          .eq('stripe_subscription_id', subscription.id);
+        
+        console.log('[WebhookHandler] Successfully deleted incomplete subscription from database:', subscription.id);
+      } catch (dbError) {
+        console.error('[WebhookHandler] Error deleting subscription from database:', dbError);
+      }
+
+      return createJsonResponse({ success: true });
+    }
+  }
+
+  // Check if subscription record exists first to determine proper status handling
+  const { data: existingSubscription, error: fetchError } = await supabaseService
+    .from('user_subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscription.id)
+    .single();
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    console.error('[WebhookHandler] Error fetching existing subscription:', fetchError);
+    throw fetchError;
   }
 
   // Map Stripe status to our valid statuses
@@ -94,7 +120,13 @@ export async function handleSubscriptionWebhook(
   } else if (subscription.status === 'canceled') {
     dbStatus = 'canceled';
   } else if (subscription.status === 'incomplete') {
-    dbStatus = 'incomplete';
+    // CRITICAL FIX: Don't override active status if payment intent webhook already set it to active
+    if (existingSubscription && existingSubscription.status === 'active') {
+      console.log('[WebhookHandler] PREVENTING STATUS OVERRIDE: Existing subscription is already active, keeping active status despite Stripe incomplete status');
+      dbStatus = 'active';
+    } else {
+      dbStatus = 'incomplete';
+    }
   } else if (subscription.status === 'incomplete_expired') {
     dbStatus = 'incomplete_expired';
   } else {
@@ -103,19 +135,11 @@ export async function handleSubscriptionWebhook(
   }
 
   console.log('[WebhookHandler] Mapping Stripe status', subscription.status, 'with cancel_at_period_end:', subscription.cancel_at_period_end, 'to DB status:', dbStatus);
+  if (existingSubscription) {
+    console.log('[WebhookHandler] Existing subscription status:', existingSubscription.status, '-> New status:', dbStatus);
+  }
 
   try {
-    // Check if subscription record exists
-    const { data: existingSubscription, error: fetchError } = await supabaseService
-      .from('user_subscriptions')
-      .select('*')
-      .eq('stripe_subscription_id', subscription.id)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('[WebhookHandler] Error fetching existing subscription:', fetchError);
-      throw fetchError;
-    }
 
     const updateData = {
       stripe_subscription_id: subscription.id,
