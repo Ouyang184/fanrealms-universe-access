@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { PaymentElement } from '@stripe/react-stripe-js';
+import { CardElement } from '@stripe/react-stripe-js';
 import { ChevronDown } from 'lucide-react';
 
 export function PaymentMethodSection() {
@@ -19,17 +19,24 @@ export function PaymentMethodSection() {
         </div>
         
         <div className="border border-gray-700 rounded-md p-3">
-          <PaymentElement
+          <CardElement
             options={{
-              layout: 'tabs',
-              fields: {
-                billingDetails: 'auto'
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#ffffff',
+                  fontFamily: 'system-ui, sans-serif',
+                  '::placeholder': {
+                    color: '#9ca3af',
+                  },
+                  backgroundColor: 'transparent',
+                },
+                invalid: {
+                  color: '#ef4444',
+                  iconColor: '#ef4444',
+                },
               },
-              defaultValues: {
-                billingDetails: {
-                  name: '',
-                }
-              }
+              hidePostalCode: false,
             }}
           />
         </div>

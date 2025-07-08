@@ -21,7 +21,6 @@ export function PaymentButtons({
   elements
 }: PaymentButtonsProps) {
   const handlePaymentClick = (event: React.FormEvent) => {
-    event.preventDefault();
     onPayment(stripe, elements, event);
   };
 

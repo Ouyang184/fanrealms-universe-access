@@ -87,14 +87,17 @@ export function usePaymentProcessing({
     setIsProcessing(true);
 
     try {
-      console.log('Confirming subscription payment with client secret:', clientSecret);
+      const cardElement = elements.getElement('card');
+      if (!cardElement) {
+        throw new Error('Card element not found');
+      }
 
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.origin + '/payment-success',
-        },
-        redirect: 'if_required'
+      console.log('Confirming payment with client secret:', clientSecret);
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        }
       });
 
       if (error) {
