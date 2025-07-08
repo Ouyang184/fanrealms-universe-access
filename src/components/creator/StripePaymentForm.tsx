@@ -12,8 +12,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use the sandbox publishable key for testing
-const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00QQzQtT2z');
+// Use the correct sandbox publishable key that matches STRIPE_SECERT_KEY_SANDBOX
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00XTFCsaZ');
 
 interface PaymentFormProps {
   clientSecret: string;
