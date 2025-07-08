@@ -14,7 +14,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started');
+  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (TEST MODE)');
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -38,20 +38,20 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
-    // Validate environment variables
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    // Validate environment variables - USE TEST KEYS
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check:', {
+    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (TEST MODE):', {
       hasStripeKey: !!stripeKey,
       hasSupabaseUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey
     });
 
     if (!stripeKey) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe key');
-      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe test key');
+      return createJsonResponse({ error: 'Missing Stripe test configuration' }, 500);
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -63,7 +63,7 @@ serve(async (req) => {
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized');
+    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized (TEST MODE)');
 
     // Authenticate user
     const user = await authenticateUser(req, supabase);
@@ -100,7 +100,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR:', {
+    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR (TEST MODE):', {
       message: error.message,
       stack: error.stack,
       name: error.name

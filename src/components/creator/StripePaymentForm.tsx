@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Load Stripe with TEST publishable key
+// Load Stripe with TEST publishable key - consistent with Payment.tsx
 const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00QQzQtT2z');
 
 interface PaymentFormProps {
