@@ -241,47 +241,114 @@ export async function handleCreateSubscription(
       .eq('user_id', user.id)
       .eq('creator_id', creatorId);
 
-    // Create new Payment Intent with updated platform fee calculation
-    console.log('Creating new Payment Intent for amount:', paymentAmount);
+    // Handle upgrades by updating existing subscription
+    if (isUpgrade && existingSubscription?.stripe_subscription_id) {
+      console.log('Handling subscription upgrade for existing subscription:', existingSubscription.stripe_subscription_id);
+      
+      const subscription = await stripe.subscriptions.update(existingSubscription.stripe_subscription_id, {
+        items: [{
+          id: existingSubscription.stripe_item_id,
+          price: stripePriceId,
+        }],
+        proration_behavior: 'create_prorations',
+        payment_behavior: 'pending_if_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
 
-    const paymentIntent = await stripe.paymentIntents.create({
+      console.log('Subscription upgraded:', subscription.id);
+
+      // Update database record
+      await supabaseService
+        .from('user_subscriptions')
+        .update({
+          tier_id: tierId,
+          stripe_price_id: stripePriceId,
+          amount: tier.price,
+          status: subscription.status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_subscription_id', subscription.id);
+
+      return createJsonResponse({
+        clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+        amount: subscription.latest_invoice.amount_due,
+        tierName: tier.title,
+        tierId: tierId,
+        creatorId: creatorId,
+        subscriptionId: subscription.id,
+        useCustomPaymentPage: true,
+        isUpgrade: true,
+        currentTierName: existingSubscription?.membership_tiers?.title || null,
+        proratedAmount: subscription.latest_invoice.amount_due,
+        fullTierPrice: Math.round(tier.price * 100),
+        currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+        reusedSession: false
+      });
+    }
+
+    // Create new subscription for new customers or first-time subscribers
+    console.log('Creating new Stripe subscription for amount:', tier.price);
+
+    const subscription = await stripe.subscriptions.create({
       customer: stripeCustomerId,
-      amount: targetAmount,
-      currency: 'usd',
-      payment_method_types: ['card'],
+      items: [{
+        price: stripePriceId,
+      }],
+      payment_behavior: 'default_incomplete',
+      payment_settings: {
+        save_default_payment_method: 'on_subscription',
+      },
+      expand: ['latest_invoice.payment_intent'],
       metadata: {
         user_id: user.id,
         creator_id: creatorId,
         tier_id: tierId,
         tier_name: tier.title,
         creator_name: tier.creators.display_name,
-        type: 'subscription_setup',
-        is_upgrade: isUpgrade ? 'true' : 'false',
-        existing_subscription_id: existingSubscription?.stripe_subscription_id || '',
-        existing_tier_id: existingSubscription?.tier_id || '',
-        current_period_end: existingSubscription?.current_period_end || '',
+        is_upgrade: 'false',
         full_tier_price: tier.price.toString(),
-        prorated_amount: isUpgrade ? proratedAmount.toString() : '0',
-        platform_fee_percent: '4'
       },
-      setup_future_usage: 'off_session',
     });
 
-    console.log('Payment Intent created:', paymentIntent.id);
+    console.log('Stripe subscription created:', subscription.id);
+
+    // Create database record with incomplete status
+    const { error: dbError } = await supabaseService
+      .from('user_subscriptions')
+      .insert({
+        user_id: user.id,
+        creator_id: creatorId,
+        tier_id: tierId,
+        stripe_customer_id: stripeCustomerId,
+        stripe_subscription_id: subscription.id,
+        stripe_price_id: stripePriceId,
+        amount: tier.price,
+        status: 'incomplete',
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: false,
+      });
+
+    if (dbError) {
+      console.error('Error creating subscription record:', dbError);
+      // Continue anyway, webhook will handle this
+    }
+
+    console.log('Database subscription record created');
 
     return createJsonResponse({
-      clientSecret: paymentIntent.client_secret,
-      amount: targetAmount,
+      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+      amount: subscription.latest_invoice.amount_due,
       tierName: tier.title,
       tierId: tierId,
       creatorId: creatorId,
-      paymentIntentId: paymentIntent.id,
+      subscriptionId: subscription.id,
       useCustomPaymentPage: true,
-      isUpgrade: isUpgrade,
-      currentTierName: existingSubscription?.membership_tiers?.title || null,
-      proratedAmount: isUpgrade ? Math.round(proratedAmount * 100) : 0,
-      fullTierPrice: Math.round(tier.price * 100),  
-      currentPeriodEnd: existingSubscription?.current_period_end || null,
+      isUpgrade: false,
+      currentTierName: null,
+      proratedAmount: 0,
+      fullTierPrice: Math.round(tier.price * 100),
+      currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
       reusedSession: false
     });
 
