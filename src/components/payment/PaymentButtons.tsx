@@ -20,14 +20,15 @@ export function PaymentButtons({
   stripe,
   elements
 }: PaymentButtonsProps) {
-  const handlePaymentClick = (event: React.FormEvent) => {
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
     onPayment(stripe, elements, event);
   };
 
   return (
-    <div className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <Button 
-        onClick={handlePaymentClick}
+        type="submit"
         disabled={!stripe || isProcessing}
         className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
         size="lg"
@@ -46,6 +47,7 @@ export function PaymentButtons({
       </Button>
 
       <Button 
+        type="button"
         onClick={onCancel}
         disabled={isProcessing}
         variant="outline"
@@ -55,6 +57,6 @@ export function PaymentButtons({
         <ArrowLeft className="mr-2 h-5 w-5" />
         Cancel and go back
       </Button>
-    </div>
+    </form>
   );
 }
