@@ -7,8 +7,8 @@ import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
-// Use the test publishable key - make sure this matches your backend secret key
-const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00QQzQtT2z');
+// Use the correct test publishable key that matches the backend
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00xsILF9k');
 
 export default function Payment() {
   const location = useLocation();
