@@ -14,7 +14,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (TEST MODE)');
+  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (SANDBOX MODE)');
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -38,20 +38,20 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
-    // Validate environment variables - USE TEST KEYS
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    // Validate environment variables - USE SANDBOX KEYS
+    const stripeKey = Deno.env.get('STRIPE_SECERT_KEY_SANDBOX');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (TEST MODE):', {
+    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (SANDBOX MODE):', {
       hasStripeKey: !!stripeKey,
       hasSupabaseUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey
     });
 
     if (!stripeKey) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe test key');
-      return createJsonResponse({ error: 'Missing Stripe test configuration' }, 500);
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe sandbox key');
+      return createJsonResponse({ error: 'Missing Stripe sandbox configuration' }, 500);
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -63,7 +63,7 @@ serve(async (req) => {
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized (TEST MODE)');
+    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized (SANDBOX MODE)');
 
     // Authenticate user
     const user = await authenticateUser(req, supabase);
@@ -100,7 +100,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR (TEST MODE):', {
+    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR (SANDBOX MODE):', {
       message: error.message,
       stack: error.stack,
       name: error.name
