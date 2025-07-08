@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -36,7 +37,7 @@ serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = Deno.env.get('Sandbox_wehook_secert');
 
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
@@ -49,7 +50,7 @@ serve(async (req) => {
       console.error('Missing required environment variables:', {
         SUPABASE_URL: !!supabaseUrl,
         SUPABASE_SERVICE_ROLE_KEY: !!supabaseServiceKey,
-        STRIPE_WEBHOOK_SECRET: !!webhookSecret
+        Sandbox_wehook_secert: !!webhookSecret
       });
       return new Response('Server configuration error', { status: 500, headers: corsHeaders });
     }
@@ -193,3 +194,4 @@ serve(async (req) => {
     });
   }
 });
+
