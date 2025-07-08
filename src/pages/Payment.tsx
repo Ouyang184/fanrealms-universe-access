@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -8,7 +7,7 @@ import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
 // Use the environment variable for the Stripe publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(import.meta.env.STRIPE_PUBLISHABLE_KEY || '');
 
 export default function Payment() {
   const location = useLocation();
