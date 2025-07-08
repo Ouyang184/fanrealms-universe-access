@@ -3,6 +3,8 @@ import Stripe from 'https://esm.sh/stripe@14.21.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { authenticateUser } from './utils/auth.ts';
 import { handleCreateSubscription } from './handlers/create-subscription.ts';
+import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
+import { handleReactivateSubscription } from './handlers/reactivate-subscription.ts';
 import { createJsonResponse } from './utils/cors.ts';
 
 const corsHeaders = {
@@ -73,6 +75,12 @@ serve(async (req) => {
     switch (action) {
       case 'create_subscription':
         return await handleCreateSubscription(stripe, supabase, user, body);
+        
+      case 'cancel_subscription':
+        return await handleCancelSubscription(stripe, supabase, user, body);
+        
+      case 'reactivate_subscription':
+        return await handleReactivateSubscription(stripe, supabase, user, body);
         
       default:
         console.log('❌ [STRIPE-SUBSCRIPTIONS] Unknown action:', action);

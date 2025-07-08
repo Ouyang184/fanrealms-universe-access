@@ -1,76 +1,61 @@
-
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleReactivateSubscription(
   stripe: any,
-  supabaseService: any,
+  supabase: any,
   user: any,
-  subscriptionId: string
+  body: any
 ) {
-  console.log('Reactivating subscription:', subscriptionId);
+  console.log('[ReactivateSubscription] === STARTING SUBSCRIPTION REACTIVATION ===');
+  console.log('[ReactivateSubscription] User ID:', user.id);
+  console.log('[ReactivateSubscription] Request body:', JSON.stringify(body, null, 2));
+
+  const { subscriptionId } = body;
 
   if (!subscriptionId) {
-    console.log('ERROR: Missing subscriptionId');
-    return createJsonResponse({ error: 'Missing subscription ID' }, 400);
+    return createJsonResponse({ error: 'Subscription ID is required' }, 400);
   }
 
-  // Find the subscription in user_subscriptions table by stripe_subscription_id
-  const { data: userSubscription, error: userSubError } = await supabaseService
-    .from('user_subscriptions')
-    .select('*')
-    .eq('stripe_subscription_id', subscriptionId)
-    .eq('user_id', user.id)
-    .maybeSingle();
+  // Create service client for database operations
+  const supabaseService = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
 
-  if (userSubError) {
-    console.error('Error querying user_subscriptions:', userSubError);
-    return createJsonResponse({ error: 'Failed to find subscription' }, 500);
-  }
-
-  if (!userSubscription) {
-    console.error('Subscription not found');
-    return createJsonResponse({ error: 'Subscription not found' }, 404);
-  }
-
-  console.log('Found user subscription to reactivate:', userSubscription.id);
-
-  // Reactivate subscription in Stripe by removing cancel_at_period_end
   try {
-    console.log('Removing cancel_at_period_end from Stripe subscription:', subscriptionId);
-    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-      cancel_at_period_end: false
+    console.log('[ReactivateSubscription] Reactivating Stripe subscription:', subscriptionId);
+
+    // Reactivate the subscription in Stripe by removing the cancellation
+    const reactivatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: false,
+      cancel_at: null
     });
-    console.log('Stripe subscription reactivated successfully');
-    
-    // Update database to reflect active status and remove cancellation flag
-    const { error: updateError } = await supabaseService
+
+    console.log('[ReactivateSubscription] Stripe subscription reactivated:', reactivatedSubscription.id);
+
+    // Update the database record
+    await supabaseService
       .from('user_subscriptions')
-      .update({ 
+      .update({
         status: 'active',
         cancel_at_period_end: false,
         updated_at: new Date().toISOString()
       })
-      .eq('id', userSubscription.id);
+      .eq('stripe_subscription_id', subscriptionId);
 
-    if (updateError) {
-      console.error('Error updating user subscription status:', updateError);
-      return createJsonResponse({ error: 'Failed to update subscription status' }, 500);
-    }
+    console.log('[ReactivateSubscription] Database updated successfully');
 
-    console.log('User subscription updated to active status successfully');
-
-    return createJsonResponse({ 
+    return createJsonResponse({
       success: true,
-      message: 'Subscription has been reactivated successfully',
-      subscription: {
-        id: updatedSubscription.id,
-        status: 'active',
-        cancel_at_period_end: false
-      }
+      reactivated: true,
+      current_period_end: reactivatedSubscription.current_period_end
     });
 
-  } catch (stripeError) {
-    console.error('Error reactivating Stripe subscription:', stripeError);
-    return createJsonResponse({ error: 'Failed to reactivate subscription' }, 500);
+  } catch (error) {
+    console.error('[ReactivateSubscription] Error:', error);
+    return createJsonResponse({ 
+      error: 'Failed to reactivate subscription. Please try again later.' 
+    }, 500);
   }
 }
