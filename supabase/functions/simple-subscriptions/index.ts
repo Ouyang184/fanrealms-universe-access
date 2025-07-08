@@ -10,9 +10,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use sandbox Stripe secret key consistently
+// Use the correct Stripe secret key for subscription payments
 const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECERT_KEY_SANDBOX') || ''
+  'sk_test_51RSMPcCli7UywJensn3y9KsPnepDG3FWA2y7my2jsO84UfXioisT0Txs4ll2cUuYlIBjNiydl7PSb9vc3cIxsQdO00b3LQtLHZ'
 );
 
 serve(async (req) => {

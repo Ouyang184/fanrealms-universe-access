@@ -8,9 +8,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe properly for Deno with async crypto provider - USING SANDBOX KEYS
+// Initialize Stripe properly for Deno with async crypto provider - USING CORRECT TEST KEYS
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
-  Deno.env.get('STRIPE_SECERT_KEY_SANDBOX') || '',
+  'sk_test_51RSMPcCli7UywJensn3y9KsPnepDG3FWA2y7my2jsO84UfXioisT0Txs4ll2cUuYlIBjNiydl7PSb9vc3cIxsQdO00b3LQtLHZ',
   {
     apiVersion: '2023-10-16',
     httpClient: (await import('https://esm.sh/stripe@14.21.0')).default.createFetchHttpClient(),
@@ -37,7 +37,7 @@ serve(async (req) => {
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const webhookSecret = Deno.env.get('Sandbox_wehook_secert');
+    const webhookSecret = 'whsec_x7YP7Yx6fDZjWNpV1cEVS5uKDZIeFonA';
 
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,

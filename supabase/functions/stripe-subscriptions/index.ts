@@ -38,8 +38,8 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
-    // Validate environment variables - USE SANDBOX KEYS
-    const stripeKey = Deno.env.get('STRIPE_SECERT_KEY_SANDBOX');
+    // Validate environment variables - USE CORRECT TEST KEYS
+    const stripeKey = 'sk_test_51RSMPcCli7UywJensn3y9KsPnepDG3FWA2y7my2jsO84UfXioisT0Txs4ll2cUuYlIBjNiydl7PSb9vc3cIxsQdO00b3LQtLHZ';
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
