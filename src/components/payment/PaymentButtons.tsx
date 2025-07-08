@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, ArrowLeft } from 'lucide-react';
 
@@ -7,7 +8,6 @@ interface PaymentButtonsProps {
   isUpgrade: boolean;
   isProcessing: boolean;
   onPayment: (stripe: any, elements: any, event: React.FormEvent) => void;
-  onCancel: () => void;
   stripe: any;
   elements: any;
 }
@@ -16,13 +16,19 @@ export function PaymentButtons({
   isUpgrade, 
   isProcessing, 
   onPayment, 
-  onCancel, 
   stripe,
   elements
 }: PaymentButtonsProps) {
+  const navigate = useNavigate();
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     onPayment(stripe, elements, event);
+  };
+
+  const handleCancel = () => {
+    console.log('User cancelled payment, navigating back');
+    navigate(-1);
   };
 
   return (
@@ -48,7 +54,7 @@ export function PaymentButtons({
 
       <Button 
         type="button"
-        onClick={onCancel}
+        onClick={handleCancel}
         disabled={isProcessing}
         variant="outline"
         className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"

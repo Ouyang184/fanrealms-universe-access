@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ export function PaymentForm() {
   const stripe = useStripe();
   const elements = useElements();
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [paymentAmount, setPaymentAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -98,7 +99,7 @@ export function PaymentForm() {
 
         // Redirect to success page or subscriptions page
         setTimeout(() => {
-          window.location.href = '/subscriptions';
+          navigate('/subscriptions');
         }, 2000);
       }
     } catch (error) {
@@ -111,11 +112,6 @@ export function PaymentForm() {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleCancel = () => {
-    console.log('User cancelled payment, navigating back');
-    window.history.back();
   };
 
   if (!clientSecret) {
@@ -171,7 +167,6 @@ export function PaymentForm() {
               isUpgrade={isUpgrade}
               isProcessing={isProcessing}
               onPayment={handlePayment}
-              onCancel={handleCancel}
               stripe={stripe}
               elements={elements}
             />
