@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -6,8 +7,8 @@ import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
-// Use the environment variable for the Stripe publishable key
-const stripePromise = loadStripe(import.meta.env.STRIPE_PUBLISHABLE_KEY || '');
+// Use the hardcoded publishable key for now since env vars aren't working in frontend
+const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJenyLWbw8lYkr0FV8bEj4A5m5l5RJvznfKfHPXr1pnKE3Q3XcXyV4YdyqK8v3sKjl7FrjrK1bX7B00QQzQtT2z');
 
 export default function Payment() {
   const location = useLocation();
