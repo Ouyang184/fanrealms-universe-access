@@ -91,7 +91,6 @@ export function usePaymentProcessing({
 
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        clientSecret,
         confirmParams: {
           return_url: window.location.origin + '/payment-success',
         },

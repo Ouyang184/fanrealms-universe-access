@@ -231,7 +231,7 @@ export async function handleCreateSubscription(
       .eq('user_id', user.id)
       .eq('creator_id', creatorId);
 
-    // Create actual Stripe Subscription instead of Payment Intent
+    // Create actual Stripe Subscription for recurring billing
     console.log('Creating Stripe Subscription for tier:', tier.title);
 
     const subscriptionData: any = {
@@ -240,8 +240,15 @@ export async function handleCreateSubscription(
         price: stripePriceId,
       }],
       payment_behavior: 'default_incomplete',
-      payment_settings: { save_default_payment_method: 'on_subscription' },
+      payment_settings: { 
+        save_default_payment_method: 'on_subscription',
+        payment_method_types: ['card']
+      },
       expand: ['latest_invoice.payment_intent'],
+      application_fee_percent: 4,
+      transfer_data: {
+        destination: tier.creators.stripe_account_id
+      },
       metadata: {
         user_id: user.id,
         creator_id: creatorId,

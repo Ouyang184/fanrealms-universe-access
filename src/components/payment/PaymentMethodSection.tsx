@@ -22,6 +22,9 @@ export function PaymentMethodSection() {
           <PaymentElement
             options={{
               layout: 'tabs',
+              fields: {
+                billingDetails: 'auto'
+              },
               defaultValues: {
                 billingDetails: {
                   name: '',
