@@ -112,24 +112,27 @@ export function useCreatorDashboard() {
       
       // Current month subscribers
       const { count: currentCount, error: currentError } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('creator_id', creatorProfile.id)
+        .eq('status', 'active')
         .gte('created_at', firstDayOfMonth);
         
       // Previous month subscribers
       const { count: previousCount, error: previousError } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('creator_id', creatorProfile.id)
+        .eq('status', 'active')
         .gte('created_at', firstDayOfPrevMonth)
         .lt('created_at', firstDayOfMonth);
         
       // Total subscribers (all time)
       const { count: totalCount, error: totalError } = await supabase
-        .from('subscriptions')
+        .from('user_subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('creator_id', creatorProfile.id);
+        .eq('creator_id', creatorProfile.id)
+        .eq('status', 'active');
         
       if (currentError || previousError || totalError) {
         console.error('Error fetching subscribers data:', { currentError, previousError, totalError });
@@ -158,16 +161,18 @@ export function useCreatorDashboard() {
         const firstDayOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
         
         const { count: currentSubscribers, error: currentError } = await supabase
-          .from('subscriptions')
-          .select('*', { count: 'exact', head: true })
-          .eq('creator_id', creatorProfile.id)
-          .eq('tier_id', tier.id);
-          
-        const { count: prevMonthSubscribers, error: prevError } = await supabase
-          .from('subscriptions')
+          .from('user_subscriptions')
           .select('*', { count: 'exact', head: true })
           .eq('creator_id', creatorProfile.id)
           .eq('tier_id', tier.id)
+          .eq('status', 'active');
+          
+        const { count: prevMonthSubscribers, error: prevError } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('creator_id', creatorProfile.id)
+          .eq('tier_id', tier.id)
+          .eq('status', 'active')
           .lt('created_at', firstDayOfMonth);
           
         if (currentError || prevError) {

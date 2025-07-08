@@ -934,55 +934,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subscriptions: {
-        Row: {
-          created_at: string
-          creator_id: string
-          id: string
-          is_paid: boolean
-          tier_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          creator_id: string
-          id?: string
-          is_paid?: boolean
-          tier_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          creator_id?: string
-          id?: string
-          is_paid?: boolean
-          tier_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "creators"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_tier_id_fkey"
-            columns: ["tier_id"]
-            isOneToOne: false
-            referencedRelation: "membership_tiers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_preferences: {
         Row: {
           category_id: number

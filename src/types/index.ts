@@ -4,7 +4,7 @@ import { Database } from '@/integrations/supabase/types';
 export type DbUser = Database['public']['Tables']['users']['Row'];
 export type DbPost = Database['public']['Tables']['posts']['Row'];
 export type DbCreator = Database['public']['Tables']['creators']['Row'];
-export type DbSubscription = Database['public']['Tables']['subscriptions']['Row'];
+// DbSubscription type removed - using user_subscriptions table instead
 export type DbTier = Database['public']['Tables']['membership_tiers']['Row'];
 export type DbUserSubscription = Database['public']['Tables']['user_subscriptions']['Row'];
 export type DbCreatorEarnings = Database['public']['Tables']['creator_earnings']['Row'];

@@ -187,9 +187,10 @@ export function useCreatorProfileData() {
       // Count subscribers for each tier and format properly
       const tiersWithSubscribers = await Promise.all(tiersData.map(async (tier) => {
         const { count, error: countError } = await supabase
-          .from('subscriptions')
+          .from('user_subscriptions')
           .select('*', { count: 'exact', head: true })
-          .eq('tier_id', tier.id);
+          .eq('tier_id', tier.id)
+          .eq('status', 'active');
           
         return {
           id: tier.id,
