@@ -104,7 +104,7 @@ serve(async (req) => {
       console.log('No existing Stripe customer found, will create one in checkout');
     }
 
-    // Create Stripe checkout session for standard one-time payment
+    // Create Stripe checkout session for authorized payment (hold funds until creator accepts)
     const session = await stripe.checkout.sessions.create({
       customer: customerId_stripe,
       customer_email: customerId_stripe ? undefined : user.email,
@@ -121,6 +121,15 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
+      payment_intent_data: {
+        capture_method: 'manual', // Hold funds until creator accepts
+        metadata: {
+          commission_request_id: commissionId,
+          customer_id: user.id,
+          creator_id: commissionRequest.creator_id,
+          type: 'commission_payment'
+        }
+      },
       mode: 'payment', // Standard one-time payment
       success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
       cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,

@@ -15,20 +15,20 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
       if (commissionId && session.metadata?.type === 'commission_payment') {
         console.log('Checkout session completed for commission:', commissionId);
 
-        // For standard payments, mark as accepted immediately since payment is captured
+        // Set to payment_pending - funds are authorized but awaiting creator acceptance
         const { error } = await supabase
           .from('commission_requests')
           .update({ 
-            status: 'accepted',
+            status: 'payment_pending',
             stripe_payment_intent_id: session.payment_intent,
-            creator_notes: 'Payment completed successfully - commission accepted'
+            creator_notes: 'Payment completed successfully - awaiting creator acceptance'
           })
           .eq('id', commissionId);
 
         if (error) {
           console.error('Failed to update commission on checkout completion:', error);
         } else {
-          console.log('Commission marked as accepted after successful payment');
+          console.log('Commission marked as payment_pending - awaiting creator acceptance');
         }
       } else {
         // Also try to find by checkout session ID in case metadata is missing
@@ -46,16 +46,16 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
           const { error: updateError } = await supabase
             .from('commission_requests')
             .update({ 
-              status: 'accepted',
+              status: 'payment_pending',
               stripe_payment_intent_id: session.payment_intent,
-              creator_notes: 'Payment completed successfully - commission accepted'
+              creator_notes: 'Payment completed successfully - awaiting creator acceptance'
             })
             .eq('id', commissionRequest.id);
 
           if (updateError) {
             console.error('Failed to update commission found by session ID:', updateError);
           } else {
-            console.log('Commission updated successfully via session ID lookup');
+            console.log('Commission updated to payment_pending via session ID lookup');
           }
         } else {
           console.log('No commission found for session:', session.id);
