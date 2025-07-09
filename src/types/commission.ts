@@ -11,6 +11,7 @@ export interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  custom_addons?: Array<{ name: string; price: number }>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -59,6 +60,7 @@ export interface CommissionRequest {
   deadline?: string;
   customer_notes?: string;
   creator_notes?: string;
+  selected_addons?: Array<{ name: string; price: number; quantity: number }>;
   stripe_payment_intent_id?: string;
   created_at: string;
   updated_at: string;

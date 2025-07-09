@@ -14,6 +14,7 @@ interface FormData {
   budget_range_max: string;
   deadline: string;
   customer_notes: string;
+  selected_addons: Array<{ name: string; price: number; quantity: number }>;
 }
 
 interface UseCommissionRequestFormProps {
@@ -39,7 +40,8 @@ export function useCommissionRequestForm({
     budget_range_min: '',
     budget_range_max: '',
     deadline: '',
-    customer_notes: ''
+    customer_notes: '',
+    selected_addons: []
   });
 
   useEffect(() => {
@@ -59,8 +61,17 @@ export function useCommissionRequestForm({
       budget_range_min: '',
       budget_range_max: '',
       deadline: '',
-      customer_notes: ''
+      customer_notes: '',
+      selected_addons: []
     });
+  };
+
+  const calculateTotalPrice = (selectedType: CommissionType, addons: Array<{ name: string; price: number; quantity: number }>) => {
+    let total = selectedType.base_price;
+    addons.forEach(addon => {
+      total += addon.price * addon.quantity;
+    });
+    return total;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +104,8 @@ export function useCommissionRequestForm({
         throw new Error("Commission type not found");
       }
 
+      const totalPrice = calculateTotalPrice(selectedType, formData.selected_addons);
+
       const requestData = {
         commission_type_id: formData.commission_type_id,
         customer_id: user.id,
@@ -103,7 +116,8 @@ export function useCommissionRequestForm({
         budget_range_max: null,
         deadline: formData.deadline || null,
         customer_notes: null,
-        agreed_price: selectedType.base_price,
+        agreed_price: totalPrice,
+        selected_addons: formData.selected_addons,
         status: 'pending'
       };
 

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -16,6 +16,7 @@ interface FormData {
   budget_range_max: string;
   deadline: string;
   customer_notes: string;
+  selected_addons: Array<{ name: string; price: number; quantity: number }>;
 }
 
 interface CommissionRequestFormProps {
@@ -39,6 +40,21 @@ export function CommissionRequestForm({
 }: CommissionRequestFormProps) {
   const selectedType = specificCommissionType || commissionTypes.find(type => type.id === formData.commission_type_id);
 
+  const handleAddonsChange = (addons: Array<{ name: string; price: number; quantity: number }>) => {
+    setFormData(prev => ({ ...prev, selected_addons: addons }));
+  };
+
+  const calculateTotalPrice = () => {
+    if (!selectedType) return 0;
+    
+    let total = selectedType.base_price;
+    formData.selected_addons.forEach(addon => {
+      total += addon.price * addon.quantity;
+    });
+    
+    return total;
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {!specificCommissionType && (
@@ -46,7 +62,7 @@ export function CommissionRequestForm({
           <Label htmlFor="commission_type">Commission Type *</Label>
           <Select 
             value={formData.commission_type_id} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, commission_type_id: value }))}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, commission_type_id: value, selected_addons: [] }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select a commission type" />
@@ -62,8 +78,13 @@ export function CommissionRequestForm({
         </div>
       )}
 
-      {selectedType && !specificCommissionType && (
-        <CommissionTypeDisplay commissionType={selectedType} />
+      {selectedType && (
+        <CommissionTypeDisplay 
+          commissionType={selectedType} 
+          selectedAddons={formData.selected_addons}
+          onAddonsChange={handleAddonsChange}
+          showAddonSelection={true}
+        />
       )}
 
       <div className="space-y-2">
@@ -88,6 +109,16 @@ export function CommissionRequestForm({
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
+
+      {/* Display total price */}
+      {selectedType && (
+        <div className="p-4 bg-muted rounded-lg">
+          <div className="flex justify-between items-center text-lg font-semibold">
+            <span>Total Commission Price:</span>
+            <span>${calculateTotalPrice().toFixed(2)}</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3">
         <Button type="button" variant="outline" onClick={onCancel}>

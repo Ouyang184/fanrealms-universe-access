@@ -18,6 +18,7 @@ interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  custom_addons?: Array<{ name: string; price: number }>;
   is_active: boolean;
   created_at: string;
 }
@@ -96,7 +97,7 @@ export function CommissionTypesTab({
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                   <div>
                     <span className="font-medium">Turnaround:</span> {type.estimated_turnaround_days} days
                   </div>
@@ -114,9 +115,23 @@ export function CommissionTypesTab({
                     </div>
                   )}
                 </div>
+
+                {/* Custom Add-ons Display */}
+                {type.custom_addons && type.custom_addons.length > 0 && (
+                  <div className="mb-4">
+                    <h5 className="font-medium text-blue-700 mb-2">Custom Add-ons:</h5>
+                    <div className="flex flex-wrap gap-2">
+                      {type.custom_addons.map((addon, index) => (
+                        <Badge key={index} variant="outline" className="text-blue-700 border-blue-300">
+                          {addon.name} - ${addon.price}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {(type.dos.length > 0 || type.donts.length > 0) && (
-                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {type.dos.length > 0 && (
                       <div>
                         <h5 className="font-medium text-green-700 mb-2">✓ Will Do:</h5>

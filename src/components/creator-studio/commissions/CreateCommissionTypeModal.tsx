@@ -16,6 +16,11 @@ interface CreateCommissionTypeModalProps {
   children: React.ReactNode;
 }
 
+interface CustomAddon {
+  name: string;
+  price: number;
+}
+
 export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommissionTypeModalProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +30,6 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
     name: "",
     description: "",
     base_price: "",
-    price_per_character: "",
     price_per_revision: "",
     estimated_turnaround_days: "",
     max_revisions: "",
@@ -33,8 +37,11 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
   
   const [dos, setDos] = useState<string[]>([]);
   const [donts, setDonts] = useState<string[]>([]);
+  const [customAddons, setCustomAddons] = useState<CustomAddon[]>([]);
   const [newDo, setNewDo] = useState("");
   const [newDont, setNewDont] = useState("");
+  const [newAddonName, setNewAddonName] = useState("");
+  const [newAddonPrice, setNewAddonPrice] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,12 +56,12 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
           name: formData.name,
           description: formData.description || null,
           base_price: parseFloat(formData.base_price),
-          price_per_character: formData.price_per_character ? parseFloat(formData.price_per_character) : null,
           price_per_revision: formData.price_per_revision ? parseFloat(formData.price_per_revision) : null,
           estimated_turnaround_days: parseInt(formData.estimated_turnaround_days),
           max_revisions: parseInt(formData.max_revisions),
           dos: dos,
           donts: donts,
+          custom_addons: customAddons,
           is_active: true
         });
 
@@ -73,13 +80,13 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
         name: "",
         description: "",
         base_price: "",
-        price_per_character: "",
         price_per_revision: "",
         estimated_turnaround_days: "",
         max_revisions: "",
       });
       setDos([]);
       setDonts([]);
+      setCustomAddons([]);
     } catch (error) {
       console.error('Error creating commission type:', error);
       toast({
@@ -104,6 +111,21 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
       setDonts([...donts, newDont.trim()]);
       setNewDont("");
     }
+  };
+
+  const addCustomAddon = () => {
+    if (newAddonName.trim() && newAddonPrice && parseFloat(newAddonPrice) > 0) {
+      setCustomAddons([...customAddons, {
+        name: newAddonName.trim(),
+        price: parseFloat(newAddonPrice)
+      }]);
+      setNewAddonName("");
+      setNewAddonPrice("");
+    }
+  };
+
+  const removeCustomAddon = (index: number) => {
+    setCustomAddons(customAddons.filter((_, i) => i !== index));
   };
 
   const removeDo = (index: number) => {
@@ -161,19 +183,40 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price_per_character">Price per Extra Character ($)</Label>
+          {/* Custom Add-ons Section */}
+          <div className="space-y-2">
+            <Label>Custom Add-ons</Label>
+            <div className="flex gap-2">
               <Input
-                id="price_per_character"
+                value={newAddonName}
+                onChange={(e) => setNewAddonName(e.target.value)}
+                placeholder="Add-on name (e.g., Extra Character)"
+                className="flex-1"
+              />
+              <Input
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.price_per_character}
-                onChange={(e) => setFormData({ ...formData, price_per_character: e.target.value })}
-                placeholder="25.00"
+                value={newAddonPrice}
+                onChange={(e) => setNewAddonPrice(e.target.value)}
+                placeholder="Price"
+                className="w-24"
               />
+              <Button type="button" onClick={addCustomAddon} size="sm">
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {customAddons.map((addon, index) => (
+                <Badge key={index} variant="outline" className="text-blue-700 border-blue-300">
+                  {addon.name} - ${addon.price}
+                  <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => removeCustomAddon(index)} />
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price_per_revision">Price per Extra Revision ($)</Label>
               <Input
@@ -186,9 +229,6 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
                 placeholder="10.00"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="estimated_turnaround_days">Turnaround (days) *</Label>
               <Input
@@ -201,18 +241,19 @@ export function CreateCommissionTypeModal({ onSuccess, children }: CreateCommiss
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="max_revisions">Max Revisions *</Label>
-              <Input
-                id="max_revisions"
-                type="number"
-                min="0"
-                value={formData.max_revisions}
-                onChange={(e) => setFormData({ ...formData, max_revisions: e.target.value })}
-                placeholder="3"
-                required
-              />
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="max_revisions">Max Revisions *</Label>
+            <Input
+              id="max_revisions"
+              type="number"
+              min="0"
+              value={formData.max_revisions}
+              onChange={(e) => setFormData({ ...formData, max_revisions: e.target.value })}
+              placeholder="3"
+              required
+            />
           </div>
 
           {/* Will Do Section */}
