@@ -187,22 +187,72 @@ serve(async (req) => {
               details: 'Could not extract valid payment intent ID' 
             }, 400);
           }
-          
-          // Try to cancel the payment intent
-          console.log('🚫 [STRIPE-SUBSCRIPTIONS] Attempting to cancel payment intent:', paymentIntentId);
-          const cancelledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
-          
-          console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent cancelled successfully:', {
-            id: cancelledPaymentIntent.id,
-            status: cancelledPaymentIntent.status,
-            amount: cancelledPaymentIntent.amount
-          });
-          
-          return createJsonResponse({ 
-            success: true, 
-            cancelled: paymentIntentId,
-            status: cancelledPaymentIntent.status 
-          });
+
+          // First, check if the payment intent exists and its current status
+          let currentPaymentIntent;
+          try {
+            currentPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+            console.log('🔍 [STRIPE-SUBSCRIPTIONS] Current payment intent status:', {
+              id: currentPaymentIntent.id,
+              status: currentPaymentIntent.status,
+              amount: currentPaymentIntent.amount
+            });
+          } catch (retrieveError) {
+            console.log('❌ [STRIPE-SUBSCRIPTIONS] Payment intent not found:', retrieveError.message);
+            // If payment intent doesn't exist, consider it successfully "cancelled"
+            return createJsonResponse({ 
+              success: true, 
+              cancelled: paymentIntentId,
+              status: 'not_found',
+              message: 'Payment intent not found - considered cancelled'
+            });
+          }
+
+          // Check if payment intent is in a cancellable state
+          if (currentPaymentIntent.status === 'canceled') {
+            console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent already cancelled');
+            return createJsonResponse({ 
+              success: true, 
+              cancelled: paymentIntentId,
+              status: 'already_canceled' 
+            });
+          }
+
+          if (currentPaymentIntent.status === 'succeeded') {
+            console.log('ℹ️ [STRIPE-SUBSCRIPTIONS] Payment intent already succeeded - cannot cancel');
+            return createJsonResponse({ 
+              success: false, 
+              cancelled: paymentIntentId,
+              status: 'succeeded',
+              message: 'Payment already succeeded - cannot cancel'
+            });
+          }
+
+          // Only attempt cancellation if in a cancellable state
+          if (['requires_payment_method', 'requires_confirmation', 'requires_action'].includes(currentPaymentIntent.status)) {
+            console.log('🚫 [STRIPE-SUBSCRIPTIONS] Attempting to cancel payment intent:', paymentIntentId);
+            const cancelledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+            
+            console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent cancelled successfully:', {
+              id: cancelledPaymentIntent.id,
+              status: cancelledPaymentIntent.status,
+              amount: cancelledPaymentIntent.amount
+            });
+            
+            return createJsonResponse({ 
+              success: true, 
+              cancelled: paymentIntentId,
+              status: cancelledPaymentIntent.status 
+            });
+          } else {
+            console.log('ℹ️ [STRIPE-SUBSCRIPTIONS] Payment intent not in cancellable state:', currentPaymentIntent.status);
+            return createJsonResponse({ 
+              success: false, 
+              cancelled: paymentIntentId,
+              status: currentPaymentIntent.status,
+              message: `Payment intent in ${currentPaymentIntent.status} state - cannot cancel`
+            });
+          }
           
         } catch (error) {
           console.log('❌ [STRIPE-SUBSCRIPTIONS] Payment intent cancellation error:', {
@@ -214,13 +264,26 @@ serve(async (req) => {
             stack: error.stack?.substring(0, 300) + '...'
           });
           
-          // Return specific error details for better debugging
+          // Handle specific Stripe error codes more gracefully
+          if (error.code === 'payment_intent_unexpected_state') {
+            return createJsonResponse({ 
+              success: false,
+              cancelled: body.clientSecret?.split('_secret_')[0],
+              error: 'Payment intent cannot be cancelled in current state',
+              stripe_error_code: error.code,
+              message: 'Payment may have already been processed or cancelled'
+            }, 200); // Return 200 instead of 500 for expected state errors
+          }
+
+          // For other errors, still return a more graceful response
           return createJsonResponse({ 
+            success: false,
             error: 'Failed to cancel payment intent',
             details: error.message,
             stripe_error_type: error.type,
-            stripe_error_code: error.code
-          }, 500);
+            stripe_error_code: error.code,
+            message: 'Payment cancellation failed but you can still navigate away'
+          }, 200); // Return 200 instead of 500 to allow cleanup to continue
         }
         
       default:
