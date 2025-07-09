@@ -1,3 +1,4 @@
+
 import { createJsonResponse } from '../utils/cors.ts';
 
 export async function handleCreateSubscription(
@@ -15,104 +16,74 @@ export async function handleCreateSubscription(
   });
 
   try {
-    // Check for existing subscriptions - prioritize incomplete ones first
+    // Check for existing active subscriptions first
     const { data: existingSubs, error: checkError } = await supabaseService
       .from('user_subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .eq('creator_id', creatorId)
-      .eq('tier_id', tierId)
-      .in('status', ['active', 'incomplete'])
-      .order('created_at', { ascending: false });
+      .in('status', ['active', 'incomplete']);
 
     if (checkError) {
       console.error('[CreateSubscription] Error checking existing subscriptions:', checkError);
       return createJsonResponse({ error: 'Failed to check existing subscriptions' }, 500);
     }
 
-    // Handle existing subscriptions
+    // Handle existing active subscriptions
     if (existingSubs && existingSubs.length > 0) {
       const activeSub = existingSubs.find(sub => sub.status === 'active');
       const incompleteSub = existingSubs.find(sub => sub.status === 'incomplete');
       
       if (activeSub) {
-        console.log('[CreateSubscription] User already has active subscription to this tier');
+        if (activeSub.tier_id === tierId) {
+          console.log('[CreateSubscription] User already has active subscription to this tier');
+          return createJsonResponse({ 
+            error: 'You already have an active subscription to this tier.',
+            shouldRefresh: true 
+          });
+        }
+        
+        // Different tier - this would be an upgrade/downgrade
+        console.log('[CreateSubscription] User has subscription to different tier - upgrade/downgrade needed');
+        // For now, return error. Tier changes can be implemented later if needed
         return createJsonResponse({ 
-          error: 'You already have an active subscription to this tier.',
+          error: 'You already have an active subscription to this creator. Please cancel your current subscription first.',
           shouldRefresh: true 
         });
       }
       
-      if (incompleteSub) {
-        console.log('[CreateSubscription] Found existing incomplete subscription, attempting to reuse...', {
-          subscriptionId: incompleteSub.stripe_subscription_id,
-          createdAt: incompleteSub.created_at
-        });
+      if (incompleteSub && incompleteSub.tier_id === tierId) {
+        console.log('[CreateSubscription] Found existing incomplete subscription, reusing...');
         
         // Try to retrieve the existing Stripe subscription
         try {
           const stripeSubscription = await stripe.subscriptions.retrieve(incompleteSub.stripe_subscription_id);
           
-          console.log('[CreateSubscription] Retrieved Stripe subscription:', {
-            id: stripeSubscription.id,
-            status: stripeSubscription.status,
-            hasLatestInvoice: !!stripeSubscription.latest_invoice
-          });
-          
           if (stripeSubscription.status === 'incomplete') {
-            // Get the payment intent from the latest invoice
-            let clientSecret = null;
-            
-            if (stripeSubscription.latest_invoice) {
-              if (typeof stripeSubscription.latest_invoice === 'string') {
-                // If it's just an ID, retrieve the full invoice
-                const invoice = await stripe.invoices.retrieve(stripeSubscription.latest_invoice, {
-                  expand: ['payment_intent']
-                });
-                clientSecret = invoice.payment_intent?.client_secret;
-              } else {
-                // If it's already expanded
-                clientSecret = stripeSubscription.latest_invoice.payment_intent?.client_secret;
-              }
-            }
+            const clientSecret = stripeSubscription.latest_invoice?.payment_intent?.client_secret;
             
             if (clientSecret) {
-              console.log('[CreateSubscription] Reusing existing incomplete subscription with client secret');
-              
-              // Get tier details for response
-              const { data: tier } = await supabaseService
-                .from('membership_tiers')
-                .select('title, price')
-                .eq('id', tierId)
-                .single();
-              
               return createJsonResponse({
                 clientSecret,
                 subscriptionId: stripeSubscription.id,
                 amount: incompleteSub.amount * 100,
-                tierName: tier?.title || 'Membership',
+                tierName: body.tierName || 'Membership',
                 tierId: tierId,
                 creatorId: creatorId,
                 useCustomPaymentPage: true,
                 reusedSession: true
               });
-            } else {
-              console.log('[CreateSubscription] No valid client secret found, will create new subscription');
             }
-          } else {
-            console.log('[CreateSubscription] Existing subscription status changed, will create new one');
           }
         } catch (stripeError) {
-          console.log('[CreateSubscription] Existing Stripe subscription not found or invalid, will create new one:', stripeError.message);
+          console.log('[CreateSubscription] Existing Stripe subscription not found, will create new one');
+          
+          // Clean up the orphaned database record
+          await supabaseService
+            .from('user_subscriptions')
+            .delete()
+            .eq('id', incompleteSub.id);
         }
-        
-        // If we reach here, the incomplete subscription is no longer valid
-        // Clean up the orphaned database record
-        console.log('[CreateSubscription] Removing invalid incomplete subscription record');
-        await supabaseService
-          .from('user_subscriptions')
-          .delete()
-          .eq('id', incompleteSub.id);
       }
     }
 
@@ -231,7 +202,7 @@ export async function handleCreateSubscription(
 
     const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
     
-    console.log('[CreateSubscription] Successfully created new subscription');
+    console.log('[CreateSubscription] Successfully created subscription');
     
     return createJsonResponse({
       clientSecret,
@@ -241,6 +212,11 @@ export async function handleCreateSubscription(
       tierId: tierId,
       creatorId: creatorId,
       useCustomPaymentPage: true,
+      isUpgrade: false,
+      currentTierName: null,
+      proratedAmount: 0,
+      fullTierPrice: tier.price * 100,
+      currentPeriodEnd: null,
       reusedSession: false
     });
 
