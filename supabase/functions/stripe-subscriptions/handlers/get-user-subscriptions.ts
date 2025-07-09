@@ -46,16 +46,6 @@ export async function handleGetUserSubscriptions(
 
     console.log('Active subscriptions found:', userSubscriptions?.length || 0);
 
-    // Clean up legacy subscriptions table entries
-    const { error: cleanupError } = await supabaseService
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', targetUserId);
-
-    if (cleanupError) {
-      console.warn('Warning: Could not clean up legacy subscriptions:', cleanupError);
-    }
-
     return createJsonResponse({
       subscriptions: userSubscriptions || [],
       userId: targetUserId
