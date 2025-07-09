@@ -34,13 +34,26 @@ export function usePaymentProcessing({
   const [isVerifying, setIsVerifying] = useState(false);
 
   const cleanupIncompleteSubscription = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      console.warn('===== CLEANUP SKIPPED: No user ID =====');
+      return;
+    }
 
     console.log('===== CLEANING UP INCOMPLETE SUBSCRIPTION =====');
-    console.log('Cleaning up for:', { userId: user.id, tierId, creatorId });
+    console.log('Cleanup details:', { 
+      userId: user.id, 
+      tierId, 
+      creatorId, 
+      hasClientSecret: !!clientSecret,
+      clientSecretLength: clientSecret?.length 
+    });
+
+    let dbCleanupSuccess = false;
+    let stripeCleanupSuccess = false;
 
     try {
-      // Delete any incomplete subscription records for this user/creator/tier
+      // Step 1: Always try to delete incomplete subscription records first
+      console.log('🗑️ Step 1: Cleaning up database records...');
       const { data: deletedSubscriptions, error: deleteError } = await supabase
         .from('user_subscriptions')
         .delete()
@@ -51,15 +64,26 @@ export function usePaymentProcessing({
         .select();
 
       if (deleteError) {
-        console.error('Error deleting incomplete subscriptions:', deleteError);
-      } else if (deletedSubscriptions && deletedSubscriptions.length > 0) {
-        console.log('Deleted incomplete subscriptions:', deletedSubscriptions);
+        console.error('❌ Database cleanup failed:', deleteError);
       } else {
-        console.log('No incomplete subscriptions found to delete');
+        dbCleanupSuccess = true;
+        if (deletedSubscriptions && deletedSubscriptions.length > 0) {
+          console.log('✅ Deleted incomplete subscriptions:', deletedSubscriptions.length);
+        } else {
+          console.log('ℹ️ No incomplete subscriptions found to delete');
+        }
       }
 
-      // Cancel the Stripe payment intent if we have a client secret
+      // Step 2: Try to cancel Stripe payment intent (but don't let failure block cleanup)
       if (clientSecret) {
+        console.log('💳 Step 2: Attempting to cancel Stripe payment intent...');
+        console.log('Client secret format check:', {
+          hasSecret: !!clientSecret,
+          startsWithPi: clientSecret.startsWith('pi_'),
+          includesSecret: clientSecret.includes('_secret_'),
+          length: clientSecret.length
+        });
+
         try {
           const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
             body: {
@@ -69,20 +93,53 @@ export function usePaymentProcessing({
           });
 
           if (error) {
-            console.error('Error cancelling payment intent:', error);
+            console.error('❌ Stripe cancellation API error:', {
+              message: error.message,
+              details: error.details,
+              hint: error.hint,
+              code: error.code
+            });
           } else {
-            console.log('Successfully cancelled payment intent');
+            stripeCleanupSuccess = true;
+            console.log('✅ Successfully cancelled payment intent:', data);
           }
         } catch (error) {
-          console.error('Failed to cancel payment intent:', error);
+          console.error('❌ Stripe cancellation network error:', {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            name: error instanceof Error ? error.name : 'Unknown',
+            stack: error instanceof Error ? error.stack : 'No stack'
+          });
         }
+      } else {
+        console.log('ℹ️ Step 2: No client secret provided, skipping Stripe cancellation');
       }
 
-      // Invalidate subscription queries to refresh UI
+      // Step 3: Always invalidate queries regardless of API failures
+      console.log('🔄 Step 3: Refreshing subscription data...');
       await invalidateAllSubscriptionQueries();
       
+      console.log('===== CLEANUP SUMMARY =====');
+      console.log({
+        dbCleanupSuccess,
+        stripeCleanupSuccess,
+        overallSuccess: dbCleanupSuccess || stripeCleanupSuccess
+      });
+      
     } catch (error) {
-      console.error('Error during cleanup:', error);
+      console.error('===== CRITICAL CLEANUP ERROR =====');
+      console.error('Unexpected error during cleanup:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : 'No stack'
+      });
+      
+      // Still try to invalidate queries even if everything else failed
+      try {
+        await invalidateAllSubscriptionQueries();
+        console.log('✅ At least managed to refresh subscription data');
+      } catch (refreshError) {
+        console.error('❌ Even refresh failed:', refreshError);
+      }
     }
   };
 

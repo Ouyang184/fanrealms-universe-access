@@ -15,6 +15,15 @@ const corsHeaders = {
 
 serve(async (req) => {
   console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (SANDBOX MODE)');
+  console.log('📍 [STRIPE-SUBSCRIPTIONS] Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: {
+      authorization: req.headers.get('Authorization') ? 'Bearer [PRESENT]' : '[MISSING]',
+      contentType: req.headers.get('Content-Type'),
+      userAgent: req.headers.get('User-Agent')
+    }
+  });
   
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -23,19 +32,31 @@ serve(async (req) => {
   }
 
   try {
-    console.log('📥 [STRIPE-SUBSCRIPTIONS] Processing request:', {
-      method: req.method,
-      url: req.url
-    });
+    console.log('📥 [STRIPE-SUBSCRIPTIONS] Processing request...');
 
-    // Parse request body
+    // Parse request body with detailed error handling
     let body;
     try {
-      body = await req.json();
-      console.log('📦 [STRIPE-SUBSCRIPTIONS] Request body parsed:', body);
+      const bodyText = await req.text();
+      console.log('📝 [STRIPE-SUBSCRIPTIONS] Raw body received:', bodyText.length > 0 ? 'Non-empty' : 'Empty');
+      
+      if (!bodyText) {
+        console.log('❌ [STRIPE-SUBSCRIPTIONS] Empty request body');
+        return createJsonResponse({ error: 'Request body is required' }, 400);
+      }
+      
+      body = JSON.parse(bodyText);
+      console.log('📦 [STRIPE-SUBSCRIPTIONS] Request body parsed successfully:', {
+        action: body?.action,
+        hasClientSecret: !!body?.clientSecret,
+        bodyKeys: Object.keys(body || {})
+      });
     } catch (parseError) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Body parse error:', parseError.message);
-      return createJsonResponse({ error: 'Invalid JSON body' }, 400);
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Body parse error:', {
+        message: parseError.message,
+        name: parseError.name
+      });
+      return createJsonResponse({ error: 'Invalid JSON body', details: parseError.message }, 400);
     }
 
     // Validate environment variables - USE CORRECT TEST KEYS
@@ -45,8 +66,11 @@ serve(async (req) => {
     
     console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (SANDBOX MODE):', {
       hasStripeKey: !!stripeKey,
+      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 12) + '...' : 'N/A',
       hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey
+      supabaseUrlDomain: supabaseUrl ? new URL(supabaseUrl).hostname : 'N/A',
+      hasServiceKey: !!supabaseServiceKey,
+      serviceKeyPrefix: supabaseServiceKey ? supabaseServiceKey.substring(0, 12) + '...' : 'N/A'
     });
 
     if (!stripeKey) {
@@ -59,19 +83,54 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Missing Supabase configuration' }, 500);
     }
 
+    // Test Stripe key validity
+    try {
+      const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
+      console.log('🔧 [STRIPE-SUBSCRIPTIONS] Testing Stripe key...');
+      await stripe.balance.retrieve();
+      console.log('✅ [STRIPE-SUBSCRIPTIONS] Stripe key is valid');
+    } catch (stripeTestError) {
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Stripe key test failed:', {
+        message: stripeTestError.message,
+        type: stripeTestError.type,
+        code: stripeTestError.code
+      });
+      return createJsonResponse({ 
+        error: 'Invalid Stripe configuration', 
+        details: stripeTestError.message 
+      }, 500);
+    }
+
     // Initialize clients
     const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized (SANDBOX MODE)');
+    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized successfully');
 
-    // Authenticate user
-    const user = await authenticateUser(req, supabase);
-    console.log('👤 [STRIPE-SUBSCRIPTIONS] User authenticated:', user.id);
+    // Authenticate user with detailed logging
+    let user;
+    try {
+      user = await authenticateUser(req, supabase);
+      console.log('👤 [STRIPE-SUBSCRIPTIONS] User authenticated successfully:', {
+        userId: user.id,
+        email: user.email,
+        hasEmail: !!user.email
+      });
+    } catch (authError) {
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Authentication failed:', {
+        message: authError.message,
+        name: authError.name,
+        stack: authError.stack?.substring(0, 200) + '...'
+      });
+      return createJsonResponse({ 
+        error: 'Authentication failed', 
+        details: authError.message 
+      }, 401);
+    }
 
     // Handle different actions
     const action = body.action;
-    console.log('🎯 [STRIPE-SUBSCRIPTIONS] Action:', action);
+    console.log('🎯 [STRIPE-SUBSCRIPTIONS] Processing action:', action);
 
     switch (action) {
       case 'create_subscription':
@@ -96,21 +155,64 @@ serve(async (req) => {
 
       case 'cancel_payment_intent':
         try {
-          console.log('💸 [STRIPE-SUBSCRIPTIONS] Cancelling payment intent');
+          console.log('💸 [STRIPE-SUBSCRIPTIONS] Starting payment intent cancellation');
+          console.log('🔍 [STRIPE-SUBSCRIPTIONS] Client secret details:', {
+            hasClientSecret: !!body.clientSecret,
+            clientSecretLength: body.clientSecret?.length,
+            clientSecretPrefix: body.clientSecret?.substring(0, 12) + '...',
+            includesSecret: body.clientSecret?.includes('_secret_')
+          });
+          
+          if (!body.clientSecret) {
+            console.log('❌ [STRIPE-SUBSCRIPTIONS] No client secret provided');
+            return createJsonResponse({ error: 'Client secret is required' }, 400);
+          }
           
           // Extract payment intent ID from client secret
-          const paymentIntentId = body.clientSecret?.split('_secret_')[0];
-          if (paymentIntentId) {
-            await stripe.paymentIntents.cancel(paymentIntentId);
-            console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent cancelled:', paymentIntentId);
-            return createJsonResponse({ success: true, cancelled: paymentIntentId });
-          } else {
-            console.log('❌ [STRIPE-SUBSCRIPTIONS] Invalid client secret format');
-            return createJsonResponse({ error: 'Invalid client secret format' }, 400);
+          const paymentIntentId = body.clientSecret.split('_secret_')[0];
+          console.log('🔍 [STRIPE-SUBSCRIPTIONS] Extracted payment intent ID:', paymentIntentId);
+          
+          if (!paymentIntentId || !paymentIntentId.startsWith('pi_')) {
+            console.log('❌ [STRIPE-SUBSCRIPTIONS] Invalid payment intent ID format:', paymentIntentId);
+            return createJsonResponse({ 
+              error: 'Invalid client secret format', 
+              details: 'Could not extract valid payment intent ID' 
+            }, 400);
           }
+          
+          // Try to cancel the payment intent
+          console.log('🚫 [STRIPE-SUBSCRIPTIONS] Attempting to cancel payment intent:', paymentIntentId);
+          const cancelledPaymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+          
+          console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent cancelled successfully:', {
+            id: cancelledPaymentIntent.id,
+            status: cancelledPaymentIntent.status,
+            amount: cancelledPaymentIntent.amount
+          });
+          
+          return createJsonResponse({ 
+            success: true, 
+            cancelled: paymentIntentId,
+            status: cancelledPaymentIntent.status 
+          });
+          
         } catch (error) {
-          console.log('❌ [STRIPE-SUBSCRIPTIONS] Error cancelling payment intent:', error.message);
-          return createJsonResponse({ error: error.message }, 500);
+          console.log('❌ [STRIPE-SUBSCRIPTIONS] Payment intent cancellation error:', {
+            message: error.message,
+            type: error.type,
+            code: error.code,
+            decline_code: error.decline_code,
+            payment_intent: error.payment_intent?.id,
+            stack: error.stack?.substring(0, 300) + '...'
+          });
+          
+          // Return specific error details for better debugging
+          return createJsonResponse({ 
+            error: 'Failed to cancel payment intent',
+            details: error.message,
+            stripe_error_type: error.type,
+            stripe_error_code: error.code
+          }, 500);
         }
         
       default:
