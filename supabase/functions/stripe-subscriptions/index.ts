@@ -6,6 +6,7 @@ import { authenticateUser } from './utils/auth.ts';
 import { handleCreateSubscription } from './handlers/create-subscription.ts';
 import { handleCancelSubscription } from './handlers/cancel-subscription.ts';
 import { handleReactivateSubscription } from './handlers/reactivate-subscription.ts';
+import { handleGetUserSubscriptions } from './handlers/get-user-subscriptions.ts';
 import { createJsonResponse } from './utils/cors.ts';
 
 const corsHeaders = {
@@ -151,6 +152,13 @@ serve(async (req) => {
           supabase, 
           user, 
           body.subscriptionId
+        );
+
+      case 'get_user_subscriptions':
+        return await handleGetUserSubscriptions(
+          supabase,
+          user,
+          body.userId
         );
 
       case 'cancel_payment_intent':
