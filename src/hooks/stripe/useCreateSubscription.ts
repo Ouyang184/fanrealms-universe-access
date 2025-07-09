@@ -62,7 +62,7 @@ export const useCreateSubscription = () => {
       return null;
     }
 
-    // Check cache first
+    // Check cache first for recent sessions
     const cacheKey = `${user.id}-${creatorId}-${tierId}`;
     const cachedSession = sessionCache.get(cacheKey);
     console.log('[useCreateSubscription] Checking cache for:', cacheKey, 'found:', !!cachedSession);
@@ -206,11 +206,11 @@ export const useCreateSubscription = () => {
           }
         });
         
-        // Show appropriate message
+        // Show appropriate message based on whether it's a reused session
         if (data.reusedSession) {
           toast({
             title: "Returning to Payment",
-            description: "Returning you to your existing payment session.",
+            description: "Continuing your previous payment session.",
           });
         } else {
           toast({

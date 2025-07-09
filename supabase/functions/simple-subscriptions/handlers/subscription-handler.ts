@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 export async function handleCreateSubscription(
@@ -9,28 +8,36 @@ export async function handleCreateSubscription(
 ) {
   console.log('[SimpleSubscriptions] Action: create_subscription, TierId:', tierId, 'CreatorId:', creatorId);
 
-  // CRITICAL: Check for existing active subscriptions to the same creator (any tier)
-  console.log('[SimpleSubscriptions] Checking for existing active subscriptions to creator:', creatorId);
+  // CRITICAL: Check for existing subscriptions - prioritize incomplete ones first
+  console.log('[SimpleSubscriptions] Checking for existing subscriptions to creator:', creatorId, 'and tier:', tierId);
   
-  const { data: existingCreatorSubs, error: creatorSubsError } = await supabase
+  const { data: existingSubs, error: subsError } = await supabase
     .from('user_subscriptions')
     .select('*')
     .eq('user_id', user.id)
     .eq('creator_id', creatorId)
-    .in('status', ['active']);
+    .eq('tier_id', tierId)
+    .in('status', ['active', 'incomplete'])
+    .order('created_at', { ascending: false });
 
-  if (creatorSubsError) {
-    console.error('[SimpleSubscriptions] Error checking creator subscriptions:', creatorSubsError);
+  if (subsError) {
+    console.error('[SimpleSubscriptions] Error checking subscriptions:', subsError);
     throw new Error('Failed to check existing subscriptions');
   }
 
-  // If user has an active subscription to this creator, handle tier change
-  if (existingCreatorSubs && existingCreatorSubs.length > 0) {
-    const existingSubscription = existingCreatorSubs[0];
-    console.log('[SimpleSubscriptions] Found existing subscription to creator:', existingSubscription);
+  // Handle existing subscriptions
+  if (existingSubs && existingSubs.length > 0) {
+    const activeSub = existingSubs.find(sub => sub.status === 'active');
+    const incompleteSub = existingSubs.find(sub => sub.status === 'incomplete');
     
-    // If it's the same tier, return error with refresh flag
-    if (existingSubscription.tier_id === tierId) {
+    console.log('[SimpleSubscriptions] Found existing subscriptions:', {
+      total: existingSubs.length,
+      hasActive: !!activeSub,
+      hasIncomplete: !!incompleteSub
+    });
+    
+    // If user has an active subscription to this exact tier, return error
+    if (activeSub) {
       console.log('[SimpleSubscriptions] User already subscribed to this tier');
       return { 
         error: 'You already have an active subscription to this tier.',
@@ -38,11 +45,87 @@ export async function handleCreateSubscription(
       };
     }
 
-    // Different tier - update existing subscription with proration
+    // If user has an incomplete subscription to this tier, try to reuse it
+    if (incompleteSub) {
+      console.log('[SimpleSubscriptions] Found incomplete subscription, attempting to reuse:', incompleteSub.stripe_subscription_id);
+      
+      try {
+        const stripeSubscription = await stripe.subscriptions.retrieve(incompleteSub.stripe_subscription_id);
+        
+        if (stripeSubscription.status === 'incomplete') {
+          // Retrieve the payment intent
+          let clientSecret = null;
+          
+          if (stripeSubscription.latest_invoice) {
+            if (typeof stripeSubscription.latest_invoice === 'string') {
+              const invoice = await stripe.invoices.retrieve(stripeSubscription.latest_invoice, {
+                expand: ['payment_intent']
+              });
+              clientSecret = invoice.payment_intent?.client_secret;
+            } else {
+              clientSecret = stripeSubscription.latest_invoice.payment_intent?.client_secret;
+            }
+          }
+          
+          if (clientSecret) {
+            console.log('[SimpleSubscriptions] Reusing existing incomplete subscription');
+            
+            // Get tier details for response
+            const { data: tier } = await supabase
+              .from('membership_tiers')
+              .select('title, price')
+              .eq('id', tierId)
+              .single();
+            
+            return {
+              clientSecret,
+              subscriptionId: stripeSubscription.id,
+              amount: incompleteSub.amount * 100,
+              tierName: tier?.title || 'Membership',
+              tierId: tierId,
+              creatorId: creatorId,
+              useCustomPaymentPage: true,
+              reusedSession: true
+            };
+          }
+        }
+        
+        console.log('[SimpleSubscriptions] Existing subscription no longer incomplete, cleaning up');
+      } catch (stripeError) {
+        console.log('[SimpleSubscriptions] Error retrieving existing subscription, cleaning up:', stripeError.message);
+      }
+      
+      // Clean up invalid incomplete subscription
+      await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('id', incompleteSub.id);
+    }
+  }
+
+  // Check for different tier to same creator (would be upgrade/downgrade)
+  const { data: existingCreatorSubs, error: creatorSubsError } = await supabase
+    .from('user_subscriptions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('creator_id', creatorId)
+    .neq('tier_id', tierId)
+    .in('status', ['active']);
+
+  if (creatorSubsError) {
+    console.error('[SimpleSubscriptions] Error checking creator subscriptions:', creatorSubsError);
+    throw new Error('Failed to check existing subscriptions');
+  }
+
+  // If user has an active subscription to this creator but different tier, handle tier change
+  if (existingCreatorSubs && existingCreatorSubs.length > 0) {
+    const existingSubscription = existingCreatorSubs[0];
+    console.log('[SimpleSubscriptions] Found existing subscription to different tier, updating:', existingSubscription);
+    
     return await handleTierUpdate(stripe, supabase, user, existingSubscription, tierId);
   }
 
-  console.log('[SimpleSubscriptions] No conflicting active subscriptions found, proceeding with creation...');
+  console.log('[SimpleSubscriptions] No conflicting subscriptions found, proceeding with creation...');
   return await createNewSubscription(stripe, supabase, user, tierId, creatorId);
 }
 
