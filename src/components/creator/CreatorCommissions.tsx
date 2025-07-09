@@ -67,7 +67,12 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           });
         } else {
           console.log('[CreatorCommissions] Successfully loaded commission types:', types?.length || 0);
-          setCommissionTypes(types || []);
+          // Transform the data to match our TypeScript interface
+          const transformedTypes = (types || []).map(type => ({
+            ...type,
+            custom_addons: Array.isArray(type.custom_addons) ? type.custom_addons : []
+          })) as CommissionType[];
+          setCommissionTypes(transformedTypes);
         }
       } catch (error) {
         console.error('[CreatorCommissions] Unexpected error fetching commission data:', error);
