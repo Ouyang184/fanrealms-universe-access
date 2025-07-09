@@ -14,29 +14,91 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Handle commission action function started');
+    
     const { commissionId, action } = await req.json();
     
     console.log('Handling commission action:', { commissionId, action });
 
+    // Validate input
+    if (!commissionId || !action) {
+      console.error('Missing required parameters:', { commissionId, action });
+      return new Response(JSON.stringify({ 
+        error: 'Missing required parameters: commissionId and action are required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    if (!['accept', 'reject'].includes(action)) {
+      console.error('Invalid action:', action);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid action. Must be "accept" or "reject"' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeKey) {
+      console.error('STRIPE_SECRET_KEY not found');
+      return new Response(JSON.stringify({ 
+        error: 'Stripe configuration missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
     });
 
     // Initialize Supabase
-    const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration missing');
+      return new Response(JSON.stringify({ 
+        error: 'Supabase configuration missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('No authorization header');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
-      throw new Error('Authentication required');
+      console.error('Authentication failed:', authError);
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
+
+    console.log('User authenticated:', user.id);
 
     // Fetch commission request with creator check
     const { data: commissionRequest, error: fetchError } = await supabaseService
@@ -51,91 +113,159 @@ serve(async (req) => {
       .eq('id', commissionId)
       .single();
 
-    if (fetchError || !commissionRequest) {
-      throw new Error('Commission request not found');
+    if (fetchError) {
+      console.error('Error fetching commission request:', fetchError);
+      return new Response(JSON.stringify({ 
+        error: 'Commission request not found' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
     }
 
+    if (!commissionRequest) {
+      console.error('Commission request not found for ID:', commissionId);
+      return new Response(JSON.stringify({ 
+        error: 'Commission request not found' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
+    }
+
+    console.log('Commission request found:', commissionRequest.id);
+    console.log('Creator info:', commissionRequest.creator);
+
     // Verify user is the creator
-    if (commissionRequest.creator.user_id !== user.id) {
-      throw new Error('Unauthorized: Only the creator can perform this action');
+    if (commissionRequest.creator?.user_id !== user.id) {
+      console.error('Unauthorized: User is not the creator', {
+        userID: user.id,
+        creatorUserID: commissionRequest.creator?.user_id
+      });
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized: Only the creator can perform this action' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
     }
 
     const paymentIntentId = commissionRequest.stripe_payment_intent_id;
     
     if (!paymentIntentId) {
-      throw new Error('No payment intent found for this commission');
+      console.error('No payment intent found for commission:', commissionId);
+      return new Response(JSON.stringify({ 
+        error: 'No payment intent found for this commission' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
+
+    console.log('Processing action:', action, 'for payment intent:', paymentIntentId);
 
     if (action === 'accept') {
       console.log('Accepting commission and capturing payment:', paymentIntentId);
       
-      // Capture the authorized payment
-      const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
-      
-      // Update commission status to accepted and paid
-      const { error: updateError } = await supabaseService
-        .from('commission_requests')
-        .update({ 
-          status: 'accepted',
-          creator_notes: 'Commission accepted and payment captured'
-        })
-        .eq('id', commissionId);
+      try {
+        // Capture the authorized payment
+        const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
+        console.log('Payment captured successfully:', paymentIntent.id);
+        
+        // Update commission status to accepted
+        const { error: updateError } = await supabaseService
+          .from('commission_requests')
+          .update({ 
+            status: 'accepted',
+            creator_notes: 'Commission accepted and payment captured'
+          })
+          .eq('id', commissionId);
 
-      if (updateError) {
-        console.error('Failed to update commission status:', updateError);
-        throw new Error('Failed to update commission status');
+        if (updateError) {
+          console.error('Failed to update commission status:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to update commission status' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          });
+        }
+
+        console.log('Commission accepted and payment captured successfully');
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Commission accepted and payment captured',
+          paymentIntent: paymentIntent.id 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+
+      } catch (stripeError) {
+        console.error('Stripe error during payment capture:', stripeError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to capture payment: ' + stripeError.message 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
       }
-
-      console.log('Commission accepted and payment captured successfully');
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Commission accepted and payment captured',
-        paymentIntent: paymentIntent.id 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
 
     } else if (action === 'reject') {
       console.log('Rejecting commission and canceling payment:', paymentIntentId);
       
-      // Cancel the authorized payment (refunds to customer)
-      const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
-      
-      // Update commission status to rejected
-      const { error: updateError } = await supabaseService
-        .from('commission_requests')
-        .update({ 
-          status: 'rejected',
-          creator_notes: 'Commission rejected and payment canceled'
-        })
-        .eq('id', commissionId);
+      try {
+        // Cancel the authorized payment (refunds to customer)
+        const paymentIntent = await stripe.paymentIntents.cancel(paymentIntentId);
+        console.log('Payment canceled successfully:', paymentIntent.id);
+        
+        // Update commission status to rejected
+        const { error: updateError } = await supabaseService
+          .from('commission_requests')
+          .update({ 
+            status: 'rejected',
+            creator_notes: 'Commission rejected and payment canceled'
+          })
+          .eq('id', commissionId);
 
-      if (updateError) {
-        console.error('Failed to update commission status:', updateError);
-        throw new Error('Failed to update commission status');
+        if (updateError) {
+          console.error('Failed to update commission status:', updateError);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to update commission status' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500,
+          });
+        }
+
+        console.log('Commission rejected and payment canceled successfully');
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          message: 'Commission rejected and payment canceled',
+          paymentIntent: paymentIntent.id 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+
+      } catch (stripeError) {
+        console.error('Stripe error during payment cancellation:', stripeError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to cancel payment: ' + stripeError.message 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
       }
-
-      console.log('Commission rejected and payment canceled successfully');
-      
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: 'Commission rejected and payment canceled',
-        paymentIntent: paymentIntent.id 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-
-    } else {
-      throw new Error('Invalid action. Must be "accept" or "reject"');
     }
 
   } catch (error) {
     console.error('Commission action error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred' 
+      error: errorMessage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
