@@ -93,6 +93,25 @@ serve(async (req) => {
           user, 
           body.subscriptionId
         );
+
+      case 'cancel_payment_intent':
+        try {
+          console.log('💸 [STRIPE-SUBSCRIPTIONS] Cancelling payment intent');
+          
+          // Extract payment intent ID from client secret
+          const paymentIntentId = body.clientSecret?.split('_secret_')[0];
+          if (paymentIntentId) {
+            await stripe.paymentIntents.cancel(paymentIntentId);
+            console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent cancelled:', paymentIntentId);
+            return createJsonResponse({ success: true, cancelled: paymentIntentId });
+          } else {
+            console.log('❌ [STRIPE-SUBSCRIPTIONS] Invalid client secret format');
+            return createJsonResponse({ error: 'Invalid client secret format' }, 400);
+          }
+        } catch (error) {
+          console.log('❌ [STRIPE-SUBSCRIPTIONS] Error cancelling payment intent:', error.message);
+          return createJsonResponse({ error: error.message }, 500);
+        }
         
       default:
         console.log('❌ [STRIPE-SUBSCRIPTIONS] Unknown action:', action);

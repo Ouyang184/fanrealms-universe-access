@@ -8,6 +8,7 @@ interface PaymentButtonsProps {
   isUpgrade: boolean;
   isProcessing: boolean;
   onPayment: (stripe: any, elements: any, event: React.FormEvent) => void;
+  onCancel?: () => void;
   stripe: any;
   elements: any;
 }
@@ -16,6 +17,7 @@ export function PaymentButtons({
   isUpgrade, 
   isProcessing, 
   onPayment, 
+  onCancel,
   stripe,
   elements
 }: PaymentButtonsProps) {
@@ -27,8 +29,12 @@ export function PaymentButtons({
   };
 
   const handleCancel = () => {
-    console.log('User cancelled payment, navigating back');
-    navigate(-1);
+    if (onCancel) {
+      onCancel();
+    } else {
+      console.log('User cancelled payment, navigating back');
+      navigate(-1);
+    }
   };
 
   return (

@@ -5,6 +5,7 @@ import { useStripe, useElements, CardElement } from '@stripe/react-stripe-js';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 import { PaymentAmountSection } from './PaymentAmountSection';
 import { PaymentMethodSection } from './PaymentMethodSection';
 import { PaymentTerms } from './PaymentTerms';
@@ -18,7 +19,6 @@ export function PaymentForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const { 
     clientSecret, 
@@ -31,6 +31,21 @@ export function PaymentForm() {
     proratedAmount, 
     fullTierPrice 
   } = location.state || {};
+
+  // Use the payment processing hook with cleanup functionality
+  const {
+    isProcessing,
+    paymentSucceeded,
+    isVerifying,
+    handlePayment,
+    handleCancel
+  } = usePaymentProcessing({
+    clientSecret: clientSecret || '',
+    tierId: tierId || '',
+    creatorId: creatorId || '',
+    tierName: tierName || '',
+    isUpgrade: isUpgrade || false
+  });
 
   // Calculate pricing details based on whether it's an upgrade or new subscription
   const monthlyAmount = isUpgrade ? (proratedAmount ? proratedAmount / 100 : 0) : (amount ? amount / 100 : 30);
@@ -50,69 +65,6 @@ export function PaymentForm() {
       setPaymentAmount((monthlyAmount).toFixed(2));
     }
   }, [clientSecret, amount, monthlyAmount, toast]);
-
-  const handlePayment = async (stripeInstance: any, elementsInstance: any, event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!stripeInstance || !elementsInstance || !clientSecret) {
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const cardElement = elementsInstance.getElement(CardElement);
-      if (!cardElement) {
-        toast({
-          title: "Payment Error",
-          description: "Card information is required",
-          variant: "destructive"
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      console.log('Confirming payment with client secret:', clientSecret);
-
-      const { error, paymentIntent } = await stripeInstance.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        }
-      });
-
-      if (error) {
-        console.error('Payment failed:', error);
-        toast({
-          title: "Payment Failed",
-          description: error.message || 'Payment could not be processed',
-          variant: "destructive"
-        });
-      } else if (paymentIntent?.status === 'succeeded') {
-        console.log('Payment succeeded:', paymentIntent.id);
-        
-        toast({
-          title: isUpgrade ? "Upgrade Successful!" : "Payment Successful!",
-          description: isUpgrade 
-            ? `Successfully upgraded to ${tierName}!`
-            : `Payment successful! You're now subscribed to ${tierName}.`,
-        });
-
-        // Redirect to success page or subscriptions page
-        setTimeout(() => {
-          navigate('/subscriptions');
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Payment Error",
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   if (!clientSecret) {
     return (
@@ -167,6 +119,7 @@ export function PaymentForm() {
               isUpgrade={isUpgrade}
               isProcessing={isProcessing}
               onPayment={handlePayment}
+              onCancel={handleCancel}
               stripe={stripe}
               elements={elements}
             />

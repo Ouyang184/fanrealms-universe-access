@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useSubscriptionEventManager } from '@/hooks/useSubscriptionEventManager';
 import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UsePaymentProcessingProps {
   clientSecret: string;
@@ -23,6 +24,7 @@ export function usePaymentProcessing({
 }: UsePaymentProcessingProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { triggerSubscriptionSuccess, invalidateAllSubscriptionQueries } = useSubscriptionEventManager();
   const { clearSubscriptionCache } = useCreateSubscription();
@@ -30,6 +32,59 @@ export function usePaymentProcessing({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSucceeded, setPaymentSucceeded] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  const cleanupIncompleteSubscription = async () => {
+    if (!user?.id) return;
+
+    console.log('===== CLEANING UP INCOMPLETE SUBSCRIPTION =====');
+    console.log('Cleaning up for:', { userId: user.id, tierId, creatorId });
+
+    try {
+      // Delete any incomplete subscription records for this user/creator/tier
+      const { data: deletedSubscriptions, error: deleteError } = await supabase
+        .from('user_subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('creator_id', creatorId)
+        .eq('tier_id', tierId)
+        .eq('status', 'incomplete')
+        .select();
+
+      if (deleteError) {
+        console.error('Error deleting incomplete subscriptions:', deleteError);
+      } else if (deletedSubscriptions && deletedSubscriptions.length > 0) {
+        console.log('Deleted incomplete subscriptions:', deletedSubscriptions);
+      } else {
+        console.log('No incomplete subscriptions found to delete');
+      }
+
+      // Cancel the Stripe payment intent if we have a client secret
+      if (clientSecret) {
+        try {
+          const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
+            body: {
+              action: 'cancel_payment_intent',
+              clientSecret: clientSecret
+            }
+          });
+
+          if (error) {
+            console.error('Error cancelling payment intent:', error);
+          } else {
+            console.log('Successfully cancelled payment intent');
+          }
+        } catch (error) {
+          console.error('Failed to cancel payment intent:', error);
+        }
+      }
+
+      // Invalidate subscription queries to refresh UI
+      await invalidateAllSubscriptionQueries();
+      
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+    }
+  };
 
   const verifySubscriptionInDB = async (maxRetries = 12, retryDelay = 2000) => {
     console.log('===== STARTING SUBSCRIPTION VERIFICATION =====');
@@ -185,11 +240,14 @@ export function usePaymentProcessing({
     }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     console.log('User cancelled payment, navigating back');
     
     // Clear the cache when user cancels
     clearSubscriptionCache(tierId, creatorId);
+    
+    // Clean up any incomplete subscription records
+    await cleanupIncompleteSubscription();
     
     setIsProcessing(false);
     setPaymentSucceeded(false);
