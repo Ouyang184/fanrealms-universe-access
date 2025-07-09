@@ -116,6 +116,7 @@ export type Database = {
           description: string
           id: string
           reference_images: string[] | null
+          selected_addons: Json | null
           status: string
           stripe_payment_intent_id: string | null
           title: string
@@ -135,6 +136,7 @@ export type Database = {
           description: string
           id?: string
           reference_images?: string[] | null
+          selected_addons?: Json | null
           status?: string
           stripe_payment_intent_id?: string | null
           title: string
@@ -154,6 +156,7 @@ export type Database = {
           description?: string
           id?: string
           reference_images?: string[] | null
+          selected_addons?: Json | null
           status?: string
           stripe_payment_intent_id?: string | null
           title?: string
@@ -197,7 +200,6 @@ export type Database = {
           is_active: boolean
           max_revisions: number
           name: string
-          price_per_character: number | null
           price_per_revision: number | null
           updated_at: string
         }
@@ -214,7 +216,6 @@ export type Database = {
           is_active?: boolean
           max_revisions?: number
           name: string
-          price_per_character?: number | null
           price_per_revision?: number | null
           updated_at?: string
         }
@@ -231,7 +232,6 @@ export type Database = {
           is_active?: boolean
           max_revisions?: number
           name?: string
-          price_per_character?: number | null
           price_per_revision?: number | null
           updated_at?: string
         }
