@@ -150,7 +150,7 @@ serve(async (req) => {
       });
     }
 
-    const paymentIntentId = commissionRequest.stripe_payment_intent_id;
+    let paymentIntentId = commissionRequest.stripe_payment_intent_id;
     
     if (!paymentIntentId) {
       console.error('No payment intent found for commission:', commissionId);
@@ -160,6 +160,40 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
+    }
+
+    // Handle case where we stored session ID instead of payment intent ID
+    if (paymentIntentId.startsWith('cs_')) {
+      console.log('Found session ID instead of payment intent ID, retrieving payment intent from session:', paymentIntentId);
+      try {
+        const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
+        if (!session.payment_intent) {
+          console.error('No payment intent found in session:', paymentIntentId);
+          return new Response(JSON.stringify({ 
+            error: 'No payment intent found in the checkout session' 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          });
+        }
+        paymentIntentId = session.payment_intent as string;
+        console.log('Retrieved payment intent ID from session:', paymentIntentId);
+
+        // Update the database with the correct payment intent ID
+        await supabaseService
+          .from('commission_requests')
+          .update({ stripe_payment_intent_id: paymentIntentId })
+          .eq('id', commissionId);
+        console.log('Updated commission record with correct payment intent ID');
+      } catch (sessionError) {
+        console.error('Error retrieving session:', sessionError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to retrieve payment information from checkout session' 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
     }
 
     console.log('Processing action:', action, 'for payment intent:', paymentIntentId);

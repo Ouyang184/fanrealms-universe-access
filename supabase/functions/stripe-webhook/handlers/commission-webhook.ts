@@ -16,11 +16,12 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
         console.log('Checkout session completed for commission:', commissionId);
 
         // Set to payment_pending - funds are authorized but awaiting creator acceptance
+        // Store the actual payment intent ID, not the session ID
         const { error } = await supabase
           .from('commission_requests')
           .update({ 
             status: 'payment_pending',
-            stripe_payment_intent_id: session.payment_intent,
+            stripe_payment_intent_id: session.payment_intent, // This is the actual payment intent ID
             creator_notes: 'Payment completed successfully - awaiting creator acceptance'
           })
           .eq('id', commissionId);
@@ -47,7 +48,7 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
             .from('commission_requests')
             .update({ 
               status: 'payment_pending',
-              stripe_payment_intent_id: session.payment_intent,
+              stripe_payment_intent_id: session.payment_intent, // Store payment intent ID
               creator_notes: 'Payment completed successfully - awaiting creator acceptance'
             })
             .eq('id', commissionRequest.id);
