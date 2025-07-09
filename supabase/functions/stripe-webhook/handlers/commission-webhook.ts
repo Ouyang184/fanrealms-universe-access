@@ -1,10 +1,15 @@
 
 export async function handleCommissionWebhook(event: any, supabase: any) {
   console.log('Processing commission webhook:', event.type);
+  console.log('Event data:', JSON.stringify(event.data?.object?.metadata || {}, null, 2));
 
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
+      console.log('Session completed:', session.id);
+      console.log('Session metadata:', session.metadata);
+      console.log('Session payment_intent:', session.payment_intent);
+      
       const commissionId = session.metadata?.commission_request_id;
 
       if (commissionId && session.metadata?.type === 'commission_payment') {
@@ -24,6 +29,36 @@ export async function handleCommissionWebhook(event: any, supabase: any) {
           console.error('Failed to update commission on checkout completion:', error);
         } else {
           console.log('Commission marked as accepted after successful payment');
+        }
+      } else {
+        // Also try to find by checkout session ID in case metadata is missing
+        console.log('No commission metadata found, trying to find by session ID:', session.id);
+        
+        const { data: commissionRequest, error: findError } = await supabase
+          .from('commission_requests')
+          .select('id')
+          .eq('stripe_payment_intent_id', session.id)
+          .single();
+
+        if (!findError && commissionRequest) {
+          console.log('Found commission by session ID:', commissionRequest.id);
+          
+          const { error: updateError } = await supabase
+            .from('commission_requests')
+            .update({ 
+              status: 'accepted',
+              stripe_payment_intent_id: session.payment_intent,
+              creator_notes: 'Payment completed successfully - commission accepted'
+            })
+            .eq('id', commissionRequest.id);
+
+          if (updateError) {
+            console.error('Failed to update commission found by session ID:', updateError);
+          } else {
+            console.log('Commission updated successfully via session ID lookup');
+          }
+        } else {
+          console.log('No commission found for session:', session.id);
         }
       }
     }

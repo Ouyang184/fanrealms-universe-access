@@ -134,10 +134,11 @@ serve(async (req) => {
 
     console.log('Created Stripe checkout session:', session.id);
 
-    // Update commission request with checkout session ID but keep status as pending
+    // Update commission request status to payment_pending and store checkout session ID
     const { error: updateError } = await supabaseService
       .from('commission_requests')
       .update({ 
+        status: 'payment_pending',
         stripe_payment_intent_id: session.id,
         creator_notes: 'Payment session created - awaiting customer payment'
       })
