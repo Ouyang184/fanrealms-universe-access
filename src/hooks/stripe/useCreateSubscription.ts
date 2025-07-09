@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Cache for payment sessions to prevent duplicate creations
 const sessionCache = new Map<string, {
@@ -25,6 +26,7 @@ export const useCreateSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
@@ -126,11 +128,27 @@ export const useCreateSubscription = () => {
 
       if (data?.error) {
         console.error('[useCreateSubscription] Function returned error:', data.error);
-        toast({
-          title: "Subscription Error", 
-          description: data.error,
-          variant: "destructive"
-        });
+        
+        // Handle duplicate subscription errors gracefully
+        if (data.shouldRefresh) {
+          // Refresh subscription data
+          queryClient.invalidateQueries({ queryKey: ['simple-subscription-check'] });
+          queryClient.invalidateQueries({ queryKey: ['simple-user-subscriptions'] });
+          queryClient.invalidateQueries({ queryKey: ['user-subscriptions'] });
+          
+          toast({
+            title: "Already Subscribed",
+            description: data.error,
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Subscription Error", 
+            description: data.error,
+            variant: "destructive"
+          });
+        }
+        
         return { 
           error: data.error,
           shouldRefresh: data.shouldRefresh || false
@@ -216,6 +234,11 @@ export const useCreateSubscription = () => {
 
     } catch (error) {
       console.error('useCreateSubscription: Failed to create subscription:', error);
+      toast({
+        title: "Subscription Failed",
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: "destructive"
+      });
       throw error;
     } finally {
       setIsProcessing(false);
@@ -228,7 +251,7 @@ export const useCreateSubscription = () => {
         });
       }, 2000);
     }
-  }, [user, isProcessing, navigate, toast, lockedSubscriptions]);
+  }, [user, isProcessing, navigate, toast, lockedSubscriptions, queryClient]);
 
   // Function to clear cache when user cancels payment
   const clearSubscriptionCache = useCallback((tierId: string, creatorId: string) => {

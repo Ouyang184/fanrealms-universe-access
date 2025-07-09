@@ -29,11 +29,12 @@ export async function handleCreateSubscription(
     const existingSubscription = existingCreatorSubs[0];
     console.log('[SimpleSubscriptions] Found existing subscription to creator:', existingSubscription);
     
-    // If it's the same tier, return error
+    // If it's the same tier, return error with refresh flag
     if (existingSubscription.tier_id === tierId) {
       console.log('[SimpleSubscriptions] User already subscribed to this tier');
       return { 
-        error: 'You already have an active subscription to this tier.' 
+        error: 'You already have an active subscription to this tier.',
+        shouldRefresh: true
       };
     }
 
@@ -98,8 +99,8 @@ async function handleTierUpdate(stripe: any, supabase: any, user: any, existingS
       }
     );
 
-    // Update database record
-    await supabase
+    // Update database record using a transaction to handle potential conflicts
+    const { error: updateError } = await supabase
       .from('user_subscriptions')
       .update({
         tier_id: tierId,
@@ -107,6 +108,11 @@ async function handleTierUpdate(stripe: any, supabase: any, user: any, existingS
         updated_at: new Date().toISOString()
       })
       .eq('id', existingSubscription.id);
+
+    if (updateError) {
+      console.error('[SimpleSubscriptions] Error updating subscription record:', updateError);
+      throw new Error('Failed to update subscription record');
+    }
 
     console.log('[SimpleSubscriptions] Successfully updated subscription tier with proration');
     
@@ -200,27 +206,68 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
   // Allow incomplete subscriptions for payment confirmation flow
   console.log('[SimpleSubscriptions] Subscription created with status:', subscription.status);
 
-  // Store subscription in user_subscriptions table
-  console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table only');
-  const { error: insertError } = await supabase
-    .from('user_subscriptions')
-    .insert({
-      user_id: user.id,
-      creator_id: creatorId,
-      tier_id: tierId,
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: stripeCustomerId,
-      status: 'incomplete',
-      amount: tier.price,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
+  // Store subscription in user_subscriptions table with conflict handling
+  console.log('[SimpleSubscriptions] Storing subscription in user_subscriptions table with duplicate prevention');
+  
+  try {
+    const { error: insertError } = await supabase
+      .from('user_subscriptions')
+      .insert({
+        user_id: user.id,
+        creator_id: creatorId,
+        tier_id: tierId,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: stripeCustomerId,
+        status: 'incomplete',
+        amount: tier.price,
+        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
-  if (insertError) {
-    console.error('[SimpleSubscriptions] Error inserting subscription:', insertError);
-    throw new Error('Failed to create subscription record');
+    if (insertError) {
+      console.error('[SimpleSubscriptions] Error inserting subscription:', insertError);
+      
+      // Handle duplicate subscription attempts gracefully
+      if (insertError.code === '23505') { // Unique violation
+        console.log('[SimpleSubscriptions] Duplicate subscription detected, checking existing subscription...');
+        
+        // Check if user already has an active subscription to this tier
+        const { data: existingSubscription } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('creator_id', creatorId)
+          .eq('tier_id', tierId)
+          .eq('status', 'active')
+          .single();
+
+        if (existingSubscription) {
+          // Cancel the Stripe subscription we just created
+          await stripe.subscriptions.cancel(subscription.id);
+          
+          return {
+            error: 'You already have an active subscription to this tier.',
+            shouldRefresh: true
+          };
+        }
+      }
+      
+      throw new Error('Failed to create subscription record');
+    }
+  } catch (dbError) {
+    console.error('[SimpleSubscriptions] Database error during subscription creation:', dbError);
+    
+    // Clean up the Stripe subscription if database insertion fails
+    try {
+      await stripe.subscriptions.cancel(subscription.id);
+      console.log('[SimpleSubscriptions] Cleaned up Stripe subscription due to database error');
+    } catch (cleanupError) {
+      console.error('[SimpleSubscriptions] Failed to cleanup Stripe subscription:', cleanupError);
+    }
+    
+    throw new Error('Failed to create subscription due to database error');
   }
 
   const clientSecret = subscription.latest_invoice?.payment_intent?.client_secret;
