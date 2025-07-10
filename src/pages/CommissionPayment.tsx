@@ -35,6 +35,8 @@ export default function CommissionPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [cancelRedirect, setCancelRedirect] = useState(false);
 
   useEffect(() => {
     if (requestId && user?.id && !loading) {
@@ -175,7 +177,45 @@ export default function CommissionPayment() {
   const handleRetry = () => {
     setError(null);
     setRetryCount(0);
+    setCancelRedirect(false);
+    setRedirectCountdown(null);
     fetchCommissionRequest();
+  };
+
+  // Auto-redirect effect for specific error conditions
+  useEffect(() => {
+    if (error && !cancelRedirect && !redirectCountdown) {
+      // Only redirect for specific post-payment error conditions
+      const shouldAutoRedirect = 
+        error.includes('Payment is already being processed') ||
+        error.includes('Payment has been authorized and is awaiting') ||
+        error.includes('Commission is in') ||
+        error.includes('Commission has already been accepted');
+      
+      if (shouldAutoRedirect) {
+        setRedirectCountdown(3);
+        
+        const countdown = setInterval(() => {
+          setRedirectCountdown(prev => {
+            if (prev === null || prev <= 1) {
+              clearInterval(countdown);
+              if (!cancelRedirect) {
+                navigate('/explore');
+              }
+              return null;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
+        return () => clearInterval(countdown);
+      }
+    }
+  }, [error, cancelRedirect, navigate]);
+
+  const handleStayOnPage = () => {
+    setCancelRedirect(true);
+    setRedirectCountdown(null);
   };
 
   if (isLoading) {
@@ -197,6 +237,18 @@ export default function CommissionPayment() {
             <p className="text-muted-foreground mb-4">
               {error || 'Commission request not found'}
             </p>
+            
+            {redirectCountdown !== null && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm mb-2">
+                  Redirecting to explore page in {redirectCountdown} seconds...
+                </p>
+                <Button onClick={handleStayOnPage} variant="outline" size="sm">
+                  Stay on this page
+                </Button>
+              </div>
+            )}
+            
             <div className="flex gap-2 justify-center">
               {retryCount < 3 && (
                 <Button onClick={handleRetry} variant="outline">

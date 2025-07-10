@@ -9,8 +9,9 @@ import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 
-interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status'> {
+interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
+  selected_addons: any; // Database Json type
   commission_type: {
     name: string;
     base_price: number;
