@@ -62,9 +62,12 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
 
     setUploadingSample(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const fileExt = sampleImage.name.split('.').pop();
       const fileName = `commission-sample-${creatorProfile.id}-${Date.now()}.${fileExt}`;
-      const filePath = `commission-samples/${fileName}`;
+      const filePath = `${user.id}/commission-samples/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('post-attachments')

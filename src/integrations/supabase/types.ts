@@ -204,6 +204,7 @@ export type Database = {
           max_revisions: number
           name: string
           price_per_revision: number | null
+          sample_art_url: string | null
           updated_at: string
         }
         Insert: {
@@ -220,6 +221,7 @@ export type Database = {
           max_revisions?: number
           name: string
           price_per_revision?: number | null
+          sample_art_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -236,6 +238,7 @@ export type Database = {
           max_revisions?: number
           name?: string
           price_per_revision?: number | null
+          sample_art_url?: string | null
           updated_at?: string
         }
         Relationships: [
