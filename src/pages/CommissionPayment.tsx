@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useUserCommissionRequests } from '@/hooks/useUserCommissionRequests';
 
 interface CommissionRequest {
   id: string;
@@ -30,6 +31,7 @@ export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { deleteRequest, isDeleting } = useUserCommissionRequests();
   const [commissionRequest, setCommissionRequest] = useState<CommissionRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -218,6 +220,24 @@ export default function CommissionPayment() {
     setRedirectCountdown(null);
   };
 
+  const handleCancel = async () => {
+    if (!requestId) return;
+    
+    const confirmed = window.confirm(
+      'Are you sure you want to cancel this commission request? This action cannot be undone.'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      deleteRequest(requestId);
+      // Navigate immediately after calling delete - the hook handles the backend deletion
+      navigate('/explore');
+    } catch (error) {
+      console.error('Error canceling commission request:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex justify-center items-center min-h-[60vh]">
@@ -385,12 +405,19 @@ export default function CommissionPayment() {
 
       <div className="flex gap-4">
         <Button 
-          onClick={() => navigate(-1)} 
+          onClick={handleCancel}
           variant="outline" 
           className="flex-1"
-          disabled={isProcessing}
+          disabled={isProcessing || isDeleting}
         >
-          Cancel
+          {isDeleting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Canceling...
+            </>
+          ) : (
+            'Cancel Request'
+          )}
         </Button>
         <Button 
           onClick={handlePayment}
