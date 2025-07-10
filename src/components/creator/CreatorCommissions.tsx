@@ -215,6 +215,22 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Sample Art Display */}
+                {type.sample_art_url && (
+                  <div className="relative">
+                    <img
+                      src={type.sample_art_url}
+                      alt={`Sample art for ${type.name}`}
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge className="bg-black/70 text-white border-0 text-xs">
+                        Sample Work
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Turnaround:</span> {type.estimated_turnaround_days} days

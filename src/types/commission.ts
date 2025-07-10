@@ -12,6 +12,7 @@ export interface CommissionType {
   dos: string[];
   donts: string[];
   custom_addons?: Array<{ name: string; price: number }>;
+  sample_art_url?: string; // Add sample art URL
   is_active: boolean;
   created_at: string;
   updated_at: string;
