@@ -215,18 +215,38 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Sample Art Display */}
-                {type.sample_art_url && (
+                {/* Sample Art Display - Enhanced */}
+                {type.sample_art_url ? (
                   <div className="relative">
                     <img
                       src={type.sample_art_url}
                       alt={`Sample art for ${type.name}`}
-                      className="w-full h-40 object-cover rounded-lg border"
+                      className="w-full h-48 object-cover rounded-lg border"
+                      onError={(e) => {
+                        console.error('Failed to load sample art:', type.sample_art_url);
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
                     />
                     <div className="absolute top-2 right-2">
                       <Badge className="bg-black/70 text-white border-0 text-xs">
                         Sample Work
                       </Badge>
+                    </div>
+                    {/* Fallback for failed image loads */}
+                    <div className="w-full h-48 bg-muted rounded-lg border flex items-center justify-center" style={{ display: 'none' }}>
+                      <div className="text-center text-muted-foreground">
+                        <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-sm">Sample art unavailable</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-muted rounded-lg border flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                      <p className="text-sm">No sample art available</p>
                     </div>
                   </div>
                 )}
