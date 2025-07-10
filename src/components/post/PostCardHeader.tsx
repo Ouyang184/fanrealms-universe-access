@@ -33,7 +33,7 @@ export function PostCardHeader({
           <AvatarFallback>{finalAuthorName.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <p className="font-medium text-sm">{finalAuthorName}</p>
             {isPremium ? (
               <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200">
