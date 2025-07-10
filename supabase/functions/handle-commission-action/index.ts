@@ -107,7 +107,8 @@ serve(async (req) => {
         *,
         creator:creators!commission_requests_creator_id_fkey(
           display_name,
-          user_id
+          user_id,
+          stripe_account_id
         )
       `)
       .eq('id', commissionId)
@@ -206,12 +207,23 @@ serve(async (req) => {
         const paymentIntent = await stripe.paymentIntents.capture(paymentIntentId);
         console.log('Payment captured successfully:', paymentIntent.id);
         
-        // Update commission status to accepted
+        const capturedAmount = paymentIntent.amount_received;
+        const platformFeeAmount = Math.round(capturedAmount * 0.05); // 5% platform fee
+        const creatorNetAmount = capturedAmount - platformFeeAmount;
+        
+        console.log('Fee calculation:', { 
+          capturedAmount, 
+          platformFeeAmount, 
+          creatorNetAmount 
+        });
+
+        // Update commission status with platform fee
         const { error: updateError } = await supabaseService
           .from('commission_requests')
           .update({ 
             status: 'accepted',
-            creator_notes: 'Commission accepted and payment captured'
+            creator_notes: 'Commission accepted and payment captured',
+            platform_fee_amount: platformFeeAmount / 100 // Store in dollars
           })
           .eq('id', commissionId);
 
@@ -225,12 +237,69 @@ serve(async (req) => {
           });
         }
 
+        // Record creator earnings with platform fee deduction
+        const { error: earningsError } = await supabaseService
+          .from('creator_earnings')
+          .insert({
+            creator_id: commissionRequest.creator_id,
+            commission_request_id: commissionId,
+            earning_type: 'commission',
+            amount: capturedAmount / 100, // Store in dollars
+            platform_fee: platformFeeAmount / 100, // Store in dollars
+            net_amount: creatorNetAmount / 100, // Store in dollars
+            payment_date: new Date().toISOString()
+          });
+
+        if (earningsError) {
+          console.error('Failed to record creator earnings:', earningsError);
+          // Don't fail the entire operation, just log the error
+          console.log('Commission accepted but earnings recording failed');
+        } else {
+          console.log('Creator earnings recorded successfully');
+        }
+
+        // If creator has a connected Stripe account, transfer the net amount
+        if (commissionRequest.creator?.stripe_account_id) {
+          try {
+            console.log('Attempting transfer to creator account:', commissionRequest.creator.stripe_account_id);
+            
+            const transfer = await stripe.transfers.create({
+              amount: creatorNetAmount,
+              currency: 'usd',
+              destination: commissionRequest.creator.stripe_account_id,
+              transfer_group: `commission_${commissionId}`,
+              metadata: {
+                commission_id: commissionId,
+                creator_id: commissionRequest.creator_id,
+                type: 'commission_payment'
+              }
+            });
+
+            console.log('Transfer created successfully:', transfer.id);
+
+            // Update earnings record with transfer ID
+            await supabaseService
+              .from('creator_earnings')
+              .update({ stripe_transfer_id: transfer.id })
+              .eq('commission_request_id', commissionId);
+
+          } catch (transferError) {
+            console.error('Transfer failed:', transferError);
+            // Don't fail the entire operation - creator can still be paid manually
+            console.log('Commission accepted but automatic transfer failed');
+          }
+        } else {
+          console.log('Creator has no connected Stripe account - manual payout required');
+        }
+
         console.log('Commission accepted and payment captured successfully');
         
         return new Response(JSON.stringify({ 
           success: true, 
           message: 'Commission accepted and payment captured',
-          paymentIntent: paymentIntent.id 
+          paymentIntent: paymentIntent.id,
+          platformFee: platformFeeAmount / 100,
+          creatorNetAmount: creatorNetAmount / 100
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,

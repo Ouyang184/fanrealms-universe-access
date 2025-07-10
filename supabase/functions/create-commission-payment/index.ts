@@ -14,172 +14,194 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CREATE COMMISSION PAYMENT REQUEST ===');
+    console.log('Create commission payment function started');
     
-    const { commissionId, customerId } = await req.json();
-    console.log('Request data:', { commissionId, customerId });
-
+    const { commissionId } = await req.json();
+    
     if (!commissionId) {
-      throw new Error('Commission ID is required');
+      return new Response(JSON.stringify({ 
+        error: 'Commission ID is required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
-    // Initialize Stripe with TEST key for commission payments
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_TEST');
+    // Initialize Stripe
+    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
-      console.error('STRIPE_SECRET_KEY_TEST not found');
-      throw new Error('Stripe test secret key not configured');
+      return new Response(JSON.stringify({ 
+        error: 'Stripe configuration missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
-    
-    console.log('Using Stripe TEST key for commission payment');
+
     const stripe = new Stripe(stripeKey, {
       apiVersion: '2023-10-16',
     });
 
     // Initialize Supabase
-    const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') || '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ 
+        error: 'Supabase configuration missing' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('No authorization header provided');
-      throw new Error('Authorization header is required');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication required' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      throw new Error('Authentication required');
+      return new Response(JSON.stringify({ 
+        error: 'Authentication failed' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
-    console.log('User authenticated:', user.id);
-
-    // Fetch commission request details
-    const { data: commissionRequest, error: commissionError } = await supabaseService
+    // Fetch commission request
+    const { data: commissionRequest, error: fetchError } = await supabaseService
       .from('commission_requests')
       .select(`
         *,
-        commission_type:commission_types(name, description),
         creator:creators!commission_requests_creator_id_fkey(
-          display_name,
-          user_id
+          display_name
         )
       `)
       .eq('id', commissionId)
-      .eq('customer_id', user.id)
-      .eq('status', 'pending')
       .single();
 
-    if (commissionError || !commissionRequest) {
-      console.error('Commission request error:', commissionError);
-      throw new Error('Commission request not found or not accessible');
+    if (fetchError || !commissionRequest) {
+      return new Response(JSON.stringify({ 
+        error: 'Commission request not found' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 404,
+      });
     }
 
-    console.log('Commission request found:', {
-      id: commissionRequest.id,
-      title: commissionRequest.title,
-      agreed_price: commissionRequest.agreed_price,
-      status: commissionRequest.status
-    });
+    // Verify user is the customer
+    if (commissionRequest.customer_id !== user.id) {
+      return new Response(JSON.stringify({ 
+        error: 'Unauthorized: Only the customer can pay for this commission' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
 
     if (!commissionRequest.agreed_price) {
-      throw new Error('No agreed price set for this commission');
+      return new Response(JSON.stringify({ 
+        error: 'Commission price not set' 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
     }
 
-    // Check if customer already exists in Stripe
-    const customers = await stripe.customers.list({ 
-      email: user.email,
-      limit: 1 
+    const totalAmount = Math.round(commissionRequest.agreed_price * 100); // Convert to cents
+    const platformFee = Math.round(totalAmount * 0.05); // 5% platform fee
+    
+    console.log('Payment details:', { 
+      totalAmount, 
+      platformFee, 
+      creatorNet: totalAmount - platformFee 
     });
 
-    let customerId_stripe;
+    // Check if customer already exists
+    const customers = await stripe.customers.list({ 
+      email: user.email, 
+      limit: 1 
+    });
+    
+    let customerId;
     if (customers.data.length > 0) {
-      customerId_stripe = customers.data[0].id;
-      console.log('Found existing Stripe customer:', customerId_stripe);
-    } else {
-      console.log('No existing Stripe customer found, will create one in checkout');
+      customerId = customers.data[0].id;
     }
 
-    // Create Stripe checkout session for authorized payment (hold funds until creator accepts)
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      customer: customerId_stripe,
-      customer_email: customerId_stripe ? undefined : user.email,
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
       line_items: [
         {
           price_data: {
             currency: 'usd',
             product_data: {
               name: `Commission: ${commissionRequest.title}`,
-              description: `${commissionRequest.commission_type.name} commission by ${commissionRequest.creator.display_name}`,
+              description: `Creator: ${commissionRequest.creator?.display_name || 'Unknown'}`,
             },
-            unit_amount: Math.round(commissionRequest.agreed_price * 100),
+            unit_amount: totalAmount,
           },
           quantity: 1,
         },
       ],
+      mode: 'payment',
       payment_intent_data: {
-        capture_method: 'manual', // Hold funds until creator accepts
+        capture_method: 'manual', // Authorize payment, capture later when creator accepts
         metadata: {
-          commission_request_id: commissionId,
-          customer_id: user.id,
-          creator_id: commissionRequest.creator_id,
-          type: 'commission_payment'
-        }
+          commission_id: commissionId,
+          platform_fee_cents: platformFee.toString(),
+          creator_net_cents: (totalAmount - platformFee).toString(),
+        },
       },
-      mode: 'payment', // Standard one-time payment
-      success_url: `${req.headers.get('origin')}/commissions/${commissionId}/payment-success`,
-      cancel_url: `${req.headers.get('origin')}/commissions/${commissionId}/pay`,
+      success_url: `${req.headers.get('origin')}/commission-payment/${commissionId}/success`,
+      cancel_url: `${req.headers.get('origin')}/commission-payment/${commissionId}`,
       metadata: {
-        commission_request_id: commissionId,
-        customer_id: user.id,
-        creator_id: commissionRequest.creator_id,
-        type: 'commission_payment'
-      }
+        commission_id: commissionId,
+        platform_fee_amount: (platformFee / 100).toString(),
+      },
     });
 
-    console.log('Created Stripe checkout session:', session.id);
-
-    // Store checkout session ID for tracking (but keep status as 'pending' until payment is completed)
-    const { error: updateError } = await supabaseService
+    // Update commission request with session info and platform fee
+    await supabaseService
       .from('commission_requests')
       .update({ 
         stripe_payment_intent_id: session.id,
-        creator_notes: 'Checkout session created - awaiting payment completion'
+        platform_fee_amount: platformFee / 100, // Store in dollars
+        status: 'payment_pending'
       })
       .eq('id', commissionId);
 
-    if (updateError) {
-      console.error('Failed to update commission request:', updateError);
-      // Cancel the checkout session if database update fails
-      try {
-        await stripe.checkout.sessions.expire(session.id);
-      } catch (expireError) {
-        console.error('Failed to expire checkout session:', expireError);
-      }
-      throw new Error('Failed to create commission payment');
-    }
+    console.log('Checkout session created:', session.id);
 
-    console.log('Updated commission request with checkout session ID');
-    console.log('=== SUCCESS: Returning checkout URL ===');
-
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      url: session.url,
+      sessionId: session.id,
+      totalAmount: totalAmount / 100,
+      platformFee: platformFee / 100,
+      creatorNetAmount: (totalAmount - platformFee) / 100
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('=== ERROR IN CREATE COMMISSION PAYMENT ===');
-    console.error('Error details:', error);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
+    console.error('Commission payment creation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
-      details: 'Check function logs for more information'
+      error: errorMessage 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

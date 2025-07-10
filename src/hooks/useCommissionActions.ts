@@ -19,9 +19,15 @@ export const useCommissionActions = () => {
       queryClient.invalidateQueries({ queryKey: ['commission-requests'] });
       
       const actionText = variables.action === 'accept' ? 'accepted' : 'rejected';
-      const message = variables.action === 'accept' 
+      
+      let message = variables.action === 'accept' 
         ? 'Commission accepted and payment captured successfully!'
         : 'Commission rejected and payment refunded to customer.';
+      
+      // Add platform fee information for accepted commissions
+      if (variables.action === 'accept' && data.platformFee && data.creatorNetAmount) {
+        message += ` Platform fee: $${data.platformFee.toFixed(2)}. Your net amount: $${data.creatorNetAmount.toFixed(2)}.`;
+      }
       
       toast({
         title: `Commission ${actionText}`,

@@ -62,6 +62,7 @@ export interface CommissionRequest {
   creator_notes?: string;
   selected_addons?: Array<{ name: string; price: number; quantity: number }>;
   stripe_payment_intent_id?: string;
+  platform_fee_amount?: number;
   created_at: string;
   updated_at: string;
 }
@@ -96,5 +97,19 @@ export interface CommissionPortfolio {
   tags: string[];
   is_featured: boolean;
   display_order: number;
+  created_at: string;
+}
+
+export interface CreatorEarnings {
+  id: string;
+  creator_id: string;
+  commission_request_id?: string;
+  subscription_id?: string;
+  earning_type: 'commission' | 'subscription';
+  amount: number;
+  platform_fee: number;
+  net_amount: number;
+  payment_date?: string;
+  stripe_transfer_id?: string;
   created_at: string;
 }
