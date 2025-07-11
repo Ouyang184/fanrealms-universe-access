@@ -40,21 +40,20 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
 
   return (
     <div className="space-y-1 p-2">
-      <div className={cn("text-xs font-semibold text-muted-foreground mb-2", collapsed ? "text-center" : "px-2")}>
-        {!collapsed && "CREATOR STUDIO"}
+      <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">
+        CREATOR STUDIO
       </div>
       {creatorItems.map((item) => (
         <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
           <Button
             variant={isActive(item.path) ? "secondary" : "ghost"}
             className={cn(
-              "w-full font-medium",
-              collapsed ? "justify-center px-2" : "justify-start gap-3",
+              "w-full font-medium justify-start gap-3",
               isActive(item.path) && "bg-primary/30",
             )}
           >
             <item.icon className="h-5 w-5" />
-            {!collapsed && <span>{item.label}</span>}
+            <span>{item.label}</span>
           </Button>
         </Link>
       ))}
