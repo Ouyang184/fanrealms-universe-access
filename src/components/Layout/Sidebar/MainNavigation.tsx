@@ -15,9 +15,10 @@ import { cn } from "@/lib/utils";
 
 interface MainNavigationProps {
   collapsed: boolean;
+  onMobileNavClick?: () => void;
 }
 
-export function MainNavigation({ collapsed }: MainNavigationProps) {
+export function MainNavigation({ collapsed, onMobileNavClick }: MainNavigationProps) {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -35,10 +36,16 @@ export function MainNavigation({ collapsed }: MainNavigationProps) {
     { path: "/settings", icon: Settings, label: "Account Settings" },
   ];
 
+  const handleNavClick = () => {
+    if (onMobileNavClick) {
+      onMobileNavClick();
+    }
+  };
+
   return (
     <div className="space-y-1 p-2">
       {navigationItems.map((item) => (
-        <Link to={item.path} key={item.path} className="block">
+        <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
           <Button
             variant={isActive(item.path) ? "secondary" : "ghost"}
             className={cn(

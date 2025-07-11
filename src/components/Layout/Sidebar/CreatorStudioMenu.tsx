@@ -1,24 +1,15 @@
 
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
-  Grid, 
-  FileText, 
-  Award, 
-  UserCheck, 
+  PenTool, 
+  BarChart3, 
   DollarSign, 
-  Settings,
-  ChevronDown,
-  PlusCircle,
-  User,
-  Bell,
-  Palette
+  FileText, 
+  Settings, 
+  Plus 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useCreatorProfile } from "@/hooks/useCreatorProfile";
-import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
 
 interface CreatorStudioMenuProps {
   collapsed: boolean;
@@ -27,127 +18,46 @@ interface CreatorStudioMenuProps {
 
 export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudioMenuProps) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const { creatorProfile, isLoading } = useCreatorProfile();
-  const [isOpen, setIsOpen] = useState(true);
   
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  // Reset open state when creator status changes
-  useEffect(() => {
-    if (creatorProfile) {
-      setIsOpen(true);
-    }
-  }, [creatorProfile]);
-
-  const studioItems = [
-    { path: "/creator-studio/dashboard", icon: Grid, label: "Dashboard" },
+  const creatorItems = [
+    { path: "/creator-studio", icon: BarChart3, label: "Creator Studio" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
-    { path: "/creator-studio/notifications", icon: Bell, label: "Notifications" },
-    { path: "/creator-studio/membership-tiers", icon: Award, label: "Membership Tiers" },
-    { path: "/creator-studio/subscribers", icon: UserCheck, label: "Subscribers" },
-    { path: "/creator-studio/commissions", icon: Palette, label: "Commissions" },
-    { path: "/creator-studio/payouts", icon: DollarSign, label: "Payouts" },
-    { path: "/creator-studio/creator-profile", icon: User, label: "Creator Profile" },
+    { path: "/creator-studio/posts/new", icon: Plus, label: "Create Post" },
+    { path: "/creator-studio/commissions", icon: PenTool, label: "Commissions" },
+    { path: "/creator-studio/earnings", icon: DollarSign, label: "Earnings" },
     { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },
   ];
 
-  const handleBecomeCreatorClick = () => {
-    if (!user) {
-      const returnTo = encodeURIComponent('/complete-profile');
-      navigate(`/login?returnTo=${returnTo}`);
-      return;
+  const handleNavClick = () => {
+    if (onMobileNavClick) {
+      onMobileNavClick();
     }
-    navigate('/complete-profile');
-    if (onMobileNavClick) onMobileNavClick();
   };
 
-  // If still loading, show a placeholder
-  if (isLoading) {
-    return null;
-  }
-
-  // Non-creator view
-  if (!creatorProfile) {
-    if (collapsed) {
-      return (
-        <div className="p-2">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-center px-2"
-            onClick={handleBecomeCreatorClick}
-          >
-            <PlusCircle className="h-5 w-5" />
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="px-2">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2 font-medium"
-          onClick={handleBecomeCreatorClick}
-        >
-          <PlusCircle className="h-5 w-5" />
-          Become a Creator
-        </Button>
-      </div>
-    );
-  }
-
-  // Creator view with collapsed sidebar
-  if (collapsed) {
-    return (
-      <div className="p-2">
-        {studioItems.map((item) => (
-          <Link to={item.path} key={item.path} onClick={onMobileNavClick}>
-            <Button 
-              variant={isActive(item.path) ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-center px-2",
-                isActive(item.path) && "bg-primary/30"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-            </Button>
-          </Link>
-        ))}
-      </div>
-    );
-  }
-
-  // Creator view with expanded sidebar
   return (
-    <div className="px-2">
-      <Collapsible defaultOpen={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-between p-2 font-semibold text-lg">
-          <div className="flex items-center gap-2">
-            <span>Creator Studio</span>
-          </div>
-          <ChevronDown className="h-5 w-5 text-muted-foreground" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-2 space-y-1">
-          {studioItems.map((item) => (
-            <Link to={item.path} key={item.path} className="block" onClick={onMobileNavClick}>
-              <Button
-                variant={isActive(item.path) ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start gap-3 font-medium",
-                  isActive(item.path) && "bg-primary/30",
-                )}
-              >
-                <item.icon className="h-5 w-5" />
-                {item.label}
-              </Button>
-            </Link>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
+    <div className="space-y-1 p-2">
+      <div className={cn("text-xs font-semibold text-muted-foreground mb-2", collapsed ? "text-center" : "px-2")}>
+        {!collapsed && "CREATOR STUDIO"}
+      </div>
+      {creatorItems.map((item) => (
+        <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
+          <Button
+            variant={isActive(item.path) ? "secondary" : "ghost"}
+            className={cn(
+              "w-full font-medium",
+              collapsed ? "justify-center px-2" : "justify-start gap-3",
+              isActive(item.path) && "bg-primary/30",
+            )}
+          >
+            <item.icon className="h-5 w-5" />
+            {!collapsed && <span>{item.label}</span>}
+          </Button>
+        </Link>
+      ))}
     </div>
   );
 }

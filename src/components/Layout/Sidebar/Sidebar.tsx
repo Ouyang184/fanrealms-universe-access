@@ -7,6 +7,10 @@ import { MainNavigation } from "./MainNavigation";
 import { CreatorStudioMenu } from "./CreatorStudioMenu";
 import { SidebarFooter } from "./SidebarFooter";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
+import { useState } from "react";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -16,19 +20,10 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
   const isMobile = useIsMobile();
-  
-  // On mobile, sidebar should be overlay or completely hidden
-  if (isMobile) {
-    return null; // Could implement a mobile drawer here if needed
-  }
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  return (
-    <div
-      className={cn(
-        "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-black flex-shrink-0",
-        collapsed ? "w-16" : "w-72",
-      )}
-    >
+  const SidebarContent = () => (
+    <>
       <SidebarHeader collapsed={collapsed} onToggle={toggleSidebar} />
 
       <ScrollArea className="flex-1 overflow-hidden">
@@ -40,6 +35,40 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
       </ScrollArea>
 
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />
+    </>
+  );
+
+  // On mobile, use a drawer
+  if (isMobile) {
+    return (
+      <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+        <DrawerTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="fixed top-3 left-3 z-50 bg-background/80 backdrop-blur-sm border"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="h-[85vh]">
+          <div className="flex flex-col h-full bg-black text-foreground">
+            <SidebarContent />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Desktop sidebar
+  return (
+    <div
+      className={cn(
+        "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-black flex-shrink-0",
+        collapsed ? "w-16" : "w-72",
+      )}
+    >
+      <SidebarContent />
     </div>
   );
 }
