@@ -17,6 +17,7 @@ import { DiscoverSection } from "@/components/explore/DiscoverSection";
 import { CommunitySection } from "@/components/explore/CommunitySection";
 import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
 import { NewsletterSection } from "@/components/explore/NewsletterSection";
+import { CommissionSection } from "@/components/home/CommissionSection";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -174,6 +175,9 @@ export default function ExplorePage() {
           isLoadingCreators={isLoadingCreators || isLoadingPopular}
           onPostClick={handlePostClick}
         />
+
+        {/* Commission Section */}
+        <CommissionSection />
 
         {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />
