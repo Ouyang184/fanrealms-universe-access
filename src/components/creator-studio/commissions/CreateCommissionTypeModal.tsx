@@ -5,176 +5,66 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Upload, X, Image } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
-import { useCreatorProfile } from '@/hooks/useCreatorProfile';
-import { toast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
+import { useCommissionTypeForm } from '@/hooks/useCommissionTypeForm';
+import { useSampleImageUpload } from '@/hooks/useSampleImageUpload';
+import { SampleImageUpload } from './SampleImageUpload';
+import { DosList, DontsList } from './DosDontsList';
 
 interface CreateCommissionTypeModalProps {
   children: React.ReactNode;
   onSuccess: () => void;
 }
 
-interface FormData {
-  name: string;
-  description: string;
-  base_price: number;
-  estimated_turnaround_days: number;
-  max_revisions: number;
-  price_per_revision?: number;
-  dos: string[];
-  donts: string[];
-  sample_art_url?: string;
-}
-
 export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommissionTypeModalProps) {
   const [open, setOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dos, setDos] = useState<string[]>([]);
-  const [donts, setDonts] = useState<string[]>([]);
-  const [currentDo, setCurrentDo] = useState('');
-  const [currentDont, setCurrentDont] = useState('');
-  const [sampleImage, setSampleImage] = useState<File | null>(null);
-  const [sampleImagePreview, setSampleImagePreview] = useState<string | null>(null);
-  const [uploadingSample, setUploadingSample] = useState(false);
 
-  const { creatorProfile } = useCreatorProfile();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
+  const {
+    register,
+    handleSubmit,
+    errors,
+    isSubmitting,
+    dos,
+    donts,
+    currentDo,
+    currentDont,
+    setCurrentDo,
+    setCurrentDont,
+    addDo,
+    addDont,
+    removeDo,
+    removeDont,
+    onSubmit,
+    resetForm,
+    creatorProfile
+  } = useCommissionTypeForm(() => {
+    setOpen(false);
+    onSuccess();
+  });
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSampleImage(file);
-      const preview = URL.createObjectURL(file);
-      setSampleImagePreview(preview);
-    }
-  };
+  const {
+    sampleImagePreview,
+    uploadingSample,
+    handleImageUpload,
+    removeSampleImage,
+    uploadSampleImage,
+    resetImageUpload
+  } = useSampleImageUpload();
 
-  const removeSampleImage = () => {
-    setSampleImage(null);
-    setSampleImagePreview(null);
-  };
-
-  const uploadSampleImage = async (): Promise<string | null> => {
-    if (!sampleImage || !creatorProfile?.id) return null;
-
-    setUploadingSample(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const fileExt = sampleImage.name.split('.').pop();
-      const fileName = `commission-sample-${creatorProfile.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/commission-samples/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('post-attachments')
-        .upload(filePath, sampleImage);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('post-attachments')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
-    } catch (error) {
-      console.error('Error uploading sample image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload sample image",
-        variant: "destructive"
-      });
-      return null;
-    } finally {
-      setUploadingSample(false);
-    }
-  };
-
-  const addDo = () => {
-    if (currentDo.trim() && !dos.includes(currentDo.trim())) {
-      setDos([...dos, currentDo.trim()]);
-      setCurrentDo('');
-    }
-  };
-
-  const addDont = () => {
-    if (currentDont.trim() && !donts.includes(currentDont.trim())) {
-      setDonts([...donts, currentDont.trim()]);
-      setCurrentDont('');
-    }
-  };
-
-  const removeDo = (index: number) => {
-    setDos(dos.filter((_, i) => i !== index));
-  };
-
-  const removeDont = (index: number) => {
-    setDonts(donts.filter((_, i) => i !== index));
-  };
-
-  const onSubmit = async (data: FormData) => {
-    if (!creatorProfile?.id) {
-      toast({
-        title: "Error",
-        description: "Creator profile not found",
-        variant: "destructive"
-      });
-      return;
+  const handleFormSubmit = async (data: any) => {
+    // Upload sample image first if provided
+    let sampleArtUrl = null;
+    if (creatorProfile?.id) {
+      sampleArtUrl = await uploadSampleImage(creatorProfile.id);
     }
 
-    setIsSubmitting(true);
-    try {
-      // Upload sample image first if provided
-      let sampleArtUrl = null;
-      if (sampleImage) {
-        sampleArtUrl = await uploadSampleImage();
-      }
+    await onSubmit(data, sampleArtUrl);
+    resetImageUpload();
+  };
 
-      const commissionData = {
-        creator_id: creatorProfile.id,
-        name: data.name,
-        description: data.description,
-        base_price: data.base_price,
-        estimated_turnaround_days: data.estimated_turnaround_days,
-        max_revisions: data.max_revisions,
-        price_per_revision: data.price_per_revision || null,
-        dos,
-        donts,
-        sample_art_url: sampleArtUrl,
-        is_active: true
-      };
-
-      const { error } = await supabase
-        .from('commission_types')
-        .insert([commissionData]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Commission type created successfully"
-      });
-
-      reset();
-      setDos([]);
-      setDonts([]);
-      setSampleImage(null);
-      setSampleImagePreview(null);
-      setOpen(false);
-      onSuccess();
-    } catch (error) {
-      console.error('Error creating commission type:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create commission type",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleModalClose = () => {
+    resetForm();
+    resetImageUpload();
+    setOpen(false);
   };
 
   return (
@@ -186,7 +76,7 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
         <DialogHeader>
           <DialogTitle>Create New Commission Type</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Name *</Label>
@@ -227,52 +117,11 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
             />
           </div>
 
-          {/* Sample Art Upload */}
-          <div>
-            <Label>Sample Art</Label>
-            <div className="mt-2">
-              {sampleImagePreview ? (
-                <div className="relative inline-block">
-                  <img
-                    src={sampleImagePreview}
-                    alt="Sample art preview"
-                    className="w-32 h-32 object-cover rounded-lg border"
-                  />
-                  <Button
-                    type="button"
-                    onClick={removeSampleImage}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                    variant="destructive"
-                    size="sm"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="sample-upload"
-                  />
-                  <label
-                    htmlFor="sample-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Image className="h-8 w-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      Click to upload sample art
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      JPG, PNG up to 10MB
-                    </span>
-                  </label>
-                </div>
-              )}
-            </div>
-          </div>
+          <SampleImageUpload
+            sampleImagePreview={sampleImagePreview}
+            onImageUpload={handleImageUpload}
+            onRemoveImage={removeSampleImage}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -317,59 +166,21 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
             </div>
           </div>
 
-          {/* Will Do Section */}
-          <div>
-            <Label>Will Do</Label>
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={currentDo}
-                onChange={(e) => setCurrentDo(e.target.value)}
-                placeholder="Add something you will do..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDo())}
-              />
-              <Button type="button" onClick={addDo} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {dos.map((item, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {item}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => removeDo(index)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <DosList
+            dos={dos}
+            currentDo={currentDo}
+            onCurrentDoChange={setCurrentDo}
+            onAddDo={addDo}
+            onRemoveDo={removeDo}
+          />
 
-          {/* Won't Do Section */}
-          <div>
-            <Label>Won't Do</Label>
-            <div className="flex gap-2 mt-2">
-              <Input
-                value={currentDont}
-                onChange={(e) => setCurrentDont(e.target.value)}
-                placeholder="Add something you won't do..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addDont())}
-              />
-              <Button type="button" onClick={addDont} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {donts.map((item, index) => (
-                <Badge key={index} variant="destructive" className="flex items-center gap-1">
-                  {item}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
-                    onClick={() => removeDont(index)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <DontsList
+            donts={donts}
+            currentDont={currentDont}
+            onCurrentDontChange={setCurrentDont}
+            onAddDont={addDont}
+            onRemoveDont={removeDont}
+          />
 
           <div className="flex gap-2 pt-4">
             <Button 
@@ -382,7 +193,7 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setOpen(false)}
+              onClick={handleModalClose}
               className="flex-1"
             >
               Cancel
