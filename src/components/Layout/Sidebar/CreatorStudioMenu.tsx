@@ -6,7 +6,6 @@ import {
   DollarSign, 
   FileText, 
   Settings, 
-  Plus,
   Users,
   Crown
 } from "lucide-react";
@@ -26,13 +25,12 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
   };
 
   const creatorItems = [
-    { path: "/creator-studio", icon: BarChart3, label: "Creator Studio" },
+    { path: "/creator-studio/dashboard", icon: BarChart3, label: "Creator Studio" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
-    { path: "/creator-studio/posts/new", icon: Plus, label: "Create Post" },
     { path: "/creator-studio/membership-tiers", icon: Crown, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: Users, label: "Subscribers" },
     { path: "/creator-studio/commissions", icon: PenTool, label: "Commissions" },
-    { path: "/creator-studio/earnings", icon: DollarSign, label: "Earnings" },
+    { path: "/creator-studio/payouts", icon: DollarSign, label: "Payouts" },
     { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },
   ];
 
