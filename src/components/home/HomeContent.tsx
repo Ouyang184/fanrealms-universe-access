@@ -162,8 +162,8 @@ export function HomeContent() {
         isLoading={isLoadingCategoryPosts || isLoadingPosts}
       />
       
-      <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
       <CommissionSection />
+      <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
       <CategoriesSection />
       <HowItWorks />
       <HomeFooter />
