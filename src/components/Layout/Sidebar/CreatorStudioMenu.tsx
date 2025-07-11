@@ -6,7 +6,9 @@ import {
   DollarSign, 
   FileText, 
   Settings, 
-  Plus 
+  Plus,
+  Users,
+  Crown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,8 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
     { path: "/creator-studio", icon: BarChart3, label: "Creator Studio" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
     { path: "/creator-studio/posts/new", icon: Plus, label: "Create Post" },
+    { path: "/creator-studio/membership-tiers", icon: Crown, label: "Membership Tiers" },
+    { path: "/creator-studio/subscribers", icon: Users, label: "Subscribers" },
     { path: "/creator-studio/commissions", icon: PenTool, label: "Commissions" },
     { path: "/creator-studio/earnings", icon: DollarSign, label: "Earnings" },
     { path: "/creator-studio/settings", icon: Settings, label: "Creator Settings" },
