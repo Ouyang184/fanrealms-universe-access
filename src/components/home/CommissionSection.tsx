@@ -50,6 +50,13 @@ export function CommissionSection() {
         return [];
       }
 
+      // Debug: Check profile images
+      console.log('Commission data with profile images:', data?.map(c => ({
+        name: c.name,
+        creator: c.creator.display_name,
+        profileImage: c.creator.profile_image_url
+      })));
+
       return data || [];
     },
   });
