@@ -154,7 +154,7 @@ export function CommissionSection() {
               </div>
 
               {/* Action Button */}
-              <Link to={`/creator/${commission.creator.user_id}?tab=commissions`}>
+              <Link to={`/creator/${commission.creator.id}?tab=commissions`}>
                 <Button className="w-full" size="sm">
                   View Details
                 </Button>
