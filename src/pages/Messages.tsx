@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreVertical, Send, Check, CheckCheck, UserX, UserCheck } from "lucide-react";
+import { Search, MoreVertical, Send, Check, CheckCheck, UserX, UserCheck, ArrowLeft } from "lucide-react";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ import { ImageUpload } from "@/components/messaging/ImageUpload";
 import { MessageImage } from "@/components/messaging/MessageImage";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Function to detect URLs and convert them to clickable links
 const renderMessageWithLinks = (text: string) => {
@@ -50,6 +52,7 @@ const renderMessageWithLinks = (text: string) => {
 export default function MessagesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const { conversations, isLoading: conversationsLoading, sendMessage, isSendingMessage } = useConversations();
   const { isUserBlocked, blockUser, unblockUser, isLoading: blockLoading } = useBlockedUsers();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -58,6 +61,7 @@ export default function MessagesPage() {
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showConversationsList, setShowConversationsList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const deleteMessageMutation = useDeleteMessage();
@@ -88,12 +92,12 @@ export default function MessagesPage() {
     document.title = "Messages | Creator Platform";
   }, []);
 
-  // Select first conversation if none selected
+  // Select first conversation if none selected and not on mobile
   useEffect(() => {
-    if (conversations.length > 0 && !selectedConversation) {
+    if (conversations.length > 0 && !selectedConversation && !isMobile) {
       setSelectedConversation(conversations[0].other_user_id);
     }
-  }, [conversations, selectedConversation]);
+  }, [conversations, selectedConversation, isMobile]);
 
   // Mark messages as read when conversation is selected
   useEffect(() => {
@@ -213,6 +217,16 @@ export default function MessagesPage() {
 
   const handleConversationSelect = (conversationId: string) => {
     setSelectedConversation(conversationId);
+    if (isMobile) {
+      setShowConversationsList(false);
+    }
+  };
+
+  const handleBackToConversations = () => {
+    if (isMobile) {
+      setShowConversationsList(true);
+      setSelectedConversation(null);
+    }
   };
 
   const handleBlockUser = async () => {
@@ -244,11 +258,17 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex min-h-0 h-[calc(100vh-8rem)]">
+    <div className={cn(
+      "flex min-h-0",
+      isMobile ? "h-[calc(100vh-4rem)]" : "h-[calc(100vh-8rem)]"
+    )}>
       {/* Conversations List */}
-      <div className="w-80 border-r border-gray-800 flex flex-col min-h-0">
-        <div className="p-4 border-b border-gray-800">
-          <h1 className="text-xl font-bold mb-4">Messages</h1>
+      <div className={cn(
+        "border-r border-gray-800 flex flex-col min-h-0",
+        isMobile ? (showConversationsList ? "w-full" : "hidden") : "w-80"
+      )}>
+        <div className={cn("border-b border-gray-800", isMobile ? "p-3" : "p-4")}>
+          <h1 className={cn("font-bold mb-4", isMobile ? "text-lg" : "text-xl")}>Messages</h1>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -275,14 +295,15 @@ export default function MessagesPage() {
                   <button
                     key={conversation.other_user_id}
                     className={cn(
-                      "w-full flex items-start p-3 gap-3 hover:bg-gray-900/50 transition-colors text-left",
+                      "w-full flex items-start gap-3 hover:bg-gray-900/50 transition-colors text-left",
+                      isMobile ? "p-3" : "p-3",
                       selectedConversation === conversation.other_user_id && "bg-gray-900/70",
                       isBlocked && "opacity-50"
                     )}
                     onClick={() => handleConversationSelect(conversation.other_user_id)}
                   >
                     <div className="relative flex-shrink-0">
-                      <Avatar className="h-10 w-10 border border-gray-700">
+                      <Avatar className={cn("border border-gray-700", isMobile ? "h-12 w-12" : "h-10 w-10")}>
                         <AvatarImage src={avatarUrl || undefined} alt={displayName} />
                         <AvatarFallback className="bg-purple-900">
                           {displayName.charAt(0).toUpperCase()}
@@ -295,7 +316,7 @@ export default function MessagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-medium truncate">{displayName}</span>
+                          <span className={cn("font-medium truncate", isMobile ? "text-base" : "text-sm")}>{displayName}</span>
                           {isCreator && (
                             <Badge variant="outline" className="h-5 border-purple-500 text-purple-400 text-xs">
                               Creator
@@ -341,14 +362,27 @@ export default function MessagesPage() {
       </div>
 
       {/* Message Thread */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className={cn(
+        "flex-1 flex flex-col min-h-0",
+        isMobile && showConversationsList && "hidden"
+      )}>
         {selectedConversation && selectedConvData ? (
           <>
             {/* Conversation Header */}
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+            <div className={cn("border-b border-gray-800 flex items-center justify-between", isMobile ? "p-3" : "p-4")}>
               <div className="flex items-center gap-3">
+                {isMobile && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={handleBackToConversations}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                )}
                 <div className="relative">
-                  <Avatar className="h-10 w-10 border border-gray-700">
+                  <Avatar className={cn("border border-gray-700", isMobile ? "h-10 w-10" : "h-10 w-10")}>
                     <AvatarImage 
                       src={selectedConvData.creator_profile?.profile_image_url || 
                            selectedConvData.other_user?.profile_picture || undefined} 
@@ -366,7 +400,7 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="font-semibold">
+                    <h2 className={cn("font-semibold", isMobile ? "text-base" : "text-lg")}>
                       {selectedConvData.creator_profile?.display_name || 
                        selectedConvData.other_user?.username || 'Unknown User'}
                     </h2>
@@ -451,7 +485,7 @@ export default function MessagesPage() {
                       key={message.id} 
                       className={cn("flex", message.sender_id === user?.id ? "justify-end" : "justify-start")}
                     >
-                      <div className="flex gap-3 max-w-[70%]">
+                      <div className={cn("flex gap-3", isMobile ? "max-w-[85%]" : "max-w-[70%]")}>
                         {message.sender_id !== user?.id && (
                           <Avatar className="h-8 w-8 mt-1 border border-gray-700">
                             <AvatarImage 
@@ -468,6 +502,7 @@ export default function MessagesPage() {
                           <div
                             className={cn(
                               "rounded-lg p-3 transition-colors",
+                              isMobile ? "text-sm" : "text-base",
                               message.sender_id === user?.id
                                 ? "bg-purple-600 text-white rounded-tr-none"
                                 : "bg-gray-800 text-white rounded-tl-none",
@@ -506,7 +541,7 @@ export default function MessagesPage() {
 
             {/* Message Input */}
             {!isSelectedUserBlocked && (
-              <div className="p-4 border-t border-gray-800">
+              <div className={cn("border-t border-gray-800", isMobile ? "p-3" : "p-4")}>
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                   <ImageUpload 
                     onImageSelect={handleImageUpload}
