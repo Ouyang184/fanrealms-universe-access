@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, DollarSign, Star, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { Calendar, Clock, DollarSign, Star, Image as ImageIcon, AlertCircle, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { CommissionType } from "@/types/commission";
@@ -258,17 +259,32 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   <div>
                     <span className="font-medium">Max Revisions:</span> {type.max_revisions}
                   </div>
-                  {type.price_per_character && (
-                    <div>
-                      <span className="font-medium">Per Character:</span> +${type.price_per_character}
-                    </div>
-                  )}
                   {type.price_per_revision && (
                     <div>
                       <span className="font-medium">Extra Revision:</span> +${type.price_per_revision}
                     </div>
                   )}
                 </div>
+
+                {/* Custom Add-ons Section - Enhanced for Mobile */}
+                {type.custom_addons && type.custom_addons.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 text-blue-600" />
+                      <h5 className="font-medium text-blue-700">Available Add-ons:</h5>
+                    </div>
+                    <div className="space-y-2">
+                      {type.custom_addons.map((addon, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-200">
+                          <span className="text-sm font-medium text-blue-900">{addon.name}</span>
+                          <Badge variant="outline" className="text-blue-700 border-blue-300 bg-white">
+                            +${addon.price}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {type.dos && type.dos.length > 0 && (
                   <div>
