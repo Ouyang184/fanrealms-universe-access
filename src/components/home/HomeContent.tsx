@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { HeroSection } from "./HeroSection";
 import { ContentTabs } from "./ContentTabs";
 import { FeaturedCreators } from "./FeaturedCreators";
 import { CategoriesSection } from "./CategoriesSection";
+import { CommissionSection } from "./CommissionSection";
 import { HowItWorks } from "./HowItWorks";
 import { HomeFooter } from "./HomeFooter";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
@@ -161,6 +163,7 @@ export function HomeContent() {
       />
       
       <FeaturedCreators creators={creators} isLoading={isLoadingCreators} />
+      <CommissionSection />
       <CategoriesSection />
       <HowItWorks />
       <HomeFooter />
