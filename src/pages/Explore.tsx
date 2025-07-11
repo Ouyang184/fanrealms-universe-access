@@ -7,6 +7,8 @@ import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { Post } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 // Import the refactored components
 import { ExploreHero } from "@/components/explore/ExploreHero";
@@ -39,6 +41,7 @@ export default function ExplorePage() {
   // Get search parameters to check if we're filtering by category
   const [searchParams] = useSearchParams();
   const categoryFilter = searchParams.get("category");
+  const tabParam = searchParams.get("tab");
   
   // Get NSFW preferences to ensure content filtering
   const { data: nsfwPrefs } = useNSFWPreferences();
@@ -47,6 +50,35 @@ export default function ExplorePage() {
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators();
   const { data: posts = [], isLoading: isLoadingPosts } = usePosts();
   const { data: popularCreators = [], isLoading: isLoadingPopular } = usePopularCreators(true);
+  
+  // Fetch all commissions data
+  const { data: allCommissions = [], isLoading: isLoadingCommissions } = useQuery({
+    queryKey: ['all-commissions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('commission_types')
+        .select(`
+          *,
+          creator:creators!inner(
+            id,
+            display_name,
+            profile_image_url,
+            user_id,
+            accepts_commissions
+          )
+        `)
+        .eq('is_active', true)
+        .eq('creators.accepts_commissions', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all commissions:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+  });
   
   // Post preview modal state
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -171,9 +203,12 @@ export default function ExplorePage() {
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
           recommendedCreators={filteredRecommended}
+          commissions={allCommissions}
           isLoadingPosts={isLoadingPosts}
           isLoadingCreators={isLoadingCreators || isLoadingPopular}
+          isLoadingCommissions={isLoadingCommissions}
           onPostClick={handlePostClick}
+          defaultTab={tabParam || "trending"}
         />
 
         {/* Commission Section */}
