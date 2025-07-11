@@ -18,7 +18,7 @@ export function HeroSection() {
 
   return (
     <section className="mb-8 sm:mb-12">
-      <div className="relative rounded-xl overflow-hidden bg-gradient-to-r from-purple-900 to-black h-48 sm:h-64">
+      <div className="relative rounded-xl overflow-hidden bg-gradient-to-r from-purple-900 to-black h-56 sm:h-64">
         <div className="absolute inset-0 z-20 flex flex-col justify-center p-4 sm:p-8">
           <h1 className="text-2xl sm:text-4xl font-bold mb-2 leading-tight">Welcome to FanRealms</h1>
           <p className="text-sm sm:text-xl text-gray-200 max-w-2xl mb-4 sm:mb-6 leading-relaxed">

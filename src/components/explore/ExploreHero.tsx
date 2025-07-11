@@ -12,7 +12,7 @@ export function ExploreHero({ categoryFilter, searchQuery, setSearchQuery }: Exp
     <section className="mb-8 sm:mb-10">
       <div className="relative rounded-xl overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-        <div className="w-full h-48 sm:h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
+        <div className="w-full h-56 sm:h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
         <div className="absolute inset-0 z-20 flex flex-col justify-center p-4 sm:p-8">
           <h1 className="text-2xl sm:text-4xl font-bold mb-2 leading-tight">
             {categoryFilter ? `Explore ${categoryFilter}` : 'Explore FanRealms'}
