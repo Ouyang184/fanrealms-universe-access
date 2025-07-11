@@ -25,7 +25,7 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
   };
 
   const creatorItems = [
-    { path: "/creator-studio/dashboard", icon: BarChart3, label: "Creator Studio" },
+    { path: "/creator-studio/dashboard", icon: BarChart3, label: "Creator Dashboard" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
     { path: "/creator-studio/membership-tiers", icon: Crown, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: Users, label: "Subscribers" },
