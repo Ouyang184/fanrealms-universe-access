@@ -244,9 +244,9 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex min-h-0 h-[calc(100vh-8rem)]">
       {/* Conversations List */}
-      <div className="w-80 border-r border-gray-800 flex flex-col h-full">
+      <div className="w-80 border-r border-gray-800 flex flex-col min-h-0">
         <div className="p-4 border-b border-gray-800">
           <h1 className="text-xl font-bold mb-4">Messages</h1>
           <div className="relative">
@@ -341,7 +341,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Message Thread */}
-      <div className="flex-1 flex flex-col h-full">
+      <div className="flex-1 flex flex-col min-h-0">
         {selectedConversation && selectedConvData ? (
           <>
             {/* Conversation Header */}
