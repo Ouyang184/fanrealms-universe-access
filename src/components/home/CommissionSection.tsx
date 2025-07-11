@@ -84,7 +84,7 @@ export function CommissionSection() {
             Get custom artwork from talented creators
           </p>
         </div>
-        <Link to="/explore?tab=commissions">
+        <Link to="/commissions">
           <Button variant="outline" className="hidden sm:flex items-center gap-2">
             View All <ArrowRight className="h-4 w-4" />
           </Button>
@@ -173,7 +173,7 @@ export function CommissionSection() {
 
       {/* Mobile View All Button */}
       <div className="flex justify-center mt-6 sm:hidden">
-        <Link to="/explore?tab=commissions">
+        <Link to="/commissions">
           <Button variant="outline" className="flex items-center gap-2">
             View All Commissions <ArrowRight className="h-4 w-4" />
           </Button>

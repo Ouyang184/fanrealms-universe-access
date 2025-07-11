@@ -41,6 +41,7 @@ import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
 import AllCreatorsPage from "./pages/AllCreators";
 import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
+import AllCommissionsPage from "./pages/AllCommissions";
 import Support from "./pages/Support";
 import CookiePolicy from "./pages/CookiePolicy";
 import About from "./pages/About";
@@ -84,6 +85,7 @@ export default function App() {
                 <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
                 <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
+                <Route path="/commissions" element={<AllCommissionsPage />} />
                 
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
