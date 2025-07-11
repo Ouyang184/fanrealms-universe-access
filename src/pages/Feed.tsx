@@ -10,6 +10,7 @@ import { useUserSubscriptions } from "@/hooks/stripe/useUserSubscriptions";
 import { FeedSidebar } from "@/components/feed/FeedSidebar";
 import { FeedMainContent } from "@/components/feed/FeedMainContent";
 import { usePostReads } from "@/hooks/usePostReads";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function FeedPage() {
   // Set document title when component mounts
@@ -31,6 +32,7 @@ export default function FeedPage() {
   
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Check if user has subscriptions that are active but scheduled to cancel
   const hasPendingCancellations = userSubscriptions.some(
@@ -115,28 +117,43 @@ export default function FeedPage() {
 
   return (
     <MainLayout>
-      <div className="flex min-h-screen">
-        {/* Left Sidebar */}
-        <FeedSidebar 
-          followedCreators={followedCreators}
-          hasFollowedCreators={hasFollowedCreators}
-        />
+      <div className="flex flex-col lg:flex-row min-h-0 gap-4 lg:gap-6">
+        {/* Left Sidebar - Hidden on mobile, shown as drawer or collapsed on tablet/desktop */}
+        {!isMobile && (
+          <div className="w-full lg:w-80 flex-shrink-0">
+            <FeedSidebar 
+              followedCreators={followedCreators}
+              hasFollowedCreators={hasFollowedCreators}
+            />
+          </div>
+        )}
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            {/* Main Feed Content */}
-            <FeedMainContent
-              hasFollowedCreators={hasFollowedCreators}
-              hasPendingCancellations={hasPendingCancellations}
-              followedPosts={followedPosts}
-              unreadPosts={unreadPosts}
-              unreadCount={unreadCount}
-              readPostIds={readPostIds}
-              markAsRead={markAsRead}
-              creatorInfoMap={creatorInfoMap}
-              onPostClick={handlePostPreview}
-            />
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="h-full overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-6 py-4 lg:py-6">
+              {/* Mobile Sidebar Info */}
+              {isMobile && hasFollowedCreators && (
+                <div className="mb-4 p-3 bg-card rounded-lg border">
+                  <p className="text-sm text-muted-foreground">
+                    Following {followedCreators.length} creator{followedCreators.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+
+              {/* Main Feed Content */}
+              <FeedMainContent
+                hasFollowedCreators={hasFollowedCreators}
+                hasPendingCancellations={hasPendingCancellations}
+                followedPosts={followedPosts}
+                unreadPosts={unreadPosts}
+                unreadCount={unreadCount}
+                readPostIds={readPostIds}
+                markAsRead={markAsRead}
+                creatorInfoMap={creatorInfoMap}
+                onPostClick={handlePostPreview}
+              />
+            </div>
           </div>
         </div>
       </div>

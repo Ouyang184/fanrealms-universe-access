@@ -31,7 +31,7 @@ export function FeedPostItem({
   };
 
   return (
-    <div className="mb-6" onClick={handlePostClick}>
+    <div className="w-full max-w-full overflow-hidden" onClick={handlePostClick}>
       <PostCard
         id={post.id}
         title={post.title}
