@@ -43,30 +43,33 @@ export default function Dashboard() {
       
       console.log('[Dashboard] Found tiers:', tiers?.length || 0);
       
-      // Get all active subscriptions for this creator in one query
-      const { data: allSubscriptions, error: subscriptionsError } = await supabase
-        .from('user_subscriptions')
-        .select('tier_id, status')
-        .eq('creator_id', creatorProfile.id)
-        .eq('status', 'active');
+      // Use the same method as useCreatorSubscribers - call the edge function
+      const { data: subscribersData, error: subscribersError } = await supabase.functions.invoke('simple-subscriptions', {
+        body: {
+          action: 'get_creator_subscribers',
+          creatorId: creatorProfile.id
+        }
+      });
 
-      if (subscriptionsError) {
-        console.error('[Dashboard] Error fetching subscriptions:', subscriptionsError);
+      if (subscribersError) {
+        console.error('[Dashboard] Error fetching subscribers:', subscribersError);
         // Continue with empty array if query fails
       }
 
-      console.log('[Dashboard] All active subscriptions:', allSubscriptions?.length || 0);
+      console.log('[Dashboard] Subscribers data from edge function:', subscribersData?.subscribers?.length || 0);
       
-      // Count subscribers by tier
-      const subscribersByTier = (allSubscriptions || []).reduce((acc, sub) => {
-        acc[sub.tier_id] = (acc[sub.tier_id] || 0) + 1;
+      // Count subscribers by tier using the edge function data
+      const subscribersByTier = (subscribersData?.subscribers || []).reduce((acc: Record<string, number>, sub: any) => {
+        if (sub.status === 'active') {
+          acc[sub.tier_id] = (acc[sub.tier_id] || 0) + 1;
+        }
         return acc;
-      }, {} as Record<string, number>);
+      }, {});
       
-      console.log('[Dashboard] Subscribers by tier:', subscribersByTier);
+      console.log('[Dashboard] Subscribers by tier from edge function:', subscribersByTier);
       
       // Calculate total active subscribers for percentage calculations
-      const totalActiveSubscribers = allSubscriptions?.length || 0;
+      const totalActiveSubscribers = (subscribersData?.subscribers || []).filter((sub: any) => sub.status === 'active').length;
       
       const tiersWithRealCounts = tiers.map((tier) => {
         const subscriberCount = subscribersByTier[tier.id] || 0;
