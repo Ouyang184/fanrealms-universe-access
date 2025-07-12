@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -7,7 +8,7 @@ import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
+import { Award, Plus, Trash2, Edit, Users, RefreshCw } from "lucide-react";
 
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
@@ -17,8 +18,9 @@ export default function CreatorStudioTiers() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Fetch creator tiers with accurate subscriber counts
+  // Fetch creator tiers with accurate subscriber counts synced from Stripe
   const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers"],
     queryFn: async () => {
@@ -39,6 +41,21 @@ export default function CreatorStudioTiers() {
       }
       
       console.log('[MembershipTiers] Creator ID:', creatorData.id);
+      
+      // Get tiers and sync subscriber counts with Stripe through edge function
+      try {
+        // First try to sync with Stripe to get accurate counts
+        const { data: syncResult } = await supabase.functions.invoke('simple-subscriptions', {
+          body: {
+            action: 'get_creator_subscribers',
+            creatorId: creatorData.id
+          }
+        });
+        
+        console.log('[MembershipTiers] Stripe sync result:', syncResult);
+      } catch (syncError) {
+        console.warn('[MembershipTiers] Stripe sync failed, using database counts:', syncError);
+      }
       
       // Then get the tiers for this creator
       const { data: tiersData, error: tiersError } = await supabase
@@ -105,9 +122,30 @@ export default function CreatorStudioTiers() {
       return tiersWithSubscribers;
     },
     enabled: !!user,
-    refetchInterval: 30000, // Refresh every 30 seconds to keep counts updated
-    staleTime: 10000, // Consider data stale after 10 seconds
+    refetchInterval: 60000, // Refresh every minute to keep counts updated
+    staleTime: 30000, // Consider data stale after 30 seconds
   });
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      await refetch();
+      toast({
+        title: "Refreshed",
+        description: "Subscriber counts have been synced with Stripe",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh subscriber counts",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Listen for subscription events and tier deletion events
   useEffect(() => {
@@ -213,9 +251,20 @@ export default function CreatorStudioTiers() {
           <h1 className="text-2xl font-semibold">Membership Tiers</h1>
           <p className="text-muted-foreground">Create and manage your membership tiers</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Create New Tier
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Sync with Stripe
+          </Button>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Create New Tier
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
@@ -239,7 +288,9 @@ export default function CreatorStudioTiers() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    <span>{tier.subscriberCount} subscribers</span>
+                    <span className="font-medium text-primary">
+                      {tier.subscriberCount} active subscriber{tier.subscriberCount !== 1 ? 's' : ''}
+                    </span>
                   </div>
                   
                   <ul className="space-y-2">

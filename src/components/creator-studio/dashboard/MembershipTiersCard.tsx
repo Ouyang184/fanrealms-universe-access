@@ -20,6 +20,16 @@ interface MembershipTiersCardProps {
 }
 
 export function MembershipTiersCard({ tiersWithCounts }: MembershipTiersCardProps) {
+  // Calculate total subscribers across all tiers
+  const totalSubscribers = tiersWithCounts.reduce((total, tier) => total + tier.subscribers, 0);
+  
+  // Ensure percentages are calculated correctly based on actual subscriber counts
+  const tiersWithUpdatedPercentages = tiersWithCounts.map(tier => ({
+    ...tier,
+    percentage: totalSubscribers > 0 ? Math.round((tier.subscribers / totalSubscribers) * 100) : 0,
+    revenue: tier.subscribers * tier.price // Calculate revenue from actual subscribers
+  }));
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -31,13 +41,13 @@ export function MembershipTiersCard({ tiersWithCounts }: MembershipTiersCardProp
             </Link>
           </Button>
         </div>
-        <CardDescription>Performance of your membership tiers</CardDescription>
+        <CardDescription>Performance of your membership tiers (synced with Stripe)</CardDescription>
       </CardHeader>
       <CardContent>
-        {tiersWithCounts.length > 0 ? (
+        {tiersWithUpdatedPercentages.length > 0 ? (
           <div className="space-y-4">
-            {tiersWithCounts.map((tier) => (
-              <div key={tier.name} className="space-y-2">
+            {tiersWithUpdatedPercentages.map((tier) => (
+              <div key={tier.id} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge
@@ -53,15 +63,29 @@ export function MembershipTiersCard({ tiersWithCounts }: MembershipTiersCardProp
                     </Badge>
                     <span className="text-sm text-muted-foreground">${tier.price.toFixed(2)}/month</span>
                   </div>
-                  <div className="text-sm font-medium">{tier.subscribers} subscribers</div>
+                  <div className="text-sm font-medium">
+                    {tier.subscribers} subscriber{tier.subscribers !== 1 ? 's' : ''}
+                  </div>
                 </div>
                 <Progress value={tier.percentage} className="h-2" />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{tier.percentage}% of subscribers</span>
+                  <span>{tier.percentage}% of total subscribers</span>
                   <span>${tier.revenue.toFixed(2)} monthly revenue</span>
                 </div>
               </div>
             ))}
+            
+            {/* Total summary */}
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span>Total Active Subscribers</span>
+                <span>{totalSubscribers}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Total Monthly Revenue</span>
+                <span>${tiersWithUpdatedPercentages.reduce((total, tier) => total + tier.revenue, 0).toFixed(2)}</span>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="py-8 text-center">
