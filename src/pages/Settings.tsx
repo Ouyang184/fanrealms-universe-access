@@ -60,53 +60,13 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              {/* Mobile Grid Layout */}
-              <div className="md:hidden">
-                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-muted">
-                  <TabsTrigger 
-                    value="profile" 
-                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    Profile
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="account" 
-                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    Account
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="notifications" 
-                    className="h-10 text-xs px-1 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    Notifications
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="privacy" 
-                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-                  >
-                    Privacy
-                  </TabsTrigger>
-                </div>
-                <div className="mt-3">
-                  <TabsTrigger 
-                    value="content" 
-                    className="w-full h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg bg-muted"
-                  >
-                    Content Preferences
-                  </TabsTrigger>
-                </div>
-              </div>
-
-              {/* Desktop Horizontal Layout */}
-              <TabsList className="hidden md:inline-flex">
+              <TabsList>
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="account">Account</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="privacy">Privacy</TabsTrigger>
                 <TabsTrigger value="content">Content</TabsTrigger>
               </TabsList>
-
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
                   <ProfileTab user={user} />
