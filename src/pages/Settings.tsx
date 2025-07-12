@@ -14,11 +14,9 @@ import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
-  const isMobile = useIsMobile();
   const {
     isAgeVerified,
     showVerificationModal,
@@ -62,37 +60,12 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className={isMobile ? "grid grid-cols-2 gap-2 h-auto p-2 w-full bg-transparent" : ""}>
-                <TabsTrigger 
-                  value="profile" 
-                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
-                >
-                  Profile
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="account" 
-                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
-                >
-                  Account
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
-                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
-                >
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="privacy" 
-                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
-                >
-                  Privacy
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="content" 
-                  className={isMobile ? "col-span-2 text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
-                >
-                  Content Preferences
-                </TabsTrigger>
+              <TabsList>
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="account">Account</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger value="privacy">Privacy</TabsTrigger>
+                <TabsTrigger value="content">Content</TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
