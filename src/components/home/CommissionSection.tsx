@@ -79,7 +79,7 @@ export function CommissionSection() {
     <section className="py-8 sm:py-12">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Featured Commissions</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Commissions</h2>
           <p className="text-muted-foreground">
             Get custom artwork from talented creators
           </p>
