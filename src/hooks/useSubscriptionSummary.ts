@@ -25,13 +25,23 @@ export const useSubscriptionSummary = (subscriptions: SubscriptionData[] | undef
       return total + (sub.tier?.price || sub.amount_paid || 0);
     }, 0);
 
-    // Find next payment date
-    const today = new Date();
-    let nextPaymentDate = new Date(today);
-    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    // Find next payment date from actual subscription data
+    const nextActiveSubscription = subscriptions.find(s => s.current_period_end);
+    let nextPaymentDate;
+    let nextPaymentAmount = 0;
+    
+    if (nextActiveSubscription?.current_period_end) {
+      nextPaymentDate = new Date(nextActiveSubscription.current_period_end);
+      nextPaymentAmount = nextActiveSubscription.tier?.price || nextActiveSubscription.amount_paid || 0;
+    } else {
+      // Fallback if no subscription data available
+      nextPaymentDate = new Date();
+      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+    }
+    
     const nextPayment = {
       date: nextPaymentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      amount: subscriptions.find(s => s.tier || s.amount_paid)?.tier?.price || subscriptions[0]?.amount_paid || 0
+      amount: nextPaymentAmount
     };
 
     return {
