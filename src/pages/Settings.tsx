@@ -60,12 +60,37 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                <TabsTrigger value="privacy">Privacy</TabsTrigger>
-                <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsList className="grid grid-cols-2 md:inline-flex h-auto md:h-10 p-1 gap-1 md:gap-0">
+                <TabsTrigger 
+                  value="profile" 
+                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 h-auto md:h-auto"
+                >
+                  Profile
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="account" 
+                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 h-auto md:h-auto"
+                >
+                  Account
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notifications" 
+                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 h-auto md:h-auto"
+                >
+                  Notifications
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="privacy" 
+                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 h-auto md:h-auto"
+                >
+                  Privacy
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="content" 
+                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 h-auto md:h-auto col-span-2 md:col-span-1"
+                >
+                  Content Preferences
+                </TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
