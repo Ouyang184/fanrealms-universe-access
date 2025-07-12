@@ -60,25 +60,13 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <div className="overflow-x-auto">
-                <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-full md:min-w-0 md:w-auto">
-                  <TabsTrigger value="profile" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
-                    Profile
-                  </TabsTrigger>
-                  <TabsTrigger value="account" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
-                    Account
-                  </TabsTrigger>
-                  <TabsTrigger value="notifications" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
-                    Notifications
-                  </TabsTrigger>
-                  <TabsTrigger value="privacy" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
-                    Privacy
-                  </TabsTrigger>
-                  <TabsTrigger value="content" className="whitespace-nowrap px-3 py-1.5 text-sm font-medium">
-                    Content
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+              <TabsList>
+                <TabsTrigger value="profile">Profile</TabsTrigger>
+                <TabsTrigger value="account">Account</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+                <TabsTrigger value="privacy">Privacy</TabsTrigger>
+                <TabsTrigger value="content">Content</TabsTrigger>
+              </TabsList>
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
                   <ProfileTab user={user} />
