@@ -149,11 +149,11 @@ export function CommissionSection() {
 
               {/* Commission Details */}
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-2 py-1">
                   <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">${commission.base_price}</span>
+                  <span className="font-medium">{commission.base_price}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-2 py-1">
                   <Clock className="h-4 w-4 text-blue-600" />
                   <span>{commission.estimated_turnaround_days} days</span>
                 </div>
