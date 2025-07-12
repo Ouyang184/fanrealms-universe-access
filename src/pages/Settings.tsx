@@ -62,20 +62,20 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-1" : ""}>
-                <TabsTrigger value="profile" className={isMobile ? "text-xs px-2 py-2" : ""}>
+              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-1 w-full" : ""}>
+                <TabsTrigger value="profile" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
                   {isMobile ? "Profile" : "Profile"}
                 </TabsTrigger>
-                <TabsTrigger value="account" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                <TabsTrigger value="account" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
                   {isMobile ? "Account" : "Account"}
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className={isMobile ? "text-xs px-2 py-2" : ""}>
-                  {isMobile ? "Notify" : "Notifications"}
+                <TabsTrigger value="notifications" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
+                  {isMobile ? "Alerts" : "Notifications"}
                 </TabsTrigger>
-                <TabsTrigger value="privacy" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                <TabsTrigger value="privacy" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
                   {isMobile ? "Privacy" : "Privacy"}
                 </TabsTrigger>
-                <TabsTrigger value="content" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                <TabsTrigger value="content" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
                   {isMobile ? "Content" : "Content"}
                 </TabsTrigger>
               </TabsList>
