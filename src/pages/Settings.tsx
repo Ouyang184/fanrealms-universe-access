@@ -14,9 +14,11 @@ import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
+  const isMobile = useIsMobile();
   const {
     isAgeVerified,
     showVerificationModal,
@@ -60,12 +62,22 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-                <TabsTrigger value="privacy">Privacy</TabsTrigger>
-                <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-1" : ""}>
+                <TabsTrigger value="profile" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                  {isMobile ? "Profile" : "Profile"}
+                </TabsTrigger>
+                <TabsTrigger value="account" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                  {isMobile ? "Account" : "Account"}
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                  {isMobile ? "Notify" : "Notifications"}
+                </TabsTrigger>
+                <TabsTrigger value="privacy" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                  {isMobile ? "Privacy" : "Privacy"}
+                </TabsTrigger>
+                <TabsTrigger value="content" className={isMobile ? "text-xs px-2 py-2" : ""}>
+                  {isMobile ? "Content" : "Content"}
+                </TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
                 <TabsContent value="profile" className="m-0">
