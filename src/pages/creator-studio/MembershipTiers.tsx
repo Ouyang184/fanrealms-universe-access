@@ -22,7 +22,7 @@ export default function CreatorStudioTiers() {
   
   // Fetch creator tiers with accurate subscriber counts from user_subscriptions table
   const { data: tiers, isLoading, error, refetch } = useQuery({
-    queryKey: ["tiers"],
+    queryKey: ["tiers", user?.id],
     queryFn: async () => {
       if (!user) return [];
       

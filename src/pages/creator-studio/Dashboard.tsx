@@ -27,42 +27,95 @@ export default function Dashboard() {
     queryFn: async () => {
       if (!creatorProfile?.id) return [];
       
+      console.log('[Dashboard] Fetching tiers for creator:', creatorProfile.id);
+      
       const { data: tiers, error: tiersError } = await supabase
         .from('membership_tiers')
         .select('*')
         .eq('creator_id', creatorProfile.id)
+        .eq('active', true)
         .order('price', { ascending: true });
         
-      if (tiersError) throw tiersError;
+      if (tiersError) {
+        console.error('[Dashboard] Error fetching tiers:', tiersError);
+        throw tiersError;
+      }
       
-      const tiersWithRealCounts = tiers.map(tier => {
-        const tierSubscribers = subscribers?.filter(sub => 
-          sub.tier_id === tier.id && sub.status === 'active'
-        ) || [];
-        
-        const subscriberCount = tierSubscribers.length;
-        const revenue = subscriberCount * (tier.price || 0);
-        const totalActiveSubscribers = subscribers?.filter(sub => sub.status === 'active').length || 0;
-        const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
-        
-        return {
-          id: tier.id,
-          name: tier.title,
-          title: tier.title,
-          price: Number(tier.price),
-          subscribers: subscriberCount,
-          percentage,
-          revenue,
-          revenueChange: 0,
-          previousSubscribers: 0,
-          growth: 0,
-        };
-      });
+      console.log('[Dashboard] Found tiers:', tiers?.length || 0);
       
+      // Get accurate subscriber counts from user_subscriptions table
+      const tiersWithRealCounts = await Promise.all(tiers.map(async (tier) => {
+        console.log('[Dashboard] Counting subscribers for tier:', tier.id, tier.title);
+        
+        try {
+          // Count active subscribers for this specific tier from user_subscriptions
+          const { count, error: countError } = await supabase
+            .from('user_subscriptions')
+            .select('*', { count: 'exact', head: true })
+            .eq('tier_id', tier.id)
+            .eq('creator_id', creatorProfile.id)
+            .eq('status', 'active');
+
+          if (countError) {
+            console.error('[Dashboard] Error counting subscribers for tier:', tier.id, countError);
+            return {
+              id: tier.id,
+              name: tier.title,
+              title: tier.title,
+              price: Number(tier.price),
+              subscribers: 0,
+              percentage: 0,
+              revenue: 0,
+              revenueChange: 0,
+              previousSubscribers: 0,
+              growth: 0,
+            };
+          }
+
+          const subscriberCount = count || 0;
+          console.log('[Dashboard] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
+          
+          const revenue = subscriberCount * (tier.price || 0);
+          
+          // Calculate percentage of total active subscribers
+          const totalActiveSubscribers = subscribers?.filter(sub => sub.status === 'active').length || 0;
+          const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
+          
+          return {
+            id: tier.id,
+            name: tier.title,
+            title: tier.title,
+            price: Number(tier.price),
+            subscribers: subscriberCount,
+            percentage,
+            revenue,
+            revenueChange: 0,
+            previousSubscribers: 0,
+            growth: 0,
+          };
+        } catch (error) {
+          console.error('[Dashboard] Error processing tier:', tier.id, error);
+          return {
+            id: tier.id,
+            name: tier.title,
+            title: tier.title,
+            price: Number(tier.price),
+            subscribers: 0,
+            percentage: 0,
+            revenue: 0,
+            revenueChange: 0,
+            previousSubscribers: 0,
+            growth: 0,
+          };
+        }
+      }));
+      
+      console.log('[Dashboard] Final tiers with subscriber counts:', tiersWithRealCounts);
       return tiersWithRealCounts;
     },
-    enabled: !!creatorProfile?.id && !!subscribers,
-    staleTime: 300000,
+    enabled: !!creatorProfile?.id,
+    staleTime: 30000,
+    refetchInterval: 60000, // Refetch every minute to keep counts updated
   });
 
   const monthlyStats = useDashboardStats(subscribers);
