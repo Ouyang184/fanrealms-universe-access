@@ -20,7 +20,7 @@ export default function CreatorStudioTiers() {
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Fetch creator tiers with accurate subscriber counts from user_subscriptions table
+  // Fetch creator tiers with accurate subscriber counts
   const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers", user?.id],
     queryFn: async () => {
@@ -57,51 +57,41 @@ export default function CreatorStudioTiers() {
       
       console.log('[MembershipTiers] Tiers data:', tiersData);
       
-      // Count active subscribers for each tier using the user_subscriptions table
-      const tiersWithSubscribers = await Promise.all((tiersData || []).map(async (tier) => {
-        console.log('[MembershipTiers] Counting subscribers for tier:', tier.id, tier.title);
+      // Get all active subscriptions for this creator in one query
+      const { data: allSubscriptions, error: subscriptionsError } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, status')
+        .eq('creator_id', creatorData.id)
+        .eq('status', 'active');
+
+      if (subscriptionsError) {
+        console.error('[MembershipTiers] Error fetching subscriptions:', subscriptionsError);
+        // Continue with empty array if query fails
+      }
+
+      console.log('[MembershipTiers] All active subscriptions:', allSubscriptions?.length || 0);
+      
+      // Count subscribers by tier
+      const subscribersByTier = (allSubscriptions || []).reduce((acc, sub) => {
+        acc[sub.tier_id] = (acc[sub.tier_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      console.log('[MembershipTiers] Subscribers by tier:', subscribersByTier);
+      
+      const tiersWithSubscribers = (tiersData || []).map((tier) => {
+        const subscriberCount = subscribersByTier[tier.id] || 0;
         
-        try {
-          // Count from user_subscriptions table with active status only
-          const { count, error: countError } = await supabase
-            .from('user_subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('tier_id', tier.id)
-            .eq('creator_id', creatorData.id)
-            .eq('status', 'active');
-
-          if (countError) {
-            console.error('[MembershipTiers] Error counting subscribers for tier:', tier.id, countError);
-            return {
-              id: tier.id,
-              name: tier.title,
-              price: tier.price,
-              features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
-              subscriberCount: 0,
-            };
-          }
-
-          const subscriberCount = count || 0;
-          console.log('[MembershipTiers] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
-          
-          return {
-            id: tier.id,
-            name: tier.title,
-            price: tier.price,
-            features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
-            subscriberCount,
-          };
-        } catch (error) {
-          console.error('[MembershipTiers] Error processing tier:', tier.id, error);
-          return {
-            id: tier.id,
-            name: tier.title,
-            price: tier.price,
-            features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
-            subscriberCount: 0,
-          };
-        }
-      }));
+        console.log(`[MembershipTiers] Tier ${tier.title}: ${subscriberCount} subscribers`);
+        
+        return {
+          id: tier.id,
+          name: tier.title,
+          price: tier.price,
+          features: tier.description ? tier.description.split("|").filter(f => f.trim()) : [],
+          subscriberCount,
+        };
+      });
       
       console.log('[MembershipTiers] Final tiers with subscriber counts:', tiersWithSubscribers);
       return tiersWithSubscribers;

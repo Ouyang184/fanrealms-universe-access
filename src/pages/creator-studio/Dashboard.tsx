@@ -43,72 +43,51 @@ export default function Dashboard() {
       
       console.log('[Dashboard] Found tiers:', tiers?.length || 0);
       
-      // Get accurate subscriber counts from user_subscriptions table
-      const tiersWithRealCounts = await Promise.all(tiers.map(async (tier) => {
-        console.log('[Dashboard] Counting subscribers for tier:', tier.id, tier.title);
+      // Get all active subscriptions for this creator in one query
+      const { data: allSubscriptions, error: subscriptionsError } = await supabase
+        .from('user_subscriptions')
+        .select('tier_id, status')
+        .eq('creator_id', creatorProfile.id)
+        .eq('status', 'active');
+
+      if (subscriptionsError) {
+        console.error('[Dashboard] Error fetching subscriptions:', subscriptionsError);
+        // Continue with empty array if query fails
+      }
+
+      console.log('[Dashboard] All active subscriptions:', allSubscriptions?.length || 0);
+      
+      // Count subscribers by tier
+      const subscribersByTier = (allSubscriptions || []).reduce((acc, sub) => {
+        acc[sub.tier_id] = (acc[sub.tier_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      console.log('[Dashboard] Subscribers by tier:', subscribersByTier);
+      
+      // Calculate total active subscribers for percentage calculations
+      const totalActiveSubscribers = allSubscriptions?.length || 0;
+      
+      const tiersWithRealCounts = tiers.map((tier) => {
+        const subscriberCount = subscribersByTier[tier.id] || 0;
+        const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
+        const revenue = subscriberCount * (tier.price || 0);
         
-        try {
-          // Count active subscribers for this specific tier from user_subscriptions
-          const { count, error: countError } = await supabase
-            .from('user_subscriptions')
-            .select('*', { count: 'exact', head: true })
-            .eq('tier_id', tier.id)
-            .eq('creator_id', creatorProfile.id)
-            .eq('status', 'active');
-
-          if (countError) {
-            console.error('[Dashboard] Error counting subscribers for tier:', tier.id, countError);
-            return {
-              id: tier.id,
-              name: tier.title,
-              title: tier.title,
-              price: Number(tier.price),
-              subscribers: 0,
-              percentage: 0,
-              revenue: 0,
-              revenueChange: 0,
-              previousSubscribers: 0,
-              growth: 0,
-            };
-          }
-
-          const subscriberCount = count || 0;
-          console.log('[Dashboard] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
-          
-          const revenue = subscriberCount * (tier.price || 0);
-          
-          // Calculate percentage of total active subscribers
-          const totalActiveSubscribers = subscribers?.filter(sub => sub.status === 'active').length || 0;
-          const percentage = totalActiveSubscribers > 0 ? Math.round((subscriberCount / totalActiveSubscribers) * 100) : 0;
-          
-          return {
-            id: tier.id,
-            name: tier.title,
-            title: tier.title,
-            price: Number(tier.price),
-            subscribers: subscriberCount,
-            percentage,
-            revenue,
-            revenueChange: 0,
-            previousSubscribers: 0,
-            growth: 0,
-          };
-        } catch (error) {
-          console.error('[Dashboard] Error processing tier:', tier.id, error);
-          return {
-            id: tier.id,
-            name: tier.title,
-            title: tier.title,
-            price: Number(tier.price),
-            subscribers: 0,
-            percentage: 0,
-            revenue: 0,
-            revenueChange: 0,
-            previousSubscribers: 0,
-            growth: 0,
-          };
-        }
-      }));
+        console.log(`[Dashboard] Tier ${tier.title}: ${subscriberCount} subscribers, ${percentage}% of total, $${revenue} revenue`);
+        
+        return {
+          id: tier.id,
+          name: tier.title,
+          title: tier.title,
+          price: Number(tier.price),
+          subscribers: subscriberCount,
+          percentage,
+          revenue,
+          revenueChange: 0,
+          previousSubscribers: 0,
+          growth: 0,
+        };
+      });
       
       console.log('[Dashboard] Final tiers with subscriber counts:', tiersWithRealCounts);
       return tiersWithRealCounts;
