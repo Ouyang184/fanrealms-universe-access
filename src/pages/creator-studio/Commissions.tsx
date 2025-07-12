@@ -97,6 +97,22 @@ export default function Commissions() {
     }
   };
 
+  const handlePreviewCommissionType = (type: CommissionType) => {
+    // TODO: Implement preview functionality
+    toast({
+      title: "Preview",
+      description: `Previewing ${type.name}`,
+    });
+  };
+
+  const handleEditCommissionType = (type: CommissionType) => {
+    // TODO: Implement edit functionality
+    toast({
+      title: "Edit",
+      description: `Editing ${type.name}`,
+    });
+  };
+
   // Calculate stats
   const activeTypes = commissionTypes.filter(type => type.is_active);
   const openSlots = creatorProfile?.commission_slots_available || 0;
@@ -156,6 +172,8 @@ export default function Commissions() {
             isLoading={isLoading}
             onDeleteCommissionType={handleDeleteCommissionType}
             onRefetchCommissionTypes={fetchCommissionTypes}
+            onPreviewCommissionType={handlePreviewCommissionType}
+            onEditCommissionType={handleEditCommissionType}
           />
         </TabsContent>
 

@@ -35,13 +35,17 @@ interface CommissionTypesTabProps {
   isLoading: boolean;
   onDeleteCommissionType: (id: string) => void;
   onRefetchCommissionTypes: () => void;
+  onPreviewCommissionType: (type: CommissionType) => void;
+  onEditCommissionType: (type: CommissionType) => void;
 }
 
 export function CommissionTypesTab({
   commissionTypes,
   isLoading,
   onDeleteCommissionType,
-  onRefetchCommissionTypes
+  onRefetchCommissionTypes,
+  onPreviewCommissionType,
+  onEditCommissionType
 }: CommissionTypesTabProps) {
   if (isLoading) {
     return (
@@ -155,11 +159,21 @@ export function CommissionTypesTab({
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4 border-t">
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => onPreviewCommissionType(type)}
+              >
                 <Eye className="h-3 w-3 mr-1" />
                 Preview
               </Button>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => onEditCommissionType(type)}
+              >
                 <Edit className="h-3 w-3 mr-1" />
                 Edit
               </Button>
