@@ -60,34 +60,34 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto md:h-10 gap-1 md:gap-0 p-1">
+              <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 h-auto gap-1 p-1">
                 <TabsTrigger 
                   value="profile" 
-                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Profile
                 </TabsTrigger>
                 <TabsTrigger 
                   value="account" 
-                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Account
                 </TabsTrigger>
                 <TabsTrigger 
                   value="notifications" 
-                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 col-span-2 md:col-span-1"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Notifications
                 </TabsTrigger>
                 <TabsTrigger 
                   value="privacy" 
-                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Privacy
                 </TabsTrigger>
                 <TabsTrigger 
                   value="content" 
-                  className="text-xs md:text-sm px-2 py-2 md:px-3 md:py-1.5 col-span-2 md:col-span-1"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Content
                 </TabsTrigger>
