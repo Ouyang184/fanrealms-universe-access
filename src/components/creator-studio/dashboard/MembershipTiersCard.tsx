@@ -37,7 +37,7 @@ export function MembershipTiersCard({ tiersWithCounts }: MembershipTiersCardProp
         {tiersWithCounts.length > 0 ? (
           <div className="space-y-4">
             {tiersWithCounts.map((tier) => (
-              <div key={tier.name} className="space-y-2">
+              <div key={tier.id} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge
@@ -57,7 +57,7 @@ export function MembershipTiersCard({ tiersWithCounts }: MembershipTiersCardProp
                 </div>
                 <Progress value={tier.percentage} className="h-2" />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{tier.percentage}% of subscribers</span>
+                  <span>{tier.percentage.toFixed(1)}% of subscribers</span>
                   <span>${tier.revenue.toFixed(2)} monthly revenue</span>
                 </div>
               </div>

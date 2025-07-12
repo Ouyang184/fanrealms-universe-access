@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -7,7 +8,7 @@ import { DeleteTierDialog } from "@/components/creator-studio/DeleteTierDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Plus, Trash2, Edit, Users } from "lucide-react";
+import { Award, Plus, Trash2, Edit, Users, RefreshCw } from "lucide-react";
 
 export default function CreatorStudioTiers() {
   const { user } = useAuth();
@@ -17,8 +18,9 @@ export default function CreatorStudioTiers() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingTier, setEditingTier] = useState<Tier | null>(null);
   const [deletingTier, setDeletingTier] = useState<Tier | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Fetch creator tiers with accurate subscriber counts
+  // Fetch creator tiers with accurate subscriber counts from user_subscriptions table
   const { data: tiers, isLoading, error, refetch } = useQuery({
     queryKey: ["tiers"],
     queryFn: async () => {
@@ -45,7 +47,7 @@ export default function CreatorStudioTiers() {
         .from("membership_tiers")
         .select("*")
         .eq("creator_id", creatorData.id)
-        .eq("active", true) // Only get active tiers
+        .eq("active", true)
         .order("price", { ascending: true });
       
       if (tiersError) {
@@ -65,7 +67,7 @@ export default function CreatorStudioTiers() {
             .from('user_subscriptions')
             .select('*', { count: 'exact', head: true })
             .eq('tier_id', tier.id)
-            .eq('creator_id', creatorData.id) // Ensure we're counting for the right creator
+            .eq('creator_id', creatorData.id)
             .eq('status', 'active');
 
           if (countError) {
@@ -109,6 +111,27 @@ export default function CreatorStudioTiers() {
     staleTime: 10000, // Consider data stale after 10 seconds
   });
 
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      await refetch();
+      toast({
+        title: "Refreshed successfully",
+        description: "Subscriber counts have been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to update subscriber counts",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // Listen for subscription events and tier deletion events
   useEffect(() => {
     const handleDataUpdate = async () => {
@@ -147,7 +170,6 @@ export default function CreatorStudioTiers() {
         table: 'membership_tiers'
       }, (payload) => {
         console.log('[MembershipTiers] Real-time tier update received:', payload);
-        // Invalidate and refetch the tiers query when tier changes occur
         queryClient.invalidateQueries({ queryKey: ["tiers"] });
       })
       .on('postgres_changes', {
@@ -156,7 +178,6 @@ export default function CreatorStudioTiers() {
         table: 'user_subscriptions'
       }, (payload) => {
         console.log('[MembershipTiers] Real-time subscription update received:', payload);
-        // Invalidate and refetch the tiers query when subscription changes occur
         queryClient.invalidateQueries({ queryKey: ["tiers"] });
       })
       .subscribe();
@@ -213,9 +234,20 @@ export default function CreatorStudioTiers() {
           <h1 className="text-2xl font-semibold">Membership Tiers</h1>
           <p className="text-muted-foreground">Create and manage your membership tiers</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> Create New Tier
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Syncing...' : 'Sync Counts'}
+          </Button>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Create New Tier
+          </Button>
+        </div>
       </div>
       
       {isLoading ? (
@@ -239,7 +271,7 @@ export default function CreatorStudioTiers() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    <span>{tier.subscriberCount} subscribers</span>
+                    <span className="font-medium text-primary">{tier.subscriberCount} subscribers</span>
                   </div>
                   
                   <ul className="space-y-2">
