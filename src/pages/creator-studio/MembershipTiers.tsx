@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -56,21 +57,21 @@ export default function CreatorStudioTiers() {
       
       console.log('[MembershipTiers] Tiers data:', tiersData);
       
-      // Count active subscribers for each tier using the user_subscriptions table with improved method
+      // Count active subscribers for each tier using the user_subscriptions table
       const tiersWithSubscribers = await Promise.all((tiersData || []).map(async (tier) => {
         console.log('[MembershipTiers] Counting subscribers for tier:', tier.id, tier.title);
         
         try {
-          // Fetch actual subscription records instead of using count
-          const { data: subscriptions, error: subscriptionsError } = await supabase
+          // Count from user_subscriptions table with active status only
+          const { count, error: countError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id, status')
+            .select('*', { count: 'exact', head: true })
             .eq('tier_id', tier.id)
             .eq('creator_id', creatorData.id)
             .eq('status', 'active');
 
-          if (subscriptionsError) {
-            console.error('[MembershipTiers] Error fetching subscribers for tier:', tier.id, subscriptionsError);
+          if (countError) {
+            console.error('[MembershipTiers] Error counting subscribers for tier:', tier.id, countError);
             return {
               id: tier.id,
               name: tier.title,
@@ -80,9 +81,8 @@ export default function CreatorStudioTiers() {
             };
           }
 
-          const subscriberCount = subscriptions?.length || 0;
+          const subscriberCount = count || 0;
           console.log('[MembershipTiers] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
-          console.log('[MembershipTiers] Subscription records for tier', tier.title, ':', subscriptions);
           
           return {
             id: tier.id,

@@ -43,21 +43,21 @@ export default function Dashboard() {
       
       console.log('[Dashboard] Found tiers:', tiers?.length || 0);
       
-      // Get accurate subscriber counts by fetching actual records instead of using count
+      // Get accurate subscriber counts from user_subscriptions table
       const tiersWithRealCounts = await Promise.all(tiers.map(async (tier) => {
         console.log('[Dashboard] Counting subscribers for tier:', tier.id, tier.title);
         
         try {
-          // Fetch actual subscription records instead of using count
-          const { data: subscriptions, error: subscriptionsError } = await supabase
+          // Count active subscribers for this specific tier from user_subscriptions
+          const { count, error: countError } = await supabase
             .from('user_subscriptions')
-            .select('id, user_id, status')
+            .select('*', { count: 'exact', head: true })
             .eq('tier_id', tier.id)
             .eq('creator_id', creatorProfile.id)
             .eq('status', 'active');
 
-          if (subscriptionsError) {
-            console.error('[Dashboard] Error fetching subscribers for tier:', tier.id, subscriptionsError);
+          if (countError) {
+            console.error('[Dashboard] Error counting subscribers for tier:', tier.id, countError);
             return {
               id: tier.id,
               name: tier.title,
@@ -72,9 +72,8 @@ export default function Dashboard() {
             };
           }
 
-          const subscriberCount = subscriptions?.length || 0;
+          const subscriberCount = count || 0;
           console.log('[Dashboard] Tier', tier.title, 'has', subscriberCount, 'active subscribers');
-          console.log('[Dashboard] Subscription records for tier', tier.title, ':', subscriptions);
           
           const revenue = subscriberCount * (tier.price || 0);
           
