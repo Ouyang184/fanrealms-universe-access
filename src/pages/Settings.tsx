@@ -62,36 +62,36 @@ export default function Settings() {
             <Tabs defaultValue="profile" className="w-full">
               {/* Mobile Grid Layout */}
               <div className="md:hidden">
-                <div className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-muted">
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-muted">
                   <TabsTrigger 
                     value="profile" 
-                    className="h-12 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                   >
                     Profile
                   </TabsTrigger>
                   <TabsTrigger 
                     value="account" 
-                    className="h-12 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                   >
                     Account
                   </TabsTrigger>
                   <TabsTrigger 
                     value="notifications" 
-                    className="h-12 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                    className="h-10 text-xs px-1 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                   >
                     Notifications
                   </TabsTrigger>
                   <TabsTrigger 
                     value="privacy" 
-                    className="h-12 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                    className="h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
                   >
                     Privacy
                   </TabsTrigger>
                 </div>
-                <div className="mt-4">
+                <div className="mt-3">
                   <TabsTrigger 
                     value="content" 
-                    className="w-full h-12 text-sm font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg bg-muted"
+                    className="w-full h-10 text-xs px-2 font-medium data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg bg-muted"
                   >
                     Content Preferences
                   </TabsTrigger>
