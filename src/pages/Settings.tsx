@@ -62,21 +62,36 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-0.5 w-full text-[8px]" : ""}>
-                <TabsTrigger value="profile" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
-                  {isMobile ? "Profile" : "Profile"}
+              <TabsList className={isMobile ? "grid grid-cols-2 gap-2 h-auto p-2 w-full bg-transparent" : ""}>
+                <TabsTrigger 
+                  value="profile" 
+                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
+                >
+                  Profile
                 </TabsTrigger>
-                <TabsTrigger value="account" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
-                  {isMobile ? "Account" : "Account"}
+                <TabsTrigger 
+                  value="account" 
+                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
+                >
+                  Account
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
-                  {isMobile ? "Notify" : "Notifications"}
+                <TabsTrigger 
+                  value="notifications" 
+                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
+                >
+                  Notifications
                 </TabsTrigger>
-                <TabsTrigger value="privacy" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
-                  {isMobile ? "Privacy" : "Privacy"}
+                <TabsTrigger 
+                  value="privacy" 
+                  className={isMobile ? "text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
+                >
+                  Privacy
                 </TabsTrigger>
-                <TabsTrigger value="content" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
-                  {isMobile ? "Content" : "Content"}
+                <TabsTrigger 
+                  value="content" 
+                  className={isMobile ? "col-span-2 text-sm px-4 py-3 rounded-lg bg-muted data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" : ""}
+                >
+                  Content Preferences
                 </TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
