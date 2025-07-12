@@ -129,11 +129,11 @@ export default function Commissions() {
               <TabsTrigger value="types">Commission Types</TabsTrigger>
               <TabsTrigger value="requests" className="relative">
                 Requests
-                {pendingRequests > 0 && (
-                  <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500">
-                    {pendingRequests}
-                  </Badge>
-                )}
+            {pendingRequests > 0 && (
+              <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500 flex items-center justify-center">
+                {pendingRequests}
+              </Badge>
+            )}
               </TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
