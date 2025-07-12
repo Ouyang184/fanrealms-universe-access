@@ -122,23 +122,23 @@ export function CommissionSection() {
             <CardContent className="space-y-4">
               {/* Sample Art */}
               {commission.sample_art_url ? (
-                <div className="relative">
+                <div className="relative overflow-hidden rounded-xl">
                   <img
                     src={commission.sample_art_url}
                     alt={`Sample art for ${commission.name}`}
-                    className="w-full h-32 object-cover rounded-lg border"
+                    className="w-full h-40 object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                     }}
                   />
-                  <div className="absolute top-2 right-2">
-                    <Badge className="bg-black/70 text-white border-0 text-xs">
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-red-500 text-white border-0 text-xs font-medium px-2 py-1">
                       Sample
                     </Badge>
                   </div>
                 </div>
               ) : (
-                <div className="w-full h-32 bg-muted rounded-lg border flex items-center justify-center">
+                <div className="w-full h-40 bg-muted rounded-xl flex items-center justify-center">
                   <div className="text-center text-muted-foreground">
                     <Palette className="h-6 w-6 mx-auto mb-2" />
                     <p className="text-sm">No sample available</p>
