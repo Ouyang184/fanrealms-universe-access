@@ -62,20 +62,20 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-1 w-full" : ""}>
-                <TabsTrigger value="profile" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
+              <TabsList className={isMobile ? "grid grid-cols-5 h-auto p-0.5 w-full text-[8px]" : ""}>
+                <TabsTrigger value="profile" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
                   {isMobile ? "Profile" : "Profile"}
                 </TabsTrigger>
-                <TabsTrigger value="account" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
+                <TabsTrigger value="account" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
                   {isMobile ? "Account" : "Account"}
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
-                  {isMobile ? "Alerts" : "Notifications"}
+                <TabsTrigger value="notifications" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
+                  {isMobile ? "Notify" : "Notifications"}
                 </TabsTrigger>
-                <TabsTrigger value="privacy" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
+                <TabsTrigger value="privacy" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
                   {isMobile ? "Privacy" : "Privacy"}
                 </TabsTrigger>
-                <TabsTrigger value="content" className={isMobile ? "text-[10px] px-1 py-2 min-w-0" : ""}>
+                <TabsTrigger value="content" className={isMobile ? "text-[8px] px-0.5 py-1.5 min-w-0 h-8" : ""}>
                   {isMobile ? "Content" : "Content"}
                 </TabsTrigger>
               </TabsList>
