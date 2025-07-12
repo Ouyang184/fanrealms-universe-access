@@ -39,18 +39,6 @@ export function SettingsTab({ creatorProfile }: SettingsTabProps) {
               </Button>
             </CommissionSettingsModal>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="font-medium">Portfolio Gallery</p>
-              <p className="text-sm text-muted-foreground">
-                Showcase examples of your commission work
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              Manage Gallery
-            </Button>
-          </div>
         </div>
       </CardContent>
     </Card>
