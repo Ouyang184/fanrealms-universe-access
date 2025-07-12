@@ -105,36 +105,39 @@ export default function Commissions() {
   const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Commission Management</h1>
-          <p className="text-muted-foreground">
-            Manage your commission types, slots, and requests
-          </p>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-6xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Commission Management</h1>
+            <p className="text-muted-foreground">
+              Manage your commission types, slots, and requests
+            </p>
+          </div>
+          <CreateCommissionTypeModal onSuccess={fetchCommissionTypes}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              New Commission Type
+            </Button>
+          </CreateCommissionTypeModal>
         </div>
-        <CreateCommissionTypeModal onSuccess={fetchCommissionTypes}>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Commission Type
-          </Button>
-        </CreateCommissionTypeModal>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="types">Commission Types</TabsTrigger>
-          <TabsTrigger value="requests" className="relative">
-            Requests
-            {pendingRequests > 0 && (
-              <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500">
-                {pendingRequests}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <div className="flex justify-center">
+            <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="types">Commission Types</TabsTrigger>
+              <TabsTrigger value="requests" className="relative">
+                Requests
+                {pendingRequests > 0 && (
+                  <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500">
+                    {pendingRequests}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </div>
 
         <TabsContent value="overview">
           <OverviewTab
@@ -170,7 +173,8 @@ export default function Commissions() {
         <TabsContent value="settings">
           <SettingsTab creatorProfile={creatorProfile} />
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 }
