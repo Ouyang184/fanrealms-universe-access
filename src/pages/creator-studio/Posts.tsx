@@ -79,7 +79,6 @@ export default function CreatorPostsPage() {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Filter posts based on filter tab and apply sorting
   const getFilteredPosts = () => {
     let filteredPosts = filter === "all" ? posts : posts.filter(post => post.type === filter);
     
@@ -169,27 +168,34 @@ export default function CreatorPostsPage() {
       {/* Content Tabs */}
       <Tabs defaultValue={filter} className="space-y-6" onValueChange={(value) => handleFilterChange(value as PostFilter)}>
         <div className="flex justify-between items-center">
-          <TabsList>
-            <TabsTrigger value="all">
-              All Posts
+          <TabsList className="grid w-full grid-cols-4 sm:w-auto sm:flex sm:grid-cols-none">
+            <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-4">
+              <span className="sm:hidden">All</span>
+              <span className="hidden sm:inline">All Posts</span>
             </TabsTrigger>
-            <TabsTrigger value="article">
-              <FileText className="h-4 w-4 mr-2" />
-              Articles
+            <TabsTrigger value="article" className="text-xs sm:text-sm px-2 sm:px-4">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Articles</span>
             </TabsTrigger>
-            <TabsTrigger value="image">
-              <ImageIcon className="h-4 w-4 mr-2" />
-              Images
+            <TabsTrigger value="image" className="text-xs sm:text-sm px-2 sm:px-4">
+              <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Images</span>
             </TabsTrigger>
-            <TabsTrigger value="video">
-              <Video className="h-4 w-4 mr-2" />
-              Videos
+            <TabsTrigger value="video" className="text-xs sm:text-sm px-2 sm:px-4">
+              <Video className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Videos</span>
             </TabsTrigger>
           </TabsList>
           <div className="hidden sm:flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Show draft posts</span>
             <Switch id="show-drafts" checked={showDrafts} onCheckedChange={toggleShowDrafts} />
           </div>
+        </div>
+
+        {/* Mobile-only draft toggle */}
+        <div className="flex sm:hidden items-center justify-between">
+          <span className="text-sm text-muted-foreground">Show draft posts</span>
+          <Switch id="show-drafts-mobile" checked={showDrafts} onCheckedChange={toggleShowDrafts} />
         </div>
 
         {/* Content for all tabs */}
