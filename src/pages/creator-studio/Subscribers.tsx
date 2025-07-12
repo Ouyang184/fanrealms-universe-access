@@ -188,7 +188,7 @@ export default function CreatorStudioSubscribers() {
                       <Avatar>
                         <AvatarImage src={subscriber.user?.profile_picture || ''} />
                         <AvatarFallback>
-                          {subscriber.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                          {(subscriber.user?.username || 'U').charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -241,7 +241,7 @@ export default function CreatorStudioSubscribers() {
                       <Avatar>
                         <AvatarImage src={subscriber.user?.profile_picture || ''} />
                         <AvatarFallback>
-                          {subscriber.user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                          {(subscriber.user?.username || 'U').charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
