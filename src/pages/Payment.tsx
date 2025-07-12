@@ -7,8 +7,8 @@ import { PaymentForm } from '@/components/payment/PaymentForm';
 import { PaymentSuccess } from '@/components/payment/PaymentSuccess';
 import { usePaymentProcessing } from '@/hooks/usePaymentProcessing';
 
-// Use the correct publishable key for subscription payments
-const stripePromise = loadStripe('pk_test_51RSMPcCli7UywJeny27NOjHOOJpnWXWGIU5zRdZBPQ1rze66AjgyeGqqzwJ22PueDNWuvJojwP85r8YPgAjyTAXB00bY7GCGHL');
+// Use live publishable key for subscription payments
+const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJenKnYQOCg0GW8YrW9nRY3vfMf0TYZyVV8eLPFEz6QzZFN7W2D8MMGtVHEFxOC6XgKYRhJ8lJjl00yjqfyF1L');
 
 export default function Payment() {
   const location = useLocation();
