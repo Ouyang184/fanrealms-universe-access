@@ -98,6 +98,7 @@ export default function Commissions() {
   };
 
   const handlePreviewCommissionType = (type: CommissionType) => {
+    console.log('Preview clicked for type:', type);
     // TODO: Implement preview functionality
     toast({
       title: "Preview",
@@ -106,6 +107,7 @@ export default function Commissions() {
   };
 
   const handleEditCommissionType = (type: CommissionType) => {
+    console.log('Edit clicked for type:', type);
     // TODO: Implement edit functionality
     toast({
       title: "Edit",
