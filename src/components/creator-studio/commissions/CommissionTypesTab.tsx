@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { CommissionPreviewModal } from './CommissionPreviewModal';
+import { EditCommissionTypeModal } from './EditCommissionTypeModal';
 
 interface CommissionType {
   id: string;
@@ -43,6 +45,20 @@ export function CommissionTypesTab({
   onDeleteCommissionType,
   onRefetchCommissionTypes
 }: CommissionTypesTabProps) {
+  const [previewType, setPreviewType] = useState<CommissionType | null>(null);
+  const [editType, setEditType] = useState<CommissionType | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
+  const handlePreview = (type: CommissionType) => {
+    setPreviewType(type);
+    setShowPreview(true);
+  };
+
+  const handleEdit = (type: CommissionType) => {
+    setEditType(type);
+    setShowEdit(true);
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
@@ -155,11 +171,21 @@ export function CommissionTypesTab({
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4 border-t">
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handlePreview(type)}
+              >
                 <Eye className="h-3 w-3 mr-1" />
                 Preview
               </Button>
-              <Button variant="outline" size="sm" className="flex-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleEdit(type)}
+              >
                 <Edit className="h-3 w-3 mr-1" />
                 Edit
               </Button>
@@ -174,6 +200,23 @@ export function CommissionTypesTab({
           </CardContent>
         </Card>
       ))}
+
+      {/* Modals */}
+      <CommissionPreviewModal
+        commissionType={previewType}
+        open={showPreview}
+        onOpenChange={setShowPreview}
+      />
+
+      <EditCommissionTypeModal
+        commissionType={editType}
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        onSuccess={() => {
+          onRefetchCommissionTypes();
+          setShowEdit(false);
+        }}
+      />
     </div>
   );
 }
