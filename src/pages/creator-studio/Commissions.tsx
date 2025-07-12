@@ -105,37 +105,48 @@ export default function Commissions() {
   const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="w-full max-w-6xl mx-auto space-y-6 min-h-[calc(100vh-3rem)]">
-        <div className="flex justify-between items-center">
+    <div className="min-h-screen p-3 sm:p-6">
+      <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6 min-h-[calc(100vh-3rem)]">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Commission Management</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold">Commission Management</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Manage your commission types, slots, and requests
             </p>
           </div>
           <CreateCommissionTypeModal onSuccess={fetchCommissionTypes}>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
-              New Commission Type
+              <span className="sm:hidden">New Type</span>
+              <span className="hidden sm:inline">New Commission Type</span>
             </Button>
           </CreateCommissionTypeModal>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="flex justify-center">
-            <TabsList className="grid grid-cols-4 w-full max-w-2xl">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="types">Commission Types</TabsTrigger>
-              <TabsTrigger value="requests" className="relative">
-                Requests
-            {pendingRequests > 0 && (
-              <Badge className="ml-2 h-5 w-5 rounded-full p-0 text-xs bg-red-500 flex items-center justify-center">
-                {pendingRequests}
-              </Badge>
-            )}
+            <TabsList className="grid grid-cols-4 w-full max-w-2xl h-auto">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="sm:hidden">Overview</span>
+                <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="types" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="sm:hidden">Types</span>
+                <span className="hidden sm:inline">Commission Types</span>
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="relative text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="sm:hidden">Requests</span>
+                <span className="hidden sm:inline">Requests</span>
+                {pendingRequests > 0 && (
+                  <Badge className="ml-1 sm:ml-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 text-xs bg-red-500 flex items-center justify-center">
+                    {pendingRequests}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+                <span className="sm:hidden">Settings</span>
+                <span className="hidden sm:inline">Settings</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
