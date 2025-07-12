@@ -105,8 +105,8 @@ export default function Commissions() {
   const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen p-6">
+      <div className="w-full max-w-6xl mx-auto space-y-6 min-h-[calc(100vh-3rem)]">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold">Commission Management</h1>
