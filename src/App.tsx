@@ -187,6 +187,13 @@ export default function App() {
                     </CreatorCheck>
                   </MainLayout>
                 } />
+                <Route path="/creator-studio/profile" element={
+                  <MainLayout>
+                    <CreatorCheck>
+                      <CreatorProfile />
+                    </CreatorCheck>
+                  </MainLayout>
+                } />
                 <Route path="/creator-studio/creator-profile" element={
                   <MainLayout>
                     <CreatorCheck>
