@@ -7,7 +7,8 @@ import {
   FileText, 
   Settings, 
   Users,
-  Crown
+  Crown,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
 
   const creatorItems = [
     { path: "/creator-studio/dashboard", icon: BarChart3, label: "Creator Dashboard" },
+    { path: "/creator-studio/profile", icon: User, label: "Creator Profile" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
     { path: "/creator-studio/membership-tiers", icon: Crown, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: Users, label: "Subscribers" },
