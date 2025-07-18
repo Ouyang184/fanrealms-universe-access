@@ -26,7 +26,7 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
     <>
       <SidebarHeader collapsed={collapsed} onToggle={toggleSidebar} />
 
-      <ScrollArea className="flex-1 overflow-hidden">
+      <ScrollArea className="flex-1 overflow-hidden" style={{ scrollBehavior: 'auto' }}>
         <MainNavigation collapsed={collapsed} />
 
         <Separator className="my-4" />
