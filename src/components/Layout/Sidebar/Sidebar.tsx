@@ -26,13 +26,13 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
     <>
       <SidebarHeader collapsed={collapsed} onToggle={toggleSidebar} />
 
-      <ScrollArea className="flex-1 overflow-hidden" style={{ scrollBehavior: 'auto' }}>
+      <div className="flex-1 overflow-y-auto">
         <MainNavigation collapsed={collapsed} />
 
         <Separator className="my-4" />
 
         <CreatorStudioMenu collapsed={collapsed} />
-      </ScrollArea>
+      </div>
 
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />
     </>
