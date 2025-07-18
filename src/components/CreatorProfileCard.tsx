@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge"; 
 import { CreatorProfile } from "@/types";
+import { CreatorRatingDisplay } from "@/components/ratings/CreatorRatingDisplay";
+import { useCreatorRatingStats } from "@/hooks/useCreatorRatingStats";
 
 interface CreatorProfileCardProps {
   creator: Partial<CreatorProfile>;
@@ -13,6 +15,10 @@ interface CreatorProfileCardProps {
 }
 
 const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoading = false }) => {
+  // Fetch rating stats for this creator
+  const { stats } = useCreatorRatingStats(creator.id ? [creator.id] : []);
+  const ratingData = creator.id ? stats[creator.id] : null;
+
   if (isLoading) {
     return (
       <Card className="overflow-hidden">
@@ -22,6 +28,7 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
             <div className="h-24 w-24 rounded-full bg-background border-4 border-background" />
             <div className="h-5 w-32 bg-muted mt-3 rounded" />
             <div className="h-4 w-48 bg-muted mt-2 rounded" />
+            <div className="h-4 w-20 bg-muted mt-2 rounded" />
           </div>
           <div className="flex justify-center">
             <div className="h-9 w-28 bg-muted rounded" />
@@ -58,6 +65,17 @@ const CreatorProfileCard: React.FC<CreatorProfileCardProps> = ({ creator, isLoad
             {displayName}
           </Link>
           {creator.bio && <p className="text-sm text-center mt-2 line-clamp-2">{creator.bio}</p>}
+          
+          {/* Display rating if available */}
+          {ratingData && (
+            <div className="mt-2 flex justify-center">
+              <CreatorRatingDisplay 
+                rating={ratingData.average_rating} 
+                count={ratingData.total_ratings}
+                size="sm"
+              />
+            </div>
+          )}
           
           {/* Display tags if available */}
           {creator.tags && creator.tags.length > 0 && (

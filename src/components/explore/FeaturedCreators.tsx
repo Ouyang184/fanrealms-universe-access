@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Award, ChevronRight } from "lucide-react";
 import { CreatorProfile } from "@/types";
+import { CreatorRatingDisplay } from "@/components/ratings/CreatorRatingDisplay";
+import { useCreatorRatingStats } from "@/hooks/useCreatorRatingStats";
 
 interface FeaturedCreatorsProps {
   creators: CreatorProfile[];
@@ -14,6 +16,10 @@ interface FeaturedCreatorsProps {
 }
 
 export function FeaturedCreators({ creators, isLoading, categoryFilter }: FeaturedCreatorsProps) {
+  // Fetch rating stats for all creators
+  const creatorIds = creators.map(creator => creator.id).filter(Boolean);
+  const { stats: ratingStats } = useCreatorRatingStats(creatorIds);
+
   // Helper function to get creator tags
   const getCreatorTags = (creator: CreatorProfile) => {
     // Extract tags from bio or default to category tags
@@ -93,6 +99,9 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
             // Get first letter for avatar fallback
             const avatarFallback = displayName.substring(0, 1).toUpperCase();
             
+            // Get rating data for this creator
+            const ratingData = ratingStats[creator.id];
+            
             return (
               <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
                 <div className="h-32 bg-gray-800 relative">
@@ -118,6 +127,18 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                   </div>
                   <h3 className="text-xl font-bold mt-4">{displayName}</h3>
                   <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+
+                  {/* Display rating if available */}
+                  {ratingData && (
+                    <div className="mt-2">
+                      <CreatorRatingDisplay 
+                        rating={ratingData.average_rating} 
+                        count={ratingData.total_ratings}
+                        size="sm"
+                        className="text-gray-300"
+                      />
+                    </div>
+                  )}
 
                   <div className="flex flex-wrap gap-2 mt-3">
                     {getCreatorTags(creator).map((tag, index) => (
