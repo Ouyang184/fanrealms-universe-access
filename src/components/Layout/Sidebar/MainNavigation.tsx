@@ -46,15 +46,16 @@ export function MainNavigation({ collapsed, onMobileNavClick }: MainNavigationPr
     <div className="space-y-1 p-2">
       {navigationItems.map((item) => (
         <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
-          <Button
+           <Button
             variant={isActive(item.path) ? "secondary" : "ghost"}
             className={cn(
-              "w-full font-medium justify-start gap-3",
+              "w-full font-medium gap-3",
+              collapsed ? "justify-center px-2" : "justify-start",
               isActive(item.path) && "bg-primary/30",
             )}
           >
-            <item.icon className="h-5 w-5" />
-            <span>{item.label}</span>
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && <span>{item.label}</span>}
           </Button>
         </Link>
       ))}
