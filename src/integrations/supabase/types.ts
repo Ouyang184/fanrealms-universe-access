@@ -417,6 +417,47 @@ export type Database = {
           },
         ]
       }
+      creator_ratings: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          rating: number
+          rating_type: string
+          review_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          rating: number
+          rating_type?: string
+          review_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          rating?: number
+          rating_type?: string
+          review_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_ratings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           accepts_commissions: boolean | null

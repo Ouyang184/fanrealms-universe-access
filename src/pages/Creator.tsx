@@ -12,6 +12,7 @@ import { CreatorPosts } from "@/components/creator/CreatorPosts";
 import { CreatorMembership } from "@/components/creator/CreatorMembership";
 import { CreatorAbout } from "@/components/creator/CreatorAbout";
 import { CreatorCommissions } from "@/components/creator/CreatorCommissions";
+import { CreatorRatings } from "@/components/ratings/CreatorRatings";
 import { toast } from "@/hooks/use-toast";
 
 const CreatorPage: React.FC = () => {
@@ -45,7 +46,7 @@ const CreatorPage: React.FC = () => {
   // Check for tab query parameter and set active tab
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['posts', 'membership', 'commissions', 'about'].includes(tabParam)) {
+    if (tabParam && ['posts', 'membership', 'commissions', 'about', 'ratings'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams, setActiveTab]);
@@ -146,10 +147,11 @@ const CreatorPage: React.FC = () => {
         <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
           <div className="px-6 py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 max-w-lg mx-auto h-11">
+              <TabsList className="grid grid-cols-5 max-w-2xl mx-auto h-11">
                 <TabsTrigger value="posts" className="text-sm font-medium">Posts</TabsTrigger>
                 <TabsTrigger value="membership" className="text-sm font-medium">Membership</TabsTrigger>
                 <TabsTrigger value="commissions" className="text-sm font-medium">Commissions</TabsTrigger>
+                <TabsTrigger value="ratings" className="text-sm font-medium">Ratings</TabsTrigger>
                 <TabsTrigger value="about" className="text-sm font-medium">About</TabsTrigger>
               </TabsList>
               
@@ -168,6 +170,15 @@ const CreatorPage: React.FC = () => {
               <TabsContent value="commissions" className="pt-6 px-0">
                 <div className="px-6">
                   <CreatorCommissions creator={creator} />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="ratings" className="pt-6 px-0">
+                <div className="px-6">
+                  <CreatorRatings 
+                    creatorId={creator?.id || ''} 
+                    creatorName={creator?.display_name || 'this creator'} 
+                  />
                 </div>
               </TabsContent>
               
