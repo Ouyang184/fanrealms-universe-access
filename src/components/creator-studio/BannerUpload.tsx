@@ -21,10 +21,10 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
+      if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
         toast({
           title: "Invalid file type",
-          description: "Please select a PNG or JPG image.",
+          description: "Please select a PNG, JPG, or GIF image.",
           variant: "destructive"
         });
         return;
@@ -128,12 +128,12 @@ export function BannerUpload({ userId, currentBannerUrl, onBannerUpdate }: Banne
           type="file"
           id="banner-upload"
           className="hidden"
-          accept="image/png, image/jpeg"
+          accept="image/png, image/jpeg, image/gif"
           onChange={handleFileSelect}
         />
         
         <span className="text-sm text-muted-foreground">
-          PNG or JPG
+          PNG, JPG, or GIF
         </span>
       </div>
     </div>
