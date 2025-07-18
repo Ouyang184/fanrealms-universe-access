@@ -48,11 +48,11 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
         onScroll={handleScroll}
         style={{ scrollBehavior: 'auto' }}
       >
-        <MainNavigation collapsed={collapsed} />
+        <MainNavigation collapsed={collapsed} isMobile={isMobile} />
 
         <Separator className="my-4" />
 
-        <CreatorStudioMenu collapsed={collapsed} />
+        <CreatorStudioMenu collapsed={collapsed} isMobile={isMobile} />
       </div>
 
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />

@@ -16,9 +16,10 @@ import { cn } from "@/lib/utils";
 interface MainNavigationProps {
   collapsed: boolean;
   onMobileNavClick?: () => void;
+  isMobile?: boolean;
 }
 
-export function MainNavigation({ collapsed, onMobileNavClick }: MainNavigationProps) {
+export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }: MainNavigationProps) {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -50,12 +51,12 @@ export function MainNavigation({ collapsed, onMobileNavClick }: MainNavigationPr
             variant={isActive(item.path) ? "secondary" : "ghost"}
             className={cn(
               "w-full font-medium gap-3",
-              collapsed ? "justify-center px-2" : "justify-start",
+              collapsed && !isMobile ? "justify-center px-2" : "justify-start",
               isActive(item.path) && "bg-primary/30",
             )}
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {(!collapsed || isMobile) && <span>{item.label}</span>}
           </Button>
         </Link>
       ))}

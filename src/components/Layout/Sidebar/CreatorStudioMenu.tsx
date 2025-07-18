@@ -16,9 +16,10 @@ import { cn } from "@/lib/utils";
 interface CreatorStudioMenuProps {
   collapsed: boolean;
   onMobileNavClick?: () => void;
+  isMobile?: boolean;
 }
 
-export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudioMenuProps) {
+export function CreatorStudioMenu({ collapsed, onMobileNavClick, isMobile = false }: CreatorStudioMenuProps) {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -44,7 +45,7 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
 
   return (
     <div className="space-y-1 p-2">
-      {!collapsed && (
+      {(!collapsed || isMobile) && (
         <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">
           CREATOR STUDIO
         </div>
@@ -55,12 +56,12 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick }: CreatorStudio
             variant={isActive(item.path) ? "secondary" : "ghost"}
             className={cn(
               "w-full font-medium gap-3",
-              collapsed ? "justify-center px-2" : "justify-start",
+              collapsed && !isMobile ? "justify-center px-2" : "justify-start",
               isActive(item.path) && "bg-primary/30",
             )}
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {(!collapsed || isMobile) && <span>{item.label}</span>}
           </Button>
         </Link>
       ))}
