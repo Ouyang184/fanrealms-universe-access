@@ -11,6 +11,8 @@ import { CreatorProfile } from "@/types";
 import { toast } from "@/hooks/use-toast";
 import { CommissionRequestModal } from "./CommissionRequestModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { CreatorRatingDisplay } from "@/components/ratings/CreatorRatingDisplay";
+import { useCreatorRatingStats } from "@/hooks/useCreatorRatingStats";
 
 interface CreatorCommissionsProps {
   creator: CreatorProfile;
@@ -21,6 +23,8 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
   const [commissionTypes, setCommissionTypes] = useState<CommissionType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { stats } = useCreatorRatingStats([creator.id]);
+  const ratingStats = stats[creator.id];
 
   // Check if current user is the creator
   const isOwnCreator = user?.id === creator.user_id;
@@ -160,6 +164,13 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5" />
             Commission Information
+            {ratingStats && ratingStats.total_ratings > 0 && (
+              <CreatorRatingDisplay 
+                rating={ratingStats.average_rating}
+                count={ratingStats.total_ratings}
+                size="sm" 
+              />
+            )}
             {!creator.accepts_commissions && (
               <Badge variant="secondary" className="ml-2">
                 Currently Closed
