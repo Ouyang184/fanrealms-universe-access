@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Award, ChevronRight } from "lucide-react";
 import { CreatorProfile } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCreatorRatingStats } from "@/hooks/useCreatorRatingStats";
+import { CreatorRatingDisplay } from "@/components/ratings/CreatorRatingDisplay";
 
 interface FeaturedCreatorsProps {
   creators?: CreatorProfile[];
@@ -14,6 +16,9 @@ interface FeaturedCreatorsProps {
 }
 
 export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedCreatorsProps) {
+  const creatorIds = creators.map(creator => creator.id);
+  const { stats, isLoading: isLoadingStats } = useCreatorRatingStats(creatorIds);
+
   if (isLoading) {
     return (
       <section className="mb-12">
@@ -94,6 +99,17 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                   </div>
                   <h3 className="text-xl font-bold mt-4">{displayName}</h3>
                   <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+                  
+                  {/* Creator Rating */}
+                  {stats[creator.id] && (
+                    <div className="mt-2">
+                      <CreatorRatingDisplay 
+                        rating={stats[creator.id].average_rating}
+                        count={stats[creator.id].total_ratings}
+                        size="sm"
+                      />
+                    </div>
+                  )}
 
                   <div className="mt-6 flex items-center justify-between">
                     <div className="text-sm text-gray-400">
