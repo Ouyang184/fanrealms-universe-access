@@ -143,11 +143,17 @@ export function ProfileInfoForm({
           <Textarea
             id="bio"
             name="bio"
-            rows={4}
+            rows={6}
             value={settings.bio || ''}
             onChange={handleChange}
-            placeholder="Tell your audience about yourself..."
+            placeholder="Tell your audience about yourself...&#10;&#10;You can embed images: ![Alt text](image-url)&#10;You can embed videos: @[Title](video-url)&#10;&#10;Example:&#10;I'm a digital artist who loves creating fantasy worlds!&#10;&#10;![My latest artwork](https://example.com/image.jpg)&#10;&#10;@[My creative process](https://youtube.com/watch?v=example)"
           />
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p><strong>Rich content supported:</strong></p>
+            <p>• Images: <code>![Alt text](image-url)</code></p>
+            <p>• Videos: <code>@[Title](video-url)</code></p>
+            <p>• Supports YouTube, Vimeo, and direct video files</p>
+          </div>
         </div>
 
         <div className="grid gap-2">
