@@ -229,7 +229,7 @@ export default function AllCreatorsExplorePage() {
                         <img
                           src={creator.banner_url}
                           alt={displayName}
-                          className="w-full h-full object-cover mix-blend-overlay"
+                          className="w-full h-full object-cover"
                         />
                       )}
                       <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
