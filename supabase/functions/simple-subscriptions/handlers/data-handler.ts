@@ -53,8 +53,8 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
     .from('user_subscriptions')
     .select(`
       *,
-      user:user_id(id, username, email, profile_picture),
-      tier:tier_id(id, title, price)
+      user:users(id, username, email, profile_picture),
+      tier:membership_tiers(id, title, price)
     `)
     .eq('creator_id', creatorId)
     .eq('status', 'active')
