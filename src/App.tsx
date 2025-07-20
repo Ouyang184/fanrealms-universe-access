@@ -40,6 +40,7 @@ import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
 import AllFeaturedCreatorsPage from "./pages/AllFeaturedCreators";
 import AllCreatorsPage from "./pages/AllCreators";
+import AllCategoriesPage from "./pages/AllCategories";
 import AllCreatorsExplorePage from "./pages/AllCreatorsExplore";
 import AllCommissionsPage from "./pages/AllCommissions";
 import Support from "./pages/Support";
@@ -87,6 +88,7 @@ export default function App() {
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/following" element={<FollowingPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/explore/All_Categories" element={<AllCategoriesPage />} />
                 <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
                 <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
                 <Route path="/explore/:category" element={<ExploreCategoryPage />} />
