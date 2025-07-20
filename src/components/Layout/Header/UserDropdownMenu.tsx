@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useDisplayName } from "@/hooks/useDisplayName";
 
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
@@ -45,12 +46,14 @@ export function UserDropdownMenu() {
   
   if (!user) return null;
   
-  const initials = profile?.username 
-    ? profile.username.substring(0, 2).toUpperCase()
-    : user.email?.substring(0, 2).toUpperCase() || "U";
-  
   const email = profile?.email || user.email || "";
-  const displayName = profile?.username || email.split('@')[0];
+  
+  // Use display name hook for consistent naming
+  const { displayName, initials } = useDisplayName({
+    ...profile,
+    email,
+    id: user.id
+  });
   
   const handleSignOut = async () => {
     try {

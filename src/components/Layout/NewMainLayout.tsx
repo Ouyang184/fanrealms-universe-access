@@ -39,6 +39,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,6 +53,13 @@ export function NewMainLayout({ children }: MainLayoutProps) {
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  
+  // Get display name and initials for user
+  const { displayName, initials } = useDisplayName({
+    ...profile,
+    email: profile?.email || "",
+    id: user?.id
+  });
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -473,14 +481,14 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                   <Avatar className="h-8 w-8 cursor-pointer">
                     <AvatarImage src={profile?.profile_picture || ""} />
                     <AvatarFallback className="bg-primary/80 text-primary-foreground">
-                      {profile?.username ? profile.username.substring(0, 2).toUpperCase() : "U"}
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 mt-1" align="end">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{profile?.username || "User"}</p>
+                      <p className="text-sm font-medium">{displayName}</p>
                       <p className="text-xs text-muted-foreground">{profile?.email || ""}</p>
                     </div>
                   </DropdownMenuLabel>
