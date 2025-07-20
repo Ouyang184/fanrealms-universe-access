@@ -162,12 +162,12 @@ export default function SubscriptionsPage() {
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                               <span className="text-white text-sm font-bold">
-                                {subscription.creator?.display_name?.charAt(0) || 'C'}
+                                {subscription.creators?.display_name?.charAt(0) || 'C'}
                               </span>
                             </div>
                             <div>
-                              <CardTitle className="text-lg">{subscription.creator?.display_name}</CardTitle>
-                              <p className="text-sm text-muted-foreground">{subscription.tier?.title}</p>
+                              <CardTitle className="text-lg">{subscription.creators?.display_name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">{subscription.membership_tiers?.title}</p>
                             </div>
                           </div>
                           <Badge variant="default">Active</Badge>

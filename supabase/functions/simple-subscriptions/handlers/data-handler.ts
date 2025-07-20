@@ -7,8 +7,8 @@ export async function handleGetUserSubscriptions(supabase: any, user: any) {
     .from('user_subscriptions')
     .select(`
       *,
-      creator:creators(id, display_name, profile_image_url),
-      tier:membership_tiers(id, title, description, price)
+      creators!fk_user_subscriptions_creator_id(id, display_name, profile_image_url),
+      membership_tiers!fk_user_subscriptions_tier_id(id, title, description, price)
     `)
     .eq('user_id', user.id)
     .eq('status', 'active')
@@ -53,18 +53,25 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
     .from('user_subscriptions')
     .select(`
       *,
-      user:users(id, username, email, profile_picture),
-      tier:membership_tiers(id, title, price)
+      users!fk_user_subscriptions_user_id(id, username, email, profile_picture),
+      membership_tiers!fk_user_subscriptions_tier_id(id, title, price)
     `)
     .eq('creator_id', creatorId)
     .eq('status', 'active')
     .order('created_at', { ascending: false });
 
   console.log('[SimpleSubscriptions] Subscribers query error:', subscribersError);
-  console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
+    console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
   
   if (subscribers && subscribers.length > 0) {
-    subscribers.forEach((sub, index) => {
+    // Map the response to match expected structure
+    const mappedSubscribers = subscribers.map(sub => ({
+      ...sub,
+      user: sub.users,
+      tier: sub.membership_tiers
+    }));
+    
+    mappedSubscribers.forEach((sub, index) => {
       console.log(`[SimpleSubscriptions] Final subscriber ${index + 1}:`, {
         user_email: sub.user?.email,
         tier_title: sub.tier?.title,
@@ -76,6 +83,8 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
         tier_data_exists: !!sub.tier
       });
     });
+    
+    return { subscribers: mappedSubscribers };
   } else {
     console.log('[SimpleSubscriptions] No subscribers found in final query, but raw data shows:', allUserSubs?.length || 0, 'records');
     

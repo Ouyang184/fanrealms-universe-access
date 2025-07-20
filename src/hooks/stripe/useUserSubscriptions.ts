@@ -17,7 +17,7 @@ interface UserSubscriptionWithDetails {
   cancel_at_period_end: boolean | null;
   created_at: string;
   updated_at: string;
-  creator?: {
+  creators?: {
     id: string;
     display_name: string | null;
     bio: string | null;
@@ -30,7 +30,7 @@ interface UserSubscriptionWithDetails {
       profile_picture: string | null;
     } | null;
   } | null;
-  tier?: {
+  membership_tiers?: {
     id: string;
     title: string;
     description: string | null;
@@ -52,7 +52,7 @@ export const useUserSubscriptions = () => {
         .from('user_subscriptions')
         .select(`
           *,
-          creator:creators (
+          creators!fk_user_subscriptions_creator_id (
             id,
             display_name,
             bio,
@@ -65,7 +65,7 @@ export const useUserSubscriptions = () => {
               profile_picture
             )
           ),
-          tier:membership_tiers (
+          membership_tiers!fk_user_subscriptions_tier_id (
             id,
             title,
             description,

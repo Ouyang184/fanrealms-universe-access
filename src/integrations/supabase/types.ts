@@ -1076,6 +1076,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_user_subscriptions_creator_id"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_subscriptions_tier_id"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_subscriptions_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "user_subscriptions_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
