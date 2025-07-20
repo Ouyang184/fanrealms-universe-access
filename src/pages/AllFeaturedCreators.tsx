@@ -165,7 +165,7 @@ export default function AllFeaturedCreatorsPage() {
               
               return (
                 <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden hover:border-purple-500/50 transition-colors">
-                  <div className="h-32 bg-gray-800 relative">
+                  <div className="h-32 bg-gradient-to-r from-purple-900 to-blue-900 relative">
                     {creator.banner_url && (
                       <img
                         src={creator.banner_url}
