@@ -42,7 +42,6 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Subscriber</TableHead>
-            <TableHead>Email</TableHead>
             <TableHead>Tier</TableHead>
             <TableHead>Amount Paid</TableHead>
             <TableHead>Subscription Date</TableHead>
@@ -56,7 +55,6 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
                 <Skeleton className="h-8 w-8 rounded-full" />
                 <Skeleton className="h-4 w-20" />
               </TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16" /></TableCell>
               <TableCell><Skeleton className="h-4 w-28" /></TableCell>
@@ -74,7 +72,6 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
       <TableHeader>
         <TableRow>
           <TableHead>Subscriber</TableHead>
-          <TableHead>Email</TableHead>
           <TableHead>Tier</TableHead>
           <TableHead>Amount Paid</TableHead>
           <TableHead>Subscription Date</TableHead>
@@ -92,7 +89,6 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
                 </Avatar>
                 <span className="font-medium">{subscriber.name}</span>
               </TableCell>
-              <TableCell>{subscriber.email}</TableCell>
               <TableCell>
                 <Badge variant={getTierBadgeVariant(subscriber.tier)}>
                   {subscriber.tier}
@@ -139,7 +135,7 @@ export const SubscribersTable: React.FC<SubscribersTableProps> = ({
           ))
         ) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
               No active subscribers found.
             </TableCell>
           </TableRow>
