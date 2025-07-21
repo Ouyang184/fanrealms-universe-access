@@ -193,7 +193,6 @@ export default function CreatorStudioSubscribers() {
                       </Avatar>
                       <div>
                         <p className="font-medium">{subscriber.user?.username || 'Unknown User'}</p>
-                        <p className="text-sm text-muted-foreground">{subscriber.user?.email}</p>
                         {subscriber.current_period_end && (
                           <p className="text-xs text-muted-foreground">
                             Next billing: {new Date(subscriber.current_period_end).toLocaleDateString()}
@@ -246,7 +245,6 @@ export default function CreatorStudioSubscribers() {
                       </Avatar>
                       <div>
                         <p className="font-medium">{subscriber.user?.username || 'Unknown User'}</p>
-                        <p className="text-sm text-muted-foreground">{subscriber.user?.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
