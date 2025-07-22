@@ -12,6 +12,7 @@ export const useAuthFunctions = () => {
   const signIn = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
       console.log("useAuthFunctions: Attempting sign in for:", email);
+      console.log("useAuthFunctions: Captcha token:", captchaToken ? `${captchaToken.substring(0, 20)}...` : "none");
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,

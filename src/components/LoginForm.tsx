@@ -53,6 +53,7 @@ const LoginForm = () => {
     try {
       setIsSubmitting(true);
       setLoginError(null);
+      console.log("LoginForm: Captcha token being sent:", values.captcha ? `${values.captcha.substring(0, 20)}...` : "none");
       await signIn(values.email, values.password, values.captcha);
       
       const params = new URLSearchParams(location.search);
