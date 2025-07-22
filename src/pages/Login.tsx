@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import LoginForm from "@/components/auth/LoginForm";
+import LoginForm from "@/components/LoginForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 
