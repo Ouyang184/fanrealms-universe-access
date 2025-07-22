@@ -27,14 +27,14 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-8 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col lg:flex-row items-center gap-8">
-            <div className="lg:w-1/2 space-y-4">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
+            <div className="lg:w-1/2 space-y-6">
               <Badge className="bg-purple-900/50 text-purple-300 hover:bg-purple-900/70 px-3 py-1">
                 The creator economy, reimagined
               </Badge>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight max-w-lg">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                 Support creators. <br />
                 <span className="text-purple-400">Get exclusive content.</span>
               </h1>
@@ -42,7 +42,7 @@ export default function LandingPage() {
                 FanRealms connects you directly with your favorite creators. Subscribe for exclusive content, community
                 access, and more.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link to="/signup">
                   <Button size="lg" className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
                     Get started
@@ -60,62 +60,17 @@ export default function LandingPage() {
                 No credit card required to browse
               </div>
             </div>
-            <div className="lg:w-1/2 flex justify-center lg:justify-end">
-              <div className="relative max-w-sm">
-                <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl"></div>
-                <div className="relative bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
-                  <img
-                    src="/lovable-uploads/cf5846ed-9cbb-42e6-a9a2-9e05259fb226.png"
-                    alt="FanRealms platform preview"
-                    className="w-full"
-                  />
-                </div>
+            <div className="lg:w-1/2 relative">
+              <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl"></div>
+              <div className="relative bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+                <img
+                  src="/lovable-uploads/cf5846ed-9cbb-42e6-a9a2-9e05259fb226.png"
+                  alt="FanRealms platform preview"
+                  className="w-full"
+                />
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Featured Creator */}
-      <section className="py-12 px-4 bg-gray-900/50">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2">Featured Creator</h2>
-            <p className="text-gray-300">Discover amazing content from our top creators</p>
-          </div>
-          <Card className="bg-gray-800 border-gray-700 max-w-2xl mx-auto">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex-shrink-0">
-                  <img
-                    src="https://eaeqyctjljbtcatlohky.supabase.co/storage/v1/object/public/avatars/1451f3c9-dced-45f9-b4da-3c5b2cc5c70a/avatar-1752810985231.png"
-                    alt="FanRealmsWeb"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-purple-500"
-                  />
-                </div>
-                <div className="flex-1 text-center sm:text-left">
-                  <h3 className="text-xl font-bold mb-1">FanRealmsWeb</h3>
-                  <p className="text-purple-400 text-sm mb-2">@unfan • Film Creator</p>
-                  <p className="text-gray-300 text-sm mb-3">
-                    Creating exclusive film content and behind-the-scenes experiences for movie enthusiasts.
-                  </p>
-                  <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-400">
-                    <span>3 followers</span>
-                    <span>•</span>
-                    <span>Film content</span>
-                  </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <Link to="/explore">
-                    <Button className="bg-purple-600 hover:bg-purple-700">
-                      View Profile
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </section>
 
