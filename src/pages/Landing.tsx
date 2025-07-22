@@ -248,10 +248,6 @@ export default function LandingPage() {
               <div className="mt-6 sm:mt-8 text-xs sm:text-sm text-gray-400 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
-                  Free forever plan
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                   No setup fees
                 </div>
                 <div className="flex items-center gap-2">
