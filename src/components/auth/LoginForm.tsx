@@ -6,6 +6,8 @@ import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { TURNSTILE_SITE_KEY } from '@/config/turnstile';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
   remember: z.boolean().optional().default(false),
+  captcha: z.string().min(1, "Please complete the captcha"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -31,6 +34,7 @@ const LoginForm = () => {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>("");
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,6 +42,7 @@ const LoginForm = () => {
       email: "",
       password: "",
       remember: false,
+      captcha: "",
     },
   });
 
@@ -48,7 +53,7 @@ const LoginForm = () => {
       setLoginError(null);
       console.log("LoginForm: Attempting to sign in with:", values.email);
       
-      const result: AuthResult = await signIn(values.email, values.password);
+      const result: AuthResult = await signIn(values.email, values.password, values.captcha);
       
       if (result.success === false) {
         console.log("LoginForm: Sign in failed:", result.error.message);
@@ -155,7 +160,34 @@ const LoginForm = () => {
           )}
         />
         
-        <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
+        <FormField
+          control={form.control}
+          name="captcha"
+          render={({ field }) => (
+            <FormItem className="space-y-2">
+              <Label>Security Check</Label>
+              <FormControl>
+                <Turnstile
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={(token) => {
+                    setCaptchaToken(token);
+                    field.onChange(token);
+                  }}
+                  onError={() => {
+                    setCaptchaToken("");
+                    field.onChange("");
+                  }}
+                  onExpire={() => {
+                    setCaptchaToken("");
+                    field.onChange("");
+                  }}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        
+        <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting || !captchaToken}>
           {isSubmitting ? (
             <div className="flex items-center">
               <svg
