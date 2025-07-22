@@ -9,13 +9,16 @@ export const useAuthFunctions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const signIn = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+  const signIn = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
       console.log("useAuthFunctions: Attempting sign in for:", email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          captchaToken
+        }
       });
 
       if (error) {
@@ -55,13 +58,14 @@ export const useAuthFunctions = () => {
     }
   }, [toast]);
 
-  const signUp = useCallback(async (email: string, password: string): Promise<AuthResult> => {
+  const signUp = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
+          captchaToken
         }
       });
 

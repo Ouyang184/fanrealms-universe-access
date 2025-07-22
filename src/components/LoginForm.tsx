@@ -53,7 +53,7 @@ const LoginForm = () => {
     try {
       setIsSubmitting(true);
       setLoginError(null);
-      await signIn(values.email, values.password);
+      await signIn(values.email, values.password, values.captcha);
       
       const params = new URLSearchParams(location.search);
       const returnTo = params.get('returnTo');

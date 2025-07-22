@@ -73,7 +73,7 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
       
-      const result = await signUp(values.email, values.password);
+      const result = await signUp(values.email, values.password, values.captcha);
       
       if (result.success === false) {
         toast.error(result.error.message);
