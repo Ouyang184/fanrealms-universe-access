@@ -4,121 +4,206 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, CheckCircle2, Sparkles, ChevronRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles, ChevronRight, Heart, Users, Star } from "lucide-react";
+import heroBackground from "@/assets/hero-bg-1.jpg";
+import heroBackground2 from "@/assets/hero-bg-2.jpg";
+import creatorBackground from "@/assets/creator-bg.jpg";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Navigation */}
-      <header className="border-b border-gray-800">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+      <header className="relative border-b border-gray-800/50 backdrop-blur-md bg-black/80 z-50 sticky top-0 transition-all duration-300">
+        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <Logo />
           <div className="flex items-center gap-4">
             <Link to="/login">
-              <Button variant="ghost" className="text-gray-300 hover:text-white">
+              <Button variant="ghost" className="text-gray-300 hover:text-white transition-all duration-200 hover:scale-105">
                 Log in
               </Button>
             </Link>
             <Link to="/signup">
-              <Button className="bg-purple-600 hover:bg-purple-700">Sign up</Button>
+              <Button className="bg-purple-600 hover:bg-purple-700 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25">
+                Sign up
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2 space-y-6">
-              <Badge className="bg-purple-900/50 text-purple-300 hover:bg-purple-900/70 px-3 py-1">
+      <section className="relative min-h-screen flex items-center px-6 overflow-hidden">
+        {/* Background Images */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black/50 to-blue-900/20"></div>
+          <img 
+            src={heroBackground} 
+            alt="" 
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+        </div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-1/4 left-10 w-20 h-20 bg-purple-500/10 rounded-full blur-xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl animate-pulse delay-700"></div>
+        
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8 animate-fade-in">
+              <Badge className="bg-purple-900/50 text-purple-300 hover:bg-purple-900/70 px-4 py-2 text-sm font-medium border border-purple-700/30 transition-all duration-200 hover:scale-105">
+                <Sparkles className="w-4 h-4 mr-2" />
                 The creator economy, reimagined
               </Badge>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Support creators. <br />
-                <span className="text-purple-400">Get exclusive content.</span>
-              </h1>
-              <p className="text-xl text-gray-300 max-w-lg">
-                FanRealms connects you directly with your favorite creators. Subscribe for exclusive content, community
-                access, and more.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-                    Get started
-                    <ArrowRight className="ml-2 h-5 w-5" />
+              
+              <div className="space-y-4">
+                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
+                  <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+                    Support creators.
+                  </span>
+                  <br />
+                  <span className="bg-gradient-to-r from-purple-400 via-purple-300 to-blue-400 bg-clip-text text-transparent">
+                    Get exclusive content.
+                  </span>
+                </h1>
+                
+                <p className="text-xl text-gray-300 max-w-xl leading-relaxed">
+                  Join the premier platform where creators thrive and fans connect. Subscribe for exclusive content, 
+                  behind-the-scenes access, and direct creator interaction.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                <Link to="/signup" className="group">
+                  <Button size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25">
+                    <Heart className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+                    Start supporting creators
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Link to="/explore">
-                  <Button size="lg" variant="outline" className="border-gray-700 hover:bg-gray-800 w-full sm:w-auto">
-                    Explore creators
+                <Link to="/explore" className="group">
+                  <Button size="lg" variant="outline" className="border-gray-600 hover:bg-gray-800/50 w-full sm:w-auto transition-all duration-300 hover:scale-105 backdrop-blur-sm">
+                    <Users className="mr-2 h-5 w-5" />
+                    Discover creators
                   </Button>
                 </Link>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                No credit card required to browse
+              
+              <div className="flex items-center gap-6 pt-4">
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  Free to browse and discover
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Star className="h-4 w-4 text-yellow-400" />
+                  Trusted by 10k+ creators
+                </div>
               </div>
             </div>
-            <div className="lg:w-1/2 relative">
-              <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl"></div>
-              <div className="relative bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
-                <img
-                  src="/lovable-uploads/cf5846ed-9cbb-42e6-a9a2-9e05259fb226.png"
-                  alt="FanRealms platform preview"
-                  className="w-full"
-                />
+            
+            <div className="relative lg:ml-8 animate-fade-in animation-delay-300">
+              {/* Floating cards like Patreon */}
+              <div className="relative">
+                {/* Main preview card */}
+                <div className="relative z-10 bg-gradient-to-br from-gray-900/90 to-gray-800/90 border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm transition-all duration-500 hover:scale-105 hover:rotate-1">
+                  <img
+                    src="/lovable-uploads/cf5846ed-9cbb-42e6-a9a2-9e05259fb226.png"
+                    alt="FanRealms platform preview"
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent"></div>
+                </div>
+                
+                {/* Floating success card */}
+                <div className="absolute -top-6 -right-6 z-20 bg-gradient-to-br from-green-500/90 to-emerald-600/90 backdrop-blur-sm text-white p-4 rounded-xl shadow-xl border border-green-400/30 transition-all duration-700 hover:scale-110 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-5 w-5" />
+                    <span className="font-semibold">$2,847</span>
+                  </div>
+                  <p className="text-xs opacity-90">Monthly earnings</p>
+                </div>
+                
+                {/* Floating supporter card */}
+                <div className="absolute -bottom-4 -left-6 z-20 bg-gradient-to-br from-purple-600/90 to-blue-600/90 backdrop-blur-sm text-white p-4 rounded-xl shadow-xl border border-purple-400/30 transition-all duration-700 hover:scale-110 animate-pulse delay-500">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    <span className="font-semibold">1.2k</span>
+                  </div>
+                  <p className="text-xs opacity-90">Active supporters</p>
+                </div>
+                
+                {/* Background glow */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-2xl opacity-50"></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 px-4 bg-gray-900">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">How FanRealms Works</h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              A simple process to connect with creators and access exclusive content
+      {/* Creator Spotlight Section */}
+      <section className="relative py-24 px-6 bg-gradient-to-b from-black via-gray-900/50 to-black">
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={creatorBackground} 
+            alt="" 
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-black"></div>
+        </div>
+        
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center mb-16 animate-fade-in">
+            <Badge className="bg-purple-900/30 text-purple-300 px-4 py-2 mb-6 border border-purple-700/30">
+              Success Stories
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+              Empowering Creators Worldwide
+            </h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              Join thousands of creators who have built thriving communities and sustainable income streams
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
             {[
               {
                 step: "01",
-                title: "Create an account",
-                description: "Sign up for free and set up your profile in just a few minutes.",
+                title: "Create Your Profile",
+                description: "Set up your creator profile with custom branding, tiers, and exclusive content offerings.",
+                icon: "👤",
               },
               {
-                step: "02",
-                title: "Discover creators",
-                description: "Browse categories or search for your favorite creators.",
+                step: "02", 
+                title: "Build Your Community",
+                description: "Connect with fans through posts, live streams, and exclusive behind-the-scenes content.",
+                icon: "🎨",
               },
               {
                 step: "03",
-                title: "Subscribe & enjoy",
-                description: "Choose a subscription tier and get instant access to exclusive content.",
+                title: "Earn & Grow",
+                description: "Receive monthly payments from supporters and scale your creative business.",
+                icon: "💰",
               },
             ].map((step, index) => (
-              <div key={index} className="relative">
-                <div className="absolute -left-4 -top-4 text-6xl font-bold text-purple-600/20">{step.step}</div>
-                <Card className="bg-gray-800 border-gray-700 h-full">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-                    <p className="text-gray-300">{step.description}</p>
+              <div key={index} className="group relative animate-fade-in" style={{animationDelay: `${index * 200}ms`}}>
+                <div className="absolute -left-4 -top-4 text-6xl font-bold text-purple-600/20 group-hover:text-purple-500/30 transition-colors duration-300">{step.step}</div>
+                <Card className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50 h-full backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10">
+                  <CardContent className="p-8">
+                    <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{step.icon}</div>
+                    <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-300 transition-colors">{step.title}</h3>
+                    <p className="text-gray-300 leading-relaxed">{step.description}</p>
                   </CardContent>
                 </Card>
               </div>
             ))}
           </div>
 
-          <div className="mt-12 text-center">
-            <Link to="/signup">
-              <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
-                Get started now
-                <ArrowRight className="ml-2 h-5 w-5" />
+          <div className="text-center">
+            <Link to="/signup" className="group">
+              <Button size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25">
+                <Sparkles className="mr-2 h-5 w-5 group-hover:animate-spin" />
+                Start Your Creator Journey
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           </div>
@@ -126,26 +211,67 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <Card className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border-gray-800">
-            <CardContent className="p-12 text-center">
-              <Sparkles className="h-12 w-12 mx-auto mb-6 text-purple-400" />
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to join FanRealms?</h2>
-              <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
-                Create your account today and discover a new way to connect with your favorite creators.
+      <section className="relative py-24 px-6 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-black to-blue-900/30"></div>
+          <img 
+            src={heroBackground2} 
+            alt="" 
+            className="w-full h-full object-cover opacity-10"
+          />
+        </div>
+        
+        {/* Animated background elements */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <Card className="bg-gradient-to-br from-gray-900/80 via-purple-900/20 to-gray-900/80 border border-purple-500/30 backdrop-blur-sm shadow-2xl">
+            <CardContent className="p-16 text-center">
+              <div className="mb-8 relative">
+                <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"></div>
+                <Sparkles className="h-16 w-16 mx-auto text-purple-400 relative z-10 animate-pulse" />
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+                Ready to Transform Your Creativity?
+              </h2>
+              
+              <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+                Join thousands of creators and supporters who have discovered a better way to connect, 
+                create, and earn. Your creative journey starts here.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/signup">
-                  <Button size="lg" className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
-                    Sign up for free
+              
+              <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                <Link to="/signup" className="group">
+                  <Button size="lg" className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-8 py-4 text-lg w-full sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/25">
+                    <Heart className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+                    Join FanRealms Free
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                <Link to="/explore">
-                  <Button size="lg" variant="outline" className="border-gray-400 hover:bg-white/10 w-full sm:w-auto">
-                    Explore creators
+                
+                <Link to="/explore" className="group">
+                  <Button size="lg" variant="outline" className="border-purple-400/50 text-purple-300 hover:bg-purple-500/10 px-8 py-4 text-lg w-full sm:w-auto transition-all duration-300 hover:scale-105 backdrop-blur-sm">
+                    <Users className="mr-2 h-5 w-5" />
+                    Browse Creators
                   </Button>
                 </Link>
+              </div>
+              
+              <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-6">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  Free forever plan
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  No setup fees
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  Cancel anytime
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -153,89 +279,90 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 pt-8 mt-12">
-        <div className="container mx-auto max-w-6xl px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold mb-4">FanRealms</h3>
-              <ul className="space-y-2">
+      <footer className="relative border-t border-gray-800/50 pt-16 mt-16 bg-gradient-to-b from-black to-gray-900">
+        <div className="container mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg text-white mb-4">FanRealms</h3>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/about" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/about" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link to="/payments" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/payments" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Payments
                   </Link>
                 </li>
                 <li>
-                  <Link to="/security" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/security" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Security
                   </Link>
                 </li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-bold mb-4">Support</h3>
-              <ul className="space-y-2">
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg text-white mb-4">Support</h3>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/help" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/help" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link to="/community-guidelines" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/community-guidelines" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Community Guidelines
                   </Link>
                 </li>
                 <li>
-                  <Link to="/contact" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/contact" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Contact Us
                   </Link>
                 </li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-bold mb-4">Legal</h3>
-              <ul className="space-y-2">
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg text-white mb-4">Legal</h3>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/terms" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/terms" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/cookie-policy" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/cookie-policy" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link to="/copyright-policy" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/copyright-policy" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Copyright Policy
                   </Link>
                 </li>
               </ul>
             </div>
-            <div>
-              <h3 className="font-bold mb-4">Creators</h3>
-              <ul className="space-y-2">
+            <div className="space-y-4">
+              <h3 className="font-bold text-lg text-white mb-4">Creators</h3>
+              <ul className="space-y-3">
                 <li>
-                  <Link to="/creator-guidelines" className="text-sm text-gray-400 hover:text-white">
+                  <Link to="/creator-guidelines" className="text-sm text-gray-400 hover:text-purple-300 transition-colors duration-200">
                     Creator Guidelines
                   </Link>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-6 pb-8 flex flex-col md:flex-row justify-between items-center">
+          
+          <div className="border-t border-gray-800/50 pt-8 pb-12 flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400">© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
-            <div className="flex gap-4 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white">
+            <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-purple-300 transition-all duration-200 hover:scale-110">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"
@@ -244,12 +371,12 @@ export default function LandingPage() {
                   />
                 </svg>
               </a>
-              <a href="#" className="text-gray-400 hover:text-white">
+              <a href="#" className="text-gray-400 hover:text-purple-300 transition-all duration-200 hover:scale-110">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
                 </svg>
               </a>
-              <a href="#" className="text-gray-400 hover:text-white">
+              <a href="#" className="text-gray-400 hover:text-purple-300 transition-all duration-200 hover:scale-110">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     fillRule="evenodd"
