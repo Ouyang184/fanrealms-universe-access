@@ -15,6 +15,7 @@ import HomePage from "./pages/Home";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import SubscriptionsPage from "./pages/Subscriptions";
 import RootLayout from "@/components/RootLayout";
+import AuthGuard from "@/components/AuthGuard";
 import FeedPage from "./pages/Feed";
 import FollowingPage from "./pages/Following";
 import Notifications from "./pages/creator-studio/Notifications";
@@ -83,14 +84,14 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/index" element={<Index />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/following" element={<FollowingPage />} />
-                <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
-                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
-                <Route path="/explore/:category" element={<ExploreCategoryPage />} />
-                <Route path="/commissions" element={<AllCommissionsPage />} />
+                <Route path="/home" element={<AuthGuard><HomePage /></AuthGuard>} />
+                <Route path="/feed" element={<AuthGuard><FeedPage /></AuthGuard>} />
+                <Route path="/following" element={<AuthGuard><FollowingPage /></AuthGuard>} />
+                <Route path="/explore" element={<AuthGuard><ExplorePage /></AuthGuard>} />
+                <Route path="/explore/all" element={<AuthGuard><AllCreatorsExplorePage /></AuthGuard>} />
+                <Route path="/explore/featured" element={<AuthGuard><AllFeaturedCreatorsPage /></AuthGuard>} />
+                <Route path="/explore/:category" element={<AuthGuard><ExploreCategoryPage /></AuthGuard>} />
+                <Route path="/commissions" element={<AuthGuard><AllCommissionsPage /></AuthGuard>} />
                 
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
@@ -116,7 +117,7 @@ export default function App() {
                 <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
                 
                 {/* Payment route */}
-                <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/payment" element={<AuthGuard><PaymentPage /></AuthGuard>} />
                 
                 {/* Direct post route - must come before creator profile route */}
                 <Route path="/post/:postId" element={<ShareablePost />} />
@@ -129,87 +130,107 @@ export default function App() {
                 
                 {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-                <Route path="/subscriptions" element={<SubscriptionsPage />} />
-                <Route path="/requests" element={<MainLayout><Requests /></MainLayout>} />
-                <Route path="/messages" element={<MainLayout><Messages /></MainLayout>} />
-                <Route path="/settings" element={<MainLayout><AccountSettings /></MainLayout>} />
-                <Route path="/membership-tiers" element={<MainLayout><MembershipTiersPage /></MainLayout>} />
+                <Route path="/subscriptions" element={<AuthGuard><SubscriptionsPage /></AuthGuard>} />
+                <Route path="/requests" element={<AuthGuard><MainLayout><Requests /></MainLayout></AuthGuard>} />
+                <Route path="/messages" element={<AuthGuard><MainLayout><Messages /></MainLayout></AuthGuard>} />
+                <Route path="/settings" element={<AuthGuard><MainLayout><AccountSettings /></MainLayout></AuthGuard>} />
+                <Route path="/membership-tiers" element={<AuthGuard><MainLayout><MembershipTiersPage /></MainLayout></AuthGuard>} />
                 
                 {/* Creator studio routes - All wrapped with CreatorCheck and MainLayout */}
                 <Route path="/creator-studio/dashboard" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <Dashboard />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <Dashboard />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/posts" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorPostsPage />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorPostsPage />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/notifications" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <Notifications />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <Notifications />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/membership-tiers" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorStudioTiers />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorStudioTiers />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/subscribers" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorStudioSubscribers />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorStudioSubscribers />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/payouts" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorStudioPayouts />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorStudioPayouts />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/commissions" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <Commissions />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <Commissions />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/settings" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorStudioSettings />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorStudioSettings />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/profile" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorProfile />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorProfile />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 <Route path="/creator-studio/creator-profile" element={
-                  <MainLayout>
-                    <CreatorCheck>
-                      <CreatorProfile />
-                    </CreatorCheck>
-                  </MainLayout>
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorProfile />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
                 } />
                 
                 {/* Commission payment routes - add before creator profile route */}
-                <Route path="/commissions/:requestId/pay" element={<CommissionPayment />} />
-                <Route path="/commissions/:requestId/payment-success" element={<CommissionPaymentSuccess />} />
+                <Route path="/commissions/:requestId/pay" element={<AuthGuard><CommissionPayment /></AuthGuard>} />
+                <Route path="/commissions/:requestId/payment-success" element={<AuthGuard><CommissionPaymentSuccess /></AuthGuard>} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
               </Routes>
