@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Turnstile } from '@marsidev/react-turnstile';
+import { TURNSTILE_SITE_KEY } from '@/config/turnstile';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -139,7 +140,7 @@ const LoginForm = () => {
               <FormLabel>Security Check</FormLabel>
               <FormControl>
                 <Turnstile
-                  siteKey="fanrealms_widget_site_key"
+                  siteKey={TURNSTILE_SITE_KEY}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
                     field.onChange(token);

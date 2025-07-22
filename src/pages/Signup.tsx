@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
 import { Turnstile } from '@marsidev/react-turnstile';
+import { TURNSTILE_SITE_KEY } from '@/config/turnstile';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -307,7 +308,7 @@ const Signup = () => {
                       <Label>Security Check</Label>
                       <FormControl>
                         <Turnstile
-                          siteKey="fanrealms_widget_site_key"
+                          siteKey={TURNSTILE_SITE_KEY}
                           onSuccess={(token) => {
                             setCaptchaToken(token);
                             field.onChange(token);
