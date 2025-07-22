@@ -114,23 +114,6 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent"></div>
                 </div>
                 
-                {/* Floating success card */}
-                <div className="absolute -top-6 -right-6 z-20 bg-gradient-to-br from-green-500/90 to-emerald-600/90 backdrop-blur-sm text-white p-4 rounded-xl shadow-xl border border-green-400/30 transition-all duration-700 hover:scale-110 animate-pulse">
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-5 w-5" />
-                    <span className="font-semibold">$2,847</span>
-                  </div>
-                  <p className="text-xs opacity-90">Monthly earnings</p>
-                </div>
-                
-                {/* Floating supporter card */}
-                <div className="absolute -bottom-4 -left-6 z-20 bg-gradient-to-br from-purple-600/90 to-blue-600/90 backdrop-blur-sm text-white p-4 rounded-xl shadow-xl border border-purple-400/30 transition-all duration-700 hover:scale-110 animate-pulse delay-500">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    <span className="font-semibold">1.2k</span>
-                  </div>
-                  <p className="text-xs opacity-90">Active supporters</p>
-                </div>
                 
                 {/* Background glow */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-purple-500/20 via-blue-500/20 to-purple-500/20 rounded-3xl blur-2xl opacity-50"></div>
