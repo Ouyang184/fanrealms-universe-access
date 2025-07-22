@@ -14,16 +14,18 @@ export default function LandingPage() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Navigation */}
       <header className="absolute top-0 left-0 right-0 z-50 transition-all duration-300">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <Logo />
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center w-full">
+          <div className="flex-shrink-0">
+            <Logo />
+          </div>
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link to="/login">
-              <Button variant="ghost" className="text-gray-300 hover:text-white transition-all duration-200 hover:scale-105">
+              <Button variant="ghost" className="text-gray-300 hover:text-white transition-all duration-200 hover:scale-105 px-3 sm:px-4">
                 Log in
               </Button>
             </Link>
             <Link to="/signup">
-              <Button className="bg-purple-600 hover:bg-purple-700 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25">
+              <Button className="bg-purple-600 hover:bg-purple-700 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25 px-4 sm:px-6">
                 Sign up
               </Button>
             </Link>
