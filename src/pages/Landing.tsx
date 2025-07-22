@@ -98,7 +98,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
                   <Star className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-                  Trusted by 10k+ creators
+                  Growing creator community
                 </div>
               </div>
             </div>
