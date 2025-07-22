@@ -34,7 +34,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center px-6 overflow-hidden pt-20">
+      <section className="relative min-h-screen flex items-center px-4 sm:px-6 overflow-hidden pt-20">
         {/* Background Images */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black/50 to-blue-900/20"></div>
@@ -51,15 +51,15 @@ export default function LandingPage() {
         <div className="absolute bottom-1/4 right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl animate-pulse delay-700"></div>
         
         <div className="container mx-auto max-w-7xl relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8 animate-fade-in">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <div className="space-y-6 sm:space-y-8 animate-fade-in">
               <Badge className="bg-purple-900/50 text-purple-300 hover:bg-purple-900/70 px-4 py-2 text-sm font-medium border border-purple-700/30 transition-all duration-200 hover:scale-105">
                 <Sparkles className="w-4 h-4 mr-2" />
                 The creator economy, reimagined
               </Badge>
               
               <div className="space-y-4">
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
                   <span className="bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
                     Support creators.
                   </span>
@@ -69,7 +69,7 @@ export default function LandingPage() {
                   </span>
                 </h1>
                 
-                <p className="text-xl text-gray-300 max-w-xl leading-relaxed">
+                <p className="text-lg sm:text-xl text-gray-300 max-w-xl leading-relaxed">
                   Join the premier platform where creators thrive and fans connect. Subscribe for exclusive content, 
                   behind-the-scenes access, and direct creator interaction.
                 </p>
@@ -91,13 +91,13 @@ export default function LandingPage() {
                 </Link>
               </div>
               
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 pt-4">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                   Free to browse and discover
                 </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Star className="h-4 w-4 text-yellow-400" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400">
+                  <Star className="h-4 w-4 text-yellow-400 flex-shrink-0" />
                   Trusted by 10k+ creators
                 </div>
               </div>
@@ -126,7 +126,7 @@ export default function LandingPage() {
       </section>
 
       {/* Creator Spotlight Section */}
-      <section className="relative py-24 px-6 bg-gradient-to-b from-black via-gray-900/50 to-black">
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-black via-gray-900/50 to-black">
         <div className="absolute inset-0 z-0">
           <img 
             src={creatorBackground} 
@@ -137,19 +137,19 @@ export default function LandingPage() {
         </div>
         
         <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="text-center mb-16 animate-fade-in">
-            <Badge className="bg-purple-900/30 text-purple-300 px-4 py-2 mb-6 border border-purple-700/30">
+          <div className="text-center mb-12 sm:mb-16 animate-fade-in">
+            <Badge className="bg-purple-900/30 text-purple-300 px-3 py-2 mb-4 sm:mb-6 border border-purple-700/30 text-xs sm:text-sm">
               Success Stories
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent leading-tight">
               Empowering Creators Worldwide
             </h2>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed px-4">
               Join thousands of creators who have built thriving communities and sustainable income streams
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
             {[
               {
                 step: "01",
@@ -173,7 +173,7 @@ export default function LandingPage() {
               <div key={index} className="group relative animate-fade-in" style={{animationDelay: `${index * 200}ms`}}>
                 <div className="absolute -left-4 -top-4 text-6xl font-bold text-purple-600/20 group-hover:text-purple-500/30 transition-colors duration-300">{step.step}</div>
                 <Card className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-gray-700/50 h-full backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10">
-                  <CardContent className="p-8">
+                  <CardContent className="p-6 sm:p-8">
                     <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">{step.icon}</div>
                     <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-300 transition-colors">{step.title}</h3>
                     <p className="text-gray-300 leading-relaxed">{step.description}</p>
@@ -196,7 +196,7 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 px-6 overflow-hidden">
+      <section className="relative py-16 sm:py-24 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 via-black to-blue-900/30"></div>
           <img 
@@ -212,7 +212,7 @@ export default function LandingPage() {
         
         <div className="container mx-auto max-w-5xl relative z-10">
           <Card className="bg-gradient-to-br from-gray-900/80 via-purple-900/20 to-gray-900/80 border border-purple-500/30 backdrop-blur-sm shadow-2xl">
-            <CardContent className="p-16 text-center">
+            <CardContent className="p-8 sm:p-12 lg:p-16 text-center">
               <div className="mb-8 relative">
                 <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"></div>
                 <Sparkles className="h-16 w-16 mx-auto text-purple-400 relative z-10 animate-pulse" />
@@ -244,17 +244,17 @@ export default function LandingPage() {
                 </Link>
               </div>
               
-              <div className="mt-8 text-sm text-gray-400 flex items-center justify-center gap-6">
+              <div className="mt-6 sm:mt-8 text-xs sm:text-sm text-gray-400 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                   Free forever plan
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                   No setup fees
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                   Cancel anytime
                 </div>
               </div>
@@ -264,9 +264,9 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-gray-800/50 pt-16 mt-16 bg-gradient-to-b from-black to-gray-900">
-        <div className="container mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="relative border-t border-gray-800/50 pt-12 sm:pt-16 mt-12 sm:mt-16 bg-gradient-to-b from-black to-gray-900">
+        <div className="container mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12">
             <div className="space-y-4">
               <h3 className="font-bold text-lg text-white mb-4">FanRealms</h3>
               <ul className="space-y-3">
