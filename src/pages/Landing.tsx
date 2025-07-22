@@ -32,7 +32,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center px-6 overflow-hidden">
+      <section className="relative min-h-screen flex items-center px-6 overflow-hidden pt-20">
         {/* Background Images */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black/50 to-blue-900/20"></div>
