@@ -218,11 +218,11 @@ export default function LandingPage() {
                 <Sparkles className="h-16 w-16 mx-auto text-purple-400 relative z-10 animate-pulse" />
               </div>
               
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent leading-tight">
                 Ready to Transform Your Creativity?
               </h2>
               
-              <p className="text-xl text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+              <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto mb-8 sm:mb-10 leading-relaxed px-4">
                 Join thousands of creators and supporters who have discovered a better way to connect, 
                 create, and earn. Your creative journey starts here.
               </p>
