@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
+import { Turnstile } from '@marsidev/react-turnstile';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,8 @@ const signupSchema = z
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
     agreeToTerms: z.boolean().refine(val => val === true, {
       message: "You must agree to the Terms of Service to continue"
-    })
+    }),
+    captcha: z.string().min(1, "Please complete the captcha"),
   });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -42,6 +44,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string>("");
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -52,6 +55,7 @@ const Signup = () => {
       email: "",
       password: "",
       agreeToTerms: false,
+      captcha: "",
     },
   });
 
@@ -295,6 +299,34 @@ const Signup = () => {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="captcha"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Security Check</Label>
+                      <FormControl>
+                        <Turnstile
+                          siteKey="fanrealms_widget_site_key"
+                          onSuccess={(token) => {
+                            setCaptchaToken(token);
+                            field.onChange(token);
+                          }}
+                          onError={() => {
+                            setCaptchaToken("");
+                            field.onChange("");
+                          }}
+                          onExpire={() => {
+                            setCaptchaToken("");
+                            field.onChange("");
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Alert className="bg-purple-900/20 border-purple-800 text-purple-200">
                   <AlertDescription className="text-xs">
                     By signing up, you'll receive updates about your account, new features, and creator content you
@@ -305,7 +337,7 @@ const Signup = () => {
                 <Button
                   type="submit"
                   className="w-full bg-purple-600 hover:bg-purple-700"
-                  disabled={isSubmitting || passwordStrength < 3}
+                  disabled={isSubmitting || passwordStrength < 3 || !captchaToken}
                 >
                   {isSubmitting ? (
                     <div className="flex items-center">

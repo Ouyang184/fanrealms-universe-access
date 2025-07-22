@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Turnstile } from '@marsidev/react-turnstile';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
+  captcha: z.string().min(1, "Please complete the captcha"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -33,6 +35,7 @@ const LoginForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,6 +44,7 @@ const LoginForm = () => {
     defaultValues: {
       email: "",
       password: "",
+      captcha: "",
     },
   });
 
@@ -126,10 +130,39 @@ const LoginForm = () => {
             </FormItem>
           )}
         />
+        
+        <FormField
+          control={form.control}
+          name="captcha"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Security Check</FormLabel>
+              <FormControl>
+                <Turnstile
+                  siteKey="fanrealms_widget_site_key"
+                  onSuccess={(token) => {
+                    setCaptchaToken(token);
+                    field.onChange(token);
+                  }}
+                  onError={() => {
+                    setCaptchaToken("");
+                    field.onChange("");
+                  }}
+                  onExpire={() => {
+                    setCaptchaToken("");
+                    field.onChange("");
+                  }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isSubmitting}
+          disabled={isSubmitting || !captchaToken}
         >
           {isSubmitting ? <LoadingSpinner className="mr-2" /> : null}
           Sign In

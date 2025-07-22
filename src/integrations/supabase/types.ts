@@ -921,6 +921,7 @@ export type Database = {
           is_nsfw: boolean
           scheduled_for: string | null
           status: string | null
+          tags: string[] | null
           tier_id: string | null
           title: string
           updated_at: string | null
@@ -935,6 +936,7 @@ export type Database = {
           is_nsfw?: boolean
           scheduled_for?: string | null
           status?: string | null
+          tags?: string[] | null
           tier_id?: string | null
           title: string
           updated_at?: string | null
@@ -949,6 +951,7 @@ export type Database = {
           is_nsfw?: boolean
           scheduled_for?: string | null
           status?: string | null
+          tags?: string[] | null
           tier_id?: string | null
           title?: string
           updated_at?: string | null
