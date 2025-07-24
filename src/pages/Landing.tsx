@@ -138,9 +138,6 @@ export default function LandingPage() {
         
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center mb-12 sm:mb-16 animate-fade-in">
-            <Badge className="bg-purple-900/30 text-purple-300 px-3 py-2 mb-4 sm:mb-6 border border-purple-700/30 text-xs sm:text-sm">
-              Success Stories
-            </Badge>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent leading-tight">
               Empowering Creators Worldwide
             </h2>
