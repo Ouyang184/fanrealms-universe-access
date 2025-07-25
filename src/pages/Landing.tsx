@@ -339,7 +339,10 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800/50 pt-8 pb-12 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-gray-400">© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
+            <div className="text-center md:text-left">
+              <p className="text-sm text-gray-400">© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
+              <p className="text-sm text-gray-400 mt-1">© 2025 FanRealms LLC — Located in Arkansas, USA</p>
+            </div>
             <div className="flex gap-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-purple-300 transition-all duration-200 hover:scale-110">
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
