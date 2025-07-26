@@ -308,9 +308,7 @@ export default function Terms() {
         {/* Company Information */}
         <div className="mt-12 pt-8 border-t border-border text-center">
           <p className="text-sm text-muted-foreground">
-            FanRealms LLC<br />
-            7509 Palm Beach Avenue<br />
-            Benton, AR 72019-2009
+            FanRealms LLC, 7509 Palm Beach Avenue, Benton, AR 72019-2009
           </p>
         </div>
       </div>
