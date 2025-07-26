@@ -56,7 +56,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-4 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-white/60">© 2025 FanRealms. All rights reserved.</p>
+            <p className="text-sm text-white/60">© 2025 FanRealms LLC — Located in Arkansas, USA</p>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-white/60">
                 <CreditCard className="w-6 h-6" />
