@@ -205,6 +205,7 @@ export type Database = {
           name: string
           price_per_revision: number | null
           sample_art_url: string | null
+          tags: string[] | null
           updated_at: string
         }
         Insert: {
@@ -222,6 +223,7 @@ export type Database = {
           name: string
           price_per_revision?: number | null
           sample_art_url?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -239,6 +241,7 @@ export type Database = {
           name?: string
           price_per_revision?: number | null
           sample_art_url?: string | null
+          tags?: string[] | null
           updated_at?: string
         }
         Relationships: [
@@ -1001,6 +1004,42 @@ export type Database = {
           stripe_customer_id?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          flagged_reason: string | null
+          id: string
+          is_flagged: boolean | null
+          is_moderated: boolean | null
+          name: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          flagged_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_moderated?: boolean | null
+          name: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          flagged_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_moderated?: boolean | null
+          name?: string
+          updated_at?: string | null
+          usage_count?: number | null
         }
         Relationships: []
       }
