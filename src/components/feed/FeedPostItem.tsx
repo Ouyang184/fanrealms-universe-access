@@ -42,6 +42,7 @@ export function FeedPostItem({
         date={post.date}
         tier_id={post.tier_id}
         attachments={post.attachments}
+        tags={post.tags}
         authorId={post.authorId}
         is_nsfw={post.is_nsfw}
       />

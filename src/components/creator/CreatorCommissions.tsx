@@ -75,7 +75,13 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           // Transform the data to match our TypeScript interface
           const transformedTypes = (types || []).map(type => ({
             ...type,
-            custom_addons: Array.isArray(type.custom_addons) ? type.custom_addons : []
+            custom_addons: Array.isArray(type.custom_addons) 
+              ? type.custom_addons.map((addon: any) => ({
+                  name: addon?.name || '',
+                  price: addon?.price || 0
+                }))
+              : [],
+            tags: Array.isArray(type.tags) ? type.tags : []
           })) as CommissionType[];
           setCommissionTypes(transformedTypes);
         }

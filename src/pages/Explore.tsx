@@ -6,6 +6,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
+import { TagFilter } from "@/components/tags/TagFilter";
 import { Post } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,9 +40,10 @@ const categoryTagMapping = {
 
 export default function ExplorePage() {
   // Get search parameters to check if we're filtering by category
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const categoryFilter = searchParams.get("category");
   const tabParam = searchParams.get("tab");
+  const tagParam = searchParams.get("tag");
   
   // Get NSFW preferences to ensure content filtering
   const { data: nsfwPrefs } = useNSFWPreferences();
@@ -91,12 +93,13 @@ export default function ExplorePage() {
       : "Explore | Creator Platform";
   }, [categoryFilter]);
   
-  // State for filtered content based on category
+  // State for filtered content based on category and tags
   const [filteredCreators, setFilteredCreators] = useState([]);
   const [filteredTrending, setFilteredTrending] = useState([]);
   const [filteredNewReleases, setFilteredNewReleases] = useState([]);
   const [filteredRecommended, setFilteredRecommended] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
   console.log('Explore: Posts count after NSFW filtering:', posts.length);
@@ -116,7 +119,14 @@ export default function ExplorePage() {
     );
   };
 
-  // Filter content when category or search changes
+  // Initialize selected tags from URL
+  useEffect(() => {
+    if (tagParam) {
+      setSelectedTags([tagParam]);
+    }
+  }, [tagParam]);
+
+  // Filter content when category, search, or tags change
   useEffect(() => {
     if (!popularCreators.length && !posts.length) return;
     
@@ -136,6 +146,25 @@ export default function ExplorePage() {
       );
     }
     
+    // Filter by tags if present
+    if (selectedTags.length > 0) {
+      creatorFilter = creatorFilter.filter(creator => 
+        creator.tags && selectedTags.some(tag => 
+          creator.tags.some(creatorTag => 
+            creatorTag.toLowerCase().includes(tag.toLowerCase())
+          )
+        )
+      );
+      
+      postsFilter = postsFilter.filter(post => 
+        post.tags && selectedTags.some(tag => 
+          post.tags.some(postTag => 
+            postTag.toLowerCase().includes(tag.toLowerCase())
+          )
+        )
+      );
+    }
+    
     // Filter by search query if present
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -147,7 +176,8 @@ export default function ExplorePage() {
       
       postsFilter = postsFilter.filter(post => 
         (post.title || "").toLowerCase().includes(query) ||
-        (post.content || "").toLowerCase().includes(query)
+        (post.content || "").toLowerCase().includes(query) ||
+        (post.tags && post.tags.some(tag => tag.toLowerCase().includes(query)))
       );
     }
     
@@ -160,7 +190,7 @@ export default function ExplorePage() {
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
     
-  }, [categoryFilter, searchQuery, popularCreators, posts, nsfwPrefs?.isNSFWEnabled]);
+  }, [categoryFilter, searchQuery, selectedTags, popularCreators, posts, nsfwPrefs?.isNSFWEnabled]);
   
   // Handle post click
   const handlePostClick = (post: Post) => {
@@ -190,6 +220,14 @@ export default function ExplorePage() {
 
         {/* Categories Section */}
         <ExploreCategories />
+
+        {/* Tag Filter */}
+        <div className="mb-8">
+          <TagFilter 
+            selectedTags={selectedTags} 
+            onTagsChange={setSelectedTags}
+          />
+        </div>
 
         {/* Featured Creators - Display all creators when no category filter or "all" is selected */}
         <FeaturedCreators 

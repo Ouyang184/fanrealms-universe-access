@@ -25,6 +25,7 @@ export function CreatePostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const { toast } = useToast();
@@ -52,6 +53,7 @@ export function CreatePostForm() {
       title,
       content,
       videoUrl,
+      tags,
       selectedTierIds,
       attachments
     });
@@ -61,6 +63,7 @@ export function CreatePostForm() {
       setTitle("");
       setContent("");
       setVideoUrl("");
+      setTags([]);
       setSelectedTierIds(null);
       setAttachments([]);
       setIsOpen(false);
@@ -91,6 +94,8 @@ export function CreatePostForm() {
             setTitle={setTitle}
             content={content}
             setContent={setContent}
+            tags={tags}
+            setTags={setTags}
             disabled={isLoading}
           />
 

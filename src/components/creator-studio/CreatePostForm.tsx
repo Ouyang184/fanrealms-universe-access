@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { TagInput } from "@/components/tags/TagInput";
 import { Switch } from "@/components/ui/switch";
 import { Loader, Globe, Lock, Video, AlertTriangle, Calendar } from "lucide-react";
 import { TierSelect } from "@/components/dashboard/TierSelect";
@@ -27,6 +28,7 @@ export function CreatePostForm() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [selectedTierIds, setSelectedTierIds] = useState<string[] | null>(null);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
   const [isScheduleCalendarOpen, setIsScheduleCalendarOpen] = useState(false);
@@ -176,7 +178,8 @@ export function CreatePostForm() {
         attachments: uploadedAttachments,
         is_nsfw: isNSFW,
         scheduled_for: scheduledFor,
-        status: postStatus
+        status: postStatus,
+        tags: tags
       };
 
       console.log('[Creator Studio] Creating post with data:', postData);
@@ -219,6 +222,7 @@ export function CreatePostForm() {
       setTitle("");
       setContent("");
       setVideoUrl("");
+      setTags([]);
       setSelectedTierIds(null);
       setAttachments([]);
       
@@ -321,6 +325,15 @@ export function CreatePostForm() {
                 Supported platforms: YouTube, Vimeo, Dailymotion, Twitch
               </p>
             </div>
+
+            <TagInput
+              tags={tags}
+              onTagsChange={setTags}
+              maxTags={10}
+              disabled={isLoading}
+              label="Tags"
+              placeholder="Add tags to help people discover your content..."
+            />
             
             <FileAttachment
               attachments={attachments}

@@ -65,6 +65,7 @@ export function useCreatePost() {
     title: string;
     content: string;
     videoUrl: string;
+    tags: string[];
     selectedTierIds: string[] | null;
     attachments: AttachmentFile[];
   }) => {
@@ -109,6 +110,7 @@ export function useCreatePost() {
         creator_id: creatorProfile?.id || null,
         tier_id: formData.selectedTierIds && formData.selectedTierIds.length === 1 ? formData.selectedTierIds[0] : null,
         attachments: uploadedAttachments,
+        tags: formData.tags,
         is_nsfw: isNSFW
       };
 

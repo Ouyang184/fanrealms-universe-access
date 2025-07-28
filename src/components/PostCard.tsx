@@ -7,6 +7,7 @@ import { PostInteractions } from './post/PostInteractions';
 import { PostCardHeader } from './post/PostCardHeader';
 import { PostCardMedia } from './post/PostCardMedia';
 import { PostCardContent } from './post/PostCardContent';
+import { TagDisplay } from './tags/TagDisplay';
 import { useSimpleSubscriptionCheck } from '@/hooks/useSimpleSubscriptionCheck';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNSFWPreferences } from '@/hooks/useNSFWPreferences';
@@ -28,6 +29,7 @@ interface PostCardProps {
   date: string;
   tier_id?: string | null;
   attachments?: any;
+  tags?: string[];
   users?: {
     username?: string;
     profile_picture?: string;
@@ -46,6 +48,7 @@ const PostCard: React.FC<PostCardProps> = ({
   date,
   tier_id,
   attachments,
+  tags,
   users,
   authorId,
   is_nsfw = false
@@ -195,6 +198,16 @@ const PostCard: React.FC<PostCardProps> = ({
       <CardContent className="pt-0 space-y-4">
         <div className="space-y-3">
           <PostCardContent title={displayContent.title} content={displayContent.content} />
+          
+          {/* Display tags if available */}
+          {tags && tags.length > 0 && (
+            <TagDisplay 
+              tags={tags} 
+              maxTags={5} 
+              size="sm" 
+              className="mb-3" 
+            />
+          )}
           
           {/* Show gradient banner only if no media content */}
           {!postHasMedia && (
