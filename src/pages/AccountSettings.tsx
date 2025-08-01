@@ -19,6 +19,7 @@ import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
+import { Link } from "react-router-dom";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -576,25 +577,96 @@ export default function AccountSettings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Profile Visibility</Label>
+                  {/* Cookie Preferences Section */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium">Cookie Preferences</h4>
                       <p className="text-sm text-muted-foreground">
-                        Make your profile visible to others
+                        Manage your cookie and tracking preferences
                       </p>
                     </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Activity Status</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Show when you're active on the platform
+                    
+                    <div className="space-y-4 pl-4 border-l-2 border-muted">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Essential Cookies</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Required for login, security, and basic functions (always active)
+                          </p>
+                        </div>
+                        <Switch checked disabled />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Functional Cookies</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Remember your preferences like theme and content settings
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={localStorage.getItem('cookie-consent') === 'accepted'}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              localStorage.setItem('cookie-consent', 'accepted');
+                              toast({
+                                title: "Cookie preferences updated",
+                                description: "Functional cookies are now enabled."
+                              });
+                            } else {
+                              localStorage.setItem('cookie-consent', 'denied');
+                              toast({
+                                title: "Cookie preferences updated", 
+                                description: "Non-essential cookies are now disabled."
+                              });
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground bg-muted/30 p-3 rounded-lg">
+                      <p className="mb-2">
+                        <strong>Note:</strong> We don't use advertising or tracking cookies.
+                      </p>
+                      <p>
+                        You can also manage cookies through your browser settings. 
+                        View our <Link to="/cookie-policy" className="text-primary hover:underline">Cookie Policy</Link> for more details.
                       </p>
                     </div>
-                    <Switch defaultChecked />
                   </div>
-                  <div className="pt-4">
+
+                  <div className="border-t pt-6 space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium">Privacy Settings</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Control your profile visibility and activity
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Profile Visibility</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Make your profile visible to others
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label>Activity Status</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Show when you're active on the platform
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
                     <Button variant="destructive">Delete Account</Button>
                   </div>
                 </CardContent>
