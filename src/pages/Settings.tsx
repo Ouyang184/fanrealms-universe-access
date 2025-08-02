@@ -61,40 +61,40 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 h-auto gap-1 p-1 bg-muted/50">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto gap-1 p-1 bg-muted/50">
                 <TabsTrigger 
                   value="profile" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Profile
                 </TabsTrigger>
                 <TabsTrigger 
                   value="account" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Account
                 </TabsTrigger>
                 <TabsTrigger 
                   value="security" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Security
                 </TabsTrigger>
                 <TabsTrigger 
                   value="notifications" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Notifications
                 </TabsTrigger>
                 <TabsTrigger 
                   value="privacy" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Privacy
                 </TabsTrigger>
                 <TabsTrigger 
                   value="content" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                  className="text-xs sm:text-sm px-2 py-2"
                 >
                   Content
                 </TabsTrigger>
