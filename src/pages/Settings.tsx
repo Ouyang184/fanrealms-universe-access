@@ -60,19 +60,19 @@ export default function Settings() {
               <p className="text-muted-foreground">Manage your account preferences</p>
             </div>
             
-            <Tabs defaultValue="profile" className="w-full">
+            <Tabs defaultValue="account" className="w-full">
               <TabsList className="inline-flex h-auto w-full justify-start rounded-lg bg-muted p-1 text-muted-foreground overflow-x-auto">
-                <TabsTrigger 
-                  value="profile" 
-                  className="text-xs sm:text-sm px-2 py-2"
-                >
-                  Profile
-                </TabsTrigger>
                 <TabsTrigger 
                   value="account" 
                   className="text-xs sm:text-sm px-2 py-2"
                 >
                   Account
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="profile" 
+                  className="text-xs sm:text-sm px-2 py-2"
+                >
+                  Profile
                 </TabsTrigger>
                 <TabsTrigger 
                   value="security" 
@@ -90,7 +90,7 @@ export default function Settings() {
                   value="content" 
                   className="text-xs sm:text-sm px-2 py-2"
                 >
-                  Content
+                  Content Preferences
                 </TabsTrigger>
               </TabsList>
               <div className="mt-6 space-y-6">
