@@ -58,6 +58,7 @@ import ResetPassword from "./pages/ResetPassword";
 import CommissionPayment from "./pages/CommissionPayment";
 import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
 import Requests from "./pages/Requests";
+import Settings2FA from "./pages/Settings2FA";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -134,6 +135,7 @@ export default function App() {
                 <Route path="/requests" element={<AuthGuard><MainLayout><Requests /></MainLayout></AuthGuard>} />
                 <Route path="/messages" element={<AuthGuard><MainLayout><Messages /></MainLayout></AuthGuard>} />
                 <Route path="/settings" element={<AuthGuard><MainLayout><AccountSettings /></MainLayout></AuthGuard>} />
+                <Route path="/settings/2fa" element={<AuthGuard><Settings2FA /></AuthGuard>} />
                 <Route path="/membership-tiers" element={<AuthGuard><MainLayout><MembershipTiersPage /></MainLayout></AuthGuard>} />
                 
                 {/* Creator studio routes - All wrapped with CreatorCheck and MainLayout */}

@@ -14,6 +14,7 @@ import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
+import { SecurityTab } from "@/components/settings/SecurityTab";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
@@ -60,7 +61,7 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 grid-rows-3 md:grid-rows-1 h-auto gap-1 p-1">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 grid-rows-3 md:grid-rows-1 h-auto gap-1 p-1">
                 <TabsTrigger 
                   value="profile" 
                   className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
@@ -78,6 +79,12 @@ export default function Settings() {
                   className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Notifications
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="security" 
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                >
+                  Security
                 </TabsTrigger>
                 <TabsTrigger 
                   value="privacy" 
@@ -127,6 +134,10 @@ export default function Settings() {
                 
                 <TabsContent value="notifications" className="m-0">
                   <NotificationsTab />
+                </TabsContent>
+                
+                <TabsContent value="security" className="m-0">
+                  <SecurityTab />
                 </TabsContent>
                 
                 <TabsContent value="content" className="m-0">

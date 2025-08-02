@@ -18,6 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthResult } from "@/lib/types/auth";
+import { MFAChallenge } from "@/components/auth/MFAChallenge";
+import { useMFA } from "@/hooks/useMFA";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -35,6 +37,10 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string>("");
+  const [showMFAChallenge, setShowMFAChallenge] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string>("");
+  const [mfaChallengeId, setMfaChallengeId] = useState<string>("");
+  const { createChallenge } = useMFA();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -56,6 +62,20 @@ const LoginForm = () => {
       const result: AuthResult = await signIn(values.email, values.password, values.captcha);
       
       if (result.success === false) {
+        if (result.mfaRequired && result.factors?.length) {
+          console.log("LoginForm: MFA challenge required");
+          const factor = result.factors[0]; // Use first TOTP factor
+          try {
+            const challengeId = await createChallenge(factor.id);
+            setMfaFactorId(factor.id);
+            setMfaChallengeId(challengeId);
+            setShowMFAChallenge(true);
+          } catch (error: any) {
+            setLoginError("Failed to create MFA challenge");
+          }
+          return;
+        }
+        
         console.log("LoginForm: Sign in failed:", result.error.message);
         setLoginError(result.error.message);
         return;
@@ -70,6 +90,30 @@ const LoginForm = () => {
       setLoginError(error?.message || "Unexpected error occurred");
     }
   };
+
+  const handleMFASuccess = () => {
+    console.log("LoginForm: MFA verification successful, redirecting...");
+    const params = new URLSearchParams(location.search);
+    const returnTo = params.get('returnTo');
+    navigate(returnTo || '/home', { replace: true });
+  };
+
+  const handleMFACancel = () => {
+    setShowMFAChallenge(false);
+    setMfaFactorId("");
+    setMfaChallengeId("");
+  };
+
+  if (showMFAChallenge) {
+    return (
+      <MFAChallenge
+        factorId={mfaFactorId}
+        challengeId={mfaChallengeId}
+        onSuccess={handleMFASuccess}
+        onCancel={handleMFACancel}
+      />
+    );
+  }
 
   return (
     <Form {...form}>

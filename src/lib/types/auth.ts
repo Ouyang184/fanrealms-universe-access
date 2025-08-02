@@ -42,4 +42,7 @@ export interface AuthResult {
   user?: User;
   session?: Session;
   error?: { message: string };
+  mfaRequired?: boolean;
+  userId?: string;
+  factors?: any[];
 }

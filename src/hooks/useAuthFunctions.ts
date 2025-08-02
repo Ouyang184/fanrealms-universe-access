@@ -27,6 +27,21 @@ export const useAuthFunctions = () => {
         throw error;
       }
       
+      console.log("useAuthFunctions: Sign in result:", data);
+      
+      // Check if MFA is required
+      if (data.session === null && data.user?.factors?.length) {
+        console.log("useAuthFunctions: MFA challenge required");
+        
+        return {
+          success: false,
+          error: { message: "MFA_CHALLENGE_REQUIRED" },
+          mfaRequired: true,
+          userId: data.user.id,
+          factors: data.user.factors
+        };
+      }
+      
       console.log("useAuthFunctions: Sign in successful:", data.user?.email);
       
       toast({
