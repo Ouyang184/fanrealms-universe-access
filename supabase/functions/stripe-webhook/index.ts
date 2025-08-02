@@ -24,6 +24,7 @@ import { handleProductWebhook } from './handlers/product-webhook.ts';
 import { handlePaymentIntentWebhook } from './handlers/payment-intent-webhook.ts';
 import { handlePriceWebhook } from './handlers/price-webhook.ts';
 import { handleCommissionWebhook } from './handlers/commission-webhook.ts';
+import { handlePaymentMethodWebhook } from './handlers/payment-method-webhook.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -157,6 +158,20 @@ serve(async (req) => {
         await handleCommissionWebhook(event, supabase);
       } catch (error) {
         console.error('Commission webhook error:', error);
+      }
+    }
+
+    // Handle payment method webhooks
+    if (event.type === 'customer.updated' || 
+        event.type === 'payment_method.attached' || 
+        event.type === 'payment_method.detached' ||
+        event.type === 'setup_intent.succeeded' ||
+        event.type === 'setup_intent.canceled') {
+      console.log('Processing payment method webhook:', event.type, '(LIVE MODE)');
+      try {
+        await handlePaymentMethodWebhook(event, supabase);
+      } catch (error) {
+        console.error('Payment method webhook error:', error);
       }
     }
 

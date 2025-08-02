@@ -58,6 +58,7 @@ import ResetPassword from "./pages/ResetPassword";
 import CommissionPayment from "./pages/CommissionPayment";
 import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
 import Requests from "./pages/Requests";
+import PaymentMethodsPage from "./pages/PaymentMethods";
 
 
 // Create a client
@@ -132,6 +133,7 @@ export default function App() {
                 {/* Main app routes - All using MainLayout for consistency */}
                 <Route path="/dashboard" element={<Navigate to="/home" replace />} />
                 <Route path="/subscriptions" element={<AuthGuard><SubscriptionsPage /></AuthGuard>} />
+                <Route path="/payment-methods" element={<AuthGuard><PaymentMethodsPage /></AuthGuard>} />
                 <Route path="/requests" element={<AuthGuard><MainLayout><Requests /></MainLayout></AuthGuard>} />
                 <Route path="/messages" element={<AuthGuard><MainLayout><Messages /></MainLayout></AuthGuard>} />
                 <Route path="/settings" element={<AuthGuard><MainLayout><AccountSettings /></MainLayout></AuthGuard>} />
