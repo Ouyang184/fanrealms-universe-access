@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface Notification {
   id: string;
   user_id: string;
-  type: 'mention' | 'like' | 'comment' | 'subscription' | 'system' | 'follow' | 'promotion';
+  type: 'mention' | 'like' | 'comment' | 'subscription' | 'system' | 'follow' | 'promotion' | 'commission';
   title?: string;
   content: string;
   related_id?: string;
@@ -155,6 +155,7 @@ export const useNotifications = () => {
       (n) => (n.type === "system" || n.type === "subscription" || n.type === "promotion") && !n.is_read,
     ).length,
     follow: notifications.filter((n) => n.type === "follow" && !n.is_read).length,
+    commission: notifications.filter((n) => n.type === "commission" && !n.is_read).length,
   };
 
   return {

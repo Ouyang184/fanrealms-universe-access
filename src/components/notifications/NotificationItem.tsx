@@ -19,6 +19,7 @@ import {
   User,
   Users,
   Gift,
+  Briefcase,
 } from "lucide-react";
 import { Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
@@ -50,6 +51,8 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         return <Users className="h-4 w-4 text-cyan-400" />
       case "promotion":
         return <Gift className="h-4 w-4 text-pink-400" />
+      case "commission":
+        return <Briefcase className="h-4 w-4 text-orange-500" />
       default:
         return <Bell className="h-4 w-4 text-gray-400" />
     }
@@ -119,6 +122,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                   )}
                   {notification.type === "like" && (
                     <DropdownMenuItem>View post</DropdownMenuItem>
+                  )}
+                  {notification.type === "commission" && (
+                    <DropdownMenuItem>View commission</DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator className="bg-gray-800" />
                   <DropdownMenuItem 

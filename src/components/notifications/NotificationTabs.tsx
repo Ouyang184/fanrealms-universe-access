@@ -10,6 +10,7 @@ import {
   MessageSquare,
   User,
   Users,
+  Briefcase,
 } from "lucide-react";
 
 interface NotificationTabsProps {
@@ -22,6 +23,7 @@ interface NotificationTabsProps {
     content: number;
     system: number;
     follow: number;
+    commission: number;
   };
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
@@ -64,6 +66,12 @@ export const NotificationTabs: React.FC<NotificationTabsProps> = ({
           Likes
           {unreadCounts.likes > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.likes}</Badge>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="commissions" className="data-[state=active]:bg-purple-900/30 relative">
+          Commissions
+          {unreadCounts.commission > 0 && (
+            <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.commission}</Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="system" className="data-[state=active]:bg-purple-900/30 relative">
@@ -129,6 +137,18 @@ export const NotificationTabs: React.FC<NotificationTabsProps> = ({
           emptyIcon={Heart}
           emptyMessage="No likes yet"
           emptyDescription="When someone likes your content, it will appear here"
+          onMarkAsRead={onMarkAsRead}
+          onDelete={onDelete}
+        />
+      </TabsContent>
+
+      <TabsContent value="commissions" className="mt-6 space-y-4">
+        <NotificationTab
+          title="Commission Notifications"
+          notifications={notifications.filter((notification) => notification.type === "commission")}
+          emptyIcon={Briefcase}
+          emptyMessage="No commission notifications"
+          emptyDescription="When creators update your commission requests, it will appear here"
           onMarkAsRead={onMarkAsRead}
           onDelete={onDelete}
         />
