@@ -20,7 +20,7 @@ export async function handleGetUserSubscriptions(
       .from('user_subscriptions')
       .select(`
         *,
-        creator:creators (
+        creators!fk_user_subscriptions_creator_id (
           id,
           display_name,
           profile_image_url,
@@ -28,7 +28,7 @@ export async function handleGetUserSubscriptions(
             username
           )
         ),
-        tier:membership_tiers (
+        membership_tiers!fk_user_subscriptions_tier_id (
           id,
           title,
           description,
