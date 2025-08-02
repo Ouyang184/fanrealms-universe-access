@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppSidebar } from "@/components/Layout/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
@@ -15,9 +16,20 @@ import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
+import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { Camera } from "lucide-react";
+import { useRef, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { isChecking, user } = useAuthCheck();
+  const { profile } = useAuth();
+  const { getAvatarUrl, uploadAvatar, isCreator } = useUnifiedAvatar();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
   const {
     isAgeVerified,
     showVerificationModal,
@@ -39,6 +51,50 @@ export default function Settings() {
   const handleAgeVerificationCancel = () => {
     console.log('❌ Settings - Age verification cancelled');
     setShowVerificationModal(false);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    
+    try {
+      await uploadAvatar(file);
+      // The upload function handles the toast notifications
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setUploadingAvatar(false);
+      // Clear the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
   
   if (isChecking) {
@@ -112,7 +168,48 @@ export default function Settings() {
                         Manage your account details and preferences
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-6">
+                      {/* Avatar Section */}
+                      <div className="flex flex-col items-center space-y-4">
+                        <div className="relative">
+                          <Avatar className="h-24 w-24">
+                            <AvatarImage 
+                              src={getAvatarUrl(profile) || ""} 
+                              alt="Profile picture" 
+                            />
+                            <AvatarFallback className="text-2xl bg-primary/10">
+                              {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                            onClick={handleAvatarClick}
+                            disabled={uploadingAvatar}
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {isCreator ? "Creator Avatar" : "Profile Picture"}
+                          </p>
+                          {isCreator && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Creator avatar takes priority over user avatar
+                            </p>
+                          )}
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
                         <Input 
