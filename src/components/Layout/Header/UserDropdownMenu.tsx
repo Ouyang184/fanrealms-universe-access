@@ -11,37 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Check if the user is a creator
-  const { data: creatorProfile } = useQuery({
-    queryKey: ['userCreator', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('creators')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking creator status:', error);
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id
-  });
-  
-  const isCreator = !!creatorProfile;
+  const { getAvatarUrl, isCreator } = useUnifiedAvatar();
   
   if (!user) return null;
   
@@ -74,7 +50,7 @@ export function UserDropdownMenu() {
       <PopoverTrigger asChild>
         <button className="focus:outline-none">
           <Avatar className="h-9 w-9 cursor-pointer">
-            <AvatarImage src={profile?.profile_picture || ""} alt={displayName} />
+            <AvatarImage src={getAvatarUrl(profile) || ""} alt={displayName} />
             <AvatarFallback className="bg-primary/80 text-primary-foreground">
               {initials}
             </AvatarFallback>
