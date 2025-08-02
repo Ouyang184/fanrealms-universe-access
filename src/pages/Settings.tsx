@@ -81,6 +81,12 @@ export default function Settings() {
                   Security
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="notifications" 
+                  className="text-xs sm:text-sm px-2 py-2"
+                >
+                  Notifications
+                </TabsTrigger>
+                <TabsTrigger 
                   value="privacy" 
                   className="text-xs sm:text-sm px-2 py-2"
                 >
@@ -128,6 +134,10 @@ export default function Settings() {
                 
                 <TabsContent value="security" className="m-0">
                   <SecurityTab />
+                </TabsContent>
+                
+                <TabsContent value="notifications" className="m-0">
+                  <NotificationsTab />
                 </TabsContent>
                 
                 <TabsContent value="content" className="m-0">
