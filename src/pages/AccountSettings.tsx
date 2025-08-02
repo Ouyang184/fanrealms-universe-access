@@ -20,6 +20,8 @@ import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { Link } from "react-router-dom";
+import { Shield, Smartphone, Monitor, Trash2, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -108,6 +110,43 @@ export default function AccountSettings() {
   // Change password dialog state
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
+  // Security settings state
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactorEnabled: false,
+    loginAlerts: true,
+    sessionTimeout: '30',
+    blockSuspiciousLogins: true,
+    saving: false
+  });
+  
+  // Mock active sessions data
+  const [activeSessions] = useState([
+    {
+      id: '1',
+      device: 'Windows PC - Chrome',
+      location: 'New York, USA',
+      lastActive: '2 minutes ago',
+      isCurrent: true,
+      ip: '192.168.1.1'
+    },
+    {
+      id: '2', 
+      device: 'iPhone 15 - Safari',
+      location: 'New York, USA',
+      lastActive: '1 hour ago',
+      isCurrent: false,
+      ip: '192.168.1.2'
+    },
+    {
+      id: '3',
+      device: 'MacBook Pro - Safari', 
+      location: 'Los Angeles, USA',
+      lastActive: '3 days ago',
+      isCurrent: false,
+      ip: '192.168.1.3'
+    }
+  ]);
   
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -244,6 +283,10 @@ export default function AccountSettings() {
     setNotificationSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleSecurityChange = (key: string, value: boolean | string) => {
+    setSecuritySettings(prev => ({ ...prev, [key]: value }));
+  };
+
   const handleNSFWToggle = (checked: boolean) => {
     console.log('AccountSettings - NSFW toggle clicked:', checked);
     updateNSFWPreference(checked);
@@ -257,6 +300,39 @@ export default function AccountSettings() {
   const handleAgeVerificationCancel = () => {
     console.log('❌ AccountSettings - Age verification cancelled');
     setShowVerificationModal(false);
+  };
+
+  const handleSessionLogout = (sessionId: string) => {
+    // In a real app, this would call an API to invalidate the session
+    toast({
+      title: "Session ended",
+      description: "The selected session has been logged out.",
+    });
+  };
+
+  const handleLogoutAllOtherSessions = () => {
+    // In a real app, this would call an API to invalidate all other sessions
+    toast({
+      title: "All other sessions logged out",
+      description: "You have been logged out of all other devices.",
+    });
+  };
+
+  const enable2FA = () => {
+    // In a real app, this would initiate 2FA setup
+    toast({
+      title: "Two-Factor Authentication",
+      description: "2FA setup would be initiated here.",
+    });
+  };
+
+  const disable2FA = () => {
+    // In a real app, this would disable 2FA after confirmation
+    toast({
+      title: "Two-Factor Authentication Disabled",
+      description: "2FA has been disabled for your account.",
+    });
+    setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: false }));
   };
   
   const saveAccountSettings = async () => {
@@ -293,6 +369,18 @@ export default function AccountSettings() {
     } finally {
       setAccountSettings(prev => ({ ...prev, saving: false }));
     }
+  };
+
+  const saveSecuritySettings = () => {
+    setSecuritySettings(prev => ({ ...prev, saving: true }));
+    // In a real app, we would save to the database here
+    setTimeout(() => {
+      toast({
+        title: "Security settings saved",
+        description: "Your security preferences have been updated"
+      });
+      setSecuritySettings(prev => ({ ...prev, saving: false }));
+    }, 1000);
   };
 
   const handleChangePassword = async (values: PasswordFormValues) => {
@@ -357,6 +445,7 @@ export default function AccountSettings() {
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="preferences">Content Preferences</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
           </TabsList>
           <div className="mt-6 space-y-6">
@@ -566,6 +655,244 @@ export default function AccountSettings() {
                   </Button>
                 </CardFooter>
               </Card>
+            </TabsContent>
+            
+            <TabsContent value="security" className="m-0">
+              <div className="space-y-6">
+                {/* Password Security */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      Password & Authentication
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your password and authentication methods
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <Label>Password</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Last changed: {new Date().toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setChangePasswordOpen(true)}
+                      >
+                        Change Password
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <Label className="flex items-center gap-2">
+                          Two-Factor Authentication
+                          {securitySettings.twoFactorEnabled && (
+                            <Badge variant="default" className="text-xs">Enabled</Badge>
+                          )}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Add an extra layer of security to your account
+                        </p>
+                      </div>
+                      {securitySettings.twoFactorEnabled ? (
+                        <Button variant="destructive" onClick={disable2FA}>
+                          Disable 2FA
+                        </Button>
+                      ) : (
+                        <Button onClick={enable2FA}>
+                          Enable 2FA
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Login Security */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Login Security</CardTitle>
+                    <CardDescription>
+                      Control login behavior and security alerts
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Login Alerts</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when someone logs into your account
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={securitySettings.loginAlerts}
+                        onCheckedChange={(checked) => handleSecurityChange("loginAlerts", checked)}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Block Suspicious Logins</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Automatically block login attempts from unusual locations
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={securitySettings.blockSuspiciousLogins}
+                        onCheckedChange={(checked) => handleSecurityChange("blockSuspiciousLogins", checked)}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Session Timeout</Label>
+                      <select 
+                        className="w-full p-2 border rounded-md bg-background"
+                        value={securitySettings.sessionTimeout}
+                        onChange={(e) => handleSecurityChange("sessionTimeout", e.target.value)}
+                      >
+                        <option value="15">15 minutes</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="240">4 hours</option>
+                        <option value="720">12 hours</option>
+                        <option value="never">Never</option>
+                      </select>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically log out after period of inactivity
+                      </p>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      onClick={saveSecuritySettings} 
+                      disabled={securitySettings.saving}
+                    >
+                      {securitySettings.saving ? "Saving..." : "Save Security Settings"}
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                {/* Active Sessions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Monitor className="h-5 w-5" />
+                      Active Sessions
+                    </CardTitle>
+                    <CardDescription>
+                      Manage devices and browsers that are currently logged in
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {activeSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-start gap-3">
+                          {session.device.includes('iPhone') || session.device.includes('Android') ? (
+                            <Smartphone className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                          ) : (
+                            <Monitor className="h-5 w-5 mt-0.5 text-muted-foreground" />
+                          )}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{session.device}</p>
+                              {session.isCurrent && (
+                                <Badge variant="default" className="text-xs">Current</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {session.location} • Last active {session.lastActive}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              IP: {session.ip}
+                            </p>
+                          </div>
+                        </div>
+                        {!session.isCurrent && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleSessionLogout(session.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </CardContent>
+                  <CardFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLogoutAllOtherSessions}
+                    >
+                      Log Out All Other Sessions
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                {/* Payment Methods */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment & Billing Security</CardTitle>
+                    <CardDescription>
+                      Manage your payment methods and billing information
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <Label>Payment Methods</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Manage your saved payment methods and billing security
+                        </p>
+                      </div>
+                      <Link to="/payment-methods">
+                        <Button variant="outline" className="gap-2">
+                          Manage Payment Methods
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Data & Download */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Data & Privacy</CardTitle>
+                    <CardDescription>
+                      Download your data or delete your account
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-1">
+                        <Label>Download Your Data</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get a copy of your account data, posts, and activity
+                        </p>
+                      </div>
+                      <Button variant="outline">
+                        Request Download
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5">
+                      <div className="space-y-1">
+                        <Label className="text-destructive">Delete Account</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Permanently delete your account and all associated data
+                        </p>
+                      </div>
+                      <Button variant="destructive">
+                        Delete Account
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
             
             <TabsContent value="privacy" className="m-0">
