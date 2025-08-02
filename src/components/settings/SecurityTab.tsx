@@ -1,12 +1,18 @@
-import { Shield, Key, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { Shield, Key, ArrowRight, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-import { useMFA } from "@/hooks/useMFA";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SecurityTab() {
-  const { hasMFA, isLoading } = useMFA();
+  const { user } = useAuth();
+  const [showMFADialog, setShowMFADialog] = useState(false);
+  
+  // Check if email 2FA is enabled from user metadata
+  const hasEmail2FA = user?.user_metadata?.email_2fa_enabled === true;
 
   return (
     <div className="space-y-6">
@@ -24,24 +30,29 @@ export function SecurityTab() {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
-                <Shield className={`h-5 w-5 ${hasMFA ? 'text-green-600' : 'text-gray-400'}`} />
+                <Mail className={`h-5 w-5 ${hasEmail2FA ? 'text-green-600' : 'text-gray-400'}`} />
                 <div>
-                  <p className="font-medium">Two-Factor Authentication</p>
+                  <p className="font-medium">Email Two-Factor Authentication</p>
                   <p className="text-sm text-muted-foreground">
-                    Add an extra layer of security to your account
+                    Receive verification codes via email when signing in
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={hasMFA ? 'default' : 'secondary'}>
-                  {isLoading ? 'Loading...' : hasMFA ? 'Enabled' : 'Disabled'}
+                <Badge variant={hasEmail2FA ? 'default' : 'secondary'}>
+                  {hasEmail2FA ? 'Enabled' : 'Disabled'}
                 </Badge>
-                <Link to="/settings/2fa">
-                  <Button variant="outline" size="sm">
-                    {hasMFA ? 'Manage' : 'Set up'}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </Link>
+                <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {hasEmail2FA ? 'Manage' : 'Set up'}
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <EmailMFASetup />
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
@@ -74,13 +85,13 @@ export function SecurityTab() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-green-600 mt-0.5" />
+              <Mail className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <p className="font-medium">Enable Two-Factor Authentication</p>
+                <p className="font-medium">Enable Email Two-Factor Authentication</p>
                 <p className="text-sm text-muted-foreground">
-                  {hasMFA 
-                    ? "✓ Great! You have 2FA enabled on your account."
-                    : "Add an authenticator app to secure your account with 2FA."
+                  {hasEmail2FA 
+                    ? "✓ Great! You have email 2FA enabled on your account."
+                    : "Add email verification codes to secure your account with 2FA."
                   }
                 </p>
               </div>

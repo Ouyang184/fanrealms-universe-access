@@ -61,7 +61,7 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 grid-rows-3 md:grid-rows-1 h-auto gap-1 p-1">
+              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto gap-1 p-1">
                 <TabsTrigger 
                   value="profile" 
                   className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
@@ -75,16 +75,16 @@ export default function Settings() {
                   Account
                 </TabsTrigger>
                 <TabsTrigger 
-                  value="notifications" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
-                >
-                  Notifications
-                </TabsTrigger>
-                <TabsTrigger 
                   value="security" 
                   className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Security
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notifications" 
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
+                >
+                  Notifications
                 </TabsTrigger>
                 <TabsTrigger 
                   value="privacy" 
@@ -94,7 +94,7 @@ export default function Settings() {
                 </TabsTrigger>
                 <TabsTrigger 
                   value="content" 
-                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5 col-span-2 md:col-span-1"
+                  className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
                 >
                   Content
                 </TabsTrigger>
