@@ -61,7 +61,7 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="account" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 h-auto bg-muted p-1">
+              <TabsList className="flex flex-wrap w-full h-auto bg-muted p-1 rounded-lg">
                 <TabsTrigger 
                   value="account" 
                   className="text-xs sm:text-sm px-2 py-2"
