@@ -61,7 +61,7 @@ export default function Settings() {
             </div>
             
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto gap-1 p-1">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 h-auto gap-1 p-1 bg-muted/50">
                 <TabsTrigger 
                   value="profile" 
                   className="text-xs md:text-sm px-1 py-2 md:px-3 md:py-1.5"
