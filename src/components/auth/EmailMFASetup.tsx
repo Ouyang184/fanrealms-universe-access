@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Mail } from "lucide-react";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { TURNSTILE_SITE_KEY } from '@/config/turnstile';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,11 +16,17 @@ export function EmailMFASetup() {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'send' | 'verify'>('send');
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
 
   const sendVerificationEmail = async () => {
     if (!user?.email) return;
+    
+    if (!captchaToken) {
+      setError('Please complete the security check');
+      return;
+    }
     
     try {
       setIsLoading(true);
@@ -28,6 +36,7 @@ export function EmailMFASetup() {
         email: user.email,
         options: {
           shouldCreateUser: false,
+          captchaToken: captchaToken,
         }
       });
 
@@ -160,7 +169,30 @@ export function EmailMFASetup() {
           </p>
         </div>
 
-        <Button onClick={sendVerificationEmail} disabled={isLoading} className="w-full">
+        <div className="space-y-2">
+          <Label>Security Check</Label>
+          <Turnstile
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={(token) => {
+              setCaptchaToken(token);
+              setError(null);
+            }}
+            onError={() => {
+              setCaptchaToken("");
+              setError("CAPTCHA verification failed. Please try again.");
+            }}
+            onExpire={() => {
+              setCaptchaToken("");
+              setError("CAPTCHA expired. Please try again.");
+            }}
+          />
+        </div>
+
+        <Button 
+          onClick={sendVerificationEmail} 
+          disabled={isLoading || !captchaToken} 
+          className="w-full"
+        >
           {isLoading ? 'Sending...' : 'Send Verification Email'}
         </Button>
       </CardContent>
