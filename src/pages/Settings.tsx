@@ -169,18 +169,25 @@ export default function Settings() {
                       </CardDescription>
                     </CardHeader>
                      <CardContent className="space-y-6">
+                       {/* Debug Info */}
+                       <div className="p-4 bg-muted rounded-lg text-sm">
+                         <p>Debug: Profile: {profile?.username || 'No profile'}</p>
+                         <p>Debug: Is Creator: {isCreator.toString()}</p>
+                         <p>Debug: Avatar URL: {getAvatarUrl(profile) || 'No avatar'}</p>
+                       </div>
+                       
                        {/* Avatar Section */}
-                       <div className="flex flex-col items-center space-y-4 py-6 border-b border-border">
+                       <div className="flex flex-col items-center space-y-4 py-6 border-b border-border bg-card/50 rounded-lg">
                          <div className="text-center space-y-2">
                            <h3 className="text-lg font-medium">Profile Picture</h3>
                            <p className="text-sm text-muted-foreground">Upload or change your avatar</p>
                          </div>
-                         <Avatar className="h-24 w-24 border-2 border-muted">
+                         <Avatar className="h-24 w-24 border-2 border-primary/20">
                            <AvatarImage 
                              src={getAvatarUrl(profile) || ""} 
                              alt="Profile picture" 
                            />
-                           <AvatarFallback className="text-xl">
+                           <AvatarFallback className="text-xl bg-primary/10">
                              {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
                            </AvatarFallback>
                          </Avatar>
@@ -190,7 +197,7 @@ export default function Settings() {
                            size="sm"
                            onClick={handleAvatarClick}
                            disabled={uploadingAvatar}
-                           className="flex items-center gap-2"
+                           className="flex items-center gap-2 bg-background"
                          >
                            <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
                            {uploadingAvatar ? "Uploading..." : "Change Avatar"}
