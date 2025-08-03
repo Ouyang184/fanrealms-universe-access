@@ -169,43 +169,54 @@ export default function Settings() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                      {/* Avatar Section */}
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="relative">
-                          <Avatar className="h-24 w-24">
-                            <AvatarImage 
-                              src={getAvatarUrl(profile) || ""} 
-                              alt="Profile picture" 
-                            />
-                            <AvatarFallback className="text-2xl bg-primary/10">
-                              {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                            onClick={handleAvatarClick}
-                            disabled={uploadingAvatar}
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      {/* Avatar Upload Section */}
+                      <div className="space-y-4">
                         <div className="text-center">
-                          <p className="text-sm text-muted-foreground">
-                            Profile Picture
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Click the camera icon to upload a new avatar
-                          </p>
+                          <h3 className="text-lg font-medium">Profile Picture</h3>
+                          <p className="text-sm text-muted-foreground">Upload a new avatar for your account</p>
                         </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                        />
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="relative">
+                            <Avatar className="h-24 w-24">
+                              <AvatarImage 
+                                src={getAvatarUrl(profile) || ""} 
+                                alt="Profile picture" 
+                              />
+                              <AvatarFallback className="text-2xl bg-primary/10">
+                                {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                              onClick={handleAvatarClick}
+                              disabled={uploadingAvatar}
+                            >
+                              <Camera className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="text-center space-y-2">
+                            <Button 
+                              variant="outline" 
+                              onClick={handleAvatarClick}
+                              disabled={uploadingAvatar}
+                              className="w-full max-w-xs"
+                            >
+                              {uploadingAvatar ? "Uploading..." : "Change Profile Picture"}
+                            </Button>
+                            <p className="text-xs text-muted-foreground">
+                              Upload a new image (max 5MB)
+                            </p>
+                          </div>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
+                        </div>
                       </div>
                       
                       <div className="space-y-2">
