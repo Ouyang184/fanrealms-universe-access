@@ -19,8 +19,8 @@ import { CategoryGrid } from "@/components/onboarding/CategoryGrid";
 import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
-import { Link } from "react-router-dom";
-import { Shield, Smartphone, Monitor, Trash2, ExternalLink, Camera } from "lucide-react";
+  import { Link } from "react-router-dom";
+  import { Shield, Trash2, ExternalLink, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
@@ -122,33 +122,6 @@ export default function AccountSettings() {
     saving: false
   });
   
-  // Mock active sessions data
-  const [activeSessions] = useState([
-    {
-      id: '1',
-      device: 'Windows PC - Chrome',
-      location: 'New York, USA',
-      lastActive: '2 minutes ago',
-      isCurrent: true,
-      ip: '192.168.1.1'
-    },
-    {
-      id: '2', 
-      device: 'iPhone 15 - Safari',
-      location: 'New York, USA',
-      lastActive: '1 hour ago',
-      isCurrent: false,
-      ip: '192.168.1.2'
-    },
-    {
-      id: '3',
-      device: 'MacBook Pro - Safari', 
-      location: 'Los Angeles, USA',
-      lastActive: '3 days ago',
-      isCurrent: false,
-      ip: '192.168.1.3'
-    }
-  ]);
   
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -348,21 +321,6 @@ export default function AccountSettings() {
     }
   };
 
-  const handleSessionLogout = (sessionId: string) => {
-    // In a real app, this would call an API to invalidate the session
-    toast({
-      title: "Session ended",
-      description: "The selected session has been logged out.",
-    });
-  };
-
-  const handleLogoutAllOtherSessions = () => {
-    // In a real app, this would call an API to invalidate all other sessions
-    toast({
-      title: "All other sessions logged out",
-      description: "You have been logged out of all other devices.",
-    });
-  };
 
   const enable2FA = () => {
     // In a real app, this would initiate 2FA setup
@@ -865,62 +823,6 @@ export default function AccountSettings() {
                   </CardFooter>
                 </Card>
 
-                {/* Active Sessions */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Monitor className="h-5 w-5" />
-                      Active Sessions
-                    </CardTitle>
-                    <CardDescription>
-                      Manage devices and browsers that are currently logged in
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {activeSessions.map((session) => (
-                      <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-start gap-3">
-                          {session.device.includes('iPhone') || session.device.includes('Android') ? (
-                            <Smartphone className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                          ) : (
-                            <Monitor className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                          )}
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{session.device}</p>
-                              {session.isCurrent && (
-                                <Badge variant="default" className="text-xs">Current</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {session.location} • Last active {session.lastActive}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              IP: {session.ip}
-                            </p>
-                          </div>
-                        </div>
-                        {!session.isCurrent && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleSessionLogout(session.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={handleLogoutAllOtherSessions}
-                    >
-                      Log Out All Other Sessions
-                    </Button>
-                  </CardFooter>
-                </Card>
 
                 {/* Payment Methods */}
                 <Card>
