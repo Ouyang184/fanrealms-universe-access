@@ -853,17 +853,6 @@ export default function AccountSettings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <Label>Download Your Data</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Get a copy of your account data, posts, and activity
-                        </p>
-                      </div>
-                      <Button variant="outline">
-                        Request Download
-                      </Button>
-                    </div>
 
                     <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                       <div className="space-y-1">
