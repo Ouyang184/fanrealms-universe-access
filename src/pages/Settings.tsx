@@ -161,6 +161,48 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="account" className="m-0">
+                  <div className="space-y-6">
+                    {/* Avatar Upload Section */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Profile Picture</CardTitle>
+                        <CardDescription>
+                          Upload and manage your avatar
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col items-center space-y-4">
+                          <Avatar className="h-24 w-24 border-2 border-muted">
+                            <AvatarImage 
+                              src={getAvatarUrl(profile) || ""} 
+                              alt="Profile picture" 
+                            />
+                            <AvatarFallback className="text-xl">
+                              {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleAvatarClick}
+                            disabled={uploadingAvatar}
+                            className="flex items-center gap-2"
+                          >
+                            <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
+                            {uploadingAvatar ? "Uploading..." : "Change Avatar"}
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     {/* Account Information */}
                     <Card>
                       <CardHeader>
@@ -192,9 +234,10 @@ export default function Settings() {
                            </Button>
                          </div>
                        </div>
-                      </CardContent>
-                    </Card>
-                </TabsContent>
+                       </CardContent>
+                     </Card>
+                   </div>
+                 </TabsContent>
                 
                 <TabsContent value="security" className="m-0">
                   <SecurityTab />
