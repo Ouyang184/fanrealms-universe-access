@@ -1,18 +1,52 @@
 import { useState } from "react";
-import { Shield, Key, ArrowRight, Mail } from "lucide-react";
+import { Shield, Key, ArrowRight, Smartphone, X } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
+import { MFAEnrollment } from "@/components/auth/MFAEnrollment";
+import { MFAChallenge } from "@/components/auth/MFAChallenge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMFA } from "@/hooks/useMFA";
+import { useToast } from "@/hooks/use-toast";
 
 export function SecurityTab() {
   const { user } = useAuth();
+  const { factors, hasMFA, fetchFactors, unenrollFactor } = useMFA();
+  const { toast } = useToast();
   const [showMFADialog, setShowMFADialog] = useState(false);
-  
-  // Check if email 2FA is enabled from user metadata
-  const hasEmail2FA = user?.user_metadata?.email_2fa_enabled === true;
+  const [managingFactor, setManagingFactor] = useState<string | null>(null);
+
+  const handleEnrollmentComplete = () => {
+    setShowMFADialog(false);
+    fetchFactors();
+    toast({
+      title: "MFA Enabled",
+      description: "Two-factor authentication has been successfully enabled for your account.",
+    });
+  };
+
+  const handleEnrollmentCancel = () => {
+    setShowMFADialog(false);
+  };
+
+  const handleUnenrollFactor = async (factorId: string) => {
+    try {
+      await unenrollFactor(factorId);
+      setManagingFactor(null);
+      fetchFactors();
+      toast({
+        title: "MFA Disabled",
+        description: "Two-factor authentication has been disabled for your account.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disable MFA",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -30,29 +64,43 @@ export function SecurityTab() {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
-                <Mail className={`h-5 w-5 ${hasEmail2FA ? 'text-green-600' : 'text-gray-400'}`} />
+                <Smartphone className={`h-5 w-5 ${hasMFA ? 'text-green-600' : 'text-gray-400'}`} />
                 <div>
-                  <p className="font-medium">Email Two-Factor Authentication</p>
+                  <p className="font-medium">Authenticator App (TOTP)</p>
                   <p className="text-sm text-muted-foreground">
-                    Receive verification codes via email when signing in
+                    Use an authenticator app to generate secure verification codes
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={hasEmail2FA ? 'default' : 'secondary'}>
-                  {hasEmail2FA ? 'Enabled' : 'Disabled'}
+                <Badge variant={hasMFA ? 'default' : 'secondary'}>
+                  {hasMFA ? 'Enabled' : 'Disabled'}
                 </Badge>
-                <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      {hasEmail2FA ? 'Manage' : 'Set up'}
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <EmailMFASetup />
-                  </DialogContent>
-                </Dialog>
+                {hasMFA ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setManagingFactor(factors[0]?.id || null)}
+                  >
+                    Manage
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                ) : (
+                  <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        Set up
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <MFAEnrollment 
+                        onEnrollmentComplete={handleEnrollmentComplete}
+                        onCancel={handleEnrollmentCancel}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
               </div>
             </div>
 
@@ -85,13 +133,13 @@ export function SecurityTab() {
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Mail className="h-5 w-5 text-green-600 mt-0.5" />
+              <Smartphone className="h-5 w-5 text-green-600 mt-0.5" />
               <div>
-                <p className="font-medium">Enable Email Two-Factor Authentication</p>
+                <p className="font-medium">Enable Authenticator App (TOTP)</p>
                 <p className="text-sm text-muted-foreground">
-                  {hasEmail2FA 
-                    ? "✓ Great! You have email 2FA enabled on your account."
-                    : "Add email verification codes to secure your account with 2FA."
+                  {hasMFA 
+                    ? "✓ Great! You have TOTP authentication enabled on your account."
+                    : "Add an authenticator app like Google Authenticator to secure your account with 2FA."
                   }
                 </p>
               </div>
@@ -119,6 +167,40 @@ export function SecurityTab() {
           </div>
         </CardContent>
       </Card>
+
+      {/* MFA Management Dialog */}
+      {managingFactor && (
+        <Dialog open={!!managingFactor} onOpenChange={() => setManagingFactor(null)}>
+          <DialogContent className="max-w-md">
+            <div className="space-y-4">
+              <div className="text-center">
+                <Shield className="h-12 w-12 mx-auto text-red-500 mb-4" />
+                <h3 className="text-lg font-semibold">Disable Two-Factor Authentication</h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to disable TOTP authentication? This will make your account less secure.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setManagingFactor(null)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  className="flex-1"
+                  onClick={() => handleUnenrollFactor(managingFactor)}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Disable MFA
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
