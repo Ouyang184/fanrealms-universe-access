@@ -168,49 +168,47 @@ export default function Settings() {
                         Manage your account details and preferences
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Avatar Section */}
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="relative">
-                          <Avatar className="h-24 w-24">
-                            <AvatarImage 
-                              src={getAvatarUrl(profile) || ""} 
-                              alt="Profile picture" 
-                            />
-                            <AvatarFallback className="text-2xl bg-primary/10">
-                              {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                            onClick={handleAvatarClick}
-                            disabled={uploadingAvatar}
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">
-                            {isCreator ? "Creator Avatar" : "Profile Picture"}
-                          </p>
-                          {isCreator && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Creator avatar takes priority over user avatar
-                            </p>
-                          )}
-                        </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
+                     <CardContent className="space-y-6">
+                       {/* Avatar Section */}
+                       <div className="flex flex-col items-center space-y-4">
+                         <div className="relative">
+                           <Avatar className="h-24 w-24">
+                             <AvatarImage 
+                               src={getAvatarUrl(profile) || ""} 
+                               alt="Profile picture" 
+                             />
+                             <AvatarFallback className="text-2xl bg-primary/10">
+                               {profile?.username?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "U"}
+                             </AvatarFallback>
+                           </Avatar>
+                           <Button
+                             size="sm"
+                             variant="secondary"
+                             className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                             onClick={handleAvatarClick}
+                             disabled={uploadingAvatar}
+                           >
+                             <Camera className="h-4 w-4" />
+                           </Button>
+                         </div>
+                         <div className="text-center">
+                           <p className="text-sm text-muted-foreground">
+                             Profile Picture
+                           </p>
+                           <p className="text-xs text-muted-foreground mt-1">
+                             Click the camera icon to upload a new avatar
+                           </p>
+                         </div>
+                         <input
+                           ref={fileInputRef}
+                           type="file"
+                           accept="image/*"
+                           onChange={handleAvatarUpload}
+                           className="hidden"
+                         />
+                       </div>
+                       
+                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
                         <Input 
                           id="email" 
