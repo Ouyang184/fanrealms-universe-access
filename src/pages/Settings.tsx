@@ -197,6 +197,16 @@ export default function Settings() {
                       </div>
                       
                       <div className="space-y-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input 
+                          id="username" 
+                          type="text" 
+                          value={profile?.username || ""}
+                          disabled
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
                         <Input 
                           id="email" 
@@ -208,6 +218,7 @@ export default function Settings() {
                           To change your email, please contact support
                         </p>
                       </div>
+                      
                       <div className="space-y-2 pt-4">
                         <Button variant="outline">Change Password</Button>
                       </div>
