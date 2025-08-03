@@ -162,7 +162,69 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="account" className="m-0">
-                  <AccountTab user={user} profile={profile} />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Account Information</CardTitle>
+                      <CardDescription>
+                        Manage your account details and preferences
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Avatar Section */}
+                      <div className="flex flex-col items-center space-y-4">
+                        <Avatar className="h-24 w-24">
+                          <AvatarImage 
+                            src={getAvatarUrl(profile) || ""} 
+                            alt="Profile picture" 
+                          />
+                          <AvatarFallback className="text-xl">
+                            {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleAvatarClick}
+                          disabled={uploadingAvatar}
+                          className="flex items-center gap-2"
+                        >
+                          <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
+                          {uploadingAvatar ? "Uploading..." : "Change Avatar"}
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                        />
+                      </div>
+                      
+                      {/* User Information */}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="username">Username</Label>
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                            {profile?.username || 'Not set'}
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                            {user?.email}
+                          </div>
+                        </div>
+                        
+                        <div className="pt-4">
+                          <Button variant="outline" className="w-full">
+                            Change Password
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </TabsContent>
                 
                 <TabsContent value="security" className="m-0">
