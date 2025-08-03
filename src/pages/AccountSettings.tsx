@@ -693,7 +693,7 @@ export default function AccountSettings() {
             </TabsContent>
             
             <TabsContent value="security" className="m-0">
-              <div className="space-y-6">
+              <div className="space-y-6">{/* Security Tab Content */}
                 {/* Password Security */}
                 <Card>
                   <CardHeader>
