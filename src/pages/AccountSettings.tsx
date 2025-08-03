@@ -20,10 +20,11 @@ import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { Link } from "react-router-dom";
-import { Shield, Trash2, ExternalLink, Camera } from "lucide-react";
+import { Shield, Trash2, ExternalLink, Camera, Mail, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
+import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -115,12 +116,14 @@ export default function AccountSettings() {
   
   // Security settings state
   const [securitySettings, setSecuritySettings] = useState({
-    twoFactorEnabled: false,
     loginAlerts: true,
     sessionTimeout: '30',
     blockSuspiciousLogins: true,
     saving: false
   });
+  
+  // MFA Dialog state
+  const [showMFADialog, setShowMFADialog] = useState(false);
   
   
   // Notification settings state
@@ -322,22 +325,6 @@ export default function AccountSettings() {
   };
 
 
-  const enable2FA = () => {
-    // In a real app, this would initiate 2FA setup
-    toast({
-      title: "Two-Factor Authentication",
-      description: "2FA setup would be initiated here.",
-    });
-  };
-
-  const disable2FA = () => {
-    // In a real app, this would disable 2FA after confirmation
-    toast({
-      title: "Two-Factor Authentication Disabled",
-      description: "2FA has been disabled for your account.",
-    });
-    setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: false }));
-  };
   
   const saveAccountSettings = async () => {
     setAccountSettings(prev => ({ ...prev, saving: true }));
@@ -735,26 +722,33 @@ export default function AccountSettings() {
                     </div>
 
                     <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <Label className="flex items-center gap-2">
-                          Two-Factor Authentication
-                          {securitySettings.twoFactorEnabled && (
-                            <Badge variant="default" className="text-xs">Enabled</Badge>
-                          )}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          Add an extra layer of security to your account
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <Mail className={`h-5 w-5 ${user?.user_metadata?.email_2fa_enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="font-medium">Email Two-Factor Authentication</p>
+                          <p className="text-sm text-muted-foreground">
+                            Receive verification codes via email when signing in
+                          </p>
+                        </div>
                       </div>
-                      {securitySettings.twoFactorEnabled ? (
-                        <Button variant="destructive" onClick={disable2FA}>
-                          Disable 2FA
-                        </Button>
-                      ) : (
-                        <Button onClick={enable2FA}>
-                          Enable 2FA
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <Badge variant={user?.user_metadata?.email_2fa_enabled ? 'default' : 'secondary'}>
+                          {user?.user_metadata?.email_2fa_enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                        <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setShowMFADialog(true)}
+                          >
+                            {user?.user_metadata?.email_2fa_enabled ? 'Manage' : 'Set up'}
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                          <DialogContent className="max-w-md">
+                            <EmailMFASetup />
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1073,6 +1067,13 @@ export default function AccountSettings() {
                 </DialogFooter>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Email MFA Setup Dialog */}
+        <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
+          <DialogContent className="max-w-md">
+            <EmailMFASetup />
           </DialogContent>
         </Dialog>
 
