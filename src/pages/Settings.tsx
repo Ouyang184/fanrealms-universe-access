@@ -161,80 +161,95 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="account" className="m-0">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Account Information</CardTitle>
-                      <CardDescription>
-                        Manage your account details and preferences
-                      </CardDescription>
-                    </CardHeader>
-                     <CardContent className="space-y-6">
-                       {/* Debug Info */}
-                       <div className="p-4 bg-muted rounded-lg text-sm">
-                         <p>Debug: Profile: {profile?.username || 'No profile'}</p>
-                         <p>Debug: Is Creator: {isCreator.toString()}</p>
-                         <p>Debug: Avatar URL: {getAvatarUrl(profile) || 'No avatar'}</p>
-                       </div>
-                       
-                       {/* Avatar Section */}
-                       <div className="flex flex-col items-center space-y-4 py-6 border-b border-border bg-card/50 rounded-lg">
-                         <div className="text-center space-y-2">
-                           <h3 className="text-lg font-medium">Profile Picture</h3>
-                           <p className="text-sm text-muted-foreground">Upload or change your avatar</p>
-                         </div>
-                         <Avatar className="h-24 w-24 border-2 border-primary/20">
-                           <AvatarImage 
-                             src={getAvatarUrl(profile) || ""} 
-                             alt="Profile picture" 
-                           />
-                           <AvatarFallback className="text-xl bg-primary/10">
-                             {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
-                           </AvatarFallback>
-                         </Avatar>
-                         <Button 
-                           type="button" 
-                           variant="outline" 
-                           size="sm"
-                           onClick={handleAvatarClick}
-                           disabled={uploadingAvatar}
-                           className="flex items-center gap-2 bg-background"
-                         >
-                           <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
-                           {uploadingAvatar ? "Uploading..." : "Change Avatar"}
-                         </Button>
-                         <input
-                           ref={fileInputRef}
-                           type="file"
-                           accept="image/*"
-                           onChange={handleAvatarUpload}
-                           className="hidden"
-                         />
-                       </div>
-                      
-                      {/* User Information */}
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Username</Label>
-                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                            {profile?.username || 'Not set'}
-                          </div>
+                  <div className="space-y-6">
+                    {/* Avatar Upload Section - Top Priority */}
+                    <Card className="border-2 border-primary/20">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-xl">Profile Picture</CardTitle>
+                        <CardDescription>
+                          Upload and manage your avatar image
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Debug Info */}
+                        <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg text-sm border">
+                          <h4 className="font-medium mb-2">Debug Information:</h4>
+                          <p>Profile: {profile?.username || 'No profile'}</p>
+                          <p>Is Creator: {isCreator.toString()}</p>
+                          <p>Avatar URL: {getAvatarUrl(profile) || 'No avatar'}</p>
+                          <p>User ID: {user?.id || 'No user'}</p>
                         </div>
                         
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                            {user?.email}
-                          </div>
-                        </div>
-                        
-                        <div className="pt-4">
-                          <Button variant="outline" className="w-full">
-                            Change Password
+                        {/* Avatar Section */}
+                        <div className="flex flex-col items-center space-y-4">
+                          <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg">
+                            <AvatarImage 
+                              src={getAvatarUrl(profile) || ""} 
+                              alt="Profile picture" 
+                            />
+                            <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                              {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Button 
+                            type="button" 
+                            variant="default" 
+                            size="lg"
+                            onClick={handleAvatarClick}
+                            disabled={uploadingAvatar}
+                            className="flex items-center gap-2 px-6 py-3"
+                          >
+                            <Camera className={`h-5 w-5 ${uploadingAvatar ? 'animate-spin' : ''}`} />
+                            {uploadingAvatar ? "Uploading..." : "Upload New Avatar"}
                           </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                          />
+                          <p className="text-xs text-muted-foreground text-center max-w-sm">
+                            Supported formats: JPG, PNG, GIF (max 5MB)
+                          </p>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+
+                    {/* Account Information */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Account Information</CardTitle>
+                        <CardDescription>
+                          View your account details
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                       {/* User Information */}
+                       <div className="space-y-4">
+                         <div className="space-y-2">
+                           <Label htmlFor="username">Username</Label>
+                           <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                             {profile?.username || 'Not set'}
+                           </div>
+                         </div>
+                         
+                         <div className="space-y-2">
+                           <Label htmlFor="email">Email</Label>
+                           <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                             {user?.email}
+                           </div>
+                         </div>
+                         
+                         <div className="pt-4">
+                           <Button variant="outline" className="w-full">
+                             Change Password
+                           </Button>
+                         </div>
+                       </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="security" className="m-0">
