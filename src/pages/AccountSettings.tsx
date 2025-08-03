@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase"; 
@@ -20,8 +20,10 @@ import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { Link } from "react-router-dom";
-import { Shield, Smartphone, Monitor, Trash2, ExternalLink } from "lucide-react";
+import { Shield, Smartphone, Monitor, Trash2, ExternalLink, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -157,6 +159,11 @@ export default function AccountSettings() {
     creatorUpdates: true,
     saving: false
   });
+  
+  // Avatar upload state and functionality
+  const { getAvatarUrl, uploadAvatar, isCreator } = useUnifiedAvatar();
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form for password change
   const form = useForm<PasswordFormValues>({
@@ -300,6 +307,45 @@ export default function AccountSettings() {
   const handleAgeVerificationCancel = () => {
     console.log('❌ AccountSettings - Age verification cancelled');
     setShowVerificationModal(false);
+  };
+
+  // Avatar upload handlers
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    const result = await uploadAvatar(file);
+    setUploadingAvatar(false);
+
+    // Clear the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSessionLogout = (sessionId: string) => {
@@ -450,13 +496,56 @@ export default function AccountSettings() {
           </TabsList>
           <div className="mt-6 space-y-6">
             <TabsContent value="account" className="m-0">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Settings</CardTitle>
-                  <CardDescription>
-                    Manage your account details and preferences
-                  </CardDescription>
-                </CardHeader>
+              <div className="space-y-6">
+                {/* Avatar Upload Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Profile Picture</CardTitle>
+                    <CardDescription>
+                      Upload and manage your avatar
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col items-center space-y-4">
+                      <Avatar className="h-24 w-24 border-2 border-muted">
+                        <AvatarImage 
+                          src={getAvatarUrl(profile) || ""} 
+                          alt="Profile picture" 
+                        />
+                        <AvatarFallback className="text-xl">
+                          {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleAvatarClick}
+                        disabled={uploadingAvatar}
+                        className="flex items-center gap-2"
+                      >
+                        <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
+                        {uploadingAvatar ? "Uploading..." : "Change Avatar"}
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Account Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Account Settings</CardTitle>
+                    <CardDescription>
+                      Manage your account details and preferences
+                    </CardDescription>
+                  </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
@@ -498,9 +587,10 @@ export default function AccountSettings() {
                   >
                     {accountSettings.saving ? "Saving..." : "Save Changes"}
                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
+                 </CardFooter>
+               </Card>
+               </div>
+             </TabsContent>
             
             <TabsContent value="preferences" className="m-0">
               <Card>
