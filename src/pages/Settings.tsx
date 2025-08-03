@@ -16,6 +16,7 @@ import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
+import { AccountTab } from "@/components/settings/AccountTab";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Camera } from "lucide-react";
@@ -161,73 +162,7 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="account" className="m-0">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Account Settings</CardTitle>
-                      <CardDescription>
-                        Manage your account details and preferences
-                      </CardDescription>
-                    </CardHeader>
-                     <CardContent className="space-y-6">
-                       {/* Avatar Section */}
-                       <div className="flex flex-col items-center space-y-4">
-                         <Avatar className="h-24 w-24">
-                           <AvatarImage 
-                             src={getAvatarUrl(profile) || ""} 
-                             alt="Profile picture" 
-                           />
-                           <AvatarFallback className="text-xl">
-                             {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
-                           </AvatarFallback>
-                         </Avatar>
-                         <Button 
-                           type="button" 
-                           variant="outline" 
-                           size="sm"
-                           onClick={handleAvatarClick}
-                           disabled={uploadingAvatar}
-                           className="flex items-center gap-2"
-                         >
-                           <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
-                           {uploadingAvatar ? "Uploading..." : "Change Avatar"}
-                         </Button>
-                         <input
-                           ref={fileInputRef}
-                           type="file"
-                           accept="image/*"
-                           onChange={handleAvatarUpload}
-                           className="hidden"
-                         />
-                       </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input 
-                          id="username" 
-                          type="text" 
-                          value={profile?.username || ""}
-                          disabled
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input 
-                          id="email" 
-                          type="email" 
-                          value={user?.email || ""}
-                          disabled
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          To change your email, please contact support
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2 pt-4">
-                        <Button variant="outline">Change Password</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <AccountTab user={user} profile={profile} />
                 </TabsContent>
                 
                 <TabsContent value="security" className="m-0">
