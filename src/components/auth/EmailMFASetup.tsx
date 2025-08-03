@@ -32,11 +32,15 @@ export function EmailMFASetup() {
       setIsLoading(true);
       setError(null);
 
+      // Send OTP code (not magic link) for email verification
       const { error } = await supabase.auth.signInWithOtp({
         email: user.email,
         options: {
           shouldCreateUser: false,
           captchaToken: captchaToken,
+          data: {
+            type: 'email_otp' // Request OTP code instead of magic link
+          }
         }
       });
 
@@ -44,12 +48,12 @@ export function EmailMFASetup() {
 
       setStep('verify');
       toast({
-        title: "Verification email sent",
+        title: "Verification code sent",
         description: "Check your email for the 6-digit verification code.",
       });
     } catch (error: any) {
       console.error('Email MFA setup error:', error);
-      setError(error.message || 'Failed to send verification email');
+      setError(error.message || 'Failed to send verification code');
     } finally {
       setIsLoading(false);
     }
