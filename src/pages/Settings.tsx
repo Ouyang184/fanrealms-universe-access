@@ -161,61 +161,6 @@ export default function Settings() {
                 </TabsContent>
                 
                 <TabsContent value="account" className="m-0">
-                  <div className="space-y-6">
-                    {/* Avatar Upload Section - Top Priority */}
-                    <Card className="border-2 border-primary/20">
-                      <CardHeader className="text-center">
-                        <CardTitle className="text-xl">Profile Picture</CardTitle>
-                        <CardDescription>
-                          Upload and manage your avatar image
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {/* Debug Info */}
-                        <div className="mb-6 p-4 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg text-sm border">
-                          <h4 className="font-medium mb-2">Debug Information:</h4>
-                          <p>Profile: {profile?.username || 'No profile'}</p>
-                          <p>Is Creator: {isCreator.toString()}</p>
-                          <p>Avatar URL: {getAvatarUrl(profile) || 'No avatar'}</p>
-                          <p>User ID: {user?.id || 'No user'}</p>
-                        </div>
-                        
-                        {/* Avatar Section */}
-                        <div className="flex flex-col items-center space-y-4">
-                          <Avatar className="h-32 w-32 border-4 border-primary/30 shadow-lg">
-                            <AvatarImage 
-                              src={getAvatarUrl(profile) || ""} 
-                              alt="Profile picture" 
-                            />
-                            <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                              {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <Button 
-                            type="button" 
-                            variant="default" 
-                            size="lg"
-                            onClick={handleAvatarClick}
-                            disabled={uploadingAvatar}
-                            className="flex items-center gap-2 px-6 py-3"
-                          >
-                            <Camera className={`h-5 w-5 ${uploadingAvatar ? 'animate-spin' : ''}`} />
-                            {uploadingAvatar ? "Uploading..." : "Upload New Avatar"}
-                          </Button>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleAvatarUpload}
-                            className="hidden"
-                          />
-                          <p className="text-xs text-muted-foreground text-center max-w-sm">
-                            Supported formats: JPG, PNG, GIF (max 5MB)
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-
                     {/* Account Information */}
                     <Card>
                       <CardHeader>
@@ -249,7 +194,6 @@ export default function Settings() {
                        </div>
                       </CardContent>
                     </Card>
-                  </div>
                 </TabsContent>
                 
                 <TabsContent value="security" className="m-0">
