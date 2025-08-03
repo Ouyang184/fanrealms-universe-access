@@ -168,37 +168,41 @@ export default function Settings() {
                         Manage your account details and preferences
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      {/* Avatar Section */}
-                      <div className="flex flex-col items-center space-y-4">
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage 
-                            src={getAvatarUrl(profile) || ""} 
-                            alt="Profile picture" 
-                          />
-                          <AvatarFallback className="text-xl">
-                            {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          size="sm"
-                          onClick={handleAvatarClick}
-                          disabled={uploadingAvatar}
-                          className="flex items-center gap-2"
-                        >
-                          <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
-                          {uploadingAvatar ? "Uploading..." : "Change Avatar"}
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                        />
-                      </div>
+                     <CardContent className="space-y-6">
+                       {/* Avatar Section */}
+                       <div className="flex flex-col items-center space-y-4 py-6 border-b border-border">
+                         <div className="text-center space-y-2">
+                           <h3 className="text-lg font-medium">Profile Picture</h3>
+                           <p className="text-sm text-muted-foreground">Upload or change your avatar</p>
+                         </div>
+                         <Avatar className="h-24 w-24 border-2 border-muted">
+                           <AvatarImage 
+                             src={getAvatarUrl(profile) || ""} 
+                             alt="Profile picture" 
+                           />
+                           <AvatarFallback className="text-xl">
+                             {profile?.username?.substring(0, 1).toUpperCase() || user?.email?.substring(0, 1).toUpperCase() || "U"}
+                           </AvatarFallback>
+                         </Avatar>
+                         <Button 
+                           type="button" 
+                           variant="outline" 
+                           size="sm"
+                           onClick={handleAvatarClick}
+                           disabled={uploadingAvatar}
+                           className="flex items-center gap-2"
+                         >
+                           <Camera className={`h-4 w-4 ${uploadingAvatar ? 'animate-spin' : ''}`} />
+                           {uploadingAvatar ? "Uploading..." : "Change Avatar"}
+                         </Button>
+                         <input
+                           ref={fileInputRef}
+                           type="file"
+                           accept="image/*"
+                           onChange={handleAvatarUpload}
+                           className="hidden"
+                         />
+                       </div>
                       
                       {/* User Information */}
                       <div className="space-y-4">
