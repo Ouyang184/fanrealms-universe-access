@@ -1,4 +1,5 @@
 
+import React, { useRef, useState } from "react";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,11 +17,9 @@ import { ProfileTab } from "@/components/settings/ProfileTab";
 import { NotificationsTab } from "@/components/settings/NotificationsTab";
 import { ContentPreferencesTab } from "@/components/settings/ContentPreferencesTab";
 import { SecurityTab } from "@/components/settings/SecurityTab";
-import { AccountTab } from "@/components/settings/AccountTab";
+import { Camera } from "lucide-react";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Camera } from "lucide-react";
-import { useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
