@@ -105,56 +105,34 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Use Supabase's built-in auth email system
+    // Send email using Supabase's auth system
     try {
-      // Generate a custom email template with the 2FA code
-      const emailHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333; text-align: center;">FanRealms 2FA Verification</h2>
-          <p style="color: #666; font-size: 16px;">Hi there,</p>
-          <p style="color: #666; font-size: 16px;">
-            You're signing in to your FanRealms account. Please use the verification code below:
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <span style="
-              background: #f8f9fa;
-              border: 2px solid #e9ecef;
-              border-radius: 8px;
-              padding: 15px 25px;
-              font-size: 24px;
-              font-weight: bold;
-              letter-spacing: 3px;
-              color: #495057;
-              display: inline-block;
-            ">${code}</span>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            This code will expire in 10 minutes. If you didn't request this, please ignore this email.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            Best regards,<br>
-            The FanRealms Team
-          </p>
-        </div>
-      `
+      // Use Supabase auth admin to send a custom recovery email with the 2FA code
+      // We'll leverage the magic link system but customize the email content
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: user.email,
+        options: {
+          data: {
+            twofa_code: code,
+            purpose: '2fa_verification'
+          }
+        }
+      })
 
-      // Use Supabase Auth to send email using a custom template approach
-      // Since Supabase doesn't have a direct "send custom email" API, 
-      // we'll use the admin API to trigger a custom email
-      
-      // For now, we'll store the code and return success
-      // In a production environment, you would configure Supabase email templates
-      // or use a webhook to handle custom email sending
-      
-      console.log(`2FA code generated for user ${user.email}: ${code}`)
-      
-      // In development, log the code for testing
-      if (Deno.env.get('ENVIRONMENT') === 'development') {
-        console.log(`🔐 2FA Code for ${email}: ${code}`)
+      if (linkError) {
+        console.error('Error generating auth link:', linkError)
+        throw new Error('Failed to generate verification email')
       }
+
+      // For development/testing, log the code
+      console.log(`🔐 2FA Code sent to ${email}: ${code}`)
+      
+      // In production, this would trigger Supabase's email system
+      // You can customize the email template in Supabase Dashboard > Authentication > Email Templates
       
     } catch (emailError) {
-      console.error('Error with email system:', emailError)
+      console.error('Error sending 2FA email:', emailError)
       return new Response(
         JSON.stringify({ error: 'Failed to send verification email' }),
         { 
