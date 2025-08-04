@@ -21,6 +21,7 @@ export function MFAEnrollment({ onEnrollmentComplete, onCancel }: MFAEnrollmentP
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [qrError, setQrError] = useState(false);
   const { toast } = useToast();
 
   const startEnrollment = async () => {
@@ -126,17 +127,31 @@ export function MFAEnrollment({ onEnrollmentComplete, onCancel }: MFAEnrollmentP
         )}
 
         <div className="flex flex-col items-center space-y-4">
-          {qrCode && (
+          {qrCode && !qrError && (
             <div className="bg-white p-4 rounded-lg">
-              <QRCodeSVG value={qrCode} size={200} />
+              <QRCodeSVG 
+                value={qrCode} 
+                size={200}
+                onError={() => setQrError(true)}
+              />
             </div>
+          )}
+
+          {qrError && (
+            <Alert>
+              <AlertDescription>
+                QR code couldn't be generated. Please use the manual setup code below.
+              </AlertDescription>
+            </Alert>
           )}
 
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">
-              Can't scan the QR code? Enter this secret manually:
+              Can't scan the QR code? Enter this secret manually in your authenticator app:
             </p>
-            <code className="text-xs bg-muted p-2 rounded break-all">{secret}</code>
+            <div className="bg-muted p-3 rounded-lg">
+              <code className="text-sm font-mono break-all select-all">{secret}</code>
+            </div>
           </div>
 
           <div className="w-full space-y-2">
