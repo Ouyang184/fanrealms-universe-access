@@ -35,9 +35,14 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
     setIsVerifying(true);
     
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      // Get user by email since we don't have an authenticated session
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (userError || !userData) {
         throw new Error("User not found");
       }
 
@@ -45,7 +50,7 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
       const { data: codeData, error: codeError } = await supabase
         .from('email_2fa_codes')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userData.id)
         .eq('code', code)
         .is('used_at', null)
         .gte('expires_at', new Date().toISOString())
@@ -60,7 +65,7 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
         await supabase
           .from('email_2fa_codes')
           .update({ attempts: attempts + 1 })
-          .eq('user_id', user.id)
+          .eq('user_id', userData.id)
           .eq('code', code);
 
         toast({
@@ -81,9 +86,22 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
         console.error('Error marking code as used:', updateError);
       }
 
+      // Now complete the login by sending a magic link
+      const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/home`
+        }
+      });
+
+      if (magicLinkError) {
+        throw new Error("Failed to complete login");
+      }
+
       toast({
         title: "Verification successful",
-        description: "You have been successfully signed in"
+        description: "Check your email for a login link to complete the process"
       });
 
       onSuccess();
@@ -105,19 +123,12 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
     setIsResending(true);
     
     try {
-      const response = await fetch('https://eaeqyctjljbtcatlohky.supabase.co/functions/v1/send-2fa-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZXF5Y3RqbGpidGNhdGxvaGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3ODE1OTgsImV4cCI6MjA2MTM1NzU5OH0.FrxmM9nqPNUjo3ZTMUdUWPirm0q1WFssoierxq9zb7A`
-        },
-        body: JSON.stringify({ email })
+      const { error } = await supabase.functions.invoke('send-2fa-email', {
+        body: { email }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to resend code');
+      if (error) {
+        throw new Error(error.message || 'Failed to resend code');
       }
 
       toast({

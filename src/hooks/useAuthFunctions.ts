@@ -42,6 +42,44 @@ export const useAuthFunctions = () => {
         };
       }
       
+      // If we have a session, check for email 2FA
+      if (data.session && data.user) {
+        console.log("useAuthFunctions: Checking for email 2FA requirement");
+        
+        // Check if user has email 2FA enabled
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('email_2fa_enabled')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (userError) {
+          console.error("useAuthFunctions: Error checking email 2FA status:", userError);
+        } else if (userData?.email_2fa_enabled) {
+          console.log("useAuthFunctions: Email 2FA required, signing out temporarily");
+          
+          // Sign out the user temporarily
+          await supabase.auth.signOut({ scope: 'local' });
+          
+          // Trigger email 2FA challenge
+          const { error: emailError } = await supabase.functions.invoke('send-2fa-email', {
+            body: { email: data.user.email }
+          });
+          
+          if (emailError) {
+            console.error("useAuthFunctions: Error sending 2FA email:", emailError);
+            throw new Error("Failed to send 2FA verification code");
+          }
+          
+          return {
+            success: false,
+            error: { message: "EMAIL_2FA_REQUIRED" },
+            emailMfaRequired: true,
+            email: data.user.email
+          };
+        }
+      }
+      
       console.log("useAuthFunctions: Sign in successful:", data.user?.email);
       
       toast({

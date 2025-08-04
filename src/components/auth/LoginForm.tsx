@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthResult } from "@/lib/types/auth";
 import { MFAChallenge } from "@/components/auth/MFAChallenge";
+import { EmailTwoFactorChallenge } from "@/components/auth/EmailTwoFactorChallenge";
 import { useMFA } from "@/hooks/useMFA";
 
 const loginSchema = z.object({
@@ -38,8 +39,10 @@ const LoginForm = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [showMFAChallenge, setShowMFAChallenge] = useState(false);
+  const [showEmailMFAChallenge, setShowEmailMFAChallenge] = useState(false);
   const [mfaFactorId, setMfaFactorId] = useState<string>("");
   const [mfaChallengeId, setMfaChallengeId] = useState<string>("");
+  const [emailMfaEmail, setEmailMfaEmail] = useState<string>("");
   const { createChallenge } = useMFA();
 
   const form = useForm<LoginFormValues>({
@@ -76,6 +79,13 @@ const LoginForm = () => {
           return;
         }
         
+        if (result.emailMfaRequired && result.email) {
+          console.log("LoginForm: Email 2FA challenge required");
+          setEmailMfaEmail(result.email);
+          setShowEmailMFAChallenge(true);
+          return;
+        }
+        
         console.log("LoginForm: Sign in failed:", result.error.message);
         setLoginError(result.error.message);
         return;
@@ -104,6 +114,18 @@ const LoginForm = () => {
     setMfaChallengeId("");
   };
 
+  const handleEmailMFASuccess = () => {
+    console.log("LoginForm: Email 2FA verification successful, redirecting...");
+    const params = new URLSearchParams(location.search);
+    const returnTo = params.get('returnTo');
+    navigate(returnTo || '/home', { replace: true });
+  };
+
+  const handleEmailMFACancel = () => {
+    setShowEmailMFAChallenge(false);
+    setEmailMfaEmail("");
+  };
+
   if (showMFAChallenge) {
     return (
       <MFAChallenge
@@ -111,6 +133,16 @@ const LoginForm = () => {
         challengeId={mfaChallengeId}
         onSuccess={handleMFASuccess}
         onCancel={handleMFACancel}
+      />
+    );
+  }
+
+  if (showEmailMFAChallenge) {
+    return (
+      <EmailTwoFactorChallenge
+        email={emailMfaEmail}
+        onSuccess={handleEmailMFASuccess}
+        onCancel={handleEmailMFACancel}
       />
     );
   }

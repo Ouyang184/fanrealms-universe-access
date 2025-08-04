@@ -45,4 +45,6 @@ export interface AuthResult {
   mfaRequired?: boolean;
   userId?: string;
   factors?: any[];
+  emailMfaRequired?: boolean;
+  email?: string;
 }
