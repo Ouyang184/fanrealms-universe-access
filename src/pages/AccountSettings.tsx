@@ -20,11 +20,13 @@ import { useNSFWPreference } from "@/hooks/useNSFWPreference";
 import { useAgeVerification } from "@/hooks/useAgeVerification";
 import { AgeVerificationModal } from "@/components/nsfw/AgeVerificationModal";
 import { Link } from "react-router-dom";
-import { Shield, Trash2, ExternalLink, Camera, Mail, ArrowRight } from "lucide-react";
+import { Shield, Trash2, ExternalLink, Camera, Mail, ArrowRight, Smartphone, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
+import { MFAEnrollment } from "@/components/auth/MFAEnrollment";
+import { useMFA } from "@/hooks/useMFA";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -124,8 +126,12 @@ export default function AccountSettings() {
   
   // MFA Dialog state
   const [showMFADialog, setShowMFADialog] = useState(false);
+  const [showTOTPDialog, setShowTOTPDialog] = useState(false);
+  const [managingFactor, setManagingFactor] = useState<string | null>(null);
   
-  
+  // MFA hooks
+  const { factors, hasMFA, fetchFactors, unenrollFactor } = useMFA();
+
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
@@ -283,6 +289,38 @@ export default function AccountSettings() {
   const handleAgeVerificationCancel = () => {
     console.log('❌ AccountSettings - Age verification cancelled');
     setShowVerificationModal(false);
+  };
+
+  // TOTP MFA handlers
+  const handleTOTPEnrollmentComplete = () => {
+    setShowTOTPDialog(false);
+    fetchFactors();
+    toast({
+      title: "MFA Enabled",
+      description: "Two-factor authentication has been successfully enabled for your account.",
+    });
+  };
+
+  const handleTOTPEnrollmentCancel = () => {
+    setShowTOTPDialog(false);
+  };
+
+  const handleUnenrollFactor = async (factorId: string) => {
+    try {
+      await unenrollFactor(factorId);
+      setManagingFactor(null);
+      fetchFactors();
+      toast({
+        title: "MFA Disabled",
+        description: "Two-factor authentication has been disabled for your account.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to disable MFA",
+        variant: "destructive",
+      });
+    }
   };
 
   // Avatar upload handlers
@@ -750,6 +788,50 @@ export default function AccountSettings() {
                         </Dialog>
                       </div>
                     </div>
+
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Smartphone className={`h-5 w-5 ${hasMFA ? 'text-green-600' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="font-medium">Authenticator App (TOTP)</p>
+                          <p className="text-sm text-muted-foreground">
+                            Use an authenticator app to generate secure verification codes
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={hasMFA ? 'default' : 'secondary'}>
+                          {hasMFA ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                        {hasMFA ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setManagingFactor(factors[0]?.id || null)}
+                          >
+                            Manage
+                            <ArrowRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        ) : (
+                          <Dialog open={showTOTPDialog} onOpenChange={setShowTOTPDialog}>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setShowTOTPDialog(true)}
+                            >
+                              Set up
+                              <ArrowRight className="h-4 w-4 ml-1" />
+                            </Button>
+                            <DialogContent className="max-w-md">
+                              <MFAEnrollment 
+                                onEnrollmentComplete={handleTOTPEnrollmentComplete}
+                                onCancel={handleTOTPEnrollmentCancel}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1063,6 +1145,44 @@ export default function AccountSettings() {
         <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
           <DialogContent className="max-w-md">
             <EmailMFASetup />
+          </DialogContent>
+        </Dialog>
+
+        {/* MFA Management Dialog */}
+        <Dialog open={!!managingFactor} onOpenChange={() => setManagingFactor(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Manage Two-Factor Authentication</DialogTitle>
+              <DialogDescription>
+                You can disable two-factor authentication for your account below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-4 border rounded-lg">
+                <Smartphone className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium">Authenticator App</p>
+                  <p className="text-sm text-muted-foreground">
+                    Currently protecting your account
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Disabling 2FA will make your account less secure. Make sure you have alternative security measures in place.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setManagingFactor(null)}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => managingFactor && handleUnenrollFactor(managingFactor)}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Disable 2FA
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
