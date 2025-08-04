@@ -541,6 +541,36 @@ export type Database = {
           },
         ]
       }
+      email_2fa_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       feeds: {
         Row: {
           created_at: string
@@ -1202,6 +1232,7 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           email: string
+          email_2fa_enabled: boolean
           id: string
           is_nsfw_enabled: boolean
           profile_picture: string | null
@@ -1214,6 +1245,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           email: string
+          email_2fa_enabled?: boolean
           id?: string
           is_nsfw_enabled?: boolean
           profile_picture?: string | null
@@ -1226,6 +1258,7 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           email?: string
+          email_2fa_enabled?: boolean
           id?: string
           is_nsfw_enabled?: boolean
           profile_picture?: string | null
@@ -1321,6 +1354,10 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_expired_2fa_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_post_view_count: {
         Args: { post_id_param: string }
         Returns: number

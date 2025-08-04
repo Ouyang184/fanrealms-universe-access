@@ -27,6 +27,7 @@ import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
 import { MFAEnrollment } from "@/components/auth/MFAEnrollment";
 import { useMFA } from "@/hooks/useMFA";
+import { useEmailMFA } from "@/hooks/useEmailMFA";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -131,6 +132,7 @@ export default function AccountSettings() {
   
   // MFA hooks
   const { factors, hasMFA, fetchFactors, unenrollFactor } = useMFA();
+  const { isEnabled: emailMFAEnabled } = useEmailMFA();
 
   // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -761,7 +763,7 @@ export default function AccountSettings() {
 
                     <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Mail className={`h-5 w-5 ${user?.user_metadata?.email_2fa_enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                        <Mail className={`h-5 w-5 ${emailMFAEnabled ? 'text-green-600' : 'text-gray-400'}`} />
                         <div>
                           <p className="font-medium">Email Two-Factor Authentication</p>
                           <p className="text-sm text-muted-foreground">
@@ -770,8 +772,8 @@ export default function AccountSettings() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={user?.user_metadata?.email_2fa_enabled ? 'default' : 'secondary'}>
-                          {user?.user_metadata?.email_2fa_enabled ? 'Enabled' : 'Disabled'}
+                        <Badge variant={emailMFAEnabled ? 'default' : 'secondary'}>
+                          {emailMFAEnabled ? 'Enabled' : 'Disabled'}
                         </Badge>
                         <Dialog open={showMFADialog} onOpenChange={setShowMFADialog}>
                           <Button 
@@ -779,7 +781,7 @@ export default function AccountSettings() {
                             size="sm"
                             onClick={() => setShowMFADialog(true)}
                           >
-                            {user?.user_metadata?.email_2fa_enabled ? 'Manage' : 'Set up'}
+                            {emailMFAEnabled ? 'Manage' : 'Set up'}
                             <ArrowRight className="h-4 w-4 ml-1" />
                           </Button>
                           <DialogContent className="max-w-md">
