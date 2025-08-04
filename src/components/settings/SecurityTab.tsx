@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Shield, Key, ArrowRight, Smartphone, X } from "lucide-react";
+import { Shield, Key, ArrowRight, Smartphone, X, Mail } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -101,6 +101,25 @@ export function SecurityTab() {
                     </DialogContent>
                   </Dialog>
                 )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-gray-400" />
+                <div>
+                  <p className="font-medium">Email Two-Factor Authentication</p>
+                  <p className="text-sm text-muted-foreground">
+                    Receive verification codes via email when signing in
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">Disabled</Badge>
+                <Button variant="outline" size="sm">
+                  Set up
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
 
