@@ -77,49 +77,19 @@ Deno.serve(async (req) => {
         throw new Error('Missing SendGrid API key')
       }
 
-      console.log(`🔐 2FA Code generated for ${email}: ${code}`)
-      
-      // SendGrid email payload
+      // SendGrid dynamic template payload
       const emailPayload = {
         personalizations: [
           {
             to: [{ email: email }],
-            subject: "Your FanRealms 2FA Verification Code"
+            dynamic_template_data: {
+              verification_code: code,
+              user_email: email
+            }
           }
         ],
         from: { email: "support@fanrealms.com", name: "FanRealms" },
-        content: [
-          {
-            type: "text/html",
-            value: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                  <h1 style="color: #333; margin-bottom: 10px;">FanRealms</h1>
-                  <h2 style="color: #666; font-weight: normal;">Two-Factor Authentication</h2>
-                </div>
-                
-                <div style="background: #f8f9fa; border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 20px;">
-                  <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                    Your verification code is:
-                  </p>
-                  <div style="font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 4px; margin: 20px 0;">
-                    ${code}
-                  </div>
-                  <p style="font-size: 14px; color: #666; margin-top: 20px;">
-                    This code will expire in 5 minutes.
-                  </p>
-                </div>
-                
-                <div style="text-align: center; color: #666; font-size: 14px;">
-                  <p>If you didn't request this code, please ignore this email.</p>
-                  <p style="margin-top: 20px;">
-                    <strong>FanRealms Team</strong>
-                  </p>
-                </div>
-              </div>
-            `
-          }
-        ]
+        template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
       }
 
       // Send email via SendGrid API
@@ -138,7 +108,7 @@ Deno.serve(async (req) => {
         throw new Error(`SendGrid API error: ${response.status}`)
       }
 
-      console.log('📧 2FA email sent successfully via SendGrid')
+      console.log('📧 2FA email sent successfully via SendGrid dynamic template')
       
     } catch (emailError) {
       console.error('Error sending email:', emailError)
