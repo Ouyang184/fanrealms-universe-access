@@ -68,18 +68,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Test SendGrid API key
+    // Send email using SendGrid
     try {
       const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
-      const senderEmail = Deno.env.get('SENDGRID_SENDER_EMAIL') || 'support@fanrealms.com'
       
       if (!sendGridApiKey) {
-        console.error('❌ SendGrid API key not found')
-        throw new Error('SendGrid API key not configured')
+        console.error('❌ Missing SendGrid API key')
+        throw new Error('Missing SendGrid API key')
       }
-      
-      console.log('✅ SendGrid API key found, testing...')
-      console.log(`📧 Using sender email: ${senderEmail}`)
 
       // SendGrid dynamic template payload
       const emailPayload = {
@@ -92,11 +88,11 @@ Deno.serve(async (req) => {
             }
           }
         ],
-        from: { email: senderEmail, name: "FanRealms Support" },
+        from: { email: "support@fanrealms.com", name: "FanRealms" },
         template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
       }
 
-      // Test SendGrid API
+      // Send email via SendGrid API
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -106,54 +102,49 @@ Deno.serve(async (req) => {
         body: JSON.stringify(emailPayload)
       })
 
-      console.log(`📊 SendGrid response status: ${response.status}`)
-
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(`❌ SendGrid API error: ${response.status} - ${errorText}`)
+        console.error('❌ SendGrid API error:', response.status, errorText)
+        console.error('📧 Email payload was:', JSON.stringify(emailPayload, null, 2))
         
-        // Return code as fallback with error details
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            message: `Email failed (${response.status}). Check console for code.`,
-            devCode: code,
-            error: `SendGrid error: ${response.status} - ${errorText.substring(0, 100)}`
-          }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
+        // For development, log the code so user can continue
+        console.log(`🔐 EMAIL FAILED - Your 2FA code is: ${code}`)
+        console.log(`⚠️ Check SendGrid setup: sender verification, API key permissions, template config`)
+        
+        throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
       }
 
-      console.log('✅ Email sent successfully via SendGrid!')
+      console.log('✅ 2FA email sent successfully via SendGrid dynamic template')
+      console.log(`🔐 Code generated for ${email}: ${code} (logged for debugging)`)
+      
+    } catch (emailError) {
+      console.error('❌ Error sending email:', emailError)
+      
+      // Log the code for development/debugging
+      console.log(`🔐 EMAIL ERROR - Your 2FA code is: ${code}`)
+      console.log(`📧 Please check SendGrid configuration`)
       
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: 'Verification code sent to your email'
+          error: 'Failed to send verification code. Please try again.',
+          devNote: `Code: ${code}` // Remove in production
         }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-
-    } catch (error) {
-      console.error('❌ SendGrid error:', error)
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          message: 'Email system error. Check console for code.',
-          devCode: code,
-          error: error.message
-        }),
-        { 
-          status: 200, // Still return success so user can continue
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Verification code sent to your email' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
 
   } catch (error) {
     console.error('Error in send-code function:', error)
