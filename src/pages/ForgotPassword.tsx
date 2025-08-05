@@ -1,10 +1,12 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
+import { Turnstile } from '@marsidev/react-turnstile';
+import { TURNSTILE_SITE_KEY } from '@/config/turnstile';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
+  captcha: z.string().min(1, "Please complete the captcha"),
 });
 
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
@@ -24,11 +27,14 @@ const ForgotPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string>("");
+  const turnstileRef = useRef<any>(null);
 
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
+      captcha: "",
     },
   });
 
@@ -41,6 +47,7 @@ const ForgotPassword = () => {
 
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
         redirectTo: `${window.location.origin}/reset-password`,
+        captchaToken: values.captcha,
       });
 
       if (error) {
@@ -53,12 +60,21 @@ const ForgotPassword = () => {
     } catch (error: any) {
       console.error("Password reset error:", error);
       
+      // Reset captcha on error
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
+      setCaptchaToken("");
+      form.setValue("captcha", "");
+      
       // Handle rate limiting gracefully
       if (error.message?.includes("rate_limit") || error.message?.includes("rate limit")) {
         setError("Too many reset requests. Please wait a moment before trying again.");
       } else if (error.message?.includes("not found") || error.message?.includes("user not found")) {
         // For security, we still show success even if email doesn't exist
         setIsSuccess(true);
+      } else if (error.message?.includes("captcha")) {
+        setError("Security verification failed. Please try again.");
       } else {
         setError(error.message || "An error occurred while sending the reset email");
       }
@@ -101,7 +117,11 @@ const ForgotPassword = () => {
                   onClick={() => {
                     setIsSuccess(false);
                     setError(null);
+                    setCaptchaToken("");
                     form.reset();
+                    if (turnstileRef.current) {
+                      turnstileRef.current.reset();
+                    }
                   }}
                 >
                   Try again
@@ -169,7 +189,36 @@ const ForgotPassword = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting}>
+                <FormField
+                  control={form.control}
+                  name="captcha"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <Label>Security Check</Label>
+                      <FormControl>
+                        <Turnstile
+                          ref={turnstileRef}
+                          siteKey={TURNSTILE_SITE_KEY}
+                          onSuccess={(token) => {
+                            setCaptchaToken(token);
+                            field.onChange(token);
+                          }}
+                          onError={() => {
+                            setCaptchaToken("");
+                            field.onChange("");
+                          }}
+                          onExpire={() => {
+                            setCaptchaToken("");
+                            field.onChange("");
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting || !captchaToken}>
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <svg
