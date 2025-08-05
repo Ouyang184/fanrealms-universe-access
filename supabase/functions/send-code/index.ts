@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
 
     // Send email using SendGrid
     try {
-      const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
+      const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
       
       if (!sendGridApiKey) {
         console.error('❌ Missing SendGrid API key')
