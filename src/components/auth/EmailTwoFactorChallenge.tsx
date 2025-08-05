@@ -9,12 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface EmailTwoFactorChallengeProps {
   email: string;
-  password: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function EmailTwoFactorChallenge({ email, password, onSuccess, onCancel }: EmailTwoFactorChallengeProps) {
+export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwoFactorChallengeProps) {
   const [code, setCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);

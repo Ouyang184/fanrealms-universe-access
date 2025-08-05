@@ -130,33 +130,17 @@ const LoginForm = () => {
     setMfaChallengeId("");
   };
 
-  const handleEmailMFASuccess = async () => {
-    console.log("LoginForm: Email 2FA verification successful, completing login...");
-    try {
-      // Complete the login with email and password after 2FA verification
-      const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
-        email: emailMfaEmail,
-        password: form.getValues("password")
-      });
+  const handleEmailMFASuccess = () => {
+    console.log("LoginForm: Email 2FA verification successful, user should already be authenticated");
+    
+    // Clear 2FA state
+    setShowEmailMFAChallenge(false);
+    setEmailMfaEmail("");
 
-      if (authError || !authResult.user) {
-        throw new Error(authError?.message || "Failed to complete login after 2FA");
-      }
-
-      // Clear 2FA state
-      setShowEmailMFAChallenge(false);
-      setEmailMfaEmail("");
-
-      // Navigate to success page
-      const params = new URLSearchParams(location.search);
-      const returnTo = params.get('returnTo');
-      navigate(returnTo || '/home', { replace: true });
-    } catch (error: any) {
-      console.error("Failed to complete login after 2FA:", error);
-      setLoginError("Failed to complete login. Please try again.");
-      setShowEmailMFAChallenge(false);
-      setEmailMfaEmail("");
-    }
+    // Navigate to success page - user is already authenticated
+    const params = new URLSearchParams(location.search);
+    const returnTo = params.get('returnTo');
+    navigate(returnTo || '/home', { replace: true });
   };
 
   const handleEmailMFACancel = () => {
@@ -179,7 +163,6 @@ const LoginForm = () => {
     return (
         <EmailTwoFactorChallenge
           email={emailMfaEmail}
-          password={form.getValues("password")}
           onSuccess={handleEmailMFASuccess}
           onCancel={handleEmailMFACancel}
         />

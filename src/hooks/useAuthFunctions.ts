@@ -58,8 +58,8 @@ export const useAuthFunctions = () => {
         } else if (userData?.email_2fa_enabled) {
           console.log("useAuthFunctions: Email 2FA required, signing out temporarily");
           
-          // Sign out the user temporarily
-          await supabase.auth.signOut({ scope: 'local' });
+          // Don't sign out - keep the session and show 2FA challenge
+          console.log("useAuthFunctions: Email 2FA required, keeping session active");
           
           // Trigger email 2FA challenge
           console.log("useAuthFunctions: Calling send-code function...");
@@ -78,7 +78,9 @@ export const useAuthFunctions = () => {
             success: false,
             error: { message: "EMAIL_2FA_REQUIRED" },
             emailMfaRequired: true,
-            email: data.user.email
+            email: data.user.email,
+            user: data.user,
+            session: data.session
           };
         }
       }
