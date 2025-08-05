@@ -4,6 +4,46 @@ import { corsHeaders } from '../_shared/cors.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+interface SendEmailParams {
+  templateId: string;
+  to: string;
+  from: string;
+  dynamic_template_data: Record<string, any>;
+}
+
+async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEmailParams) {
+  const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
+  
+  if (!sendGridApiKey) {
+    throw new Error('Missing SendGrid API key')
+  }
+
+  const emailPayload = {
+    personalizations: [
+      {
+        to: [{ email: to }],
+        dynamic_template_data
+      }
+    ],
+    from: { email: from, name: "FanRealms" },
+    template_id: templateId
+  }
+
+  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${sendGridApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(emailPayload)
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
+  }
+}
+
 interface RequestBody {
   email: string;
 }
@@ -70,43 +110,15 @@ Deno.serve(async (req) => {
 
     // Send email using SendGrid
     try {
-      const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
-      
-      if (!sendGridApiKey) {
-        console.error('❌ Missing SendGrid API key')
-        throw new Error('Missing SendGrid API key')
-      }
-
-      // SendGrid dynamic template payload
-      const emailPayload = {
-        personalizations: [
-          {
-            to: [{ email: email }],
-            dynamic_template_data: {
-              verification_code: code,
-              user_email: email
-            }
-          }
-        ],
-        from: { email: "support@fanrealms.com", name: "FanRealms" },
-        template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
-      }
-
-      // Send email via SendGrid API
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sendGridApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailPayload)
+      await sendEmail({
+        templateId: 'd-120a3ffb0c774da8ad484ab9010b673a',
+        to: email,
+        from: 'support@fanrealms.com',
+        dynamic_template_data: {
+          subject: 'Your FanRealms Login Code',
+          code: code
+        }
       })
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('SendGrid API error:', response.status, errorText)
-        throw new Error(`SendGrid API error: ${response.status}`)
-      }
 
       console.log('📧 2FA email sent successfully via SendGrid dynamic template')
       
