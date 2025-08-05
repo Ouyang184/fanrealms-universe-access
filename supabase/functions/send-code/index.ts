@@ -18,6 +18,10 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
     throw new Error('Missing SendGrid API key')
   }
 
+  console.log('📧 Preparing to send email to:', to)
+  console.log('📧 Template ID:', templateId)
+  console.log('📧 Dynamic template data:', dynamic_template_data)
+
   const emailPayload = {
     personalizations: [
       {
@@ -26,9 +30,10 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
       }
     ],
     from: { email: from, name: "FanRealms" },
-    subject: dynamic_template_data.subject || 'Your FanRealms Login Code',
     template_id: templateId
   }
+
+  console.log('📧 SendGrid payload:', JSON.stringify(emailPayload, null, 2))
 
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
