@@ -53,22 +53,10 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
         return;
       }
 
-      // Code verified successfully, now complete the login by sending a magic link
-      const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/home`
-        }
-      });
-
-      if (magicLinkError) {
-        throw new Error("Failed to complete login");
-      }
-
+      // Code verified successfully, user can now proceed
       toast({
         title: "Verification successful",
-        description: "Check your email for a login link to complete the process"
+        description: "You have been verified successfully"
       });
 
       onSuccess();
