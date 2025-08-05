@@ -26,6 +26,7 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
       }
     ],
     from: { email: from, name: "FanRealms" },
+    subject: dynamic_template_data.subject || 'Your FanRealms Login Code',
     template_id: templateId
   }
 
