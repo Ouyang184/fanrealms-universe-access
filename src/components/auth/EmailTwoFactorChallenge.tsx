@@ -54,19 +54,10 @@ export function EmailTwoFactorChallenge({ email, password, onSuccess, onCancel }
         return;
       }
 
-      // Code verified successfully, now complete the login
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: password
-      });
-
-      if (authError || !authData.user) {
-        throw new Error("Failed to complete login");
-      }
-
+      // Code verified successfully - 2FA is complete
       toast({
-        title: "Login successful",
-        description: "You have been successfully logged in"
+        title: "Verification successful", 
+        description: "2FA verification completed successfully"
       });
 
       onSuccess();

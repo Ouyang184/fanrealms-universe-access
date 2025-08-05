@@ -21,6 +21,7 @@ import { AuthResult } from "@/lib/types/auth";
 import { MFAChallenge } from "@/components/auth/MFAChallenge";
 import { EmailTwoFactorChallenge } from "@/components/auth/EmailTwoFactorChallenge";
 import { useMFA } from "@/hooks/useMFA";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -129,11 +130,33 @@ const LoginForm = () => {
     setMfaChallengeId("");
   };
 
-  const handleEmailMFASuccess = () => {
-    console.log("LoginForm: Email 2FA verification successful, redirecting...");
-    const params = new URLSearchParams(location.search);
-    const returnTo = params.get('returnTo');
-    navigate(returnTo || '/home', { replace: true });
+  const handleEmailMFASuccess = async () => {
+    console.log("LoginForm: Email 2FA verification successful, completing login...");
+    try {
+      // Complete the login with email and password after 2FA verification
+      const { data: authResult, error: authError } = await supabase.auth.signInWithPassword({
+        email: emailMfaEmail,
+        password: form.getValues("password")
+      });
+
+      if (authError || !authResult.user) {
+        throw new Error(authError?.message || "Failed to complete login after 2FA");
+      }
+
+      // Clear 2FA state
+      setShowEmailMFAChallenge(false);
+      setEmailMfaEmail("");
+
+      // Navigate to success page
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo');
+      navigate(returnTo || '/home', { replace: true });
+    } catch (error: any) {
+      console.error("Failed to complete login after 2FA:", error);
+      setLoginError("Failed to complete login. Please try again.");
+      setShowEmailMFAChallenge(false);
+      setEmailMfaEmail("");
+    }
   };
 
   const handleEmailMFACancel = () => {
