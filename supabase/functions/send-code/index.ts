@@ -72,6 +72,8 @@ Deno.serve(async (req) => {
     console.log(`🔐 2FA Code for ${email}: ${code}`)
     console.log(`📧 Email system bypassed - using console logging`)
     
+    // Note: When email is re-enabled, sender will be support@fanrealms.com
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
