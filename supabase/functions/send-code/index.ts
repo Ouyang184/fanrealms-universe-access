@@ -68,22 +68,92 @@ Deno.serve(async (req) => {
       )
     }
 
-    // For development, return the code directly since SendGrid isn't working
-    console.log(`🔐 2FA Code for ${email}: ${code}`)
-    console.log(`📧 Email system bypassed - using console logging`)
-    
-    // Note: When email is re-enabled, sender will be support@fanrealms.com
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Verification code generated. Check console logs for the code.',
-        devCode: code // Temporary for development
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    // Test SendGrid API key
+    try {
+      const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
+      const senderEmail = Deno.env.get('SENDGRID_SENDER_EMAIL') || 'support@fanrealms.com'
+      
+      if (!sendGridApiKey) {
+        console.error('❌ SendGrid API key not found')
+        throw new Error('SendGrid API key not configured')
       }
-    )
+      
+      console.log('✅ SendGrid API key found, testing...')
+      console.log(`📧 Using sender email: ${senderEmail}`)
+
+      // SendGrid dynamic template payload
+      const emailPayload = {
+        personalizations: [
+          {
+            to: [{ email: email }],
+            dynamic_template_data: {
+              verification_code: code,
+              user_email: email
+            }
+          }
+        ],
+        from: { email: senderEmail, name: "FanRealms Support" },
+        template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
+      }
+
+      // Test SendGrid API
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendGridApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      })
+
+      console.log(`📊 SendGrid response status: ${response.status}`)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`❌ SendGrid API error: ${response.status} - ${errorText}`)
+        
+        // Return code as fallback with error details
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            message: `Email failed (${response.status}). Check console for code.`,
+            devCode: code,
+            error: `SendGrid error: ${response.status} - ${errorText.substring(0, 100)}`
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      console.log('✅ Email sent successfully via SendGrid!')
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Verification code sent to your email'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+
+    } catch (error) {
+      console.error('❌ SendGrid error:', error)
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: 'Email system error. Check console for code.',
+          devCode: code,
+          error: error.message
+        }),
+        { 
+          status: 200, // Still return success so user can continue
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
 
   } catch (error) {
     console.error('Error in send-code function:', error)
