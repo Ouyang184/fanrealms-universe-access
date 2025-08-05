@@ -104,30 +104,18 @@ Deno.serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('❌ SendGrid API error:', response.status, errorText)
-        console.error('📧 Email payload was:', JSON.stringify(emailPayload, null, 2))
-        
-        // For development, log the code so user can continue
-        console.log(`🔐 EMAIL FAILED - Your 2FA code is: ${code}`)
-        console.log(`⚠️ Check SendGrid setup: sender verification, API key permissions, template config`)
-        
-        throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
+        console.error('SendGrid API error:', response.status, errorText)
+        throw new Error(`SendGrid API error: ${response.status}`)
       }
 
-      console.log('✅ 2FA email sent successfully via SendGrid dynamic template')
-      console.log(`🔐 Code generated for ${email}: ${code} (logged for debugging)`)
+      console.log('📧 2FA email sent successfully via SendGrid dynamic template')
       
     } catch (emailError) {
-      console.error('❌ Error sending email:', emailError)
-      
-      // Log the code for development/debugging
-      console.log(`🔐 EMAIL ERROR - Your 2FA code is: ${code}`)
-      console.log(`📧 Please check SendGrid configuration`)
+      console.error('Error sending email:', emailError)
       
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to send verification code. Please try again.',
-          devNote: `Code: ${code}` // Remove in production
+          error: 'Failed to send verification code. Please try again.' 
         }),
         { 
           status: 500,
