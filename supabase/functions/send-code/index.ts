@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
         to: email,
         from: 'support@fanrealms.com',
         dynamic_template_data: {
+          subject: 'Your FanRealms Login Code',
           code: code
         }
       })
