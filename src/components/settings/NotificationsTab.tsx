@@ -59,6 +59,9 @@ export function NotificationsTab() {
             <p className="text-sm text-muted-foreground">
               Receive notifications via email
             </p>
+            <p className="text-xs text-muted-foreground italic">
+              Email notifications are only for New Content Alerts and Creator Updates
+            </p>
           </div>
           <Switch 
             checked={notificationSettings.emailNotifications}
