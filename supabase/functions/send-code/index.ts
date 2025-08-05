@@ -44,10 +44,18 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
     body: JSON.stringify(emailPayload)
   })
 
+  console.log('📧 SendGrid response status:', response.status)
+  console.log('📧 SendGrid response headers:', Object.fromEntries(response.headers.entries()))
+
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('📧 SendGrid API error response:', errorText)
     throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
   }
+
+  // Log successful response
+  const responseText = await response.text()
+  console.log('📧 SendGrid success response:', responseText)
 }
 
 interface RequestBody {
@@ -121,7 +129,6 @@ Deno.serve(async (req) => {
         to: email,
         from: 'support@fanrealms.com',
         dynamic_template_data: {
-          subject: 'Your FanRealms Login Code',
           code: code
         }
       })
