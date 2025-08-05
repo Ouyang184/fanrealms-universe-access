@@ -4,14 +4,8 @@ import { corsHeaders } from '../_shared/cors.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-interface SendEmailParams {
-  templateId: string;
-  to: string;
-  from: string;
-  dynamic_template_data: Record<string, any>;
-}
 
-async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEmailParams) {
+async function sendEmail(to: string, code: string) {
   const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
   
   if (!sendGridApiKey) {
@@ -19,18 +13,40 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
   }
 
   console.log('📧 Preparing to send email to:', to)
-  console.log('📧 Template ID:', templateId)
-  console.log('📧 Dynamic template data:', dynamic_template_data)
+  console.log('📧 Verification code:', code)
 
   const emailPayload = {
     personalizations: [
       {
         to: [{ email: to }],
-        dynamic_template_data
+        subject: "Your FanRealms Login Code"
       }
     ],
-    from: { email: from, name: "FanRealms" },
-    template_id: templateId
+    from: { 
+      email: Deno.env.get('SENDGRID_SENDER_EMAIL') || 'noreply@fanrealms.com',
+      name: "FanRealms" 
+    },
+    content: [
+      {
+        type: "text/html",
+        value: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h1 style="color: #333; text-align: center;">Your FanRealms Login Code</h1>
+            <p style="font-size: 16px; color: #555; text-align: center;">
+              Use this code to complete your login:
+            </p>
+            <div style="background: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
+              <span style="font-size: 32px; font-weight: bold; color: #6366f1; letter-spacing: 4px;">
+                ${code}
+              </span>
+            </div>
+            <p style="font-size: 14px; color: #777; text-align: center;">
+              This code will expire in 5 minutes. If you didn't request this code, please ignore this email.
+            </p>
+          </div>
+        `
+      }
+    ]
   }
 
   console.log('📧 SendGrid payload:', JSON.stringify(emailPayload, null, 2))
@@ -124,17 +140,9 @@ Deno.serve(async (req) => {
 
     // Send email using SendGrid
     try {
-      await sendEmail({
-        templateId: 'd-120a3ffb0c774da8ad484ab9010b673a',
-        to: email,
-        from: 'support@fanrealms.com',
-        dynamic_template_data: {
-          subject: 'Your FanRealms Login Code',
-          code: code
-        }
-      })
+      await sendEmail(email, code)
 
-      console.log('📧 2FA email sent successfully via SendGrid dynamic template')
+      console.log('📧 2FA email sent successfully via SendGrid')
       
     } catch (emailError) {
       console.error('Error sending email:', emailError)
