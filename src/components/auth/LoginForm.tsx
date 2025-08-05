@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
@@ -43,6 +43,7 @@ const LoginForm = () => {
   const [mfaFactorId, setMfaFactorId] = useState<string>("");
   const [mfaChallengeId, setMfaChallengeId] = useState<string>("");
   const [emailMfaEmail, setEmailMfaEmail] = useState<string>("");
+  const turnstileRef = useRef<any>(null);
   const { createChallenge } = useMFA();
 
   const form = useForm<LoginFormValues>({
@@ -88,6 +89,13 @@ const LoginForm = () => {
         
         console.log("LoginForm: Sign in failed:", result.error.message);
         setLoginError(result.error.message);
+        
+        // Reset captcha on failed login attempts
+        if (turnstileRef.current) {
+          turnstileRef.current.reset();
+        }
+        setCaptchaToken("");
+        form.setValue("captcha", "");
         return;
       }
       
@@ -98,6 +106,13 @@ const LoginForm = () => {
     } catch (error: any) {
       console.error("LoginForm: Login error:", error);
       setLoginError(error?.message || "Unexpected error occurred");
+      
+      // Reset captcha on error
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
+      setCaptchaToken("");
+      form.setValue("captcha", "");
     }
   };
 
@@ -244,6 +259,7 @@ const LoginForm = () => {
               <Label>Security Check</Label>
               <FormControl>
                 <Turnstile
+                  ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
