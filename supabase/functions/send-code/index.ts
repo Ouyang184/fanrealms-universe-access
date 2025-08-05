@@ -71,11 +71,14 @@ Deno.serve(async (req) => {
     // Send email using SendGrid
     try {
       const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
+      const senderEmail = Deno.env.get('SENDGRID_SENDER_EMAIL') || 'noreply@fanrealms.com'
       
       if (!sendGridApiKey) {
         console.error('❌ Missing SendGrid API key')
         throw new Error('Missing SendGrid API key')
       }
+
+      console.log(`📧 Using sender email: ${senderEmail}`)
 
       // SendGrid dynamic template payload
       const emailPayload = {
@@ -88,7 +91,7 @@ Deno.serve(async (req) => {
             }
           }
         ],
-        from: { email: "support@fanrealms.com", name: "FanRealms" },
+        from: { email: senderEmail, name: "FanRealms" },
         template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
       }
 
