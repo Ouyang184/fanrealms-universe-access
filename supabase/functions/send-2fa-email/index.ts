@@ -1,11 +1,65 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 import { corsHeaders } from '../_shared/cors.ts'
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-interface RequestBody {
+interface Send2FAEmailRequest {
   email: string;
+  code: string;
+}
+
+interface SendGridEmailData {
+  personalizations: Array<{
+    to: Array<{ email: string }>;
+    dynamic_template_data: {
+      subject: string;
+      code: string;
+    };
+  }>;
+  from: { email: string; name: string };
+  template_id: string;
+}
+
+async function sendEmail(email: string, code: string) {
+  const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
+  
+  if (!sendGridApiKey) {
+    throw new Error('Missing SendGrid API key')
+  }
+
+  const emailData: SendGridEmailData = {
+    personalizations: [
+      {
+        to: [{ email: email }],
+        dynamic_template_data: {
+          subject: 'Your FanRealms Login Code',
+          code: code
+        }
+      }
+    ],
+    from: { 
+      email: 'support@fanrealms.com', 
+      name: 'FanRealms' 
+    },
+    template_id: 'd-120a3ffb0c774da8ad484ab9010b673a'
+  }
+
+  console.log('📧 Sending 2FA email to:', email)
+  console.log('📧 Email payload:', JSON.stringify(emailData, null, 2))
+
+  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${sendGridApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(emailData)
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('❌ SendGrid API error:', response.status, errorText)
+    throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
+  }
+
+  console.log('✅ 2FA email sent successfully')
 }
 
 Deno.serve(async (req) => {
@@ -15,11 +69,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email }: RequestBody = await req.json()
+    const { email, code }: Send2FAEmailRequest = await req.json()
     
-    if (!email) {
+    // Validate inputs
+    if (!email || typeof email !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'Email is required' }),
+        JSON.stringify({ error: 'Valid email is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -27,33 +82,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create Supabase client with service role
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
-    // Get user by email
-    const { data: { users }, error: getUserError } = await supabase.auth.admin.listUsers()
-    const user = users?.find(u => u.email === email)
-    
-    if (!user) {
+    if (!code || typeof code !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Check if user has email 2FA enabled
-    const { data: userData, error: userDataError } = await supabase
-      .from('users')
-      .select('email_2fa_enabled')
-      .eq('id', user.id)
-      .single()
-
-    if (userDataError || !userData?.email_2fa_enabled) {
-      return new Response(
-        JSON.stringify({ error: 'Email 2FA not enabled for this user' }),
+        JSON.stringify({ error: 'Valid code is required' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -61,91 +92,27 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Rate limiting: Check if user has requested a code recently (within 1 minute)
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString()
-    const { data: recentCodes } = await supabase
-      .from('email_2fa_codes')
-      .select('id')
-      .eq('user_id', user.id)
-      .gte('created_at', oneMinuteAgo)
-
-    if (recentCodes && recentCodes.length > 0) {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
       return new Response(
-        JSON.stringify({ error: 'Please wait before requesting another code' }),
+        JSON.stringify({ error: 'Invalid email format' }),
         { 
-          status: 429, 
+          status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
-    
-    // Set expiration to 10 minutes from now
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+    console.log('📧 Processing 2FA email request for:', email)
 
-    // Store code in database
-    const { error: insertError } = await supabase
-      .from('email_2fa_codes')
-      .insert({
-        user_id: user.id,
-        code,
-        expires_at: expiresAt
-      })
-
-    if (insertError) {
-      console.error('Error storing 2FA code:', insertError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to generate verification code' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Send email using Supabase's auth system
-    try {
-      // Use Supabase auth admin to send a custom recovery email with the 2FA code
-      // We'll leverage the magic link system but customize the email content
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: user.email,
-        options: {
-          data: {
-            twofa_code: code,
-            purpose: '2fa_verification'
-          }
-        }
-      })
-
-      if (linkError) {
-        console.error('Error generating auth link:', linkError)
-        throw new Error('Failed to generate verification email')
-      }
-
-      // For development/testing, log the code
-      console.log(`🔐 2FA Code sent to ${email}: ${code}`)
-      
-      // In production, this would trigger Supabase's email system
-      // You can customize the email template in Supabase Dashboard > Authentication > Email Templates
-      
-    } catch (emailError) {
-      console.error('Error sending 2FA email:', emailError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to send verification email' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
+    // Send email using SendGrid
+    await sendEmail(email, code)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Verification code sent to your email' 
+        message: '2FA email sent successfully' 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -153,9 +120,12 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error in send-2fa-email function:', error)
+    console.error('❌ Error in send-2fa-email function:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Failed to send 2FA email',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
