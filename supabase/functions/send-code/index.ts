@@ -68,38 +68,87 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Send email using Amazon SES SMTP
+    // Send email using SendGrid
     try {
-      const sesUser = Deno.env.get('SES_SMTP_USER')
-      const sesPass = Deno.env.get('SES_SMTP_PASS')
+      const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
       
-      console.log(`🔧 Checking SES credentials: User=${sesUser ? 'SET' : 'MISSING'}, Pass=${sesPass ? 'SET' : 'MISSING'}`)
-      
-      if (!sesUser || !sesPass) {
-        console.error('❌ Missing SES SMTP credentials')
-        throw new Error('Missing SES SMTP credentials')
+      if (!sendGridApiKey) {
+        console.error('❌ Missing SendGrid API key')
+        throw new Error('Missing SendGrid API key')
       }
 
-      // For development/testing, log the code and skip actual email sending
       console.log(`🔐 2FA Code generated for ${email}: ${code}`)
-      console.log(`📧 SES credentials configured, would send email in production`)
       
-      // TODO: Implement actual SES email sending here
-      // For now, return success with the code logged
+      // SendGrid email payload
+      const emailPayload = {
+        personalizations: [
+          {
+            to: [{ email: email }],
+            subject: "Your FanRealms 2FA Verification Code"
+          }
+        ],
+        from: { email: "support@fanrealms.com", name: "FanRealms" },
+        content: [
+          {
+            type: "text/html",
+            value: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                  <h1 style="color: #333; margin-bottom: 10px;">FanRealms</h1>
+                  <h2 style="color: #666; font-weight: normal;">Two-Factor Authentication</h2>
+                </div>
+                
+                <div style="background: #f8f9fa; border-radius: 8px; padding: 30px; text-align: center; margin-bottom: 20px;">
+                  <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+                    Your verification code is:
+                  </p>
+                  <div style="font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 4px; margin: 20px 0;">
+                    ${code}
+                  </div>
+                  <p style="font-size: 14px; color: #666; margin-top: 20px;">
+                    This code will expire in 5 minutes.
+                  </p>
+                </div>
+                
+                <div style="text-align: center; color: #666; font-size: 14px;">
+                  <p>If you didn't request this code, please ignore this email.</p>
+                  <p style="margin-top: 20px;">
+                    <strong>FanRealms Team</strong>
+                  </p>
+                </div>
+              </div>
+            `
+          }
+        ]
+      }
+
+      // Send email via SendGrid API
+      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sendGridApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('SendGrid API error:', response.status, errorText)
+        throw new Error(`SendGrid API error: ${response.status}`)
+      }
+
+      console.log('📧 2FA email sent successfully via SendGrid')
       
     } catch (emailError) {
-      console.error('Error with email system:', emailError)
-      
-      // For development, still return success but log the error
-      console.log(`⚠️ Email sending failed, but code stored: ${code}`)
+      console.error('Error sending email:', emailError)
       
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          message: 'Verification code generated (check server logs for code)',
-          devNote: `Code: ${code}` // Remove this in production
+          error: 'Failed to send verification code. Please try again.' 
         }),
         { 
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
