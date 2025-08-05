@@ -62,9 +62,12 @@ export const useAuthFunctions = () => {
           await supabase.auth.signOut({ scope: 'local' });
           
           // Trigger email 2FA challenge
-          const { error: emailError } = await supabase.functions.invoke('send-code', {
+          console.log("useAuthFunctions: Calling send-code function...");
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-code', {
             body: { email: data.user.email }
           });
+          
+          console.log("useAuthFunctions: Send-code response:", { emailData, emailError });
           
           if (emailError) {
             console.error("useAuthFunctions: Error sending 2FA email:", emailError);

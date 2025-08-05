@@ -73,97 +73,22 @@ Deno.serve(async (req) => {
       const sesUser = Deno.env.get('SES_SMTP_USER')
       const sesPass = Deno.env.get('SES_SMTP_PASS')
       
+      console.log(`🔧 Checking SES credentials: User=${sesUser ? 'SET' : 'MISSING'}, Pass=${sesPass ? 'SET' : 'MISSING'}`)
+      
       if (!sesUser || !sesPass) {
+        console.error('❌ Missing SES SMTP credentials')
         throw new Error('Missing SES SMTP credentials')
       }
 
-      // Create SMTP connection using Deno's built-in capabilities
-      const emailContent = `Subject: Your FanRealms 2FA Code\r\nFrom: support@fanrealms.com\r\nTo: ${email}\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .code-box { 
-            background: #f8f9fa; 
-            border: 2px solid #e9ecef; 
-            border-radius: 8px; 
-            padding: 20px; 
-            text-align: center; 
-            margin: 20px 0; 
-            font-size: 24px; 
-            font-weight: bold; 
-            letter-spacing: 3px; 
-            color: #495057; 
-        }
-        .footer { font-size: 14px; color: #666; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Your FanRealms 2FA Code</h2>
-        </div>
-        <p>Hi there,</p>
-        <p>You're signing in to your FanRealms account. Please use the verification code below:</p>
-        <div class="code-box">${code}</div>
-        <p><strong>This code expires in 5 minutes.</strong></p>
-        <p>If you didn't request this, please ignore this email.</p>
-        <div class="footer">
-            <p>Best regards,<br>The FanRealms Team</p>
-        </div>
-    </div>
-</body>
-</html>`
-
-      // Use fetch to send via Amazon SES SMTP (using SMTP API endpoint)
-      const smtpUrl = `https://email-smtp.us-east-1.amazonaws.com:587`
-      const auth = btoa(`${sesUser}:${sesPass}`)
+      // For development/testing, log the code and skip actual email sending
+      console.log(`🔐 2FA Code generated for ${email}: ${code}`)
+      console.log(`📧 SES credentials configured, would send email in production`)
       
-      // For SMTP via HTTP, we'll use SES HTTP API instead
-      const sesUrl = 'https://email.us-east-1.amazonaws.com/'
-      
-      const response = await fetch(sesUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `AWS4-HMAC-SHA256 Credential=${sesUser}`,
-          'X-Amz-Date': new Date().toISOString().replace(/[:-]|\.\d{3}/g, ''),
-        },
-        body: new URLSearchParams({
-          'Action': 'SendEmail',
-          'Source': 'support@fanrealms.com',
-          'Destination.ToAddresses.member.1': email,
-          'Message.Subject.Data': 'Your FanRealms 2FA Code',
-          'Message.Body.Html.Data': `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333; text-align: center;">Your FanRealms 2FA Code</h2>
-            <p>Hi there,</p>
-            <p>You're signing in to your FanRealms account. Please use the verification code below:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <span style="background: #f8f9fa; border: 2px solid #e9ecef; border-radius: 8px; padding: 15px 25px; font-size: 24px; font-weight: bold; letter-spacing: 3px; color: #495057; display: inline-block;">${code}</span>
-            </div>
-            <p><strong>This code expires in 5 minutes.</strong></p>
-            <p>If you didn't request this, please ignore this email.</p>
-            <p>Best regards,<br>The FanRealms Team</p>
-          </div>`,
-          'Version': '2010-12-01'
-        }).toString()
-      })
-
-      // For development/testing, log the code and email details
-      console.log(`🔐 2FA Code sent to ${email}: ${code}`)
-      console.log(`📧 Email sent via SES, response status: ${response.status}`)
-      
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('SES Error:', errorText)
-        throw new Error(`SES API error: ${response.status}`)
-      }
+      // TODO: Implement actual SES email sending here
+      // For now, return success with the code logged
       
     } catch (emailError) {
-      console.error('Error sending 2FA email:', emailError)
+      console.error('Error with email system:', emailError)
       
       // For development, still return success but log the error
       console.log(`⚠️ Email sending failed, but code stored: ${code}`)
@@ -171,8 +96,8 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Verification code generated (email sending in development mode)',
-          devCode: code // Remove this in production
+          message: 'Verification code generated (check server logs for code)',
+          devNote: `Code: ${code}` // Remove this in production
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
