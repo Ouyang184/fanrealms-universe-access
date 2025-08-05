@@ -64,9 +64,13 @@ Deno.serve(async (req) => {
   try {
     const { email }: RequestBody = await req.json()
     
-    if (!email) {
+    console.log('📧 Received email request for:', email, 'Type:', typeof email)
+    
+    // Validate email exists and is a string
+    if (!email || typeof email !== 'string') {
+      console.error('❌ Invalid email input:', { email, type: typeof email })
       return new Response(
-        JSON.stringify({ error: 'Email is required' }),
+        JSON.stringify({ error: 'Email must be a valid string' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -74,9 +78,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Validate email format
+    // Trim whitespace and validate email format
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) {
+      console.error('❌ Empty email after trimming')
+      return new Response(
+        JSON.stringify({ error: 'Email cannot be empty' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(trimmedEmail)) {
+      console.error('❌ Invalid email format:', trimmedEmail)
       return new Response(
         JSON.stringify({ error: 'Invalid email format' }),
         { 
@@ -85,6 +102,8 @@ Deno.serve(async (req) => {
         }
       )
     }
+
+    console.log('✅ Email validation passed for:', trimmedEmail)
 
     // Create Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -95,11 +114,11 @@ Deno.serve(async (req) => {
     // Set expiration to 5 minutes from now
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
 
-    // Store/update code in database (upsert)
+    // Store/update code in database (upsert) using trimmed email
     const { error: insertError } = await supabase
       .from('email_2fa_codes')
       .upsert({
-        email,
+        email: trimmedEmail,
         code,
         expires_at: expiresAt
       })
@@ -115,11 +134,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Send email using SendGrid
+    // Send email using SendGrid with validated trimmed email
     try {
+      console.log('📧 About to send email to:', trimmedEmail)
       await sendEmail({
         templateId: 'd-120a3ffb0c774da8ad484ab9010b673a',
-        to: email,
+        to: trimmedEmail,
         from: 'support@fanrealms.com',
         dynamic_template_data: {
           subject: 'Your FanRealms Login Code',
@@ -128,6 +148,7 @@ Deno.serve(async (req) => {
       })
 
       console.log('📧 2FA email sent successfully via SendGrid dynamic template')
+      
       
     } catch (emailError) {
       console.error('Error sending email:', emailError)
