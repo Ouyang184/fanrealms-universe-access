@@ -154,11 +154,12 @@ const LoginForm = () => {
 
   if (showEmailMFAChallenge) {
     return (
-      <EmailTwoFactorChallenge
-        email={emailMfaEmail}
-        onSuccess={handleEmailMFASuccess}
-        onCancel={handleEmailMFACancel}
-      />
+        <EmailTwoFactorChallenge
+          email={emailMfaEmail}
+          password={form.getValues("password")}
+          onSuccess={handleEmailMFASuccess}
+          onCancel={handleEmailMFACancel}
+        />
     );
   }
 

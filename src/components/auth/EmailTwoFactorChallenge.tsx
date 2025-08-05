@@ -9,11 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface EmailTwoFactorChallengeProps {
   email: string;
+  password: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwoFactorChallengeProps) {
+export function EmailTwoFactorChallenge({ email, password, onSuccess, onCancel }: EmailTwoFactorChallengeProps) {
   const [code, setCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -53,10 +54,19 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
         return;
       }
 
-      // Code verified successfully, user can now proceed
+      // Code verified successfully, now complete the login
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (authError || !authData.user) {
+        throw new Error("Failed to complete login");
+      }
+
       toast({
-        title: "Verification successful",
-        description: "You have been verified successfully"
+        title: "Login successful",
+        description: "You have been successfully logged in"
       });
 
       onSuccess();
