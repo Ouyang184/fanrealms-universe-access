@@ -73,6 +73,12 @@ Deno.serve(async (req) => {
       const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
       const senderEmail = Deno.env.get('SENDGRID_SENDER_EMAIL') || 'noreply@fanrealms.com'
       
+      console.log('🔍 DEBUG: Starting email send process')
+      console.log('🔍 DEBUG: API Key exists:', !!sendGridApiKey)
+      console.log('🔍 DEBUG: Sender email:', senderEmail)
+      console.log('🔍 DEBUG: Target email:', email)
+      console.log('🔍 DEBUG: Generated code:', code)
+      
       if (!sendGridApiKey) {
         console.error('❌ Missing SendGrid API key')
         throw new Error('Missing SendGrid API key')
