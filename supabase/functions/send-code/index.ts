@@ -96,6 +96,9 @@ Deno.serve(async (req) => {
       }
 
       // Send email via SendGrid API
+      console.log('🚀 Attempting to send email via SendGrid...')
+      console.log('📧 Email payload:', JSON.stringify(emailPayload, null, 2))
+      
       const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
         headers: {
@@ -104,6 +107,9 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify(emailPayload)
       })
+
+      console.log('📊 SendGrid response status:', response.status)
+      console.log('📊 SendGrid response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -117,6 +123,8 @@ Deno.serve(async (req) => {
         throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
       }
 
+      const responseText = await response.text()
+      console.log('✅ SendGrid response:', responseText)
       console.log('✅ 2FA email sent successfully via SendGrid dynamic template')
       console.log(`🔐 Code generated for ${email}: ${code} (logged for debugging)`)
       
