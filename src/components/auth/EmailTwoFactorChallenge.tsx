@@ -35,58 +35,25 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
     setIsVerifying(true);
     
     try {
-      // Get user by email since we don't have an authenticated session
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
+      // Call the verify-code Edge Function
+      const { data: verifyResponse, error: verifyError } = await supabase.functions.invoke('verify-code', {
+        body: {
+          email: email,
+          code: code
+        }
+      });
 
-      if (userError || !userData) {
-        throw new Error("User not found");
-      }
-
-      // Verify the code
-      const { data: codeData, error: codeError } = await supabase
-        .from('email_2fa_codes')
-        .select('*')
-        .eq('user_id', userData.id)
-        .eq('code', code)
-        .is('used_at', null)
-        .gte('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (codeError || !codeData) {
+      if (verifyError || !verifyResponse?.success) {
         setAttempts(prev => prev + 1);
-        
-        // Increment attempts in database
-        await supabase
-          .from('email_2fa_codes')
-          .update({ attempts: attempts + 1 })
-          .eq('user_id', userData.id)
-          .eq('code', code);
-
         toast({
           title: "Invalid code",
-          description: "The verification code is incorrect or has expired",
+          description: verifyResponse?.error || "The verification code is incorrect or has expired",
           variant: "destructive"
         });
         return;
       }
 
-      // Mark code as used
-      const { error: updateError } = await supabase
-        .from('email_2fa_codes')
-        .update({ used_at: new Date().toISOString() })
-        .eq('id', codeData.id);
-
-      if (updateError) {
-        console.error('Error marking code as used:', updateError);
-      }
-
-      // Now complete the login by sending a magic link
+      // Code verified successfully, now complete the login by sending a magic link
       const { error: magicLinkError } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -123,7 +90,7 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
     setIsResending(true);
     
     try {
-      const { error } = await supabase.functions.invoke('send-2fa-email', {
+      const { data, error } = await supabase.functions.invoke('send-code', {
         body: { email }
       });
 

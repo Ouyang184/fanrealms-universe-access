@@ -71,11 +71,11 @@ export function useEmailMFA() {
 
       if (userError) throw userError;
 
-      // Clean up any existing codes
+      // Clean up any existing codes (using email instead of user_id)
       const { error: cleanupError } = await supabase
         .from('email_2fa_codes')
         .delete()
-        .eq('user_id', user.id);
+        .eq('email', user.email);
 
       if (cleanupError) {
         console.error('Error cleaning up 2FA codes:', cleanupError);
@@ -104,19 +104,13 @@ export function useEmailMFA() {
   const sendVerificationCode = async (email: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('https://eaeqyctjljbtcatlohky.supabase.co/functions/v1/send-2fa-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZXF5Y3RqbGpidGNhdGxvaGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3ODE1OTgsImV4cCI6MjA2MTM1NzU5OH0.FrxmM9nqPNUjo3ZTMUdUWPirm0q1WFssoierxq9zb7A`
-        },
-        body: JSON.stringify({ email })
+      // Call the send-code Edge Function
+      const { data, error } = await supabase.functions.invoke('send-code', {
+        body: { email }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send verification code');
+      if (error) {
+        throw new Error(error.message || 'Failed to send verification code');
       }
 
       toast({

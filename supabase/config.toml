@@ -62,6 +62,12 @@ verify_jwt = true
 [functions.stripe-subscriptions]
 verify_jwt = false
 
+[functions.send-code]
+verify_jwt = false
+
+[functions.verify-code]
+verify_jwt = false
+
 [edge_runtime]
 inspector_port = 8083
 policy = "per_request"

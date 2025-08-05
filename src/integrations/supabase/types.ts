@@ -543,31 +543,22 @@ export type Database = {
       }
       email_2fa_codes: {
         Row: {
-          attempts: number
           code: string
           created_at: string
+          email: string
           expires_at: string
-          id: string
-          used_at: string | null
-          user_id: string
         }
         Insert: {
-          attempts?: number
           code: string
           created_at?: string
+          email: string
           expires_at: string
-          id?: string
-          used_at?: string | null
-          user_id: string
         }
         Update: {
-          attempts?: number
           code?: string
           created_at?: string
+          email?: string
           expires_at?: string
-          id?: string
-          used_at?: string | null
-          user_id?: string
         }
         Relationships: []
       }
