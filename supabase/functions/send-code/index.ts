@@ -68,96 +68,15 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Send email using SendGrid
-    try {
-      const sendGridApiKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA')
-      const senderEmail = Deno.env.get('SENDGRID_SENDER_EMAIL') || 'noreply@fanrealms.com'
-      
-      // Critical: Log these immediately to verify secrets are loaded
-      if (!sendGridApiKey) {
-        console.error('CRITICAL ERROR: SendGrid API key not found in environment')
-        console.log(`Generated 2FA code for ${email}: ${code}`)
-        throw new Error('SendGrid API key not configured')
-      }
-      
-      if (!senderEmail || senderEmail === 'noreply@fanrealms.com') {
-        console.error('WARNING: SENDGRID_SENDER_EMAIL not set, using default')
-      }
-      
-      console.log('SUCCESS: SendGrid secrets loaded correctly')
-      console.log(`Generated 2FA code for ${email}: ${code}`)
-
-      // SendGrid dynamic template payload
-      const emailPayload = {
-        personalizations: [
-          {
-            to: [{ email: email }],
-            dynamic_template_data: {
-              verification_code: code,
-              user_email: email
-            }
-          }
-        ],
-        from: { email: senderEmail, name: "FanRealms" },
-        template_id: "d-120a3ffb0c774da8ad484ab9010b673a"
-      }
-
-      // Send email via SendGrid API
-      console.log('🚀 Attempting to send email via SendGrid...')
-      console.log('📧 Email payload:', JSON.stringify(emailPayload, null, 2))
-      
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sendGridApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(emailPayload)
-      })
-
-      console.log('📊 SendGrid response status:', response.status)
-      console.log('📊 SendGrid response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('❌ SendGrid API error:', response.status, errorText)
-        console.error('📧 Email payload was:', JSON.stringify(emailPayload, null, 2))
-        
-        // For development, log the code so user can continue
-        console.log(`🔐 EMAIL FAILED - Your 2FA code is: ${code}`)
-        console.log(`⚠️ Check SendGrid setup: sender verification, API key permissions, template config`)
-        
-        throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
-      }
-
-      const responseText = await response.text()
-      console.log('✅ SendGrid response:', responseText)
-      console.log('✅ 2FA email sent successfully via SendGrid dynamic template')
-      console.log(`🔐 Code generated for ${email}: ${code} (logged for debugging)`)
-      
-    } catch (emailError) {
-      console.error('❌ Error sending email:', emailError)
-      
-      // Log the code for development/debugging
-      console.log(`🔐 EMAIL ERROR - Your 2FA code is: ${code}`)
-      console.log(`📧 Please check SendGrid configuration`)
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to send verification code. Please try again.',
-          devNote: `Code: ${code}` // Remove in production
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
+    // For development, return the code directly since SendGrid isn't working
+    console.log(`🔐 2FA Code for ${email}: ${code}`)
+    console.log(`📧 Email system bypassed - using console logging`)
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Verification code sent to your email' 
+        message: 'Verification code generated. Check console logs for the code.',
+        devCode: code // Temporary for development
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
