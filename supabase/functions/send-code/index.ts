@@ -22,13 +22,15 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
     personalizations: [
       {
         to: [{ email: to }],
+        subject: dynamic_template_data.subject || 'Your FanRealms Login Code',
         dynamic_template_data
       }
     ],
     from: { email: from, name: "FanRealms" },
-    subject: dynamic_template_data.subject || 'Your FanRealms Login Code',
     template_id: templateId
   }
+
+  console.log('📧 Sending email with payload:', JSON.stringify(emailPayload, null, 2))
 
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
@@ -41,8 +43,12 @@ async function sendEmail({ templateId, to, from, dynamic_template_data }: SendEm
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('SendGrid API error:', response.status, errorText)
     throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
   }
+
+  const responseData = await response.text()
+  console.log('📧 SendGrid response:', responseData)
 }
 
 interface RequestBody {
