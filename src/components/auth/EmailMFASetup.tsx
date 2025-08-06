@@ -8,7 +8,11 @@ import { useAuth } from "@/contexts/AuthContext";
 export function EmailMFASetup() {
   const { user } = useAuth();
   const { isEnabled, isLoading, enableEmailMFA, disableEmailMFA } = useEmailMFA();
+  // Automatically show management view if 2FA is already enabled
   const [isManaging, setIsManaging] = useState(false);
+
+  // Show management view by default if 2FA is enabled
+  const shouldShowManagement = isEnabled || isManaging;
 
   const handleToggleMFA = async () => {
     if (isEnabled) {
@@ -23,7 +27,7 @@ export function EmailMFASetup() {
     setIsManaging(false);
   };
 
-  if (isManaging && isEnabled) {
+  if (shouldShowManagement) {
     return (
       <DialogContent className="max-w-md">
         <DialogHeader>
