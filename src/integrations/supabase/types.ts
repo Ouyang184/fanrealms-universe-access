@@ -1226,6 +1226,7 @@ export type Database = {
           email_2fa_enabled: boolean
           id: string
           is_nsfw_enabled: boolean
+          notification_preferences: Json | null
           profile_picture: string | null
           updated_at: string | null
           username: string
@@ -1239,6 +1240,7 @@ export type Database = {
           email_2fa_enabled?: boolean
           id?: string
           is_nsfw_enabled?: boolean
+          notification_preferences?: Json | null
           profile_picture?: string | null
           updated_at?: string | null
           username: string
@@ -1252,6 +1254,7 @@ export type Database = {
           email_2fa_enabled?: boolean
           id?: string
           is_nsfw_enabled?: boolean
+          notification_preferences?: Json | null
           profile_picture?: string | null
           updated_at?: string | null
           username?: string

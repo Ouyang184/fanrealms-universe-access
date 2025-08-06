@@ -3,46 +3,35 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { Spinner } from "@/components/ui/spinner";
 
 export function NotificationsTab() {
-  const { toast } = useToast();
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    newContentAlerts: true,
-    commentReplies: true,
-    mentions: true,
-    creatorUpdates: true,
-    saving: false
-  });
+  const { 
+    preferences, 
+    isLoading, 
+    isSaving, 
+    updatePreference, 
+    savePreferences 
+  } = useNotificationPreferences();
 
-  const handleNotificationChange = (key: string, value: boolean) => {
-    setNotificationSettings(prev => ({ ...prev, [key]: value }));
+  const handleNotificationChange = (key: keyof typeof preferences, value: boolean) => {
+    updatePreference(key, value);
   };
 
-  const saveNotificationSettings = async () => {
-    setNotificationSettings(prev => ({ ...prev, saving: true }));
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Notification preferences updated",
-        description: "Your notification settings have been saved.",
-      });
-    } catch (error) {
-      console.error('Error saving notifications:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update notification settings.",
-        variant: "destructive",
-      });
-    } finally {
-      setNotificationSettings(prev => ({ ...prev, saving: false }));
-    }
+  const handleSavePreferences = async () => {
+    await savePreferences(preferences);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Spinner />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -64,7 +53,7 @@ export function NotificationsTab() {
             </p>
           </div>
           <Switch 
-            checked={notificationSettings.emailNotifications}
+            checked={preferences.emailNotifications}
             onCheckedChange={(checked) => handleNotificationChange("emailNotifications", checked)}
           />
         </div>
@@ -76,7 +65,7 @@ export function NotificationsTab() {
             </p>
           </div>
           <Switch 
-            checked={notificationSettings.newContentAlerts}
+            checked={preferences.newContentAlerts}
             onCheckedChange={(checked) => handleNotificationChange("newContentAlerts", checked)}
           />
         </div>
@@ -88,7 +77,7 @@ export function NotificationsTab() {
             </p>
           </div>
           <Switch 
-            checked={notificationSettings.commentReplies}
+            checked={preferences.commentReplies}
             onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
           />
         </div>
@@ -100,7 +89,7 @@ export function NotificationsTab() {
             </p>
           </div>
           <Switch 
-            checked={notificationSettings.mentions}
+            checked={preferences.mentions}
             onCheckedChange={(checked) => handleNotificationChange("mentions", checked)}
           />
         </div>
@@ -112,17 +101,17 @@ export function NotificationsTab() {
             </p>
           </div>
           <Switch 
-            checked={notificationSettings.creatorUpdates}
+            checked={preferences.creatorUpdates}
             onCheckedChange={(checked) => handleNotificationChange("creatorUpdates", checked)}
           />
         </div>
       </CardContent>
       <CardFooter>
         <Button 
-          onClick={saveNotificationSettings} 
-          disabled={notificationSettings.saving}
+          onClick={handleSavePreferences} 
+          disabled={isSaving}
         >
-          {notificationSettings.saving ? "Saving..." : "Save Preferences"}
+          {isSaving ? "Saving..." : "Save Preferences"}
         </Button>
       </CardFooter>
     </Card>
