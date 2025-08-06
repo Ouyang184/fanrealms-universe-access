@@ -139,7 +139,6 @@ export default function AccountSettings() {
     emailNotifications: true,
     newContentAlerts: true,
     commentReplies: true,
-    creatorUpdates: true,
     saving: false
   });
   
@@ -693,18 +692,6 @@ export default function AccountSettings() {
                     <Switch 
                       checked={notificationSettings.commentReplies}
                       onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Creator Updates</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified about important updates from creators you follow
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notificationSettings.creatorUpdates}
-                      onCheckedChange={(checked) => handleNotificationChange("creatorUpdates", checked)}
                     />
                   </div>
                 </CardContent>

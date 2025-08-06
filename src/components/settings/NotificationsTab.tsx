@@ -49,7 +49,7 @@ export function NotificationsTab() {
               Receive content update from creators via email
             </p>
             <p className="text-xs text-muted-foreground italic">
-              Email notifications are only for New Content Alerts and Creator Updates
+              Email notifications are only for New Content Alerts
             </p>
           </div>
           <Switch 
@@ -79,18 +79,6 @@ export function NotificationsTab() {
           <Switch 
             checked={preferences.commentReplies}
             onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label>Creator Updates</Label>
-            <p className="text-sm text-muted-foreground">
-              Get notified about important updates from creators you follow
-            </p>
-          </div>
-          <Switch 
-            checked={preferences.creatorUpdates}
-            onCheckedChange={(checked) => handleNotificationChange("creatorUpdates", checked)}
           />
         </div>
       </CardContent>

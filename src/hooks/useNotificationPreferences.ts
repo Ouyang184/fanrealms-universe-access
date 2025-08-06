@@ -7,7 +7,6 @@ export interface NotificationPreferences {
   emailNotifications: boolean;
   newContentAlerts: boolean;
   commentReplies: boolean;
-  creatorUpdates: boolean;
 }
 
 export const useNotificationPreferences = () => {
@@ -17,7 +16,6 @@ export const useNotificationPreferences = () => {
     emailNotifications: true,
     newContentAlerts: true,
     commentReplies: true,
-    creatorUpdates: true,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +43,6 @@ export const useNotificationPreferences = () => {
             emailNotifications: prefs.email_notifications ?? true,
             newContentAlerts: prefs.new_content_alerts ?? true,
             commentReplies: prefs.comment_replies ?? true,
-            creatorUpdates: prefs.creator_updates ?? true,
           });
         }
       } catch (error) {
@@ -72,7 +69,6 @@ export const useNotificationPreferences = () => {
             email_notifications: newPreferences.emailNotifications,
             new_content_alerts: newPreferences.newContentAlerts,
             comment_replies: newPreferences.commentReplies,
-            creator_updates: newPreferences.creatorUpdates,
           }
         })
         .eq('id', user.id);
