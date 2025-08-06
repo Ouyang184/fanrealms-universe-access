@@ -7,7 +7,6 @@ export interface NotificationPreferences {
   emailNotifications: boolean;
   newContentAlerts: boolean;
   commentReplies: boolean;
-  mentions: boolean;
   creatorUpdates: boolean;
 }
 
@@ -46,7 +45,6 @@ export const useNotificationPreferences = () => {
             emailNotifications: prefs.email_notifications ?? true,
             newContentAlerts: prefs.new_content_alerts ?? true,
             commentReplies: prefs.comment_replies ?? true,
-            mentions: prefs.mentions ?? true,
             creatorUpdates: prefs.creator_updates ?? true,
           });
         }
@@ -74,7 +72,6 @@ export const useNotificationPreferences = () => {
             email_notifications: newPreferences.emailNotifications,
             new_content_alerts: newPreferences.newContentAlerts,
             comment_replies: newPreferences.commentReplies,
-            mentions: newPreferences.mentions,
             creator_updates: newPreferences.creatorUpdates,
           }
         })
