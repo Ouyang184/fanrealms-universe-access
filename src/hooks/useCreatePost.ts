@@ -145,6 +145,22 @@ export function useCreatePost() {
 
       console.log('Post created successfully with NSFW flag:', insertedPost[0]?.is_nsfw);
 
+      // Send email notifications to followers
+      if (insertedPost[0] && creatorProfile?.id) {
+        try {
+          await supabase.functions.invoke('send-new-post-notification', {
+            body: {
+              postId: insertedPost[0].id,
+              creatorId: creatorProfile.id
+            }
+          });
+          console.log('Email notifications sent successfully');
+        } catch (emailError) {
+          console.error('Failed to send email notifications:', emailError);
+          // Don't fail the post creation if email fails
+        }
+      }
+
       const postType = formData.selectedTierIds && formData.selectedTierIds.length > 0 ? "premium" : "public";
       const nsfwNotice = isNSFW ? " (automatically flagged as 18+)" : "";
       

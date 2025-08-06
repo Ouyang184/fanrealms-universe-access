@@ -68,6 +68,9 @@ verify_jwt = false
 [functions.verify-code]
 verify_jwt = false
 
+[functions.send-new-post-notification]
+verify_jwt = false
+
 [edge_runtime]
 inspector_port = 8083
 policy = "per_request"
