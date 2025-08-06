@@ -18,7 +18,6 @@ export const useNotificationPreferences = () => {
     emailNotifications: true,
     newContentAlerts: true,
     commentReplies: true,
-    mentions: true,
     creatorUpdates: true,
   });
   const [isLoading, setIsLoading] = useState(true);

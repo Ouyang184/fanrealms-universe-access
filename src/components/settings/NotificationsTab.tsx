@@ -83,18 +83,6 @@ export function NotificationsTab() {
         </div>
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label>Mentions</Label>
-            <p className="text-sm text-muted-foreground">
-              Get notified when you're mentioned in a post or comment
-            </p>
-          </div>
-          <Switch 
-            checked={preferences.mentions}
-            onCheckedChange={(checked) => handleNotificationChange("mentions", checked)}
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
             <Label>Creator Updates</Label>
             <p className="text-sm text-muted-foreground">
               Get notified about important updates from creators you follow
