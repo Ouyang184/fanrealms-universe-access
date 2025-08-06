@@ -139,7 +139,6 @@ export default function AccountSettings() {
     emailNotifications: true,
     newContentAlerts: true,
     commentReplies: true,
-    mentions: true,
     creatorUpdates: true,
     saving: false
   });
@@ -694,18 +693,6 @@ export default function AccountSettings() {
                     <Switch 
                       checked={notificationSettings.commentReplies}
                       onCheckedChange={(checked) => handleNotificationChange("commentReplies", checked)}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Mentions</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Get notified when you're mentioned in a post or comment
-                      </p>
-                    </div>
-                    <Switch 
-                      checked={notificationSettings.mentions}
-                      onCheckedChange={(checked) => handleNotificationChange("mentions", checked)}
                     />
                   </div>
                   <div className="flex items-center justify-between">
