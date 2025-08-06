@@ -902,29 +902,6 @@ export default function AccountSettings() {
                   </CardContent>
                 </Card>
 
-                {/* Data & Download */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Data & Privacy</CardTitle>
-                    <CardDescription>
-                      Download your data or delete your account
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-
-                    <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-destructive/5">
-                      <div className="space-y-1">
-                        <Label className="text-destructive">Delete Account</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Permanently delete your account and all associated data
-                        </p>
-                      </div>
-                      <Button variant="destructive">
-                        Delete Account
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </TabsContent>
             
@@ -1026,9 +1003,6 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  <div className="border-t pt-6">
-                    <Button variant="destructive">Delete Account</Button>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
