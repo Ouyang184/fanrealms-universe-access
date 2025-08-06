@@ -46,7 +46,7 @@ export function NotificationsTab() {
           <div className="space-y-0.5">
             <Label>Email Notifications</Label>
             <p className="text-sm text-muted-foreground">
-              Receive notifications via email
+              Receive content update from creators via email
             </p>
             <p className="text-xs text-muted-foreground italic">
               Email notifications are only for New Content Alerts and Creator Updates
