@@ -203,6 +203,7 @@ export type Database = {
           is_active: boolean
           max_revisions: number
           name: string
+          price_per_character: number | null
           price_per_revision: number | null
           sample_art_url: string | null
           tags: string[] | null
@@ -221,6 +222,7 @@ export type Database = {
           is_active?: boolean
           max_revisions?: number
           name: string
+          price_per_character?: number | null
           price_per_revision?: number | null
           sample_art_url?: string | null
           tags?: string[] | null
@@ -239,6 +241,7 @@ export type Database = {
           is_active?: boolean
           max_revisions?: number
           name?: string
+          price_per_character?: number | null
           price_per_revision?: number | null
           sample_art_url?: string | null
           tags?: string[] | null
