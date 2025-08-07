@@ -80,44 +80,35 @@ export function EditCommissionTypeModal({
   }, [commissionType]);
 
   const addDo = () => {
-    console.log('Adding do:', currentDo);
     if (currentDo.trim() && !dos.includes(currentDo.trim())) {
       const newDos = [...dos, currentDo.trim()];
       setDos(newDos);
       setCurrentDo('');
-      console.log('Updated dos:', newDos);
     }
   };
 
   const addDont = () => {
-    console.log('Adding dont:', currentDont);
     if (currentDont.trim() && !donts.includes(currentDont.trim())) {
       const newDonts = [...donts, currentDont.trim()];
       setDonts(newDonts);
       setCurrentDont('');
-      console.log('Updated donts:', newDonts);
     }
   };
 
   const removeDo = (index: number) => {
-    console.log('Removing do at index:', index);
     const newDos = dos.filter((_, i) => i !== index);
     setDos(newDos);
-    console.log('Updated dos after remove:', newDos);
   };
 
   const removeDont = (index: number) => {
-    console.log('Removing dont at index:', index);
     const newDonts = donts.filter((_, i) => i !== index);
     setDonts(newDonts);
-    console.log('Updated donts after remove:', newDonts);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commissionType) return;
 
-    console.log('Submitting form with data:', { dos, donts, formData });
     setIsSubmitting(true);
     try {
       const updateData = {
