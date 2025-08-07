@@ -5,6 +5,7 @@ import { Eye } from 'lucide-react';
 import { PostLikes } from './PostLikes';
 import { PostComments } from './PostComments';
 import { ShareButton } from './ShareButton';
+import { SaveButton } from './SaveButton';
 import { usePostViews } from '@/hooks/usePostViews';
 
 interface PostInteractionsProps {
@@ -41,6 +42,8 @@ export const PostInteractions: React.FC<PostInteractionsProps> = ({
       {/* Action Buttons */}
       <div className="flex items-center gap-4">
         <PostLikes postId={postId} />
+        
+        <SaveButton postId={postId} />
         
         <ShareButton
           postId={postId}

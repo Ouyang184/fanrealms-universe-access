@@ -7,6 +7,7 @@ import { FeedEmpty } from "./FeedEmpty";
 import { EmptyFeed } from "./EmptyFeed";
 import { ServiceNotificationBanner } from "./ServiceNotificationBanner";
 import { Post } from "@/types";
+import { useSavedPosts } from "@/hooks/useSavedPosts";
 
 interface FeedMainContentProps {
   hasFollowedCreators: boolean;
@@ -32,6 +33,26 @@ export const FeedMainContent: React.FC<FeedMainContentProps> = ({
   onPostClick
 }) => {
   const hasPosts = followedPosts.length > 0;
+  const { savedPosts, isLoading: savedPostsLoading } = useSavedPosts();
+  
+  // Transform saved posts to match Post interface
+  const savedPostsFormatted = savedPosts.map(saved => {
+    const post = saved.posts;
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.created_at,
+      date: post.created_at,
+      authorId: post.author_id,
+      authorName: post.creators?.display_name || post.users?.username || '',
+      authorAvatar: post.creators?.profile_image_url || post.users?.profile_picture,
+      tier_id: post.tier_id,
+      attachments: post.attachments,
+      tags: post.tags,
+      is_nsfw: post.is_nsfw
+    };
+  });
 
   if (!hasFollowedCreators) {
     return <EmptyFeed />;
@@ -121,8 +142,27 @@ export const FeedMainContent: React.FC<FeedMainContentProps> = ({
         </TabsContent>
 
         {/* Saved Tab */}
-        <TabsContent value="saved" className="mt-4 lg:mt-6">
-          <FeedEmpty />
+        <TabsContent value="saved" className="mt-4 lg:mt-6 space-y-4 lg:space-y-6">
+          {savedPostsLoading ? (
+            <div className="text-center py-8 lg:py-10">
+              <p className="text-muted-foreground">Loading saved posts...</p>
+            </div>
+          ) : savedPostsFormatted.length > 0 ? (
+            <div className="space-y-4 lg:space-y-6">
+              {savedPostsFormatted.map((post) => (
+                <FeedPostItem
+                  key={post.id}
+                  post={post}
+                  readPostIds={readPostIds}
+                  markAsRead={markAsRead}
+                  creatorInfo={creatorInfoMap[post.authorId]}
+                  onPostClick={onPostClick}
+                />
+              ))}
+            </div>
+          ) : (
+            <FeedEmpty />
+          )}
         </TabsContent>
       </Tabs>
     </div>
