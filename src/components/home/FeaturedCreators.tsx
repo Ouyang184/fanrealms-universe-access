@@ -75,7 +75,7 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
               : `/creator/${creator.id}`;
             
             return (
-              <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
+              <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden relative">
                 <div className="h-32 bg-gray-800">
                   {creator.banner_url && (
                     <img 
@@ -84,6 +84,9 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                       className="w-full h-full object-cover"
                     />
                   )}
+                  <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
+                    <Award className="h-3 w-3" /> Featured
+                  </Badge>
                 </div>
                 <CardContent className="pt-0 -mt-12 p-6">
                   <div className="flex justify-between items-start">
@@ -93,9 +96,6 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
                         {displayName.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <Badge className="mt-2 bg-purple-600 flex items-center gap-1">
-                      <Award className="h-3 w-3" /> Featured
-                    </Badge>
                   </div>
                   <h3 className="text-xl font-bold mt-4">{displayName}</h3>
                   <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
