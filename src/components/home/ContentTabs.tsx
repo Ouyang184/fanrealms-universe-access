@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { ContentItem } from "@/components/explore/ContentItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types";
+import { Link } from "react-router-dom";
 
 interface ContentTabsProps {
   forYouPosts: Post[];
@@ -66,9 +67,11 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
             Recent
           </TabsTrigger>
         </TabsList>
-        <Button variant="link" className="text-purple-400">
-          View All <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
+        <Link to="/explore">
+          <Button variant="link" className="text-purple-400">
+            View All <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </Link>
       </div>
 
       <TabsContent value="for-you" className="mt-0">
