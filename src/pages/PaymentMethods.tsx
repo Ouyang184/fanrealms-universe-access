@@ -6,9 +6,9 @@ import { AddPaymentMethodForm } from "@/components/payment-methods/AddPaymentMet
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 
-// Initialize Stripe with publishable key
+// Initialize Stripe with publishable key from environment
 const stripePromise = loadStripe(
-  "pk_live_51RSBPPHBj5p1kQmqBwECrHSNrNxlCN6vH1Gqvn8qvAQ1rW0u5uj5Nq4Y5X5B3T8JKKyVz0N6r5EFGH2UJXwZs5E700KKDDlJa5"
+  window.env?.VITE_STRIPE_PUBLISHABLE_KEY || ""
 );
 
 export default function PaymentMethodsPage() {
