@@ -117,6 +117,7 @@ export type Database = {
           id: string
           platform_fee_amount: number | null
           reference_images: string[] | null
+          revision_count: number
           selected_addons: Json | null
           status: string
           stripe_payment_intent_id: string | null
@@ -138,6 +139,7 @@ export type Database = {
           id?: string
           platform_fee_amount?: number | null
           reference_images?: string[] | null
+          revision_count?: number
           selected_addons?: Json | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           id?: string
           platform_fee_amount?: number | null
           reference_images?: string[] | null
+          revision_count?: number
           selected_addons?: Json | null
           status?: string
           stripe_payment_intent_id?: string | null
@@ -188,6 +191,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      commission_revisions: {
+        Row: {
+          commission_request_id: string
+          created_at: string
+          extra_revision_fee: number | null
+          id: string
+          is_extra_revision: boolean
+          request_notes: string
+          requester_id: string
+          revision_number: number
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_request_id: string
+          created_at?: string
+          extra_revision_fee?: number | null
+          id?: string
+          is_extra_revision?: boolean
+          request_notes: string
+          requester_id: string
+          revision_number: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_request_id?: string
+          created_at?: string
+          extra_revision_fee?: number | null
+          id?: string
+          is_extra_revision?: boolean
+          request_notes?: string
+          requester_id?: string
+          revision_number?: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       commission_types: {
         Row: {
