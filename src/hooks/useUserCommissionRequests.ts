@@ -8,9 +8,12 @@ import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
   selected_addons: any; // Database Json type
+  revision_count: number;
   commission_type: {
     name: string;
     base_price: number;
+    max_revisions: number;
+    price_per_revision?: number;
   };
   creator: {
     display_name: string;
@@ -22,7 +25,7 @@ export const useUserCommissionRequests = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: requests = [], isLoading } = useQuery({
+  const { data: requests = [], isLoading, refetch } = useQuery({
     queryKey: ['user-commission-requests', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -31,7 +34,7 @@ export const useUserCommissionRequests = () => {
         .from('commission_requests')
         .select(`
           *,
-          commission_type:commission_types(name, base_price),
+          commission_type:commission_types(name, base_price, max_revisions, price_per_revision),
           creator:creators(display_name, profile_image_url)
         `)
         .eq('customer_id', user.id)
@@ -164,5 +167,6 @@ export const useUserCommissionRequests = () => {
     isLoading,
     deleteRequest,
     isDeleting: deleteRequestMutation.isPending,
+    refetch,
   };
 };

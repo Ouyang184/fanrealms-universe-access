@@ -6,7 +6,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { FileText } from 'lucide-react';
 
 export default function Requests() {
-  const { requests, isLoading, deleteRequest, isDeleting } = useUserCommissionRequests();
+  const { requests, isLoading, deleteRequest, isDeleting, refetch } = useUserCommissionRequests();
 
   if (isLoading) {
     return (
@@ -44,6 +44,7 @@ export default function Requests() {
               key={request.id}
               request={request}
               onDelete={deleteRequest}
+              onRevisionCreated={refetch}
               isDeleting={isDeleting}
             />
           ))}

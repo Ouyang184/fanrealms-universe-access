@@ -4,17 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye } from 'lucide-react';
+import { Trash2, Eye, RotateCcw } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
+import { RequestRevisionModal } from './RequestRevisionModal';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
   selected_addons: any; // Database Json type
+  revision_count: number;
   commission_type: {
     name: string;
     base_price: number;
+    max_revisions: number;
+    price_per_revision?: number;
   };
   creator: {
     display_name: string;
@@ -25,6 +29,7 @@ interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'st
 interface UserCommissionRequestCardProps {
   request: UserCommissionRequestWithRelations;
   onDelete: (requestId: string) => void;
+  onRevisionCreated: () => void;
   isDeleting: boolean;
 }
 
@@ -54,10 +59,13 @@ const getStatusColor = (status: string) => {
 export function UserCommissionRequestCard({ 
   request, 
   onDelete, 
+  onRevisionCreated,
   isDeleting 
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
   const canDelete = request.status === 'pending' || request.status === 'rejected';
+  const canRequestRevision = request.status === 'delivered' || request.status === 'completed';
 
   const handleDeleteClick = () => {
     console.log('Delete button clicked for request:', request.id);
@@ -136,6 +144,18 @@ export function UserCommissionRequestCard({
               View Details
             </Button>
             
+            {canRequestRevision && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRevisionModal(true)}
+                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Request Revision
+              </Button>
+            )}
+            
             {canDelete && (
               <Button
                 variant="outline"
@@ -158,6 +178,13 @@ export function UserCommissionRequestCard({
         onConfirm={handleDeleteConfirm}
         isDeleting={isDeleting}
         requestTitle={request.title}
+      />
+
+      <RequestRevisionModal
+        open={showRevisionModal}
+        onOpenChange={setShowRevisionModal}
+        commissionRequest={request}
+        onRevisionCreated={onRevisionCreated}
       />
     </>
   );
