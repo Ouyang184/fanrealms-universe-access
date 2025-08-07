@@ -123,13 +123,13 @@ export function StripeConnectSection() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-green-600">Available:</p>
-                <p className="font-mono font-medium">
+                <p className="font-mono font-medium text-green-800">
                   ${(balance.available?.[0]?.amount || 0) / 100}
                 </p>
               </div>
               <div>
                 <p className="text-green-600">Pending:</p>
-                <p className="font-mono font-medium">
+                <p className="font-mono font-medium text-green-800">
                   ${(balance.pending?.[0]?.amount || 0) / 100}
                 </p>
               </div>
