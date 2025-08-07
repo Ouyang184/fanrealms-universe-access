@@ -51,7 +51,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
     <section className="mb-10">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">
-          {categoryFilter ? `${categoryFilter} Creators` : 'Featured Creators'}
+          {categoryFilter ? `${categoryFilter} Creators` : 'Creators'}
         </h2>
         <Link to="/explore/all">
           <Button variant="link" className="text-purple-400">
