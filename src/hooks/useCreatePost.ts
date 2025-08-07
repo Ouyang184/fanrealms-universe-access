@@ -69,7 +69,16 @@ export function useCreatePost() {
     selectedTierIds: string[] | null;
     attachments: AttachmentFile[];
   }) => {
-    if (!user) return;
+    if (!user) return false;
+    
+    if (!creatorProfile?.id) {
+      toast({
+        title: "Create a creator profile",
+        description: "You need a creator profile before you can publish posts.",
+        variant: "destructive",
+      });
+      return false;
+    }
     
     console.log('Form submission started with selectedTierIds:', formData.selectedTierIds);
     console.log('Creator NSFW setting:', creatorProfile?.is_nsfw);
@@ -111,7 +120,9 @@ export function useCreatePost() {
         tier_id: formData.selectedTierIds && formData.selectedTierIds.length === 1 ? formData.selectedTierIds[0] : null,
         attachments: uploadedAttachments,
         tags: formData.tags,
-        is_nsfw: isNSFW
+        is_nsfw: isNSFW,
+        status: 'published',
+        scheduled_for: null,
       };
 
       console.log('Creating post with automatic NSFW flag:', { 
@@ -177,9 +188,11 @@ export function useCreatePost() {
       return true;
     } catch (error: any) {
       console.error('Error creating post:', error);
+      const errMsg = (error && (error.message || (typeof error === 'string' ? error : 'Failed to create post. Please try again.'))) || 'Failed to create post. Please try again.';
+      const errCode = (error && (error as any).code) ? ` (code: ${(error as any).code})` : '';
       toast({
-        title: "Error",
-        description: error.message || "Failed to create post. Please try again.",
+        title: "Post not created",
+        description: `${errMsg}${errCode}`,
         variant: "destructive",
       });
       return false;
