@@ -281,6 +281,11 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                       <span className="font-medium">Extra Revision:</span> +${type.price_per_revision}
                     </div>
                   )}
+                  {type.price_per_character && (
+                    <div>
+                      <span className="font-medium">Price Per Character:</span> +${type.price_per_character}
+                    </div>
+                  )}
                 </div>
 
                 {/* Custom Add-ons Section - Enhanced for Mobile */}
