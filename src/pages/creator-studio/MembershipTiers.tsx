@@ -104,20 +104,51 @@ export default function CreatorStudioTiers() {
     staleTime: 10000, // Consider data stale after 10 seconds
   });
 
-  // Manual refresh function
+  // Manual refresh function with explicit sync
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
+      // First get the creator ID
+      const { data: creatorData, error: creatorError } = await supabase
+        .from("creators")
+        .select("id")
+        .eq("user_id", user?.id)
+        .single();
+      
+      if (creatorError) {
+        throw new Error("Could not find your creator profile");
+      }
+
+      // Call the explicit sync action
+      console.log('[MembershipTiers] Triggering explicit sync for creator:', creatorData.id);
+      
+      const { data: syncResult, error: syncError } = await supabase.functions.invoke('simple-subscriptions', {
+        body: {
+          action: 'sync_subscription_counts',
+          creatorId: creatorData.id
+        }
+      });
+
+      if (syncError) {
+        console.error('[MembershipTiers] Sync error:', syncError);
+        throw syncError;
+      }
+
+      console.log('[MembershipTiers] Sync result:', syncResult);
+
+      // Then invalidate and refetch local data
       await queryClient.invalidateQueries({ queryKey: ["tiers"] });
       await refetch();
+      
       toast({
-        title: "Refreshed successfully",
-        description: "Subscriber counts have been updated",
+        title: "Sync completed successfully",
+        description: `Updated ${syncResult?.subscribers?.length || 0} subscriber records`,
       });
     } catch (error) {
+      console.error('[MembershipTiers] Sync failed:', error);
       toast({
-        title: "Refresh failed",
-        description: "Failed to update subscriber counts",
+        title: "Sync failed",
+        description: "Failed to sync with Stripe. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -58,6 +58,11 @@ serve(async (req) => {
         result = await handleGetCreatorSubscribers(stripe, supabase, creatorId);
         break;
 
+      case 'sync_subscription_counts':
+        console.log('[SimpleSubscriptions] Explicit sync action triggered for creator:', creatorId);
+        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId);
+        break;
+
       default:
         throw new Error('Invalid action');
     }
