@@ -13,13 +13,15 @@ interface CommissionTypeDisplayProps {
   selectedAddons?: Array<{ name: string; price: number; quantity: number }>;
   onAddonsChange?: (addons: Array<{ name: string; price: number; quantity: number }>) => void;
   showAddonSelection?: boolean;
+  characterCount?: number;
 }
 
 export function CommissionTypeDisplay({ 
   commissionType, 
   selectedAddons = [],
   onAddonsChange,
-  showAddonSelection = false
+  showAddonSelection = false,
+  characterCount = 1
 }: CommissionTypeDisplayProps) {
   const [addonQuantities, setAddonQuantities] = useState<{ [key: string]: number }>(() => {
     const quantities: { [key: string]: number } = {};
@@ -51,11 +53,17 @@ export function CommissionTypeDisplay({
   const calculateTotalPrice = () => {
     let total = commissionType.base_price;
     
+    // Add addon costs
     if (showAddonSelection && commissionType.custom_addons) {
       commissionType.custom_addons.forEach(addon => {
         const quantity = addonQuantities[addon.name] || 0;
         total += addon.price * quantity;
       });
+    }
+    
+    // Add character costs
+    if (commissionType.price_per_character && characterCount > 1) {
+      total += commissionType.price_per_character * (characterCount - 1);
     }
     
     return total;

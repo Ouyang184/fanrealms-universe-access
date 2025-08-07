@@ -15,6 +15,7 @@ interface FormData {
   deadline: string;
   customer_notes: string;
   selected_addons: Array<{ name: string; price: number; quantity: number }>;
+  character_count: number;
 }
 
 interface UseCommissionRequestFormProps {
@@ -41,7 +42,8 @@ export function useCommissionRequestForm({
     budget_range_max: '',
     deadline: '',
     customer_notes: '',
-    selected_addons: []
+    selected_addons: [],
+    character_count: 1
   });
 
   useEffect(() => {
@@ -62,15 +64,24 @@ export function useCommissionRequestForm({
       budget_range_max: '',
       deadline: '',
       customer_notes: '',
-      selected_addons: []
+      selected_addons: [],
+      character_count: 1
     });
   };
 
-  const calculateTotalPrice = (selectedType: CommissionType, addons: Array<{ name: string; price: number; quantity: number }>) => {
+  const calculateTotalPrice = (selectedType: CommissionType, addons: Array<{ name: string; price: number; quantity: number }>, characterCount: number) => {
     let total = selectedType.base_price;
+    
+    // Add addon costs
     addons.forEach(addon => {
       total += addon.price * addon.quantity;
     });
+    
+    // Add character costs
+    if (selectedType.price_per_character && characterCount > 1) {
+      total += selectedType.price_per_character * (characterCount - 1);
+    }
+    
     return total;
   };
 
@@ -104,7 +115,7 @@ export function useCommissionRequestForm({
         throw new Error("Commission type not found");
       }
 
-      const totalPrice = calculateTotalPrice(selectedType, formData.selected_addons);
+      const totalPrice = calculateTotalPrice(selectedType, formData.selected_addons, formData.character_count);
 
       const requestData = {
         commission_type_id: formData.commission_type_id,
@@ -115,7 +126,7 @@ export function useCommissionRequestForm({
         budget_range_min: null,
         budget_range_max: null,
         deadline: formData.deadline || null,
-        customer_notes: null,
+        customer_notes: formData.character_count > 1 ? `Character count: ${formData.character_count}` : null,
         agreed_price: totalPrice,
         selected_addons: formData.selected_addons,
         status: 'pending'

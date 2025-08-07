@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -17,6 +18,7 @@ interface FormData {
   deadline: string;
   customer_notes: string;
   selected_addons: Array<{ name: string; price: number; quantity: number }>;
+  character_count: number;
 }
 
 interface CommissionRequestFormProps {
@@ -48,9 +50,16 @@ export function CommissionRequestForm({
     if (!selectedType) return 0;
     
     let total = selectedType.base_price;
+    
+    // Add addon costs
     formData.selected_addons.forEach(addon => {
       total += addon.price * addon.quantity;
     });
+    
+    // Add character costs
+    if (selectedType.price_per_character && formData.character_count > 1) {
+      total += selectedType.price_per_character * (formData.character_count - 1);
+    }
     
     return total;
   };
@@ -79,12 +88,36 @@ export function CommissionRequestForm({
       )}
 
       {selectedType && (
-        <CommissionTypeDisplay 
-          commissionType={selectedType} 
-          selectedAddons={formData.selected_addons}
-          onAddonsChange={handleAddonsChange}
-          showAddonSelection={true}
-        />
+        <div className="space-y-4">
+          <CommissionTypeDisplay 
+            commissionType={selectedType} 
+            selectedAddons={formData.selected_addons}
+            onAddonsChange={handleAddonsChange}
+            showAddonSelection={true}
+            characterCount={formData.character_count}
+          />
+          
+          {/* Character Count Input */}
+          {selectedType.price_per_character && (
+            <div className="space-y-2">
+              <Label htmlFor="character_count">Number of Characters</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="character_count"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.character_count}
+                  onChange={(e) => setFormData(prev => ({ ...prev, character_count: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="flex h-10 w-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {formData.character_count === 1 ? 'Base price includes 1 character' : `+$${(selectedType.price_per_character * (formData.character_count - 1)).toFixed(2)} for additional characters`}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="space-y-2">
