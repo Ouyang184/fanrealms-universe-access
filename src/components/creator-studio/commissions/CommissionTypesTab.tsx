@@ -138,6 +138,11 @@ export function CommissionTypesTab({
                   <span className="font-medium">Extra Revision:</span> +${type.price_per_revision}
                 </div>
               )}
+              {type.price_per_character && (
+                <div>
+                  <span className="font-medium">Per Character:</span> +${type.price_per_character}
+                </div>
+              )}
             </div>
 
             {/* Will Do / Won't Do Lists */}

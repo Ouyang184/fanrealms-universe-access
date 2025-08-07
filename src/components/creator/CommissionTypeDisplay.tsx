@@ -85,6 +85,11 @@ export function CommissionTypeDisplay({
               <span className="font-medium">Extra Revision:</span> +${commissionType.price_per_revision}
             </div>
           )}
+          {commissionType.price_per_character && (
+            <div className="col-span-2">
+              <span className="font-medium">Per Character:</span> +${commissionType.price_per_character}
+            </div>
+          )}
         </div>
 
         {/* Custom Add-ons */}
