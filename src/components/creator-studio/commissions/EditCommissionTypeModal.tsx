@@ -260,8 +260,9 @@ export function EditCommissionTypeModal({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={formData.price_per_character}
-                  onChange={(e) => setFormData({ ...formData, price_per_character: parseFloat(e.target.value) || 0 })}
+                  value={formData.price_per_character || ''}
+                  onChange={(e) => setFormData({ ...formData, price_per_character: e.target.value ? parseFloat(e.target.value) : 0 })}
+                  placeholder="2.50"
                 />
               </div>
             </div>

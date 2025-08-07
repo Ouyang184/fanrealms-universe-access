@@ -12,6 +12,7 @@ interface FormData {
   estimated_turnaround_days: number;
   max_revisions: number;
   price_per_revision?: number;
+  price_per_character?: number;
   dos: string[];
   donts: string[];
   sample_art_url?: string;
@@ -69,6 +70,7 @@ export function useCommissionTypeForm(onSuccess: () => void) {
         estimated_turnaround_days: data.estimated_turnaround_days,
         max_revisions: data.max_revisions,
         price_per_revision: data.price_per_revision || null,
+        price_per_character: data.price_per_character || null,
         dos,
         donts,
         sample_art_url: sampleArtUrl,

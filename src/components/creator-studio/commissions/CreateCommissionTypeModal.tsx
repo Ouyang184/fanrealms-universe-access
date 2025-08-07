@@ -160,10 +160,23 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
                 id="price_per_revision"
                 type="number"
                 step="0.01"
+                min="0"
                 {...register('price_per_revision')}
                 placeholder="10.00"
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="price_per_character">Price per Character ($)</Label>
+            <Input
+              id="price_per_character"
+              type="number"
+              step="0.01"
+              min="0"
+              {...register('price_per_character')}
+              placeholder="2.50"
+            />
           </div>
 
           <DosList
