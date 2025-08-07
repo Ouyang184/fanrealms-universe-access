@@ -232,9 +232,6 @@ export default function AllCreatorsExplorePage() {
                           className="w-full h-full object-cover"
                         />
                       )}
-                      <Badge className="absolute top-2 right-2 bg-purple-600 flex items-center gap-1">
-                        <Award className="h-3 w-3" /> Featured
-                      </Badge>
                     </div>
                     <CardContent className="pt-0 -mt-12 p-6">
                       <div className="flex justify-between items-start">
