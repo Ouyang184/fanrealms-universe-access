@@ -1363,6 +1363,10 @@ export type Database = {
         Args: { tier_id_param: string }
         Returns: boolean
       }
+      user_owns_creator_profile: {
+        Args: { creator_id_param: string }
+        Returns: boolean
+      }
       user_owns_post: {
         Args: { post_id_param: string }
         Returns: boolean
