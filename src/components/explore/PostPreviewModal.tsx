@@ -21,6 +21,7 @@ import { useSimpleSubscriptionCheck } from "@/hooks/useSimpleSubscriptionCheck";
 import { useAuth } from "@/contexts/AuthContext";
 import { NSFWContentGate } from "@/components/nsfw/NSFWContentGate";
 import { usePostViews, usePostViewTracking } from "@/hooks/usePostViews";
+import { Link } from "react-router-dom";
 
 interface PostPreviewModalProps {
   open: boolean;
@@ -66,19 +67,24 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
   };
 
   const displayContent = getDisplayContent();
+  const creatorUrl = post.authorId ? `/creator/${post.authorId}` : (post.authorName ? `/creator/${encodeURIComponent(post.authorName)}` : '#');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} />
-              <AvatarFallback>{post.authorName?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
+            <Link to={creatorUrl} onClick={(e) => { e.stopPropagation(); onOpenChange(false); }} aria-label={`View ${post.authorName || 'creator'} profile`} className="flex-shrink-0">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png"} />
+                <AvatarFallback>{post.authorName?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
+            </Link>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium">{post.authorName}</span>
+                <Link to={creatorUrl} onClick={(e) => { e.stopPropagation(); onOpenChange(false); }} className="font-medium hover:text-primary transition-colors">
+                  {post.authorName}
+                </Link>
                 {post.tier_id && (
                   <Badge className="bg-primary">
                     <Crown className="h-3 w-3 mr-1" />

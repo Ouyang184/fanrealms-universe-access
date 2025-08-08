@@ -12,6 +12,7 @@ import { useComments } from "@/hooks/useComments";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ShareButton } from "@/components/post/ShareButton";
+import { Link } from "react-router-dom";
 
 interface ContentItemProps {
   post: Post;
@@ -37,6 +38,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   // Use the post's authorName and authorAvatar which should now be properly set from HomeContent
   const displayName = post.authorName || "Creator";
   const avatarUrl = post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png";
+  const creatorUrl = post.authorId ? `/creator/${post.authorId}` : (post.authorName ? `/creator/${encodeURIComponent(post.authorName)}` : '#');
   
   console.log('ContentItem: Rendering post with creator info:', {
     postId: post.id,
@@ -130,17 +132,21 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         {/* Creator info and metadata */}
         <div className="flex items-center justify-between pt-1 sm:pt-2 gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
-              <AvatarImage 
-                src={avatarUrl} 
-                alt={displayName} 
-              />
-              <AvatarFallback className="text-xs bg-gray-700 text-gray-300">
-                {displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <Link to={creatorUrl} onClick={(e) => e.stopPropagation()} aria-label={`View ${displayName} profile`} className="flex-shrink-0">
+              <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
+                <AvatarImage 
+                  src={avatarUrl} 
+                  alt={displayName} 
+                />
+                <AvatarFallback className="text-xs bg-gray-700 text-gray-300">
+                  {displayName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
             <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
-              <span className="text-xs sm:text-sm font-medium text-gray-300 truncate">{displayName}</span>
+              <Link to={creatorUrl} onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium text-gray-300 truncate hover:text-primary transition-colors">
+                {displayName}
+              </Link>
               {post.tier_id ? (
                 <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">
                   <Crown className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
