@@ -221,13 +221,6 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
-        {/* Tag Filter */}
-        <div className="mb-8">
-          <TagFilter 
-            selectedTags={selectedTags} 
-            onTagsChange={setSelectedTags}
-          />
-        </div>
 
         {/* Featured Creators - Display all creators when no category filter or "all" is selected */}
         <FeaturedCreators 
@@ -235,6 +228,14 @@ export default function ExplorePage() {
           isLoading={isLoadingCreators || isLoadingPopular}
           categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
+
+        {/* Tag Filter (moved below Creators) */}
+        <div className="mb-8">
+          <TagFilter 
+            selectedTags={selectedTags} 
+            onTagsChange={setSelectedTags}
+          />
+        </div>
 
         {/* Content Tabs - Display all content when no category filter or "all" is selected */}
         <ContentTabs
