@@ -221,15 +221,7 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
-
-        {/* Featured Creators - Display all creators when no category filter or "all" is selected */}
-        <FeaturedCreators 
-          creators={filteredCreators}
-          isLoading={isLoadingCreators || isLoadingPopular}
-          categoryFilter={categoryFilter === "all" ? null : categoryFilter}
-        />
-
-        {/* Tag Filter (moved below Creators) */}
+        {/* Tag Filter */}
         <div className="mb-8">
           <TagFilter 
             selectedTags={selectedTags} 
@@ -237,7 +229,7 @@ export default function ExplorePage() {
           />
         </div>
 
-        {/* Content Tabs - Display all content when no category filter or "all" is selected */}
+        {/* Posts - show below Tag Filter */}
         <ContentTabs
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
@@ -248,6 +240,13 @@ export default function ExplorePage() {
           isLoadingCommissions={isLoadingCommissions}
           onPostClick={handlePostClick}
           defaultTab={tabParam || "trending"}
+        />
+
+        {/* Featured Creators (moved below posts) */}
+        <FeaturedCreators 
+          creators={filteredCreators}
+          isLoading={isLoadingCreators || isLoadingPopular}
+          categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
 
         {/* Commission Section */}
