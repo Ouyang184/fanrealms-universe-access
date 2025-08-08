@@ -30,8 +30,10 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
   );
 
   const addTag = (tag: string) => {
-    if (!selectedTags.includes(tag)) {
-      onTagsChange([...selectedTags, tag]);
+    const clean = tag.toLowerCase().trim().replace(/^#/, '');
+    if (!clean) return;
+    if (!selectedTags.includes(clean)) {
+      onTagsChange([...selectedTags, clean]);
     }
   };
 

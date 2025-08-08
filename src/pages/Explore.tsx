@@ -140,7 +140,8 @@ export default function ExplorePage() {
   // Initialize selected tags from URL
   useEffect(() => {
     if (tagParam) {
-      setSelectedTags([tagParam]);
+      const clean = tagParam.toLowerCase().replace(/^#/, '').trim();
+      setSelectedTags(clean ? [clean] : []);
     }
   }, [tagParam]);
 
@@ -166,18 +167,22 @@ export default function ExplorePage() {
     
     // Filter by tags if present
     if (selectedTags.length > 0) {
+      const normalizedSelected = selectedTags
+        .map(t => t.toLowerCase().replace(/^#/, '').trim())
+        .filter(Boolean);
+
       creatorFilter = creatorFilter.filter(creator => 
-        creator.tags && selectedTags.some(tag => 
+        creator.tags && normalizedSelected.some(tag => 
           creator.tags.some(creatorTag => 
-            creatorTag.toLowerCase().includes(tag.toLowerCase())
+            creatorTag.toLowerCase().replace(/^#/, '').trim() === tag
           )
         )
       );
       
       postsFilter = postsFilter.filter(post => 
-        post.tags && selectedTags.some(tag => 
+        post.tags && normalizedSelected.some(tag => 
           post.tags.some(postTag => 
-            postTag.toLowerCase().includes(tag.toLowerCase())
+            String(postTag).toLowerCase().replace(/^#/, '').trim() === tag
           )
         )
       );
