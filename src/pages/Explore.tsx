@@ -21,6 +21,7 @@ import { CommunitySection } from "@/components/explore/CommunitySection";
 import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
 import { NewsletterSection } from "@/components/explore/NewsletterSection";
 import { CommissionSection } from "@/components/home/CommissionSection";
+import { ContentItem } from "@/components/explore/ContentItem";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -81,6 +82,22 @@ export default function ExplorePage() {
       return data || [];
     },
   });
+
+  // Fetch all likes (for computing most liked posts)
+  const { data: allLikes = [] } = useQuery({
+    queryKey: ['all-likes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('likes')
+        .select('post_id');
+      if (error) {
+        console.error('Error fetching likes:', error);
+        return [] as { post_id: string }[];
+      }
+      return (data || []) as { post_id: string }[];
+    },
+    staleTime: 30000,
+  });
   
   // Post preview modal state
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -100,6 +117,7 @@ export default function ExplorePage() {
   const [filteredRecommended, setFilteredRecommended] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mostLikedPosts, setMostLikedPosts] = useState<Post[]>([]);
 
   console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
   console.log('Explore: Posts count after NSFW filtering:', posts.length);
@@ -189,8 +207,19 @@ export default function ExplorePage() {
       new Date(a.createdAt || Date.now()).getTime()
     ).slice(0, 4)); // Latest posts
     setFilteredRecommended(creatorFilter.slice(0, 4)); // Recommended creators
+
+    // Compute most liked regular posts (non-premium)
+    const likeMap = new Map<string, number>();
+    (allLikes as { post_id: string }[]).forEach((l) => {
+      likeMap.set(l.post_id, (likeMap.get(l.post_id) || 0) + 1);
+    });
+    const regularPosts = postsFilter.filter((p) => !p.tier_id);
+    const mostLikedSorted = [...regularPosts].sort(
+      (a, b) => (likeMap.get(b.id) || 0) - (likeMap.get(a.id) || 0)
+    );
+    setMostLikedPosts(mostLikedSorted.slice(0, 12));
     
-  }, [categoryFilter, searchQuery, selectedTags, popularCreators, posts, nsfwPrefs?.isNSFWEnabled]);
+  }, [categoryFilter, searchQuery, selectedTags, popularCreators, posts, nsfwPrefs?.isNSFWEnabled, allLikes]);
   
   // Handle post click
   const handlePostClick = (post: Post) => {
@@ -221,15 +250,37 @@ export default function ExplorePage() {
         {/* Categories Section */}
         <ExploreCategories />
 
+        {/* Featured Creators - keep in original position */}
+        <FeaturedCreators 
+          creators={filteredCreators}
+          isLoading={isLoadingCreators || isLoadingPopular}
+          categoryFilter={categoryFilter === "all" ? null : categoryFilter}
+        />
+
         {/* Tag Filter */}
-        <div className="mb-8">
+        <div className="mb-8 mt-6">
           <TagFilter 
             selectedTags={selectedTags} 
             onTagsChange={setSelectedTags}
           />
         </div>
 
-        {/* Posts - show below Tag Filter */}
+        {/* Most Liked Posts (regular/public) */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Most Liked Posts</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+            {mostLikedPosts.map((post) => (
+              <ContentItem 
+                key={post.id} 
+                post={post} 
+                type="trending" 
+                onPostClick={handlePostClick}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Content Tabs - other feeds */}
         <ContentTabs
           trendingPosts={filteredTrending}
           newReleases={filteredNewReleases}
@@ -240,13 +291,6 @@ export default function ExplorePage() {
           isLoadingCommissions={isLoadingCommissions}
           onPostClick={handlePostClick}
           defaultTab={tabParam || "trending"}
-        />
-
-        {/* Featured Creators (moved below posts) */}
-        <FeaturedCreators 
-          creators={filteredCreators}
-          isLoading={isLoadingCreators || isLoadingPopular}
-          categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
 
         {/* Commission Section */}
