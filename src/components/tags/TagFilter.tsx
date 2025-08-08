@@ -43,6 +43,16 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
     onTagsChange([]);
   };
 
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const tag = searchQuery.trim();
+      if (tag) {
+        addTag(tag);
+        setSearchQuery('');
+      }
+    }
+  };
+
   return (
     <div className={className}>
       {/* Desktop View */}
@@ -90,6 +100,7 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
             placeholder="Search tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
             className="pl-10"
           />
         </div>
@@ -175,6 +186,7 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
                   placeholder="Search tags..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
                   className="pl-10"
                 />
               </div>
