@@ -21,42 +21,66 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log('[useCreatorFetch] Fetching creator with identifier:', identifier);
       
-      // Try to fetch by username first, then by creator ID
-      let query = supabase
-        .from('creators')
-        .select(`
+      // Try to fetch by username first, then by creator ID, then by display_name
+      const baseSelect = `
           *,
           users!creators_user_id_fkey (
             username,
             profile_picture
           )
-        `);
+        `;
+      
+      // Helper to build a creators query with common select
+      const creatorsQuery = () => supabase.from('creators').select(baseSelect);
+      
+      // Decode in case identifier came URL-encoded (e.g., display names with spaces)
+      const decoded = decodeURIComponent(identifier);
       
       // Check if identifier looks like a UUID
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded);
+      
+      let data: any | null = null;
+      let error: any | null = null;
       
       if (isUUID) {
-        query = query.eq('id', identifier);
+        ({ data, error } = await creatorsQuery().eq('id', decoded).single());
       } else {
-        // First try to find by username in the users table
+        // 1) Try username match via users table
         const { data: userData } = await supabase
           .from('users')
           .select('id')
-          .eq('username', identifier)
-          .single();
+          .eq('username', decoded)
+          .maybeSingle();
         
         if (userData) {
-          query = query.eq('user_id', userData.id);
+          ({ data, error } = await creatorsQuery().eq('user_id', userData.id).single());
         } else {
-          // If no user found, return null
-          return null;
+          // 2) Try exact display_name match (case sensitive)
+          ({ data } = await creatorsQuery().eq('display_name', decoded).maybeSingle());
+          
+          // 3) If not found, try case-insensitive exact match using ilike
+          if (!data) {
+            ({ data } = await creatorsQuery().ilike('display_name', decoded).maybeSingle());
+          }
+          
+          if (!data) {
+            // 4) As a last resort, try a slug-like comparison (remove spaces and lowercase)
+            const normalized = decoded.toLowerCase().replace(/\s+/g, '');
+            const { data: list } = await creatorsQuery().select(baseSelect);
+            if (Array.isArray(list)) {
+              data = list.find((c: any) => (c.display_name || '').toLowerCase().replace(/\s+/g, '') === normalized) || null;
+            }
+          }
         }
       }
       
-      const { data, error } = await query.single();
-      
       if (error) {
         console.error('[useCreatorFetch] Error fetching creator:', error);
+        return null;
+      }
+      
+      if (!data) {
+        console.warn('[useCreatorFetch] No creator found for identifier:', decoded);
         return null;
       }
       
