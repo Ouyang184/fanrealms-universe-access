@@ -83,12 +83,8 @@ export function usePosts() {
           authorName: userData?.username || creatorData?.display_name || "Creator",
           authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
           
-          // Add tags if they exist in the database (may need to be added to Post interface)
-          tags: post.title
-            ?.split(' ')
-            .filter(word => word.length > 3)
-            .slice(0, 3)
-            .map(tag => tag.toLowerCase().replace(/[^a-z0-9]/g, '')) || []
+          // Add tags from DB column if present
+          tags: Array.isArray((post as any).tags) ? (post as any).tags : [],
         };
       });
     },
