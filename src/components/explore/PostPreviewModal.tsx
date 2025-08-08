@@ -134,6 +134,15 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
               </div>
             )}
             
+            {/* Tags */}
+            {Array.isArray(post.tags) && post.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 py-2">
+                {post.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">#{tag}</Badge>
+                ))}
+              </div>
+            )}
+
             {/* Stats */}
             <div className="flex items-center gap-6 py-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">

@@ -120,6 +120,15 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           <p className="text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3 break-words hyphens-auto">
             {getPreviewContent(post.content)}
           </p>
+          {Array.isArray(post.tags) && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-1">
+              {post.tags.slice(0, 5).map((tag) => (
+                <Badge key={tag} variant="outline" className="text-[10px] sm:text-xs">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Creator info and metadata */}
