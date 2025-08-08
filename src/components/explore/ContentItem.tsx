@@ -38,7 +38,11 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
   // Use the post's authorName and authorAvatar which should now be properly set from HomeContent
   const displayName = post.authorName || "Creator";
   const avatarUrl = post.authorAvatar || "/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png";
-  const creatorUrl = post.authorId ? `/creator/${post.authorId}` : (post.authorName ? `/creator/${encodeURIComponent(post.authorName)}` : '#');
+  const creatorUrl = post.authorName
+    ? `/creator/${encodeURIComponent(post.authorName)}`
+    : post.authorId
+      ? `/creator/${post.authorId}`
+      : '#';
   
   console.log('ContentItem: Rendering post with creator info:', {
     postId: post.id,

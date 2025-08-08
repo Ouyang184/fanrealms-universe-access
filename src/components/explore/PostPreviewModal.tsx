@@ -67,7 +67,11 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
   };
 
   const displayContent = getDisplayContent();
-  const creatorUrl = post.authorId ? `/creator/${post.authorId}` : (post.authorName ? `/creator/${encodeURIComponent(post.authorName)}` : '#');
+  const creatorUrl = post.authorName
+    ? `/creator/${encodeURIComponent(post.authorName)}`
+    : post.authorId
+      ? `/creator/${post.authorId}`
+      : '#';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
