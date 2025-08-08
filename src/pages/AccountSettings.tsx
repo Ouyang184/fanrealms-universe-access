@@ -28,6 +28,7 @@ import { EmailMFASetup } from "@/components/auth/EmailMFASetup";
 import { MFAEnrollment } from "@/components/auth/MFAEnrollment";
 import { useMFA } from "@/hooks/useMFA";
 import { useEmailMFA } from "@/hooks/useEmailMFA";
+import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -134,13 +135,14 @@ export default function AccountSettings() {
   const { factors, hasMFA, fetchFactors, unenrollFactor } = useMFA();
   const { isEnabled: emailMFAEnabled } = useEmailMFA();
 
-  // Notification settings state
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    newContentAlerts: true,
-    commentReplies: true,
-    saving: false
-  });
+  // Notification preferences hook
+  const { 
+    preferences: notificationSettings,
+    isLoading: notificationsLoading,
+    isSaving: notificationsSaving,
+    updatePreference,
+    savePreferences: saveNotifPreferences
+  } = useNotificationPreferences();
   
   // Avatar upload state and functionality
   const { getAvatarUrl, uploadAvatar, isCreator } = useUnifiedAvatar();
@@ -267,11 +269,12 @@ export default function AccountSettings() {
     const { name, value } = e.target;
     setAccountSettings(prev => ({ ...prev, [name]: value }));
   };
-  
-  const handleNotificationChange = (key: string, value: boolean) => {
-    setNotificationSettings(prev => ({ ...prev, [key]: value }));
+  const handleNotificationChange = (
+    key: 'emailNotifications' | 'newContentAlerts' | 'commentReplies',
+    value: boolean
+  ) => {
+    updatePreference(key, value);
   };
-
   const handleSecurityChange = (key: string, value: boolean | string) => {
     setSecuritySettings(prev => ({ ...prev, [key]: value }));
   };
@@ -442,17 +445,8 @@ export default function AccountSettings() {
   };
   
   const saveNotificationSettings = () => {
-    setNotificationSettings(prev => ({ ...prev, saving: true }));
-    // In a real app, we would save to the database here
-    setTimeout(() => {
-      toast({
-        title: "Notification preferences saved",
-        description: "Your notification settings have been updated"
-      });
-      setNotificationSettings(prev => ({ ...prev, saving: false }));
-    }, 1000);
+    saveNotifPreferences(notificationSettings);
   };
-  
   if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -698,9 +692,9 @@ export default function AccountSettings() {
                 <CardFooter>
                   <Button 
                     onClick={saveNotificationSettings} 
-                    disabled={notificationSettings.saving}
+                    disabled={notificationsSaving}
                   >
-                    {notificationSettings.saving ? "Saving..." : "Save Preferences"}
+                    {notificationsSaving ? "Saving..." : "Save Preferences"}
                   </Button>
                 </CardFooter>
               </Card>
