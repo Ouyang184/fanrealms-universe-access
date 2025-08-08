@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PostCard from '@/components/PostCard';
 import { Post } from '@/types';
 
@@ -18,20 +18,39 @@ export function FeedPostItem({
   creatorInfo, 
   onPostClick 
 }: FeedPostItemProps) {
+  const itemRef = useRef<HTMLDivElement>(null);
+
+  // Auto-mark as read when 50% of the card is visible
+  useEffect(() => {
+    if (!itemRef.current || !markAsRead || !readPostIds) return;
+    if (readPostIds.has(post.id)) return;
+
+    const node = itemRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+          markAsRead(post.id);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: [0.5] }
+    );
+
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, [post.id, markAsRead, readPostIds]);
+
   const handlePostClick = () => {
-    // Mark as read if function is provided
-    if (markAsRead && readPostIds && !readPostIds.has(post.id)) {
-      markAsRead(post.id);
-    }
-    
-    // Call the onPostClick callback if provided
+    // Only handle preview/navigation; read is handled by IntersectionObserver
     if (onPostClick) {
       onPostClick(post);
     }
   };
 
   return (
-    <div className="w-full max-w-full overflow-hidden" onClick={handlePostClick}>
+    <div ref={itemRef} className="w-full max-w-full overflow-hidden" onClick={handlePostClick}>
       <PostCard
         id={post.id}
         title={post.title}
