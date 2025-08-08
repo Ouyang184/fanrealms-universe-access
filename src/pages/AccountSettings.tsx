@@ -656,7 +656,7 @@ export default function AccountSettings() {
                     <div className="space-y-0.5">
                       <Label>Email Notifications</Label>
                       <p className="text-sm text-muted-foreground">
-                        Receive notifications via email
+                        Receive notifications from content update via email
                       </p>
                     </div>
                     <Switch 
