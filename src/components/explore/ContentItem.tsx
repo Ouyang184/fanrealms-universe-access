@@ -92,19 +92,15 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           </div>
         )}
         
-        {/* Overlay badges */}
-        <div className="absolute top-2 right-2 flex gap-1 sm:gap-2">
-          {type === 'trending' && (
-            <Badge className="bg-red-500/90 text-white text-xs">
-              Trending
-            </Badge>
-          )}
-          {type === 'new' && (
+        {/* Overlay badge */}
+        {type === 'new' && (
+          <div className="absolute top-2 right-2">
             <Badge className="bg-blue-500/90 text-white text-xs">
               New
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
+
       </div>
 
       <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
