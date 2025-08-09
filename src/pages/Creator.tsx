@@ -142,7 +142,7 @@ const CreatorPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto px-4 sm:px-6">
         <div className="pt-2">
           <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -161,36 +161,36 @@ const CreatorPage: React.FC = () => {
         
         {/* Tab Navigation - properly spaced below header */}
         <div className="border-t border-b border-border bg-background sticky top-0 z-20 shadow-sm">
-          <div className="px-6 py-4">
+          <div className="px-3 py-2 sm:px-6 sm:py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="flex w-full max-w-full mx-0 sm:mx-auto h-11 gap-2 overflow-x-auto">
-                <TabsTrigger value="posts" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Posts</TabsTrigger>
-                <TabsTrigger value="membership" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Membership</TabsTrigger>
-                <TabsTrigger value="commissions" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Commissions</TabsTrigger>
-                <TabsTrigger value="ratings" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Ratings</TabsTrigger>
-                <TabsTrigger value="about" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">About</TabsTrigger>
+              <TabsList className="flex w-full max-w-full sm:mx-auto h-10 sm:h-11 gap-1.5 sm:gap-2 overflow-x-auto overscroll-x-contain -mx-3 sm:mx-0 px-3 sm:px-0 snap-x snap-mandatory">
+                <TabsTrigger value="posts" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0 snap-start">Posts</TabsTrigger>
+                <TabsTrigger value="membership" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0 snap-start">Membership</TabsTrigger>
+                <TabsTrigger value="commissions" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0 snap-start">Commissions</TabsTrigger>
+                <TabsTrigger value="ratings" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0 snap-start">Ratings</TabsTrigger>
+                <TabsTrigger value="about" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0 snap-start">About</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="posts" className="pt-6 px-0">
-                <div className="px-6">
+              <TabsContent value="posts" className="pt-4 sm:pt-6 px-0">
+                <div className="px-3 sm:px-6 w-full overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_video]:w-full [&_video]:h-auto [&_iframe]:w-full [&_iframe]:aspect-video">
                   <CreatorPosts posts={posts || []} />
                 </div>
               </TabsContent>
               
-              <TabsContent value="membership" className="pt-6 px-0">
-                <div className="px-6">
+              <TabsContent value="membership" className="pt-4 sm:pt-6 px-0">
+                <div className="px-3 sm:px-6 w-full overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_video]:w-full [&_video]:h-auto [&_iframe]:w-full [&_iframe]:aspect-video">
                   <CreatorMembership creatorId={creator?.id || ''} />
                 </div>
               </TabsContent>
               
-              <TabsContent value="commissions" className="pt-6 px-0">
-                <div className="px-6">
+              <TabsContent value="commissions" className="pt-4 sm:pt-6 px-0">
+                <div className="px-3 sm:px-6 w-full overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_video]:w-full [&_video]:h-auto [&_iframe]:w-full [&_iframe]:aspect-video">
                   <CreatorCommissions creator={creator} />
                 </div>
               </TabsContent>
               
-              <TabsContent value="ratings" className="pt-6 px-0">
-                <div className="px-6">
+              <TabsContent value="ratings" className="pt-4 sm:pt-6 px-0">
+                <div className="px-3 sm:px-6 w-full overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_video]:w-full [&_video]:h-auto [&_iframe]:w-full [&_iframe]:aspect-video">
                   <CreatorRatings 
                     creatorId={creator?.id || ''} 
                     creatorName={creator?.display_name || 'this creator'} 
@@ -198,8 +198,8 @@ const CreatorPage: React.FC = () => {
                 </div>
               </TabsContent>
               
-              <TabsContent value="about" className="pt-6 px-0">
-                <div className="px-6">
+              <TabsContent value="about" className="pt-4 sm:pt-6 px-0">
+                <div className="px-3 sm:px-6 w-full overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_video]:w-full [&_video]:h-auto [&_iframe]:w-full [&_iframe]:aspect-video">
                   <CreatorAbout creator={creator} />
                 </div>
               </TabsContent>
