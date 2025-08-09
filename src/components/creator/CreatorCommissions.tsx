@@ -228,6 +228,15 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                   <CardTitle className="text-lg">{type.name}</CardTitle>
                   <Badge variant="secondary">${type.base_price}</Badge>
                 </div>
+                {type.tags && type.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {type.tags.slice(0, 6).map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 {type.description && (
                   <p className="text-sm text-muted-foreground">{type.description}</p>
                 )}
