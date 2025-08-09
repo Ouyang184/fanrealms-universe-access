@@ -9,6 +9,7 @@ import { useCommissionTypeForm } from '@/hooks/useCommissionTypeForm';
 import { useSampleImageUpload } from '@/hooks/useSampleImageUpload';
 import { SampleImageUpload } from './SampleImageUpload';
 import { DosList, DontsList } from './DosDontsList';
+import { TagInput } from '@/components/tags/TagInput';
 
 interface CreateCommissionTypeModalProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ interface CreateCommissionTypeModalProps {
 
 export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommissionTypeModalProps) {
   const [open, setOpen] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
 
   const {
     register,
@@ -57,13 +59,14 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
       sampleArtUrl = await uploadSampleImage(creatorProfile.id);
     }
 
-    await onSubmit(data, sampleArtUrl);
+    await onSubmit(data, sampleArtUrl, tags);
     resetImageUpload();
   };
 
   const handleModalClose = () => {
     resetForm();
     resetImageUpload();
+    setTags([]);
     setOpen(false);
   };
 
@@ -115,6 +118,17 @@ export function CreateCommissionTypeModal({ children, onSuccess }: CreateCommiss
               placeholder="Describe what this commission type includes..."
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label>Tags</Label>
+            <TagInput
+              tags={tags}
+              onTagsChange={setTags}
+              maxTags={10}
+              placeholder="Add tags (e.g., portrait, anime)"
+            />
+            <p className="text-sm text-muted-foreground">Up to 10 tags to help discovery.</p>
           </div>
 
           <SampleImageUpload

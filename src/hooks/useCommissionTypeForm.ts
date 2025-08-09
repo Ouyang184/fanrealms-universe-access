@@ -16,6 +16,7 @@ interface FormData {
   dos: string[];
   donts: string[];
   sample_art_url?: string;
+  tags?: string[];
 }
 
 export function useCommissionTypeForm(onSuccess: () => void) {
@@ -50,7 +51,7 @@ export function useCommissionTypeForm(onSuccess: () => void) {
     setDonts(donts.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: FormData, sampleArtUrl: string | null) => {
+  const onSubmit = async (data: FormData, sampleArtUrl: string | null, tags?: string[]) => {
     if (!creatorProfile?.id) {
       toast({
         title: "Error",
@@ -73,6 +74,7 @@ export function useCommissionTypeForm(onSuccess: () => void) {
         price_per_character: data.price_per_character || null,
         dos,
         donts,
+        tags: tags ?? [],
         sample_art_url: sampleArtUrl,
         is_active: true
       };

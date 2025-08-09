@@ -11,6 +11,7 @@ export interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  tags?: string[];
   custom_addons?: Array<{ name: string; price: number }>;
   sample_art_url?: string; // Add sample art URL
   is_active: boolean;

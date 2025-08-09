@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
+import { TagInput } from '@/components/tags/TagInput';
 
 interface CommissionType {
   id: string;
@@ -26,6 +27,7 @@ interface CommissionType {
   max_revisions: number;
   dos: string[];
   donts: string[];
+  tags?: string[];
   sample_art_url?: string;
   is_active: boolean;
   created_at: string;
@@ -58,8 +60,9 @@ export function EditCommissionTypeModal({
   });
   const [dos, setDos] = useState<string[]>([]);
   const [donts, setDonts] = useState<string[]>([]);
-  const [currentDo, setCurrentDo] = useState('');
-  const [currentDont, setCurrentDont] = useState('');
+const [currentDo, setCurrentDo] = useState('');
+const [currentDont, setCurrentDont] = useState('');
+const [tags, setTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (commissionType) {
@@ -76,6 +79,7 @@ export function EditCommissionTypeModal({
       });
       setDos(commissionType.dos || []);
       setDonts(commissionType.donts || []);
+      setTags(commissionType.tags || []);
     }
   }, [commissionType]);
 
@@ -123,6 +127,7 @@ export function EditCommissionTypeModal({
         is_active: formData.is_active,
         dos,
         donts,
+        tags,
       };
 
       const { error } = await supabase
@@ -270,6 +275,17 @@ export function EditCommissionTypeModal({
                 />
               </div>
             </div>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <Label>Tags</Label>
+            <TagInput
+              tags={tags}
+              onTagsChange={setTags}
+              maxTags={10}
+              placeholder="Add tags (e.g., portrait, anime)"
+            />
           </div>
 
           {/* Will Do List */}
