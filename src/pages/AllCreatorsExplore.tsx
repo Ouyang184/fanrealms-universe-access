@@ -18,9 +18,7 @@ import {
   Search,
   Filter,
   Star,
-  ChevronRight,
   ChevronLeft,
-  Award,
   Check,
   SlidersHorizontal,
   TrendingUp,
@@ -177,15 +175,10 @@ export default function AllCreatorsExplorePage() {
 
         {/* Creators Grid */}
         <section className="mb-10">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center mb-6">
             <h2 className="text-2xl font-bold">
-              {isLoadingCreators 
-                ? "Loading creators..." 
-                : `${displayCreators.length} Creators`}
+              {isLoadingCreators ? "Loading creators..." : `${displayCreators.length} Creators`}
             </h2>
-            <Button variant="link" className="text-purple-400">
-              View All <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
 
           {isLoadingCreators ? (
