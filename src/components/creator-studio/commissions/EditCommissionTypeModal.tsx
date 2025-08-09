@@ -15,6 +15,9 @@ import { X, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { TagInput } from '@/components/tags/TagInput';
+import { useSampleImageUpload } from '@/hooks/useSampleImageUpload';
+import { SampleImageUpload } from './SampleImageUpload';
+import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 
 interface CommissionType {
   id: string;
@@ -63,6 +66,8 @@ export function EditCommissionTypeModal({
 const [currentDo, setCurrentDo] = useState('');
 const [currentDont, setCurrentDont] = useState('');
 const [tags, setTags] = useState<string[]>([]);
+const { sampleImage, sampleImagePreview, handleImageUpload, removeSampleImage, uploadSampleImage, resetImageUpload } = useSampleImageUpload();
+const { creatorProfile } = useCreatorProfile();
 
   useEffect(() => {
     if (commissionType) {
@@ -115,6 +120,14 @@ const [tags, setTags] = useState<string[]>([]);
 
     setIsSubmitting(true);
     try {
+      let finalSampleUrl: string | null = formData.sample_art_url || null;
+      if (sampleImage && creatorProfile?.id) {
+        const uploadedUrl = await uploadSampleImage(creatorProfile.id);
+        if (uploadedUrl) {
+          finalSampleUrl = uploadedUrl;
+        }
+      }
+
       const updateData = {
         name: formData.name,
         description: formData.description || null,
@@ -123,7 +136,7 @@ const [tags, setTags] = useState<string[]>([]);
         price_per_revision: formData.price_per_revision || null,
         estimated_turnaround_days: formData.estimated_turnaround_days,
         max_revisions: formData.max_revisions,
-        sample_art_url: formData.sample_art_url || null,
+        sample_art_url: finalSampleUrl,
         is_active: formData.is_active,
         dos,
         donts,
@@ -152,6 +165,7 @@ const [tags, setTags] = useState<string[]>([]);
         variant: "destructive"
       });
     } finally {
+      resetImageUpload();
       setIsSubmitting(false);
     }
   };
@@ -189,13 +203,17 @@ const [tags, setTags] = useState<string[]>([]);
             </div>
 
             <div>
-              <Label htmlFor="sample_art_url">Sample Art URL</Label>
-              <Input
-                id="sample_art_url"
-                type="url"
-                value={formData.sample_art_url}
-                onChange={(e) => setFormData({ ...formData, sample_art_url: e.target.value })}
+              <SampleImageUpload
+                sampleImagePreview={sampleImagePreview || formData.sample_art_url || null}
+                onImageUpload={handleImageUpload}
+                onRemoveImage={() => {
+                  removeSampleImage();
+                  setFormData({ ...formData, sample_art_url: '' });
+                }}
               />
+              <p className="text-sm text-muted-foreground mt-2">
+                Upload a new image to replace the current one, or remove it to clear.
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">
