@@ -96,37 +96,9 @@ export default function AllCreatorsExplorePage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-6">
-        {/* Hero Section */}
-        <section className="mb-8">
-          <div className="relative rounded-xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <div className="w-full h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
-            <div className="absolute inset-0 z-20 flex flex-col justify-center p-8">
-              <h1 className="text-4xl font-bold mb-2">All Creators</h1>
-              <p className="text-xl text-gray-200 max-w-2xl mb-6">
-                Discover amazing creators and exclusive content across all categories
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search for creators, content, or topics..."
-                    className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Removed hero banner to simplify layout like All Posts */}
 
-        {/* Back to Explore Button */}
-        <section className="mb-8">
+        <section className="mb-4">
           <div className="flex items-center justify-end">
             <Button variant="outline" className="gap-2" onClick={() => navigate('/explore')}>
               <ChevronLeft className="h-4 w-4" />
@@ -135,41 +107,55 @@ export default function AllCreatorsExplorePage() {
           </div>
         </section>
 
-        {/* Filtering and Sorting */}
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold">All Creators</h1>
+          <p className="text-muted-foreground mt-1">Discover amazing creators across all categories.</p>
+        </header>
+
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center">
-                <SlidersHorizontal className="h-5 w-5 mr-2 text-purple-400" />
-                <span className="mr-3 font-medium">Filters:</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-5 w-5 text-purple-400" />
+              <span className="font-medium">Filters:</span>
             </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Filter className="h-4 w-4" />
-                  Sort: {sortOption === "top-rated" ? "Top Rated" : sortOption === "newest" ? "Newest" : "Most Popular"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
-                <DropdownMenuItem onClick={() => setSortOption("top-rated")} className="flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  <span>Top Rated</span>
-                  {sortOption === "top-rated" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption("newest")} className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>Newest</span>
-                  {sortOption === "newest" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortOption("most-popular")} className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span>Most Popular</span>
-                  {sortOption === "most-popular" && <Check className="h-4 w-4 ml-2" />}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="relative sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search for creators, content, or topics..."
+                  className="pl-10 w-full"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 rounded-full">
+                    <Filter className="h-4 w-4" />
+                    {`Sort: ${sortOption === 'top-rated' ? 'Top Rated' : sortOption === 'newest' ? 'Newest' : 'Most Popular'}`}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
+                  <DropdownMenuItem onClick={() => setSortOption('top-rated')} className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    <span>Top Rated</span>
+                    {sortOption === 'top-rated' && <Check className="h-4 w-4 ml-2" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortOption('newest')} className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>Newest</span>
+                    {sortOption === 'newest' && <Check className="h-4 w-4 ml-2" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortOption('most-popular')} className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Most Popular</span>
+                    {sortOption === 'most-popular' && <Check className="h-4 w-4 ml-2" />}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </section>
 
