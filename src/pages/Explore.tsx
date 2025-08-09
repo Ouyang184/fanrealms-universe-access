@@ -23,6 +23,7 @@ import { NewsletterSection } from "@/components/explore/NewsletterSection";
 import { CommissionSection } from "@/components/home/CommissionSection";
 import { ContentItem } from "@/components/explore/ContentItem";
 import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -275,9 +276,11 @@ export default function ExplorePage() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Most Liked Posts</h2>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/posts" aria-label="View all posts">View All</Link>
-            </Button>
+            <Link to="/posts" aria-label="View all posts">
+              <Button variant="link" className="text-purple-400">
+                View All <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {mostLikedPosts.map((post) => (
