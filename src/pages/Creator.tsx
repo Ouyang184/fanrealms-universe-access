@@ -160,15 +160,15 @@ const CreatorPage: React.FC = () => {
         />
         
         {/* Tab Navigation - properly spaced below header */}
-        <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="border-t border-b border-border bg-background sticky top-0 z-20 shadow-sm">
           <div className="px-6 py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-5 max-w-2xl mx-auto h-11">
-                <TabsTrigger value="posts" className="text-sm font-medium">Posts</TabsTrigger>
-                <TabsTrigger value="membership" className="text-sm font-medium">Membership</TabsTrigger>
-                <TabsTrigger value="commissions" className="text-sm font-medium">Commissions</TabsTrigger>
-                <TabsTrigger value="ratings" className="text-sm font-medium">Ratings</TabsTrigger>
-                <TabsTrigger value="about" className="text-sm font-medium">About</TabsTrigger>
+              <TabsList className="flex w-full max-w-full mx-0 sm:mx-auto h-11 gap-2 overflow-x-auto">
+                <TabsTrigger value="posts" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Posts</TabsTrigger>
+                <TabsTrigger value="membership" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Membership</TabsTrigger>
+                <TabsTrigger value="commissions" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Commissions</TabsTrigger>
+                <TabsTrigger value="ratings" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">Ratings</TabsTrigger>
+                <TabsTrigger value="about" className="text-sm font-medium px-3 sm:px-4 whitespace-nowrap shrink-0">About</TabsTrigger>
               </TabsList>
               
               <TabsContent value="posts" className="pt-6 px-0">
