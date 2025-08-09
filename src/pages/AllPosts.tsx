@@ -147,25 +147,23 @@ export default function AllPostsPage() {
 
         {/* Filtering and Sorting */}
         <section className="mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center">
-                <Filter className="h-5 w-5 mr-2 text-purple-400" />
-                <span className="mr-3 font-medium">Sort by:</span>
-              </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-xl border border-gray-800">
+            <div className="flex items-center">
+              <Filter className="h-5 w-5 mr-2 text-purple-400" />
+              <span className="font-semibold">Filters:</span>
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Heart className="h-4 w-4" />
-                  {sortOption === 'most-liked' ? 'Most Liked' : 'Newest'}
+                <Button variant="outline" size="sm" className="gap-2 rounded-lg">
+                  <Filter className="h-4 w-4" />
+                  <span>Sort: {sortOption === 'most-liked' ? 'Top Rated' : 'Newest'}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-gray-900 border-gray-800">
                 <DropdownMenuItem onClick={() => setSortOption('most-liked')} className="flex items-center gap-2">
                   <Heart className="h-4 w-4" />
-                  <span>Most Liked</span>
+                  <span>Top Rated</span>
                   {sortOption === 'most-liked' && <Check className="h-4 w-4 ml-2" />}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortOption('newest')} className="flex items-center gap-2">
