@@ -28,6 +28,7 @@ interface CommissionType {
   dos: string[];
   donts: string[];
   sample_art_url?: string;
+  tags?: string[];
   is_active: boolean;
   created_at: string;
 }
@@ -94,6 +95,15 @@ export function CommissionTypesTab({
                     {type.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </CardTitle>
+                {type.tags && type.tags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {type.tags.slice(0, 6).map((tag, idx) => (
+                      <Badge key={idx} variant="outline" className="text-[10px] leading-none py-0.5 px-2">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 {type.description && (
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {type.description}
