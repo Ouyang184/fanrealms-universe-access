@@ -5,6 +5,7 @@ import { MainLayout } from "@/components/Layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { ArrowLeft } from "lucide-react";
 import { useCreatorPage } from "@/hooks/useCreatorPage";
 import { useFollow } from "@/hooks/useFollow";
 import { CreatorHeader } from "@/components/creator/CreatorHeader";
@@ -101,6 +102,14 @@ const CreatorPage: React.FC = () => {
       }
     }, 100);
   };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/explore");
+    }
+  };
   
   console.log('Creator Page:', { identifier, creator, isLoading: isLoadingCreator });
   
@@ -133,7 +142,14 @@ const CreatorPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-0 max-w-5xl mx-auto">
+      <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="pt-2">
+          <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back</span>
+          </Button>
+        </div>
+        
         <CreatorHeader 
           creator={creator}
           isFollowing={isFollowing}
