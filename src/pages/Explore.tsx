@@ -22,8 +22,7 @@ import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
 import { NewsletterSection } from "@/components/explore/NewsletterSection";
 import { CommissionSection } from "@/components/home/CommissionSection";
 import { ContentItem } from "@/components/explore/ContentItem";
-import { ChevronRight } from "lucide-react";
-
+import { Button } from "@/components/ui/button";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -276,10 +275,9 @@ export default function ExplorePage() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Most Liked Posts</h2>
-            <Link to="/posts" aria-label="View all posts" className="group inline-flex items-center gap-2 text-primary hover:text-primary/90 transition-colors">
-              <span className="font-medium">View All</span>
-              <ChevronRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </Link>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/posts" aria-label="View all posts">View All</Link>
+            </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {mostLikedPosts.map((post) => (
