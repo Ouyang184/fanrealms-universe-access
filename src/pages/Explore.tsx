@@ -1,6 +1,6 @@
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
 import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
@@ -22,6 +22,7 @@ import { PopularTagsSection } from "@/components/explore/PopularTagsSection";
 import { NewsletterSection } from "@/components/explore/NewsletterSection";
 import { CommissionSection } from "@/components/home/CommissionSection";
 import { ContentItem } from "@/components/explore/ContentItem";
+import { Button } from "@/components/ui/button";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -272,7 +273,12 @@ export default function ExplorePage() {
 
         {/* Most Liked Posts (regular/public) */}
         <section className="mb-12">
-          <h2 className="text-2xl font-bold mb-4">Most Liked Posts</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Most Liked Posts</h2>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/posts" aria-label="View all posts">View All</Link>
+            </Button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {mostLikedPosts.map((post) => (
               <ContentItem 
