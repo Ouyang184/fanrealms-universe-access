@@ -38,6 +38,19 @@ export default function AllPostsPage() {
     staleTime: 30000,
   });
 
+  // Fetch creators to enable filtering by creator name
+  const { data: creators = [] } = useQuery({
+    queryKey: ["public-creators"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("creators").select("id, display_name");
+      if (error) {
+        console.error("Error fetching creators:", error);
+        return [] as { id: string; display_name: string | null }[];
+      }
+      return (data || []) as { id: string; display_name: string | null }[];
+    },
+    staleTime: 30000,
+  });
   // Build like count map
   const likeMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -46,6 +59,15 @@ export default function AllPostsPage() {
     });
     return m;
   }, [allLikes]);
+
+  // Build a map of creator_id -> display_name (lowercased) for filtering
+  const creatorNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    ((creators as { id: string; display_name: string | null }[]) || []).forEach((c) => {
+      if (c?.id) m.set(c.id, (c.display_name || "").toLowerCase());
+    });
+    return m;
+  }, [creators]);
 
   useEffect(() => {
     const title = "All Posts | FanRealms";
@@ -101,14 +123,25 @@ export default function AllPostsPage() {
       );
     }
 
-    // Tag filter
+    // Tag filter (now also matches creator display names)
     if (selectedTags.length > 0) {
       const normalized = selectedTags.map(t => t.toLowerCase().replace(/^#/, '').trim());
+
+      // Pre-compute which creators match any of the selected terms
+      const matchingCreatorIds = new Set<string>();
+      normalized.forEach(term => {
+        creatorNameById.forEach((name, id) => {
+          if (name.includes(term)) matchingCreatorIds.add(id);
+        });
+      });
+
       result = result.filter((p) => {
         const tags = (p.tags || []).map((t: any) => String(t).toLowerCase().replace(/^#/, '').trim());
         const title = (p.title || "").toLowerCase();
         const content = (p.content || "").toLowerCase();
-        return normalized.some(tag => tags.includes(tag) || title.includes(tag) || content.includes(tag));
+        const matchesText = normalized.some(tag => tags.includes(tag) || title.includes(tag) || content.includes(tag));
+        const matchesCreator = (p as any).creator_id ? matchingCreatorIds.has((p as any).creator_id as string) : false;
+        return matchesText || matchesCreator;
       });
     }
 
@@ -126,7 +159,7 @@ export default function AllPostsPage() {
     }
 
     return result;
-  }, [posts, likeMap, searchQuery, selectedTags, sortOption]);
+  }, [posts, likeMap, searchQuery, selectedTags, sortOption, creatorNameById]);
 
   return (
     <MainLayout>
