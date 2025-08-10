@@ -32,7 +32,7 @@ export const PostInteractions: React.FC<PostInteractionsProps> = ({
   return (
     <div className="border-t pt-4">
       {/* Engagement Stats */}
-      <div className="flex items-center gap-6 mb-4 text-sm text-muted-foreground">
+      <div className="flex items-center gap-4 sm:gap-6 mb-4 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Eye className="h-4 w-4" />
           <span>{viewCount}</span>
@@ -40,7 +40,7 @@ export const PostInteractions: React.FC<PostInteractionsProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
         <PostLikes postId={postId} />
         
         <SaveButton postId={postId} />
