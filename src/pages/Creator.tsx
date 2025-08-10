@@ -163,7 +163,7 @@ const CreatorPage: React.FC = () => {
         <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
           <div className="px-3 py-2 sm:px-6 sm:py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full h-10 sm:h-11 overflow-x-auto justify-start sm:justify-center gap-1 sm:gap-2">
+              <TabsList className="w-full md:w-auto h-10 sm:h-11 overflow-x-auto md:overflow-visible justify-start sm:justify-center gap-1 sm:gap-2">
                 <TabsTrigger value="posts" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Posts</TabsTrigger>
                 <TabsTrigger value="membership" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Membership</TabsTrigger>
                 <TabsTrigger value="commissions" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Commissions</TabsTrigger>
