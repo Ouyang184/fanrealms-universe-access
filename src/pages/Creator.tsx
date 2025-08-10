@@ -161,36 +161,36 @@ const CreatorPage: React.FC = () => {
         
         {/* Tab Navigation - properly spaced below header */}
         <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-          <div className="px-6 py-4">
+          <div className="px-3 py-2 sm:px-6 sm:py-4">
             <Tabs defaultValue="posts" value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-5 max-w-2xl mx-auto h-11">
-                <TabsTrigger value="posts" className="text-sm font-medium">Posts</TabsTrigger>
-                <TabsTrigger value="membership" className="text-sm font-medium">Membership</TabsTrigger>
-                <TabsTrigger value="commissions" className="text-sm font-medium">Commissions</TabsTrigger>
-                <TabsTrigger value="ratings" className="text-sm font-medium">Ratings</TabsTrigger>
-                <TabsTrigger value="about" className="text-sm font-medium">About</TabsTrigger>
+              <TabsList className="w-full h-10 sm:h-11 overflow-x-auto justify-start sm:justify-center gap-1 sm:gap-2">
+                <TabsTrigger value="posts" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Posts</TabsTrigger>
+                <TabsTrigger value="membership" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Membership</TabsTrigger>
+                <TabsTrigger value="commissions" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Commissions</TabsTrigger>
+                <TabsTrigger value="ratings" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">Ratings</TabsTrigger>
+                <TabsTrigger value="about" className="text-xs sm:text-sm font-medium px-2 py-1 sm:px-3 sm:py-1.5">About</TabsTrigger>
               </TabsList>
               
               <TabsContent value="posts" className="pt-6 px-0">
-                <div className="px-6">
+                 <div className="px-3 sm:px-6">
                   <CreatorPosts posts={posts || []} />
                 </div>
               </TabsContent>
               
               <TabsContent value="membership" className="pt-6 px-0">
-                <div className="px-6">
+                 <div className="px-3 sm:px-6">
                   <CreatorMembership creatorId={creator?.id || ''} />
                 </div>
               </TabsContent>
               
               <TabsContent value="commissions" className="pt-6 px-0">
-                <div className="px-6">
+                 <div className="px-3 sm:px-6">
                   <CreatorCommissions creator={creator} />
                 </div>
               </TabsContent>
               
               <TabsContent value="ratings" className="pt-6 px-0">
-                <div className="px-6">
+                 <div className="px-3 sm:px-6">
                   <CreatorRatings 
                     creatorId={creator?.id || ''} 
                     creatorName={creator?.display_name || 'this creator'} 
@@ -199,7 +199,7 @@ const CreatorPage: React.FC = () => {
               </TabsContent>
               
               <TabsContent value="about" className="pt-6 px-0">
-                <div className="px-6">
+                <div className="px-3 sm:px-6">
                   <CreatorAbout creator={creator} />
                 </div>
               </TabsContent>
