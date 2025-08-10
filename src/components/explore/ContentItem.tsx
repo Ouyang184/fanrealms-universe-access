@@ -168,7 +168,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           </div>
 
           {/* Engagement stats with interactive buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 text-gray-400 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 text-gray-400 flex-shrink-0 ml-3 sm:ml-4">
             <Button
               variant="ghost"
               size="sm"
