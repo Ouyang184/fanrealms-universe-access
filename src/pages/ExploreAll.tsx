@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TagFilter } from "@/components/tags/TagFilter";
 
 type SortOption = "newest" | "oldest" | "popular" | "alphabetical" | "price-low" | "price-high";
 type ContentType = "all" | "art-illustration" | "gaming" | "music" | "writing" | "photography" | "education" | "podcasts" | "cooking" | "fitness" | "technology" | "fashion" | "film-video";
@@ -27,6 +28,7 @@ export default function ExploreAllPage() {
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [contentType, setContentType] = useState<ContentType>("all");
   const [sortedCreators, setSortedCreators] = useState<CreatorProfile[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Helper function to get creator tags
   const getCreatorTags = (creator: CreatorProfile) => {
@@ -97,6 +99,16 @@ export default function ExploreAllPage() {
 
     // First filter by content type
     let filtered = filterCreatorsByContentType(creators, contentType);
+
+    // Filter by selected tags
+    if (selectedTags.length > 0) {
+      const lowerTags = selectedTags.map(t => t.toLowerCase());
+      filtered = filtered.filter((creator) => {
+        const tags = getCreatorTags(creator).map(t => t.toLowerCase());
+        const bio = (creator.bio || "").toLowerCase();
+        return lowerTags.some(tag => tags.includes(tag) || bio.includes(tag));
+      });
+    }
     
     // Then sort the filtered results
     let sorted = [...filtered];
@@ -136,7 +148,7 @@ export default function ExploreAllPage() {
     }
 
     setSortedCreators(sorted);
-  }, [creators, sortBy, contentType]);
+  }, [creators, sortBy, contentType, selectedTags]);
 
   useEffect(() => {
     document.title = "All Featured Creators | FanRealms";
@@ -258,6 +270,10 @@ export default function ExploreAllPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
         </div>
 
         {/* Creators Grid */}

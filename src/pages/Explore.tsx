@@ -23,9 +23,7 @@ import { NewsletterSection } from "@/components/explore/NewsletterSection";
 import { CommissionSection } from "@/components/home/CommissionSection";
 import { ContentItem } from "@/components/explore/ContentItem";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 // Category mapping for better tag matching
 const categoryTagMapping = {
@@ -122,7 +120,7 @@ export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [mostLikedPosts, setMostLikedPosts] = useState<Post[]>([]);
-  const [commissionSearch, setCommissionSearch] = useState("");
+  
 
   console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
   console.log('Explore: Posts count after NSFW filtering:', posts.length);
@@ -310,30 +308,9 @@ export default function ExplorePage() {
           defaultTab={tabParam || "trending"}
         />
 
-        {/* Commission Tags Filter */}
-        <section className="mb-6">
-          <h3 className="text-xl font-semibold mb-3">Filter by Tags</h3>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={commissionSearch}
-              onChange={(e) => setCommissionSearch(e.target.value)}
-              placeholder="Search tags..."
-              className="pl-8"
-              aria-label="Search commission tags"
-            />
-          </div>
-          <div className="mt-3 text-sm text-muted-foreground">
-            <span>Popular tags:</span>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Badge variant="secondary" className="cursor-pointer" onClick={() => setCommissionSearch('big')}># big</Badge>
-              <Badge variant="secondary" className="cursor-pointer" onClick={() => setCommissionSearch('tall')}># tall</Badge>
-            </div>
-          </div>
-        </section>
 
         {/* Commission Section */}
-        <CommissionSection key={`comm-${commissionSearch}`} initialQuery={commissionSearch} />
+        <CommissionSection />
 
         {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />

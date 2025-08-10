@@ -28,6 +28,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { TagFilter } from "@/components/tags/TagFilter";
 
 interface CommissionType {
   id: string;
@@ -51,6 +52,7 @@ export default function AllCommissionsPage() {
   const navigate = useNavigate();
   const [sortOption, setSortOption] = useState<SortOption>("newest");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     document.title = "All Commissions | FanRealms";
@@ -99,6 +101,15 @@ export default function AllCommissionsPage() {
         commission.description?.toLowerCase().includes(query) ||
         commission.creator.display_name.toLowerCase().includes(query)
       );
+    }
+
+    // Apply tag filter
+    if (selectedTags.length > 0) {
+      const lowerTags = selectedTags.map(t => t.toLowerCase());
+      result = result.filter(commission => {
+        const haystack = `${commission.name} ${commission.description || ''} ${commission.creator.display_name}`.toLowerCase();
+        return lowerTags.some(tag => haystack.includes(tag));
+      });
     }
     
     // Apply sorting
@@ -235,6 +246,10 @@ export default function AllCommissionsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </section>
+
+        <section className="mb-6 sm:mb-8">
+          <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
         </section>
 
         {/* Commissions Grid */}
