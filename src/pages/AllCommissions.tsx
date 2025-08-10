@@ -183,10 +183,19 @@ export default function AllCommissionsPage() {
         {/* Filtering and Sorting */}
         <section className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-3 sm:p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full">
               <div className="flex items-center">
                 <SlidersHorizontal className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-purple-400" />
                 <span className="mr-3 font-medium text-sm sm:text-base">Filters:</span>
+              </div>
+              <div className="relative flex-1 sm:flex-none sm:w-72">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search commissions..."
+                  className="pl-8"
+                />
               </div>
             </div>
             
