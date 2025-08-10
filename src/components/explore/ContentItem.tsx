@@ -134,7 +134,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
         </div>
 
         {/* Creator info and metadata */}
-        <div className="flex items-center justify-between pt-1 sm:pt-2 gap-2">
+        <div className="flex items-center justify-between pt-1 sm:pt-2 gap-4 md:gap-6">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Link to={creatorUrl} onClick={(e) => e.stopPropagation()} aria-label={`View ${displayName} profile`} className="flex-shrink-0">
               <Avatar className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0">
