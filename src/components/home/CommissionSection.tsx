@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Palette, Clock, DollarSign, Star, ArrowRight } from "lucide-react";
+import { Palette, Clock, DollarSign, Star, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
@@ -179,8 +179,10 @@ export function CommissionSection() {
             Get custom artwork from talented creators
           </p>
         </div>
-        <Link to="/commissions" className="hidden sm:flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-          View All <ArrowRight className="h-4 w-4" />
+        <Link to="/commissions">
+          <Button variant="link" className="text-purple-400 hidden sm:inline-flex">
+            View All <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </Link>
       </div>
 
@@ -192,8 +194,10 @@ export function CommissionSection() {
 
       {/* Mobile View All Button */}
       <div className="flex justify-center mt-6 sm:hidden">
-        <Link to="/commissions" className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-          View All Commissions <ArrowRight className="h-4 w-4" />
+        <Link to="/commissions">
+          <Button variant="link" className="text-purple-400">
+            View All <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </Link>
       </div>
     </section>
