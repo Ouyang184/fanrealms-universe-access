@@ -65,7 +65,7 @@ export function CreatorHeader({
         <div className="absolute inset-0 bg-black/20" />
         
         {/* Display Name and NSFW Badge positioned on banner */}
-        <div className="absolute bottom-6 left-6 md:left-32 lg:left-40">
+        <div className="hidden md:block absolute bottom-6 left-6 md:left-32 lg:left-40">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">
               {displayName}
@@ -95,6 +95,15 @@ export function CreatorHeader({
 
         {/* Main content area - properly spaced to avoid avatar overlap */}
         <div className="pt-20 space-y-6">
+          {/* Mobile display name below avatar */}
+          <div className="md:hidden">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold">{displayName}</h1>
+              {creator.is_nsfw && (
+                <NSFWBadge variant="profile" />
+              )}
+            </div>
+          </div>
           {/* Bio section positioned below avatar and name */}
           {creator.bio && (
             <div className="space-y-2">
