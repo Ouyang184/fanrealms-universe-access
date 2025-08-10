@@ -308,7 +308,7 @@ export default function ExplorePage() {
         />
 
         {/* Commission Section */}
-        <CommissionSection />
+        <CommissionSection showSearch />
 
         {/* Remove hardcoded data from DiscoverSection */}
         <DiscoverSection />

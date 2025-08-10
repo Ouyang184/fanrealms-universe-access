@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Palette, Clock, DollarSign, Star, ChevronRight } from "lucide-react";
+import { Palette, Clock, DollarSign, Star, ChevronRight, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
@@ -119,11 +120,19 @@ function CommissionCard({ commission }: { commission: CommissionType }) {
   );
 }
 
-export function CommissionSection() {
+export function CommissionSection({ showSearch = false, initialQuery = "" }: { showSearch?: boolean; initialQuery?: string }) {
+  const [search, setSearch] = useState(initialQuery);
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const { data: featuredCommissions = [], isLoading } = useQuery({
-    queryKey: ['featured-commissions'],
+    queryKey: ['featured-commissions', debouncedSearch],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('commission_types')
         .select(`
           *,
@@ -136,7 +145,13 @@ export function CommissionSection() {
           )
         `)
         .eq('is_active', true)
-        .eq('creators.accepts_commissions', true)
+        .eq('creators.accepts_commissions', true);
+
+      if (debouncedSearch) {
+        query = query.or(`name.ilike.%${debouncedSearch}%,description.ilike.%${debouncedSearch}%`);
+      }
+
+      const { data, error } = await query
         .order('base_price')
         .limit(6);
 
@@ -144,13 +159,6 @@ export function CommissionSection() {
         console.error('Error fetching featured commissions:', error);
         return [];
       }
-
-      // Debug: Check profile images
-      console.log('Commission data with profile images:', data?.map(c => ({
-        name: c.name,
-        creator: c.creator.display_name,
-        profileImage: c.creator.profile_image_url
-      })));
 
       return data || [];
     },
@@ -172,18 +180,46 @@ export function CommissionSection() {
 
   return (
     <section className="py-8 sm:py-12">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Commissions</h2>
-          <p className="text-muted-foreground">
-            Get custom artwork from talented creators
-          </p>
+      <div className="mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Commissions</h2>
+            <p className="text-muted-foreground">
+              Get custom artwork from talented creators
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-3">
+            {showSearch && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search commissions..."
+                  className="pl-8 w-56"
+                />
+              </div>
+            )}
+            <Link to="/commissions">
+              <Button variant="link" className="text-purple-400">
+                View All <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
-        <Link to="/commissions">
-          <Button variant="link" className="text-purple-400 hidden sm:inline-flex">
-            View All <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </Link>
+        {showSearch && (
+          <div className="sm:hidden mt-3">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search commissions..."
+                className="pl-8 w-full"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
