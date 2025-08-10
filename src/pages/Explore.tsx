@@ -6,7 +6,7 @@ import { usePosts } from "@/hooks/usePosts";
 import { usePopularCreators } from "@/hooks/usePopularCreators";
 import { useNSFWPreferences } from "@/hooks/useNSFWPreferences";
 import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
-import { TagFilter } from "@/components/tags/TagFilter";
+
 import { Post } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -265,13 +265,6 @@ export default function ExplorePage() {
           categoryFilter={categoryFilter === "all" ? null : categoryFilter}
         />
 
-        {/* Tag Filter */}
-        <div className="mb-8 mt-6">
-          <TagFilter 
-            selectedTags={selectedTags} 
-            onTagsChange={setSelectedTags}
-          />
-        </div>
 
         {/* Most Liked Posts (regular/public) */}
         <section className="mb-12">

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChevronLeft, Check, Filter, Search, Clock, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { TagFilter } from "@/components/tags/TagFilter";
 
 export default function AllPostsPage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function AllPostsPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOption, setSortOption] = useState<"most-liked" | "newest">("most-liked");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Fetch all likes to compute "most liked" sorting
   const { data: allLikes = [] } = useQuery({
@@ -99,6 +101,17 @@ export default function AllPostsPage() {
       );
     }
 
+    // Tag filter
+    if (selectedTags.length > 0) {
+      const normalized = selectedTags.map(t => t.toLowerCase().replace(/^#/, '').trim());
+      result = result.filter((p) => {
+        const tags = (p.tags || []).map((t: any) => String(t).toLowerCase().replace(/^#/, '').trim());
+        const title = (p.title || "").toLowerCase();
+        const content = (p.content || "").toLowerCase();
+        return normalized.some(tag => tags.includes(tag) || title.includes(tag) || content.includes(tag));
+      });
+    }
+
     // Sorting
     if (sortOption === "most-liked") {
       result = [...result].sort(
@@ -113,7 +126,7 @@ export default function AllPostsPage() {
     }
 
     return result;
-  }, [posts, likeMap, searchQuery, sortOption]);
+  }, [posts, likeMap, searchQuery, selectedTags, sortOption]);
 
   return (
     <MainLayout>
@@ -136,7 +149,12 @@ export default function AllPostsPage() {
           <p className="text-muted-foreground mt-1">Browse public posts by top ratings or newest.</p>
         </header>
 
-        {/* Filtering and Sorting */}
+{/* Tag Filter */}
+<section className="mb-6">
+  <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+</section>
+
+{/* Filtering and Sorting */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
             <div className="flex items-center gap-2">

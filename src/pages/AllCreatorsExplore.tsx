@@ -26,12 +26,14 @@ import {
 } from "lucide-react";
 import { useCreators } from "@/hooks/useCreators";
 import { CreatorProfile } from "@/types";
+import { TagFilter } from "@/components/tags/TagFilter";
 
 export default function AllCreatorsExplorePage() {
   const navigate = useNavigate();
   
   const [sortOption, setSortOption] = useState<string>("top-rated");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   // Fetch all creators from the database
   const { data: allCreators = [], isLoading: isLoadingCreators } = useCreators(searchQuery);
@@ -46,6 +48,16 @@ export default function AllCreatorsExplorePage() {
     if (!creators || creators.length === 0) return [];
     
     let result = [...creators];
+
+    // Tag filter
+    if (selectedTags.length > 0) {
+      const lowerTags = selectedTags.map(t => t.toLowerCase());
+      result = result.filter((creator) => {
+        const tags = getCreatorTags(creator).map(t => t.toLowerCase());
+        const bio = (creator.bio || "").toLowerCase();
+        return lowerTags.some(tag => tags.includes(tag) || bio.includes(tag));
+      });
+    }
     
     // Apply sorting
     if (sortOption === "top-rated") {
@@ -159,7 +171,11 @@ export default function AllCreatorsExplorePage() {
           </div>
         </section>
 
-        {/* Creators Grid */}
+<section className="mb-6">
+  <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+</section>
+
+{/* Creators Grid */}
         <section className="mb-10">
           <div className="flex items-center mb-6">
             <h2 className="text-2xl font-bold">
