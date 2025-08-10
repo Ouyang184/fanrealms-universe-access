@@ -17,9 +17,10 @@ interface TagFilterProps {
   selectedTags: string[];
   onTagsChange: (tags: string[]) => void;
   className?: string;
+  title?: string;
 }
 
-export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFilterProps) {
+export function TagFilter({ selectedTags, onTagsChange, className = "", title = "Filter by Tags" }: TagFilterProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: popularTags = [] } = usePopularTags(30);
 
@@ -61,7 +62,7 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
       <div className="hidden md:block space-y-4">
         <div className="flex items-center gap-2 mb-3">
           <Hash className="h-4 w-4" />
-          <span className="font-medium">Filter by Tags</span>
+          <span className="font-medium">{title}</span>
           {selectedTags.length > 0 && (
             <Button
               variant="ghost"
@@ -142,10 +143,10 @@ export function TagFilter({ selectedTags, onTagsChange, className = "" }: TagFil
           </SheetTrigger>
           <SheetContent side="bottom" className="h-[70vh]">
             <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Hash className="h-5 w-5" />
-                Filter by Tags
-              </SheetTitle>
+            <SheetTitle className="flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              {title}
+            </SheetTitle>
               <SheetDescription>
                 Select tags to filter content
               </SheetDescription>

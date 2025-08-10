@@ -8,9 +8,9 @@ import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, Check, Filter, Search, Clock, Heart } from "lucide-react";
+import { ChevronLeft, Check, Filter, Clock, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TagFilter } from "@/components/tags/TagFilter";
 
@@ -149,12 +149,7 @@ export default function AllPostsPage() {
           <p className="text-muted-foreground mt-1">Browse public posts by top ratings or newest.</p>
         </header>
 
-{/* Tag Filter */}
-<section className="mb-6">
-  <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
-</section>
-
-{/* Filtering and Sorting */}
+        {/* Filtering and Sorting */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
             <div className="flex items-center gap-2">
@@ -162,17 +157,7 @@ export default function AllPostsPage() {
               <span className="font-medium">Filters:</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search posts, content, or tags..."
-                  className="pl-10 w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
+            <div className="flex w-full sm:w-auto justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 rounded-full">
@@ -195,6 +180,11 @@ export default function AllPostsPage() {
               </DropdownMenu>
             </div>
           </div>
+        </section>
+
+        {/* Tag Filter */}
+        <section className="mb-6">
+          <TagFilter title="Filter by Posts, Creators, or Tags" selectedTags={selectedTags} onTagsChange={setSelectedTags} />
         </section>
 
         {/* Posts Grid */}
