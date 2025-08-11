@@ -12,23 +12,24 @@ serve(async (req) => {
 
   try {
     // Prefer Sandbox/Test keys for safety; fallback to generic/live
+    // Prefer LIVE keys first, then fallback to generic/test/sandbox
     const order = [
-      "STRIPE_PUBLISHABLE_KEY_SANDBOX",
-      "STRIPE_PUBLISHABLE_KEY_TEST",
-      "STRIPE_PUBLISHABLE_KEY",
       "STRIPE_PUBLISHABLE_KEY_LIVE",
+      "STRIPE_PUBLISHABLE_KEY",
+      "STRIPE_PUBLISHABLE_KEY_TEST",
+      "STRIPE_PUBLISHABLE_KEY_SANDBOX",
     ] as const;
 
     let publishableKey: string | undefined;
-    let mode: "sandbox" | "test" | "default" | "live" = "default";
+    let mode: "live" | "default" | "test" | "sandbox" = "default";
 
     for (const k of order) {
       const v = Deno.env.get(k);
       if (v && v.trim().length > 0) {
         publishableKey = v.trim();
-        if (k === "STRIPE_PUBLISHABLE_KEY_SANDBOX") mode = "sandbox";
+        if (k === "STRIPE_PUBLISHABLE_KEY_LIVE") mode = "live";
         else if (k === "STRIPE_PUBLISHABLE_KEY_TEST") mode = "test";
-        else if (k === "STRIPE_PUBLISHABLE_KEY_LIVE") mode = "live";
+        else if (k === "STRIPE_PUBLISHABLE_KEY_SANDBOX") mode = "sandbox";
         break;
       }
     }
