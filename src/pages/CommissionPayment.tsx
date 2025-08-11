@@ -44,6 +44,7 @@ export default function CommissionPayment() {
   const [cancelRedirect, setCancelRedirect] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const [effectivePublishableKey, setEffectivePublishableKey] = useState<string | null>(
     window.env?.VITE_STRIPE_PUBLISHABLE_KEY || null
@@ -129,9 +130,10 @@ export default function CommissionPayment() {
   const createPaymentIntent = async (commissionId: string) => {
     try {
       setIsCreatingIntent(true);
-    if (!effectivePublishableKey) {
-      throw new Error('Missing Stripe publishable key. Please configure it in Supabase secrets or window.env.');
-    }
+      setPaymentError(null);
+      if (!effectivePublishableKey) {
+        throw new Error('Missing Stripe publishable key. Please configure it in Supabase secrets or window.env.');
+      }
       const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
         body: { commissionId }
       });
@@ -145,26 +147,32 @@ export default function CommissionPayment() {
       setClientSecret(data.clientSecret);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create payment intent';
-      setError(msg);
+      setPaymentError(msg);
       toast({ title: 'Payment Error', description: msg, variant: 'destructive' });
     } finally {
       setIsCreatingIntent(false);
     }
   };
-
   const handleRetry = () => {
     setError(null);
+    setPaymentError(null);
     setRetryCount(0);
     setCancelRedirect(false);
     setRedirectCountdown(null);
     fetchCommissionRequest();
   };
-
   useEffect(() => {
-    if (commissionRequest?.id && user && !clientSecret && !isCreatingIntent) {
+    if (
+      commissionRequest?.id &&
+      user &&
+      effectivePublishableKey &&
+      !clientSecret &&
+      !isCreatingIntent &&
+      !paymentError
+    ) {
       createPaymentIntent(commissionRequest.id);
     }
-  }, [commissionRequest?.id, user, clientSecret, isCreatingIntent]);
+  }, [commissionRequest?.id, user, clientSecret, isCreatingIntent, effectivePublishableKey, paymentError]);
 
   useEffect(() => {
     if (error && !cancelRedirect && !redirectCountdown) {
@@ -396,12 +404,39 @@ export default function CommissionPayment() {
               </AlertDescription>
             </Alert>
           )}
+
+          {paymentError && (
+            <Alert className="mb-4 border-red-500 bg-red-950/50 text-red-100">
+              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertDescription className="text-red-100">
+                <strong className="text-red-200">Payment error:</strong> {paymentError}
+                <div className="mt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => commissionRequest && createPaymentIntent(commissionRequest.id)}
+                    disabled={isCreatingIntent}
+                  >
+                    {isCreatingIntent ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Retrying...
+                      </>
+                    ) : (
+                      'Retry payment setup'
+                    )}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {isCreatingIntent && (
             <div className="flex items-center justify-center py-6 text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Preparing secure payment...
             </div>
           )}
+
           {!isCreatingIntent && clientSecret && effectivePublishableKey && stripePromise && (
             <Elements
               stripe={stripePromise}

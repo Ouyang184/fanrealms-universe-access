@@ -32,7 +32,12 @@
     <meta name="theme-color" content="#8B5CF6" />
     <meta name="msapplication-TileColor" content="#8B5CF6" />
     <meta name="msapplication-TileImage" content="/lovable-uploads/2f42f42e-d6b3-4c6c-9055-511b74eec359.png" />
-    
+
+    <!-- Performance: speed up Stripe -->
+    <link rel="preconnect" href="https://js.stripe.com" crossorigin />
+    <link rel="preconnect" href="https://api.stripe.com" crossorigin />
+    <link rel="dns-prefetch" href="//js.stripe.com" />
+    <link rel="dns-prefetch" href="//api.stripe.com" />
     <!-- Supabase Environment Variables -->
     <script>
       window.env = {
