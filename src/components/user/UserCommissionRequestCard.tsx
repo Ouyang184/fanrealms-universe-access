@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, RotateCcw } from 'lucide-react';
+import { Trash2, Eye, RotateCcw, Download } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 import { RequestRevisionModal } from './RequestRevisionModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCommissionDeliverables } from '@/hooks/useCommissionDeliverables';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
@@ -64,6 +66,8 @@ export function UserCommissionRequestCard({
 }: UserCommissionRequestCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  const { deliverables, getSignedUrl } = useCommissionDeliverables(request.id);
   const canDelete = request.status === 'pending' || request.status === 'rejected';
   const canRequestRevision = request.status === 'delivered' || request.status === 'completed';
 
@@ -143,6 +147,17 @@ export function UserCommissionRequestCard({
               <Eye className="h-4 w-4" />
               View Details
             </Button>
+            {deliverables.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeliveryModal(true)}
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                View Delivery
+              </Button>
+            )}
             
             {canRequestRevision && (
               <Button
@@ -186,6 +201,51 @@ export function UserCommissionRequestCard({
         commissionRequest={request}
         onRevisionCreated={onRevisionCreated}
       />
+
+      <Dialog open={showDeliveryModal} onOpenChange={setShowDeliveryModal}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Delivered Files</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {deliverables.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No deliveries yet.</p>
+            ) : (
+              deliverables.map((d) => (
+                <div key={d.id} className="rounded border p-3">
+                  {d.delivery_notes && (
+                    <p className="text-sm mb-2">{d.delivery_notes}</p>
+                  )}
+                  <ul className="space-y-2">
+                    {d.file_urls.map((path, idx) => (
+                      <li key={idx} className="flex items-center justify-between text-sm">
+                        <span className="truncate mr-2">{path.split('/').pop()}</span>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const url = await getSignedUrl(path);
+                              window.open(url, '_blank');
+                            } catch (e) {
+                              console.error('Failed to get download link', e);
+                            }
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Download className="h-4 w-4" /> Download
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Delivered at {new Date(d.delivered_at).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

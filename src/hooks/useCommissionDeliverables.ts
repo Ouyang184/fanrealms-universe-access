@@ -73,21 +73,34 @@ export const useCommissionDeliverables = (commissionRequestId?: string) => {
   const uploadFile = async (file: File, commissionRequestId: string): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${supabase.auth.getUser().then(u => u.data.user?.id)}/${commissionRequestId}/${fileName}`;
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError) throw userError;
+    if (!user?.id) throw new Error('Not authenticated');
+
+    const filePath = `${user.id}/${commissionRequestId}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('commission-deliverables')
-      .upload(filePath, file);
+      .upload(filePath, file, { contentType: file.type });
 
     if (uploadError) {
       throw uploadError;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from('commission-deliverables')
-      .getPublicUrl(filePath);
+    // Return the storage path (bucket is private). Consumers should create signed URLs when needed.
+    return filePath;
+  };
 
-    return publicUrl;
+  const getSignedUrl = async (filePath: string, expiresInSeconds = 3600): Promise<string> => {
+    const { data, error } = await supabase.storage
+      .from('commission-deliverables')
+      .createSignedUrl(filePath, expiresInSeconds);
+    if (error) throw error;
+    return data.signedUrl;
   };
 
   return {
@@ -96,5 +109,6 @@ export const useCommissionDeliverables = (commissionRequestId?: string) => {
     createDeliverable: createDeliverableMutation.mutate,
     isSubmitting: createDeliverableMutation.isPending,
     uploadFile,
+    getSignedUrl,
   };
 };

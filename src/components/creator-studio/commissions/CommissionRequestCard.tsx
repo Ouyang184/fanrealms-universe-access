@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CommissionRequestStatus } from '@/types/commission';
 import { useCommissionActions } from '@/hooks/useCommissionActions';
+import { SubmitWorkModal } from '@/components/creator-studio/commissions/SubmitWorkModal';
 
 interface CommissionRequestWithRelations {
   id: string;
@@ -61,6 +62,7 @@ export function CommissionRequestCard({
 }: CommissionRequestCardProps) {
   const [refundReason, setRefundReason] = useState('');
   const [showRefundDialog, setShowRefundDialog] = useState(false);
+  const [showSubmitWorkModal, setShowSubmitWorkModal] = useState(false);
   
   const { acceptCommission, rejectCommission, processRefund, isProcessing } = useCommissionActions();
 
@@ -267,6 +269,22 @@ export function CommissionRequestCard({
                 </div>
               </DialogContent>
             </Dialog>
+          )}
+
+          {['accepted','in_progress'].includes(request.status) && (
+            <>
+              <Button 
+                onClick={() => setShowSubmitWorkModal(true)}
+                className="flex-1"
+              >
+                Submit Work
+              </Button>
+              <SubmitWorkModal 
+                open={showSubmitWorkModal}
+                onOpenChange={setShowSubmitWorkModal}
+                request={request as any}
+              />
+            </>
           )}
 
           {request.status === 'pending' && (
