@@ -41,8 +41,7 @@ async function sendEmail(email: string, code: string) {
     template_id: 'd-120a3ffb0c774da8ad484ab9010b673a'
   }
 
-  console.log('📧 Sending 2FA email to:', email)
-  console.log('📧 Email payload:', JSON.stringify(emailData, null, 2))
+  console.log('📧 Sending 2FA email');
 
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
@@ -104,7 +103,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    console.log('📧 Processing 2FA email request for:', email)
+    console.log('📧 Processing 2FA email request')
 
     // Send email using SendGrid
     await sendEmail(email, code)

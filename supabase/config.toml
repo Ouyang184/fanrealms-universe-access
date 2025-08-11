@@ -60,7 +60,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.stripe-subscriptions]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-code]
 verify_jwt = false

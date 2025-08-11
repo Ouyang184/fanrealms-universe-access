@@ -12,8 +12,7 @@ async function sendEmail(to: string, code: string) {
     throw new Error('Missing SendGrid API key')
   }
 
-  console.log('📧 Preparing to send email to:', to)
-  console.log('📧 Verification code:', code)
+  console.log('📧 Preparing to send 2FA email');
 
   const emailPayload = {
     personalizations: [
@@ -49,7 +48,7 @@ async function sendEmail(to: string, code: string) {
     ]
   }
 
-  console.log('📧 SendGrid payload:', JSON.stringify(emailPayload, null, 2))
+  // 📧 SendGrid payload omitted for security
 
   const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
     method: 'POST',
@@ -61,7 +60,6 @@ async function sendEmail(to: string, code: string) {
   })
 
   console.log('📧 SendGrid response status:', response.status)
-  console.log('📧 SendGrid response headers:', Object.fromEntries(response.headers.entries()))
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -69,9 +67,7 @@ async function sendEmail(to: string, code: string) {
     throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
   }
 
-  // Log successful response
-  const responseText = await response.text()
-  console.log('📧 SendGrid success response:', responseText)
+  // 📧 SendGrid success response omitted
 }
 
 interface RequestBody {

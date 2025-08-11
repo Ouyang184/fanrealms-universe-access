@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       // Still return success since verification was successful
     }
 
-    console.log(`✅ Successful 2FA verification for ${email}`)
+    console.log(`✅ Successful 2FA verification`)
 
     return new Response(
       JSON.stringify({ 

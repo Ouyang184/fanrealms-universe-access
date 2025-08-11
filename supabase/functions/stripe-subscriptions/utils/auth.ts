@@ -12,17 +12,13 @@ export async function authenticateUser(req: Request, supabase: any) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    console.log('[Auth] Extracted token length:', token.length);
-    
     console.log('[Auth] Calling supabase.auth.getUser...');
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     console.log('[Auth] Auth response:', { 
       hasUser: !!user, 
       userId: user?.id,
-      userEmail: user?.email,
-      hasError: !!error,
-      errorMessage: error?.message 
+      hasError: !!error
     });
     
     if (error || !user) {
