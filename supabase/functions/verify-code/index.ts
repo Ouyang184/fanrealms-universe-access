@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       .single()
 
     if (fetchError || !codeData) {
-      console.log(`Invalid code attempt for ${email}: ${code}`)
+      console.log(`Invalid 2FA verification attempt`)
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(codeData.expires_at)
     
     if (now > expiresAt) {
-      console.log(`Expired code attempt for ${email}: ${code}`)
+      console.log(`Expired 2FA verification attempt`)
       
       // Delete expired code
       await supabase
