@@ -1475,7 +1475,9 @@ export type Database = {
         }[]
       }
       get_public_creator_profile: {
-        Args: { p_creator_id?: string; p_username?: string }
+        Args:
+          | { p_creator_id?: string; p_username?: string }
+          | { p_creator_id?: string; p_username?: string; p_user_id?: string }
         Returns: {
           id: string
           display_name: string
@@ -1487,6 +1489,28 @@ export type Database = {
           tags: string[]
           website: string
           username: string
+        }[]
+      }
+      get_public_creators_list: {
+        Args: {
+          p_search?: string
+          p_sort?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          user_id: string
+          display_name: string
+          profile_image_url: string
+          banner_url: string
+          bio: string
+          follower_count: number
+          is_nsfw: boolean
+          tags: string[]
+          website: string
+          username: string
+          created_at: string
         }[]
       }
       get_public_membership_tiers: {
