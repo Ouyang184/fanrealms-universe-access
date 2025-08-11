@@ -36,55 +36,54 @@ export function useCreatorRatings(creatorId: string, ratingType: string = 'gener
     if (!creatorId) return;
 
     try {
-      // First fetch ratings
-      const { data: ratingsData, error: ratingsError } = await supabase
-        .from('creator_ratings')
-        .select('*')
-        .eq('creator_id', creatorId)
-        .eq('rating_type', ratingType)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_creator_ratings', {
+        p_creator_id: creatorId,
+        p_rating_type: ratingType,
+        p_limit: 100,
+        p_offset: 0,
+      });
 
-      if (ratingsError) throw ratingsError;
+      if (error) throw error;
 
-      // Then fetch user data for each rating
-      const ratingsWithUsers = await Promise.all(
-        (ratingsData || []).map(async (rating) => {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('username, profile_picture')
-            .eq('id', rating.user_id)
-            .single();
-          
-          return {
-            ...rating,
-            user: userData || { username: 'Anonymous', profile_picture: null }
-          };
-        })
-      );
+      const ratingsWithUsers: CreatorRating[] = (data || []).map((r: any) => ({
+        id: r.id,
+        user_id: r.user_id,
+        creator_id: r.creator_id,
+        rating: r.rating,
+        review_text: r.review_text || undefined,
+        rating_type: r.rating_type,
+        created_at: r.created_at,
+        updated_at: r.created_at,
+        user: {
+          username: r.username,
+          profile_picture: r.profile_picture || undefined,
+        },
+      }));
 
       setRatings(ratingsWithUsers);
 
       // Calculate stats
-      if (ratingsData && ratingsData.length > 0) {
-        const total = ratingsData.reduce((sum, r) => sum + r.rating, 0);
-        const average = total / ratingsData.length;
-        const distribution = ratingsData.reduce((acc, r) => {
-          acc[r.rating] = (acc[r.rating] || 0) + 1;
+      const count = ratingsWithUsers.length;
+      if (count > 0) {
+        const total = ratingsWithUsers.reduce((sum, rr) => sum + rr.rating, 0);
+        const average = total / count;
+        const distribution = ratingsWithUsers.reduce((acc: { [key: number]: number }, rr) => {
+          acc[rr.rating] = (acc[rr.rating] || 0) + 1;
           return acc;
         }, {} as { [key: number]: number });
 
         setStats({
           average: Math.round(average * 10) / 10,
-          count: ratingsData.length,
-          distribution
+          count,
+          distribution,
         });
       } else {
         setStats({ average: 0, count: 0, distribution: {} });
       }
 
       // Find user's rating
-      const userRatingData = ratingsWithUsers?.find(r => r.user_id === user?.id);
-      setUserRating(userRatingData || null);
+      const userRatingData = ratingsWithUsers?.find(r => r.user_id === user?.id) || null;
+      setUserRating(userRatingData);
 
     } catch (error) {
       console.error('Error fetching ratings:', error);

@@ -12,29 +12,11 @@ export const useFollows = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('follows')
-        .select(`
-          creator_id,
-          created_at,
-          creators (
-            id,
-            user_id,
-            display_name,
-            bio,
-            profile_image_url,
-            banner_url,
-            follower_count,
-            tags,
-            users (
-              id,
-              username,
-              email,
-              profile_picture
-            )
-          )
-        `)
-        .eq('user_id', user.id);
+      const { data, error } = await supabase.rpc('get_user_following', {
+        p_user_id: user.id,
+        p_limit: 100,
+        p_offset: 0,
+      });
 
       if (error) {
         console.error('Error fetching follows:', error);
@@ -42,30 +24,22 @@ export const useFollows = () => {
       }
 
       // Transform the data to match our CreatorProfile type
-      const followedCreators: CreatorProfile[] = data
-        .filter(follow => follow.creators) // Filter out any null creators
-        .map((follow) => {
-          const creator = follow.creators;
-          const user = creator.users;
-          
-          return {
-            id: creator.id,
-            user_id: creator.user_id,
-            username: user?.username || `user-${creator.user_id?.substring(0, 8)}`,
-            email: user?.email || "",
-            fullName: user?.username || "",
-            display_name: creator.display_name || user?.username || `Creator ${creator.id.substring(0, 6)}`,
-            displayName: creator.display_name || user?.username || `Creator ${creator.id.substring(0, 6)}`,
-            bio: creator.bio || "",
-            // Prioritize creator's profile_image_url over user's profile_picture
-            avatar_url: creator.profile_image_url || user?.profile_picture || null,
-            profile_image_url: creator.profile_image_url || user?.profile_picture || null,
-            banner_url: creator.banner_url || null,
-            follower_count: creator.follower_count || 0,
-            tags: creator.tags || [],
-            created_at: follow.created_at
-          };
-        });
+      const followedCreators: CreatorProfile[] = (data || []).map((row: any) => ({
+        id: row.creator_id,
+        user_id: row.creator_user_id,
+        username: row.username || `user-${String(row.creator_user_id).substring(0, 8)}`,
+        email: "",
+        fullName: row.username || "",
+        display_name: row.display_name || row.username || `Creator ${String(row.creator_id).substring(0, 6)}`,
+        displayName: row.display_name || row.username || `Creator ${String(row.creator_id).substring(0, 6)}`,
+        bio: row.bio || "",
+        avatar_url: row.profile_image_url || null,
+        profile_image_url: row.profile_image_url || null,
+        banner_url: row.banner_url || null,
+        follower_count: row.follower_count || 0,
+        tags: row.tags || [],
+        created_at: row.followed_at,
+      }));
 
       return followedCreators;
     },

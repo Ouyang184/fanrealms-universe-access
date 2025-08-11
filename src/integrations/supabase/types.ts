@@ -1459,6 +1459,7 @@ export type Database = {
         Args: { p_user_id: string; p_limit?: number; p_offset?: number }
         Returns: {
           creator_id: string
+          creator_user_id: string
           display_name: string
           username: string
           profile_image_url: string
@@ -1466,6 +1467,8 @@ export type Database = {
           bio: string
           follower_count: number
           is_nsfw: boolean
+          tags: string[]
+          followed_at: string
         }[]
       }
       get_user_public_profiles: {
