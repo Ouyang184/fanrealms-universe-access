@@ -150,36 +150,6 @@ export default function AllCommissionsPage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        {/* Hero Section */}
-        <section className="mb-6 sm:mb-8">
-          <div className="relative rounded-xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-900/90 to-black/70 z-10" />
-            <div className="w-full h-48 sm:h-56 md:h-64 bg-gradient-to-r from-purple-900 to-blue-900"></div>
-            <div className="absolute inset-0 z-20 flex flex-col justify-center p-4 sm:p-6 md:p-8">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 leading-tight">
-                All Commissions
-              </h1>
-              <p className="text-sm sm:text-lg md:text-xl text-gray-200 max-w-2xl mb-4 sm:mb-6 leading-relaxed">
-                Discover custom artwork and commissions from talented creators
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-2xl">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search for commission types, creators, or services..."
-                    className="pl-10 bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500 w-full text-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-sm sm:text-base">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Back to Explore Button */}
         <section className="mb-6 sm:mb-8">
@@ -255,11 +225,11 @@ export default function AllCommissionsPage() {
         {/* Commissions Grid */}
         <section className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold">
+            <h1 className="text-xl sm:text-2xl font-bold">
               {isLoading 
                 ? "Loading commissions..." 
                 : `${displayCommissions.length} Commission Types`}
-            </h2>
+            </h1>
           </div>
 
           {isLoading ? (
