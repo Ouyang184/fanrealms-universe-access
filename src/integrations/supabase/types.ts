@@ -1418,6 +1418,16 @@ export type Database = {
           },
         ]
       }
+      user_public_profiles: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          profile_picture: string | null
+          username: string | null
+          website: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_2fa_codes: {
@@ -1427,6 +1437,16 @@ export type Database = {
       get_post_view_count: {
         Args: { post_id_param: string }
         Returns: number
+      }
+      get_user_public_profiles: {
+        Args: { ids?: string[]; usernames?: string[] }
+        Returns: {
+          id: string
+          username: string
+          profile_picture: string
+          website: string
+          created_at: string
+        }[]
       }
       user_has_tier_access: {
         Args: { tier_id_param: string }
