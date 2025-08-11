@@ -8,8 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe with live keys
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY');
+// Initialize Stripe with test/sandbox keys when available
+const stripeSecretKey =
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+  Deno.env.get('STRIPE_SECRET_KEY') ||
+  Deno.env.get('STRIPE_SECRET_KEY_LIVE');
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
   stripeSecretKey,
   {
@@ -32,14 +36,18 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED (LIVE MODE) ===');
+    console.log('=== WEBHOOK EVENT RECEIVED (TEST MODE) ===');
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     console.log('Request method:', req.method);
     console.log('Request URL:', req.url);
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret =
+      Deno.env.get('STRIPE_WEBHOOK_SECRET_TEST') ||
+      Deno.env.get('STRIPE_WEBHOOK_SECRET_SANDBOX') ||
+      Deno.env.get('STRIPE_WEBHOOK_SECRET') ||
+      Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE');
 
     console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
@@ -77,7 +85,7 @@ serve(async (req) => {
     try {
       // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook signature verified successfully (LIVE MODE)');
+      console.log('Webhook signature verified successfully (TEST MODE)');
     } catch (err) {
       console.error('===== WEBHOOK SIGNATURE VERIFICATION FAILED =====');
       console.error('Error details:', err);
@@ -95,7 +103,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id, '(LIVE MODE)');
+    console.log('Webhook event type:', event.type, 'ID:', event.id, '(TEST MODE)');
 
     // Handle payment intent webhooks FIRST - these are critical for custom payment flow
     if (event.type === 'payment_intent.succeeded') {

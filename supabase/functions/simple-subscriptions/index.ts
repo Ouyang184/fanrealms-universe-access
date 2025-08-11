@@ -10,8 +10,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use live Stripe secret key for subscription payments
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY');
+// Use test/sandbox Stripe secret key for subscription payments
+const stripeSecretKey =
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+  Deno.env.get('STRIPE_SECRET_KEY') ||
+  Deno.env.get('STRIPE_SECRET_KEY_LIVE');
 const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey);
 
 serve(async (req) => {
@@ -37,7 +41,7 @@ serve(async (req) => {
     }
 
     const { action, tierId, creatorId, subscriptionId, paymentIntentId, immediate } = await req.json();
-    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate, '(LIVE MODE)');
+    console.log('[SimpleSubscriptions] Action:', action, 'TierId:', tierId, 'CreatorId:', creatorId, 'Immediate:', immediate, '(TEST MODE)');
 
     let result;
 
@@ -72,7 +76,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[SimpleSubscriptions] Error (LIVE MODE):', error);
+    console.error('[SimpleSubscriptions] Error (TEST MODE):', error);
     return new Response(JSON.stringify({ 
       error: error.message || 'Internal server error' 
     }), {

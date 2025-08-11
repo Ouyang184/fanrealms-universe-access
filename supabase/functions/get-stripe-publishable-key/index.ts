@@ -11,13 +11,12 @@ serve(async (req) => {
   }
 
   try {
-    // Prefer Sandbox/Test keys for safety; fallback to generic/live
-    // Prefer LIVE keys first, then fallback to generic/test/sandbox
+    // Prefer Test/Sandbox keys for safety; fallback to generic/live
     const order = [
-      "STRIPE_PUBLISHABLE_KEY_LIVE",
-      "STRIPE_PUBLISHABLE_KEY",
       "STRIPE_PUBLISHABLE_KEY_TEST",
       "STRIPE_PUBLISHABLE_KEY_SANDBOX",
+      "STRIPE_PUBLISHABLE_KEY",
+      "STRIPE_PUBLISHABLE_KEY_LIVE",
     ] as const;
 
     let publishableKey: string | undefined;

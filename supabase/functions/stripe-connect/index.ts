@@ -15,7 +15,11 @@ serve(async (req) => {
 
   try {
     const { action, creatorId, accountId } = await req.json()
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY')
+    const stripeSecretKey =
+      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+      Deno.env.get('STRIPE_SECRET_KEY') ||
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE')
 
     if (!stripeSecretKey) {
       console.error('Missing Stripe secret key')

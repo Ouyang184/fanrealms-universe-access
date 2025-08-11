@@ -15,7 +15,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (LIVE MODE)');
+  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (TEST MODE)');
   console.log('📍 [STRIPE-SUBSCRIPTIONS] Request details:', {
     method: req.method,
     url: req.url,
@@ -60,12 +60,16 @@ serve(async (req) => {
       return createJsonResponse({ error: 'Invalid JSON body', details: parseError.message }, 400);
     }
 
-    // Validate environment variables - USE LIVE KEYS
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY');
+    // Validate environment variables - USE TEST/SANDBOX KEYS FIRST
+    const stripeKey =
+      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+      Deno.env.get('STRIPE_SECRET_KEY') ||
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (LIVE MODE):', {
+    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (TEST MODE):', {
       hasStripeKey: !!stripeKey,
       stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 12) + '...' : 'N/A',
       hasSupabaseUrl: !!supabaseUrl,
@@ -75,8 +79,8 @@ serve(async (req) => {
     });
 
     if (!stripeKey) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe live key');
-      return createJsonResponse({ error: 'Missing Stripe live configuration' }, 500);
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe test key');
+      return createJsonResponse({ error: 'Missing Stripe test configuration' }, 500);
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -292,7 +296,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR (LIVE MODE):', {
+    console.log('💥 [STRIPE-SUBSCRIPTIONS] CRITICAL ERROR (TEST MODE):', {
       message: error.message,
       stack: error.stack,
       name: error.name
