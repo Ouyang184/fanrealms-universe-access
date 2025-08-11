@@ -44,20 +44,33 @@ serve(async (req) => {
     // Fetch commission request
     const { data: commission, error: crErr } = await supabaseServiceClient
       .from("commission_requests")
-      .select("id, customer_id, creator_id, agreed_price, status")
+      .select("id, customer_id, creator_id, agreed_price, status, stripe_payment_intent_id")
       .eq("id", commissionId)
       .maybeSingle();
 
     if (crErr) throw crErr;
     if (!commission) throw new Error("Commission request not found");
     if (commission.customer_id !== user.id) throw new Error("Not authorized for this commission");
-    if (commission.status !== "pending") throw new Error("Commission is not payable in current status");
     if (!commission.agreed_price) throw new Error("No agreed price set for this commission");
 
     const amountCents = Math.round(Number(commission.agreed_price) * 100);
 
     if (!stripeSecret) throw new Error("Stripe secret key not configured");
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+
+    // If a payment is already pending, return the existing client secret (idempotent)
+    if (commission.status === "payment_pending" && commission.stripe_payment_intent_id) {
+      const existingPI = await stripe.paymentIntents.retrieve(commission.stripe_payment_intent_id);
+      return new Response(
+        JSON.stringify({ clientSecret: existingPI.client_secret }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
+      );
+    }
+
+    // Only allow creating a new PI when commission is pending
+    if (commission.status !== "pending") {
+      throw new Error("Commission is not payable in current status");
+    }
 
     // Ensure a customer exists
     let customerId: string | undefined;

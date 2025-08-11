@@ -31,7 +31,7 @@ interface CommissionRequest {
 }
 
 
-const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJenKnYQOCg0GW8YrW9nRY3vfMf0TYZyVV8eLPFEz6QzZFN7W2D8MMGtVHEFxOC6XgKYRhJ8lJjl00yjqfyF1L');
+const stripePromise = loadStripe(window.env?.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
@@ -80,11 +80,9 @@ export default function CommissionPayment() {
         return;
       }
 
-      // Check if request is in correct status for payment
-      if (data.status !== 'pending') {
-        if (data.status === 'payment_pending') {
-          setError('Payment is already being processed for this commission');
-        } else if (data.status === 'payment_authorized') {
+      // Allow proceeding when status is 'pending' or 'payment_pending'
+      if (data.status !== 'pending' && data.status !== 'payment_pending') {
+        if (data.status === 'payment_authorized') {
           setError('Payment has been authorized and is awaiting creator acceptance');
         } else if (data.status === 'accepted') {
           setError('This commission has already been accepted and paid');
