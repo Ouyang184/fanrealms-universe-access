@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,22 +30,6 @@ interface CommissionRequest {
   };
 }
 
-const publishableKey = window.env?.VITE_STRIPE_PUBLISHABLE_KEY;
-const [effectivePublishableKey, setEffectivePublishableKey] = useState<string | null>(publishableKey || null);
-
-useEffect(() => {
-  if (!effectivePublishableKey) {
-    supabase.functions
-      .invoke('get-stripe-publishable-key')
-      .then(({ data }) => {
-        if (data?.publishableKey) setEffectivePublishableKey(data.publishableKey);
-      })
-      .catch(() => {});
-  }
-}, [effectivePublishableKey]);
-
-const stripePromise = effectivePublishableKey ? loadStripe(effectivePublishableKey) : null;
-
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
   const { user, loading } = useAuth();
@@ -60,6 +44,27 @@ export default function CommissionPayment() {
   const [cancelRedirect, setCancelRedirect] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+
+  const [effectivePublishableKey, setEffectivePublishableKey] = useState<string | null>(
+    window.env?.VITE_STRIPE_PUBLISHABLE_KEY || null
+  );
+
+  useEffect(() => {
+    if (!effectivePublishableKey) {
+      supabase.functions
+        .invoke('get-stripe-publishable-key')
+        .then(({ data }) => {
+          if (data?.publishableKey) {
+            setEffectivePublishableKey(data.publishableKey);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [effectivePublishableKey]);
+
+  const stripePromise = useMemo(() => {
+    return effectivePublishableKey ? loadStripe(effectivePublishableKey) : null;
+  }, [effectivePublishableKey]);
 
   useEffect(() => {
     if (requestId && user?.id && !loading) {
@@ -155,14 +160,12 @@ export default function CommissionPayment() {
     fetchCommissionRequest();
   };
 
-  // Create the payment intent once commission is loaded
   useEffect(() => {
     if (commissionRequest?.id && user && !clientSecret && !isCreatingIntent) {
       createPaymentIntent(commissionRequest.id);
     }
   }, [commissionRequest?.id, user, clientSecret, isCreatingIntent]);
 
-  // Auto-redirect effect for specific error conditions
   useEffect(() => {
     if (error && !cancelRedirect && !redirectCountdown) {
       const shouldAutoRedirect = 
