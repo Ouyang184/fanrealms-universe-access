@@ -70,9 +70,7 @@ export function useConversations() {
 
       // Get creator profiles for participants who are creators
       const { data: creatorProfiles } = await supabase
-        .from('creators')
-        .select('id, user_id, display_name, profile_image_url, bio')
-        .in('user_id', otherUserIds);
+        .rpc('get_public_creators_by_user_ids', { p_user_ids: otherUserIds });
 
       // Get last messages for each conversation
       const { data: lastMessages } = await supabase

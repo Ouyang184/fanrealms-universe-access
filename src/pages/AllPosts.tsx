@@ -42,12 +42,18 @@ export default function AllPostsPage() {
   const { data: creators = [] } = useQuery({
     queryKey: ["public-creators"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("creators").select("id, display_name");
+      const { data, error } = await supabase.rpc('get_public_creators_list', {
+        p_search: null,
+        p_sort: 'created_at',
+        p_limit: 500,
+        p_offset: 0,
+      });
       if (error) {
-        console.error("Error fetching creators:", error);
+        console.error("Error fetching creators (public):", error);
         return [] as { id: string; display_name: string | null }[];
       }
-      return (data || []) as { id: string; display_name: string | null }[];
+      const list = (Array.isArray(data) ? data : []) as any[];
+      return list.map((c) => ({ id: c.id as string, display_name: (c.display_name as string) || null }));
     },
     staleTime: 30000,
   });

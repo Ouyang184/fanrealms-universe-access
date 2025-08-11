@@ -15,46 +15,28 @@ export const findByCreatorId = async (identifier?: string) => {
   
   console.log(`Looking up creator by creator.id: "${identifier}"`);
   
-  // First try to get the creator with user info
-  const { data: creatorById, error: idError } = await supabase
-    .from('creators')
-    .select(`
-      *,
-      users!creators_user_id_fkey (
-        id,
-        username,
-        email,
-        profile_picture
-      )
-    `)
-    .eq('id', identifier)
-    .maybeSingle();
+  // First try to get the creator via secure RPC
+  const { data, error } = await supabase
+    .rpc('get_public_creator_profile', { p_creator_id: identifier });
+  
+  const row: any = Array.isArray(data) ? data[0] : data;
+  
+  if (row) {
+    console.log("Found creator by creator.id (RPC):", row);
     
-  if (creatorById) {
-    console.log("Found creator by creator.id:", creatorById);
-    
-    // Handle case where user relationship might be missing - properly type the user info
-    const userInfo = creatorById.users as { 
-      id?: string; 
-      username?: string; 
-      email?: string; 
-      profile_picture?: string; 
-    } | null;
-    
-    // Create the display name once and use it for both properties
-    const displayNameValue = creatorById.display_name || userInfo?.username || `Creator ${identifier.substring(0, 8)}`;
+    const displayNameValue = row.display_name || row.username || `Creator ${identifier.substring(0, 8)}`;
     
     const creatorProfile = {
-      ...creatorById,
-      id: creatorById.id,      // Primary key from creators table
-      user_id: creatorById.user_id, // Keep user_id from auth
-      username: userInfo?.username || `user-${creatorById.user_id?.substring(0, 8) || 'unknown'}`,
-      email: userInfo?.email || "",
+      ...row,
+      id: row.id,
+      user_id: row.user_id,
+      username: row.username || `user-${(row.user_id || '').substring(0, 8)}`,
+      email: "",
       fullName: displayNameValue,
       display_name: displayNameValue,
-      displayName: displayNameValue, // Add this required property
-      avatar_url: userInfo?.profile_picture || null,
-      tags: creatorById.tags || []
+      displayName: displayNameValue,
+      avatar_url: row.profile_image_url || null,
+      tags: row.tags || []
     };
     
     return creatorProfile as CreatorProfile;
@@ -69,45 +51,26 @@ export const findByUsername = async (cleanedIdentifier?: string) => {
   
   console.log(`Looking up creator by username: "${cleanedIdentifier}"`);
   
-  const { data: userByUsername, error: usernameError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('username', cleanedIdentifier)
-    .maybeSingle();
+  // Use RPC to get by username directly
+  const { data, error } = await supabase
+    .rpc('get_public_creator_profile', { p_username: cleanedIdentifier });
+  const row: any = Array.isArray(data) ? data[0] : data;
   
-  if (userByUsername) {
-    console.log("Found user by username:", userByUsername);
-    const userId = userByUsername.id;
-    
-    // Get creator info for this user
-    const { data: creatorData, error: creatorError } = await supabase
-      .from('creators')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-      
-    if (creatorData) {
-      console.log("Found creator info for username:", creatorData);
-      
-      // Create the display name once and use it for both properties
-      const displayNameValue = creatorData.display_name || userByUsername.username;
-      
-      // Build and return the combined profile
-      const creatorProfile = {
-        ...creatorData,
-        ...userByUsername,
-        id: creatorData.id, // Use creator table ID (needed for social links)
-        user_id: userId,    // Store user_id separately
-        fullName: displayNameValue,
-        display_name: displayNameValue,
-        displayName: displayNameValue, // Add this required property
-        username: userByUsername.username,
-        avatar_url: userByUsername.profile_picture || null,
-        tags: creatorData.tags || []
-      };
-      
-      return creatorProfile as CreatorProfile;
-    }
+  if (row) {
+    console.log("Found creator by username (RPC):", row);
+    const displayNameValue = row.display_name || row.username;
+    const creatorProfile = {
+      ...row,
+      id: row.id,
+      user_id: row.user_id,
+      fullName: displayNameValue,
+      display_name: displayNameValue,
+      displayName: displayNameValue,
+      username: row.username,
+      avatar_url: row.profile_image_url || null,
+      tags: row.tags || []
+    };
+    return creatorProfile as CreatorProfile;
   }
   
   return null;
@@ -119,39 +82,25 @@ export const findByUserId = async (cleanedIdentifier?: string) => {
   
   console.log(`Looking up creator by user_id: "${cleanedIdentifier}"`);
   
-  const { data: creatorByUserId, error: userIdError } = await supabase
-    .from('creators')
-    .select(`
-      *,
-      users!creators_user_id_fkey (
-        id,
-        username,
-        email,
-        profile_picture
-      )
-    `)
-    .eq('user_id', cleanedIdentifier)
-    .maybeSingle();
-    
-  if (creatorByUserId && creatorByUserId.users) {
-    console.log("Found creator by user_id:", creatorByUserId);
-    
-    // Create the display name once and use it for both properties
-    const displayNameValue = creatorByUserId.display_name || creatorByUserId.users.username;
-    
+  const { data, error } = await supabase
+    .rpc('get_public_creator_profile', { p_user_id: cleanedIdentifier });
+  const row: any = Array.isArray(data) ? data[0] : data;
+  
+  if (row) {
+    console.log("Found creator by user_id (RPC):", row);
+    const displayNameValue = row.display_name || row.username;
     const creatorProfile = {
-      ...creatorByUserId,
-      id: creatorByUserId.id,      // Primary key from creators table
-      user_id: creatorByUserId.user_id, // Keep user_id from auth
-      username: creatorByUserId.users.username || `user-${creatorByUserId.user_id.substring(0, 8)}`,
-      email: creatorByUserId.users.email || "",
+      ...row,
+      id: row.id,
+      user_id: row.user_id,
+      username: row.username || `user-${(row.user_id || '').substring(0, 8)}`,
+      email: "",
       fullName: displayNameValue,
       display_name: displayNameValue,
-      displayName: displayNameValue, // Add this required property
-      avatar_url: creatorByUserId.users.profile_picture || null,
-      tags: creatorByUserId.tags || []
+      displayName: displayNameValue,
+      avatar_url: row.profile_image_url || null,
+      tags: row.tags || []
     };
-    
     return creatorProfile as CreatorProfile;
   }
   

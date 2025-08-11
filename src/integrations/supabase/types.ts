@@ -1491,6 +1491,16 @@ export type Database = {
           username: string
         }[]
       }
+      get_public_creators_by_user_ids: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          id: string
+          user_id: string
+          display_name: string
+          profile_image_url: string
+          bio: string
+        }[]
+      }
       get_public_creators_list: {
         Args: {
           p_search?: string

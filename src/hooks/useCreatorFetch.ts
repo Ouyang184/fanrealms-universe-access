@@ -21,17 +21,7 @@ export function useCreatorFetch(identifier?: string) {
       
       console.log('[useCreatorFetch] Fetching creator with identifier:', identifier);
       
-      // Try to fetch by username first, then by creator ID, then by display_name
-      const baseSelect = `
-          *,
-          users!creators_user_id_fkey (
-            username,
-            profile_picture
-          )
-        `;
-      
-      // Helper to build a creators query with common select
-      const creatorsQuery = () => supabase.from('creators').select(baseSelect);
+      // Try to fetch by username first, then by creator ID, then by display_name using secure RPCs
       
       // Decode in case identifier came URL-encoded (e.g., display names with spaces)
       const decoded = decodeURIComponent(identifier);
@@ -39,77 +29,56 @@ export function useCreatorFetch(identifier?: string) {
       // Check if identifier looks like a UUID
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(decoded);
       
-      let data: any | null = null;
-      let error: any | null = null;
+      let row: any | null = null;
+      let rpcError: any | null = null;
       
-      if (isUUID) {
-        ({ data, error } = await creatorsQuery().eq('id', decoded).single());
-      } else {
-        // 1) Try username match via users table
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id')
-          .eq('username', decoded)
-          .maybeSingle();
-        
-        if (userData) {
-          ({ data, error } = await creatorsQuery().eq('user_id', userData.id).single());
+      try {
+        if (isUUID) {
+          const { data, error } = await supabase.rpc('get_public_creator_profile', { p_creator_id: decoded });
+          rpcError = error;
+          row = Array.isArray(data) ? data[0] : data;
         } else {
-          // 2) Try exact display_name match (case sensitive)
-          ({ data } = await creatorsQuery().eq('display_name', decoded).maybeSingle());
-          
-          // 3) If not found, try case-insensitive exact match using ilike
-          if (!data) {
-            ({ data } = await creatorsQuery().ilike('display_name', decoded).maybeSingle());
-          }
-          
-          if (!data) {
-            // 4) As a last resort, try a slug-like comparison (remove spaces and lowercase)
-            const normalized = decoded.toLowerCase().replace(/\s+/g, '');
-            const { data: list } = await creatorsQuery().select(baseSelect);
-            if (Array.isArray(list)) {
-              data = list.find((c: any) => (c.display_name || '').toLowerCase().replace(/\s+/g, '') === normalized) || null;
-            }
+          // 1) Try username match directly via RPC
+          const { data, error } = await supabase.rpc('get_public_creator_profile', { p_username: decoded });
+          if (!error && data && (Array.isArray(data) ? data[0] : data)) {
+            row = Array.isArray(data) ? data[0] : data;
+          } else {
+            // 2) Fallback: search by display name using list RPC
+            const { data: list } = await supabase.rpc('get_public_creators_list', { p_search: decoded, p_limit: 1, p_offset: 0 });
+            row = Array.isArray(list) && list.length > 0 ? list[0] : null;
           }
         }
+      } catch (e) {
+        rpcError = e;
       }
       
-      if (error) {
-        console.error('[useCreatorFetch] Error fetching creator:', error);
+      if (rpcError) {
+        console.error('[useCreatorFetch] Error fetching creator via RPC:', rpcError);
         return null;
       }
       
-      if (!data) {
+      if (!row) {
         console.warn('[useCreatorFetch] No creator found for identifier:', decoded);
         return null;
       }
       
-      console.log('[useCreatorFetch] Creator data:', data);
+      console.log('[useCreatorFetch] Creator data (public-safe):', row);
       
       return {
-        id: data.id,
-        user_id: data.user_id,
-        display_name: data.display_name,
-        bio: data.bio,
-        profile_image_url: data.profile_image_url,
-        banner_url: data.banner_url,
-        website: data.website,
-        tags: data.tags || [],
-        follower_count: data.follower_count || 0,
-        is_nsfw: data.is_nsfw || false,
-        created_at: data.created_at,
-        stripe_account_id: data.stripe_account_id,
-        stripe_onboarding_complete: data.stripe_onboarding_complete || false,
-        stripe_charges_enabled: data.stripe_charges_enabled || false,
-        stripe_payouts_enabled: data.stripe_payouts_enabled || false,
-        // Include commission fields
-        accepts_commissions: data.accepts_commissions || false,
-        commission_base_rate: data.commission_base_rate,
-        commission_turnaround_days: data.commission_turnaround_days,
-        commission_slots_available: data.commission_slots_available,
-        commission_tos: data.commission_tos,
-        username: data.users?.username || null
-      };
+        id: row.id,
+        user_id: row.user_id,
+        display_name: row.display_name,
+        bio: row.bio,
+        profile_image_url: row.profile_image_url,
+        banner_url: row.banner_url,
+        website: row.website,
+        tags: row.tags || [],
+        follower_count: row.follower_count || 0,
+        is_nsfw: row.is_nsfw || false,
+        created_at: row.created_at,
+        // Sensitive Stripe/commission fields intentionally omitted for public fetch
+        username: row.username || null
+      } as CreatorProfile;
     },
     enabled: !!identifier
   });

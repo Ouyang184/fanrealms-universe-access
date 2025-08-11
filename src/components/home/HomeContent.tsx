@@ -60,9 +60,7 @@ export function HomeContent() {
       console.log('HomeContent: Fetching creator info for author IDs:', authorIds);
       
       const { data: creatorsData, error } = await supabase
-        .from('creators')
-        .select('user_id, display_name, profile_image_url')
-        .in('user_id', authorIds);
+        .rpc('get_public_creators_by_user_ids', { p_user_ids: authorIds });
       
       if (error) {
         console.error('HomeContent: Error fetching creators:', error);

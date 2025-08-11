@@ -46,11 +46,9 @@ export function useFollowActions() {
     console.log("Following creator:", creatorId, "User:", user.id);
     
     // Get current creator data
-    const { data: creator, error } = await supabase
-      .from("creators")
-      .select("user_id, display_name, users(username)")
-      .eq("id", creatorId)
-      .single();
+    const { data: creatorRpc, error } = await supabase
+      .rpc('get_public_creator_profile', { p_creator_id: creatorId });
+    const creator = Array.isArray(creatorRpc) ? creatorRpc[0] : creatorRpc;
     
     if (error) {
       console.error("Error fetching creator:", error);
