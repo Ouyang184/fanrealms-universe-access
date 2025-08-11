@@ -16,9 +16,11 @@ serve(async (req) => {
   const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const supabaseService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const stripeSecret =
+    Deno.env.get("STRIPE_SECERT_KEY_SANDBOX") || // note: supporting existing misspelling
+    Deno.env.get("STRIPE_SECRET_KEY_SANDBOX") ||
+    Deno.env.get("STRIPE_SECRET_KEY_TEST") ||
     Deno.env.get("STRIPE_SECRET_KEY") ||
     Deno.env.get("STRIPE_SECRET_KEY_LIVE") ||
-    Deno.env.get("STRIPE_SECRET_KEY_TEST") ||
     "";
 
   const supabaseAuthClient = createClient(supabaseUrl, supabaseAnon, {

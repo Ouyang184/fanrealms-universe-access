@@ -31,7 +31,20 @@ interface CommissionRequest {
 }
 
 const publishableKey = window.env?.VITE_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
+const [effectivePublishableKey, setEffectivePublishableKey] = useState<string | null>(publishableKey || null);
+
+useEffect(() => {
+  if (!effectivePublishableKey) {
+    supabase.functions
+      .invoke('get-stripe-publishable-key')
+      .then(({ data }) => {
+        if (data?.publishableKey) setEffectivePublishableKey(data.publishableKey);
+      })
+      .catch(() => {});
+  }
+}, [effectivePublishableKey]);
+
+const stripePromise = effectivePublishableKey ? loadStripe(effectivePublishableKey) : null;
 
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
@@ -111,9 +124,9 @@ export default function CommissionPayment() {
   const createPaymentIntent = async (commissionId: string) => {
     try {
       setIsCreatingIntent(true);
-      if (!publishableKey) {
-        throw new Error('Missing Stripe publishable key. Please configure VITE_STRIPE_PUBLISHABLE_KEY.');
-      }
+    if (!effectivePublishableKey) {
+      throw new Error('Missing Stripe publishable key. Please configure it in Supabase secrets or window.env.');
+    }
       const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
         body: { commissionId }
       });
@@ -372,11 +385,11 @@ export default function CommissionPayment() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!publishableKey && (
+          {!effectivePublishableKey && (
             <Alert className="mb-4 border-yellow-500 bg-yellow-950/50 text-yellow-100">
               <AlertCircle className="h-4 w-4 text-yellow-400" />
               <AlertDescription className="text-yellow-100">
-                Stripe is not configured. Missing publishable key. Please set VITE_STRIPE_PUBLISHABLE_KEY.
+                Stripe is not configured. Missing publishable key. Please set it in Supabase secrets.
               </AlertDescription>
             </Alert>
           )}
@@ -386,7 +399,7 @@ export default function CommissionPayment() {
               Preparing secure payment...
             </div>
           )}
-          {!isCreatingIntent && clientSecret && publishableKey && stripePromise && (
+          {!isCreatingIntent && clientSecret && effectivePublishableKey && stripePromise && (
             <Elements
               stripe={stripePromise}
               options={{
