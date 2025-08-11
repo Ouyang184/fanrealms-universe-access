@@ -28,11 +28,13 @@ export const useCommissionDeliverables = (commissionRequestId?: string) => {
     mutationFn: async ({ 
       commissionRequestId, 
       fileUrls, 
-      deliveryNotes 
+      deliveryNotes,
+      externalLinks
     }: { 
       commissionRequestId: string; 
       fileUrls: string[]; 
       deliveryNotes?: string;
+      externalLinks?: string[];
     }) => {
       const { error } = await supabase
         .from('commission_deliverables')
@@ -40,6 +42,7 @@ export const useCommissionDeliverables = (commissionRequestId?: string) => {
           commission_request_id: commissionRequestId,
           file_urls: fileUrls,
           delivery_notes: deliveryNotes,
+          external_links: externalLinks ?? [],
         });
 
       if (error) throw error;

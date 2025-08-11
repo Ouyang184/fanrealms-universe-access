@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trash2, Eye, RotateCcw, Download } from 'lucide-react';
+import { Trash2, Eye, RotateCcw, Download, ExternalLink } from 'lucide-react';
 import { CommissionRequest, CommissionRequestStatus } from '@/types/commission';
 import { format } from 'date-fns';
 import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
@@ -237,6 +237,30 @@ export function UserCommissionRequestCard({
                       </li>
                     ))}
                   </ul>
+
+                  {d.external_links && d.external_links.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-sm font-medium">External links</div>
+                      <ul className="space-y-2 mt-1">
+                        {d.external_links.map((link, i) => (
+                          <li key={i} className="flex items-center justify-between text-sm">
+                            <a href={link} target="_blank" rel="noopener noreferrer" className="truncate mr-2 underline">
+                              {link}
+                            </a>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(link, '_blank')}
+                              className="flex items-center gap-2"
+                            >
+                              <ExternalLink className="h-4 w-4" /> Open
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <p className="text-xs text-muted-foreground mt-2">
                     Delivered at {new Date(d.delivered_at).toLocaleString()}
                   </p>

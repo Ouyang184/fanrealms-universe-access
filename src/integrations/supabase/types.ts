@@ -62,6 +62,7 @@ export type Database = {
           created_at: string
           delivered_at: string
           delivery_notes: string | null
+          external_links: string[]
           file_urls: string[]
           id: string
           updated_at: string
@@ -71,6 +72,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string
           delivery_notes?: string | null
+          external_links?: string[]
           file_urls?: string[]
           id?: string
           updated_at?: string
@@ -80,6 +82,7 @@ export type Database = {
           created_at?: string
           delivered_at?: string
           delivery_notes?: string | null
+          external_links?: string[]
           file_urls?: string[]
           id?: string
           updated_at?: string

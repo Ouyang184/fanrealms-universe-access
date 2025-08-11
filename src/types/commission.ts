@@ -73,6 +73,7 @@ export interface CommissionDeliverable {
   id: string;
   commission_request_id: string;
   file_urls: string[];
+  external_links?: string[];
   delivery_notes?: string;
   delivered_at: string;
   created_at: string;

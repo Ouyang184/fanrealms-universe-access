@@ -28,30 +28,42 @@ export function SubmitWorkModal({ open, onOpenChange, request }: SubmitWorkModal
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const { createDeliverable, isSubmitting, uploadFile } = useCommissionDeliverables();
+  const [externalLinksText, setExternalLinksText] = useState('');
+  const parsedExternalLinks = externalLinksText
+    .split(/\n|,/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .filter((link) => {
+      try {
+        const u = new URL(link);
+        return u.protocol === 'https:' || u.protocol === 'http:';
+      } catch {
+        return false;
+      }
+    });
 
   const handleSubmit = async () => {
-    if (selectedFiles.length === 0) {
+    if (selectedFiles.length === 0 && parsedExternalLinks.length === 0) {
       return;
     }
 
     try {
-      // Upload all files
-      const uploadPromises = selectedFiles.map(file => 
-        uploadFile(file, request.id)
-      );
-      
-      const fileUrls = await Promise.all(uploadPromises);
-      
-      // Create deliverable record
+      let fileUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        const uploadPromises = selectedFiles.map((file) => uploadFile(file, request.id));
+        fileUrls = await Promise.all(uploadPromises);
+      }
+
       createDeliverable({
         commissionRequestId: request.id,
         fileUrls,
         deliveryNotes: deliveryNotes || undefined,
+        externalLinks: parsedExternalLinks,
       });
 
-      // Reset form and close modal
       setSelectedFiles([]);
       setDeliveryNotes('');
+      setExternalLinksText('');
       onOpenChange(false);
     } catch (error) {
       console.error('Error submitting work:', error);
@@ -76,8 +88,22 @@ export function SubmitWorkModal({ open, onOpenChange, request }: SubmitWorkModal
               maxFiles={10}
               maxSizePerFile={50}
             />
-            {selectedFiles.length === 0 && (
-              <p className="text-sm text-red-600">Please upload at least one file</p>
+            {(selectedFiles.length === 0 && parsedExternalLinks.length === 0) && (
+              <p className="text-sm text-red-600">Please upload at least one file or add at least one link</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="external-links">External download links (Optional)</Label>
+            <Textarea
+              id="external-links"
+              placeholder="Paste Google Drive, Mega, Dropbox, or other download links here. One per line or comma-separated."
+              value={externalLinksText}
+              onChange={(e) => setExternalLinksText(e.target.value)}
+              className="min-h-[80px]"
+            />
+            {externalLinksText && parsedExternalLinks.length === 0 && (
+              <p className="text-sm text-red-600">Please enter valid http(s) links</p>
             )}
           </div>
 
@@ -113,7 +139,7 @@ export function SubmitWorkModal({ open, onOpenChange, request }: SubmitWorkModal
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={isSubmitting || selectedFiles.length === 0}
+            disabled={isSubmitting || (selectedFiles.length === 0 && parsedExternalLinks.length === 0)}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Work'}
           </Button>
