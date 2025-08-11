@@ -1451,6 +1451,10 @@ export type Database = {
           profile_picture: string
         }[]
       }
+      get_post_like_count: {
+        Args: { post_id_param: string }
+        Returns: number
+      }
       get_post_view_count: {
         Args: { post_id_param: string }
         Returns: number
