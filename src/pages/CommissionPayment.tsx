@@ -30,8 +30,8 @@ interface CommissionRequest {
   };
 }
 
-
-const stripePromise = loadStripe(window.env?.VITE_STRIPE_PUBLISHABLE_KEY || "");
+const publishableKey = window.env?.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
@@ -111,10 +111,18 @@ export default function CommissionPayment() {
   const createPaymentIntent = async (commissionId: string) => {
     try {
       setIsCreatingIntent(true);
+      if (!publishableKey) {
+        throw new Error('Missing Stripe publishable key. Please configure VITE_STRIPE_PUBLISHABLE_KEY.');
+      }
       const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
         body: { commissionId }
       });
       if (error) throw new Error(error.message || 'Failed to create payment intent');
+      // If already authorized or captured, go straight to success
+      if (data?.status === 'requires_capture' || data?.status === 'succeeded') {
+        navigate(`/commissions/${commissionId}/payment-success`);
+        return;
+      }
       if (!data?.clientSecret) throw new Error('No client secret received');
       setClientSecret(data.clientSecret);
     } catch (e) {
@@ -125,7 +133,6 @@ export default function CommissionPayment() {
       setIsCreatingIntent(false);
     }
   };
-
 
   const handleRetry = () => {
     setError(null);
@@ -365,13 +372,21 @@ export default function CommissionPayment() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {!publishableKey && (
+            <Alert className="mb-4 border-yellow-500 bg-yellow-950/50 text-yellow-100">
+              <AlertCircle className="h-4 w-4 text-yellow-400" />
+              <AlertDescription className="text-yellow-100">
+                Stripe is not configured. Missing publishable key. Please set VITE_STRIPE_PUBLISHABLE_KEY.
+              </AlertDescription>
+            </Alert>
+          )}
           {isCreatingIntent && (
             <div className="flex items-center justify-center py-6 text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Preparing secure payment...
             </div>
           )}
-          {!isCreatingIntent && clientSecret && (
+          {!isCreatingIntent && clientSecret && publishableKey && stripePromise && (
             <Elements
               stripe={stripePromise}
               options={{

@@ -62,7 +62,14 @@ serve(async (req) => {
     if (commission.status === "payment_pending" && commission.stripe_payment_intent_id) {
       const existingPI = await stripe.paymentIntents.retrieve(commission.stripe_payment_intent_id);
       return new Response(
-        JSON.stringify({ clientSecret: existingPI.client_secret }),
+        JSON.stringify({ 
+          clientSecret: existingPI.client_secret,
+          paymentIntentId: existingPI.id,
+          status: existingPI.status,
+          livemode: existingPI.livemode,
+          amount: existingPI.amount,
+          currency: existingPI.currency
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
       );
     }
@@ -108,7 +115,14 @@ serve(async (req) => {
       .eq("id", commission.id);
 
     return new Response(
-      JSON.stringify({ clientSecret: paymentIntent.client_secret }),
+      JSON.stringify({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        status: paymentIntent.status,
+        livemode: paymentIntent.livemode,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
     );
   } catch (e) {
