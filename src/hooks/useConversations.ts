@@ -12,8 +12,9 @@ export interface ConversationParticipant {
   other_user: {
     id: string;
     username: string;
-    email: string;
-    profile_picture?: string;
+    profile_picture?: string | null;
+    website?: string | null;
+    created_at?: string;
   } | null;
   creator_profile?: {
     id: string;
