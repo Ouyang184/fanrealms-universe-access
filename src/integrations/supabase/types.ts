@@ -1424,9 +1424,49 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_creator_followers: {
+        Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          user_id: string
+          username: string
+          profile_picture: string
+        }[]
+      }
+      get_creator_ratings: {
+        Args: {
+          p_creator_id: string
+          p_rating_type?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          user_id: string
+          creator_id: string
+          rating: number
+          review_text: string
+          rating_type: string
+          created_at: string
+          username: string
+          profile_picture: string
+        }[]
+      }
       get_post_view_count: {
         Args: { post_id_param: string }
         Returns: number
+      }
+      get_user_following: {
+        Args: { p_user_id: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          creator_id: string
+          display_name: string
+          username: string
+          profile_image_url: string
+          banner_url: string
+          bio: string
+          follower_count: number
+          is_nsfw: boolean
+        }[]
       }
       get_user_public_profiles: {
         Args: { ids?: string[]; usernames?: string[] }
