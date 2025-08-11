@@ -1455,6 +1455,51 @@ export type Database = {
         Args: { post_id_param: string }
         Returns: number
       }
+      get_public_commission_types: {
+        Args: {
+          p_creator_id: string
+          p_only_active?: boolean
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          creator_id: string
+          name: string
+          description: string
+          base_price: number
+          estimated_turnaround_days: number
+          is_active: boolean
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_public_creator_profile: {
+        Args: { p_creator_id?: string; p_username?: string }
+        Returns: {
+          id: string
+          display_name: string
+          profile_image_url: string
+          banner_url: string
+          bio: string
+          follower_count: number
+          is_nsfw: boolean
+          tags: string[]
+          website: string
+          username: string
+        }[]
+      }
+      get_public_membership_tiers: {
+        Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          creator_id: string
+          title: string
+          description: string
+          price: number
+          active: boolean
+        }[]
+      }
       get_user_following: {
         Args: { p_user_id: string; p_limit?: number; p_offset?: number }
         Returns: {
