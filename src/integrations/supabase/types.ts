@@ -1418,16 +1418,6 @@ export type Database = {
           },
         ]
       }
-      user_public_profiles: {
-        Row: {
-          created_at: string | null
-          id: string | null
-          profile_picture: string | null
-          username: string | null
-          website: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       cleanup_expired_2fa_codes: {
