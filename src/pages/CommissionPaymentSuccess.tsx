@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,7 +67,7 @@ export default function CommissionPaymentSuccess() {
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <CardTitle className="text-2xl text-green-700">Payment Successful!</CardTitle>
+          <CardTitle className="text-2xl text-green-700">Authorization Successful</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {commissionRequest && (
@@ -79,22 +78,21 @@ export default function CommissionPaymentSuccess() {
                   by {commissionRequest.creator.display_name}
                 </p>
                 <p className="font-bold text-xl">
-                  ${commissionRequest.agreed_price.toFixed(2)} paid
+                  ${commissionRequest.agreed_price.toFixed(2)} authorized
                 </p>
               </div>
 
               <div className="space-y-4">
                 <p className="text-muted-foreground">
-                  Your commission payment has been processed successfully. 
-                  The creator will now begin working on your commission.
+                  Your card has been authorized successfully. The creator will now review your commission request.
                 </p>
                 
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• The creator will receive notification of your payment</li>
-                    <li>• Work will begin on your commission</li>
-                    <li>• You'll receive updates via messages or notifications</li>
+                    <li>• The creator is notified of your authorization</li>
+                    <li>• If the creator accepts, we will capture the payment</li>
+                    <li>• You’ll receive updates via messages or notifications</li>
                     <li>• Final deliverables will be provided upon completion</li>
                   </ul>
                 </div>

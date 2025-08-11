@@ -10,6 +10,9 @@ import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useUserCommissionRequests } from '@/hooks/useUserCommissionRequests';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import CommissionElementsForm from '@/components/commissions/CommissionElementsForm';
 
 interface CommissionRequest {
   id: string;
@@ -27,6 +30,9 @@ interface CommissionRequest {
   };
 }
 
+
+const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJenKnYQOCg0GW8YrW9nRY3vfMf0TYZyVV8eLPFEz6QzZFN7W2D8MMGtVHEFxOC6XgKYRhJ8lJjl00yjqfyF1L');
+
 export default function CommissionPayment() {
   const { requestId } = useParams<{ requestId: string }>();
   const { user, loading } = useAuth();
@@ -39,6 +45,8 @@ export default function CommissionPayment() {
   const [retryCount, setRetryCount] = useState(0);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
   const [cancelRedirect, setCancelRedirect] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isCreatingIntent, setIsCreatingIntent] = useState(false);
 
   useEffect(() => {
     if (requestId && user?.id && !loading) {
@@ -102,79 +110,24 @@ export default function CommissionPayment() {
     }
   };
 
-  const handlePayment = async () => {
-    if (!commissionRequest || !user) {
-      console.log('Missing required data:', { commissionRequest: !!commissionRequest, user: !!user });
-      return;
-    }
-
-    console.log('Starting payment process for commission:', commissionRequest.id);
-    setIsProcessing(true);
-    setError(null);
-    
+  const createPaymentIntent = async (commissionId: string) => {
     try {
-      console.log('Calling create-commission-payment function...');
-      const { data, error } = await supabase.functions.invoke('create-commission-payment', {
-        body: {
-          commissionId: commissionRequest.id,
-          customerId: user.id
-        }
+      setIsCreatingIntent(true);
+      const { data, error } = await supabase.functions.invoke('create-commission-payment-intent', {
+        body: { commissionId }
       });
-
-      console.log('Function response:', { data, error });
-
-      if (error) {
-        console.error('Function error:', error);
-        // Handle specific API key errors
-        if (error.message?.includes('stripe') || error.message?.includes('secret key')) {
-          throw new Error('Payment service configuration error. Please contact support.');
-        }
-        throw new Error(error.message || 'Failed to create payment session');
-      }
-
-      if (data?.url) {
-        console.log('Opening Stripe Checkout in new tab:', data.url);
-        // Open Stripe checkout in a new tab to avoid iframe navigation restrictions
-        const newWindow = window.open(data.url, '_blank');
-        if (!newWindow) {
-          throw new Error('Payment popup was blocked. Please allow popups and try again.');
-        }
-      } else {
-        console.error('No payment URL received:', data);
-        throw new Error('No payment URL received from server');
-      }
-    } catch (error) {
-      console.error('Error creating payment session:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Failed to initiate payment';
-      setError(errorMessage);
-      
-      // Show toast for specific error types
-      if (errorMessage.includes('Authentication')) {
-        toast({
-          title: 'Authentication Error',
-          description: 'Please log in again and try once more.',
-          variant: 'destructive'
-        });
-      } else if (errorMessage.includes('Commission request not found')) {
-        toast({
-          title: 'Commission Not Found',
-          description: 'This commission request may have been removed or modified.',
-          variant: 'destructive'
-        });
-      } else {
-        toast({
-          title: 'Payment Error',
-          description: 'Failed to initiate payment. Please try again.',
-          variant: 'destructive'
-        });
-      }
-      
-      setRetryCount(prev => prev + 1);
+      if (error) throw new Error(error.message || 'Failed to create payment intent');
+      if (!data?.clientSecret) throw new Error('No client secret received');
+      setClientSecret(data.clientSecret);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to create payment intent';
+      setError(msg);
+      toast({ title: 'Payment Error', description: msg, variant: 'destructive' });
     } finally {
-      setIsProcessing(false);
+      setIsCreatingIntent(false);
     }
   };
+
 
   const handleRetry = () => {
     setError(null);
@@ -184,19 +137,23 @@ export default function CommissionPayment() {
     fetchCommissionRequest();
   };
 
+  // Create the payment intent once commission is loaded
+  useEffect(() => {
+    if (commissionRequest?.id && user && !clientSecret && !isCreatingIntent) {
+      createPaymentIntent(commissionRequest.id);
+    }
+  }, [commissionRequest?.id, user, clientSecret, isCreatingIntent]);
+
   // Auto-redirect effect for specific error conditions
   useEffect(() => {
     if (error && !cancelRedirect && !redirectCountdown) {
-      // Only redirect for specific post-payment error conditions
       const shouldAutoRedirect = 
         error.includes('Payment is already being processed') ||
         error.includes('Payment has been authorized and is awaiting') ||
         error.includes('Commission is in') ||
         error.includes('Commission has already been accepted');
-      
       if (shouldAutoRedirect) {
         setRedirectCountdown(3);
-        
         const countdown = setInterval(() => {
           setRedirectCountdown(prev => {
             if (prev === null || prev <= 1) {
@@ -209,7 +166,6 @@ export default function CommissionPayment() {
             return prev - 1;
           });
         }, 1000);
-        
         return () => clearInterval(countdown);
       }
     }
@@ -403,6 +359,47 @@ export default function CommissionPayment() {
         </CardContent>
       </Card>
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Payment Method
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isCreatingIntent && (
+            <div className="flex items-center justify-center py-6 text-muted-foreground">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Preparing secure payment...
+            </div>
+          )}
+          {!isCreatingIntent && clientSecret && (
+            <Elements
+              stripe={stripePromise}
+              options={{
+                clientSecret,
+                appearance: {
+                  theme: 'night',
+                  variables: {
+                    colorPrimary: '#ffffff',
+                    colorText: '#ffffff',
+                    colorTextSecondary: '#9ca3af',
+                    borderRadius: '8px',
+                    colorBackground: '#1f2937',
+                    colorDanger: '#ef4444',
+                  }
+                }
+              }}
+            >
+              <CommissionElementsForm 
+                requestId={commissionRequest.id}
+                amount={commissionRequest.agreed_price}
+              />
+            </Elements>
+          )}
+        </CardContent>
+      </Card>
+
       <div className="flex gap-4">
         <Button 
           onClick={handleCancel}
@@ -417,24 +414,6 @@ export default function CommissionPayment() {
             </>
           ) : (
             'Cancel Request'
-          )}
-        </Button>
-        <Button 
-          onClick={handlePayment}
-          disabled={isProcessing || !commissionRequest}
-          className="flex-1"
-          size="lg"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <CreditCard className="mr-2 h-4 w-4" />
-              Authorize ${commissionRequest.agreed_price.toFixed(2)}
-            </>
           )}
         </Button>
       </div>
