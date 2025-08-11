@@ -222,9 +222,19 @@ export async function handleCreateSubscription(
 
   } catch (error) {
     console.error('[CreateSubscription] Error:', error);
+
+    const message = (error as any)?.message || '';
+    if (message.includes("No such destination") || message.includes("transfer_data[destination]")) {
+      return createJsonResponse({ 
+        error: 'Creator is not fully connected to Stripe in LIVE mode. Please ask the creator to complete live onboarding and try again.',
+        details: message,
+        creatorNeedsStripeLive: true
+      }, 400);
+    }
+
     return createJsonResponse({ 
       error: 'Failed to create subscription',
-      details: error.message 
+      details: message 
     }, 500);
   }
 }

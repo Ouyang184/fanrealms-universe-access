@@ -15,7 +15,7 @@ serve(async (req) => {
 
   try {
     const { action, creatorId, accountId } = await req.json()
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY_LIVE') || Deno.env.get('STRIPE_SECRET_KEY')
 
     if (!stripeSecretKey) {
       console.error('Missing Stripe secret key')
@@ -54,7 +54,24 @@ serve(async (req) => {
 
       let accountId = existingCreator.stripe_account_id
 
-      // Create new account if none exists
+      // Validate existing account against current environment (live/test)
+      if (accountId) {
+        try {
+          console.log('Validating existing Stripe account in current environment:', accountId)
+          await stripe.accounts.retrieve(accountId)
+          console.log('Existing account is valid in current environment')
+        } catch (e) {
+          console.warn('Existing account not found in current environment, will create a new one:', {
+            accountId,
+            message: (e as any)?.message,
+            type: (e as any)?.type,
+            code: (e as any)?.code,
+          })
+          accountId = undefined as unknown as string
+        }
+      }
+
+      // Create new account if none exists or invalid for this environment
       if (!accountId) {
         console.log('Creating new Stripe account')
         const account = await stripe.accounts.create({
