@@ -23,24 +23,18 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
   
   // Fetch the specific tier information for this post
   const { data: tierInfo } = useQuery({
-    queryKey: ['tier-info', post.tier_id],
+    queryKey: ['tier-info', post.tier_id, post.authorId],
     queryFn: async () => {
-      if (!post.tier_id) return null;
-      
+      if (!post.tier_id || !post.authorId) return null;
       const { data, error } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('id', post.tier_id)
-        .single();
-      
+        .rpc('get_public_membership_tiers', { p_creator_id: post.authorId });
       if (error) {
-        console.error('Error fetching tier info:', error);
+        console.error('Error fetching tier info (public RPC):', error);
         return null;
       }
-      
-      return data;
+      return (data || []).find((t: any) => t.id === post.tier_id) || null;
     },
-    enabled: !!post.tier_id,
+    enabled: !!post.tier_id && !!post.authorId,
   });
 
   // Fetch all tiers for this creator to show upgrade path
@@ -48,17 +42,14 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
     queryKey: ['creator-tiers', post.authorId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('creator_id', post.authorId)
-        .order('price', { ascending: true });
+        .rpc('get_public_membership_tiers', { p_creator_id: post.authorId });
       
       if (error) {
-        console.error('Error fetching creator tiers:', error);
+        console.error('Error fetching creator tiers (public RPC):', error);
         return [];
       }
       
-      return data;
+      return data || [];
     },
     enabled: !!post.authorId,
   });

@@ -42,18 +42,22 @@ export const usePopularCreators = (excludeAI = true) => {
       const creatorIds = filtered.map(c => c.id);
       let tiersByCreator: Record<string, any[]> = {};
       if (creatorIds.length > 0) {
-        const { data: tiersData, error: tiersError } = await supabase
-          .from('membership_tiers')
-          .select('id, creator_id, title, price, description, created_at')
-          .in('creator_id', creatorIds)
-          .eq('active', true);
-        if (!tiersError) {
-          tiersByCreator = (tiersData || []).reduce((acc, tier) => {
-            acc[tier.creator_id] = acc[tier.creator_id] || [];
-            acc[tier.creator_id].push(tier);
-            return acc;
-          }, {} as Record<string, any[]>);
-        }
+        const results = await Promise.all(
+          creatorIds.map(async (id) => {
+            const { data, error } = await supabase.rpc('get_public_membership_tiers', { p_creator_id: id });
+            if (error) {
+              console.warn('Error fetching public tiers for creator', id, error);
+              return [] as any[];
+            }
+            return data || [];
+          })
+        );
+        const tiersData = results.flat();
+        tiersByCreator = tiersData.reduce((acc: Record<string, any[]>, tier: any) => {
+          acc[tier.creator_id] = acc[tier.creator_id] || [];
+          acc[tier.creator_id].push(tier);
+          return acc;
+        }, {} as Record<string, any[]>);
       }
 
       return filtered.map((creator): CreatorProfile => {

@@ -169,10 +169,7 @@ export function useCreatorProfileData() {
       if (!creatorProfile?.id) return [];
       
       const { data: tiersData, error } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('creator_id', creatorProfile.id)
-        .order('price', { ascending: true });
+        .rpc('get_public_membership_tiers', { p_creator_id: creatorProfile.id });
       
       if (error) {
         console.error('Error fetching tiers:', error);

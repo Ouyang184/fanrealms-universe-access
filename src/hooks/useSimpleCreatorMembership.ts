@@ -25,10 +25,7 @@ export const useSimpleCreatorMembership = (creatorId: string) => {
       console.log('[CreatorMembership] Fetching tiers for creator:', creatorId);
       
       const { data: tiersData, error: tiersError } = await supabase
-        .from('membership_tiers')
-        .select('*')
-        .eq('creator_id', creatorId)
-        .order('price', { ascending: true });
+        .rpc('get_public_membership_tiers', { p_creator_id: creatorId });
 
       if (tiersError) throw tiersError;
 
