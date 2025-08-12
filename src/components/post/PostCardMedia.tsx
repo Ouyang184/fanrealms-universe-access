@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Play, FileText, File, FileImage, Video } from 'lucide-react';
 import { parseVideoUrl, isVideoUrl } from '@/utils/videoUtils';
+import { getSignedUrl } from '@/utils/storage';
 
 interface PostCardMediaProps {
   attachments: any;
@@ -82,6 +83,18 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
   };
 
   const firstMedia = getFirstMedia(attachments);
+  const [urlToRender, setUrlToRender] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!firstMedia?.url) { setUrlToRender(null); return; }
+      // Only sign non-embedded files; getSignedUrl is safe to call regardless
+      const signed = await getSignedUrl(firstMedia.url, 'post-attachments', 3600);
+      if (mounted) setUrlToRender(signed);
+    })();
+    return () => { mounted = false; };
+  }, [firstMedia?.url]);
 
   if (!firstMedia) {
     console.log('PostCardMedia - No media to render, returning null');
@@ -134,7 +147,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
       <div className="relative mb-4">
         <div className="relative w-full rounded-lg overflow-hidden border">
           <img
-            src={firstMedia.url}
+            src={urlToRender || firstMedia.url}
             alt={firstMedia.name || "Media thumbnail"}
             className="w-full h-auto object-cover max-h-96"
             onError={(e) => {
@@ -173,7 +186,7 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
               console.error('PostCardMedia - Video element error:', e);
             }}
           >
-            <source src={firstMedia.url} type="video/mp4" />
+            <source src={urlToRender || firstMedia.url} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">

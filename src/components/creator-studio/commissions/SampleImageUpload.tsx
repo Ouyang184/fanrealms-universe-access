@@ -24,7 +24,7 @@ export function SampleImageUpload({
             <img
               src={sampleImagePreview}
               alt="Sample art preview"
-              className="w-32 h-32 object-cover rounded-lg border"
+              loading="lazy"
             />
             <Button
               type="button"

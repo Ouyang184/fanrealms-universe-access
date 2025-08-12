@@ -160,8 +160,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Optional: verify Cloudflare Turnstile if token provided and secret configured
-    if (TURNSTILE_SECRET && turnstileToken) {
+    // Require Cloudflare Turnstile if secret configured
+    if (TURNSTILE_SECRET) {
+      if (!turnstileToken) {
+        return new Response(
+          JSON.stringify({ error: 'Captcha token required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const valid = await verifyTurnstile(turnstileToken, ip);
       if (!valid) {
         return new Response(

@@ -40,11 +40,8 @@ export function useSampleImageUpload() {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('post-attachments')
-        .getPublicUrl(filePath);
-
-      return data.publicUrl;
+      // Store only the storage path; resolve signed URL at view time
+      return filePath;
     } catch (error) {
       console.error('Error uploading sample image:', error);
       toast({

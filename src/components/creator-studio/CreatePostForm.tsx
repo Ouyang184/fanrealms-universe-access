@@ -69,11 +69,8 @@ export function CreatePostForm() {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('post-attachments')
-        .getPublicUrl(fileName);
-
-      return data.publicUrl;
+      // Store only the storage path; render with signed URLs at view time
+      return fileName;
     } catch (error) {
       console.error('Error uploading file:', error);
       toast({

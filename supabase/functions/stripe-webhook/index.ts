@@ -36,10 +36,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== WEBHOOK EVENT RECEIVED (TEST MODE) ===');
-    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
-    console.log('Request method:', req.method);
-    console.log('Request URL:', req.url);
+    console.log('Stripe webhook received');
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -49,12 +46,7 @@ serve(async (req) => {
       Deno.env.get('STRIPE_WEBHOOK_SECRET') ||
       Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE');
 
-    console.log('Environment check:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey,
-      hasWebhookSecret: !!webhookSecret,
-      webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 10) + '...' : 'NOT_SET'
-    });
+    // Environment variables presence checked
 
     if (!supabaseUrl || !supabaseServiceKey || !webhookSecret) {
       console.error('Missing required environment variables:', {
@@ -87,16 +79,9 @@ serve(async (req) => {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
       console.log('Webhook signature verified successfully (TEST MODE)');
     } catch (err) {
-      console.error('===== WEBHOOK SIGNATURE VERIFICATION FAILED =====');
-      console.error('Error details:', err);
-      console.error('Error message:', err.message);
-      console.error('Error type:', err.type);
-      console.error('Webhook secret used:', webhookSecret ? 'SET (length: ' + webhookSecret.length + ')' : 'NOT_SET');
-      console.error('Signature received:', signature);
-      console.error('Body preview:', body.substring(0, 200) + '...');
+      console.error('Webhook signature verification failed');
       return new Response(JSON.stringify({ 
-        error: 'Webhook signature verification failed',
-        details: err.message 
+        error: 'Webhook signature verification failed'
       }), { 
         status: 400, 
         headers: corsHeaders 

@@ -1,10 +1,9 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Video, Image as ImageIcon, Download, ExternalLink } from 'lucide-react';
-
-interface PostAttachment {
+import { getSignedUrl } from '@/utils/storage';
   url: string;
   name: string;
   type: 'image' | 'video' | 'pdf';
@@ -16,7 +15,24 @@ interface PostAttachmentsProps {
 }
 
 export function PostAttachments({ attachments }: PostAttachmentsProps) {
-  if (!attachments || attachments.length === 0) {
+  const [resolved, setResolved] = useState<PostAttachment[] | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const signed = await Promise.all(
+        (attachments || []).map(async (att) => ({
+          ...att,
+          url: await getSignedUrl(att.url, 'post-attachments', 3600)
+        }))
+      );
+      if (mounted) setResolved(signed);
+    })();
+    return () => { mounted = false; };
+  }, [attachments]);
+
+  const list = resolved || attachments;
+  if (!list || list.length === 0) {
     return null;
   }
 
@@ -49,9 +65,9 @@ export function PostAttachments({ attachments }: PostAttachmentsProps) {
     document.body.removeChild(link);
   };
 
-  const images = attachments.filter(att => att.type === 'image');
-  const videos = attachments.filter(att => att.type === 'video');
-  const pdfs = attachments.filter(att => att.type === 'pdf');
+  const images = list.filter(att => att.type === 'image');
+  const videos = list.filter(att => att.type === 'video');
+  const pdfs = list.filter(att => att.type === 'pdf');
 
   return (
     <div className="mt-4 space-y-4">
