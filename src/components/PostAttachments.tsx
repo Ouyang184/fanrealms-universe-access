@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Video, Image as ImageIcon, Download, ExternalLink } from 'lucide-react';
 import { getSignedUrl } from '@/utils/storage';
+interface PostAttachment {
   url: string;
   name: string;
   type: 'image' | 'video' | 'pdf';
