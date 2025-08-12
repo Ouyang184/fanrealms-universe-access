@@ -1448,6 +1448,35 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      get_commission_request_secure: {
+        Args: { p_commission_id: string }
+        Returns: {
+          id: string
+          commission_type_id: string
+          customer_id: string
+          creator_id: string
+          title: string
+          description: string
+          reference_images: string[]
+          budget_range_min: number
+          budget_range_max: number
+          agreed_price: number
+          status: string
+          deadline: string
+          customer_notes: string
+          creator_notes: string
+          selected_addons: Json
+          stripe_payment_intent_id: string
+          platform_fee_amount: number
+          created_at: string
+          updated_at: string
+          revision_count: number
+          commission_type_name: string
+          commission_type_base_price: number
+          customer_username: string
+          customer_profile_picture: string
+        }[]
+      }
       get_creator_followers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
@@ -1586,6 +1615,27 @@ export type Database = {
           profile_picture: string
           website: string
           created_at: string
+        }[]
+      }
+      list_my_commission_requests: {
+        Args: {
+          p_role?: string
+          p_status?: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          commission_type_id: string
+          customer_id: string
+          creator_id: string
+          title: string
+          agreed_price: number
+          status: string
+          created_at: string
+          updated_at: string
+          commission_type_name: string
+          commission_type_base_price: number
         }[]
       }
       user_has_tier_access: {
