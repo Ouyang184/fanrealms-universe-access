@@ -91,13 +91,13 @@ export function UserCommissionRequestCard({
               <CardTitle className="text-lg">{request.title}</CardTitle>
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={request.creator.profile_image_url} />
+                  <AvatarImage src={request.creator?.profile_image_url || undefined} />
                   <AvatarFallback className="text-xs">
-                    {request.creator.display_name?.substring(0, 2).toUpperCase() || 'CR'}
+                    {(request.creator?.display_name?.substring(0, 2).toUpperCase()) || 'CR'}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm text-muted-foreground">
-                  {request.creator.display_name}
+                  {request.creator?.display_name ?? 'Unknown Creator'}
                 </span>
               </div>
             </div>
