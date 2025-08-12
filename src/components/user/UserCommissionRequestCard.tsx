@@ -111,12 +111,12 @@ export function UserCommissionRequestCard({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Commission Type:</span>
-              <p className="text-muted-foreground">{request.commission_type.name}</p>
+              <p className="text-muted-foreground">{request.commission_type?.name ?? 'Unknown type'}</p>
             </div>
             <div>
               <span className="font-medium">Price:</span>
               <p className="text-muted-foreground">
-                ${request.agreed_price?.toFixed(2) || request.commission_type.base_price.toFixed(2)}
+                ${request.agreed_price?.toFixed(2) ?? request.commission_type?.base_price?.toFixed(2) ?? '—'}
               </p>
             </div>
             <div>
