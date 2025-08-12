@@ -152,10 +152,10 @@ export default function ExplorePage() {
   useEffect(() => {
     if (!popularCreators.length && !posts.length) return;
     
-    // Start with real creators only, from the popular creators query (which already excludes AI)
-    let creatorFilter = popularCreators;
+    // Start with popular creators; if empty, fall back to all creators
+    const baseCreators = popularCreators.length ? popularCreators : allCreators;
+    let creatorFilter = baseCreators;
     let postsFilter = posts; // Posts are already NSFW-filtered by the hook
-    
     // Filter by category if present (but not if category is "all" or undefined)
     if (categoryFilter && categoryFilter !== "all") {
       creatorFilter = popularCreators.filter(creator => 
@@ -227,7 +227,7 @@ export default function ExplorePage() {
     );
     setMostLikedPosts(mostLikedSorted.slice(0, 12));
     
-  }, [categoryFilter, searchQuery, selectedTags, popularCreators, posts, nsfwPrefs?.isNSFWEnabled, allLikes]);
+  }, [categoryFilter, searchQuery, selectedTags, popularCreators, allCreators, posts, nsfwPrefs?.isNSFWEnabled, allLikes]);
   
   // Handle post click
   const handlePostClick = (post: Post) => {
