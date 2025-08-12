@@ -4,6 +4,10 @@ import { corsHeaders } from '../_shared/cors.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+function getClientIP(req: Request): string {
+  const h = req.headers;
+  return h.get('cf-connecting-ip') || h.get('x-forwarded-for')?.split(',')[0]?.trim() || h.get('x-real-ip') || '0.0.0.0';
+}
 interface RequestBody {
   email: string;
   code: string;
@@ -54,6 +58,32 @@ Deno.serve(async (req) => {
     // Create Supabase client with service role
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    // Rate limit verification attempts: max 8 per 15 minutes by IP or email
+    const ip = getClientIP(req);
+    const windowMs = 15 * 60 * 1000; // 15 minutes
+    const since = new Date(Date.now() - windowMs).toISOString();
+
+    const { count: ipCount } = await supabase
+      .from('rate_limit_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('action', 'verify_code')
+      .eq('ip', ip)
+      .gte('created_at', since);
+
+    const { count: emailCount } = await supabase
+      .from('rate_limit_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('action', 'verify_code')
+      .eq('email', email)
+      .gte('created_at', since);
+
+    const attempts = Math.max(ipCount ?? 0, emailCount ?? 0);
+    if (attempts >= 8) {
+      return new Response(
+        JSON.stringify({ error: 'Too many attempts. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     // Check if code exists and is valid
     const { data: codeData, error: fetchError } = await supabase
       .from('email_2fa_codes')
@@ -113,6 +143,13 @@ Deno.serve(async (req) => {
     }
 
     console.log(`✅ Successful 2FA verification`)
+
+    // Log successful verification attempt
+    await supabase.from('rate_limit_events').insert({
+      ip,
+      email,
+      action: 'verify_code'
+    });
 
     return new Response(
       JSON.stringify({ 

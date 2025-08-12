@@ -1097,6 +1097,30 @@ export type Database = {
           },
         ]
       }
+      rate_limit_events: {
+        Row: {
+          action: string
+          created_at: string
+          email: string | null
+          id: string
+          ip: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string
+        }
+        Relationships: []
+      }
       saved_posts: {
         Row: {
           created_at: string
