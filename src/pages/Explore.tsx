@@ -150,15 +150,16 @@ export default function ExplorePage() {
 
   // Filter content when category, search, or tags change
   useEffect(() => {
-    if (!popularCreators.length && !posts.length) return;
+    if (!popularCreators.length && !allCreators.length && !posts.length) return;
     
     // Start with popular creators; if empty, fall back to all creators
     const baseCreators = popularCreators.length ? popularCreators : allCreators;
     let creatorFilter = baseCreators;
     let postsFilter = posts; // Posts are already NSFW-filtered by the hook
+    console.log('Explore: creators counts', { popular: popularCreators.length, all: allCreators.length, base: baseCreators.length });
     // Filter by category if present (but not if category is "all" or undefined)
     if (categoryFilter && categoryFilter !== "all") {
-      creatorFilter = popularCreators.filter(creator => 
+      creatorFilter = baseCreators.filter(creator => 
         creatorMatchesCategory(creator, categoryFilter)
       );
       
