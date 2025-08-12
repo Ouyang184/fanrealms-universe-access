@@ -62,11 +62,6 @@ serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
     
-    console.log('Webhook data:', {
-      bodyLength: body.length,
-      hasSignature: !!signature,
-      signaturePrefix: signature ? signature.substring(0, 20) + '...' : 'NO_SIGNATURE'
-    });
 
     if (!signature) {
       console.error('No stripe-signature header found');
@@ -92,15 +87,11 @@ serve(async (req) => {
 
     // Handle payment intent webhooks FIRST - these are critical for custom payment flow
     if (event.type === 'payment_intent.succeeded') {
-      console.log('===== PAYMENT INTENT SUCCEEDED WEBHOOK RECEIVED =====');
-      console.log('Event ID:', event.id);
-      console.log('Payment Intent ID:', event.data.object.id);
-      console.log('Payment Intent metadata:', JSON.stringify(event.data.object.metadata, null, 2));
-      console.log('Processing payment_intent.succeeded (LIVE MODE)');
+      console.log('Handling payment_intent.succeeded', event.id);
       
       try {
         const result = await handlePaymentIntentWebhook(event, supabase, stripe);
-        console.log('Payment intent webhook result:', result);
+        
         return result;
       } catch (error) {
         console.error('Payment intent webhook error:', error);
@@ -116,10 +107,10 @@ serve(async (req) => {
 
     // Handle subscription-related webhooks 
     if (event.type.startsWith('customer.subscription.') || event.type === 'invoice.payment_succeeded') {
-      console.log('Processing subscription webhook:', event.type, '(LIVE MODE)');
+      console.log('Handling subscription webhook', event.type);
       try {
         const result = await handleSubscriptionWebhook(event, supabase, stripe);
-        console.log('Subscription webhook result:', result);
+        
         return result;
       } catch (error) {
         console.error('Subscription webhook error:', error);
@@ -135,7 +126,7 @@ serve(async (req) => {
 
     // Handle checkout session completed events
     if (event.type === 'checkout.session.completed') {
-      console.log('Processing checkout.session.completed (LIVE MODE)');
+      console.log('Handling checkout.session.completed');
       try {
         await handleCheckoutWebhook(event, supabase, stripe);
       } catch (error) {
@@ -146,7 +137,7 @@ serve(async (req) => {
     // Handle commission-related webhooks
     if (event.type === 'payment_intent.canceled' || 
         event.type === 'charge.refunded') {
-      console.log('Processing commission webhook:', event.type, '(LIVE MODE)');
+      console.log('Handling commission webhook', event.type);
       try {
         await handleCommissionWebhook(event, supabase);
       } catch (error) {
@@ -160,7 +151,7 @@ serve(async (req) => {
         event.type === 'payment_method.detached' ||
         event.type === 'setup_intent.succeeded' ||
         event.type === 'setup_intent.canceled') {
-      console.log('Processing payment method webhook:', event.type, '(LIVE MODE)');
+      console.log('Handling payment method webhook', event.type);
       try {
         await handlePaymentMethodWebhook(event, supabase);
       } catch (error) {
@@ -170,7 +161,7 @@ serve(async (req) => {
 
     // Handle price webhooks
     if (event.type.startsWith('price.')) {
-      console.log('Processing price webhook:', event.type, '(LIVE MODE)');
+      console.log('Handling price webhook', event.type);
       try {
         await handlePriceWebhook(event, supabase);
       } catch (error) {
@@ -180,7 +171,7 @@ serve(async (req) => {
 
     // Handle product webhooks
     if (event.type.startsWith('product.')) {
-      console.log('Processing product webhook:', event.type, '(LIVE MODE)');
+      console.log('Handling product webhook', event.type);
       try {
         await handleProductWebhook(event, supabase);
       } catch (error) {
@@ -188,7 +179,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('=== WEBHOOK PROCESSING COMPLETE (LIVE MODE) ===');
+    
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {

@@ -205,7 +205,7 @@ export function usePaymentProcessing({
     setIsProcessing(true);
 
     try {
-      console.log('Confirming subscription payment with client secret:', clientSecret);
+      
 
       // Use confirmPayment for subscription payments instead of confirmCardPayment
       const { error, paymentIntent } = await stripe.confirmPayment({
