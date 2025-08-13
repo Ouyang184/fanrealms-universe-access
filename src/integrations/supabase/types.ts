@@ -1540,6 +1540,16 @@ export type Database = {
           followed_at: string
         }[]
       }
+      get_user_public_data: {
+        Args: { ids?: string[]; usernames?: string[] }
+        Returns: {
+          id: string
+          username: string
+          profile_picture: string
+          website: string
+          created_at: string
+        }[]
+      }
       get_user_public_profiles: {
         Args: { ids?: string[]; usernames?: string[] }
         Returns: {
