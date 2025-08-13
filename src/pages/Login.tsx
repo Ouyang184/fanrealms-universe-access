@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import LoginForm from "@/components/auth/LoginForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
+import SEO from "@/components/SEO";
 
 const Login = () => {
   const { user, loading } = useAuth();
@@ -19,6 +20,8 @@ const Login = () => {
       setIsReady(true);
     }
   }, [loading]);
+
+  
 
   if (loading || !isReady) {
     return (
