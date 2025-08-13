@@ -1409,6 +1409,34 @@ export type Database = {
           profile_picture: string
         }[]
       }
+      get_my_creator_earnings: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_start_date?: string
+          p_end_date?: string
+        }
+        Returns: {
+          id: string
+          creator_id: string
+          earning_type: string
+          amount: number
+          platform_fee: number
+          net_amount: number
+          payment_date: string
+          subscription_id: string
+          commission_request_id: string
+        }[]
+      }
+      get_my_creator_earnings_summary: {
+        Args: { p_start_date?: string; p_end_date?: string }
+        Returns: {
+          total_amount: number
+          total_platform_fees: number
+          total_net: number
+          count_records: number
+        }[]
+      }
       get_post_like_count: {
         Args: { post_id_param: string }
         Returns: number
