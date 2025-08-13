@@ -69,7 +69,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-new-post-notification]
-verify_jwt = false
+verify_jwt = true
 
 [edge_runtime]
 inspector_port = 8083
