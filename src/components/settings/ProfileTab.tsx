@@ -39,7 +39,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
           .from('users')
           .select('website')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
           
         setProfileSettings({
           name: user.user_metadata?.full_name || profile.username || "",

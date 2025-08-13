@@ -59,12 +59,10 @@ export function useMessages(userId: string | undefined) {
 
       // Fetch user data
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', Array.from(userIds));
+        .rpc('get_user_public_profiles', { ids: Array.from(userIds) as string[] });
 
       if (usersError) {
-        console.error("Error loading users:", usersError);
+        console.error("Error loading public profiles:", usersError);
         return [];
       }
 

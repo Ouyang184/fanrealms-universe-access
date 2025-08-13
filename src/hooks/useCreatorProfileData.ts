@@ -26,7 +26,7 @@ export function useCreatorProfileData() {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
       
       if (userError || !userData) {
         console.error('[useCreatorProfileData] Error fetching user:', userError);
