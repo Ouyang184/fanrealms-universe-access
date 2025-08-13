@@ -126,13 +126,10 @@ export default function AllCreatorsExplorePage() {
 
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <SlidersHorizontal className="h-5 w-5 text-purple-400" />
               <span className="font-medium">Filters:</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-              <div className="relative sm:w-72">
+              <div className="relative flex-1 sm:flex-none sm:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
                   placeholder="Search for creators, content, or topics..."
@@ -141,7 +138,9 @@ export default function AllCreatorsExplorePage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+            </div>
 
+            <div className="flex w-full sm:w-auto justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 rounded-full">
