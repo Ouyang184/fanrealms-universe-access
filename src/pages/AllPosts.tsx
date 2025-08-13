@@ -8,9 +8,10 @@ import { PostPreviewModal } from "@/components/explore/PostPreviewModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, Check, Filter, Clock, Heart } from "lucide-react";
+import { ChevronLeft, Check, Filter, Clock, Heart, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TagFilter } from "@/components/tags/TagFilter";
 
@@ -191,9 +192,18 @@ export default function AllPostsPage() {
         {/* Filtering and Sorting */}
         <section className="mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <Filter className="h-5 w-5 text-purple-400" />
               <span className="font-medium">Filters:</span>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search posts, creators, or tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
 
             <div className="flex w-full sm:w-auto justify-end">
