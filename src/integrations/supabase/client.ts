@@ -2,19 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Safely access window.env with validation
-const getEnvVar = (key: keyof Window['env']) => {
-  const value = window?.env?.[key];
-  if (!value) {
-    console.error(`Missing required environment variable: ${key}`);
-    return ''; // Return empty string instead of throwing
-  }
-  return value;
-};
-
-// Get environment variables
-const SUPABASE_URL = getEnvVar('VITE_SUPABASE_URL');
-const SUPABASE_ANON_KEY = getEnvVar('VITE_SUPABASE_ANON_KEY');
+// Supabase credentials (Lovable: avoid VITE_* envs)
+const SUPABASE_URL = 'https://eaeqyctjljbtcatlohky.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVhZXF5Y3RqbGpidGNhdGxvaGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3ODE1OTgsImV4cCI6MjA2MTM1NzU5OH0.FrxmM9nqPNUjo3ZTMUdUWPirm0q1WFssoierxq9zb7A';
 
 // Create the Supabase client with persistent session configuration
 export const supabase = createClient<Database>(
