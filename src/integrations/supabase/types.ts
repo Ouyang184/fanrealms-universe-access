@@ -836,6 +836,71 @@ export type Database = {
           },
         ]
       }
+      payment_audit_log: {
+        Row: {
+          accessed_data: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          operation: string
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accessed_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          operation: string
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accessed_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          operation?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_metadata_encrypted: {
+        Row: {
+          created_at: string
+          encrypted_data: string | null
+          id: string
+          payment_method_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_data?: string | null
+          id?: string
+          payment_method_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_data?: string | null
+          id?: string
+          payment_method_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_metadata_encrypted_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_methods: {
         Row: {
           card_brand: string | null
@@ -874,6 +939,30 @@ export type Database = {
           stripe_payment_method_id?: string
           type?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          operation: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          operation: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          operation?: string
           user_id?: string
         }
         Relationships: []
@@ -1346,9 +1435,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payment_security_summary: {
+        Row: {
+          newest_record: string | null
+          oldest_record: string | null
+          table_name: string | null
+          total_records: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_payment_rate_limit: {
+        Args: {
+          p_user_id: string
+          p_operation: string
+          p_limit?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       cleanup_expired_2fa_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1540,6 +1647,19 @@ export type Database = {
           followed_at: string
         }[]
       }
+      get_user_payment_methods_secure: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          type: string
+          card_brand: string
+          card_last4: string
+          card_exp_month: number
+          card_exp_year: number
+          is_default: boolean
+          created_at: string
+        }[]
+      }
       get_user_public_data: {
         Args: { ids?: string[]; usernames?: string[] }
         Returns: {
@@ -1580,6 +1700,14 @@ export type Database = {
           commission_type_name: string
           commission_type_base_price: number
         }[]
+      }
+      log_payment_access: {
+        Args: {
+          p_table_name: string
+          p_operation: string
+          p_accessed_data?: Json
+        }
+        Returns: undefined
       }
       user_has_tier_access: {
         Args: { tier_id_param: string }
