@@ -899,6 +899,13 @@ export type Database = {
             referencedRelation: "payment_methods"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "payment_metadata_encrypted_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payment_methods: {
@@ -964,6 +971,78 @@ export type Database = {
           ip_address?: unknown | null
           operation?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      payment_secrets_vault: {
+        Row: {
+          created_at: string
+          encrypted_stripe_id: string | null
+          encryption_key_hash: string | null
+          id: string
+          last_accessed: string | null
+          payment_method_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_stripe_id?: string | null
+          encryption_key_hash?: string | null
+          id?: string
+          last_accessed?: string | null
+          payment_method_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_stripe_id?: string | null
+          encryption_key_hash?: string | null
+          id?: string
+          last_accessed?: string | null
+          payment_method_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_secrets_vault_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_secrets_vault_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_security_alerts: {
+        Row: {
+          alert_type: string
+          attempted_data: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          attempted_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          attempted_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1435,7 +1514,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      payment_methods_safe: {
+        Row: {
+          card_brand: string | null
+          card_exp_month: number | null
+          card_exp_year: number | null
+          card_last4: string | null
+          created_at: string | null
+          id: string | null
+          is_default: boolean | null
+          type: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_default?: boolean | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_payment_rate_limit: {
@@ -1449,6 +1566,10 @@ export type Database = {
       }
       cleanup_expired_2fa_codes: {
         Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      detect_payment_intrusion: {
+        Args: { p_table_accessed: string; p_suspicious_behavior: string }
         Returns: undefined
       }
       get_commission_request_secure: {
@@ -1507,6 +1628,17 @@ export type Database = {
           profile_picture: string
         }[]
       }
+      get_masked_payment_methods: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          type: string
+          card_brand: string
+          card_last4: string
+          is_default: boolean
+          exp_display: string
+        }[]
+      }
       get_my_creator_earnings: {
         Args: {
           p_limit?: number
@@ -1533,6 +1665,15 @@ export type Database = {
           total_platform_fees: number
           total_net: number
           count_records: number
+        }[]
+      }
+      get_payment_method_for_processing: {
+        Args: { p_payment_method_id: string; p_operation: string }
+        Returns: {
+          id: string
+          stripe_payment_method_id: string
+          user_id: string
+          type: string
         }[]
       }
       get_payment_security_summary: {
