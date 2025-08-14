@@ -5,29 +5,32 @@ import { useToast } from '@/hooks/use-toast';
 export interface PaymentMethod {
   id: string;
   type: string;
-  card?: {
-    brand: string;
-    last4: string;
-    exp_month: number;
-    exp_year: number;
-  };
+  card_brand?: string;
+  card_last4?: string;
+  card_exp_month?: number;
+  card_exp_year?: number;
   is_default: boolean;
+  created_at: string;
 }
 
 export const usePaymentMethods = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch payment methods
+  // Fetch payment methods using secure function
   const { data: paymentMethods = [], isLoading, refetch } = useQuery({
     queryKey: ['paymentMethods'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('payment-methods', {
-        method: 'GET'
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      
+      // Use the secure function for enhanced security
+      const { data, error } = await supabase.rpc('get_user_payment_methods_secure', {
+        p_user_id: user.id
       });
-
+      
       if (error) throw error;
-      return data.paymentMethods as PaymentMethod[];
+      return (data || []) as PaymentMethod[];
     },
   });
 

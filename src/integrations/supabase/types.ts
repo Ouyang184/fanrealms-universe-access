@@ -1435,16 +1435,7 @@ export type Database = {
       }
     }
     Views: {
-      payment_security_summary: {
-        Row: {
-          newest_record: string | null
-          oldest_record: string | null
-          table_name: string | null
-          total_records: number | null
-          unique_users: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_payment_rate_limit: {
@@ -1542,6 +1533,16 @@ export type Database = {
           total_platform_fees: number
           total_net: number
           count_records: number
+        }[]
+      }
+      get_payment_security_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          total_records: number
+          unique_users: number
+          oldest_record: string
+          newest_record: string
         }[]
       }
       get_post_like_count: {
