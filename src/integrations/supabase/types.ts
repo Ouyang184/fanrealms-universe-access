@@ -899,13 +899,6 @@ export type Database = {
             referencedRelation: "payment_methods"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "payment_metadata_encrypted_payment_method_id_fkey"
-            columns: ["payment_method_id"]
-            isOneToOne: false
-            referencedRelation: "payment_methods_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
       payment_methods: {
@@ -1005,13 +998,6 @@ export type Database = {
             columns: ["payment_method_id"]
             isOneToOne: false
             referencedRelation: "payment_methods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "payment_secrets_vault_payment_method_id_fkey"
-            columns: ["payment_method_id"]
-            isOneToOne: false
-            referencedRelation: "payment_methods_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -1514,45 +1500,7 @@ export type Database = {
       }
     }
     Views: {
-      payment_methods_safe: {
-        Row: {
-          card_brand: string | null
-          card_exp_month: number | null
-          card_exp_year: number | null
-          card_last4: string | null
-          created_at: string | null
-          id: string | null
-          is_default: boolean | null
-          type: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          card_brand?: string | null
-          card_exp_month?: number | null
-          card_exp_year?: number | null
-          card_last4?: string | null
-          created_at?: string | null
-          id?: string | null
-          is_default?: boolean | null
-          type?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          card_brand?: string | null
-          card_exp_month?: number | null
-          card_exp_year?: number | null
-          card_last4?: string | null
-          created_at?: string | null
-          id?: string | null
-          is_default?: boolean | null
-          type?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_payment_rate_limit: {
@@ -1773,6 +1721,21 @@ export type Database = {
           active: boolean
         }[]
       }
+      get_safe_payment_methods: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          user_id: string
+          type: string
+          card_brand: string
+          card_last4: string
+          card_exp_month: number
+          card_exp_year: number
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }[]
+      }
       get_user_following: {
         Args: { p_user_id: string; p_limit?: number; p_offset?: number }
         Returns: {
@@ -1787,6 +1750,15 @@ export type Database = {
           is_nsfw: boolean
           tags: string[]
           followed_at: string
+        }[]
+      }
+      get_user_payment_cards_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          card_display: string
+          is_default: boolean
+          created_at: string
         }[]
       }
       get_user_payment_methods_secure: {
@@ -1849,6 +1821,10 @@ export type Database = {
           p_operation: string
           p_accessed_data?: Json
         }
+        Returns: undefined
+      }
+      log_security_event: {
+        Args: { p_event_type: string; p_table_name: string; p_details?: Json }
         Returns: undefined
       }
       user_has_tier_access: {

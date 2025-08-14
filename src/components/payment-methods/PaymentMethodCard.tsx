@@ -19,7 +19,7 @@ export function PaymentMethodCard({
   isSettingDefault, 
   isDeleting 
 }: PaymentMethodCardProps) {
-  const { id, type, card_brand, card_last4, card_exp_month, card_exp_year, is_default } = paymentMethod;
+  const { id, card_display, card_brand, card_last4, card_exp_month, card_exp_year, is_default } = paymentMethod;
 
   const getBrandIcon = (brand?: string) => {
     if (!brand) return null;
@@ -45,13 +45,19 @@ export function PaymentMethodCard({
           <div className="flex items-center gap-3">
             <CreditCard className="h-5 w-5 text-muted-foreground" />
             <div>
-              <div className="flex items-center gap-2">
-                {card_brand && getBrandIcon(card_brand)}
-                <span className="text-sm font-medium">
-                  •••• •••• •••• {card_last4}
-                </span>
-              </div>
-              {card_exp_month && card_exp_year && (
+              {card_display ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{card_display}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {card_brand && getBrandIcon(card_brand)}
+                  <span className="text-sm font-medium">
+                    •••• •••• •••• {card_last4}
+                  </span>
+                </div>
+              )}
+              {card_exp_month && card_exp_year && !card_display && (
                 <p className="text-xs text-muted-foreground">
                   Expires {String(card_exp_month).padStart(2, '0')}/{card_exp_year}
                 </p>
