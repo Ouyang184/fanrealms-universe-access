@@ -34,8 +34,8 @@ export function RequestRevisionModal({
   const [revisionNotes, setRevisionNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isExtraRevision = commissionRequest.revision_count >= commissionRequest.commission_type.max_revisions;
-  const extraRevisionFee = commissionRequest.commission_type.price_per_revision || 0;
+  const isExtraRevision = commissionRequest.revision_count >= (commissionRequest.commission_type?.max_revisions ?? 3);
+  const extraRevisionFee = commissionRequest.commission_type?.price_per_revision || 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export function RequestRevisionModal({
     }
   };
 
-  const remainingFreeRevisions = Math.max(0, commissionRequest.commission_type.max_revisions - commissionRequest.revision_count);
+  const remainingFreeRevisions = Math.max(0, (commissionRequest.commission_type?.max_revisions ?? 3) - commissionRequest.revision_count);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -102,7 +102,7 @@ export function RequestRevisionModal({
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
             <p className="font-medium">{commissionRequest.title}</p>
-            <p>Revisions used: {commissionRequest.revision_count} of {commissionRequest.commission_type.max_revisions}</p>
+            <p>Revisions used: {commissionRequest.revision_count} of {commissionRequest.commission_type?.max_revisions ?? 3}</p>
             {remainingFreeRevisions > 0 ? (
               <p className="text-green-600">You have {remainingFreeRevisions} free revision{remainingFreeRevisions !== 1 ? 's' : ''} remaining</p>
             ) : (
