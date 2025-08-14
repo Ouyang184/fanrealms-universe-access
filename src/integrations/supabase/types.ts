@@ -1624,6 +1624,15 @@ export type Database = {
           type: string
         }[]
       }
+      get_payment_method_for_service: {
+        Args: { p_payment_method_id: string; p_operation: string }
+        Returns: {
+          id: string
+          stripe_payment_method_id: string
+          user_id: string
+          type: string
+        }[]
+      }
       get_payment_security_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1736,6 +1745,16 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_secure_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          display_text: string
+          card_type: string
+          is_default: boolean
+          created_at: string
+        }[]
+      }
       get_user_following: {
         Args: { p_user_id: string; p_limit?: number; p_offset?: number }
         Returns: {
@@ -1821,6 +1840,10 @@ export type Database = {
           p_operation: string
           p_accessed_data?: Json
         }
+        Returns: undefined
+      }
+      log_secure_payment_access: {
+        Args: { p_operation: string; p_user_id: string; p_metadata?: Json }
         Returns: undefined
       }
       log_security_event: {

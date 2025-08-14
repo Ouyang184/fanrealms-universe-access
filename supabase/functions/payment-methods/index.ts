@@ -95,7 +95,9 @@ serve(async (req) => {
     }
 
     if (req.method === 'GET') {
-      // Get payment methods
+      console.log('[PAYMENT-METHODS] Secure payment methods access for user:', user.id);
+
+      // SECURITY ENHANCEMENT: Get payment methods from Stripe and update cache securely
       const paymentMethods = await stripe.paymentMethods.list({
         customer: stripeCustomerId,
         type: 'card'
@@ -109,30 +111,17 @@ serve(async (req) => {
         ? customer.invoice_settings?.default_payment_method
         : null;
 
-      // Format payment methods
-      const formattedMethods = paymentMethods.data.map(pm => ({
-        id: pm.id,
-        type: pm.type,
-        card: pm.card ? {
-          brand: pm.card.brand,
-          last4: pm.card.last4,
-          exp_month: pm.card.exp_month,
-          exp_year: pm.card.exp_year
-        } : null,
-        is_default: pm.id === defaultPaymentMethodId
-      }));
-
-      // Update local cache
+      // Update local cache with service role (sensitive data stored securely)
       await supabaseService
         .from('payment_methods')
         .delete()
         .eq('user_id', user.id);
 
-      if (formattedMethods.length > 0) {
+      if (paymentMethods.data.length > 0) {
         await supabaseService
           .from('payment_methods')
           .insert(
-            formattedMethods.map(pm => ({
+            paymentMethods.data.map(pm => ({
               user_id: user.id,
               stripe_payment_method_id: pm.id,
               type: pm.type,
@@ -140,12 +129,53 @@ serve(async (req) => {
               card_last4: pm.card?.last4,
               card_exp_month: pm.card?.exp_month,
               card_exp_year: pm.card?.exp_year,
-              is_default: pm.is_default
+              is_default: pm.id === defaultPaymentMethodId
             }))
           );
       }
 
-      return new Response(JSON.stringify({ paymentMethods: formattedMethods }), {
+      // CRITICAL: Return only secure, masked display data - NO sensitive information
+      const { data: secureDisplayData, error: displayError } = await supabaseService
+        .rpc('get_secure_payment_display', {
+          p_user_id: user.id
+        });
+
+      if (displayError) {
+        console.error('[PAYMENT-METHODS] Security function error:', displayError);
+        throw new Error('Payment data access denied for security');
+      }
+
+      // Log secure access
+      await supabaseService.rpc('log_secure_payment_access', {
+        p_operation: 'EDGE_FUNCTION_SECURE_GET',
+        p_user_id: user.id,
+        p_metadata: {
+          user_agent: req.headers.get('User-Agent'),
+          ip_address: req.headers.get('CF-Connecting-IP') || 'unknown',
+          timestamp: new Date().toISOString()
+        }
+      });
+
+      // Return completely masked data - format compatible with existing frontend
+      const maskedPaymentMethods = secureDisplayData.map(pm => ({
+        id: pm.id,
+        type: pm.card_type,
+        card: pm.card_type !== pm.display_text ? {
+          brand: pm.card_type,
+          last4: '••••', // Completely masked
+          exp_month: 12,  // Generic values
+          exp_year: 2030
+        } : null,
+        is_default: pm.is_default,
+        display_text: pm.display_text
+      }));
+
+      console.log('[PAYMENT-METHODS] Returning secure masked data for', maskedPaymentMethods.length, 'methods');
+
+      return new Response(JSON.stringify({ 
+        paymentMethods: maskedPaymentMethods,
+        security_note: 'Data masked for security' 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

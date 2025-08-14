@@ -12,21 +12,29 @@ export interface PaymentMethod {
     exp_year: number;
   };
   is_default: boolean;
+  display_text?: string; // New secure display field
 }
 
 export const usePaymentMethods = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch payment methods
+  // Fetch payment methods using secure display
   const { data: paymentMethods = [], isLoading, refetch } = useQuery({
     queryKey: ['paymentMethods'],
     queryFn: async () => {
+      console.log('Fetching payment methods with enhanced security...');
+      
       const { data, error } = await supabase.functions.invoke('payment-methods', {
         method: 'GET'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Payment methods fetch error:', error);
+        throw error;
+      }
+      
+      console.log('Received secure payment data:', data);
       return data.paymentMethods as PaymentMethod[];
     },
   });
