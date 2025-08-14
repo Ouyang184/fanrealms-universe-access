@@ -98,8 +98,8 @@ export function OverviewTab({
         <CardContent>
           {requests.length > 0 ? (
             <div className="space-y-3 sm:space-y-4">
-              {requests.slice(0, 3).map((request) => (
-                <div key={request.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-2 sm:gap-0">
+              {requests.slice(0, 3).map((request, index) => (
+                <div key={`${request.id}-${index}`} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 border rounded-lg gap-2 sm:gap-0">
                   <div className="flex-1">
                     <p className="font-medium text-sm sm:text-base">{request.title}</p>
                     <p className="text-xs sm:text-sm text-muted-foreground">

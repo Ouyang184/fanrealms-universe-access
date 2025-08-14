@@ -39,11 +39,18 @@ export const useCommissionRequests = () => {
 
       if (error) throw error;
       
-      // Transform the data to properly type the status field
-      return (data || []).map(request => ({
+      // Transform the data and remove duplicates
+      const transformedData = (data || []).map(request => ({
         ...request,
         status: request.status as CommissionRequestStatus
       }));
+      
+      // Remove duplicates based on ID
+      const uniqueRequests = transformedData.filter((request, index, self) => 
+        index === self.findIndex(r => r.id === request.id)
+      );
+      
+      return uniqueRequests;
     },
     enabled: !!creatorProfile?.id,
   });
