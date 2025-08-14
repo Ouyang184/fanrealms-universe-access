@@ -19,7 +19,7 @@ interface RequestRevisionModalProps {
     commission_type: {
       max_revisions: number;
       price_per_revision?: number;
-    };
+    } | null;
   };
   onRevisionCreated: () => void;
 }
