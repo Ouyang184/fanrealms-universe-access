@@ -34,8 +34,8 @@ export const useUserCommissionRequests = () => {
         .from('commission_requests')
         .select(`
           *,
-          commission_type:commission_types(name, base_price, max_revisions, price_per_revision),
-          creator:creators(display_name, profile_image_url)
+          commission_types!inner(name, base_price, max_revisions, price_per_revision),
+          creators!inner(display_name, profile_image_url)
         `)
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
@@ -44,7 +44,9 @@ export const useUserCommissionRequests = () => {
       
       return (data || []).map(request => ({
         ...request,
-        status: request.status as CommissionRequestStatus
+        status: request.status as CommissionRequestStatus,
+        commission_type: request.commission_types,
+        creator: request.creators
       }));
     },
     enabled: !!user?.id,
