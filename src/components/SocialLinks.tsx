@@ -43,8 +43,6 @@ export function SocialLinks({
   const { links, isLoading } = useSocialLinks(creatorId);
   
   useEffect(() => {
-    console.log("SocialLinks component rendering with creatorId:", creatorId);
-    console.log("Links available:", links);
   }, [creatorId, links]);
   
   if (!creatorId) {
@@ -57,7 +55,7 @@ export function SocialLinks({
   }
   
   if (!links || links.length === 0) {
-    console.log(`No links found for creator ID: ${creatorId}`);
+    
     return null;
   }
   
@@ -99,7 +97,7 @@ export function SocialLinks({
       displayUrl = displayUrl.replace(/^www\./, '');
     } catch (e) {
       // If URL parsing fails, just show the raw URL
-      console.log("Invalid URL format:", url);
+      
     }
     return displayUrl;
   };

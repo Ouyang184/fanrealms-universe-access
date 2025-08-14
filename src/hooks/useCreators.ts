@@ -15,7 +15,7 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
   return useQuery({
     queryKey: ["creators", searchTerm, filters],
     queryFn: async () => {
-      console.log("useCreators - Searching creators with term:", searchTerm, "and filters:", filters);
+      
       
       // Determine sort parameter for RPC
       const sortBy = filters?.sortBy || 'created_at';
@@ -23,7 +23,7 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
       
       // Validate search term length
       if (searchTerm && searchTerm.trim().length < 2) {
-        console.log("useCreators - Search term too short, returning empty array");
+        
         return [];
       }
       const term = searchTerm?.toLowerCase().trim() || null;
@@ -36,15 +36,14 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
       });
       
       if (error) {
-        console.error('useCreators - Error fetching creators via RPC:', error);
+        
         throw error;
       }
       
-      const list = (Array.isArray(data) ? data : []) as any[];
-      console.log('useCreators - Raw creator data from RPC:', list);
+      const list = Array.isArray(data) ? data : [];
       
       // Transform the data to match our CreatorProfile type
-      let transformedCreators: CreatorProfile[] = list.map((creator: any) => {
+      let transformedCreators: CreatorProfile[] = list.map((creator) => {
         const userId = creator.user_id as string | null;
         const cleanUserId = userId?.startsWith('user-') ? userId.substring(5) : userId || undefined;
         const displayName = creator.display_name || creator.username || `Creator ${(cleanUserId || '').substring(0, 6)}`;
@@ -102,7 +101,7 @@ export const useCreators = (searchTerm?: string, filters?: SearchFilters) => {
         transformedCreators = [...transformedCreators].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
       }
       
-      console.log('useCreators - Transformed creators for search:', transformedCreators);
+      
       return transformedCreators;
     },
     staleTime: 30000, // Cache for 30 seconds

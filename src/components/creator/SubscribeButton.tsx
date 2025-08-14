@@ -36,17 +36,6 @@ export function SubscribeButton({
   // FIXED: Use subscription check result with proper validation
   const isUserSubscribed = finalSubscriptionData?.isSubscribed ?? isSubscribed;
 
-  console.log('[SubscribeButton] FIXED Render state:', {
-    tierId,
-    creatorId,
-    tierName,
-    isSubscribedProp: isSubscribed,
-    subscriptionData: finalSubscriptionData,
-    hookIsSubscribed: subscriptionData?.isSubscribed,
-    finalIsUserSubscribed: isUserSubscribed,
-    isLoading,
-    isCreatorStripeReady
-  });
 
   if (isLoading) {
     return (
@@ -59,7 +48,7 @@ export function SubscribeButton({
   
   // Check if user has an active subscription (including those scheduled to cancel but still in period)
   if (subscription && (subscription.status === 'active' || subscription.isActive)) {
-    console.log('[SubscribeButton] Showing SubscribedButton - user has active subscription');
+    
     return (
       <SubscribedButton
         tierName={tierName}
@@ -74,7 +63,7 @@ export function SubscribeButton({
 
   // Fallback check for isUserSubscribed
   if (isUserSubscribed) {
-    console.log('[SubscribeButton] Showing SubscribedButton - fallback for subscribed user');
+    
     return (
       <SubscribedButton
         tierName={tierName}
@@ -88,11 +77,11 @@ export function SubscribeButton({
   }
 
   if (!isCreatorStripeReady) {
-    console.log('[SubscribeButton] Showing PaymentUnavailableButton - Stripe not ready');
+    
     return <PaymentUnavailableButton />;
   }
 
-  console.log('[SubscribeButton] Showing ActiveSubscribeButton - no active subscription');
+  
   return (
     <ActiveSubscribeButton
       tierId={tierId}

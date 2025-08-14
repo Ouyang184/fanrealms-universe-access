@@ -37,7 +37,7 @@ export function SendMessageDialog({ isOpen, onClose, receiverId, receiverName }:
     
     setIsSending(true);
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('messages')
       .insert({
         sender_id: user.id,

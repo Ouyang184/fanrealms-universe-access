@@ -183,13 +183,11 @@ export function useCreatePost() {
       queryClient.invalidateQueries({ queryKey: ['creator-posts'] });
 
       return true;
-    } catch (error: any) {
-      console.error('Error creating post:', error);
-      const errMsg = (error && (error.message || (typeof error === 'string' ? error : 'Failed to create post. Please try again.'))) || 'Failed to create post. Please try again.';
-      const errCode = (error && (error as any).code) ? ` (code: ${(error as any).code})` : '';
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create post. Please try again.';
       toast({
         title: "Post not created",
-        description: `${errMsg}${errCode}`,
+        description: errorMessage,
         variant: "destructive",
       });
       return false;

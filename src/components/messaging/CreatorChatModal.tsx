@@ -180,7 +180,7 @@ export function CreatorChatModal({
           filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${creatorId}),and(sender_id.eq.${creatorId},receiver_id.eq.${user.id}))` 
         }, 
         (payload) => {
-          setMessages(prev => prev.filter(msg => msg.id !== (payload.old as any).id));
+          setMessages(prev => prev.filter(msg => msg.id !== payload.old?.id));
         }
       )
       .subscribe();

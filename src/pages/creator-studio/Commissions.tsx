@@ -46,7 +46,7 @@ export default function Commissions() {
     if (!creatorProfile?.id) return;
     
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('commission_types')
         .select('*')
         .eq('creator_id', creatorProfile.id)
@@ -74,7 +74,7 @@ export default function Commissions() {
 
   const handleDeleteCommissionType = async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('commission_types')
         .delete()
         .eq('id', id);
@@ -102,7 +102,7 @@ export default function Commissions() {
   const openSlots = creatorProfile?.commission_slots_available || 0;
   const pendingRequests = requests.filter(req => req.status === 'pending').length;
   const inProgressRequests = requests.filter(req => ['in_progress', 'delivered', 'under_review'].includes(req.status)).length;
-  const monthlyEarnings = 0; // TODO: Calculate from commission earnings when implemented
+  const monthlyEarnings = 0; // Commission earnings calculation will be implemented when payment tracking is added
 
   return (
     <div className="min-h-screen p-3 sm:p-6">

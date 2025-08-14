@@ -22,7 +22,7 @@ export const generatePostBanner = (postTitle: string) => {
 };
 
 // Check if post has any media content (images, files, or embedded videos)
-export const hasMediaContent = (attachments: any): boolean => {
+export const hasMediaContent = (attachments: unknown): boolean => {
   if (!attachments) return false;
   
   let parsedAttachments = [];
@@ -36,15 +36,16 @@ export const hasMediaContent = (attachments: any): boolean => {
     }
   } else if (Array.isArray(attachments)) {
     parsedAttachments = attachments;
-  } else if (attachments && typeof attachments === 'object' && attachments.value) {
-    if (typeof attachments.value === 'string' && attachments.value !== "undefined") {
+  } else if (attachments && typeof attachments === 'object' && 'value' in attachments) {
+    const attachmentValue = (attachments as { value: unknown }).value;
+    if (typeof attachmentValue === 'string' && attachmentValue !== "undefined") {
       try {
-        parsedAttachments = JSON.parse(attachments.value);
+        parsedAttachments = JSON.parse(attachmentValue);
       } catch {
         return false;
       }
-    } else if (Array.isArray(attachments.value)) {
-      parsedAttachments = attachments.value;
+    } else if (Array.isArray(attachmentValue)) {
+      parsedAttachments = attachmentValue;
     }
   }
   

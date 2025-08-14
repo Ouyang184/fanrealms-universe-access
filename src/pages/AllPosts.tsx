@@ -50,11 +50,10 @@ export default function AllPostsPage() {
         p_offset: 0,
       });
       if (error) {
-        console.error("Error fetching creators (public):", error);
         return [] as { id: string; display_name: string | null }[];
       }
-      const list = (Array.isArray(data) ? data : []) as any[];
-      return list.map((c) => ({ id: c.id as string, display_name: (c.display_name as string) || null }));
+      const list = Array.isArray(data) ? data : [];
+      return list.map((c) => ({ id: c.id, display_name: c.display_name || null }));
     },
     staleTime: 30000,
   });

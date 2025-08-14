@@ -45,7 +45,7 @@ export function CommissionSettingsModal({ children }: CommissionSettingsModalPro
     
     setIsLoading(true);
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('creators')
         .update({
           accepts_commissions: settings.accepts_commissions,

@@ -65,20 +65,6 @@ const PostCard: React.FC<PostCardProps> = ({
     return <NSFWContentPlaceholder type="post" />;
   }
   
-  // ENHANCED DEBUG: Log all the important values with more detail
-  console.log('PostCard - ENHANCED DEBUG:', {
-    postId: id,
-    postTitle: title,
-    authorId: authorId,
-    authorIdType: typeof authorId,
-    authorIdValue: JSON.stringify(authorId),
-    userId: user?.id,
-    userIdType: typeof user?.id,
-    userIdValue: JSON.stringify(user?.id),
-    bothDefined: !!(authorId && user?.id),
-    strictStringComparison: String(authorId || '') === String(user?.id || ''),
-    tier_id: tier_id
-  });
   
   // Check if user is subscribed to this tier
   const { subscriptionData } = useSimpleSubscriptionCheck(tier_id || undefined, authorId);
@@ -98,13 +84,6 @@ const PostCard: React.FC<PostCardProps> = ({
   if (isOwnPost) {
     // Creator viewing their own post - ALWAYS grant full access
     hasFullAccess = true;
-    console.log('PostCard - CREATOR ACCESS OVERRIDE:', {
-      postId: id,
-      message: 'Creator viewing their own post - forcing full access',
-      authorId,
-      userId: user?.id,
-      isPremiumPost
-    });
   } else {
     // Non-creator viewing post - use subscription logic
     hasFullAccess = !isPremiumPost || isSubscribedToTier || hasActiveSubscription;
@@ -115,22 +94,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayAvatar = authorAvatar || users?.profile_picture;
   const displayDate = createdAt ? formatRelativeDate(createdAt) : "Recently";
 
-  console.log('PostCard - ENHANCED ACCESS DECISION:', {
-    postId: id,
-    postTitle: title,
-    tierId: tier_id,
-    authorId,
-    userId: user?.id,
-    isPremiumPost,
-    isOwnPost,
-    isSubscribedToTier,
-    hasActiveSubscription,
-    hasFullAccess,
-    finalDecision: hasFullAccess ? 'FULL_ACCESS_GRANTED' : 'ACCESS_RESTRICTED',
-    // Additional debug info
-    userObject: user,
-    subscriptionDataObject: subscriptionData
-  });
+  
 
   // FIXED VIDEO HANDLING: Separate video URLs from video files
   const videoUrls = parsedAttachments.filter(attachment => 

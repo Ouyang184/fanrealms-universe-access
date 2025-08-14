@@ -282,7 +282,7 @@ export function CommissionRequestCard({
               <SubmitWorkModal 
                 open={showSubmitWorkModal}
                 onOpenChange={setShowSubmitWorkModal}
-                request={request as any}
+                request={request}
               />
             </>
           )}

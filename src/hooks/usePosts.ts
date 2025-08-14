@@ -84,7 +84,7 @@ export function usePosts() {
           authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
           
           // Add tags from DB column if present
-          tags: Array.isArray((post as any).tags) ? (post as any).tags : [],
+          tags: Array.isArray(post.tags) ? post.tags : [],
         };
       });
     },

@@ -103,7 +103,7 @@ export default function SubscriptionsPage() {
     }
   };
 
-  console.log('Rendering subscriptions page with data:', userSubscriptions);
+  
 
   // Filter and sort subscriptions
   const filteredSubscriptions = useMemo(() => {

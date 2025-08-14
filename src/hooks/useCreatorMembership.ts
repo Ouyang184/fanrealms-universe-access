@@ -99,7 +99,7 @@ export const useCreatorMembership = (creatorId: string) => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('[CreatorMembership] Checking user subscriptions for user:', user.id, 'creator:', creatorId);
+      
       
       // Query user_subscriptions table directly - include both active and cancelling
       const { data, error } = await supabase
@@ -113,7 +113,7 @@ export const useCreatorMembership = (creatorId: string) => {
         return [];
       }
 
-      console.log('[CreatorMembership] User subscriptions to creator found:', data?.length || 0);
+      
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
