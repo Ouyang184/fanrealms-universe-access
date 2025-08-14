@@ -30,13 +30,13 @@ export const useUserCommissionRequests = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase.rpc('get_user_commission_requests_with_details', {
+      const { data, error } = await supabase.rpc('get_user_commission_requests_with_details' as any, {
         p_customer_id: user.id
       });
 
       if (error) throw error;
       
-      return (data || []).map((row: any) => ({
+      return (data as any[] || []).map((row: any) => ({
         ...row,
         status: row.status as CommissionRequestStatus,
         commission_type: {

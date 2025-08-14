@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1549,18 +1549,18 @@ export type Database = {
     Functions: {
       audit_payment_operation: {
         Args: {
+          p_metadata?: Json
           p_operation_type: string
           p_payment_method_id: string
           p_result: string
-          p_metadata?: Json
         }
         Returns: undefined
       }
       check_payment_rate_limit: {
         Args: {
-          p_user_id: string
-          p_operation: string
           p_limit?: number
+          p_operation: string
+          p_user_id: string
           p_window_minutes?: number
         }
         Returns: boolean
@@ -1574,142 +1574,142 @@ export type Database = {
         Returns: number
       }
       detect_payment_intrusion: {
-        Args: { p_table_accessed: string; p_suspicious_behavior: string }
+        Args: { p_suspicious_behavior: string; p_table_accessed: string }
         Returns: undefined
       }
       get_commission_request_secure: {
         Args: { p_commission_id: string }
         Returns: {
-          id: string
-          commission_type_id: string
-          customer_id: string
-          creator_id: string
-          title: string
-          description: string
-          reference_images: string[]
-          budget_range_min: number
-          budget_range_max: number
           agreed_price: number
-          status: string
-          deadline: string
-          customer_notes: string
-          creator_notes: string
-          selected_addons: Json
-          stripe_payment_intent_id: string
-          platform_fee_amount: number
-          created_at: string
-          updated_at: string
-          revision_count: number
-          commission_type_name: string
+          budget_range_max: number
+          budget_range_min: number
           commission_type_base_price: number
-          customer_username: string
+          commission_type_id: string
+          commission_type_name: string
+          created_at: string
+          creator_id: string
+          creator_notes: string
+          customer_id: string
+          customer_notes: string
           customer_profile_picture: string
+          customer_username: string
+          deadline: string
+          description: string
+          id: string
+          platform_fee_amount: number
+          reference_images: string[]
+          revision_count: number
+          selected_addons: Json
+          status: string
+          stripe_payment_intent_id: string
+          title: string
+          updated_at: string
         }[]
       }
       get_creator_followers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
+          profile_picture: string
           user_id: string
           username: string
-          profile_picture: string
         }[]
       }
       get_creator_ratings: {
         Args: {
           p_creator_id: string
-          p_rating_type?: string
           p_limit?: number
           p_offset?: number
+          p_rating_type?: string
         }
         Returns: {
-          id: string
-          user_id: string
-          creator_id: string
-          rating: number
-          review_text: string
-          rating_type: string
           created_at: string
-          username: string
+          creator_id: string
+          id: string
           profile_picture: string
+          rating: number
+          rating_type: string
+          review_text: string
+          user_id: string
+          username: string
         }[]
       }
       get_masked_payment_methods: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          type: string
           card_brand: string
           card_last4: string
-          is_default: boolean
           exp_display: string
+          id: string
+          is_default: boolean
+          type: string
         }[]
       }
       get_my_creator_earnings: {
         Args: {
+          p_end_date?: string
           p_limit?: number
           p_offset?: number
           p_start_date?: string
-          p_end_date?: string
         }
         Returns: {
-          id: string
+          amount: number
+          commission_request_id: string
           creator_id: string
           earning_type: string
-          amount: number
-          platform_fee: number
+          id: string
           net_amount: number
           payment_date: string
+          platform_fee: number
           subscription_id: string
-          commission_request_id: string
         }[]
       }
       get_my_creator_earnings_summary: {
-        Args: { p_start_date?: string; p_end_date?: string }
+        Args: { p_end_date?: string; p_start_date?: string }
         Returns: {
-          total_amount: number
-          total_platform_fees: number
-          total_net: number
           count_records: number
+          total_amount: number
+          total_net: number
+          total_platform_fees: number
         }[]
       }
       get_payment_method_for_processing: {
-        Args: { p_payment_method_id: string; p_operation: string }
+        Args: { p_operation: string; p_payment_method_id: string }
         Returns: {
           id: string
           stripe_payment_method_id: string
-          user_id: string
           type: string
+          user_id: string
         }[]
       }
       get_payment_method_for_processing_secure: {
         Args: {
-          p_payment_method_id: string
           p_operation: string
+          p_payment_method_id: string
           p_request_context?: Json
         }
         Returns: {
+          method_type: string
           stripe_payment_method_id: string
           user_id: string
-          method_type: string
         }[]
       }
       get_payment_method_for_service: {
-        Args: { p_payment_method_id: string; p_operation: string }
+        Args: { p_operation: string; p_payment_method_id: string }
         Returns: {
           id: string
           stripe_payment_method_id: string
-          user_id: string
           type: string
+          user_id: string
         }[]
       }
       get_payment_security_summary: {
         Args: Record<PropertyKey, never>
         Returns: {
+          newest_record: string
+          oldest_record: string
           table_name: string
           total_records: number
           unique_users: number
-          oldest_record: string
-          newest_record: string
         }[]
       }
       get_post_like_count: {
@@ -1723,210 +1723,241 @@ export type Database = {
       get_public_commission_types: {
         Args: {
           p_creator_id: string
-          p_only_active?: boolean
           p_limit?: number
           p_offset?: number
+          p_only_active?: boolean
         }
         Returns: {
-          id: string
-          creator_id: string
-          name: string
-          description: string
           base_price: number
+          creator_id: string
+          description: string
           estimated_turnaround_days: number
+          id: string
           is_active: boolean
+          name: string
           sample_art_url: string
           tags: string[]
         }[]
       }
       get_public_creator_profile: {
         Args:
+          | { p_creator_id?: string; p_user_id?: string; p_username?: string }
           | { p_creator_id?: string; p_username?: string }
-          | { p_creator_id?: string; p_username?: string; p_user_id?: string }
         Returns: {
-          id: string
-          display_name: string
-          profile_image_url: string
           banner_url: string
           bio: string
+          display_name: string
           follower_count: number
+          id: string
           is_nsfw: boolean
+          profile_image_url: string
           tags: string[]
-          website: string
           username: string
+          website: string
         }[]
       }
       get_public_creators_by_user_ids: {
         Args: { p_user_ids: string[] }
         Returns: {
-          id: string
-          user_id: string
-          display_name: string
-          profile_image_url: string
           bio: string
+          display_name: string
+          id: string
+          profile_image_url: string
+          user_id: string
         }[]
       }
       get_public_creators_list: {
         Args: {
-          p_search?: string
-          p_sort?: string
           p_limit?: number
           p_offset?: number
+          p_search?: string
+          p_sort?: string
         }
         Returns: {
-          id: string
-          user_id: string
-          display_name: string
-          profile_image_url: string
           banner_url: string
           bio: string
-          follower_count: number
-          is_nsfw: boolean
-          tags: string[]
-          website: string
-          username: string
           created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          username: string
+          website: string
         }[]
       }
       get_public_membership_tiers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
-          id: string
-          creator_id: string
-          title: string
-          description: string
-          price: number
           active: boolean
+          creator_id: string
+          description: string
+          id: string
+          price: number
+          title: string
         }[]
       }
       get_safe_payment_methods: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          user_id: string
-          type: string
           card_brand: string
-          card_last4: string
           card_exp_month: number
           card_exp_year: number
-          is_default: boolean
+          card_last4: string
           created_at: string
+          id: string
+          is_default: boolean
+          type: string
           updated_at: string
+          user_id: string
         }[]
       }
       get_secure_payment_display: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          display_text: string
           card_type: string
-          is_default: boolean
           created_at: string
+          display_text: string
+          id: string
+          is_default: boolean
+        }[]
+      }
+      get_user_commission_requests_with_details: {
+        Args: { p_customer_id: string }
+        Returns: {
+          agreed_price: number
+          budget_range_max: number
+          budget_range_min: number
+          commission_type_base_price: number
+          commission_type_id: string
+          commission_type_max_revisions: number
+          commission_type_name: string
+          commission_type_price_per_revision: number
+          created_at: string
+          creator_display_name: string
+          creator_id: string
+          creator_notes: string
+          creator_profile_image_url: string
+          customer_id: string
+          customer_notes: string
+          deadline: string
+          description: string
+          id: string
+          platform_fee_amount: number
+          reference_images: string[]
+          revision_count: number
+          selected_addons: Json
+          status: string
+          stripe_payment_intent_id: string
+          title: string
+          updated_at: string
         }[]
       }
       get_user_following: {
-        Args: { p_user_id: string; p_limit?: number; p_offset?: number }
+        Args: { p_limit?: number; p_offset?: number; p_user_id: string }
         Returns: {
+          banner_url: string
+          bio: string
           creator_id: string
           creator_user_id: string
           display_name: string
-          username: string
-          profile_image_url: string
-          banner_url: string
-          bio: string
+          followed_at: string
           follower_count: number
           is_nsfw: boolean
+          profile_image_url: string
           tags: string[]
-          followed_at: string
+          username: string
         }[]
       }
       get_user_payment_cards_display: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
           card_display: string
-          is_default: boolean
           created_at: string
+          id: string
+          is_default: boolean
         }[]
       }
       get_user_payment_methods_secure: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          type: string
           card_brand: string
-          card_last4: string
           card_exp_month: number
           card_exp_year: number
-          is_default: boolean
+          card_last4: string
           created_at: string
+          id: string
+          is_default: boolean
+          type: string
         }[]
       }
       get_user_public_data: {
         Args: { ids?: string[]; usernames?: string[] }
         Returns: {
-          id: string
-          username: string
-          profile_picture: string
-          website: string
           created_at: string
+          id: string
+          profile_picture: string
+          username: string
+          website: string
         }[]
       }
       get_user_public_profiles: {
         Args: { ids?: string[]; usernames?: string[] }
         Returns: {
-          id: string
-          username: string
-          profile_picture: string
-          website: string
           created_at: string
+          id: string
+          profile_picture: string
+          username: string
+          website: string
         }[]
       }
       get_zero_knowledge_payment_display: {
         Args: { p_user_id: string }
         Returns: {
-          id: string
-          method_type: string
-          is_default: boolean
-          status: string
           added_date: string
+          id: string
+          is_default: boolean
+          method_type: string
+          status: string
         }[]
       }
       list_my_commission_requests: {
         Args: {
-          p_role?: string
-          p_status?: string
           p_limit?: number
           p_offset?: number
+          p_role?: string
+          p_status?: string
         }
         Returns: {
-          id: string
-          commission_type_id: string
-          customer_id: string
-          creator_id: string
-          title: string
           agreed_price: number
-          status: string
-          created_at: string
-          updated_at: string
-          commission_type_name: string
           commission_type_base_price: number
+          commission_type_id: string
+          commission_type_name: string
+          created_at: string
+          creator_id: string
+          customer_id: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
         }[]
       }
       log_payment_access: {
         Args: {
-          p_table_name: string
-          p_operation: string
           p_accessed_data?: Json
+          p_operation: string
+          p_table_name: string
         }
         Returns: undefined
       }
       log_secure_payment_access: {
-        Args: { p_operation: string; p_user_id: string; p_metadata?: Json }
+        Args: { p_metadata?: Json; p_operation: string; p_user_id: string }
         Returns: undefined
       }
       log_security_event: {
-        Args: { p_event_type: string; p_table_name: string; p_details?: Json }
+        Args: { p_details?: Json; p_event_type: string; p_table_name: string }
         Returns: undefined
       }
       user_has_tier_access: {
