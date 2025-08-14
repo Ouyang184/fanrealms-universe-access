@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/hooks/use-toast';
 import { CommissionType } from '@/types/commission';
 import { useNavigate } from 'react-router-dom';
+import { useDraftStorage } from './useDraftStorage';
 
 interface FormData {
   commission_type_id: string;
@@ -23,18 +24,23 @@ interface UseCommissionRequestFormProps {
   creatorId: string;
   specificCommissionType?: CommissionType;
   onSuccess: () => void;
+  initialData?: FormData;
+  enableAutoSave?: boolean;
 }
 
 export function useCommissionRequestForm({
   commissionTypes,
   creatorId,
   specificCommissionType,
-  onSuccess
+  onSuccess,
+  initialData,
+  enableAutoSave = true
 }: UseCommissionRequestFormProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
+  
+  const defaultFormData: FormData = {
     commission_type_id: specificCommissionType?.id || '',
     title: '',
     description: '',
@@ -44,7 +50,15 @@ export function useCommissionRequestForm({
     customer_notes: '',
     selected_addons: [],
     character_count: 1
-  });
+  };
+
+  const [formData, setFormData] = useState<FormData>(initialData || defaultFormData);
+  
+  const { saveDraft, clearDraft, draftExists } = useDraftStorage(
+    creatorId, 
+    specificCommissionType?.id || '', 
+    user?.id
+  );
 
   useEffect(() => {
     if (specificCommissionType) {
@@ -55,19 +69,30 @@ export function useCommissionRequestForm({
     }
   }, [specificCommissionType]);
 
-  const resetForm = () => {
-    setFormData({
-      commission_type_id: specificCommissionType?.id || '',
-      title: '',
-      description: '',
-      budget_range_min: '',
-      budget_range_max: '',
-      deadline: '',
-      customer_notes: '',
-      selected_addons: [],
-      character_count: 1
-    });
-  };
+  // Auto-save draft when form data changes
+  useEffect(() => {
+    if (!enableAutoSave || !user?.id || !specificCommissionType?.id) return;
+    
+    // Don't save if form is mostly empty
+    if (!formData.description.trim() && !formData.deadline && formData.selected_addons.length === 0) {
+      return;
+    }
+    
+    const timeoutId = setTimeout(() => {
+      saveDraft(formData);
+    }, 1000); // Debounce for 1 second
+    
+    return () => clearTimeout(timeoutId);
+  }, [formData, enableAutoSave, user?.id, specificCommissionType?.id, saveDraft]);
+
+  const resetForm = useCallback(() => {
+    setFormData(defaultFormData);
+    clearDraft();
+  }, [clearDraft, defaultFormData]);
+
+  const loadDraftData = useCallback((draftData: FormData) => {
+    setFormData(draftData);
+  }, []);
 
   const calculateTotalPrice = (selectedType: CommissionType, addons: Array<{ name: string; price: number; quantity: number }>, characterCount: number) => {
     let total = selectedType.base_price;
@@ -145,6 +170,7 @@ export function useCommissionRequestForm({
         description: "Your commission request has been submitted successfully"
       });
 
+      clearDraft(); // Clear draft on successful submission
       resetForm();
       onSuccess();
       
@@ -171,6 +197,8 @@ export function useCommissionRequestForm({
     setFormData,
     isSubmitting,
     handleSubmit,
-    resetForm
+    resetForm,
+    loadDraftData,
+    draftExists
   };
 }
