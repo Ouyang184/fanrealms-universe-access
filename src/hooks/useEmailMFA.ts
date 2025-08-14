@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -72,9 +71,15 @@ export function useEmailMFA() {
 
       if (userError) throw userError;
 
-      // Note: Client no longer attempts to delete from email_2fa_codes.
-      // These codes are now service-role managed and auto-cleaned by the database function within ~15 minutes.
-      console.log('[Email 2FA] Disabled; any existing codes will auto-expire and be cleaned up by the server.');
+      // Clean up any existing codes (using email instead of user_id)
+      const { error: cleanupError } = await supabase
+        .from('email_2fa_codes')
+        .delete()
+        .eq('email', user.email);
+
+      if (cleanupError) {
+        console.error('Error cleaning up 2FA codes:', cleanupError);
+      }
 
       setIsEnabled(false);
       toast({

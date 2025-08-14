@@ -66,14 +66,11 @@ export const useSavedPosts = () => {
       const authorIds = postsData?.map(p => p.author_id) || [];
       let usersData = [];
       if (authorIds.length > 0) {
-        const { data: publicUsers, error: usersError } = await supabase
-          .rpc('get_user_public_profiles', { ids: authorIds as string[] });
-        if (usersError) {
-          console.error('Error fetching public user profiles:', usersError);
-          usersData = [];
-        } else {
-          usersData = publicUsers || [];
-        }
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, username, profile_picture')
+          .in('id', authorIds);
+        usersData = users || [];
       }
 
       // Combine the data

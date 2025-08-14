@@ -1,3 +1,4 @@
+
 project_id = "eaeqyctjljbtcatlohky"
 
 [api]
@@ -68,12 +69,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.send-new-post-notification]
-verify_jwt = true
-
-[functions.stripe-connect]
-verify_jwt = true
-
-[functions.send-2fa-email]
 verify_jwt = false
 
 [edge_runtime]

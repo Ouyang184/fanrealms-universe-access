@@ -34,38 +34,19 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Authentication check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response('Unauthorized', { 
-        status: 401, 
-        headers: corsHeaders 
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response('Invalid authentication', { 
-        status: 401, 
-        headers: corsHeaders 
-      });
-    }
-
     const { postId, creatorId }: PostNotificationRequest = await req.json();
 
     console.log('Processing notification for post:', postId, 'creator:', creatorId);
 
-    // Authorization check - verify user owns the post and creator profile
+    // Get post details
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('title, content, created_at, author_id, creator_id')
+      .select('title, content, created_at')
       .eq('id', postId)
       .single();
 
@@ -76,40 +57,6 @@ const handler = async (req: Request): Promise<Response> => {
         headers: corsHeaders 
       });
     }
-
-    // Verify user owns this post
-    if (post.author_id !== user.id) {
-      console.error('User does not own this post:', { userId: user.id, postAuthorId: post.author_id });
-      return new Response('Forbidden', { 
-        status: 403, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Verify the post belongs to the specified creator
-    if (post.creator_id !== creatorId) {
-      console.error('Post does not belong to specified creator:', { postCreatorId: post.creator_id, requestedCreatorId: creatorId });
-      return new Response('Invalid creator for post', { 
-        status: 400, 
-        headers: corsHeaders 
-      });
-    }
-
-    // Additional verification - check if user owns the creator profile
-    const { data: creatorData, error: creatorOwnershipError } = await supabase
-      .from('creators')
-      .select('user_id')
-      .eq('id', creatorId)
-      .single();
-
-    if (creatorOwnershipError || !creatorData || creatorData.user_id !== user.id) {
-      console.error('User does not own creator profile:', { userId: user.id, creatorUserId: creatorData?.user_id });
-      return new Response('Forbidden', { 
-        status: 403, 
-        headers: corsHeaders 
-      });
-    }
-
 
     // Get creator details
     const { data: creator, error: creatorError } = await supabase

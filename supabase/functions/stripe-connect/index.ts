@@ -14,31 +14,12 @@ serve(async (req) => {
   }
 
   try {
-    // Authentication check
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid authentication' }), { 
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const { action, creatorId, accountId } = await req.json();
-    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    const { action, creatorId, accountId } = await req.json()
+    const stripeSecretKey =
+      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+      Deno.env.get('STRIPE_SECRET_KEY') ||
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE')
 
     if (!stripeSecretKey) {
       console.error('Missing Stripe secret key')
@@ -49,6 +30,9 @@ serve(async (req) => {
     }
 
     const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const origin = req.headers.get('origin') || 'http://localhost:3000'
     console.log('Origin:', origin)
@@ -57,10 +41,10 @@ serve(async (req) => {
     if (action === 'create_account') {
       console.log('Creating account for creator:', creatorId)
       
-      // Verify user owns this creator profile
+      // First check if creator already has a Stripe account
       const { data: existingCreator, error: fetchError } = await supabase
         .from('creators')
-        .select('stripe_account_id, user_id')
+        .select('stripe_account_id')
         .eq('id', creatorId)
         .single()
 
@@ -71,16 +55,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
-
-      // Authorization check - ensure user owns this creator profile
-      if (existingCreator.user_id !== user.id) {
-        console.error('User does not own creator profile:', { userId: user.id, creatorUserId: existingCreator.user_id })
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
 
       let accountId = existingCreator.stripe_account_id
 
@@ -151,30 +125,6 @@ serve(async (req) => {
     } else if (action === 'create_login_link') {
       console.log('Creating login link for account:', accountId)
       
-      // Verify user owns this Stripe account
-      const { data: creatorData, error: creatorError } = await supabase
-        .from('creators')
-        .select('user_id')
-        .eq('stripe_account_id', accountId)
-        .single()
-
-      if (creatorError || !creatorData) {
-        console.error('Error fetching creator for account:', creatorError)
-        return new Response(JSON.stringify({ error: 'Account not found' }), { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Authorization check
-      if (creatorData.user_id !== user.id) {
-        console.error('User does not own this Stripe account:', { userId: user.id, accountUserId: creatorData.user_id })
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-      
       // Check if account has completed onboarding
       const account = await stripe.accounts.retrieve(accountId)
       
@@ -200,30 +150,6 @@ serve(async (req) => {
 
     } else if (action === 'get_balance') {
       console.log('Getting balance for account:', accountId)
-      
-      // Verify user owns this Stripe account
-      const { data: creatorData, error: creatorError } = await supabase
-        .from('creators')
-        .select('user_id')
-        .eq('stripe_account_id', accountId)
-        .single()
-
-      if (creatorError || !creatorData) {
-        console.error('Error fetching creator for account:', creatorError)
-        return new Response(JSON.stringify({ error: 'Account not found' }), { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Authorization check
-      if (creatorData.user_id !== user.id) {
-        console.error('User does not own this Stripe account:', { userId: user.id, accountUserId: creatorData.user_id })
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
       
       // Get account balance
       const balance = await stripe.balance.retrieve({

@@ -48,13 +48,16 @@ export default function CreatorStudioPayouts() {
     queryKey: ['creatorEarnings', creatorProfile?.id],
     queryFn: async () => {
       if (!creatorProfile?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('creator_earnings')
+        .select('*')
+        .eq('creator_id', creatorProfile.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-      const { data, error } = await supabase.rpc('get_my_creator_earnings', {
-        p_limit: 10,
-        p_offset: 0
-      });
       if (error) throw error;
-      return data ?? [];
+      return data;
     },
     enabled: !!creatorProfile?.id
   });
@@ -63,9 +66,9 @@ export default function CreatorStudioPayouts() {
   const totalEarnings = earnings.reduce((sum, earning) => sum + (earning.net_amount || 0), 0);
   const monthlyEarnings = earnings
     .filter(earning => {
-      const earningDate = earning.payment_date ? new Date(earning.payment_date) : null;
+      const earningDate = new Date(earning.created_at);
       const now = new Date();
-      return earningDate && earningDate.getMonth() === now.getMonth() && earningDate.getFullYear() === now.getFullYear();
+      return earningDate.getMonth() === now.getMonth() && earningDate.getFullYear() === now.getFullYear();
     })
     .reduce((sum, earning) => sum + (earning.net_amount || 0), 0);
 
@@ -201,7 +204,7 @@ export default function CreatorStudioPayouts() {
                 earnings.map((earning) => (
                   <TableRow key={earning.id}>
                     <TableCell>
-                      {earning.payment_date ? new Date(earning.payment_date).toLocaleDateString() : '-'}
+                      {new Date(earning.payment_date || earning.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>Subscription Payment</TableCell>
                     <TableCell>${earning.amount.toFixed(2)}</TableCell>

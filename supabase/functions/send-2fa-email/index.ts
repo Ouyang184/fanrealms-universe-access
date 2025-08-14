@@ -1,11 +1,4 @@
 import { corsHeaders } from '../_shared/cors.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// Initialize Supabase service client for rate limiting
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
 
 interface Send2FAEmailRequest {
   email: string;
@@ -110,79 +103,20 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Redact email for logs
-    const redact = (e: string) => e.replace(/(.{2}).+(@.+)/, '$1***$2')
-    console.log('📧 Processing 2FA email request for', redact(email))
-
-    // Require API key for this endpoint
-    const providedKey = req.headers.get('x-2fa-api-key') || req.headers.get('x-api-key')
-    const expectedKey = Deno.env.get('API_KEY_FOR_FANREALMS_2FA') || ''
-    if (!expectedKey || providedKey !== expectedKey) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Basic rate limiting by IP and email over 10 minutes
-    const clientIp =
-      req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      req.headers.get('cf-connecting-ip') ||
-      'unknown'
-
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-    const maxPerEmail = 3
-    const maxPerIp = 10
-
-    const [{ count: emailCount, error: emailCountError }, { count: ipCount, error: ipCountError }] = await Promise.all([
-      supabase
-        .from('rate_limit_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('action', 'send_2fa_email')
-        .eq('email', email)
-        .gte('created_at', tenMinutesAgo),
-      supabase
-        .from('rate_limit_events')
-        .select('id', { count: 'exact', head: true })
-        .eq('action', 'send_2fa_email')
-        .eq('ip', clientIp)
-        .gte('created_at', tenMinutesAgo),
-    ])
-
-    if (emailCountError || ipCountError) {
-      console.warn('⚠️ Rate limit count error', { emailCountError, ipCountError })
-    } else {
-      if ((emailCount ?? 0) >= maxPerEmail || (ipCount ?? 0) >= maxPerIp) {
-        return new Response(
-          JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    }
+    console.log('📧 Processing 2FA email request')
 
     // Send email using SendGrid
     await sendEmail(email, code)
 
-    // Record rate limit event
-    const { error: insertError } = await supabase.from('rate_limit_events').insert({
-      ip: clientIp,
-      action: 'send_2fa_email',
-      email,
-    })
-    if (insertError) {
-      console.warn('⚠️ Failed to record rate limit event', insertError)
-    }
-
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: '2FA email sent successfully',
+      JSON.stringify({ 
+        success: true, 
+        message: '2FA email sent successfully' 
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
-
 
   } catch (error) {
     console.error('❌ Error in send-2fa-email function:', error)

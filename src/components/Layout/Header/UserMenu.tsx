@@ -26,7 +26,7 @@ export function UserMenu({ profile, onSignOut }: UserMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-8 w-8 cursor-pointer">
-          <AvatarImage src={profile?.profile_picture || ""} alt={`${profile?.username || "User"} profile picture`} loading="lazy" />
+          <AvatarImage src={profile?.profile_picture || ""} />
           <AvatarFallback className="bg-primary/80 text-primary-foreground">
             {profile?.username ? profile.username.substring(0, 2).toUpperCase() : "U"}
           </AvatarFallback>

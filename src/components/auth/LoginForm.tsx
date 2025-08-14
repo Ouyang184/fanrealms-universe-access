@@ -62,7 +62,7 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setLoginError(null);
-      console.log('LoginForm: Attempting to sign in');
+      console.log("LoginForm: Attempting to sign in with:", values.email);
       
       const result: AuthResult = await signIn(values.email, values.password, values.captcha);
       

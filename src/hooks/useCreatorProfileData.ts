@@ -24,9 +24,9 @@ export function useCreatorProfileData() {
       
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, email, username, profile_picture')
+        .select('*')
         .eq('id', user.id)
-        .maybeSingle();
+        .single();
       
       if (userError || !userData) {
         console.error('[useCreatorProfileData] Error fetching user:', userError);
