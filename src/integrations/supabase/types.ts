@@ -1032,6 +1032,50 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_vault_encrypted: {
+        Row: {
+          access_count: number | null
+          created_at: string
+          encrypted_metadata: string | null
+          encrypted_stripe_id: string
+          encryption_version: number
+          id: string
+          key_fingerprint: string
+          last_accessed: string | null
+          payment_method_id: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string
+          encrypted_metadata?: string | null
+          encrypted_stripe_id: string
+          encryption_version?: number
+          id?: string
+          key_fingerprint: string
+          last_accessed?: string | null
+          payment_method_id: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string
+          encrypted_metadata?: string | null
+          encrypted_stripe_id?: string
+          encryption_version?: number
+          id?: string
+          key_fingerprint?: string
+          last_accessed?: string | null
+          payment_method_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_vault_encrypted_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       post_reads: {
         Row: {
           created_at: string
@@ -1503,6 +1547,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_payment_operation: {
+        Args: {
+          p_operation_type: string
+          p_payment_method_id: string
+          p_result: string
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
       check_payment_rate_limit: {
         Args: {
           p_user_id: string
@@ -1515,6 +1568,10 @@ export type Database = {
       cleanup_expired_2fa_codes: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      cleanup_old_payment_audit_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       detect_payment_intrusion: {
         Args: { p_table_accessed: string; p_suspicious_behavior: string }
@@ -1622,6 +1679,18 @@ export type Database = {
           stripe_payment_method_id: string
           user_id: string
           type: string
+        }[]
+      }
+      get_payment_method_for_processing_secure: {
+        Args: {
+          p_payment_method_id: string
+          p_operation: string
+          p_request_context?: Json
+        }
+        Returns: {
+          stripe_payment_method_id: string
+          user_id: string
+          method_type: string
         }[]
       }
       get_payment_method_for_service: {
@@ -1811,6 +1880,16 @@ export type Database = {
           profile_picture: string
           website: string
           created_at: string
+        }[]
+      }
+      get_zero_knowledge_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          id: string
+          method_type: string
+          is_default: boolean
+          status: string
+          added_date: string
         }[]
       }
       list_my_commission_requests: {

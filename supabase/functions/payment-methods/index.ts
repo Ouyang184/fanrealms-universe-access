@@ -134,47 +134,52 @@ serve(async (req) => {
           );
       }
 
-      // CRITICAL: Return only secure, masked display data - NO sensitive information
-      const { data: secureDisplayData, error: displayError } = await supabaseService
-        .rpc('get_secure_payment_display', {
+      // ULTRA-SECURE: Use zero-knowledge display function - absolutely no card details exposed
+      const { data: zeroKnowledgeData, error: displayError } = await supabaseService
+        .rpc('get_zero_knowledge_payment_display', {
           p_user_id: user.id
         });
 
       if (displayError) {
-        console.error('[PAYMENT-METHODS] Security function error:', displayError);
+        console.error('[PAYMENT-METHODS] Zero-knowledge security function error:', displayError);
         throw new Error('Payment data access denied for security');
       }
 
-      // Log secure access
-      await supabaseService.rpc('log_secure_payment_access', {
-        p_operation: 'EDGE_FUNCTION_SECURE_GET',
-        p_user_id: user.id,
+      // Enhanced audit logging for payment operations
+      await supabaseService.rpc('audit_payment_operation', {
+        p_operation_type: 'EDGE_FUNCTION_ZERO_KNOWLEDGE_ACCESS',
+        p_payment_method_id: null, // No specific payment method accessed
+        p_result: 'SUCCESS',
         p_metadata: {
           user_agent: req.headers.get('User-Agent'),
           ip_address: req.headers.get('CF-Connecting-IP') || 'unknown',
-          timestamp: new Date().toISOString()
+          methods_count: zeroKnowledgeData?.length || 0,
+          security_level: 'ZERO_KNOWLEDGE'
         }
       });
 
-      // Return completely masked data - format compatible with existing frontend
-      const maskedPaymentMethods = secureDisplayData.map(pm => ({
+      // Return ultra-secure masked data - zero knowledge of any sensitive information
+      const ultraSecurePaymentMethods = zeroKnowledgeData.map(pm => ({
         id: pm.id,
-        type: pm.card_type,
-        card: pm.card_type !== pm.display_text ? {
-          brand: pm.card_type,
+        type: pm.method_type.toLowerCase().replace(' ', '_'),
+        card: pm.method_type === 'Payment Card' ? {
+          brand: 'card',
           last4: '••••', // Completely masked
           exp_month: 12,  // Generic values
           exp_year: 2030
         } : null,
         is_default: pm.is_default,
-        display_text: pm.display_text
+        display_text: pm.method_type,
+        added_date: pm.added_date,
+        security_status: pm.status
       }));
 
-      console.log('[PAYMENT-METHODS] Returning secure masked data for', maskedPaymentMethods.length, 'methods');
+      console.log('[PAYMENT-METHODS] Returning ultra-secure zero-knowledge data for', ultraSecurePaymentMethods.length, 'methods');
 
       return new Response(JSON.stringify({ 
-        paymentMethods: maskedPaymentMethods,
-        security_note: 'Data masked for security' 
+        paymentMethods: ultraSecurePaymentMethods,
+        security_note: 'Zero-knowledge security - no sensitive data exposed',
+        enhanced_protection: true
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
