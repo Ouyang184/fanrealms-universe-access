@@ -113,41 +113,42 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
   
   console.log(`Looking up creator by display_name: "${cleanedIdentifier}"`);
   
-  const { data: creatorsWithDisplayName, error: displayNameError } = await supabase
-    .from('creators')
-    .select(`
-      *,
-      users!creators_user_id_fkey (
-        id,
-        username,
-        email,
-        profile_picture
-      )
-    `)
-    .ilike('display_name', cleanedIdentifier)
-    .limit(1);
+  // Use the secure function to get only public creator data
+  const { data: allCreators, error: displayNameError } = await supabase
+    .rpc('get_public_creators_list', { 
+      p_search: cleanedIdentifier, 
+      p_sort: 'created_at', 
+      p_limit: 50, 
+      p_offset: 0 
+    });
     
-  if (creatorsWithDisplayName && creatorsWithDisplayName.length > 0) {
-    const creatorByDisplayName = creatorsWithDisplayName[0];
-    console.log("Found creator by display_name:", creatorByDisplayName);
+  if (allCreators && allCreators.length > 0) {
+    // Find exact match for display_name
+    const creatorByDisplayName = allCreators.find(c => 
+      c.display_name?.toLowerCase() === cleanedIdentifier.toLowerCase()
+    );
     
-    // Create the display name once and use it for both properties
-    const displayNameValue = creatorByDisplayName.display_name || creatorByDisplayName.users?.username;
-    
-    const creatorProfile = {
-      ...creatorByDisplayName,
-      id: creatorByDisplayName.id,         // Primary key from creators table
-      user_id: creatorByDisplayName.user_id,   // Keep user_id from auth
-      username: creatorByDisplayName.users?.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
-      email: creatorByDisplayName.users?.email || "",
-      fullName: displayNameValue,
-      display_name: displayNameValue,
-      displayName: displayNameValue, // Add this required property
-      avatar_url: creatorByDisplayName.users?.profile_picture || null,
-      tags: creatorByDisplayName.tags || []
-    };
-    
-    return creatorProfile as CreatorProfile;
+    if (creatorByDisplayName) {
+      console.log("Found creator by display_name:", creatorByDisplayName);
+      
+      // Create the display name once and use it for both properties
+      const displayNameValue = creatorByDisplayName.display_name || creatorByDisplayName.username;
+      
+      const creatorProfile = {
+        ...creatorByDisplayName,
+        id: creatorByDisplayName.id,         // Primary key from creators table
+        user_id: creatorByDisplayName.user_id,   // Keep user_id from auth
+        username: creatorByDisplayName.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
+        email: "",
+        fullName: displayNameValue,
+        display_name: displayNameValue,
+        displayName: displayNameValue, // Add this required property
+        avatar_url: creatorByDisplayName.profile_image_url || null,
+        tags: creatorByDisplayName.tags || []
+      };
+      
+      return creatorProfile as CreatorProfile;
+    }
   }
   
   return null;
@@ -159,19 +160,14 @@ export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
   
   console.log(`Looking up creator by abbreviated user_id: "${originalIdentifier}"`);
   
-  // Get all creators and check if any match the formatted ID pattern
+  // Get all creators using secure function and check if any match the formatted ID pattern
   const { data: allCreators, error: allCreatorsError } = await supabase
-    .from('creators')
-    .select(`
-      *,
-      users!creators_user_id_fkey (
-        id,
-        username,
-        email,
-        profile_picture
-      )
-    `)
-    .limit(100);
+    .rpc('get_public_creators_list', { 
+      p_search: null, 
+      p_sort: 'created_at', 
+      p_limit: 100, 
+      p_offset: 0 
+    });
     
   if (allCreators && allCreators.length > 0) {
     // Find by comparing the abbreviated user ID format
@@ -184,18 +180,18 @@ export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
       console.log("Found creator by abbreviated ID:", matchingCreator);
       
       // Create the display name once and use it for both properties
-      const displayNameValue = matchingCreator.display_name || matchingCreator.users?.username;
+      const displayNameValue = matchingCreator.display_name || matchingCreator.username;
       
       const creatorProfile = {
         ...matchingCreator,
         id: matchingCreator.id,          // Primary key from creators table
         user_id: matchingCreator.user_id,    // Keep user_id from auth
-        username: matchingCreator.users?.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
-        email: matchingCreator.users?.email || "",
+        username: matchingCreator.username || `user-${matchingCreator.user_id.substring(0, 8)}`,
+        email: "",
         fullName: displayNameValue,
         display_name: displayNameValue,
         displayName: displayNameValue, // Add this required property
-        avatar_url: matchingCreator.users?.profile_picture || null,
+        avatar_url: matchingCreator.profile_image_url || null,
         tags: matchingCreator.tags || []
       };
       
