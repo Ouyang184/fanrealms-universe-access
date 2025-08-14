@@ -71,7 +71,10 @@ export const useExistingCommissionCheck = (commissionTypeId: string, creatorId: 
         };
       }
 
-      const existingRequest = existingRequests[0] as ExistingCommissionWithDetails;
+      const existingRequest = {
+        ...existingRequests[0],
+        selected_addons: existingRequests[0].selected_addons as Array<{ name: string; price: number; quantity: number }>
+      } as ExistingCommissionWithDetails;
       const status = existingRequest.status;
 
       // Determine the appropriate action based on status
