@@ -1606,6 +1606,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_creator_commission_status: {
+        Args: { p_creator_id: string }
+        Returns: boolean
+      }
       get_creator_followers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
