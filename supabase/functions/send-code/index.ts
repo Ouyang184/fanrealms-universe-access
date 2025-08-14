@@ -160,14 +160,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Require Cloudflare Turnstile if secret configured
-    if (TURNSTILE_SECRET) {
-      if (!turnstileToken) {
-        return new Response(
-          JSON.stringify({ error: 'Captcha token required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    // Require Cloudflare Turnstile if secret configured and token provided
+    if (TURNSTILE_SECRET && turnstileToken) {
       const valid = await verifyTurnstile(turnstileToken, ip);
       if (!valid) {
         return new Response(
@@ -175,6 +169,8 @@ Deno.serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    } else if (TURNSTILE_SECRET && !turnstileToken) {
+      console.log('⚠️ Turnstile secret configured but no token provided - allowing without captcha for now');
     }
 
     // Generate 6-digit code
