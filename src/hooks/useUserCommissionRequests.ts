@@ -30,21 +30,25 @@ export const useUserCommissionRequests = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('commission_requests')
-        .select(`
-          *,
-          commission_type:commission_types(name, base_price, max_revisions, price_per_revision),
-          creator:creators(display_name, profile_image_url)
-        `)
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_user_commission_requests_with_details', {
+        p_customer_id: user.id
+      });
 
       if (error) throw error;
       
-      return (data || []).map(request => ({
-        ...request,
-        status: request.status as CommissionRequestStatus
+      return (data || []).map((row: any) => ({
+        ...row,
+        status: row.status as CommissionRequestStatus,
+        commission_type: {
+          name: row.commission_type_name || 'Unknown type',
+          base_price: row.commission_type_base_price || 0,
+          max_revisions: row.commission_type_max_revisions || 0,
+          price_per_revision: row.commission_type_price_per_revision
+        },
+        creator: {
+          display_name: row.creator_display_name || 'Unknown Creator',
+          profile_image_url: row.creator_profile_image_url
+        }
       }));
     },
     enabled: !!user?.id,
