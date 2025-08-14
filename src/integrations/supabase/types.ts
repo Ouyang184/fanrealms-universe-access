@@ -1606,6 +1606,17 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_creator_commission_info: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          id: string
+        }[]
+      }
       get_creator_commission_status: {
         Args: { p_creator_id: string }
         Returns: boolean

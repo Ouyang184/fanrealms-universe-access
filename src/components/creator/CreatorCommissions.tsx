@@ -13,6 +13,7 @@ import { CommissionRequestModal } from "./CommissionRequestModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { CreatorRatingDisplay } from "@/components/ratings/CreatorRatingDisplay";
 import { useCreatorRatingStats } from "@/hooks/useCreatorRatingStats";
+import { SecureCommissionDisplay } from "./SecureCommissionDisplay";
 
 interface CreatorCommissionsProps {
   creator: CreatorProfile;
@@ -185,20 +186,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-green-600" />
-              <span className="text-sm">Starting from ${creator.commission_base_rate || 0}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-600" />
-              <span className="text-sm">{creator.commission_turnaround_days || 7} days turnaround</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-purple-600" />
-              <span className="text-sm">{creator.commission_slots_available || 0} slots available</span>
-            </div>
-          </div>
+          <SecureCommissionDisplay creatorId={creator.id} />
           {creator.commission_tos && (
             <div className="pt-4 border-t">
               <h4 className="font-medium mb-2">Terms of Service</h4>
