@@ -1761,12 +1761,14 @@ export type Database = {
         Returns: {
           banner_url: string
           bio: string
+          created_at: string
           display_name: string
           follower_count: number
           id: string
           is_nsfw: boolean
           profile_image_url: string
           tags: string[]
+          user_id: string
           username: string
           website: string
         }[]
@@ -1798,7 +1800,6 @@ export type Database = {
           is_nsfw: boolean
           profile_image_url: string
           tags: string[]
-          user_id: string
           username: string
           website: string
         }[]
