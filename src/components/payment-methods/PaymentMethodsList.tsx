@@ -2,20 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RefreshCw, CreditCard, Shield } from "lucide-react";
-import { PaymentMethodCard } from "./PaymentMethodCard";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useSecurePaymentMethods } from "@/hooks/useSecurePaymentMethods";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export function PaymentMethodsList() {
-  const {
-    paymentMethods,
-    isLoading,
-    refetch,
-    setAsDefault,
-    isSettingDefault,
-    deletePaymentMethod,
-    isDeleting
-  } = usePaymentMethods();
+  const { paymentMethods, isLoading, error, refetch } = useSecurePaymentMethods();
 
   if (isLoading) {
     return (
@@ -63,15 +54,34 @@ export function PaymentMethodsList() {
           </div>
         ) : (
           <div className="grid gap-4">
-            {paymentMethods.map((paymentMethod) => (
-              <PaymentMethodCard
-                key={paymentMethod.id}
-                paymentMethod={paymentMethod}
-                onSetDefault={setAsDefault}
-                onDelete={deletePaymentMethod}
-                isSettingDefault={isSettingDefault}
-                isDeleting={isDeleting}
-              />
+            {paymentMethods.map((method) => (
+              <div
+                key={method.id}
+                className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
+              >
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="font-medium">{method.masked_display}</p>
+                    <p className="text-sm text-gray-500">Added {method.created_month}</p>
+                    {method.is_default && (
+                      <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full mt-1">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refetch}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    Refresh
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         )}

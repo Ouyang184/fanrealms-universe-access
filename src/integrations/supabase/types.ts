@@ -1814,6 +1814,15 @@ export type Database = {
           title: string
         }[]
       }
+      get_safe_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          created_month: string
+          id: string
+          is_default: boolean
+          masked_display: string
+        }[]
+      }
       get_safe_payment_methods: {
         Args: { p_user_id: string }
         Returns: {

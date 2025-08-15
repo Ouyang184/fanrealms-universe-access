@@ -1,60 +1,137 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
+
+// Security logging function
+const logSecurityEvent = (eventType: string, details: any, userId?: string) => {
+  console.log(`🔒 SECURITY [${eventType}]:`, {
+    timestamp: new Date().toISOString(),
+    userId,
+    ...details
+  });
+};
+
+// Authentication verification function
+const verifyUserAuthentication = async (req: Request, supabase: any) => {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    logSecurityEvent('AUTH_MISSING', { endpoint: 'stripe-connect' });
+    throw new Error('Authorization header required');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  
+  if (error || !user) {
+    logSecurityEvent('AUTH_FAILED', { error: error?.message, endpoint: 'stripe-connect' });
+    throw new Error(`Authentication failed: ${error?.message || 'User not found'}`);
+  }
+
+  logSecurityEvent('AUTH_SUCCESS', { userId: user.id, endpoint: 'stripe-connect' }, user.id);
+  return user;
+};
+
+// Verify creator ownership
+const verifyCreatorAccess = async (supabase: any, userId: string, creatorId?: string) => {
+  if (!creatorId) {
+    const { data: creator, error } = await supabase
+      .from('creators')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error || !creator) {
+      logSecurityEvent('CREATOR_ACCESS_DENIED', { userId, reason: 'No creator profile found' }, userId);
+      throw new Error('Creator profile not found');
+    }
+    
+    return creator.id;
+  }
+
+  // Verify user owns the specified creator profile
+  const { data: creator, error } = await supabase
+    .from('creators')
+    .select('id')
+    .eq('id', creatorId)
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !creator) {
+    logSecurityEvent('CREATOR_ACCESS_DENIED', { userId, creatorId, reason: 'Unauthorized creator access' }, userId);
+    throw new Error('Unauthorized access to creator profile');
+  }
+
+  return creatorId;
+};
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { action, creatorId, accountId } = await req.json()
-    const stripeSecretKey =
-      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
-      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
-      Deno.env.get('STRIPE_SECRET_KEY') ||
-      Deno.env.get('STRIPE_SECRET_KEY_LIVE')
+    logSecurityEvent('REQUEST_START', { 
+      method: req.method, 
+      url: req.url,
+      userAgent: req.headers.get('User-Agent'),
+      origin: req.headers.get('Origin')
+    });
 
+    // Initialize Supabase with service role for secure operations
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
+    // Initialize Supabase with anon key for user authentication
+    const supabaseAnon = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+
+    // Verify user authentication
+    const user = await verifyUserAuthentication(req, supabaseAnon);
+
+    const { action, creatorId, accountId } = await req.json();
+    logSecurityEvent('ACTION_REQUEST', { action, creatorId, accountId }, user.id);
+    // Verify Stripe configuration
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
-      console.error('Missing Stripe secret key')
-      return new Response(JSON.stringify({ error: 'Missing Stripe configuration' }), { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      logSecurityEvent('STRIPE_CONFIG_ERROR', { reason: 'Missing secret key' }, user.id);
+      throw new Error('Stripe configuration error');
     }
 
-    const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    });
 
     const origin = req.headers.get('origin') || 'http://localhost:3000'
     console.log('Origin:', origin)
     console.log('Action:', action)
 
-    if (action === 'create_account') {
-      console.log('Creating account for creator:', creatorId)
-      
-      // First check if creator already has a Stripe account
-      const { data: existingCreator, error: fetchError } = await supabase
-        .from('creators')
-        .select('stripe_account_id')
-        .eq('id', creatorId)
-        .single()
+    switch (action) {
+      case 'create_account': {
+        // Verify creator access
+        const validCreatorId = await verifyCreatorAccess(supabaseService, user.id, creatorId);
+        
+        // Check if account already exists
+        const { data: existingCreator } = await supabaseService
+          .from('creators')
+          .select('stripe_account_id')
+          .eq('id', validCreatorId)
+          .single();
 
-      if (fetchError) {
-        console.error('Error fetching creator:', fetchError)
-        return new Response(JSON.stringify({ error: 'Creator not found' }), { 
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
+        if (existingCreator?.stripe_account_id) {
+          logSecurityEvent('ACCOUNT_EXISTS', { creatorId: validCreatorId }, user.id);
+          throw new Error('Stripe account already exists for this creator');
+        }
 
       let accountId = existingCreator.stripe_account_id
 
