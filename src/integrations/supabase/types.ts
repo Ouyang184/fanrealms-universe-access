@@ -1814,6 +1814,47 @@ export type Database = {
           title: string
         }[]
       }
+      get_safe_creator_profile: {
+        Args: { creator_id_param?: string; username_param?: string }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          username: string
+          website: string
+        }[]
+      }
+      get_safe_creator_profiles: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          username: string
+          website: string
+        }[]
+      }
       get_safe_payment_display: {
         Args: { p_user_id: string }
         Returns: {
