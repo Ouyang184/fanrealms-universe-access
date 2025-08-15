@@ -31,7 +31,7 @@ export const useCommissionRequests = () => {
         .select(`
           *,
           commission_type:commission_types(name, base_price),
-          customer:users(username, profile_picture)
+          customer:users!commission_requests_customer_id_fkey(username, profile_picture)
         `)
         .eq('creator_id', creatorProfile.id)
         .neq('status', 'rejected') // Filter out rejected requests
