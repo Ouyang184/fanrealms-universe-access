@@ -129,11 +129,10 @@ serve(async (req) => {
           .single();
 
         if (existingCreator?.stripe_account_id) {
-          logSecurityEvent('ACCOUNT_EXISTS', { creatorId: validCreatorId }, user.id);
-          throw new Error('Stripe account already exists for this creator');
+          logSecurityEvent('ACCOUNT_EXISTS', { creatorId: validCreatorId, accountId: existingCreator.stripe_account_id }, user.id);
         }
 
-      let accountId = existingCreator.stripe_account_id
+        let accountId = existingCreator?.stripe_account_id
 
       // Validate existing account against current environment (live/test)
       if (accountId) {
@@ -167,10 +166,10 @@ serve(async (req) => {
         console.log('Created account:', accountId)
 
         // Update creator with Stripe account ID
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseService
           .from('creators')
           .update({ stripe_account_id: accountId })
-          .eq('id', creatorId)
+          .eq('id', validCreatorId)
 
         if (updateError) {
           console.error('Error updating creator:', updateError)
@@ -198,8 +197,9 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+      }
 
-    } else if (action === 'create_login_link') {
+      case 'create_login_link': {
       console.log('Creating login link for account:', accountId)
       
       // Check if account has completed onboarding
@@ -224,8 +224,9 @@ serve(async (req) => {
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+      }
 
-    } else if (action === 'get_balance') {
+      case 'get_balance': {
       console.log('Getting balance for account:', accountId)
       
       // Get account balance
@@ -236,6 +237,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ balance }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+      }
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), { 
