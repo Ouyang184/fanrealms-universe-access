@@ -42,7 +42,9 @@ export const useCommissionRequests = () => {
       // Transform the data and remove duplicates
       const transformedData = (data || []).map(request => ({
         ...request,
-        status: request.status as CommissionRequestStatus
+        status: request.status as CommissionRequestStatus,
+        // Ensure customer data is properly structured
+        customer: request.customer || { username: 'Unknown user', profile_picture: null }
       }));
       
       // Remove duplicates based on ID
