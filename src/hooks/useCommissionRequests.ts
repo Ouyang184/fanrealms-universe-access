@@ -26,26 +26,36 @@ export const useCommissionRequests = () => {
     queryFn: async () => {
       if (!creatorProfile?.id) return [];
       
+      console.log('🔍 Fetching commission requests for creator:', creatorProfile.id);
+      
       const { data, error } = await supabase
         .from('commission_requests')
         .select(`
           *,
           commission_type:commission_types(name, base_price),
-          customer:users!commission_requests_customer_id_fkey(username, profile_picture)
+          customer:users(username, profile_picture)
         `)
         .eq('creator_id', creatorProfile.id)
         .neq('status', 'rejected') // Filter out rejected requests
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Commission requests query error:', error);
+        throw error;
+      }
+      
+      console.log('📋 Raw commission requests data:', data);
       
       // Transform the data and remove duplicates
-      const transformedData = (data || []).map(request => ({
-        ...request,
-        status: request.status as CommissionRequestStatus,
-        // Ensure customer data is properly structured
-        customer: request.customer || { username: 'Unknown user', profile_picture: null }
-      }));
+      const transformedData = (data || []).map(request => {
+        console.log('🔄 Processing request:', request.id, 'Customer data:', request.customer);
+        return {
+          ...request,
+          status: request.status as CommissionRequestStatus,
+          // Ensure customer data is properly structured with better fallback
+          customer: request.customer || { username: 'Unknown user', profile_picture: null }
+        };
+      });
       
       // Remove duplicates based on ID
       const uniqueRequests = transformedData.filter((request, index, self) => 
