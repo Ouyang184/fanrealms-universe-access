@@ -1,152 +1,89 @@
 
 
-# FanRealms Pivot: Marketplace, Job Board, and Forum
+# Redesign FanRealms: Clean & Minimal
 
-## Overview
+Strip away the heavy gradients, purple-saturated UI, and generic SaaS patterns. Replace with a design inspired by itch.io, Linear, and Notion — whitespace-driven, typography-focused, and restrained color use.
 
-Transform FanRealms from a subscription-based creator platform into a three-pillar platform: Marketplace (one-time purchases), Job Board (gigs/bounties), and Forum (devlogs/community). This builds on top of existing infrastructure — no rewrites.
+## What changes
 
-## Architecture Summary
+### 1. Color system overhaul (`src/index.css`)
+- Replace the purple-heavy dark theme with a neutral dark palette (true blacks, warm grays, off-white text)
+- Accent color: a single muted teal or warm orange instead of electric purple everywhere
+- Remove all `bg-gradient-to-r from-purple-*` patterns across components
+- Reduce border opacity for subtler card edges
 
-```text
-┌─────────────────────────────────────────────────┐
-│                  Existing Auth                  │
-│            (users, creators, profiles)          │
-├─────────────┬──────────────┬────────────────────┤
-│  Marketplace│   Job Board  │      Forum         │
-│             │              │                    │
-│ digital_    │ job_listings │ forum_threads      │
-│ products    │ job_apps     │ forum_replies      │
-│ purchases   │              │                    │
-├─────────────┴──────────────┴────────────────────┤
-│     Stripe (one-time sessions) │ Mailgun alerts │
-└─────────────────────────────────────────────────┘
-```
+### 2. Hero section (`HeroSection.tsx`)
+- Remove the gradient banner entirely
+- Replace with a simple text-based hero: large heading, one-line subtitle, minimal buttons
+- No background image or color block — just clean typography on the dark background
+- Buttons: solid primary + text-only secondary (no outlined ghost buttons with opacity hacks)
 
----
+### 3. Sidebar (`Sidebar.tsx`, `SidebarHeader.tsx`, `MainNavigation.tsx`, `SidebarFooter.tsx`)
+- Subtle background (slightly lighter than page) instead of pure black
+- Remove the gradient logo icon — use plain text or a simple monochrome icon
+- Nav items: remove rounded pill-style active states, use a simple left-border indicator
+- Tighter spacing, smaller icon size (4x4 instead of 5x5)
 
-## Phase 1: Database Migrations
+### 4. Header (`Header.tsx`)
+- Simplify to just search + avatar. Remove the feed icon from header (it's already in sidebar)
+- Search bar: plain input with no heavy borders, placeholder text only
 
-### 1A. Marketplace Tables
+### 5. Content cards (home, explore, marketplace, jobs, forum)
+- Remove `bg-gray-900 border-gray-800` card style — use borderless cards with subtle hover elevation
+- Remove all `bg-purple-*` badges and buttons — use neutral badges
+- Featured creators: simpler layout, no gradient overlays on banners
+- Categories: text list or simple pills instead of emoji circles with gradient backgrounds
 
-**`digital_products`** — Sellers list downloadable assets/expertise.
-- `id`, `creator_id` (FK to creators), `title`, `description`, `price` (numeric), `asset_url`, `cover_image_url`, `category` (text), `tags` (text[]), `status` (draft/published/archived), `stripe_price_id`, timestamps.
-- RLS: public read for published; creator-only write.
+### 6. "How It Works" section (`HowItWorks.tsx`)
+- Remove the icon circles with purple backgrounds
+- Simple numbered list or three columns with just text — no decorative elements
 
-**`purchases`** — Records of completed one-time buys.
-- `id`, `buyer_id` (auth.uid), `product_id`, `creator_id`, `amount`, `platform_fee`, `net_amount`, `stripe_session_id`, `stripe_payment_intent_id`, `status` (pending/completed/refunded), timestamps.
-- RLS: buyers see own purchases; creators see sales of their products; service_role inserts.
+### 7. Footer (`HomeFooter.tsx`)
+- Reduce to a single line with links, copyright. Remove social media SVG icons or keep them minimal
 
-### 1B. Job Board Tables
+### 8. Explore hero (`ExploreHero.tsx`)
+- Remove gradient banner. Simple heading + search bar on plain background
 
-**`job_listings`** — Gigs and bounties posted by any authenticated user.
-- `id`, `poster_id` (auth.uid), `title`, `description`, `requirements` (text), `category` (enum or text: "Game Dev", "Data Science", "iOS", "Web", "Design", "Other"), `budget_min`/`budget_max` (numeric), `budget_type` (fixed/hourly/bounty), `status` (open/in_progress/filled/closed), `tags` (text[]), `deadline`, timestamps.
-- RLS: public read for open listings; poster-only write.
+### 9. Creator header (`CreatorHeader.tsx`)
+- Remove `bg-gradient-to-r from-blue-600 to-purple-600` banner default
+- Use a solid muted color or no banner at all when none is uploaded
 
-**`job_applications`** — Users apply to listings.
-- `id`, `listing_id`, `applicant_id`, `cover_letter`, `portfolio_url`, `status` (pending/accepted/rejected), timestamps.
-- RLS: applicants see own; poster sees applications on their listings.
+### 10. Login page (`Login.tsx`)
+- Remove `bg-black` + `bg-gray-900` card styling
+- Clean centered form, minimal chrome
 
-### 1C. Forum Tables
+### 11. Global cleanup
+- Remove `App.css` entirely (unused Vite boilerplate)
+- Remove duplicate scrollbar styles in `globals.css` (already in `index.css`)
+- Remove all `text-purple-400` link colors — use the CSS variable `--primary` consistently
 
-**`forum_threads`** — Top-level discussion posts (replaces/extends devlogs concept).
-- `id`, `author_id` (auth.uid), `title`, `content` (text, supports markdown/rich text), `category` (text), `tags` (text[]), `is_pinned`, `is_locked`, `view_count`, `reply_count`, `status` (published/archived), timestamps.
-- RLS: public read for published; author-only write.
+## Files to modify
+- `src/index.css` — new color tokens
+- `src/components/home/HeroSection.tsx`
+- `src/components/home/HowItWorks.tsx`
+- `src/components/home/HomeFooter.tsx`
+- `src/components/home/CategoriesSection.tsx`
+- `src/components/home/FeaturedCreators.tsx`
+- `src/components/home/ContentTabs.tsx`
+- `src/components/home/CommissionSection.tsx`
+- `src/components/Layout/Sidebar/Sidebar.tsx`
+- `src/components/Layout/Sidebar/SidebarHeader.tsx`
+- `src/components/Layout/Sidebar/MainNavigation.tsx`
+- `src/components/Layout/Sidebar/SidebarFooter.tsx`
+- `src/components/Layout/Header/Header.tsx`
+- `src/components/Logo.tsx`
+- `src/components/explore/ExploreHero.tsx`
+- `src/components/creator/CreatorHeader.tsx`
+- `src/pages/Login.tsx`
+- `src/pages/Marketplace.tsx`
+- `src/pages/Jobs.tsx`
+- `src/pages/Forum.tsx`
+- `src/App.css` — delete
+- `src/globals.css` — clean up duplicates
 
-**`forum_replies`** — Replies to threads.
-- `id`, `thread_id`, `author_id`, `content`, `parent_reply_id` (nullable, for nested replies), timestamps.
-- RLS: public read; authenticated insert; author-only update/delete.
-
----
-
-## Phase 2: Edge Functions / Backend
-
-### 2A. Marketplace Checkout (`create-product-checkout`)
-
-New edge function that creates a **Stripe Checkout Session** in `payment` mode (one-time) instead of `subscription` mode. Key differences from existing `simple-subscriptions`:
-- Uses `stripe.checkout.sessions.create({ mode: 'payment', line_items: [...] })` with the product's `stripe_price_id`
-- On success webhook, inserts into `purchases` table and triggers creator earnings record
-- Applies platform fee via `payment_intent_data.application_fee_amount` (Stripe Connect)
-
-### 2B. Job Alert Notifications (`send-job-alert`)
-
-New edge function triggered by a database trigger on `job_listings` INSERT:
-- Queries users who have matching category/tag preferences (stored in existing `users` preferences or a new `job_alert_preferences` table)
-- Calls Mailgun API to send notification emails
-- Uses existing Mailgun secret
-
-### 2C. Stripe Webhook Update
-
-Update existing `stripe-webhook` to handle `checkout.session.completed` events for one-time payments (in addition to existing subscription events), recording the purchase.
-
----
-
-## Phase 3: Frontend Components
-
-### 3A. Marketplace
-
-**New files:**
-- `src/pages/Marketplace.tsx` — Grid of product cards with category filters
-- `src/pages/ProductDetail.tsx` — Full product page with checkout button
-- `src/components/marketplace/ProductCard.tsx` — Card component (cover image, title, price, creator avatar)
-- `src/components/marketplace/CreateProductDialog.tsx` — Form for sellers
-- `src/hooks/useMarketplace.ts` — CRUD hooks for digital_products + purchase flow
-- `src/pages/creator-studio/Products.tsx` — Seller's product management page
-
-**Styling:** Matches existing patterns — uses `Card`, `Badge`, `Button`, `Skeleton` from `@/components/ui`, `container mx-auto p-6 space-y-8` layout, `useQuery`/`useMutation` from TanStack Query.
-
-### 3B. Job Board
-
-**New files:**
-- `src/pages/Jobs.tsx` — List view with category filter tabs (Game Dev, Data Science, iOS, Web, Design)
-- `src/pages/JobDetail.tsx` — Full listing with apply button
-- `src/components/jobs/JobListingCard.tsx` — Compact list item (title, budget, category badge, deadline)
-- `src/components/jobs/CreateJobDialog.tsx` — Post a job form
-- `src/components/jobs/JobApplicationDialog.tsx` — Apply modal
-- `src/hooks/useJobs.ts` — CRUD hooks for listings and applications
-
-### 3C. Forum
-
-**New files:**
-- `src/pages/Forum.tsx` — Thread list with category/tag filtering
-- `src/pages/ForumThread.tsx` — Thread view with replies, supports markdown rendering (using `react-markdown` + `react-syntax-highlighter` for code blocks)
-- `src/components/forum/ThreadCard.tsx` — Thread preview card
-- `src/components/forum/CreateThreadDialog.tsx` — New thread with rich text
-- `src/components/forum/ReplyEditor.tsx` — Reply composer with code snippet support
-- `src/hooks/useForum.ts` — CRUD hooks for threads and replies
-
-### 3D. Navigation Updates
-
-Update `src/components/Layout/Sidebar/MainNavigation.tsx` to add three new nav items:
-- **Marketplace** (`/marketplace`, `Store` icon)
-- **Jobs** (`/jobs`, `Briefcase` icon)
-- **Forum** (`/forum`, `MessagesSquare` icon)
-
-### 3E. Routing Updates
-
-Add to `src/App.tsx`:
-- `/marketplace` — MarketplacePage
-- `/marketplace/:productId` — ProductDetailPage
-- `/jobs` — JobsPage
-- `/jobs/:jobId` — JobDetailPage
-- `/forum` — ForumPage
-- `/forum/:threadId` — ForumThreadPage
-- `/creator-studio/products` — Creator product management
-
-All wrapped with `AuthGuard` + `MainLayout` (public pages like marketplace browsing can skip AuthGuard).
-
----
-
-## Technical Details
-
-### Dependencies to Add
-- `react-markdown` — Render markdown in forum posts
-- `react-syntax-highlighter` — Code block highlighting in forum
-- `@tailwindcss/typography` — Prose styling for forum content
-
-### Stripe Integration Change
-The key architectural shift: existing `simple-subscriptions` edge function uses `stripe.subscriptions.create()`. The new marketplace function uses `stripe.checkout.sessions.create({ mode: 'payment' })`. Both coexist — subscriptions remain available for creators who want them, while marketplace uses one-time payments.
-
-### Migration Strategy
-No existing tables are dropped. The subscription system remains intact. New tables are additive. The sidebar navigation expands to include the three new pillars alongside existing features.
+## Technical notes
+- No new dependencies needed
+- All changes are visual/CSS — no logic or data flow changes
+- Existing Tailwind utility classes are replaced, not extended
+- The dark theme remains but shifts from "neon SaaS" to "refined neutral"
 
