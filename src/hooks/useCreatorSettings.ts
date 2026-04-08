@@ -45,10 +45,17 @@ export const useCreatorSettings = (creatorId?: string) => {
       // If no creator exists and we're fetching for current user, create one
       if (!creator && !creatorId) {
         console.log('No creator found, creating one for user:', user.id);
+        const { data: userData } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+
         const { data: newCreator, error: createError } = await supabase
           .from('creators')
           .insert({
             user_id: user.id,
+            username: userData?.username || user.id,
             bio: '',
             display_name: '',
             profile_image_url: null,

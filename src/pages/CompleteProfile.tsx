@@ -244,10 +244,18 @@ const CompleteProfile = () => {
       });
       
       // Create creator profile
+      // Fetch username for creator record
+      const { data: userData } = await supabase
+        .from('users')
+        .select('username')
+        .eq('id', user?.id)
+        .single();
+
       const { data, error } = await supabase
         .from('creators')
         .insert([{
           user_id: user?.id,
+          username: userData?.username || user?.id || '',
           display_name: displayName.trim(),
           bio: bio.trim(),
           profile_image_url: profileImageUrl,
