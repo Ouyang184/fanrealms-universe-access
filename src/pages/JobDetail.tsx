@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 
 export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
-  const { data: listing, isLoading } = useJobListing(jobId || '');
+  const { data: listing, isLoading } = useJobListing(jobId || '') as { data: any; isLoading: boolean };
 
   if (isLoading) {
     return (

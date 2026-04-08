@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Jobs() {
   const [category, setCategory] = useState('all');
-  const { data: listings, isLoading } = useJobListings(category);
+  const { data: listings, isLoading } = useJobListings(category) as { data: any[] | undefined; isLoading: boolean };
 
   return (
     <MainLayout>

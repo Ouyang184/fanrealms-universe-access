@@ -39,8 +39,8 @@ function MarkdownContent({ content }: { content: string }) {
 
 export default function ForumThread() {
   const { threadId } = useParams<{ threadId: string }>();
-  const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '');
-  const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '');
+  const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '') as { data: any; isLoading: boolean };
+  const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '') as { data: any[] | undefined; isLoading: boolean };
 
   if (threadLoading) {
     return (

@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Forum() {
   const [category, setCategory] = useState('all');
-  const { data: threads, isLoading } = useForumThreads(category);
+  const { data: threads, isLoading } = useForumThreads(category) as { data: any[] | undefined; isLoading: boolean };
 
   return (
     <MainLayout>
