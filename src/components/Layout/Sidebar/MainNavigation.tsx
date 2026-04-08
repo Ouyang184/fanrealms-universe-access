@@ -8,7 +8,10 @@ import {
   MessageSquare, 
   ShoppingBag, 
   Settings,
-  FileText
+  FileText,
+  Store,
+  Briefcase,
+  MessagesSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -31,6 +34,9 @@ export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }
     { path: "/feed", icon: Rss, label: "Feed" },
     { path: "/following", icon: Users, label: "Following" },
     { path: "/explore", icon: Compass, label: "Explore" },
+    { path: "/marketplace", icon: Store, label: "Marketplace" },
+    { path: "/jobs", icon: Briefcase, label: "Jobs" },
+    { path: "/forum", icon: MessagesSquare, label: "Forum" },
     { path: "/messages", icon: MessageSquare, label: "Messages" },
     { path: "/requests", icon: FileText, label: "Requests" },
     { path: "/subscriptions", icon: ShoppingBag, label: "Subscriptions" },

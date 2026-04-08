@@ -8,7 +8,9 @@ import {
   Settings, 
   Users,
   Crown,
-  User
+  User,
+  FolderKanban,
+  Store
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,6 +32,8 @@ export function CreatorStudioMenu({ collapsed, onMobileNavClick, isMobile = fals
     { path: "/creator-studio/dashboard", icon: BarChart3, label: "Creator Dashboard" },
     { path: "/creator-studio/profile", icon: User, label: "Creator Profile" },
     { path: "/creator-studio/posts", icon: FileText, label: "Posts" },
+    { path: "/creator-studio/projects", icon: FolderKanban, label: "Projects" },
+    { path: "/creator-studio/products", icon: Store, label: "Products" },
     { path: "/creator-studio/membership-tiers", icon: Crown, label: "Membership Tiers" },
     { path: "/creator-studio/subscribers", icon: Users, label: "Subscribers" },
     { path: "/creator-studio/commissions", icon: PenTool, label: "Commissions" },
