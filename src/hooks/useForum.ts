@@ -19,7 +19,7 @@ export function useForumThreads(category?: string) {
     queryFn: async () => {
       let query = supabase
         .from('forum_threads')
-        .select('*, users:author_id(username, profile_picture)')
+        .select('*')
         .eq('status', 'published')
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
@@ -42,9 +42,22 @@ export function useForumThread(threadId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('forum_threads')
-        .select('*, users:author_id(username, profile_picture)')
+        .select('*')
         .eq('id', threadId)
         .single();
+
+      if (error) throw error;
+
+      // Fetch author info separately
+      if (data) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('username, profile_picture')
+          .eq('id', data.author_id)
+          .single();
+        return { ...data, users: userData };
+      }
+      return data;
 
       if (error) throw error;
       return data;
@@ -59,12 +72,25 @@ export function useForumReplies(threadId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('forum_replies')
-        .select('*, users:author_id(username, profile_picture)')
+        .select('*')
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return data;
+      if (!data) return [];
+
+      // Fetch user info for all replies
+      const authorIds = [...new Set(data.map((r) => r.author_id))];
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, username, profile_picture')
+        .in('id', authorIds);
+
+      const usersMap = new Map((usersData || []).map((u) => [u.id, u]));
+      return data.map((r) => ({
+        ...r,
+        users: usersMap.get(r.author_id) || null,
+      }));
     },
   });
 }
