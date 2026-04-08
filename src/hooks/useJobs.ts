@@ -18,7 +18,7 @@ export function useJobListings(category?: string) {
     queryFn: async () => {
       let query = supabase
         .from('job_listings')
-        .select('*, users:poster_id(username, profile_picture)')
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
@@ -40,11 +40,21 @@ export function useJobListing(jobId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('job_listings')
-        .select('*, users:poster_id(username, profile_picture)')
+        .select('*')
         .eq('id', jobId)
         .single();
 
       if (error) throw error;
+
+      if (data) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('username, profile_picture')
+          .eq('id', data.poster_id)
+          .single();
+        return { ...data, users: userData };
+      }
+      return data;
       return data;
     },
   });
@@ -92,7 +102,7 @@ export function useJobApplications(listingId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('job_applications')
-        .select('*, users:applicant_id(username, profile_picture)')
+        .select('*')
         .eq('listing_id', listingId)
         .order('created_at', { ascending: false });
 
