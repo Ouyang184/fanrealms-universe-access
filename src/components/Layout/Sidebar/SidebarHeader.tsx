@@ -9,7 +9,7 @@ interface SidebarHeaderProps {
 
 export function SidebarHeader({ collapsed, onToggle }: SidebarHeaderProps) {
   return (
-    <div className={cn("p-4 flex items-center", collapsed ? "justify-center" : "justify-start")}>
+    <div className={cn("p-3 flex items-center", collapsed ? "justify-center" : "justify-start")}>
       <Logo collapsed={collapsed} onClick={onToggle} />
     </div>
   );
