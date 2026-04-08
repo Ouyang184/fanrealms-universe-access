@@ -36,6 +36,8 @@ import CreatorStudioPayouts from "./pages/creator-studio/Payouts";
 import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
+import CreatorProjectsPage from "./pages/creator-studio/Projects";
+import ProjectDetailPage from "./pages/creator-studio/ProjectDetail";
 import Commissions from "./pages/creator-studio/Commissions";
 import PaymentPage from "./pages/Payment";
 import Terms from "./pages/Terms";
