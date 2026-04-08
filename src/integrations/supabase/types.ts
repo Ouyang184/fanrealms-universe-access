@@ -10,10 +10,37 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: unknown
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -93,6 +120,20 @@ export type Database = {
             columns: ["commission_request_id"]
             isOneToOne: false
             referencedRelation: "commission_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_creator_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_customer_view"
             referencedColumns: ["id"]
           },
         ]
@@ -414,6 +455,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "creator_earnings_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_creator_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_customer_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "creator_earnings_creator_id_fkey"
             columns: ["creator_id"]
             isOneToOne: false
@@ -508,6 +563,7 @@ export type Database = {
           commission_tos: string | null
           commission_turnaround_days: number | null
           created_at: string
+          creator_name: string | null
           display_name: string | null
           follower_count: number
           id: string
@@ -520,6 +576,8 @@ export type Database = {
           tags: string[] | null
           updated_at: string | null
           user_id: string
+          user_profile_picture: string | null
+          username: string
           website: string | null
         }
         Insert: {
@@ -531,6 +589,7 @@ export type Database = {
           commission_tos?: string | null
           commission_turnaround_days?: number | null
           created_at?: string
+          creator_name?: string | null
           display_name?: string | null
           follower_count?: number
           id?: string
@@ -543,6 +602,8 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           user_id: string
+          user_profile_picture?: string | null
+          username: string
           website?: string | null
         }
         Update: {
@@ -554,6 +615,7 @@ export type Database = {
           commission_tos?: string | null
           commission_turnaround_days?: number | null
           created_at?: string
+          creator_name?: string | null
           display_name?: string | null
           follower_count?: number
           id?: string
@@ -566,6 +628,8 @@ export type Database = {
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string
+          user_profile_picture?: string | null
+          username?: string
           website?: string | null
         }
         Relationships: [
@@ -841,7 +905,7 @@ export type Database = {
           accessed_data: Json | null
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           table_name: string
           user_agent: string | null
@@ -851,7 +915,7 @@ export type Database = {
           accessed_data?: Json | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           table_name: string
           user_agent?: string | null
@@ -861,7 +925,7 @@ export type Database = {
           accessed_data?: Json | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           table_name?: string
           user_agent?: string | null
@@ -947,21 +1011,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           user_id?: string
         }
@@ -1008,7 +1072,7 @@ export type Database = {
           attempted_data: Json | null
           created_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -1017,7 +1081,7 @@ export type Database = {
           attempted_data?: Json | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -1026,7 +1090,7 @@ export type Database = {
           attempted_data?: Json | null
           created_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -1326,6 +1390,63 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_rate_limits: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address: unknown
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       stripe_customers: {
         Row: {
           created_at: string | null
@@ -1413,9 +1534,34 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           amount: number
+          billing_email: string | null
           cancel_at_period_end: boolean | null
           created_at: string
           creator_id: string
@@ -1431,6 +1577,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          billing_email?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string
           creator_id: string
@@ -1446,6 +1593,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          billing_email?: string | null
           cancel_at_period_end?: boolean | null
           created_at?: string
           creator_id?: string
@@ -1501,6 +1649,7 @@ export type Database = {
         Row: {
           age_verified: boolean | null
           created_at: string
+          creator_name: string | null
           date_of_birth: string | null
           email: string
           email_2fa_enabled: boolean
@@ -1515,6 +1664,7 @@ export type Database = {
         Insert: {
           age_verified?: boolean | null
           created_at?: string
+          creator_name?: string | null
           date_of_birth?: string | null
           email: string
           email_2fa_enabled?: boolean
@@ -1529,6 +1679,7 @@ export type Database = {
         Update: {
           age_verified?: boolean | null
           created_at?: string
+          creator_name?: string | null
           date_of_birth?: string | null
           email?: string
           email_2fa_enabled?: boolean
@@ -1544,7 +1695,188 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      commission_requests_creator_view: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          creator_notes: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          platform_fee_amount: number | null
+          reference_images: string[] | null
+          revision_count: number | null
+          selected_addons: Json | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: never
+          budget_range_min?: never
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: never
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: never
+          budget_range_min?: never
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: never
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_requests_customer_view: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          creator_notes: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          platform_fee_amount: number | null
+          reference_images: string[] | null
+          revision_count: number | null
+          selected_addons: Json | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: never
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: never
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_payment_operation: {
@@ -1556,6 +1888,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      audit_user_data_security: {
+        Args: never
+        Returns: {
+          details: string
+          recommendation: string
+          security_check: string
+          status: string
+        }[]
+      }
       check_payment_rate_limit: {
         Args: {
           p_limit?: number
@@ -1565,45 +1906,144 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_expired_2fa_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_ip_address: unknown
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
       }
-      cleanup_old_payment_audit_logs: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
+      cleanup_old_payment_audit_logs: { Args: never; Returns: number }
       detect_payment_intrusion: {
         Args: { p_suspicious_behavior: string; p_table_accessed: string }
         Returns: undefined
       }
-      get_commission_request_secure: {
-        Args: { p_commission_id: string }
+      get_commission_request_secure_v2: {
+        Args: { p_request_id: string }
         Returns: {
           agreed_price: number
           budget_range_max: number
           budget_range_min: number
-          commission_type_base_price: number
           commission_type_id: string
-          commission_type_name: string
           created_at: string
           creator_id: string
           creator_notes: string
           customer_id: string
           customer_notes: string
-          customer_profile_picture: string
-          customer_username: string
           deadline: string
           description: string
           id: string
-          platform_fee_amount: number
           reference_images: string[]
           revision_count: number
           selected_addons: Json
           status: string
-          stripe_payment_intent_id: string
           title: string
           updated_at: string
+          user_role: string
+        }[]
+      }
+      get_commission_type_details_secure: {
+        Args: { p_commission_type_id: string }
+        Returns: {
+          base_price: number
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number
+          price_per_revision: number
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_for_authenticated: {
+        Args: {
+          p_creator_id: string
+          p_limit?: number
+          p_offset?: number
+          p_only_active?: boolean
+        }
+        Returns: {
+          base_price: number
+          creator_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_public: {
+        Args: { p_creator_id: string }
+        Returns: {
+          base_price: number
+          creator_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_secure: {
+        Args: { p_creator_id?: string }
+        Returns: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number
+          price_per_revision: number
+          sample_art_url: string
+          show_pricing: boolean
+          tags: string[]
+          updated_at: string
+        }[]
+      }
+      get_creator_business_profile_secure: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          stripe_account_id: string
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
+          tags: string[]
+          user_id: string
+          username: string
+          website: string
         }[]
       }
       get_creator_commission_info: {
@@ -1621,6 +2061,25 @@ export type Database = {
         Args: { p_creator_id: string }
         Returns: boolean
       }
+      get_creator_commission_types: {
+        Args: { p_creator_id: string }
+        Returns: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
       get_creator_followers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
@@ -1629,6 +2088,82 @@ export type Database = {
           username: string
         }[]
       }
+      get_creator_for_follow: {
+        Args: { p_creator_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          user_id: string
+        }[]
+      }
+      get_creator_profile_public: {
+        Args: { p_creator_id: string }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          website: string
+        }[]
+      }
+      get_creator_profile_secure:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_display_name?: string
+              p_username?: string
+            }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_tos: string
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              is_owner: boolean
+              profile_image_url: string
+              stripe_account_id: string
+              stripe_charges_enabled: boolean
+              stripe_onboarding_complete: boolean
+              stripe_payouts_enabled: boolean
+              tags: string[]
+              updated_at: string
+              user_id: string
+              website: string
+            }[]
+          }
       get_creator_ratings: {
         Args: {
           p_creator_id: string
@@ -1646,6 +2181,48 @@ export type Database = {
           review_text: string
           user_id: string
           username: string
+        }[]
+      }
+      get_creator_settings_secure: {
+        Args: { p_user_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          stripe_account_id: string
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
+          tags: string[]
+          updated_at: string
+          user_id: string
+          users: Json
+          website: string
+        }[]
+      }
+      get_featured_commissions: {
+        Args: { p_limit?: number; p_search_term?: string }
+        Returns: {
+          base_price: number
+          creator_display_name: string
+          creator_id: string
+          creator_profile_image_url: string
+          creator_user_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          name: string
+          sample_art_url: string
         }[]
       }
       get_masked_payment_methods: {
@@ -1718,7 +2295,7 @@ export type Database = {
         }[]
       }
       get_payment_security_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           newest_record: string
           oldest_record: string
@@ -1727,15 +2304,41 @@ export type Database = {
           unique_users: number
         }[]
       }
-      get_post_like_count: {
-        Args: { post_id_param: string }
-        Returns: number
-      }
-      get_post_view_count: {
-        Args: { post_id_param: string }
-        Returns: number
-      }
-      get_public_commission_types: {
+      get_post_like_count: { Args: { post_id_param: string }; Returns: number }
+      get_post_view_count: { Args: { post_id_param: string }; Returns: number }
+      get_public_commission_types:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              base_price: number
+              creator_id: string
+              description: string
+              estimated_turnaround_days: number
+              id: string
+              name: string
+              sample_art_url: string
+              tags: string[]
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id: string
+              p_limit?: number
+              p_offset?: number
+              p_only_active?: boolean
+            }
+            Returns: {
+              base_price: number
+              description: string
+              estimated_turnaround_days: number
+              id: string
+              is_active: boolean
+              name: string
+              sample_art_url: string
+              tags: string[]
+            }[]
+          }
+      get_public_commission_types_secure: {
         Args: {
           p_creator_id: string
           p_limit?: number
@@ -1744,21 +2347,37 @@ export type Database = {
         }
         Returns: {
           base_price: number
+          created_at: string
           creator_id: string
+          custom_addons: Json
           description: string
           estimated_turnaround_days: number
           id: string
           is_active: boolean
+          max_revisions: number
           name: string
+          price_per_character: number
+          price_per_revision: number
           sample_art_url: string
           tags: string[]
         }[]
       }
-      get_public_creator_profile: {
-        Args:
-          | { p_creator_id?: string; p_user_id?: string; p_username?: string }
-          | { p_creator_id?: string; p_username?: string }
+      get_public_creator_commission_status: {
+        Args: { p_creator_id: string }
         Returns: {
+          accepts_commissions: boolean
+          creator_id: string
+        }[]
+      }
+      get_public_creator_display: {
+        Args: {
+          p_creator_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          accepts_commissions: boolean
           banner_url: string
           bio: string
           created_at: string
@@ -1768,19 +2387,137 @@ export type Database = {
           is_nsfw: boolean
           profile_image_url: string
           tags: string[]
-          user_id: string
           username: string
           website: string
         }[]
       }
+      get_public_creator_profile:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_user_id?: string
+              p_username?: string
+            }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_user_id?: string
+              p_username?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: { p_identifier: string }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              website: string
+            }[]
+          }
+      get_public_creators:
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_search?: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_search?: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
       get_public_creators_by_user_ids: {
         Args: { p_user_ids: string[] }
         Returns: {
+          banner_url: string
           bio: string
           display_name: string
+          follower_count: number
           id: string
+          is_nsfw: boolean
           profile_image_url: string
+          tags: string[]
           user_id: string
+          website: string
         }[]
       }
       get_public_creators_list: {
@@ -1794,14 +2531,16 @@ export type Database = {
           banner_url: string
           bio: string
           created_at: string
+          creator_name: string
           display_name: string
           follower_count: number
           id: string
           is_nsfw: boolean
           profile_image_url: string
           tags: string[]
+          user_id: string
+          user_profile_picture: string
           username: string
-          website: string
         }[]
       }
       get_public_membership_tiers: {
@@ -1813,6 +2552,31 @@ export type Database = {
           id: string
           price: number
           title: string
+        }[]
+      }
+      get_public_posts_secure: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          attachments: Json
+          content: string
+          created_at: string
+          creator_display_name: string
+          creator_profile_image: string
+          creator_username: string
+          id: string
+          is_nsfw: boolean
+          tags: string[]
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_public_user_info: {
+        Args: { p_user_id?: string; p_username?: string }
+        Returns: {
+          created_at: string
+          id: string
+          profile_picture: string
+          username: string
         }[]
       }
       get_safe_creator_profile: {
@@ -1880,6 +2644,24 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_safe_user_info: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          id: string
+          profile_picture: string
+          username: string
+        }[]
+      }
+      get_secure_creator_commission_info: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_turnaround_days: number
+          id: string
+        }[]
+      }
       get_secure_payment_display: {
         Args: { p_user_id: string }
         Returns: {
@@ -1890,6 +2672,7 @@ export type Database = {
           is_default: boolean
         }[]
       }
+      get_security_headers: { Args: never; Returns: Json }
       get_user_commission_requests_with_details: {
         Args: { p_customer_id: string }
         Returns: {
@@ -1969,7 +2752,7 @@ export type Database = {
           website: string
         }[]
       }
-      get_user_public_profiles: {
+      get_user_public_profiles_secure: {
         Args: { ids?: string[]; usernames?: string[] }
         Returns: {
           created_at: string
@@ -1988,6 +2771,13 @@ export type Database = {
           method_type: string
           status: string
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       list_my_commission_requests: {
         Args: {
@@ -2010,6 +2800,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      log_creator_financial_access: {
+        Args: { p_creator_id: string; p_operation: string }
+        Returns: undefined
+      }
       log_payment_access: {
         Args: {
           p_accessed_data?: Json
@@ -2022,9 +2816,81 @@ export type Database = {
         Args: { p_metadata?: Json; p_operation: string; p_user_id: string }
         Returns: undefined
       }
-      log_security_event: {
-        Args: { p_details?: Json; p_event_type: string; p_table_name: string }
+      log_security_event:
+        | {
+            Args: { p_event_data?: Json; p_event_type: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_details?: Json
+              p_event_type: string
+              p_table_name: string
+            }
+            Returns: undefined
+          }
+      log_security_event_with_rate_limit: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_rate_limit_max?: number
+          p_rate_limit_window?: string
+        }
+        Returns: boolean
+      }
+      log_sensitive_access_attempt: {
+        Args: { p_details?: Json; p_operation: string; p_table_name: string }
         Returns: undefined
+      }
+      lookup_creator_by_identifier: {
+        Args: { p_identifier: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          creator_name: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          user_profile_picture: string
+          username: string
+          website: string
+        }[]
+      }
+      search_creators_public: {
+        Args: {
+          p_is_nsfw?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_search_term?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          banner_url: string
+          bio: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          website: string
+        }[]
+      }
+      user_can_see_full_post_content: {
+        Args: { post_id_param: string }
+        Returns: boolean
       }
       user_has_tier_access: {
         Args: { tier_id_param: string }
@@ -2034,13 +2900,18 @@ export type Database = {
         Args: { creator_id_param: string }
         Returns: boolean
       }
-      user_owns_post: {
-        Args: { post_id_param: string }
-        Returns: boolean
+      user_owns_post: { Args: { post_id_param: string }; Returns: boolean }
+      validate_user_data_access: {
+        Args: never
+        Returns: {
+          access_type: string
+          description: string
+          is_secure: boolean
+        }[]
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "user" | "moderator" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2167,6 +3038,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["user", "moderator", "admin"],
+    },
   },
 } as const
