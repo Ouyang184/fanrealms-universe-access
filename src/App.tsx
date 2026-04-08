@@ -259,6 +259,15 @@ export default function App() {
                     </MainLayout>
                   </AuthGuard>
                 } />
+                <Route path="/creator-studio/products" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorProductsPage />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
+                } />
                 <Route path="/creator-studio/projects/:projectId" element={
                   <AuthGuard>
                     <MainLayout>
