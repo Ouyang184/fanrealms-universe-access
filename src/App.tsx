@@ -37,6 +37,7 @@ import CreatorStudioSettings from "./pages/creator-studio/Settings";
 import CreatorPage from "./pages/Creator";
 import CreatorProfile from "./pages/creator-studio/CreatorProfile";
 import CreatorProjectsPage from "./pages/creator-studio/Projects";
+import CreatorProductsPage from "./pages/creator-studio/Products";
 import ProjectDetailPage from "./pages/creator-studio/ProjectDetail";
 import Commissions from "./pages/creator-studio/Commissions";
 import PaymentPage from "./pages/Payment";
@@ -62,6 +63,12 @@ import CommissionPayment from "./pages/CommissionPayment";
 import CommissionPaymentSuccess from "./pages/CommissionPaymentSuccess";
 import Requests from "./pages/Requests";
 import PaymentMethodsPage from "./pages/PaymentMethods";
+import Marketplace from "./pages/Marketplace";
+import ProductDetail from "./pages/ProductDetail";
+import Jobs from "./pages/Jobs";
+import JobDetail from "./pages/JobDetail";
+import Forum from "./pages/Forum";
+import ForumThread from "./pages/ForumThread";
 
 
 // Create a client
@@ -98,6 +105,14 @@ export default function App() {
                 <Route path="/explore/:category" element={<AuthGuard><ExploreCategoryPage /></AuthGuard>} />
                 <Route path="/commissions" element={<AuthGuard><AllCommissionsPage /></AuthGuard>} />
                 <Route path="/posts" element={<AuthGuard><AllPostsPage /></AuthGuard>} />
+                
+                {/* Three pillars: Marketplace, Jobs, Forum */}
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/marketplace/:productId" element={<ProductDetail />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/jobs/:jobId" element={<AuthGuard><JobDetail /></AuthGuard>} />
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/:threadId" element={<ForumThread />} />
                 
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
