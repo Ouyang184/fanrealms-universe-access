@@ -1,6 +1,5 @@
 
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { SidebarHeader } from "./SidebarHeader";
 import { MainNavigation } from "./MainNavigation";
@@ -24,14 +23,12 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef(0);
 
-  // Save scroll position when it changes
   const handleScroll = () => {
     if (scrollContainerRef.current) {
       scrollPositionRef.current = scrollContainerRef.current.scrollTop;
     }
   };
 
-  // Restore scroll position after navigation
   useEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
       scrollContainerRef.current.scrollTop = scrollPositionRef.current;
@@ -41,7 +38,6 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
   const SidebarContent = () => (
     <>
       <SidebarHeader collapsed={collapsed} onToggle={toggleSidebar} />
-
       <div 
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"
@@ -49,17 +45,13 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
         style={{ scrollBehavior: 'auto' }}
       >
         <MainNavigation collapsed={collapsed} isMobile={isMobile} />
-
-        <Separator className="my-4" />
-
+        <Separator className="my-2" />
         <CreatorStudioMenu collapsed={collapsed} isMobile={isMobile} />
       </div>
-
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />
     </>
   );
 
-  // On mobile, use a drawer
   if (isMobile) {
     return (
       <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
@@ -67,13 +59,13 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="fixed top-3 left-3 z-50 bg-background/80 backdrop-blur-sm border"
+            className="fixed top-3 left-3 z-50"
           >
             <Menu className="h-5 w-5" />
           </Button>
         </DrawerTrigger>
         <DrawerContent className="h-[85vh]">
-          <div className="flex flex-col h-full bg-black text-foreground">
+          <div className="flex flex-col h-full bg-background text-foreground">
             <SidebarContent />
           </div>
         </DrawerContent>
@@ -81,12 +73,11 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
     );
   }
 
-  // Desktop sidebar
   return (
     <div
       className={cn(
-        "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-black flex-shrink-0",
-        collapsed ? "w-16" : "w-72",
+        "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-card flex-shrink-0",
+        collapsed ? "w-14" : "w-56",
       )}
     >
       <SidebarContent />

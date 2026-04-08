@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
@@ -20,18 +19,11 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
   const renderContent = (posts: Post[], type: 'trending' | 'new') => {
     if (isLoading) {
       return Array.from({ length: 8 }).map((_, index) => (
-        <div key={`skeleton-${index}`} className="bg-gray-900 border-gray-800 rounded-lg overflow-hidden">
+        <div key={`skeleton-${index}`} className="rounded-lg border border-border overflow-hidden">
           <Skeleton className="h-40 w-full" />
           <div className="p-4 space-y-2">
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-4 w-full" />
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-6 w-6 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <Skeleton className="h-6 w-6 rounded" />
-            </div>
           </div>
         </div>
       ));
@@ -40,8 +32,7 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
     if (posts.length === 0) {
       return (
         <div className="col-span-full text-center py-12 text-muted-foreground">
-          <p className="text-lg mb-2">No content available yet</p>
-          <p className="text-sm">Check back later for new posts from creators!</p>
+          <p className="text-sm">No content available yet</p>
         </div>
       );
     }
@@ -54,40 +45,34 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
   };
 
   return (
-    <Tabs defaultValue="for-you" className="mb-12">
+    <Tabs defaultValue="for-you" className="mb-16">
       <div className="flex items-center justify-between mb-4">
-        <TabsList className="bg-gray-900 border-gray-800">
-          <TabsTrigger value="for-you" className="data-[state=active]:bg-purple-900/30">
-            For You
-          </TabsTrigger>
-          <TabsTrigger value="trending" className="data-[state=active]:bg-purple-900/30">
-            Trending
-          </TabsTrigger>
-          <TabsTrigger value="recent" className="data-[state=active]:bg-purple-900/30">
-            Recent
-          </TabsTrigger>
+        <TabsList>
+          <TabsTrigger value="for-you">For You</TabsTrigger>
+          <TabsTrigger value="trending">Trending</TabsTrigger>
+          <TabsTrigger value="recent">Recent</TabsTrigger>
         </TabsList>
         <Link to="/explore">
-          <Button variant="link" className="text-purple-400">
-            View All <ChevronRight className="h-4 w-4 ml-1" />
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </Link>
       </div>
 
       <TabsContent value="for-you" className="mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {renderContent(forYouPosts, 'new')}
         </div>
       </TabsContent>
 
       <TabsContent value="trending" className="mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {renderContent(trendingPosts, 'trending')}
         </div>
       </TabsContent>
 
       <TabsContent value="recent" className="mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {renderContent(recentPosts, 'new')}
         </div>
       </TabsContent>

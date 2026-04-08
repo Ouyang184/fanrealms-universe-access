@@ -1,19 +1,9 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  Home, 
-  Users, 
-  Rss, 
-  Compass, 
-  MessageSquare, 
-  ShoppingBag, 
-  Settings,
-  FileText,
-  Store,
-  Briefcase,
-  MessagesSquare
+  Home, Users, Rss, Compass, MessageSquare, ShoppingBag, Settings,
+  FileText, Store, Briefcase, MessagesSquare
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface MainNavigationProps {
@@ -24,10 +14,7 @@ interface MainNavigationProps {
 
 export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }: MainNavigationProps) {
   const location = useLocation();
-  
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   const navigationItems = [
     { path: "/home", icon: Home, label: "Home" },
@@ -40,30 +27,26 @@ export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }
     { path: "/messages", icon: MessageSquare, label: "Messages" },
     { path: "/requests", icon: FileText, label: "Requests" },
     { path: "/subscriptions", icon: ShoppingBag, label: "Subscriptions" },
-    { path: "/settings", icon: Settings, label: "Account Settings" },
+    { path: "/settings", icon: Settings, label: "Settings" },
   ];
 
-  const handleNavClick = () => {
-    if (onMobileNavClick) {
-      onMobileNavClick();
-    }
-  };
-
   return (
-    <div className="space-y-1 p-2">
+    <div className="space-y-0.5 px-2 py-2">
       {navigationItems.map((item) => (
-        <Link to={item.path} key={item.path} className="block" onClick={handleNavClick}>
-           <Button
-            variant={isActive(item.path) ? "secondary" : "ghost"}
-            className={cn(
-              "w-full font-medium gap-3",
-              collapsed && !isMobile ? "justify-center px-2" : "justify-start",
-              isActive(item.path) && "bg-primary/30",
-            )}
-          >
-            <item.icon className="h-5 w-5 flex-shrink-0" />
-            {(!collapsed || isMobile) && <span>{item.label}</span>}
-          </Button>
+        <Link
+          to={item.path}
+          key={item.path}
+          onClick={onMobileNavClick}
+          className={cn(
+            "flex items-center gap-3 px-2 py-1.5 rounded text-sm transition-colors",
+            collapsed && !isMobile ? "justify-center" : "",
+            isActive(item.path)
+              ? "text-foreground bg-accent font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+          )}
+        >
+          <item.icon className="h-4 w-4 flex-shrink-0" />
+          {(!collapsed || isMobile) && <span>{item.label}</span>}
         </Link>
       ))}
     </div>

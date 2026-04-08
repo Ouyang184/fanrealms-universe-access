@@ -14,10 +14,7 @@ const Login = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Only mark as ready once we've confirmed loading is complete
-    if (!loading) {
-      setIsReady(true);
-    }
+    if (!loading) setIsReady(true);
   }, [loading]);
 
   if (loading || !isReady) {
@@ -29,29 +26,25 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Link to="/" className="inline-block">
-            <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
-          </Link>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <Link to="/" className="text-xl font-bold">FanRealms</Link>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800 text-white">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
-            <CardDescription className="text-center text-gray-400">Sign in to your FanRealms account</CardDescription>
+            <CardTitle className="text-xl text-center">Welcome back</CardTitle>
+            <CardDescription className="text-center">Sign in to your account</CardDescription>
           </CardHeader>
           <CardContent>
             <LoginForm />
             <SocialLoginOptions />
           </CardContent>
           <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium">
-                Sign up
-              </Link>
+              <Link to="/signup" className="text-primary hover:underline font-medium">Sign up</Link>
             </p>
           </CardFooter>
         </Card>

@@ -1,6 +1,5 @@
 
 import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface SidebarFooterProps {
@@ -10,15 +9,17 @@ interface SidebarFooterProps {
 
 export function SidebarFooter({ collapsed, onSignOut }: SidebarFooterProps) {
   return (
-    <div className={cn("border-t border-border", collapsed ? "p-2" : "p-4")}>
-      <Button
-        variant="ghost"
-        className={cn("w-full text-muted-foreground", collapsed ? "justify-center px-2" : "justify-start gap-3")}
+    <div className={cn("border-t border-border", collapsed ? "p-2" : "p-3")}>
+      <button
+        className={cn(
+          "flex items-center gap-3 w-full px-2 py-1.5 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors",
+          collapsed && "justify-center"
+        )}
         onClick={onSignOut}
       >
-        <LogOut className="h-5 w-5" />
+        <LogOut className="h-4 w-4" />
         {!collapsed && <span>Logout</span>}
-      </Button>
+      </button>
     </div>
   );
 }
