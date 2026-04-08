@@ -235,6 +235,24 @@ export default function App() {
                     </MainLayout>
                   </AuthGuard>
                 } />
+                <Route path="/creator-studio/projects" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <CreatorProjectsPage />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
+                } />
+                <Route path="/creator-studio/projects/:projectId" element={
+                  <AuthGuard>
+                    <MainLayout>
+                      <CreatorCheck>
+                        <ProjectDetailPage />
+                      </CreatorCheck>
+                    </MainLayout>
+                  </AuthGuard>
+                } />
                 
                 {/* Commission payment routes - add before creator profile route */}
                 <Route path="/commissions/:requestId/pay" element={<AuthGuard><CommissionPayment /></AuthGuard>} />
