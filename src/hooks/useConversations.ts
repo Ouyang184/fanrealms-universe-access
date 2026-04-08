@@ -61,7 +61,7 @@ export function useConversations() {
       // Get user data for all other users
       const otherUserIds = participants.map(p => p.other_user_id);
         const { data: usersData, error: usersError } = await supabase
-          .rpc('get_user_public_profiles', { ids: otherUserIds });
+          .rpc('get_user_public_profiles' as any, { ids: otherUserIds });
 
       if (usersError) {
         console.error('Error fetching users:', usersError);

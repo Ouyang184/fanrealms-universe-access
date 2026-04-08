@@ -89,11 +89,18 @@ export const useProfile = () => {
 
           if (creatorError) throw creatorError;
         } else {
-          // Create new creator record
+          // Create new creator record - fetch username first
+          const { data: userData } = await supabase
+            .from('users')
+            .select('username')
+            .eq('id', userId)
+            .single();
+
           const { error: creatorError } = await supabase
             .from('creators')
             .insert({
               user_id: userId,
+              username: userData?.username || userId,
               ...creatorData
             });
 
