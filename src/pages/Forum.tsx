@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThreads, FORUM_CATEGORIES } from '@/hooks/useForum';
 import { ThreadCard } from '@/components/forum/ThreadCard';
-import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 
 export default function Forum() {
   const [category, setCategory] = useState('all');
@@ -12,38 +11,60 @@ export default function Forum() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Forum</h1>
-            <p className="text-muted-foreground">Discuss, share devlogs, and connect with the community</p>
+            <h1 className="text-[20px] font-bold tracking-[-0.5px]">Forum</h1>
+            <p className="text-[13px] text-[#888] mt-0.5">Discuss, share devlogs, and connect with the community</p>
           </div>
           <CreateThreadDialog />
         </div>
 
-        <Tabs value={category} onValueChange={setCategory}>
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="all">All</TabsTrigger>
-            {FORUM_CATEGORIES.map((c) => (
-              <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {/* Category pills */}
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setCategory('all')}
+            className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
+              category === 'all'
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-[#666] border-[#e5e5e5] hover:border-[#ccc]'
+            }`}
+          >
+            All
+          </button>
+          {FORUM_CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
+                category === c
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-[#666] border-[#e5e5e5] hover:border-[#ccc]'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full" />
+              <Skeleton key={i} className="h-[68px] w-full rounded-xl" />
             ))}
           </div>
         ) : threads && threads.length > 0 ? (
-          <div className="space-y-3">
-            {threads.map((thread) => (
-              <ThreadCard key={thread.id} thread={thread} />
+          <div className="bg-white rounded-xl border border-[#eee] overflow-hidden">
+            {threads.map((thread, i) => (
+              <ThreadCard
+                key={thread.id}
+                thread={thread}
+                isLast={i === threads.length - 1}
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-16 text-[#aaa]">
             No threads yet. Start the conversation!
           </div>
         )}
