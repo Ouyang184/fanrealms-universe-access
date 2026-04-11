@@ -69,6 +69,7 @@ import Jobs from "./pages/Jobs";
 import JobDetail from "./pages/JobDetail";
 import Forum from "./pages/Forum";
 import ForumThread from "./pages/ForumThread";
+import GamesPage from "./pages/Games";
 
 
 // Create a client
@@ -113,6 +114,7 @@ export default function App() {
                 <Route path="/jobs/:jobId" element={<AuthGuard><JobDetail /></AuthGuard>} />
                 <Route path="/forum" element={<Forum />} />
                 <Route path="/forum/:threadId" element={<ForumThread />} />
+                <Route path="/games" element={<AuthGuard><GamesPage /></AuthGuard>} />
                 
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
