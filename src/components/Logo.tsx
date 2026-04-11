@@ -15,6 +15,9 @@ export function Logo({ collapsed = false, onClick, className, variant = "light" 
     <div
       className={cn("flex items-center gap-2 cursor-pointer", className)}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && onClick) onClick();
+      }}
       role="button"
       tabIndex={0}
       aria-label="FanRealms"
@@ -41,8 +44,8 @@ export function Logo({ collapsed = false, onClick, className, variant = "light" 
       </svg>
 
       {!collapsed && (
-        <span className={cn("text-base font-bold tracking-tight leading-none", textColor)}>
-          Fan<span className={accentColor}>Realms</span>
+        <span className="text-base font-bold tracking-tight leading-none">
+          <span className={textColor}>Fan</span><span className="text-primary">Realms</span>
         </span>
       )}
     </div>
