@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms — Castle Logo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #f0f0f0; padding: 40px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .swatch {
+    border-radius: 14px;
+    padding: 40px;
+    display: flex; align-items: center; justify-content: center;
+    flex: 1; min-width: 200px;
+  }
+  .swatch.white { background: #fff; border: 1px solid #e5e5e5; }
+  .swatch.dark  { background: #111; }
+  .swatch.red   { background: #e11d48; }
+  .swatch.gray  { background: #f5f5f5; border: 1px solid #e5e5e5; }
+
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: #999; margin-bottom: 12px;
+  }
+
+  /* ─── LOGO ─── */
+  .fr-logo { display: flex; align-items: center; }
+
+  /* Castle icon built with SVG for crispness at all sizes */
+  .fr-icon { flex-shrink: 0; }
+
+  .fr-word { display: flex; align-items: baseline; margin-left: 10px; }
+  .fr-word.sm { margin-left: 7px; }
+  .fr-word.lg { margin-left: 14px; }
+
+  .w-fan    { font-weight: 700; letter-spacing: -0.4px; color: #111; }
+  .w-realms { font-weight: 700; letter-spacing: -0.4px; color: #e11d48; }
+  .on-dark .w-fan    { color: #fff; }
+  .on-dark .w-realms { color: #ff6b8a; }
+  .on-red  .w-fan    { color: #fff; }
+  .on-red  .w-realms { color: rgba(255,255,255,0.65); }
+
+  /* sizes */
+  .fr-logo.sm .w-fan, .fr-logo.sm .w-realms { font-size: 14px; }
+  .fr-logo.md .w-fan, .fr-logo.md .w-realms { font-size: 20px; }
+  .fr-logo.lg .w-fan, .fr-logo.lg .w-realms { font-size: 28px; }
+
+  /* icon-only scale row */
+  .icon-row { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; padding: 28px 32px; background: white; border-radius: 14px; border: 1px solid #e5e5e5; margin-bottom: 16px; }
+  .icon-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .icon-label { font-size: 11px; color: #888; font-weight: 500; }
+
+  /* nav mockup */
+  .nav-mock {
+    background: white;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    padding: 0 24px;
+    display: flex; align-items: center;
+    height: 54px; gap: 20px;
+  }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-link { padding: 6px 12px; font-size: 13px; font-weight: 500; color: #888; border-radius: 8px; cursor: pointer; }
+  .nav-link.active { background: #fff0f3; color: #e11d48; font-weight: 600; }
+  .nav-right { margin-left: auto; display: flex; gap: 8px; }
+  .btn-g { padding: 6px 14px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; font-weight: 600; color: #555; font-family: 'Space Grotesk', sans-serif; }
+  .btn-p { padding: 6px 14px; background: #e11d48; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; color: white; font-family: 'Space Grotesk', sans-serif; }
+</style>
+</head>
+<body>
+
+<h2>Castle Tower — Refined</h2>
+<p class="sub">Polished across all backgrounds and sizes</p>
+
+<div class="section-label">On light backgrounds</div>
+<div class="row">
+  <div class="swatch white">
+    <div class="fr-logo lg">
+      <svg class="fr-icon" width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <rect width="52" height="52" rx="12" fill="#E11D48"/>
+        <!-- battlements: 5 merlons -->
+        <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <!-- tower body -->
+        <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+        <!-- window -->
+        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+        <!-- door arch -->
+        <rect x="23" y="31" width="7" height="8" rx="0" fill="#E11D48"/>
+        <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+      </svg>
+      <div class="fr-word lg">
+        <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+      </div>
+    </div>
+  </div>
+  <div class="swatch gray">
+    <div class="fr-logo md">
+      <svg class="fr-icon" width="38" height="38" viewBox="0 0 52 52" fill="none">
+        <rect width="52" height="52" rx="12" fill="#E11D48"/>
+        <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+        <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+        <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+      </svg>
+      <div class="fr-word md">
+        <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">On dark backgrounds</div>
+<div class="row">
+  <div class="swatch dark">
+    <div class="fr-logo md on-dark">
+      <svg class="fr-icon" width="38" height="38" viewBox="0 0 52 52" fill="none">
+        <rect width="52" height="52" rx="12" fill="#E11D48"/>
+        <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+        <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+        <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+        <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+        <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+      </svg>
+      <div class="fr-word md">
+        <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+      </div>
+    </div>
+  </div>
+  <div class="swatch red">
+    <div class="fr-logo md on-red">
+      <svg class="fr-icon" width="38" height="38" viewBox="0 0 52 52" fill="none">
+        <rect width="52" height="52" rx="12" fill="white"/>
+        <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="#E11D48"/>
+        <rect x="19" y="13" width="6" height="6" rx="1"   fill="#E11D48"/>
+        <rect x="23" y="10" width="7" height="9" rx="1.5" fill="#E11D48"/>
+        <rect x="33" y="13" width="6" height="6" rx="1"   fill="#E11D48"/>
+        <rect x="37" y="10" width="7" height="9" rx="1.5" fill="#E11D48"/>
+        <rect x="9" y="19" width="35" height="20" rx="1.5" fill="#E11D48"/>
+        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="white"/>
+        <rect x="23" y="31" width="7" height="8" fill="white"/>
+        <rect x="23" y="31" width="7" height="4" rx="3.5" fill="white"/>
+      </svg>
+      <div class="fr-word md">
+        <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Icon sizes</div>
+<div class="icon-row">
+  <div class="icon-wrap">
+    <svg width="64" height="64" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="12" fill="#E11D48"/>
+      <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+      <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+    </svg>
+    <span class="icon-label">64px</span>
+  </div>
+  <div class="icon-wrap">
+    <svg width="32" height="32" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="12" fill="#E11D48"/>
+      <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+      <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+    </svg>
+    <span class="icon-label">32px</span>
+  </div>
+  <div class="icon-wrap">
+    <svg width="20" height="20" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="12" fill="#E11D48"/>
+      <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+      <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+    </svg>
+    <span class="icon-label">20px</span>
+  </div>
+  <div class="icon-wrap">
+    <svg width="16" height="16" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="12" fill="#E11D48"/>
+      <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+      <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+    </svg>
+    <span class="icon-label">16px favicon</span>
+  </div>
+</div>
+
+<div class="section-label">In the nav bar</div>
+<div class="nav-mock">
+  <div class="fr-logo sm">
+    <svg width="28" height="28" viewBox="0 0 52 52" fill="none">
+      <rect width="52" height="52" rx="12" fill="#E11D48"/>
+      <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+      <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+      <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
+      <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+      <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+    </svg>
+    <div class="fr-word sm">
+      <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+    </div>
+  </div>
+  <div class="nav-links">
+    <div class="nav-link active">Marketplace</div>
+    <div class="nav-link">Jobs</div>
+    <div class="nav-link">Forum</div>
+    <div class="nav-link">Explore</div>
+  </div>
+  <div class="nav-right">
+    <button class="btn-g">Log in</button>
+    <button class="btn-p">Sign up</button>
+  </div>
+</div>
+
+</body>
+</html>

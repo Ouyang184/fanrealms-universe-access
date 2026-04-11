@@ -78,7 +78,7 @@
 /* Scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(216 10% 20%) transparent;
+  scrollbar-color: hsl(0 0% 20%) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -91,12 +91,12 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: hsl(216 10% 20%);
+  background: hsl(0 0% 20%);
   border-radius: 3px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: hsl(216 10% 28%);
+  background: hsl(0 0% 28%);
 }
 
 /* Stripe Elements */

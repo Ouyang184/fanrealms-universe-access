@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms — Kingdom Logos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #f0f0f0; padding: 40px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .concept {
+    background: white;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .concept:hover { border-color: #e11d48; box-shadow: 0 4px 20px rgba(225,29,72,0.1); }
+  .concept.selected { border-color: #e11d48; }
+
+  .stage {
+    min-height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 36px 40px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .stage.dark  { background: #111; }
+  .stage.light { background: #fafafa; }
+  .stage.red   { background: #e11d48; }
+
+  .info { padding: 14px 18px; }
+  .info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .info p  { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.5; }
+
+  .logo { display: flex; align-items: center; gap: 13px; }
+  .word { display: flex; align-items: baseline; }
+  .w-fan    { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .w-realms { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #e11d48; }
+  .on-dark .w-fan    { color: #fff; }
+  .on-dark .w-realms { color: #ff6b8a; }
+  .on-red  .w-fan    { color: #fff; }
+  .on-red  .w-realms { color: rgba(255,255,255,0.65); }
+
+  /* ── A: CROWN — refined, 5 points ── */
+  .crown-tile {
+    width: 42px; height: 42px;
+    background: #e11d48;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .crown-svg { width: 26px; height: 20px; }
+
+  /* ── B: CASTLE TOWER ── */
+  .castle-tile {
+    width: 42px; height: 42px;
+    background: #e11d48;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 6px;
+    overflow: hidden;
+  }
+  .castle {
+    width: 24px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .battlements {
+    display: flex;
+    gap: 2px;
+    align-self: stretch;
+    justify-content: center;
+  }
+  .merlon { width: 5px; height: 5px; background: white; border-radius: 1px 1px 0 0; }
+  .crenel { width: 3px; height: 0; }
+  .tower-body {
+    width: 100%;
+    height: 14px;
+    background: white;
+    border-radius: 0 0 1px 1px;
+    position: relative;
+  }
+  .tower-door {
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 7px;
+    background: #e11d48;
+    border-radius: 3px 3px 0 0;
+  }
+  .tower-window {
+    position: absolute;
+    top: 2px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px;
+    background: #e11d48;
+    border-radius: 2px 2px 0 0;
+  }
+
+  /* ── C: SHIELD / CREST ── */
+  .shield-tile {
+    width: 42px; height: 42px;
+    background: #111;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .shield {
+    width: 22px; height: 26px;
+    background: #e11d48;
+    position: relative;
+    border-radius: 3px 3px 0 0;
+    clip-path: polygon(0% 0%, 100% 0%, 100% 60%, 50% 100%, 0% 60%);
+  }
+  .shield-inner {
+    position: absolute;
+    inset: 4px;
+    background: rgba(255,255,255,0.15);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 55%, 50% 100%, 0% 55%);
+    border-radius: 2px 2px 0 0;
+  }
+  .shield-stripe {
+    position: absolute;
+    top: 6px; left: 50%; transform: translateX(-50%);
+    width: 2px; height: 12px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 1px;
+  }
+  .shield-cross-h {
+    position: absolute;
+    top: 11px; left: 5px; right: 5px;
+    height: 2px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 1px;
+  }
+
+  /* ── D: BANNER / FLAG ── */
+  .banner-tile {
+    width: 42px; height: 42px;
+    background: #e11d48;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .banner {
+    width: 22px; height: 26px;
+    position: relative;
+  }
+  .banner-pole {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: white;
+    border-radius: 2px;
+  }
+  .banner-flag {
+    position: absolute;
+    left: 3px; top: 0;
+    width: 19px; height: 16px;
+    background: white;
+    border-radius: 0 3px 0 0;
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+  }
+  .banner-crown-dot {
+    position: absolute;
+    left: 3px; top: 2px;
+    width: 19px; height: 10px;
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 2px;
+    padding: 0 3px;
+  }
+  .bc { width: 4px; background: #e11d48; border-radius: 1px 1px 0 0; }
+  .bc.t { height: 8px; }
+  .bc.s { height: 5px; }
+</style>
+</head>
+<body>
+
+<h2>Kingdom Realm Logos</h2>
+<p class="sub">Crown, castle, crest, banner — pick the symbol that feels like FanRealms</p>
+
+<div class="grid">
+
+  <!-- A: CROWN -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="crown-tile">
+          <!-- SVG crown: clean 5-point -->
+          <svg class="crown-svg" viewBox="0 0 26 20" fill="none">
+            <!-- base band -->
+            <rect x="1" y="13" width="24" height="5" rx="1.5" fill="white"/>
+            <!-- left tall point -->
+            <rect x="2" y="4" width="5" height="11" rx="1" fill="white"/>
+            <!-- left short point -->
+            <rect x="9" y="7" width="4" height="8" rx="1" fill="white"/>
+            <!-- center tall point -->
+            <rect x="11" y="2" width="4" height="13" rx="1" fill="white"/>
+            <!-- right short point -->
+            <rect x="13" y="7" width="4" height="8" rx="1" fill="white"/>
+            <!-- right tall point -->
+            <rect x="19" y="4" width="5" height="11" rx="1" fill="white"/>
+            <!-- three dots on points -->
+            <circle cx="4.5" cy="3" r="2" fill="white"/>
+            <circle cx="13" cy="1.5" r="2" fill="white"/>
+            <circle cx="21.5" cy="3" r="2" fill="white"/>
+          </svg>
+        </div>
+        <div class="word">
+          <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>A — Crown</h3>
+      <p>Classic 5-point crown with jewel dots. Clean, immediately "kingdom." Works at any size.</p>
+    </div>
+  </div>
+
+  <!-- B: CASTLE TOWER -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="castle-tile">
+          <div class="castle">
+            <div class="battlements">
+              <div class="merlon"></div>
+              <div class="crenel"></div>
+              <div class="merlon"></div>
+              <div class="crenel"></div>
+              <div class="merlon"></div>
+            </div>
+            <div class="tower-body">
+              <div class="tower-window"></div>
+              <div class="tower-door"></div>
+            </div>
+          </div>
+        </div>
+        <div class="word">
+          <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>B — Castle Tower</h3>
+      <p>Simplified castle silhouette with battlements. Bold, readable, unmistakably a kingdom. Great as a favicon.</p>
+    </div>
+  </div>
+
+  <!-- C: SHIELD / CREST -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage light">
+      <div class="logo">
+        <div class="shield-tile">
+          <div class="shield">
+            <div class="shield-inner"></div>
+            <div class="shield-stripe"></div>
+            <div class="shield-cross-h"></div>
+          </div>
+        </div>
+        <div class="word">
+          <span class="w-fan" style="color:#111">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>C — Shield / Crest</h3>
+      <p>Heraldic shield shape — like a coat of arms. Feels like a realm you belong to, a faction you represent.</p>
+    </div>
+  </div>
+
+  <!-- D: BANNER -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage light">
+      <div class="logo">
+        <div class="banner-tile">
+          <div class="banner">
+            <div class="banner-pole"></div>
+            <div class="banner-flag">
+              <div class="banner-crown-dot">
+                <div class="bc s"></div>
+                <div class="bc t"></div>
+                <div class="bc s"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="word">
+          <span class="w-fan" style="color:#111">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>D — Kingdom Banner</h3>
+      <p>A flag with a mini crown — like a royal standard. Unique silhouette, strong sense of belonging to a realm.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

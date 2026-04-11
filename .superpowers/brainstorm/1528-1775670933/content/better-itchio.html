@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms — Better itch.io mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #fff; color: #111; }
+
+  /* NAV */
+  nav {
+    border-bottom: 2px solid #111;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    height: 52px;
+    gap: 32px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+  }
+  .logo {
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: #111;
+    text-transform: lowercase;
+  }
+  .logo span { color: #e11d48; }
+  .nav-links { display: flex; gap: 20px; font-size: 13px; font-weight: 500; color: #555; }
+  .nav-links a { color: inherit; text-decoration: none; }
+  .nav-links a:hover { color: #111; }
+  .nav-links a.active { color: #e11d48; font-weight: 700; }
+  .nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .btn-outline {
+    border: 2px solid #111;
+    background: transparent;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .btn-fill {
+    border: 2px solid #e11d48;
+    background: #e11d48;
+    color: white;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* HERO BANNER */
+  .hero {
+    border-bottom: 2px solid #111;
+    padding: 48px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .hero-text h1 {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+    max-width: 460px;
+  }
+  .hero-text h1 em { color: #e11d48; font-style: normal; }
+  .hero-text p {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #555;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+  .hero-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-shrink: 0;
+  }
+  .stat { text-align: center; }
+  .stat-num { font-size: 28px; font-weight: 900; letter-spacing: -1px; color: #111; }
+  .stat-num span { color: #e11d48; }
+  .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-top: 2px; }
+
+  /* TABS */
+  .section-tabs {
+    border-bottom: 2px solid #111;
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+  }
+  .tab {
+    padding: 12px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+  }
+  .tab.active { color: #e11d48; border-bottom-color: #e11d48; }
+  .tab:hover { color: #111; }
+
+  /* GRID */
+  .section { padding: 28px 32px; }
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-header h2 {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #111;
+  }
+  .section-header a { font-size: 12px; color: #e11d48; font-weight: 600; text-decoration: none; }
+
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #111; border: 2px solid #111; border-radius: 4px; overflow: hidden; }
+  .card {
+    background: #fff;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .card:hover { background: #fff9f9; }
+  .card-thumb {
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: #f4f4f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .card-thumb.c1 { background: #fef2f2; }
+  .card-thumb.c2 { background: #f0fdf4; }
+  .card-thumb.c3 { background: #eff6ff; }
+  .card-thumb.c4 { background: #fdf4ff; }
+  .card-body { padding: 10px 12px 12px; }
+  .card-title { font-size: 13px; font-weight: 700; color: #111; line-height: 1.3; }
+  .card-author { font-size: 11px; color: #888; margin-top: 2px; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+  .card-price { font-size: 14px; font-weight: 800; color: #111; }
+  .card-tag {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: #fef2f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+  }
+
+  /* JOB ROW */
+  .jobs-list { border: 2px solid #111; border-radius: 4px; overflow: hidden; }
+  .job-row {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 16px;
+    border-bottom: 1px solid #e5e5e5;
+    background: white;
+    cursor: pointer;
+  }
+  .job-row:last-child { border-bottom: none; }
+  .job-row:hover { background: #fff9f9; }
+  .job-dot { width: 8px; height: 8px; border-radius: 50%; background: #e11d48; flex-shrink: 0; }
+  .job-title { font-size: 13px; font-weight: 700; color: #111; }
+  .job-meta { font-size: 11px; color: #888; margin-top: 1px; }
+  .job-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .job-type {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 2px;
+    border: 1px solid #111;
+    color: #111;
+  }
+  .job-pay { font-size: 12px; font-weight: 800; color: #111; }
+
+  /* FORUM */
+  .forum-list { border: 2px solid #111; border-radius: 4px; overflow: hidden; }
+  .thread-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 14px;
+    border-bottom: 1px solid #e5e5e5;
+    background: white;
+    cursor: pointer;
+  }
+  .thread-row:last-child { border-bottom: none; }
+  .thread-row:hover { background: #fff9f9; }
+  .thread-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+    background: #111;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .thread-title { font-size: 13px; font-weight: 700; color: #111; line-height: 1.3; }
+  .thread-meta { font-size: 11px; color: #888; margin-top: 3px; }
+  .thread-stats { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .thread-replies { font-size: 13px; font-weight: 800; color: #111; }
+  .thread-replies-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">fan<span>realms</span></div>
+  <div class="nav-links">
+    <a href="#" class="active">Marketplace</a>
+    <a href="#">Jobs</a>
+    <a href="#">Forum</a>
+    <a href="#">Explore</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-outline">Log in</button>
+    <button class="btn-fill">Sign up</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-text">
+    <h1>The indie creator<br><em>marketplace.</em></h1>
+    <p>Buy and sell game assets, find freelance work, and connect with other creators. Built for the people making things.</p>
+    <div class="hero-actions">
+      <button class="btn-fill" style="font-size:13px; padding: 8px 20px;">Browse</button>
+      <button class="btn-outline" style="font-size:13px; padding: 8px 20px;">Sell your work</button>
+    </div>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-num">4<span>.</span>2k</div>
+      <div class="stat-label">Creators</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">18<span>k</span></div>
+      <div class="stat-label">Assets</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">930</div>
+      <div class="stat-label">Open Jobs</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-tabs">
+  <div class="tab active">All</div>
+  <div class="tab">Game Assets</div>
+  <div class="tab">Templates</div>
+  <div class="tab">Tools</div>
+  <div class="tab">Music</div>
+  <div class="tab">Art</div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>New & Noteworthy</h2>
+    <a href="#">See all</a>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-thumb c1">Preview</div>
+      <div class="card-body">
+        <div class="card-title">Pixel Art Pack Vol. 3</div>
+        <div class="card-author">PixelForge Studio</div>
+        <div class="card-footer">
+          <span class="card-price">$12.00</span>
+          <span class="card-tag">Game Assets</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-thumb c2">Preview</div>
+      <div class="card-body">
+        <div class="card-title">Godot RPG Starter Kit</div>
+        <div class="card-author">devnull_games</div>
+        <div class="card-footer">
+          <span class="card-price">$24.00</span>
+          <span class="card-tag">Template</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-thumb c3">Preview</div>
+      <div class="card-body">
+        <div class="card-title">Synthwave Loops Pack</div>
+        <div class="card-author">retrowave.audio</div>
+        <div class="card-footer">
+          <span class="card-price">$8.00</span>
+          <span class="card-tag">Music</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-thumb c4">Preview</div>
+      <div class="card-body">
+        <div class="card-title">UI Kit — Sci-Fi HUD</div>
+        <div class="card-author">interface.lab</div>
+        <div class="card-footer">
+          <span class="card-price">Free</span>
+          <span class="card-tag">Art</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="padding-top:0;">
+  <div class="two-col">
+    <div>
+      <div class="section-header">
+        <h2>Open Jobs</h2>
+        <a href="#">See all</a>
+      </div>
+      <div class="jobs-list">
+        <div class="job-row">
+          <div class="job-dot"></div>
+          <div>
+            <div class="job-title">2D Animator for mobile game</div>
+            <div class="job-meta">MoonDust Studios — posted 2h ago</div>
+          </div>
+          <div class="job-right">
+            <span class="job-type">Contract</span>
+            <span class="job-pay">$800</span>
+          </div>
+        </div>
+        <div class="job-row">
+          <div class="job-dot" style="background:#888;"></div>
+          <div>
+            <div class="job-title">Godot developer for jam game</div>
+            <div class="job-meta">Team Nebula — posted 5h ago</div>
+          </div>
+          <div class="job-right">
+            <span class="job-type">Bounty</span>
+            <span class="job-pay">$200</span>
+          </div>
+        </div>
+        <div class="job-row">
+          <div class="job-dot"></div>
+          <div>
+            <div class="job-title">Composer for indie RPG soundtrack</div>
+            <div class="job-meta">lost pixel — posted 1d ago</div>
+          </div>
+          <div class="job-right">
+            <span class="job-type">Freelance</span>
+            <span class="job-pay">$1,200</span>
+          </div>
+        </div>
+        <div class="job-row">
+          <div class="job-dot" style="background:#888;"></div>
+          <div>
+            <div class="job-title">Narrative writer — dungeon crawler</div>
+            <div class="job-meta">Hollow Crown — posted 2d ago</div>
+          </div>
+          <div class="job-right">
+            <span class="job-type">Part-time</span>
+            <span class="job-pay">$600</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-header">
+        <h2>Forum</h2>
+        <a href="#">See all</a>
+      </div>
+      <div class="forum-list">
+        <div class="thread-row">
+          <div class="thread-avatar">PF</div>
+          <div>
+            <div class="thread-title">Show your devlog — April 2026</div>
+            <div class="thread-meta">Devlogs — PixelForge · 3h ago</div>
+          </div>
+          <div class="thread-stats">
+            <div class="thread-replies">84</div>
+            <div class="thread-replies-label">replies</div>
+          </div>
+        </div>
+        <div class="thread-row">
+          <div class="thread-avatar" style="background:#e11d48;">RW</div>
+          <div>
+            <div class="thread-title">How do you price game assets?</div>
+            <div class="thread-meta">Marketplace — retrowave.audio · 6h ago</div>
+          </div>
+          <div class="thread-stats">
+            <div class="thread-replies">31</div>
+            <div class="thread-replies-label">replies</div>
+          </div>
+        </div>
+        <div class="thread-row">
+          <div class="thread-avatar" style="background:#374151;">NB</div>
+          <div>
+            <div class="thread-title">Best tools for pixel animation in 2026</div>
+            <div class="thread-meta">Tools — Team Nebula · 1d ago</div>
+          </div>
+          <div class="thread-stats">
+            <div class="thread-replies">57</div>
+            <div class="thread-replies-label">replies</div>
+          </div>
+        </div>
+        <div class="thread-row">
+          <div class="thread-avatar" style="background:#7c3aed;">IL</div>
+          <div>
+            <div class="thread-title">Feedback wanted: my first asset pack</div>
+            <div class="thread-meta">Feedback — interface.lab · 2d ago</div>
+          </div>
+          <div class="thread-stats">
+            <div class="thread-replies">19</div>
+            <div class="thread-replies-label">replies</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

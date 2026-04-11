@@ -194,8 +194,13 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
           <Logo variant="dark" />
           <div className="flex gap-6 text-[12px]">
-            {["About", "Terms", "Privacy", "Support"].map((l) => (
-              <Link key={l} to={`/${l.toLowerCase()}`} className="hover:text-[#999] transition-colors">{l}</Link>
+            {[
+              { label: "About", to: "/about" },
+              { label: "Terms", to: "/terms" },
+              { label: "Privacy", to: "/privacy-policy" },
+              { label: "Help", to: "/help" },
+            ].map(({ label, to }) => (
+              <Link key={label} to={to} className="hover:text-[#999] transition-colors">{label}</Link>
             ))}
           </div>
           <div className="text-[12px] text-[#444]">2026 FanRealms</div>

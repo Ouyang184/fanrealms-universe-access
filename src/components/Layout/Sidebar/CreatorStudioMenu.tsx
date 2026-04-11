@@ -12,7 +12,7 @@ interface CreatorStudioMenuProps {
 const CREATOR_ITEMS = [
   { path: "/creator-studio/dashboard", icon: BarChart3, label: "Dashboard" },
   { path: "/creator-studio/products", icon: Store, label: "My Products" },
-  { path: "/games/my-games", icon: Gamepad2, label: "My Games" },
+  { path: "/games", icon: Gamepad2, label: "My Games" },
   { path: "/creator-studio/commissions", icon: PenTool, label: "Commissions" },
   { path: "/creator-studio/payouts", icon: DollarSign, label: "Earnings" },
 ];

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms — Realm Logos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #f0f0f0; padding: 40px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .concept {
+    background: white;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .concept:hover { border-color: #e11d48; box-shadow: 0 4px 20px rgba(225,29,72,0.1); }
+  .concept.selected { border-color: #e11d48; }
+
+  .stage {
+    min-height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 36px 40px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 48px;
+  }
+  .stage.dark  { background: #111; }
+  .stage.light { background: #fafafa; }
+
+  .info { padding: 14px 18px; }
+  .info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .info p  { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.5; }
+
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .word { display: flex; align-items: baseline; }
+  .w-fan    { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .w-realms { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #e11d48; }
+  .on-dark .w-fan    { color: #fff; }
+  .on-dark .w-realms { color: #ff6b8a; }
+
+  /* ── A: PLANET + RING (Saturn) ── */
+  .planet-wrap {
+    width: 44px; height: 44px;
+    position: relative;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .planet {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #e11d48;
+    position: relative;
+    z-index: 2;
+  }
+  .ring {
+    position: absolute;
+    width: 40px; height: 14px;
+    border: 3px solid #e11d48;
+    border-radius: 50%;
+    z-index: 1;
+    /* clip top half so it goes behind planet */
+  }
+  .ring-back {
+    position: absolute;
+    width: 40px; height: 14px;
+    border: 3px solid #e11d48;
+    border-radius: 50%;
+    z-index: 0;
+    opacity: 0.35;
+    clip-path: inset(0 0 50% 0);
+  }
+  .ring-front {
+    position: absolute;
+    width: 40px; height: 14px;
+    border: 3px solid #e11d48;
+    border-radius: 50%;
+    z-index: 3;
+    clip-path: inset(50% 0 0 0);
+  }
+
+  /* on dark: white planet, red ring */
+  .on-dark .planet { background: white; }
+  .on-dark .ring-back { border-color: rgba(255,255,255,0.25); }
+  .on-dark .ring-front { border-color: white; }
+
+  /* ── B: LAYERED WORLD ── */
+  .world-mark {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #e11d48;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .world-arc1 {
+    position: absolute;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 5px solid rgba(255,255,255,0.2);
+    top: 12px; left: -6px;
+  }
+  .world-arc2 {
+    position: absolute;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.35);
+    top: -4px; left: 14px;
+  }
+  .world-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: white;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── C: GEM / CRYSTAL ── */
+  .gem-wrap {
+    width: 42px; height: 42px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gem {
+    position: relative;
+    width: 28px; height: 30px;
+  }
+  /* top facet (trapezoid) */
+  .gem-top {
+    position: absolute;
+    top: 0; left: 4px; right: 4px;
+    height: 11px;
+    background: #e11d48;
+    clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+  }
+  /* body */
+  .gem-body {
+    position: absolute;
+    top: 11px; left: 0; right: 0;
+    height: 19px;
+    background: #e11d48;
+    clip-path: polygon(14% 0%, 86% 0%, 50% 100%);
+    filter: brightness(0.82);
+  }
+  /* highlight */
+  .gem-shine {
+    position: absolute;
+    top: 13px; left: 6px;
+    width: 8px; height: 9px;
+    background: rgba(255,255,255,0.3);
+    clip-path: polygon(10% 0%, 90% 0%, 50% 100%);
+  }
+  .gem-top-shine {
+    position: absolute;
+    top: 2px; left: 8px;
+    width: 6px; height: 5px;
+    background: rgba(255,255,255,0.25);
+    clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+  }
+
+  /* ── D: ORBIT ── */
+  .orbit-wrap {
+    width: 44px; height: 44px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .orbit-core {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #e11d48;
+    position: relative;
+    z-index: 2;
+  }
+  .orbit-ring1 {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 2px solid #e11d48;
+    z-index: 1;
+  }
+  .orbit-ring2 {
+    position: absolute;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(225,29,72,0.4);
+    z-index: 0;
+  }
+  .orbit-dot {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #e11d48;
+    top: 2px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+  }
+
+  .on-dark .orbit-core { background: white; }
+  .on-dark .orbit-ring1 { border-color: white; }
+  .on-dark .orbit-ring2 { border-color: rgba(255,255,255,0.3); }
+  .on-dark .orbit-dot { background: white; }
+</style>
+</head>
+<body>
+
+<h2>Realm-Inspired Logo Concepts</h2>
+<p class="sub">Worlds, orbits, gems — all rooted in the idea of a realm</p>
+
+<div class="grid">
+
+  <!-- A: SATURN PLANET -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="planet-wrap">
+          <div class="ring-back"></div>
+          <div class="planet"></div>
+          <div class="ring-front"></div>
+        </div>
+        <div class="word">
+          <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>A — Planet + Ring</h3>
+      <p>Saturn-like planet. Immediately reads as "another world / realm." Bold, iconic, no other platform uses it.</p>
+    </div>
+  </div>
+
+  <!-- B: WORLD SPHERE -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage light">
+      <div class="logo">
+        <div class="world-mark">
+          <div class="world-arc1"></div>
+          <div class="world-arc2"></div>
+          <div class="world-dot"></div>
+        </div>
+        <div class="word">
+          <span class="w-fan" style="color:#111">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>B — World Sphere</h3>
+      <p>A globe with layered arcs suggesting continents / atmosphere. Feels like a world you can explore.</p>
+    </div>
+  </div>
+
+  <!-- C: GEM / CRYSTAL -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="gem-wrap">
+          <div class="gem">
+            <div class="gem-top"></div>
+            <div class="gem-top-shine"></div>
+            <div class="gem-body"></div>
+            <div class="gem-shine"></div>
+          </div>
+        </div>
+        <div class="word">
+          <span class="w-fan">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>C — Crystal Gem</h3>
+      <p>A faceted gem — realms as treasure. Feels like an RPG collectible or rare drop. Fits the indie game culture well.</p>
+    </div>
+  </div>
+
+  <!-- D: ORBIT -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage light">
+      <div class="logo">
+        <div class="orbit-wrap">
+          <div class="orbit-ring2"></div>
+          <div class="orbit-ring1"></div>
+          <div class="orbit-core"></div>
+          <div class="orbit-dot"></div>
+        </div>
+        <div class="word">
+          <span class="w-fan" style="color:#111">Fan</span><span class="w-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>D — Orbit</h3>
+      <p>Concentric rings with a orbiting dot. Suggests many worlds in motion — a universe of creators and fans.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

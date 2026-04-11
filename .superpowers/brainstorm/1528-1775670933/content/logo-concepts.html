@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms Logo Concepts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #f5f5f5; color: #111; padding: 40px; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; color: #111; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .concepts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .concept {
+    background: white;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .concept:hover { border-color: #e11d48; box-shadow: 0 4px 20px rgba(225,29,72,0.1); }
+  .concept.selected { border-color: #e11d48; box-shadow: 0 4px 20px rgba(225,29,72,0.15); }
+
+  .logo-stage {
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .logo-stage.dark { background: #111; }
+  .logo-stage.light { background: #fafafa; }
+  .logo-stage.red { background: #e11d48; }
+  .logo-stage.cream { background: #fdf8f0; }
+
+  .concept-info { padding: 16px 20px; }
+  .concept-name { font-size: 14px; font-weight: 700; color: #111; }
+  .concept-desc { font-size: 12px; color: #888; margin-top: 4px; line-height: 1.5; }
+
+  /* LOGO A — Portal mark + wordmark */
+  .logo-a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .portal-mark {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .portal-outer {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #e11d48;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .portal-inner {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .portal-core {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: #e11d48;
+  }
+  .logo-a-text { line-height: 1; }
+  .logo-a-text .fan { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+  .logo-a-text .realms { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #ff6b8a; letter-spacing: -0.5px; }
+
+  /* LOGO B — Stacked F lettermark */
+  .logo-b { display: flex; align-items: center; gap: 14px; }
+  .f-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #e11d48;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .f-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 2px 0;
+  }
+  .f-bar-top { width: 20px; height: 3px; background: white; border-radius: 2px; }
+  .f-bar-mid { width: 14px; height: 3px; background: white; border-radius: 2px; }
+  .f-bar-stem { width: 3px; height: 10px; background: white; border-radius: 2px; margin-top: 0px; }
+  .logo-b-text .fan { font-family: 'Syne', sans-serif; font-size: 21px; font-weight: 800; color: #111; letter-spacing: -0.5px; }
+  .logo-b-text .realms { font-family: 'Syne', sans-serif; font-size: 21px; font-weight: 800; color: #e11d48; letter-spacing: -0.5px; }
+
+  /* LOGO C — Diamond realm */
+  .logo-c { display: flex; align-items: center; gap: 13px; }
+  .diamond-wrap {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .diamond {
+    width: 26px;
+    height: 26px;
+    background: #e11d48;
+    transform: rotate(45deg);
+    border-radius: 4px;
+    position: relative;
+  }
+  .diamond::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: white;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 2px;
+  }
+  .logo-c-text { line-height: 1; }
+  .logo-c-fan { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 900; color: white; letter-spacing: -0.5px; }
+  .logo-c-realms { font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 400; color: rgba(255,255,255,0.65); letter-spacing: -0.5px; }
+
+  /* LOGO D — Slash wordmark */
+  .logo-d { display: flex; align-items: center; gap: 0; }
+  .slash-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: #111;
+    padding: 10px 18px;
+    border-radius: 10px;
+  }
+  .slash-fan { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: white; letter-spacing: -0.5px; }
+  .slash-divider {
+    width: 2px;
+    height: 22px;
+    background: #e11d48;
+    margin: 0 8px;
+    transform: rotate(15deg);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .slash-realms { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #e11d48; letter-spacing: -0.5px; }
+
+  /* on-light versions */
+  .logo-b-light .fan { color: #111 !important; }
+  .logo-b-light .realms { color: #e11d48 !important; }
+</style>
+</head>
+<body>
+
+<h2>FanRealms — Logo Concepts</h2>
+<p class="sub">Click a concept to select it. Each shown on its intended background.</p>
+
+<div class="concepts">
+
+  <!-- A: Portal nested squares -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="logo-stage dark">
+      <div class="logo-a">
+        <div class="portal-outer">
+          <div class="portal-inner">
+            <div class="portal-core"></div>
+          </div>
+        </div>
+        <div class="logo-a-text">
+          <span class="fan">Fan</span><span class="realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-info">
+      <div class="concept-name">A — Nested Portal</div>
+      <div class="concept-desc">Nested squares suggest a portal/realm. Clean geometric mark, works at any size. Dark + red on white.</div>
+    </div>
+  </div>
+
+  <!-- B: F lettermark -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="logo-stage light">
+      <div class="logo-b">
+        <div class="f-mark">
+          <div class="f-inner">
+            <div class="f-bar-top"></div>
+            <div class="f-bar-mid"></div>
+            <div style="display:flex; gap:0;">
+              <div class="f-bar-stem"></div>
+            </div>
+          </div>
+        </div>
+        <div class="logo-b-text logo-b-light">
+          <span class="fan">Fan</span><span class="realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-info">
+      <div class="concept-name">B — F Lettermark</div>
+      <div class="concept-desc">Bold "F" in a red tile. Simple, works as a favicon. Strong brand mark that scales down to icon size.</div>
+    </div>
+  </div>
+
+  <!-- C: Diamond -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="logo-stage red">
+      <div class="logo-c">
+        <div class="diamond-wrap">
+          <div class="diamond"></div>
+        </div>
+        <div class="logo-c-text">
+          <span class="logo-c-fan">Fan</span><span class="logo-c-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-info">
+      <div class="concept-name">C — Diamond Mark</div>
+      <div class="concept-desc">Rotated square (diamond) symbolizes a realm/world. Shown reversed on red. Bold weight contrast between "Fan" and "Realms".</div>
+    </div>
+  </div>
+
+  <!-- D: Slash wordmark -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="logo-stage cream">
+      <div class="logo-d">
+        <div class="slash-container">
+          <span class="slash-fan">Fan</span>
+          <div class="slash-divider"></div>
+          <span class="slash-realms">Realms</span>
+        </div>
+      </div>
+    </div>
+    <div class="concept-info">
+      <div class="concept-name">D — Slash Wordmark</div>
+      <div class="concept-desc">No icon — pure typographic mark. The red slash separates and connects "Fan" and "Realms". Compact and modern.</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

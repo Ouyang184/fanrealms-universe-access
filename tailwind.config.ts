@@ -74,11 +74,6 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))'
         },
-        fanrealms: {
-          purple: 'hsl(252, 59%, 48%)',
-          blue: '#2D7FF9',
-          dark: '#121212',
-        }
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -109,7 +104,6 @@ export default {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'auth-gradient': 'linear-gradient(to right bottom, hsl(var(--primary)), hsl(var(--primary)/0.8))',
       }
     }
   },

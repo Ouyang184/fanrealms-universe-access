@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms — User vs Creator Sidebar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #e8e8e8; padding: 32px; color: #111; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+  .col-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .col-label .badge {
+    padding: 2px 10px; border-radius: 99px;
+    font-size: 10px; font-weight: 700;
+  }
+  .badge-user { background: #e5e5e5; color: #555; }
+  .badge-creator { background: #e11d48; color: white; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 100%;
+    background: #111;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 9px;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .sidebar-logo-text { font-size: 15px; font-weight: 700; color: white; letter-spacing: -0.3px; }
+  .sidebar-logo-text span { color: #e11d48; }
+
+  .sec-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: #444;
+    padding: 14px 16px 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px; margin: 1px 8px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 500; color: #777;
+    cursor: pointer;
+  }
+  .nav-item.active { background: #1f1f1f; color: white; font-weight: 600; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #333; flex-shrink: 0; }
+  .nav-item.active .nav-dot { background: #e11d48; }
+  .nav-badge {
+    margin-left: auto; background: #e11d48; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 1px 6px; border-radius: 99px;
+  }
+
+  .divider { height: 1px; background: #1a1a1a; margin: 8px 0; }
+
+  /* Creator studio section */
+  .creator-section {
+    background: #0d0d0d;
+    border-top: 1px solid #1f1f1f;
+    padding-bottom: 8px;
+  }
+  .creator-section .sec-label { color: #e11d48; }
+  .creator-section .nav-item { color: #666; }
+  .creator-section .nav-item:hover { background: #1a1a1a; color: #ccc; }
+
+  /* Become creator CTA */
+  .become-creator-cta {
+    margin: 12px 10px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .cta-title { font-size: 12px; font-weight: 700; color: #ccc; }
+  .cta-desc { font-size: 11px; color: #555; margin-top: 4px; line-height: 1.5; }
+  .cta-btn {
+    margin-top: 12px;
+    display: block; width: 100%;
+    background: #e11d48; color: white;
+    border: none; border-radius: 7px;
+    padding: 8px; font-size: 12px; font-weight: 700;
+    font-family: inherit; cursor: pointer; text-align: center;
+  }
+
+  /* profile footer */
+  .sidebar-foot {
+    border-top: 1px solid #1a1a1a;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .profile-av {
+    width: 30px; height: 30px; border-radius: 8px;
+    flex-shrink: 0; display: flex; align-items: center;
+    justify-content: center; color: white; font-size: 11px; font-weight: 700;
+  }
+  .profile-name { font-size: 12px; font-weight: 600; color: #ccc; }
+  .profile-handle { font-size: 11px; color: #444; margin-top: 1px; }
+  .profile-settings { margin-left: auto; }
+  .settings-icon { width: 16px; height: 16px; color: #444; }
+
+  /* creator badge on profile */
+  .creator-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #e11d48; color: white;
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 2px 7px; border-radius: 99px;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<h2>User vs Creator — Sidebar States</h2>
+<p class="sub">Same platform, same login — creator tools unlock with one toggle</p>
+
+<div class="split">
+
+  <!-- REGULAR USER -->
+  <div>
+    <div class="col-label">
+      Regular User <span class="badge badge-user">Fan / Buyer</span>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="24" height="24" viewBox="0 0 52 52" fill="none">
+          <rect width="52" height="52" rx="12" fill="#E11D48"/>
+          <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+          <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+          <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="9"  y="19" width="35" height="20" rx="1.5" fill="white"/>
+          <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+          <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+          <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+        </svg>
+        <div class="sidebar-logo-text">Fan<span>Realms</span></div>
+      </div>
+
+      <div class="sec-label">Discover</div>
+      <div class="nav-item active"><div class="nav-dot"></div> Home</div>
+      <div class="nav-item"><div class="nav-dot"></div> Explore</div>
+      <div class="nav-item"><div class="nav-dot"></div> Marketplace</div>
+      <div class="nav-item"><div class="nav-dot"></div> Indie Games</div>
+
+      <div class="sec-label">Community</div>
+      <div class="nav-item"><div class="nav-dot"></div> Forum <span class="nav-badge">3</span></div>
+      <div class="nav-item"><div class="nav-dot"></div> Jobs</div>
+      <div class="nav-item"><div class="nav-dot"></div> Following</div>
+      <div class="nav-item"><div class="nav-dot"></div> Messages <span class="nav-badge">2</span></div>
+
+      <div class="sec-label">Account</div>
+      <div class="nav-item"><div class="nav-dot"></div> Purchases</div>
+      <div class="nav-item"><div class="nav-dot"></div> Subscriptions</div>
+      <div class="nav-item"><div class="nav-dot"></div> Settings</div>
+
+      <!-- Become a Creator CTA -->
+      <div class="become-creator-cta">
+        <div class="cta-title">Become a Creator</div>
+        <div class="cta-desc">Sell assets, list your games, post jobs, and earn on FanRealms.</div>
+        <button class="cta-btn">Get started</button>
+      </div>
+
+      <div class="sidebar-foot">
+        <div class="profile-av" style="background:#374151;">JD</div>
+        <div>
+          <div class="profile-name">Jake D.</div>
+          <div class="profile-handle">@jakedev</div>
+        </div>
+        <div class="profile-settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATOR -->
+  <div>
+    <div class="col-label">
+      Indie Creator <span class="badge badge-creator">Creator</span>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <svg width="24" height="24" viewBox="0 0 52 52" fill="none">
+          <rect width="52" height="52" rx="12" fill="#E11D48"/>
+          <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="19" y="13" width="6" height="6" rx="1"   fill="white"/>
+          <rect x="23" y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="33" y="13" width="6" height="6" rx="1"   fill="white"/>
+          <rect x="37" y="10" width="7" height="9" rx="1.5" fill="white"/>
+          <rect x="9"  y="19" width="35" height="20" rx="1.5" fill="white"/>
+          <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+          <rect x="23" y="31" width="7" height="8" fill="#E11D48"/>
+          <rect x="23" y="31" width="7" height="4" rx="3.5" fill="#E11D48"/>
+        </svg>
+        <div class="sidebar-logo-text">Fan<span>Realms</span></div>
+      </div>
+
+      <div class="sec-label">Discover</div>
+      <div class="nav-item active"><div class="nav-dot"></div> Home</div>
+      <div class="nav-item"><div class="nav-dot"></div> Explore</div>
+      <div class="nav-item"><div class="nav-dot"></div> Marketplace</div>
+      <div class="nav-item"><div class="nav-dot"></div> Indie Games</div>
+
+      <div class="sec-label">Community</div>
+      <div class="nav-item"><div class="nav-dot"></div> Forum <span class="nav-badge">3</span></div>
+      <div class="nav-item"><div class="nav-dot"></div> Jobs</div>
+      <div class="nav-item"><div class="nav-dot"></div> Following</div>
+      <div class="nav-item"><div class="nav-dot"></div> Messages <span class="nav-badge">5</span></div>
+
+      <div class="divider"></div>
+
+      <!-- Creator Studio unlocked -->
+      <div class="creator-section">
+        <div class="sec-label">Creator Studio</div>
+        <div class="nav-item"><div class="nav-dot"></div> Dashboard</div>
+        <div class="nav-item"><div class="nav-dot"></div> My Products</div>
+        <div class="nav-item"><div class="nav-dot"></div> My Games</div>
+        <div class="nav-item"><div class="nav-dot"></div> Commissions <span class="nav-badge">2</span></div>
+        <div class="nav-item"><div class="nav-dot"></div> Earnings</div>
+        <div class="nav-item"><div class="nav-dot"></div> Analytics</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="sec-label">Account</div>
+      <div class="nav-item"><div class="nav-dot"></div> Purchases</div>
+      <div class="nav-item"><div class="nav-dot"></div> Settings</div>
+
+      <div class="sidebar-foot">
+        <div class="profile-av" style="background:#e11d48;">PF</div>
+        <div>
+          <div class="profile-name">PixelForge</div>
+          <div class="creator-pill">Creator</div>
+        </div>
+        <div class="profile-settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

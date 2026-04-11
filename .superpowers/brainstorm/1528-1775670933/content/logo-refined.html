@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms Logo — Refined</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #f0f0f0; padding: 40px; color: #111; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .row { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  .swatch {
+    border-radius: 14px;
+    padding: 36px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 220px;
+  }
+  .swatch.white { background: #ffffff; border: 1px solid #e5e5e5; }
+  .swatch.dark  { background: #111111; }
+  .swatch.red   { background: #e11d48; }
+  .swatch.gray  { background: #f5f5f5; border: 1px solid #e5e5e5; }
+
+  /* ── LOGO COMPONENT ── */
+  .fr-logo { display: flex; align-items: center; gap: 10px; }
+
+  /* Mark: three nested rounded squares */
+  .fr-mark {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+  .fr-sq1 { /* outer */
+    position: absolute; inset: 0;
+    border-radius: 8px;
+    background: #e11d48;
+  }
+  .fr-sq2 { /* mid */
+    position: absolute;
+    inset: 7px;
+    border-radius: 4px;
+    background: white;
+  }
+  .fr-sq3 { /* inner */
+    position: absolute;
+    inset: 13px;
+    border-radius: 2px;
+    background: #e11d48;
+  }
+
+  /* Mark on dark bg — outer becomes white */
+  .on-dark .fr-sq1 { background: #e11d48; }
+  .on-dark .fr-sq2 { background: #111; }
+  .on-dark .fr-sq3 { background: #e11d48; }
+
+  /* Mark on red bg — invert */
+  .on-red .fr-sq1 { background: white; }
+  .on-red .fr-sq2 { background: #e11d48; }
+  .on-red .fr-sq3 { background: white; }
+
+  /* Wordmark */
+  .fr-word { line-height: 1; display: flex; align-items: baseline; gap: 0; }
+  .fr-fan    { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #111; }
+  .fr-realms { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #e11d48; }
+
+  .on-dark .fr-fan    { color: #ffffff; }
+  .on-dark .fr-realms { color: #ff6b8a; }
+
+  .on-red .fr-fan    { color: #ffffff; }
+  .on-red .fr-realms { color: rgba(255,255,255,0.7); }
+
+  /* ── SIZE VARIANTS ── */
+  .fr-logo.sm .fr-mark { width: 24px; height: 24px; }
+  .fr-logo.sm .fr-sq2  { inset: 5px; border-radius: 3px; }
+  .fr-logo.sm .fr-sq3  { inset: 9px; border-radius: 1px; }
+  .fr-logo.sm .fr-fan,
+  .fr-logo.sm .fr-realms { font-size: 14px; }
+  .fr-logo.sm { gap: 7px; }
+
+  .fr-logo.lg .fr-mark { width: 52px; height: 52px; }
+  .fr-logo.lg .fr-sq2  { inset: 10px; border-radius: 6px; }
+  .fr-logo.lg .fr-sq3  { inset: 19px; border-radius: 3px; }
+  .fr-logo.lg .fr-fan,
+  .fr-logo.lg .fr-realms { font-size: 28px; }
+  .fr-logo.lg { gap: 14px; }
+
+  /* ── ICON ONLY ── */
+  .icon-row { display: flex; gap: 16px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+  .icon-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-label { font-size: 11px; color: #888; font-weight: 500; }
+
+  .fr-icon { position: relative; flex-shrink: 0; border-radius: calc(var(--s) * 0.22); background: #e11d48; }
+  .fr-icon .i2 { position: absolute; background: white; border-radius: calc(var(--s) * 0.11); }
+  .fr-icon .i3 { position: absolute; background: #e11d48; border-radius: calc(var(--s) * 0.05); }
+
+  /* 64px */
+  .fr-icon.s64 { --s:64px; width:64px; height:64px; }
+  .fr-icon.s64 .i2 { inset: 12px; }
+  .fr-icon.s64 .i3 { inset: 22px; }
+
+  /* 32px */
+  .fr-icon.s32 { --s:32px; width:32px; height:32px; }
+  .fr-icon.s32 .i2 { inset: 6px; border-radius: 3px; }
+  .fr-icon.s32 .i3 { inset: 11px; border-radius: 2px; }
+
+  /* 20px favicon */
+  .fr-icon.s20 { --s:20px; width:20px; height:20px; border-radius: 4px; }
+  .fr-icon.s20 .i2 { inset: 4px; border-radius: 2px; }
+  .fr-icon.s20 .i3 { inset: 7px; border-radius: 1px; }
+
+  /* 16px favicon */
+  .fr-icon.s16 { --s:16px; width:16px; height:16px; border-radius: 3px; }
+  .fr-icon.s16 .i2 { inset: 3px; border-radius: 1px; }
+  .fr-icon.s16 .i3 { inset: 6px; border-radius: 1px; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    margin-bottom: 12px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Logo A — Refined</h2>
+<p class="sub">Nested portal mark across all backgrounds and sizes</p>
+
+<div class="section-label">On light backgrounds</div>
+<div class="row">
+  <div class="swatch white">
+    <div class="fr-logo lg">
+      <div class="fr-mark"><div class="fr-sq1"></div><div class="fr-sq2"></div><div class="fr-sq3"></div></div>
+      <div class="fr-word"><span class="fr-fan">Fan</span><span class="fr-realms">Realms</span></div>
+    </div>
+  </div>
+  <div class="swatch gray">
+    <div class="fr-logo">
+      <div class="fr-mark"><div class="fr-sq1"></div><div class="fr-sq2"></div><div class="fr-sq3"></div></div>
+      <div class="fr-word"><span class="fr-fan">Fan</span><span class="fr-realms">Realms</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">On dark backgrounds</div>
+<div class="row">
+  <div class="swatch dark">
+    <div class="fr-logo on-dark">
+      <div class="fr-mark"><div class="fr-sq1"></div><div class="fr-sq2"></div><div class="fr-sq3"></div></div>
+      <div class="fr-word"><span class="fr-fan">Fan</span><span class="fr-realms">Realms</span></div>
+    </div>
+  </div>
+  <div class="swatch red">
+    <div class="fr-logo on-red">
+      <div class="fr-mark"><div class="fr-sq1"></div><div class="fr-sq2"></div><div class="fr-sq3"></div></div>
+      <div class="fr-word"><span class="fr-fan">Fan</span><span class="fr-realms">Realms</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Size scale — icon only</div>
+<div class="swatch white" style="justify-content: flex-start; gap: 24px; flex-wrap: wrap; padding: 28px 32px;">
+  <div class="icon-wrap">
+    <div class="fr-icon s64"><div class="i2"></div><div class="i3"></div></div>
+    <span class="icon-label">64px</span>
+  </div>
+  <div class="icon-wrap">
+    <div class="fr-icon s32"><div class="i2"></div><div class="i3"></div></div>
+    <span class="icon-label">32px</span>
+  </div>
+  <div class="icon-wrap">
+    <div class="fr-icon s20"><div class="i2"></div><div class="i3"></div></div>
+    <span class="icon-label">20px</span>
+  </div>
+  <div class="icon-wrap">
+    <div class="fr-icon s16"><div class="i2"></div><div class="i3"></div></div>
+    <span class="icon-label">16px favicon</span>
+  </div>
+</div>
+
+<br>
+<div class="section-label">In context — nav bar</div>
+<div class="swatch white" style="justify-content: flex-start; padding: 0 20px; min-height: 52px; border-radius: 10px; gap: 24px;">
+  <div class="fr-logo sm">
+    <div class="fr-mark"><div class="fr-sq1"></div><div class="fr-sq2"></div><div class="fr-sq3"></div></div>
+    <div class="fr-word"><span class="fr-fan">Fan</span><span class="fr-realms">Realms</span></div>
+  </div>
+  <div style="display:flex; gap:16px; font-size:13px; color:#888; font-weight:500;">
+    <span>Marketplace</span><span>Jobs</span><span>Forum</span><span>Explore</span>
+  </div>
+  <div style="margin-left:auto; display:flex; gap:8px;">
+    <div style="padding:6px 14px; border:1px solid #e5e5e5; border-radius:7px; font-size:12px; font-weight:600; color:#555;">Log in</div>
+    <div style="padding:6px 14px; background:#e11d48; border-radius:7px; font-size:12px; font-weight:600; color:white;">Sign up</div>
+  </div>
+</div>
+
+</body>
+</html>

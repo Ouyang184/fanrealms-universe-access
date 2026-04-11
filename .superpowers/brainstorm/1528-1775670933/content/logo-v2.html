@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FanRealms Logo V2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Space Grotesk', system-ui, sans-serif; background: #f0f0f0; padding: 40px; color: #111; }
+
+  h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  p.sub { font-size: 13px; color: #888; margin-bottom: 32px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .concept {
+    background: white;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .concept:hover { border-color: #e11d48; box-shadow: 0 4px 20px rgba(225,29,72,0.1); }
+  .concept.selected { border-color: #e11d48; }
+
+  .stage {
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 40px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 48px;
+  }
+  .stage.dark  { background: #111; }
+  .stage.light { background: #fafafa; }
+  .stage.red   { background: #e11d48; }
+
+  .info { padding: 14px 18px; }
+  .info h3 { font-size: 13px; font-weight: 700; color: #111; }
+  .info p  { font-size: 12px; color: #888; margin-top: 3px; line-height: 1.5; }
+
+  /* shared wordmark */
+  .word { display: flex; align-items: baseline; }
+  .w-fan    { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; }
+  .w-realms { font-size: 20px; font-weight: 700; letter-spacing: -0.4px; color: #e11d48; }
+  .on-dark .w-fan    { color: #fff; }
+  .on-dark .w-realms { color: #ff6b8a; }
+  .on-red  .w-fan    { color: #fff; }
+  .on-red  .w-realms { color: rgba(255,255,255,0.65); }
+
+  .logo { display: flex; align-items: center; gap: 11px; }
+
+  /* ── A: CROWN ── */
+  .crown {
+    width: 38px; height: 38px;
+    background: #e11d48;
+    border-radius: 9px;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 7px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .crown-shape {
+    width: 22px; height: 14px;
+    position: relative;
+  }
+  /* base bar */
+  .crown-shape::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    background: white;
+    border-radius: 1px;
+  }
+  /* three points using clip */
+  .crown-points {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 10px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 1px;
+  }
+  .cp { width: 5px; background: white; border-radius: 1px 1px 0 0; }
+  .cp.tall { height: 10px; }
+  .cp.short { height: 6px; }
+  .cp-gap { flex: 1; }
+
+  /* ── B: PIXEL GRID ── */
+  .pixel-mark {
+    width: 38px; height: 38px;
+    background: #e11d48;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .pgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 7px);
+    grid-template-rows: repeat(3, 7px);
+    gap: 2px;
+  }
+  .px { border-radius: 1px; }
+  .px.on  { background: white; }
+  .px.off { background: rgba(255,255,255,0.2); }
+
+  /* ── C: FR LIGATURE ── */
+  .fr-mark {
+    width: 38px; height: 38px;
+    background: #e11d48;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .fr-glyph {
+    position: relative;
+    width: 20px; height: 22px;
+  }
+  /* F strokes */
+  .f-vert  { position:absolute; left:0; top:0; bottom:0; width:3px; background:white; border-radius:2px; }
+  .f-top   { position:absolute; left:0; top:0; right:0; height:3px; background:white; border-radius:2px; }
+  .f-mid   { position:absolute; left:0; top:9px; width:12px; height:3px; background:white; border-radius:2px; }
+  /* R leg */
+  .r-hump  { position:absolute; right:0; top:0; width:10px; height:12px; border:3px solid white; border-left:none; border-radius:0 5px 5px 0; }
+  .r-leg   { position:absolute; right:0; bottom:0; width:3px; height:11px; background:white; border-radius:2px; transform: rotate(15deg); transform-origin: top center; }
+
+  /* ── D: ARCH / GATE ── */
+  .arch-mark {
+    width: 38px; height: 38px;
+    background: #e11d48;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .arch-shape {
+    width: 18px; height: 20px;
+    position: relative;
+  }
+  .arch-outer {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 18px;
+    border: 3px solid white;
+    border-bottom: none;
+    border-radius: 9px 9px 0 0;
+  }
+  .arch-inner {
+    position: absolute;
+    top: 5px; left: 4px; right: 4px;
+    height: 13px;
+    border: 2px solid rgba(255,255,255,0.45);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+  }
+  .arch-base {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: white;
+    border-radius: 1px;
+  }
+</style>
+</head>
+<body>
+
+<h2>New Logo Concepts</h2>
+<p class="sub">No more nested squares — fresh marks that fit FanRealms</p>
+
+<div class="grid">
+
+  <!-- A: CROWN -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="crown">
+          <div class="crown-shape">
+            <div class="crown-points">
+              <div class="cp tall"></div>
+              <div class="cp-gap"></div>
+              <div class="cp short"></div>
+              <div class="cp-gap"></div>
+              <div class="cp tall"></div>
+            </div>
+          </div>
+        </div>
+        <div class="word"><span class="w-fan">Fan</span><span class="w-realms">Realms</span></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>A — Crown</h3>
+      <p>Simple crown mark — ties directly to "Realms" (kingdoms, worlds). No major platform uses this. Reads immediately.</p>
+    </div>
+  </div>
+
+  <!-- B: PIXEL GRID -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage light">
+      <div class="logo">
+        <div class="pixel-mark">
+          <div class="pgrid">
+            <div class="px on"></div>
+            <div class="px on"></div>
+            <div class="px on"></div>
+            <div class="px on"></div>
+            <div class="px off"></div>
+            <div class="px on"></div>
+            <div class="px off"></div>
+            <div class="px on"></div>
+            <div class="px off"></div>
+          </div>
+        </div>
+        <div class="word"><span class="w-fan" style="color:#111">Fan</span><span class="w-realms">Realms</span></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>B — Pixel Grid</h3>
+      <p>3x3 pixel grid with an "F" pattern. Nods to indie games and pixel art culture. Unique and very on-brand.</p>
+    </div>
+  </div>
+
+  <!-- C: FR LIGATURE -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage red">
+      <div class="logo on-red">
+        <div class="fr-mark" style="background:white;">
+          <div class="fr-glyph">
+            <div class="f-vert"></div>
+            <div class="f-top"></div>
+            <div class="f-mid"></div>
+            <div class="r-hump" style="border-color:#e11d48;"></div>
+            <div class="r-leg" style="background:#e11d48;"></div>
+          </div>
+        </div>
+        <div class="word"><span class="w-fan">Fan</span><span class="w-realms">Realms</span></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>C — FR Ligature</h3>
+      <p>"F" and "R" merged into one glyph inside a tile. Compact monogram — works great as an app icon or favicon.</p>
+    </div>
+  </div>
+
+  <!-- D: ARCH / GATE -->
+  <div class="concept" onclick="this.classList.toggle('selected')">
+    <div class="stage dark">
+      <div class="logo on-dark">
+        <div class="arch-mark">
+          <div class="arch-shape">
+            <div class="arch-outer"></div>
+            <div class="arch-inner"></div>
+            <div class="arch-base"></div>
+          </div>
+        </div>
+        <div class="word"><span class="w-fan">Fan</span><span class="w-realms">Realms</span></div>
+      </div>
+    </div>
+    <div class="info">
+      <h3>D — Arch / Gate</h3>
+      <p>A doorway arch — entering a realm. Minimal, symbolic, and different from every other creator platform out there.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
