@@ -19,7 +19,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+    <div className="flex h-screen bg-[#f5f5f5] text-foreground overflow-hidden">
       <Sidebar 
         collapsed={isMobile ? true : sidebarCollapsed} 
         toggleSidebar={toggleSidebar} 
@@ -30,7 +30,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Header />
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-auto p-3 sm:p-6">
+        <main className="flex-1 overflow-auto p-4 sm:p-6">
           <div className="max-w-full">
             {children}
           </div>
