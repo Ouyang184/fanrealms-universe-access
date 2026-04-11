@@ -1,66 +1,58 @@
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  category?: string | null;
+  cover_image_url?: string | null;
+  creators?: {
+    id?: string;
+    display_name?: string | null;
+    username?: string | null;
+    profile_image_url?: string | null;
+  } | null;
+}
+
 interface ProductCardProps {
-  product: {
-    id: string;
-    title: string;
-    description?: string | null;
-    price: number;
-    cover_image_url?: string | null;
-    category?: string | null;
-    creators?: {
-      username: string;
-      display_name?: string | null;
-      profile_image_url?: string | null;
-    } | null;
-  };
+  product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const authorName = product.creators?.display_name || product.creators?.username || 'Unknown';
+  const priceDisplay = product.price === 0 ? 'Free' : `$${(product.price / 100).toFixed(2)}`;
+  const imageUrl = product.cover_image_url;
+
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video bg-muted relative overflow-hidden">
-        {product.cover_image_url ? (
+    <Link
+      to={`/marketplace/${product.id}`}
+      className="group bg-white border border-[#eee] rounded-xl overflow-hidden hover:shadow-[0_6px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-200"
+    >
+      <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden">
+        {imageUrl ? (
           <img
-            src={product.cover_image_url}
+            src={imageUrl}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            No Image
+          <div className="w-full h-full flex items-center justify-center text-[11px] text-[#ccc] font-medium uppercase tracking-wide">
+            No preview
           </div>
         )}
-        {product.category && (
-          <Badge className="absolute top-2 right-2" variant="secondary">
-            {product.category}
-          </Badge>
-        )}
       </div>
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg truncate">{product.title}</h3>
-        {product.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-            {product.description}
-          </p>
-        )}
-        {product.creators && (
-          <p className="text-xs text-muted-foreground mt-2">
-            by {product.creators.display_name || product.creators.username}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <span className="text-lg font-bold text-primary">
-          ${product.price.toFixed(2)}
-        </span>
-        <Button asChild size="sm">
-          <Link to={`/marketplace/${product.id}`}>View</Link>
-        </Button>
-      </CardFooter>
-    </Card>
+      <div className="p-3">
+        <div className="text-[13px] font-semibold leading-snug truncate">{product.title}</div>
+        <div className="text-[11px] text-[#aaa] mt-0.5 truncate">{authorName}</div>
+        <div className="flex items-center justify-between mt-2.5">
+          <span className="text-[14px] font-bold">{priceDisplay}</span>
+          {product.category && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fff0f3] text-primary">
+              {product.category}
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }
