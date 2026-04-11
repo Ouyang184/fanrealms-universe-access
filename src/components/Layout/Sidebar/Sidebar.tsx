@@ -1,5 +1,4 @@
 
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { SidebarHeader } from "./SidebarHeader";
 import { MainNavigation } from "./MainNavigation";
@@ -45,7 +44,6 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
         style={{ scrollBehavior: 'auto' }}
       >
         <MainNavigation collapsed={collapsed} isMobile={isMobile} />
-        <Separator className="my-2" />
         <CreatorStudioMenu collapsed={collapsed} isMobile={isMobile} />
       </div>
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />
@@ -65,7 +63,7 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
           </Button>
         </DrawerTrigger>
         <DrawerContent className="h-[85vh]">
-          <div className="flex flex-col h-full bg-background text-foreground">
+          <div className="flex flex-col h-full bg-[#111] text-white">
             <SidebarContent />
           </div>
         </DrawerContent>
@@ -76,7 +74,7 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
   return (
     <div
       className={cn(
-        "border-r border-border flex flex-col transition-all duration-300 ease-in-out bg-card flex-shrink-0",
+        "flex flex-col transition-all duration-300 ease-in-out bg-[#111] flex-shrink-0",
         collapsed ? "w-14" : "w-56",
       )}
     >
