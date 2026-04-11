@@ -1,66 +1,48 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Calendar, DollarSign } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
-interface JobListingCardProps {
-  listing: {
-    id: string;
-    title: string;
-    description?: string | null;
-    category: string;
-    budget_min?: number | null;
-    budget_max?: number | null;
-    budget_type: string;
-    deadline?: string | null;
-    tags?: string[] | null;
-    created_at: string;
-    users?: { username: string; profile_picture?: string | null } | null;
-  };
+interface JobListing {
+  id: string;
+  title: string;
+  category?: string;
+  budget_type?: string;
+  budget_min?: number;
+  created_at: string;
 }
 
-export function JobListingCard({ listing }: JobListingCardProps) {
-  const budgetDisplay = () => {
-    if (listing.budget_min && listing.budget_max) {
-      return `$${listing.budget_min} - $${listing.budget_max}`;
-    }
-    if (listing.budget_min) return `From $${listing.budget_min}`;
-    if (listing.budget_max) return `Up to $${listing.budget_max}`;
-    return 'Negotiable';
-  };
+interface JobListingCardProps {
+  listing: JobListing;
+  isLast?: boolean;
+}
+
+export function JobListingCard({ listing, isLast }: JobListingCardProps) {
+  const initials = (listing.category || "JB").slice(0, 2).toUpperCase();
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-base truncate">{listing.title}</h3>
-              <Badge variant="outline">{listing.category}</Badge>
-              <Badge variant="secondary" className="capitalize">{listing.budget_type}</Badge>
-            </div>
-            {listing.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{listing.description}</p>
-            )}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3" />{budgetDisplay()}
-              </span>
-              {listing.deadline && (
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />Due {format(new Date(listing.deadline), 'MMM d, yyyy')}
-                </span>
-              )}
-              <span>Posted {format(new Date(listing.created_at), 'MMM d')}</span>
-            </div>
-          </div>
-          <Button asChild size="sm" variant="outline">
-            <Link to={`/jobs/${listing.id}`}>View</Link>
-          </Button>
+    <Link
+      to={`/jobs/${listing.id}`}
+      className={`flex items-center gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors ${!isLast ? 'border-b border-[#f5f5f5]' : ''}`}
+    >
+      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+      <div className="w-8 h-8 rounded-lg bg-[#f0f0f0] flex items-center justify-center text-[11px] font-bold text-[#888] flex-shrink-0">
+        {initials}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-semibold truncate">{listing.title}</div>
+        <div className="text-[11px] text-[#aaa] mt-0.5">
+          {listing.category} · {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {listing.budget_type && (
+          <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#f5f5f5] text-[#555]">
+            {listing.budget_type}
+          </span>
+        )}
+        {listing.budget_min && (
+          <span className="text-[13px] font-bold">${listing.budget_min}</span>
+        )}
+      </div>
+    </Link>
   );
 }

@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useJobListings, JOB_CATEGORIES } from '@/hooks/useJobs';
 import { JobListingCard } from '@/components/jobs/JobListingCard';
-import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
 
 export default function Jobs() {
   const [category, setCategory] = useState('all');
@@ -12,39 +11,61 @@ export default function Jobs() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Job Board</h1>
-            <p className="text-muted-foreground">Find gigs, bounties, and freelance opportunities</p>
+            <h1 className="text-[20px] font-bold tracking-[-0.5px]">Jobs</h1>
+            <p className="text-[13px] text-[#888] mt-0.5">Find gigs, bounties, and freelance opportunities</p>
           </div>
           <CreateJobDialog />
         </div>
 
-        <Tabs value={category} onValueChange={setCategory}>
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="all">All</TabsTrigger>
-            {JOB_CATEGORIES.map((c) => (
-              <TabsTrigger key={c} value={c}>{c}</TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        {/* Category pills */}
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setCategory('all')}
+            className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
+              category === 'all'
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-[#666] border-[#e5e5e5] hover:border-[#ccc]'
+            }`}
+          >
+            All
+          </button>
+          {JOB_CATEGORIES.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`px-4 py-1.5 rounded-full text-[12px] font-semibold border transition-colors ${
+                category === c
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-[#666] border-[#e5e5e5] hover:border-[#ccc]'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 w-full" />
+              <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
             ))}
           </div>
         ) : listings && listings.length > 0 ? (
-          <div className="space-y-3">
-            {listings.map((listing) => (
-              <JobListingCard key={listing.id} listing={listing} />
+          <div className="bg-white rounded-xl border border-[#eee] overflow-hidden">
+            {listings.map((listing, i) => (
+              <JobListingCard
+                key={listing.id}
+                listing={listing}
+                isLast={i === listings.length - 1}
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            No open listings found. Be the first to post a job!
+          <div className="text-center py-16 text-[#aaa]">
+            No open listings. Be the first to post a job!
           </div>
         )}
       </div>
