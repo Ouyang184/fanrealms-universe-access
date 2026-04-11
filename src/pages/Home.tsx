@@ -1,13 +1,11 @@
 
 import { MainLayout } from "@/components/Layout/MainLayout";
-import { HomeContent } from "@/components/home/HomeContent";
+import { HomeDashboard } from "@/components/home/HomeDashboard";
 
 export default function HomePage() {
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto p-6">
-        <HomeContent />
-      </div>
+      <HomeDashboard />
     </MainLayout>
   );
 }
