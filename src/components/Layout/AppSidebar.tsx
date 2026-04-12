@@ -15,7 +15,7 @@ import {
   useSidebar
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { NavigationMenu } from './Sidebar/NavigationMenu';
+import { MainNavigation as NavigationMenu } from './Sidebar/MainNavigation';
 import { CreatorStudioMenu } from './Sidebar/CreatorStudioMenu';
 import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
 import { cn } from '@/lib/utils';
