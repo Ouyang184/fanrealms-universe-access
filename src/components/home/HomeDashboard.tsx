@@ -2,6 +2,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMarketplaceProducts } from "@/hooks/useMarketplace";
 import { useJobListings } from "@/hooks/useJobs";
 import { useForumThreads } from "@/hooks/useForum";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
@@ -17,6 +19,13 @@ export function HomeDashboard() {
   const { data: products } = useMarketplaceProducts("all");
   const { data: jobs } = useJobListings("all") as { data: any[] | undefined };
   const { data: threads } = useForumThreads("all") as { data: any[] | undefined };
+  const { data: creatorCount } = useQuery({
+    queryKey: ["creator-count"],
+    queryFn: async () => {
+      const { count } = await supabase.from("creators").select("*", { count: "exact", head: true });
+      return count ?? 0;
+    },
+  });
 
   const name = profile?.full_name || profile?.username || "there";
 
@@ -35,7 +44,7 @@ export function HomeDashboard() {
           { label: "Open Jobs", value: jobs?.length ?? 0, sub: "Across all categories" },
           { label: "New Assets", value: products?.length ?? 0, sub: "Listed this week" },
           { label: "Forum Threads", value: threads?.length ?? 0, sub: "Active discussions" },
-          { label: "Creators", value: "4.2k", sub: "On the platform" },
+          { label: "Creators", value: creatorCount ?? 0, sub: "On the platform" },
         ].map(({ label, value, sub }) => (
           <div key={label} className="bg-white rounded-xl border border-[#eee] p-4">
             <div className="text-[11px] font-semibold text-[#aaa] uppercase tracking-[0.5px]">{label}</div>

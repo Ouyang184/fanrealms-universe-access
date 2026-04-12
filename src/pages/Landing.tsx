@@ -64,20 +64,6 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-          <div className="hidden md:flex gap-10 flex-shrink-0">
-            {[
-              { num: "4.2k", label: "Creators" },
-              { num: "18k", label: "Assets" },
-              { num: "930", label: "Open jobs" },
-            ].map(({ num, label }) => (
-              <div key={label} className="text-center">
-                <div className="text-[32px] font-bold tracking-[-1px]">
-                  {num}<span className="text-primary">.</span>
-                </div>
-                <div className="text-[12px] text-[#aaa] font-medium mt-1">{label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
