@@ -100,21 +100,23 @@ export default function App() {
                 <Route path="/home" element={<AuthGuard><HomePage /></AuthGuard>} />
                 <Route path="/feed" element={<AuthGuard><FeedPage /></AuthGuard>} />
                 <Route path="/following" element={<AuthGuard><FollowingPage /></AuthGuard>} />
-                <Route path="/explore" element={<AuthGuard><ExplorePage /></AuthGuard>} />
-                <Route path="/explore/all" element={<AuthGuard><AllCreatorsExplorePage /></AuthGuard>} />
-                <Route path="/explore/featured" element={<AuthGuard><AllFeaturedCreatorsPage /></AuthGuard>} />
-                <Route path="/explore/:category" element={<AuthGuard><ExploreCategoryPage /></AuthGuard>} />
-                <Route path="/commissions" element={<AuthGuard><AllCommissionsPage /></AuthGuard>} />
-                <Route path="/posts" element={<AuthGuard><AllPostsPage /></AuthGuard>} />
-                
+
+                {/* Public browse routes - no login required */}
+                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/explore/all" element={<AllCreatorsExplorePage />} />
+                <Route path="/explore/featured" element={<AllFeaturedCreatorsPage />} />
+                <Route path="/explore/:category" element={<ExploreCategoryPage />} />
+                <Route path="/commissions" element={<AllCommissionsPage />} />
+                <Route path="/posts" element={<AllPostsPage />} />
+
                 {/* Three pillars: Marketplace, Jobs, Forum */}
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/marketplace/:productId" element={<ProductDetail />} />
                 <Route path="/jobs" element={<Jobs />} />
-                <Route path="/jobs/:jobId" element={<AuthGuard><JobDetail /></AuthGuard>} />
+                <Route path="/jobs/:jobId" element={<JobDetail />} />
                 <Route path="/forum" element={<Forum />} />
                 <Route path="/forum/:threadId" element={<ForumThread />} />
-                <Route path="/games" element={<AuthGuard><GamesPage /></AuthGuard>} />
+                <Route path="/games" element={<GamesPage />} />
                 
                 {/* Auth routes - moved higher in priority */}
                 <Route path="/login" element={<Login />} />
