@@ -14,7 +14,49 @@ export async function handleCheckoutWebhook(
   console.log('[CheckoutHandler] Subscription ID:', session.subscription);
 
   if (!session.subscription) {
-    console.log('[CheckoutHandler] No subscription in session, skipping');
+    // One-time marketplace purchase
+    console.log('[CheckoutHandler] No subscription — checking for one-time purchase metadata');
+    const { product_id, buyer_id, creator_id } = session.metadata ?? {};
+
+    if (!product_id || !buyer_id || !creator_id) {
+      console.log('[CheckoutHandler] Missing metadata for one-time purchase, skipping');
+      return createJsonResponse({ success: true });
+    }
+
+    // Fetch price from digital_products (source of truth)
+    const { data: product, error: productFetchError } = await supabaseService
+      .from('digital_products')
+      .select('price')
+      .eq('id', product_id)
+      .maybeSingle();
+
+    if (productFetchError) {
+      console.error('[CheckoutHandler] Error fetching product:', productFetchError);
+      throw productFetchError;
+    }
+
+    const amount = Number(product?.price ?? 0);
+    const platformFee = parseFloat((amount * 0.1).toFixed(2));   // 10% platform fee
+    const netAmount = parseFloat((amount - platformFee).toFixed(2));
+
+    const { error: insertError } = await supabaseService.from('purchases').insert({
+      buyer_id,
+      product_id,
+      creator_id,   // creators.id (FK to public.creators)
+      amount,
+      platform_fee: platformFee,
+      net_amount: netAmount,
+      stripe_session_id: session.id,
+      stripe_payment_intent_id: session.payment_intent ?? null,
+      status: 'completed',
+    });
+
+    if (insertError) {
+      console.error('[CheckoutHandler] Error inserting purchase:', insertError);
+      throw insertError;
+    }
+
+    console.log('[CheckoutHandler] One-time purchase recorded for product:', product_id);
     return createJsonResponse({ success: true });
   }
 
