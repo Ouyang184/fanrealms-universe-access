@@ -1,15 +1,26 @@
-import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useProduct } from '@/hooks/useMarketplace';
+import { useMarketplaceCheckout } from '@/hooks/useMarketplaceCheckout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const { data: product, isLoading } = useProduct(productId || '');
+  const [searchParams] = useSearchParams();
+  const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
+
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      toast.success('Purchase complete! Check your email for your download link.');
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -69,12 +80,14 @@ export default function ProductDetail() {
           </CardContent>
         </Card>
 
-        <Button size="lg" className="w-full">
-          Buy Now — ${product.price.toFixed(2)}
+        <Button
+          size="lg"
+          className="w-full"
+          onClick={() => checkout(product.id)}
+          disabled={checkoutLoading}
+        >
+          {checkoutLoading ? 'Redirecting to checkout…' : `Buy Now — $${product.price.toFixed(2)}`}
         </Button>
-        <p className="text-xs text-center text-muted-foreground">
-          Stripe checkout integration placeholder — connect your Stripe one-time payment flow here.
-        </p>
       </div>
     </MainLayout>
   );
