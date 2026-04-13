@@ -6,7 +6,7 @@ import AuthCallback from "./pages/AuthCallback";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import OnboardingPage from "./pages/Onboarding";
-import PreferencesPage from "./pages/Preferences";
+import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Dashboard from "./pages/creator-studio/Dashboard";
 import LoadingPage from "./pages/Loading";
@@ -245,15 +245,6 @@ export default function App() {
                     </MainLayout>
                   </AuthGuard>
                 } />
-                <Route path="/creator-studio/creator-profile" element={
-                  <AuthGuard>
-                    <MainLayout>
-                      <CreatorCheck>
-                        <CreatorProfile />
-                      </CreatorCheck>
-                    </MainLayout>
-                  </AuthGuard>
-                } />
                 <Route path="/creator-studio/projects" element={
                   <AuthGuard>
                     <MainLayout>
@@ -287,6 +278,9 @@ export default function App() {
                 <Route path="/commissions/:requestId/payment-success" element={<AuthGuard><CommissionPaymentSuccess /></AuthGuard>} />
                 
                 <Route path="/loading" element={<LoadingPage />} />
+
+                {/* 404 catch-all */}
+                <Route path="*" element={<NotFound />} />
               </Routes>
               <Toaster />
             </RootLayout>

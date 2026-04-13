@@ -111,8 +111,6 @@ const CreatorPage: React.FC = () => {
     }
   };
   
-  console.log('Creator Page:', { identifier, creator, isLoading: isLoadingCreator });
-  
   if (isLoadingCreator) {
     return (
       <MainLayout>
