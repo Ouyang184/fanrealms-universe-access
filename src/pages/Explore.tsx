@@ -122,9 +122,6 @@ export default function ExplorePage() {
   const [mostLikedPosts, setMostLikedPosts] = useState<Post[]>([]);
   
 
-  console.log('Explore: NSFW preferences:', nsfwPrefs?.isNSFWEnabled);
-  console.log('Explore: Posts count after NSFW filtering:', posts.length);
-
   // Helper function to check if creator matches category
   const creatorMatchesCategory = (creator, category) => {
     if (!category) return true;
@@ -156,7 +153,6 @@ export default function ExplorePage() {
     const baseCreators = popularCreators.length ? popularCreators : allCreators;
     let creatorFilter = baseCreators;
     let postsFilter = posts; // Posts are already NSFW-filtered by the hook
-    console.log('Explore: creators counts', { popular: popularCreators.length, all: allCreators.length, base: baseCreators.length });
     // Filter by category if present (but not if category is "all" or undefined)
     if (categoryFilter && categoryFilter !== "all") {
       creatorFilter = baseCreators.filter(creator => 
@@ -232,14 +228,12 @@ export default function ExplorePage() {
   
   // Handle post click
   const handlePostClick = (post: Post) => {
-    console.log('Explore: Opening preview for post:', post.title);
     setSelectedPost(post);
     setIsPreviewOpen(true);
   };
 
   // Handle modal close
   const handleModalClose = (open: boolean) => {
-    console.log('Explore: Modal close triggered, open:', open);
     setIsPreviewOpen(open);
     if (!open) {
       setTimeout(() => setSelectedPost(null), 200);
