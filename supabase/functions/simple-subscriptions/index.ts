@@ -59,12 +59,12 @@ serve(async (req) => {
         break;
 
       case 'get_creator_subscribers':
-        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId);
+        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId, user);
         break;
 
       case 'sync_subscription_counts':
         console.log('[SimpleSubscriptions] Explicit sync action triggered for creator:', creatorId);
-        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId);
+        result = await handleGetCreatorSubscribers(stripe, supabase, creatorId, user);
         break;
 
       default:
