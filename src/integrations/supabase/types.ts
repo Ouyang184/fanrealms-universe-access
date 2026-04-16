@@ -934,6 +934,42 @@ export type Database = {
         }
         Relationships: []
       }
+      indie_games: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_platform: string | null
+          external_url: string
+          genre: string | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_platform?: string | null
+          external_url: string
+          genre?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_platform?: string | null
+          external_url?: string
+          genre?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           applicant_id: string
