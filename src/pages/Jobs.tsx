@@ -5,6 +5,7 @@ import { useJobListings, JOB_CATEGORIES } from '@/hooks/useJobs';
 import { JobListingCard } from '@/components/jobs/JobListingCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
+import { Briefcase } from 'lucide-react';
 
 export default function Jobs() {
   const [category, setCategory] = useState('all');
@@ -66,7 +67,9 @@ export default function Jobs() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <div className="text-5xl mb-4">💼</div>
+            <div className="w-12 h-12 rounded-xl bg-[#f5f5f5] flex items-center justify-center mb-4">
+              <Briefcase className="w-5 h-5 text-[#aaa]" />
+            </div>
             <h3 className="text-[17px] font-bold text-[#111] mb-2">No open jobs yet</h3>
             <p className="text-[13px] text-[#888] max-w-xs mb-6 leading-relaxed">
               Post a gig, bounty, or freelance opportunity and connect with talented indie creators.

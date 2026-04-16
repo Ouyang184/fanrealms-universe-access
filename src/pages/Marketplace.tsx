@@ -4,6 +4,7 @@ import { useMarketplaceProducts } from '@/hooks/useMarketplace';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
+import { ShoppingBag } from 'lucide-react';
 
 const CATEGORIES = ['all', 'Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
 
@@ -62,7 +63,9 @@ export default function Marketplace() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <div className="text-5xl mb-4">🎨</div>
+            <div className="w-12 h-12 rounded-xl bg-[#f5f5f5] flex items-center justify-center mb-4">
+              <ShoppingBag className="w-5 h-5 text-[#aaa]" />
+            </div>
             <h3 className="text-[17px] font-bold text-[#111] mb-2">No assets listed yet</h3>
             <p className="text-[13px] text-[#888] max-w-xs mb-6 leading-relaxed">
               Be the first creator to sell game art, templates, tools, or music on FanRealms.

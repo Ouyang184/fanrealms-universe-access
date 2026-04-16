@@ -4,6 +4,7 @@ import { useMarketplaceProducts } from "@/hooks/useMarketplace";
 import { useJobListings } from "@/hooks/useJobs";
 import { useForumThreads } from "@/hooks/useForum";
 import { formatDistanceToNow } from "date-fns";
+import { ShoppingBag, Gamepad2, Briefcase, MessageSquare } from "lucide-react";
 
 export default function LandingPage() {
   const { data: products } = useMarketplaceProducts("all");
@@ -67,13 +68,15 @@ export default function LandingPage() {
           </div>
           <div className="hidden md:grid grid-cols-2 gap-3 flex-shrink-0 w-[320px]">
             {[
-              { icon: "🎨", title: "Sell Digital Assets", desc: "Game art, templates, tools & more" },
-              { icon: "🎮", title: "Showcase Games", desc: "Get your indie game discovered" },
-              { icon: "💼", title: "Find Work", desc: "Gigs, bounties & freelance jobs" },
-              { icon: "💬", title: "Join the Community", desc: "Forum, devlogs & creator support" },
-            ].map(({ icon, title, desc }) => (
+              { Icon: ShoppingBag, title: "Sell Digital Assets", desc: "Game art, templates, tools & more" },
+              { Icon: Gamepad2, title: "Showcase Games", desc: "Get your indie game discovered" },
+              { Icon: Briefcase, title: "Find Work", desc: "Gigs, bounties & freelance jobs" },
+              { Icon: MessageSquare, title: "Join the Community", desc: "Forum, devlogs & creator support" },
+            ].map(({ Icon, title, desc }) => (
               <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4">
-                <div className="text-2xl mb-2">{icon}</div>
+                <div className="w-8 h-8 rounded-lg bg-white border border-[#eee] flex items-center justify-center mb-2.5">
+                  <Icon className="w-4 h-4 text-[#555]" />
+                </div>
                 <div className="text-[13px] font-bold text-[#111]">{title}</div>
                 <div className="text-[11px] text-[#888] mt-0.5 leading-relaxed">{desc}</div>
               </div>
@@ -163,7 +166,9 @@ export default function LandingPage() {
       ) : (
         <section className="max-w-6xl mx-auto px-6 py-10">
           <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
-            <div className="text-4xl mb-3">🎨</div>
+            <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-3">
+              <ShoppingBag className="w-4 h-4 text-[#bbb]" />
+            </div>
             <div className="text-[16px] font-bold text-[#111] mb-1">The marketplace is open</div>
             <div className="text-[13px] text-[#888] mb-4 max-w-sm mx-auto">
               No assets listed yet — be the first creator to sell your work here.
@@ -246,7 +251,9 @@ export default function LandingPage() {
         <section className="max-w-6xl mx-auto px-6 pb-10">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
-              <div className="text-3xl mb-2">💼</div>
+              <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
+                <Briefcase className="w-4 h-4 text-[#bbb]" />
+              </div>
               <div className="text-[15px] font-bold text-[#111] mb-1">No jobs yet</div>
               <div className="text-[12px] text-[#999] mb-4">Post a gig and find talented indie creators.</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
@@ -254,7 +261,9 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
-              <div className="text-3xl mb-2">💬</div>
+              <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
+                <MessageSquare className="w-4 h-4 text-[#bbb]" />
+              </div>
               <div className="text-[15px] font-bold text-[#111] mb-1">Forum is quiet</div>
               <div className="text-[12px] text-[#999] mb-4">Start the first conversation with the community.</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
