@@ -65,6 +65,7 @@ export default function LandingPage() {
                 Sell your work
               </Link>
             </div>
+            <p className="mt-4 text-[12px] text-[#aaa]">Free to join · Payments secured by Stripe · No hidden fees</p>
           </div>
           <div className="hidden md:grid grid-cols-2 gap-3 flex-shrink-0 w-[320px]">
             {[
@@ -288,7 +289,7 @@ export default function LandingPage() {
               <Link key={label} to={to} className="hover:text-[#999] transition-colors">{label}</Link>
             ))}
           </div>
-          <div className="text-[12px] text-[#444]">2026 FanRealms</div>
+          <div className="text-[12px] text-[#444]">© 2026 FanRealms</div>
         </div>
       </footer>
     </div>

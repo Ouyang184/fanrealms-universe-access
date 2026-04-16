@@ -1,174 +1,112 @@
-
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Users, Heart, Star, Shield, Mail, Twitter, Instagram, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+import { MainLayout } from "@/components/Layout/MainLayout";
+import { ShoppingBag, Gamepad2, Briefcase, MessageSquare, Shield } from "lucide-react";
 
 export default function About() {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate(-1);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Simple Back Button */}
-      <div className="container mx-auto px-4 py-4">
-        <Button variant="ghost" size="sm" onClick={handleBack} className="flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </Button>
-      </div>
+    <MainLayout>
+      <div className="max-w-2xl mx-auto py-8 space-y-10">
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            About FanRealms
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Empowering creators to build meaningful connections with their fans through 
-            innovative subscription-based content sharing and community building.
+        {/* Header */}
+        <div>
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-2">About FanRealms</h1>
+          <p className="text-[15px] text-[#666] leading-relaxed">
+            FanRealms is an indie creator marketplace for game developers, artists, and freelancers.
+            It's a place to buy and sell digital assets, showcase indie games, find work, and connect
+            with other people building things.
           </p>
         </div>
 
-        {/* Mission Statement */}
-        <Card className="mb-16 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-200 dark:border-purple-800">
-          <CardContent className="p-8 text-center">
-            <Heart className="w-12 h-12 mx-auto mb-4 text-purple-600" />
-            <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-4xl mx-auto">
-              At FanRealms, we believe every creator deserves a platform where they can share their passion, 
-              build authentic relationships with their audience, and earn sustainable income doing what they love. 
-              We're democratizing content creation by providing tools that put creators first and fans second to none.
-            </p>
-          </CardContent>
-        </Card>
+        {/* What you can do */}
+        <div className="space-y-3">
+          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">What you can do</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              { Icon: ShoppingBag, title: "Marketplace", desc: "Buy and sell game art, templates, tools, music, and other digital assets." },
+              { Icon: Gamepad2, title: "Games", desc: "List your indie game and get it in front of the FanRealms community." },
+              { Icon: Briefcase, title: "Jobs", desc: "Post or find freelance gigs, bounties, and contract work." },
+              { Icon: MessageSquare, title: "Forum", desc: "Share devlogs, ask questions, and talk with other creators." },
+            ].map(({ Icon, title, desc }) => (
+              <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4 flex gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white border border-[#eee] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Icon className="w-4 h-4 text-[#555]" />
+                </div>
+                <div>
+                  <div className="text-[13px] font-bold text-[#111]">{title}</div>
+                  <div className="text-[12px] text-[#888] mt-0.5 leading-relaxed">{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* Our Story */}
-        <div className="grid lg:grid-cols-2 gap-12 mb-16">
+        {/* Payments & safety */}
+        <div className="bg-[#fafafa] border border-[#eee] rounded-xl p-5 flex gap-4">
+          <div className="w-9 h-9 rounded-xl bg-white border border-[#eee] flex items-center justify-center flex-shrink-0">
+            <Shield className="w-4 h-4 text-[#555]" />
+          </div>
           <div>
-            <h2 className="text-3xl font-bold mb-6">Our Story</h2>
-            <div className="space-y-4 text-muted-foreground">
-              <p>
-                FanRealms was born from a simple observation: creators were struggling to monetize 
-                their content while maintaining genuine connections with their audience. Existing 
-                platforms took large cuts, imposed restrictive policies, and treated creators as 
-                expendable resources.
-              </p>
-              <p>
-                We envisioned a different future—one where creators have complete control over 
-                their content, fair revenue sharing, and direct relationships with their fans. 
-                FanRealms represents this vision: a realm where creativity thrives and fans 
-                truly support the creators they love.
-              </p>
-              <p>
-                Since our inception, we've focused on building not just a platform, but a 
-                community that celebrates authentic content creation and meaningful fan engagement.
-              </p>
-            </div>
-          </div>
-          <div className="lg:pl-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4">What Sets Us Apart</h3>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-yellow-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Creator-First Approach</h4>
-                    <p className="text-sm text-muted-foreground">Fair revenue sharing and creator-friendly policies</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Content Protection</h4>
-                    <p className="text-sm text-muted-foreground">Advanced security and copyright protection</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" />
-                  <div>
-                    <h4 className="font-medium">Community Focus</h4>
-                    <p className="text-sm text-muted-foreground">Tools that foster genuine fan-creator relationships</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Team Section */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-6">Our Team</h2>
-          <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            FanRealms is built by a passionate team of creators, developers, and community advocates 
-            who understand the challenges of content creation firsthand.
-          </p>
-          <Card className="max-w-md mx-auto">
-            <CardContent className="p-6 text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Users className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="font-semibold mb-2">The FanRealms Team</h3>
-              <p className="text-sm text-muted-foreground">
-                A diverse group of creators, engineers, and community builders working 
-                together to revolutionize the creator economy.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-12 text-center text-white mb-16">
-          <h2 className="text-3xl font-bold mb-4">Join the FanRealms Community</h2>
-          <p className="text-xl mb-8 opacity-90">
-            Whether you're a creator looking to monetize your passion or a fan wanting to 
-            support your favorite creators, FanRealms is your gateway to authentic connections.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary">
-              <Link to="/signup">Start Creating</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="bg-white/20 border-white/30 text-white hover:bg-white/30">
-              <Link to="/explore">Discover Creators</Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Contact Section */}
-        <Card>
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Get in Touch</h2>
-            <p className="text-muted-foreground mb-6">
-              Have questions, feedback, or want to learn more about FanRealms? We'd love to hear from you.
+            <div className="text-[14px] font-bold text-[#111] mb-1">Payments are handled by Stripe</div>
+            <p className="text-[13px] text-[#777] leading-relaxed">
+              We never store your card details. All transactions go through Stripe, one of the most
+              trusted payment processors in the world. Sellers receive payouts directly to their bank
+              account via Stripe Connect.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button asChild variant="outline">
-                <a href="mailto:support@fanrealms.com" className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  support@fanrealms.com
-                </a>
-              </Button>
-              <div className="flex gap-2">
-                <Button size="icon" variant="ghost" asChild>
-                  <a href="https://twitter.com/fanrealms" target="_blank" rel="noopener noreferrer">
-                    <Twitter className="w-4 h-4" />
-                    <span className="sr-only">Twitter</span>
-                  </a>
-                </Button>
-                <Button size="icon" variant="ghost" asChild>
-                  <a href="https://instagram.com/fanrealms" target="_blank" rel="noopener noreferrer">
-                    <Instagram className="w-4 h-4" />
-                    <span className="sr-only">Instagram</span>
-                  </a>
-                </Button>
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div className="space-y-3">
+          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Pricing</h2>
+          <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
+            {[
+              { label: "Sign up", value: "Free" },
+              { label: "Browse & buy", value: "Free" },
+              { label: "List assets for sale", value: "Free" },
+              { label: "Platform fee on sales", value: "10%" },
+              { label: "Payment processing (Stripe)", value: "~2.9% + 30¢" },
+            ].map(({ label, value }, i, arr) => (
+              <div
+                key={label}
+                className={`flex items-center justify-between px-4 py-3 text-[13px] ${i < arr.length - 1 ? "border-b border-[#f5f5f5]" : ""}`}
+              >
+                <span className="text-[#666]">{label}</span>
+                <span className="font-semibold text-[#111]">{value}</span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+          <p className="text-[12px] text-[#aaa]">No monthly subscription required to sell. You only pay when you make a sale.</p>
+        </div>
+
+        {/* Contact */}
+        <div className="space-y-2">
+          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Contact</h2>
+          <p className="text-[13px] text-[#666]">
+            Questions or issues? Email us at{" "}
+            <a href="mailto:support@fanrealms.com" className="text-primary font-medium hover:underline">
+              support@fanrealms.com
+            </a>
+            . We usually respond within a day.
+          </p>
+        </div>
+
+        {/* CTA */}
+        <div className="flex gap-3 pt-2">
+          <Link
+            to="/signup"
+            className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+          >
+            Create an account
+          </Link>
+          <Link
+            to="/marketplace"
+            className="px-5 py-2.5 text-[13px] font-semibold text-[#333] bg-[#f5f5f5] rounded-[10px] hover:bg-[#eee] transition-colors"
+          >
+            Browse marketplace
+          </Link>
+        </div>
+
       </div>
-    </div>
+    </MainLayout>
   );
 }
