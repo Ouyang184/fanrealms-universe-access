@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThreads, FORUM_CATEGORIES } from '@/hooks/useForum';
 import { ThreadCard } from '@/components/forum/ThreadCard';
@@ -64,8 +65,18 @@ export default function Forum() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 text-[#aaa]">
-            No threads yet. Start the conversation!
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="text-5xl mb-4">💬</div>
+            <h3 className="text-[17px] font-bold text-[#111] mb-2">No threads yet</h3>
+            <p className="text-[13px] text-[#888] max-w-xs mb-6 leading-relaxed">
+              Be the first to start a conversation — share devlogs, ask questions, or introduce yourself.
+            </p>
+            <Link
+              to="/signup"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+            >
+              Start a thread
+            </Link>
           </div>
         )}
       </div>

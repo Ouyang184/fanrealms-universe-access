@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useJobListings, JOB_CATEGORIES } from '@/hooks/useJobs';
 import { JobListingCard } from '@/components/jobs/JobListingCard';
@@ -64,8 +65,18 @@ export default function Jobs() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 text-[#aaa]">
-            No open listings. Be the first to post a job!
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <div className="text-5xl mb-4">💼</div>
+            <h3 className="text-[17px] font-bold text-[#111] mb-2">No open jobs yet</h3>
+            <p className="text-[13px] text-[#888] max-w-xs mb-6 leading-relaxed">
+              Post a gig, bounty, or freelance opportunity and connect with talented indie creators.
+            </p>
+            <Link
+              to="/signup"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+            >
+              Post a job
+            </Link>
           </div>
         )}
       </div>
