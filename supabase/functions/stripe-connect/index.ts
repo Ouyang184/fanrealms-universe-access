@@ -200,10 +200,28 @@ serve(async (req) => {
       }
 
       case 'create_login_link': {
-      console.log('Creating login link for account:', accountId)
+      // SECURITY: Resolve the caller's own creator profile and use ITS stripe_account_id.
+      // Never trust client-supplied accountId for privileged actions.
+      const callerCreatorId = await verifyCreatorAccess(supabaseService, user.id);
+      const { data: callerCreator, error: callerCreatorErr } = await supabaseService
+        .from('creators')
+        .select('stripe_account_id')
+        .eq('id', callerCreatorId)
+        .single();
+
+      if (callerCreatorErr || !callerCreator?.stripe_account_id) {
+        logSecurityEvent('STRIPE_ACCOUNT_MISSING', { creatorId: callerCreatorId }, user.id);
+        return new Response(JSON.stringify({ error: 'No Stripe account found for this creator' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      const ownedAccountId = callerCreator.stripe_account_id;
+
+      console.log('Creating login link for account:', ownedAccountId)
       
       // Check if account has completed onboarding
-      const account = await stripe.accounts.retrieve(accountId)
+      const account = await stripe.accounts.retrieve(ownedAccountId)
       
       if (!account.charges_enabled || !account.details_submitted) {
         console.error('Account has not completed onboarding')
@@ -216,7 +234,7 @@ serve(async (req) => {
       }
 
       // Create login link for existing account
-      const loginLink = await stripe.accounts.createLoginLink(accountId)
+      const loginLink = await stripe.accounts.createLoginLink(ownedAccountId)
       console.log('Login link created:', loginLink.url)
 
       return new Response(JSON.stringify({ 
@@ -227,11 +245,28 @@ serve(async (req) => {
       }
 
       case 'get_balance': {
-      console.log('Getting balance for account:', accountId)
+      // SECURITY: Look up the caller's own stripe_account_id from the database.
+      const balanceCreatorId = await verifyCreatorAccess(supabaseService, user.id);
+      const { data: balanceCreator, error: balanceCreatorErr } = await supabaseService
+        .from('creators')
+        .select('stripe_account_id')
+        .eq('id', balanceCreatorId)
+        .single();
+
+      if (balanceCreatorErr || !balanceCreator?.stripe_account_id) {
+        logSecurityEvent('STRIPE_ACCOUNT_MISSING', { creatorId: balanceCreatorId }, user.id);
+        return new Response(JSON.stringify({ error: 'No Stripe account found for this creator' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+      const ownedBalanceAccountId = balanceCreator.stripe_account_id;
+
+      console.log('Getting balance for account:', ownedBalanceAccountId)
       
       // Get account balance
       const balance = await stripe.balance.retrieve({
-        stripeAccount: accountId,
+        stripeAccount: ownedBalanceAccountId,
       })
 
       return new Response(JSON.stringify({ balance }), {

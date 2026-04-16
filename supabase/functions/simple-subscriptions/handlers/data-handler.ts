@@ -17,9 +17,25 @@ export async function handleGetUserSubscriptions(supabase: any, user: any) {
   return { subscriptions: subscriptions || [] };
 }
 
-export async function handleGetCreatorSubscribers(stripe: any, supabase: any, creatorId: string) {
+export async function handleGetCreatorSubscribers(stripe: any, supabase: any, creatorId: string, user?: any) {
   console.log('[SimpleSubscriptions] Getting creator subscribers for creator:', creatorId);
-  
+
+  // SECURITY: Require an authenticated user that owns this creator profile.
+  if (!user?.id) {
+    throw new Error('Unauthorized: authentication required');
+  }
+  const { data: ownedCreator, error: ownerErr } = await supabase
+    .from('creators')
+    .select('id')
+    .eq('id', creatorId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (ownerErr || !ownedCreator) {
+    console.warn('[SimpleSubscriptions] Unauthorized subscriber list access attempt', { userId: user.id, creatorId });
+    throw new Error('Unauthorized: you do not own this creator profile');
+  }
+
   // Get all tiers for this creator
   console.log('[SimpleSubscriptions] Fetching all tiers for creator:', creatorId);
   const { data: tiers } = await supabase
