@@ -95,19 +95,19 @@ export default function LandingPage() {
               {
                 step: "1",
                 title: "Sign up free",
-                desc: "Create your account in seconds. No subscription required to browse or buy.",
+                desc: "Create your account in seconds. Free to browse and download assets.",
                 color: "bg-primary/10 text-primary",
               },
               {
                 step: "2",
-                title: "Browse or list",
-                desc: "Buy game assets, hire creators, or list your own work for sale.",
+                title: "Find or list Godot assets",
+                desc: "Buy plugins, shaders, and sprites — or upload your own packs for sale.",
                 color: "bg-blue-50 text-blue-600",
               },
               {
                 step: "3",
-                title: "Connect & grow",
-                desc: "Follow creators, discuss in the forum, and build your audience.",
+                title: "Build & ship",
+                desc: "Get the tools you need, find collaborators in the forum, and ship your game.",
                 color: "bg-green-50 text-green-600",
               },
             ].map(({ step, title, desc, color }) => (
