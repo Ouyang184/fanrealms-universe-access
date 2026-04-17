@@ -14,81 +14,90 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== ARCHIVE STRIPE PRODUCT FUNCTION START ===');
-    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')!;
 
-    // Initialize Supabase client for auth
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
+
     if (authError || !user) {
-      throw new Error('Authentication failed');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
-    console.log('User authenticated:', user.id);
-
-    // Get request body
     const { productId, priceId } = await req.json();
-    console.log('Archive request:', { productId, priceId });
-
-    if (!productId) {
-      throw new Error('Product ID is required');
+    if (!productId || typeof productId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Initialize Stripe
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    });
+    // Ownership verification
+    const { data: tier, error: tierError } = await supabaseService
+      .from('membership_tiers')
+      .select('id, creator_id')
+      .eq('stripe_product_id', productId)
+      .maybeSingle();
 
-    // Archive the Stripe product (this also archives associated prices)
-    console.log('Archiving Stripe product:', productId);
-    
-    const archivedProduct = await stripe.products.update(productId, {
-      active: false,
-    });
+    if (tierError || !tier) {
+      console.error('Ownership lookup failed (tier not found)');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
 
-    console.log('Product archived successfully:', archivedProduct.id);
+    const { data: creator, error: creatorError } = await supabaseService
+      .from('creators')
+      .select('id')
+      .eq('id', tier.creator_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    // If a specific price ID was provided, also deactivate it
-    if (priceId) {
+    if (creatorError || !creator) {
+      console.error('Ownership lookup failed (creator mismatch)', { userId: user.id });
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+
+    const archivedProduct = await stripe.products.update(productId, { active: false });
+
+    if (priceId && typeof priceId === 'string') {
       try {
-        console.log('Deactivating price:', priceId);
-        await stripe.prices.update(priceId, {
-          active: false,
-        });
-        console.log('Price deactivated successfully');
+        await stripe.prices.update(priceId, { active: false });
       } catch (priceError) {
         console.error('Error deactivating price (continuing anyway):', priceError);
       }
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      archivedProductId: archivedProduct.id,
-      message: 'Product archived successfully'
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    return new Response(
+      JSON.stringify({ success: true, archivedProductId: archivedProduct.id }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
 
   } catch (error) {
     console.error('Error archiving Stripe product:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to archive Stripe product' 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: 'Failed to archive product' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 });
