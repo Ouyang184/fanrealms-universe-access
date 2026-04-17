@@ -64,8 +64,8 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
         {isLoading ? (
           // Loading skeletons
           Array(3).fill(0).map((_, i) => (
-            <Card key={`creator-skeleton-${i}`} className="bg-gray-900 border-gray-800 overflow-hidden">
-              <div className="h-32 bg-gray-800" />
+            <Card key={`creator-skeleton-${i}`} className="bg-card border-border overflow-hidden">
+              <div className="h-32 bg-secondary" />
               <CardContent className="pt-0 -mt-12 p-6">
                 <div className="flex justify-between items-start">
                   <Skeleton className="h-20 w-20 rounded-md" />
@@ -103,8 +103,8 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
             const ratingData = ratingStats[creator.id];
             
             return (
-              <Card key={creator.id} className="bg-gray-900 border-gray-800 overflow-hidden">
-                <div className="h-32 bg-gray-800 relative">
+              <Card key={creator.id} className="bg-card border-border overflow-hidden">
+                <div className="h-32 bg-secondary relative">
                   {creator.banner_url && (
                     <img
                       src={creator.banner_url}
@@ -117,13 +117,13 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                   <div className="flex justify-between items-start">
                     <Avatar className="h-20 w-20 border-4 border-gray-900">
                       <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
-                      <AvatarFallback className="bg-gray-800 text-xl">
+                      <AvatarFallback className="bg-secondary text-xl">
                         {avatarFallback}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <h3 className="text-xl font-bold mt-4">{displayName}</h3>
-                  <p className="text-gray-400 text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+                  <p className="text-muted-foreground text-sm mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
 
                   {/* Display rating if available */}
                   {ratingData && (
@@ -132,21 +132,21 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                         rating={ratingData.average_rating} 
                         count={ratingData.total_ratings}
                         size="sm"
-                        className="text-gray-300"
+                        className="text-muted-foreground"
                       />
                     </div>
                   )}
 
                   <div className="flex flex-wrap gap-2 mt-3">
                     {getCreatorTags(creator).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700">
+                      <Badge key={index} variant="outline" className="bg-secondary border-border">
                         {tag}
                       </Badge>
                     ))}
                   </div>
 
                   <div className="mt-6 flex items-center justify-between">
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-muted-foreground">
                       {creator.tiers && creator.tiers.length > 0 ? (
                         <>From <span className="font-medium text-white">${Math.min(...creator.tiers.map(tier => tier.price)).toFixed(2)}/mo</span></>
                       ) : (
@@ -154,7 +154,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                       )}
                     </div>
                     <Link to={creatorLink}>
-                      <Button className="bg-primary hover:bg-[#3a7aab]">View Creator</Button>
+                      <Button className="bg-primary hover:bg-primary/90">View Creator</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -162,7 +162,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
             );
           })
         ) : (
-          <div className="col-span-3 text-center py-10 text-gray-400">
+          <div className="col-span-3 text-center py-10 text-muted-foreground">
             No creators found in this category yet. Check back soon!
           </div>
         )}

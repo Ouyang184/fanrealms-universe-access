@@ -145,7 +145,7 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
                 <p className="text-sm text-[#777] mb-3">
                   This post is for this seller's subscribers. Subscribe to unlock the full post.
                 </p>
-                <Button className="w-full bg-primary hover:bg-[#3a7aab] text-white">
+                <Button className="w-full bg-primary hover:bg-primary/90 text-white">
                   <Lock className="h-4 w-4 mr-2" />
                   Subscribe to unlock
                 </Button>

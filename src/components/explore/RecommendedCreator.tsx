@@ -60,21 +60,21 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
   const avatarFallback = (displayName || "C").substring(0, 1).toUpperCase();
 
   return (
-    <Card className="bg-gray-900 border-gray-800 flex overflow-hidden">
+    <Card className="bg-card border-border flex overflow-hidden">
       <div className="p-4 flex-shrink-0">
         <Avatar className="h-16 w-16">
           <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
-          <AvatarFallback className="bg-gray-800 text-xl">{avatarFallback}</AvatarFallback>
+          <AvatarFallback className="bg-secondary text-xl">{avatarFallback}</AvatarFallback>
         </Avatar>
       </div>
       <div className="flex-1 p-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold">{displayName}</h3>
         </div>
-        <p className="text-sm text-gray-400 mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{creator.bio || "Creator on FanRealms"}</p>
         <div className="flex flex-wrap gap-2 mt-2">
           {getCreatorTags(creator).slice(0, 3).map((tag, index) => (
-            <Badge key={index} variant="outline" className="bg-gray-800 border-gray-700 text-xs">
+            <Badge key={index} variant="outline" className="bg-secondary border-border text-xs">
               {tag}
             </Badge>
           ))}
@@ -84,7 +84,7 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
             <span className="font-medium">{getPricingDisplay(creator)}</span>
           </div>
           <Link to={creatorLink}>
-            <Button size="sm" className="bg-primary hover:bg-[#3a7aab]">
+            <Button size="sm" className="bg-primary hover:bg-primary/90">
               View Creator
             </Button>
           </Link>

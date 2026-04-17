@@ -36,7 +36,7 @@ export function ExploreCategories() {
               Content Type
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-gray-800 border-gray-700 z-50">
+          <DropdownMenuContent className="bg-secondary border-border z-50">
             <DropdownMenuItem 
               onClick={() => {
                 console.log('All Categories clicked - should navigate to /explore');
