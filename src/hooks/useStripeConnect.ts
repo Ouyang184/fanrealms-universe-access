@@ -17,11 +17,11 @@ export const useStripeConnect = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('creators')
+      const { data, error } = await (supabase as any)
+        .from('creator_stripe_status')
         .select('stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

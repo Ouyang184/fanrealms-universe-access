@@ -553,6 +553,47 @@ export type Database = {
           },
         ]
       }
+      creator_stripe_accounts: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_stripe_accounts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creators: {
         Row: {
           accepts_commissions: boolean | null
@@ -569,10 +610,6 @@ export type Database = {
           id: string
           is_nsfw: boolean
           profile_image_url: string | null
-          stripe_account_id: string | null
-          stripe_charges_enabled: boolean | null
-          stripe_onboarding_complete: boolean | null
-          stripe_payouts_enabled: boolean | null
           tags: string[] | null
           updated_at: string | null
           user_id: string
@@ -595,10 +632,6 @@ export type Database = {
           id?: string
           is_nsfw?: boolean
           profile_image_url?: string | null
-          stripe_account_id?: string | null
-          stripe_charges_enabled?: boolean | null
-          stripe_onboarding_complete?: boolean | null
-          stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
           updated_at?: string | null
           user_id: string
@@ -621,10 +654,6 @@ export type Database = {
           id?: string
           is_nsfw?: boolean
           profile_image_url?: string | null
-          stripe_account_id?: string | null
-          stripe_charges_enabled?: boolean | null
-          stripe_onboarding_complete?: boolean | null
-          stripe_payouts_enabled?: boolean | null
           tags?: string[] | null
           updated_at?: string | null
           user_id?: string
@@ -2318,6 +2347,32 @@ export type Database = {
           },
         ]
       }
+      creator_stripe_status: {
+        Row: {
+          creator_id: string | null
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_stripe_accounts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_payment_operation: {
@@ -2337,6 +2392,10 @@ export type Database = {
           security_check: string
           status: string
         }[]
+      }
+      can_read_post_attachment: {
+        Args: { _object_name: string; _user_id: string }
+        Returns: boolean
       }
       check_payment_rate_limit: {
         Args: {
