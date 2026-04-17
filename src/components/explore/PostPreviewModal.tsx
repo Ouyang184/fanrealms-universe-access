@@ -135,19 +135,19 @@ export function PostPreviewModal({ open, onOpenChange, post }: PostPreviewModalP
               </div>
             )}
             
-            {/* Premium content notice for non-subscribers */}
+            {/* Members-only content notice for non-subscribers */}
             {post.tier_id && !hasAccess && (
-              <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
-                <div className="flex items-center gap-2 text-amber-800 mb-3">
-                  <Crown className="h-5 w-5 text-purple-600" />
-                  <span className="font-semibold">Premium Content Preview</span>
+              <div className="p-4 bg-[#fafafa] border border-[#eee] rounded-lg">
+                <div className="flex items-center gap-2 text-[#111] mb-3">
+                  <Lock className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">Members-only content</span>
                 </div>
-                <p className="text-sm text-amber-700 mb-3">
-                  This is a preview of premium content. Subscribe to unlock the full post and exclusive content from this creator.
+                <p className="text-sm text-[#777] mb-3">
+                  This post is for this seller's subscribers. Subscribe to unlock the full post.
                 </p>
-                <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
+                <Button className="w-full bg-primary hover:bg-[#3a7aab] text-white">
                   <Lock className="h-4 w-4 mr-2" />
-                  Subscribe to Unlock
+                  Subscribe to unlock
                 </Button>
               </div>
             )}

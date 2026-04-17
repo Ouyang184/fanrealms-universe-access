@@ -38,7 +38,7 @@ export function ProfileHeader({ creator }: ProfileHeaderProps) {
           />
         </div>
       ) : (
-        <div className="w-full h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-lg" />
+        <div className="w-full h-48 md:h-64 bg-[#f5f5f5] rounded-t-lg" />
       )}
       
       {/* Profile Content */}

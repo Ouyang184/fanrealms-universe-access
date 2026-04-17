@@ -120,19 +120,19 @@ export const TierAccessInfo: React.FC<TierAccessInfoProps> = ({ post, creatorInf
   };
 
   return (
-    <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+    <div className="mb-4 p-3 bg-[#fafafa] border border-[#eee] rounded-lg">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-purple-800 mb-1">
+          <p className="text-sm font-medium text-[#111] mb-1">
             Posted for {tierPricesText}
           </p>
-          <p className="text-xs text-purple-600">
-            Premium content available to subscribers
+          <p className="text-xs text-[#777]">
+            Members-only content available to subscribers
           </p>
         </div>
         <Button
           size="sm"
-          className="bg-pink-500 hover:bg-pink-600 text-white"
+          className="bg-primary hover:bg-[#3a7aab] text-white"
           onClick={handleUnlockTier}
           disabled={isProcessing}
         >

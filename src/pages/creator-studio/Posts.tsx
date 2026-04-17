@@ -570,10 +570,10 @@ function PostCard({ post }: { post: CreatorPost }) {
           )}
 
           {isPremiumPost && hasFullAccess && isOwnPost && (
-            <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 flex items-center gap-2">
+            <div className="mt-3 p-3 bg-[#fafafa] border border-[#eee] rounded-lg">
+              <p className="text-sm text-[#555] flex items-center gap-2">
                 <Lock className="h-4 w-4" />
-                This is your premium content. Subscribers with access to this tier can view the full post.
+                This is your members-only content. Subscribers with access to this tier can view the full post.
               </p>
             </div>
           )}

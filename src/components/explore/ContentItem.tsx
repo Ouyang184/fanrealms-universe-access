@@ -3,7 +3,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Heart, MessageCircle, Crown, Globe } from "lucide-react";
+import { Heart, MessageCircle, Lock, Globe } from "lucide-react";
 import { Post } from "@/types";
 import { PostCardMedia } from "@/components/post/PostCardMedia";
 import { generatePostBanner, hasMediaContent } from "@/utils/postBanners";
@@ -152,10 +152,10 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
                 {displayName}
               </Link>
               {post.tier_id ? (
-                <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">
-                  <Crown className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-                  <span className="hidden xs:inline">Premium</span>
-                  <span className="xs:hidden">P</span>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">
+                  <Lock className="h-2 w-2 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                  <span className="hidden xs:inline">Members</span>
+                  <span className="xs:hidden">M</span>
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 flex-shrink-0 text-xs scale-75 sm:scale-100 origin-left">

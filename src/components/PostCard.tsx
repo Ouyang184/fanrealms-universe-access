@@ -149,7 +149,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const postHasMedia = hasMediaContent(attachments);
 
   return (
-    <Card className={`w-full max-w-2xl mx-auto ${isPremiumPost && !hasFullAccess ? 'border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30' : ''}`}>
+    <Card className={`w-full max-w-2xl mx-auto ${isPremiumPost && !hasFullAccess ? 'border-[#eee] bg-white' : ''}`}>
       <CardHeader className="pb-3">
         <PostCardHeader
           authorName={displayAuthorName}
@@ -194,49 +194,49 @@ const PostCard: React.FC<PostCardProps> = ({
             </div>
           )}
           
-          {/* Creator's own premium content indicator */}
+          {/* Seller's own members-only content indicator */}
           {isPremiumPost && hasFullAccess && isOwnPost && (
-            <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-800">
-                <Crown className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Your Premium Content</span>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
-                  Creator View
+            <div className="p-3 bg-[#fafafa] border border-[#eee] rounded-lg">
+              <div className="flex items-center gap-2 text-[#555]">
+                <Lock className="h-4 w-4" />
+                <span className="text-sm font-medium">Your members-only content</span>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                  Seller View
                 </Badge>
               </div>
             </div>
           )}
           
-          {/* Premium content access indicator for subscribers */}
+          {/* Members-only content access indicator for subscribers */}
           {isPremiumPost && hasFullAccess && !isOwnPost && (
-            <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-green-800">
-                <Crown className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">✓ Premium Content Unlocked</span>
-                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+            <div className="p-3 bg-[#fafafa] border border-[#eee] rounded-lg">
+              <div className="flex items-center gap-2 text-[#555]">
+                <Lock className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">✓ Members-only content unlocked</span>
+                <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                   Subscribed
                 </Badge>
               </div>
             </div>
           )}
           
-          {/* Premium content preview/lock indicator for non-subscribers - ONLY for non-creators */}
+          {/* Members-only content lock for non-subscribers */}
           {isPremiumPost && !hasFullAccess && !isOwnPost && (
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800 mb-3">
-                <Crown className="h-5 w-5 text-purple-600" />
-                <span className="font-semibold">Premium Content</span>
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
-                  Tier Exclusive
+            <div className="p-4 bg-[#fafafa] border border-[#eee] rounded-lg">
+              <div className="flex items-center gap-2 text-[#111] mb-3">
+                <Lock className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Members-only content</span>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                  Subscribers only
                 </Badge>
               </div>
-              <p className="text-sm text-amber-700 mb-3">
-                This content is available to premium subscribers. Subscribe to unlock the full post and exclusive content from this creator.
+              <p className="text-sm text-[#777] mb-3">
+                This post is for this seller's subscribers. Subscribe to unlock the full post.
               </p>
-              
-              <Button className="w-full bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
+
+              <Button className="w-full bg-primary hover:bg-[#3a7aab] text-white">
                 <Lock className="h-4 w-4 mr-2" />
-                Subscribe to Unlock
+                Subscribe to unlock
               </Button>
             </div>
           )}
@@ -276,8 +276,8 @@ const PostCard: React.FC<PostCardProps> = ({
               <Badge 
                 variant="secondary" 
                 className={`${
-                  isPremiumPost 
-                    ? "bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200" 
+                  isPremiumPost
+                    ? "bg-primary/10 text-primary border-primary/20"
                     : "bg-green-50 text-green-700 border-green-200"
                 }`}
               >

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Globe } from 'lucide-react';
+import { Lock, Globe } from 'lucide-react';
 
 interface PostCardHeaderProps {
   authorName: string;
@@ -36,9 +36,9 @@ export function PostCardHeader({
           <div className="flex items-center gap-3">
             <p className="font-medium text-sm">{finalAuthorName}</p>
             {isPremium ? (
-              <Badge variant="secondary" className="bg-gradient-to-r from-purple-100 to-amber-100 text-purple-700 border-purple-200">
-                <Crown className="h-3 w-3 mr-1" />
-                Premium
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Lock className="h-3 w-3 mr-1" />
+                Members only
               </Badge>
             ) : (
               <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
