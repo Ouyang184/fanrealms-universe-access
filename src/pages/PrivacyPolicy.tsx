@@ -1,197 +1,104 @@
-
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Shield, Eye, Database, Users, ArrowLeft } from "lucide-react";
+import { Link } from 'react-router-dom';
+import { Logo } from '@/components/Logo';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function PrivacyPolicy() {
-  const navigate = useNavigate();
-
-  const handleBack = () => {
-    navigate(-1);
-  };
+  const { user } = useAuth();
+  const backTo = user ? '/home' : '/';
+  const lastUpdated = 'April 2026';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="flex items-center gap-2 mb-4">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </Button>
-          <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
-          <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
+    <div className="min-h-screen bg-white text-[#111]">
+      <header className="border-b border-[#eee]">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link to="/"><Logo /></Link>
+          <Link to={backTo} className="text-[13px] text-[#777] hover:text-[#111]">← Back</Link>
+        </div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+        <div>
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-1">Privacy Policy</h1>
+          <p className="text-[12px] text-[#aaa]">Last updated: {lastUpdated}</p>
         </div>
 
-        <div className="space-y-8">
-          {/* Introduction */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Privacy Policy Overview
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                At FanRealms, we are committed to protecting your privacy and ensuring the security of your personal information. 
-                This Privacy Policy explains how we collect, use, and protect your data when you use our platform.
-              </p>
-            </CardContent>
-          </Card>
+        <p className="text-[14px] text-[#555] leading-relaxed">
+          FanRealms is an indie creator marketplace. This policy explains what data we collect
+          when you use the site, why we collect it, and the choices you have.
+        </p>
 
-          {/* Data Collection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Data Collection & Usage
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Data Collected</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-border">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th className="border border-border p-3 text-left">Category</th>
-                        <th className="border border-border p-3 text-left">Examples</th>
-                        <th className="border border-border p-3 text-left">Purpose</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="border border-border p-3">Account Data</td>
-                        <td className="border border-border p-3">Email, username, age verification</td>
-                        <td className="border border-border p-3">User authentication</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Payment Data</td>
-                        <td className="border border-border p-3">Card details (via Stripe)</td>
-                        <td className="border border-border p-3">Transaction processing</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Content Data</td>
-                        <td className="border border-border p-3">Posts, messages, media</td>
-                        <td className="border border-border p-3">Platform functionality</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Usage Data</td>
-                        <td className="border border-border p-3">IP, cookies, device info</td>
-                        <td className="border border-border p-3">Analytics & security</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+        <Section title="What we collect">
+          <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
+            {[
+              ['Account', 'Email, username, password hash', 'Sign in, notifications'],
+              ['Marketplace', 'Products you list, buy, or rate', 'Run the marketplace'],
+              ['Payments', 'Card details via Stripe — we never store card numbers', 'Process purchases and payouts'],
+              ['Usage', 'IP address, device info, page visits', 'Security, analytics, fraud prevention'],
+            ].map(([cat, ex, pur], i, arr) => (
+              <div
+                key={cat}
+                className={`grid grid-cols-[100px_1fr_1fr] gap-3 px-4 py-3 text-[12px] ${i < arr.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+              >
+                <div className="font-semibold text-[#111]">{cat}</div>
+                <div className="text-[#666]">{ex}</div>
+                <div className="text-[#888]">{pur}</div>
               </div>
+            ))}
+          </div>
+        </Section>
 
-              <Separator />
+        <Section title="Who we share data with">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li><strong className="text-[#111] font-semibold">Stripe</strong> — processes all payments. We never see your card.</li>
+            <li><strong className="text-[#111] font-semibold">Supabase</strong> — our hosting and database provider.</li>
+            <li><strong className="text-[#111] font-semibold">Sellers</strong> — see basic buyer info (username, email) for their own sales only.</li>
+            <li><strong className="text-[#111] font-semibold">Law enforcement</strong> — only when legally required.</li>
+          </ul>
+          <p className="text-[13px] text-[#555] leading-relaxed mt-3">
+            We do <strong>not</strong> sell personal data, run behavioral ad networks, or share your
+            data with data brokers.
+          </p>
+        </Section>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">How We Use Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>To provide services (payments, moderation).</li>
-                  <li>To improve the Platform (bug fixes, UX enhancements).</li>
-                  <li>For legal compliance (fraud prevention, subpoenas).</li>
-                </ul>
-              </div>
+        <Section title="Your rights">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>Download a copy of your data</li>
+            <li>Correct inaccurate information</li>
+            <li>Delete your account and all associated data</li>
+            <li>Object to processing, or restrict it</li>
+          </ul>
+          <p className="text-[13px] text-[#555] leading-relaxed mt-3">
+            Email <a href="mailto:privacy@fanrealms.com" className="text-primary font-medium hover:underline">privacy@fanrealms.com</a> to exercise any of these rights.
+            EU (GDPR) and California (CCPA) residents have additional rights under those laws.
+          </p>
+        </Section>
 
-              <Separator />
+        <Section title="Data retention & security">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            We keep your data for as long as your account is active and for a reasonable period
+            afterward to comply with legal and tax obligations. All data is encrypted at rest and
+            in transit. Card numbers are never stored on our servers.
+          </p>
+        </Section>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Data Sharing & Third Parties</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Creators see fan interactions (tips, subscriptions).</li>
-                  <li>Payment processors (Stripe) handle transactions.</li>
-                  <li>Cloud providers (Supabase) store data securely.</li>
-                  <li>Legal authorities (if required by law).</li>
-                </ul>
-              </div>
+        <Section title="Contact">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            Questions about this policy? Email{' '}
+            <a href="mailto:privacy@fanrealms.com" className="text-primary font-medium hover:underline">
+              privacy@fanrealms.com
+            </a>.
+          </p>
+        </Section>
+      </main>
+    </div>
+  );
+}
 
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">User Rights (GDPR/CCPA)</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Access/Delete Data:</strong> Email support@fanrealms.com</li>
-                  <li><strong>Opt-Out (CCPA):</strong> Contact us for data deletion requests</li>
-                  <li><strong>EU Users:</strong> Withdraw consent anytime</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Data Retention & Security</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>We retain data as long as necessary (or per legal requirements).</li>
-                  <li>Encryption & firewalls protect sensitive data.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Data Protection Rights */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="w-5 h-5" />
-                Your Data Protection Rights
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Right to Access</h4>
-                  <p className="text-muted-foreground">You have the right to request copies of your personal data.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Right to Rectification</h4>
-                  <p className="text-muted-foreground">You have the right to request correction of inaccurate or incomplete data.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Right to Erasure</h4>
-                  <p className="text-muted-foreground">You have the right to request deletion of your personal data under certain conditions.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Right to Restrict Processing</h4>
-                  <p className="text-muted-foreground">You have the right to request that we restrict the processing of your personal data.</p>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2">Right to Data Portability</h4>
-                  <p className="text-muted-foreground">You have the right to request that we transfer your data to another organization.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Contact Us About Privacy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                If you have any questions about this Privacy Policy or wish to exercise your data protection rights, 
-                please contact our privacy team.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button variant="outline" asChild>
-                  <a href="mailto:privacy@fanrealms.com">Privacy Team</a>
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href="mailto:support@fanrealms.com">General Support</a>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">{title}</h2>
+      {children}
     </div>
   );
 }

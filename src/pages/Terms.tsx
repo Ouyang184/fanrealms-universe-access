@@ -1,317 +1,118 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Check, Shield, FileText, Users, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Terms() {
-  const [finalAgreement, setFinalAgreement] = useState<boolean>(false);
   const { user } = useAuth();
-
-  const handleAcceptContinue = () => {
-    if (finalAgreement) {
-      // Navigate to home if agreed
-      window.location.href = '/home';
-    } else {
-      // Exit website if not agreed
-      window.location.href = '/';
-    }
-  };
-
-  // Determine the back link based on authentication status
-  const backToLink = user ? '/home' : '/';
-  const backToText = user ? 'Back to Home' : 'Back to Home';
+  const backTo = user ? '/home' : '/';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <Link to={backToLink} className="text-primary hover:underline mb-4 inline-block">
-            ← {backToText}
-          </Link>
-          <h1 className="text-4xl font-bold mb-4">Terms of Service & Privacy Policy</h1>
-          <p className="text-muted-foreground">Last Updated: {new Date().toLocaleDateString()}</p>
+    <div className="min-h-screen bg-white text-[#111]">
+      <header className="border-b border-[#eee]">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link to="/"><Logo /></Link>
+          <Link to={backTo} className="text-[13px] text-[#777] hover:text-[#111]">← Back</Link>
+        </div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-6 py-10 space-y-8">
+        <div>
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-1">Terms of Service</h1>
+          <p className="text-[12px] text-[#aaa]">Last updated: April 2026</p>
         </div>
 
-        <div className="space-y-8">
-          {/* Introduction */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                1. Introduction & Acceptance of Terms
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                By accessing or using FanRealms ("the Platform"), you agree to comply with these Terms of Service (ToS) and our Privacy Policy. If you do not agree, you must immediately cease using the Platform.
-              </p>
-            </CardContent>
-          </Card>
+        <p className="text-[14px] text-[#555] leading-relaxed">
+          These terms govern your use of FanRealms — the indie creator marketplace for digital
+          assets, indie games, freelance work, and community. By using the site you agree to
+          these terms.
+        </p>
 
-          {/* Eligibility */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                2. Eligibility & Account Registration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">2.1 Age Requirement</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>You must be at least 18 years of age to create NSFW content.</li>
-                  <li>In jurisdictions where the legal age of consent differs, you must comply with local laws.</li>
-                  <li>We do not knowingly allow underage users and will terminate accounts and report illegal activity if discovered.</li>
-                </ul>
-              </div>
+        <Section title="1. Using the platform">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>You must be at least 13 years old to create an account (16 in the EEA).</li>
+            <li>You're responsible for keeping your account credentials secure.</li>
+            <li>You won't try to bypass security, scrape at scale, or overload the service.</li>
+          </ul>
+        </Section>
 
-              <Separator />
+        <Section title="2. Selling on the marketplace">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>You keep ownership of your work. You grant us a license to host and display it.</li>
+            <li>You must own or have the right to sell every asset you list.</li>
+            <li>FanRealms takes a <strong className="text-[#111] font-semibold">10% platform fee</strong> on each sale. Stripe's processing fee (~2.9% + 30¢) is separate.</li>
+            <li>Payouts are handled by Stripe Connect. You're responsible for your own taxes.</li>
+            <li>No pirated content, stolen assets, malware, or AI-generated content that violates third-party rights.</li>
+          </ul>
+        </Section>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-3">2.2 Account Security</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>You are responsible for maintaining confidential login credentials.</li>
-                  <li>You must notify us immediately of unauthorized access.</li>
-                  <li>We reserve the right to suspend or terminate accounts suspected of fraudulent activity.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
+        <Section title="3. Buying on the marketplace">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>Digital products are generally final-sale. Refunds are handled case-by-case for broken or misrepresented items.</li>
+            <li>Licenses for purchased assets are defined by the seller on each listing.</li>
+            <li>Don't redistribute or resell purchased assets unless the license explicitly allows it.</li>
+          </ul>
+        </Section>
 
-          {/* User Responsibilities */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                3. User Responsibilities & Prohibited Conduct
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">3.1 Permitted Use</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>The Platform is for legally permissible content (e.g., artistic, educational, or adult content where allowed).</li>
-                  <li>Users must comply with all applicable laws (local, national, and international).</li>
-                </ul>
-              </div>
+        <Section title="4. Jobs & forum">
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>Job posts must describe real work with a real budget. No MLM, no spam, no paid reviews.</li>
+            <li>Freelance agreements are between the buyer and seller. FanRealms is not a party to them.</li>
+            <li>Forum posts must follow the <Link to="/community-guidelines" className="text-primary hover:underline">Community Guidelines</Link>.</li>
+          </ul>
+        </Section>
 
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">3.2 Prohibited Content & Behavior</h3>
-                <p className="mb-3">You may not use the Platform to:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Posting inappropriate content (child exploitation, revenge porn, terrorism-related material), if any inappropriate content are reported, it will be immediately deleted.</li>
-                  <li>Engage in fraud, phishing, or scams.</li>
-                  <li>Harass, dox, or threaten others.</li>
-                  <li>Distribute malware, spam, or pirated material.</li>
-                  <li>Circumvent payment systems (e.g., chargebacks, off-platform transactions).</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">3.3 Content Ownership & Licensing</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Creators retain ownership of their content but grant the Platform a non-exclusive license to distribute it.</li>
-                  <li>Subscribers may not redistribute paid content without permission.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5" />
-                4. Payments, Fees & Refunds
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">4.1 Subscription & Tipping</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Subscribers pay creators by the use of stripe, stripe and the Platform deducts a service fee.</li>
-                  <li>Recurring subscriptions auto-renew unless canceled.</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">4.2 Refund Policy</h3>
-                <div className="space-y-3">
-                  <p>No refunds for voluntary transactions.</p>
-                  <p><strong>Exceptions:</strong></p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>Unauthorized payments (report within 7 days).</li>
-                    <li>Undelivered content (after 14 days of non-delivery).</li>
-                  </ul>
-                  <p>Chargebacks will result in account suspension.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Copyright */}
-          <Card>
-            <CardHeader>
-              <CardTitle>5. Copyright & DMCA Compliance</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">5.1 Copyright Infringement Claims</h3>
-                <div className="space-y-3">
-                  <p>We comply with the Digital Millennium Copyright Act (DMCA).</p>
-                  <p>To file a takedown request, submit:</p>
-                  <ul className="list-disc pl-6 space-y-2">
-                    <li>A physical or electronic signature of the copyright owner.</li>
-                    <li>Identification of the infringing material.</li>
-                    <li>Contact information.</li>
-                    <li>A statement of good faith belief that the use is unauthorized.</li>
-                  </ul>
-                  <p>Submit claims to: legal@fanrealms.com</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">5.2 Counter-Notification</h3>
-                <p>If content is wrongly removed, you may submit a counter-notice under penalty of perjury.</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Termination */}
-          <Card>
-            <CardHeader>
-              <CardTitle>6. Termination & Suspension</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="list-disc pl-6 space-y-2">
-                <li>We may terminate accounts for violations without refunds.</li>
-                <li>Users may appeal bans via support@fanrealms.com</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* Dispute Resolution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>7. Dispute Resolution & Governing Law</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="list-disc pl-6 space-y-2">
-                <li><strong>Governing Law:</strong> These terms are governed by United States federal and state law.</li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          {/* Privacy Policy */}
-          <Card>
-            <CardHeader>
-              <CardTitle>8. Privacy Policy (Detailed Breakdown)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">8.1 Data Collected</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-border">
-                    <thead>
-                      <tr className="bg-muted">
-                        <th className="border border-border p-3 text-left">Category</th>
-                        <th className="border border-border p-3 text-left">Examples</th>
-                        <th className="border border-border p-3 text-left">Purpose</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td className="border border-border p-3">Account Data</td>
-                        <td className="border border-border p-3">Email, username, age verification</td>
-                        <td className="border border-border p-3">User authentication</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Payment Data</td>
-                        <td className="border border-border p-3">Card details (via Stripe)</td>
-                        <td className="border border-border p-3">Transaction processing</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Content Data</td>
-                        <td className="border border-border p-3">Posts, messages, media</td>
-                        <td className="border border-border p-3">Platform functionality</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-border p-3">Usage Data</td>
-                        <td className="border border-border p-3">IP, cookies, device info</td>
-                        <td className="border border-border p-3">Analytics & security</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">8.2 How We Use Data</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>To provide services (payments, moderation).</li>
-                  <li>To improve the Platform (bug fixes, UX enhancements).</li>
-                  <li>For legal compliance (fraud prevention, subpoenas).</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">8.3 Data Sharing & Third Parties</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Creators see fan interactions (tips, subscriptions).</li>
-                  <li>Payment processors (Stripe) handle transactions.</li>
-                  <li>Cloud providers (Supabase) store data securely.</li>
-                  <li>Legal authorities (if required by law).</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">8.4 User Rights (GDPR/CCPA)</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li><strong>Access/Delete Data:</strong> Email support@fanrealms.com</li>
-                  <li><strong>Opt-Out (CCPA):</strong> Contact us for data deletion requests</li>
-                  <li><strong>EU Users:</strong> Withdraw consent anytime</li>
-                </ul>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">8.5 Data Retention & Security</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>We retain data as long as necessary (or per legal requirements).</li>
-                  <li>Encryption & firewalls protect sensitive data.</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Company Information */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            FanRealms LLC, 7509 Palm Beach Avenue, Benton, AR 72019-2009
+        <Section title="5. Prohibited content">
+          <p className="text-[13px] text-[#555] leading-relaxed mb-2">
+            You may not upload or list:
           </p>
-        </div>
-      </div>
+          <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
+            <li>Content that infringes copyright, trademark, or other IP rights</li>
+            <li>Malware, keyloggers, or anything designed to harm users or systems</li>
+            <li>Content that sexualizes minors, promotes real-world violence, or encourages self-harm</li>
+            <li>Harassment, hate speech, or targeted abuse</li>
+          </ul>
+        </Section>
+
+        <Section title="6. Account suspension & termination">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            We may suspend or terminate accounts that violate these terms, receive repeated
+            chargebacks, or are used for fraud. You can close your account at any time from Settings.
+          </p>
+        </Section>
+
+        <Section title="7. Disclaimers & liability">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            FanRealms is provided "as is". We're not liable for indirect damages, lost profits,
+            or data loss, to the fullest extent allowed by law. Nothing here limits your rights
+            under applicable consumer protection laws.
+          </p>
+        </Section>
+
+        <Section title="8. Changes">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            We may update these terms as the platform evolves. Material changes will be announced
+            via email or a site notice.
+          </p>
+        </Section>
+
+        <Section title="Contact">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            Questions? Email{' '}
+            <a href="mailto:legal@fanrealms.com" className="text-primary font-medium hover:underline">
+              legal@fanrealms.com
+            </a>.
+          </p>
+        </Section>
+      </main>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">{title}</h2>
+      {children}
     </div>
   );
 }

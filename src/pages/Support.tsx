@@ -1,114 +1,102 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Mail, HelpCircle, Shield, FileQuestion } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { Mail, ShoppingBag, Gamepad2, Briefcase, MessageSquare } from 'lucide-react';
 
 export default function Support() {
   const { user } = useAuth();
-
-  // Determine the back link based on authentication status
-  const backToLink = user ? '/home' : '/';
-  const backToText = user ? 'Back to Home' : 'Back to Home';
+  const backTo = user ? '/home' : '/';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-8">
-          <Link to={backToLink} className="text-primary hover:underline mb-4 inline-block">
-            ← {backToText}
-          </Link>
-          <h1 className="text-4xl font-bold mb-4">Help Center</h1>
-          <p className="text-muted-foreground">Get the support you need for FanRealms</p>
+    <div className="min-h-screen bg-white text-[#111]">
+      <header className="border-b border-[#eee]">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link to="/"><Logo /></Link>
+          <Link to={backTo} className="text-[13px] text-[#777] hover:text-[#111]">← Back</Link>
+        </div>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-6 py-10 space-y-10">
+        <div>
+          <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-2">Help & support</h1>
+          <p className="text-[14px] text-[#666] leading-relaxed">
+            Need help buying or selling on FanRealms? Have a question about a job listing
+            or a marketplace dispute? We're here to help.
+          </p>
         </div>
 
-        <div className="space-y-8">
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Contact Support
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">General Support</h3>
-                <p className="text-muted-foreground mb-2">
-                  For account issues, technical problems, or general questions about FanRealms:
-                </p>
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                  <Mail className="w-4 h-4" />
-                  <a href="mailto:support@fanrealms.com" className="text-primary hover:underline">
-                    support@fanrealms.com
-                  </a>
+        {/* Contact */}
+        <div className="space-y-3">
+          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Contact us</h2>
+          <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
+            {[
+              { label: 'General support', email: 'support@fanrealms.com', desc: 'Account, buying, selling, payouts' },
+              { label: 'Marketplace disputes', email: 'disputes@fanrealms.com', desc: 'Refunds, chargebacks, seller issues' },
+              { label: 'Legal & DMCA', email: 'legal@fanrealms.com', desc: 'Takedowns, copyright, trademarks' },
+            ].map(({ label, email, desc }, i, arr) => (
+              <div
+                key={email}
+                className={`flex items-start gap-3 px-4 py-3.5 ${i < arr.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+              >
+                <Mail className="w-4 h-4 text-[#888] mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-[13px] font-semibold text-[#111]">{label}</div>
+                  <div className="text-[12px] text-[#888] mt-0.5">{desc}</div>
                 </div>
+                <a href={`mailto:${email}`} className="text-[12px] font-medium text-primary hover:underline whitespace-nowrap">
+                  {email}
+                </a>
               </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Legal & Copyright</h3>
-                <p className="text-muted-foreground mb-2">
-                  For legal matters, DMCA takedown requests, or copyright issues:
-                </p>
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                  <Mail className="w-4 h-4" />
-                  <a href="mailto:legal@fanrealms.com" className="text-primary hover:underline">
-                    legal@fanrealms.com
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Common Topics */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5" />
-                Common Support Topics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <h4 className="font-semibold">Account & Billing</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Account registration issues</li>
-                    <li>• Payment and subscription problems</li>
-                    <li>• Profile settings help</li>
-                    <li>• Account recovery</li>
-                  </ul>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-semibold">Content & Safety</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Reporting inappropriate content</li>
-                    <li>• Content moderation questions</li>
-                    <li>• Creator verification</li>
-                    <li>• Platform guidelines</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Response Time Notice */}
-          <Card className="border-2 border-primary/20">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="font-semibold mb-2">Response Time</h3>
-                <p className="text-muted-foreground">
-                  We typically respond to support inquiries within 24-48 hours. For urgent matters, please clearly mark your email as "URGENT" in the subject line.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
+          <p className="text-[12px] text-[#aaa]">We typically respond within 24 hours on weekdays.</p>
         </div>
-      </div>
+
+        {/* Common topics */}
+        <div className="space-y-3">
+          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Common questions</h2>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              {
+                Icon: ShoppingBag,
+                title: 'Buying & selling',
+                items: ['Refund policy', 'Payment failures', 'Download issues', 'Seller payouts'],
+              },
+              {
+                Icon: Gamepad2,
+                title: 'Listing a game',
+                items: ['Submission guidelines', 'Editing your listing', 'Removing a game'],
+              },
+              {
+                Icon: Briefcase,
+                title: 'Jobs',
+                items: ['Posting a gig', 'Dispute resolution', 'Escrow / payments'],
+              },
+              {
+                Icon: MessageSquare,
+                title: 'Forum & community',
+                items: ['Reporting a user', 'Thread moderation', 'Account suspensions'],
+              },
+            ].map(({ Icon, title, items }) => (
+              <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-white border border-[#eee] flex items-center justify-center">
+                    <Icon className="w-3.5 h-3.5 text-[#555]" />
+                  </div>
+                  <div className="text-[13px] font-bold text-[#111]">{title}</div>
+                </div>
+                <ul className="text-[12px] text-[#666] space-y-1">
+                  {items.map((item) => (
+                    <li key={item} className="flex items-center gap-1.5">
+                      <span className="text-[#ccc]">·</span>{item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
