@@ -200,7 +200,7 @@ export default function MembershipTiersPage() {
       {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">Seller Plans</h1>
-        <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+        <p className="text-xl text-[#777] max-w-3xl mx-auto">
           Choose the right plan to access source code, monthly asset packs, and premium Godot assets from the sellers you follow.
         </p>
       </div>
@@ -210,62 +210,38 @@ export default function MembershipTiersPage() {
         {tiers.map((tier) => (
           <Card
             key={tier.id}
-            className={`bg-gray-900 border-gray-800 relative ${
-              tier.popular ? "ring-2 ring-purple-500 shadow-lg shadow-purple-500/20" : ""
+            className={`bg-white border border-[#eee] relative ${
+              tier.popular ? "ring-2 ring-primary shadow-lg shadow-primary/20" : ""
             }`}
           >
             {tier.popular && (
               <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                <Badge className="bg-purple-600">Most Popular</Badge>
+                <Badge className="bg-primary">Most Popular</Badge>
               </div>
             )}
             <CardHeader className="text-center pb-2">
-              <div className="mx-auto bg-gray-800 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                <tier.icon
-                  className={`h-8 w-8 ${
-                    tier.color === "purple"
-                      ? "text-purple-400"
-                      : tier.color === "amber"
-                        ? "text-amber-400"
-                        : "text-blue-400"
-                  }`}
-                />
+              <div className="mx-auto bg-[#f5f5f5] p-3 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <tier.icon className="h-8 w-8 text-primary" />
               </div>
               <CardTitle className="text-2xl">{tier.name}</CardTitle>
               <div className="mt-2 mb-2">
                 <span className="text-3xl font-bold">${tier.price}</span>
-                <span className="text-gray-400 ml-1">/month</span>
+                <span className="text-[#777] ml-1">/month</span>
               </div>
-              <CardDescription className="text-gray-400">{tier.description}</CardDescription>
+              <CardDescription className="text-[#777]">{tier.description}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
               <ul className="space-y-3">
                 {tier.features.map((feature, index) => (
                   <li key={index} className="flex items-start">
-                    <Check
-                      className={`h-5 w-5 mr-2 flex-shrink-0 ${
-                        tier.color === "purple"
-                          ? "text-purple-400"
-                          : tier.color === "amber"
-                            ? "text-amber-400"
-                            : "text-blue-400"
-                      }`}
-                    />
+                    <Check className="h-5 w-5 mr-2 flex-shrink-0 text-primary" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
             <CardFooter>
-              <Button
-                className={`w-full ${
-                  tier.color === "purple"
-                    ? "bg-purple-600 hover:bg-purple-700"
-                    : tier.color === "amber"
-                      ? "bg-amber-600 hover:bg-amber-700"
-                      : "bg-blue-600 hover:bg-blue-700"
-                }`}
-              >
+              <Button className="w-full bg-primary hover:bg-[#3a7aab]">
                 Choose {tier.name}
               </Button>
             </CardFooter>
@@ -279,83 +255,83 @@ export default function MembershipTiersPage() {
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <th className="py-4 px-6 text-left">Feature</th>
                 {tiers.map((tier) => (
                   <th key={tier.id} className="py-4 px-6 text-center">
                     <div className="font-bold text-lg">{tier.name}</div>
-                    <div className="text-gray-400">${tier.price}/month</div>
+                    <div className="text-[#777]">${tier.price}/month</div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Subscriber-only posts & devlogs</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-blue-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-purple-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Community Discord role</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-blue-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-purple-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Direct message with seller</td>
                 <td className="py-4 px-6 text-center text-sm">Included</td>
                 <td className="py-4 px-6 text-center text-sm">Included</td>
                 <td className="py-4 px-6 text-center text-sm">Priority access</td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">GDScript source code</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-purple-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">1-on-1 call with seller</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center text-sm">Monthly</td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Monthly exclusive asset pack</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center text-sm">Included</td>
                 <td className="py-4 px-6 text-center text-sm">Included</td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Commercial use license</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
-              <tr className="border-b border-gray-800">
+              <tr className="border-b border-[#eee]">
                 <td className="py-4 px-6 font-medium">Input on asset roadmap</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
               <tr>
@@ -363,7 +339,7 @@ export default function MembershipTiersPage() {
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
-                  <Check className="h-5 w-5 mx-auto text-amber-400" />
+                  <Check className="h-5 w-5 mx-auto text-primary" />
                 </td>
               </tr>
             </tbody>
@@ -374,17 +350,17 @@ export default function MembershipTiersPage() {
       {/* Creator Category Benefits */}
       <div className="mb-16">
         <h2 className="text-3xl font-bold text-center mb-8">Benefits by Seller Type</h2>
-        <p className="text-center text-gray-400 mb-8 max-w-3xl mx-auto">
+        <p className="text-center text-[#777] mb-8 max-w-3xl mx-auto">
           Different seller types offer unique benefits at each plan level. Explore what you can expect from the Godot devs you support.
         </p>
 
         <Tabs defaultValue="art" className="w-full">
-          <TabsList className="bg-gray-900 border-gray-800 mb-6 flex flex-wrap justify-center">
+          <TabsList className="bg-[#f5f5f5] border border-[#eee] mb-6 flex flex-wrap justify-center">
             {creatorCategories.map((category) => (
               <TabsTrigger
                 key={category.id}
                 value={category.id}
-                className="data-[state=active]:bg-purple-900/30 flex items-center gap-2"
+                className="data-[state=active]:bg-primary/10 flex items-center gap-2"
               >
                 <category.icon className="h-4 w-4" />
                 {category.name}
@@ -398,18 +374,10 @@ export default function MembershipTiersPage() {
                 {Object.entries(category.tierBenefits).map(([tierId, benefits], index) => {
                   const tier = tiers.find((t) => t.id === tierId)
                   return (
-                    <Card key={tierId} className="bg-gray-900 border-gray-800">
+                    <Card key={tierId} className="bg-white border border-[#eee]">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <tier.icon
-                            className={`h-5 w-5 ${
-                              tier.color === "purple"
-                                ? "text-purple-400"
-                                : tier.color === "amber"
-                                  ? "text-amber-400"
-                                  : "text-blue-400"
-                            }`}
-                          />
+                          <tier.icon className="h-5 w-5 text-primary" />
                           {tier.name} Tier
                         </CardTitle>
                         <CardDescription>${tier.price}/month</CardDescription>
@@ -418,15 +386,7 @@ export default function MembershipTiersPage() {
                         <ul className="space-y-2">
                           {benefits.map((benefit, i) => (
                             <li key={i} className="flex items-start">
-                              <Check
-                                className={`h-4 w-4 mr-2 mt-1 flex-shrink-0 ${
-                                  tier.color === "purple"
-                                    ? "text-purple-400"
-                                    : tier.color === "amber"
-                                      ? "text-amber-400"
-                                      : "text-blue-400"
-                                }`}
-                              />
+                              <Check className="h-4 w-4 mr-2 mt-1 flex-shrink-0 text-primary" />
                               <span className="text-sm">{benefit}</span>
                             </li>
                           ))}
@@ -448,7 +408,7 @@ export default function MembershipTiersPage() {
           {testimonials.map((testimonial) => {
             const tier = tiers.find((t) => t.name === testimonial.tier)
             return (
-              <Card key={testimonial.id} className="bg-gray-900 border-gray-800">
+              <Card key={testimonial.id} className="bg-white border border-[#eee]">
                 <CardContent className="pt-6">
                   <div className="flex items-center mb-4">
                     <div className="mr-4">
@@ -460,26 +420,20 @@ export default function MembershipTiersPage() {
                     </div>
                     <div>
                       <div className="font-medium">{testimonial.name}</div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-[#777]">
                         {testimonial.tier} member • {testimonial.creator}
                       </div>
                     </div>
                   </div>
                   <div className="relative">
-                    <div className="text-4xl text-purple-500 absolute -top-4 -left-2">"</div>
-                    <p className="pl-4 italic text-gray-300">{testimonial.quote}</p>
-                    <div className="text-4xl text-purple-500 absolute -bottom-6 right-0">"</div>
+                    <div className="text-4xl text-primary absolute -top-4 -left-2">"</div>
+                    <p className="pl-4 italic text-[#555]">{testimonial.quote}</p>
+                    <div className="text-4xl text-primary absolute -bottom-6 right-0">"</div>
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0">
                   <Badge
-                    className={`${
-                      tier.color === "purple"
-                        ? "bg-purple-600/20 text-purple-400 border-purple-800"
-                        : tier.color === "amber"
-                          ? "bg-amber-600/20 text-amber-400 border-amber-800"
-                          : "bg-blue-600/20 text-blue-400 border-blue-800"
-                    }`}
+                    className="bg-primary/10 text-primary border-primary/20"
                     variant="outline"
                   >
                     {testimonial.tier} Tier
@@ -495,7 +449,7 @@ export default function MembershipTiersPage() {
       <div className="mb-16">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
-          <p className="text-gray-400 max-w-3xl mx-auto">
+          <p className="text-[#777] max-w-3xl mx-auto">
             Got questions about Godot seller plans? Find answers to common questions below.
           </p>
         </div>
@@ -503,14 +457,14 @@ export default function MembershipTiersPage() {
         <div className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="w-full">
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-b border-gray-800">
+              <AccordionItem key={index} value={`item-${index}`} className="border-b border-[#eee]">
                 <AccordionTrigger className="text-left">
                   <div className="flex items-center gap-2">
-                    <HelpCircle className="h-5 w-5 text-purple-400 flex-shrink-0" />
+                    <HelpCircle className="h-5 w-5 text-primary flex-shrink-0" />
                     <span>{faq.question}</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="text-gray-400 pl-7">{faq.answer}</AccordionContent>
+                <AccordionContent className="text-[#777] pl-7">{faq.answer}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -518,16 +472,16 @@ export default function MembershipTiersPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-xl p-8 text-center mb-8">
+      <div className="bg-[#fafafa] border border-[#eee] rounded-xl p-8 text-center mb-8">
         <h2 className="text-2xl font-bold mb-4">Ready to access source code & premium Godot assets?</h2>
-        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+        <p className="text-[#555] mb-6 max-w-2xl mx-auto">
           Pick the right plan and get instant access to GDScript source code, monthly asset packs, and more from the Godot sellers you follow.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
+          <Button size="lg" className="bg-primary hover:bg-[#3a7aab]">
             Get Started
           </Button>
-          <Button size="lg" variant="outline" className="border-purple-600 text-purple-400">
+          <Button size="lg" variant="outline">
             Browse Sellers
           </Button>
         </div>
@@ -535,47 +489,47 @@ export default function MembershipTiersPage() {
 
       {/* Additional Info */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border border-[#eee]">
           <CardHeader className="flex flex-row items-center gap-4">
-            <Shield className="h-8 w-8 text-purple-400" />
+            <Shield className="h-8 w-8 text-primary" />
             <div>
               <CardTitle>Satisfaction Guarantee</CardTitle>
               <CardDescription>30-day money-back guarantee</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#777]">
               If you're not satisfied with your membership experience within the first 30 days, we'll provide a full
               refund.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border border-[#eee]">
           <CardHeader className="flex flex-row items-center gap-4">
-            <Zap className="h-8 w-8 text-purple-400" />
+            <Zap className="h-8 w-8 text-primary" />
             <div>
               <CardTitle>Flexible Subscriptions</CardTitle>
               <CardDescription>Change or cancel anytime</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#777]">
               You're never locked in. Upgrade, downgrade, or cancel your membership at any time with no penalties.
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border border-[#eee]">
           <CardHeader className="flex flex-row items-center gap-4">
-            <MessageSquare className="h-8 w-8 text-purple-400" />
+            <MessageSquare className="h-8 w-8 text-primary" />
             <div>
               <CardTitle>24/7 Support</CardTitle>
               <CardDescription>We're here to help</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#777]">
               Our support team is available around the clock to assist with any questions or issues regarding your
               membership.
             </p>
