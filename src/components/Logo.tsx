@@ -23,7 +23,7 @@ export function Logo({ collapsed = false, onClick, className, variant = "light" 
       aria-label="FanRealms"
     >
       <svg width="28" height="28" viewBox="0 0 52 52" fill="none" aria-hidden="true" className="flex-shrink-0">
-        <rect width="52" height="52" rx="10" fill="#E11D48"/>
+        <rect width="52" height="52" rx="10" fill="#478CBF"/>
         {/* left tall merlon */}
         <rect x="9"  y="10" width="7" height="9" rx="1.5" fill="white"/>
         {/* left short merlon */}
@@ -37,10 +37,10 @@ export function Logo({ collapsed = false, onClick, className, variant = "light" 
         {/* tower body */}
         <rect x="9" y="19" width="35" height="20" rx="1.5" fill="white"/>
         {/* window arch */}
-        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#E11D48"/>
+        <rect x="22" y="23" width="9" height="7" rx="4.5" fill="#478CBF"/>
         {/* door */}
-        <rect x="23" y="30" width="7" height="9" fill="#E11D48"/>
-        <rect x="23" y="30" width="7" height="4" rx="3.5" fill="#E11D48"/>
+        <rect x="23" y="30" width="7" height="9" fill="#478CBF"/>
+        <rect x="23" y="30" width="7" height="4" rx="3.5" fill="#478CBF"/>
       </svg>
 
       {!collapsed && (
