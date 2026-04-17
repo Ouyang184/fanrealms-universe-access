@@ -46,7 +46,7 @@ export default function ShareablePost() {
       return {
         ...data,
         authorId: data.author_id,
-        authorName: data.users?.username || 'Creator',
+        authorName: data.users?.username || 'Seller',
         authorAvatar: data.users?.profile_picture,
         date: new Date(data.created_at).toLocaleDateString(),
         createdAt: data.created_at
@@ -114,11 +114,11 @@ export default function ShareablePost() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card className="border-amber-200 bg-gradient-to-br from-amber-50/30 to-purple-50/30">
+        <Card className="border-[#eee] bg-white">
           <CardHeader>
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="h-5 w-5 text-purple-600" />
-              <span className="font-semibold text-purple-800">Premium Content Preview</span>
+              <Lock className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-[#111]">Members-only content</span>
             </div>
             <h1 className="text-2xl font-bold">{post.title}</h1>
             <p className="text-muted-foreground">by {post.authorName}</p>
@@ -127,19 +127,19 @@ export default function ShareablePost() {
           <CardContent className="space-y-4">
             <p className="text-gray-700">{previewContent}</p>
             
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-purple-50 border border-amber-200 rounded-lg">
-              <div className="flex items-center gap-2 text-amber-800 mb-3">
-                <Lock className="h-5 w-5 text-purple-600" />
+            <div className="p-4 bg-[#fafafa] border border-[#eee] rounded-lg">
+              <div className="flex items-center gap-2 text-[#111] mb-3">
+                <Lock className="h-5 w-5 text-primary" />
                 <span className="font-semibold">This is Premium Content</span>
               </div>
-              <p className="text-sm text-amber-700 mb-3">
-                Subscribe to unlock the full post and get access to exclusive content from this creator.
+              <p className="text-sm text-gray-600 mb-3">
+                This post is for this seller's subscribers. Subscribe to their plan to access the full content.
               </p>
               
               <div className="flex gap-2">
-                <Button className="bg-gradient-to-r from-purple-600 to-amber-600 hover:from-purple-700 hover:to-amber-700 text-white">
+                <Button className="bg-primary hover:bg-[#3a7aab] text-white">
                   <Lock className="h-4 w-4 mr-2" />
-                  Subscribe to Unlock
+                  Subscribe to unlock
                 </Button>
                 
                 {!user && (
