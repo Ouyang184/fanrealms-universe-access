@@ -18,7 +18,7 @@ export default function GamesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[20px] font-bold tracking-[-0.5px]">Indie Games</h1>
-            <p className="text-[13px] text-[#888] mt-0.5">Discover games made by the FanRealms community</p>
+            <p className="text-[13px] text-[#888] mt-0.5">Discover indie games made with Godot</p>
           </div>
           {user && (
             <button className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors">
@@ -67,7 +67,7 @@ export default function GamesPage() {
             </div>
             <h3 className="text-[17px] font-bold text-[#111] mb-2">No games listed yet</h3>
             <p className="text-[13px] text-[#888] max-w-xs mb-6 leading-relaxed">
-              Showcase your indie game and get it discovered by the FanRealms community.
+              Showcase your Godot game and get it discovered by other Godot devs.
             </p>
             <Link
               to="/signup"
