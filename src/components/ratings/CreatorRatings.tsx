@@ -75,7 +75,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
                       </div>
                     ) : showForm ? (
                       <RatingForm
-                        creatorName={creatorName}
                         initialRating={userRating?.rating || 0}
                         initialReview={userRating?.review_text || ""}
                         isEditing={!!userRating}
