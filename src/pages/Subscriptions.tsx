@@ -257,9 +257,9 @@ export default function SubscriptionsPage() {
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                <span className="text-white text-sm font-bold">
-                                  {subscription.creators?.display_name?.charAt(0) || 'C'}
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <span className="text-primary text-sm font-bold">
+                                  {subscription.creators?.display_name?.charAt(0) || 'S'}
                                 </span>
                               </div>
                               <div>
