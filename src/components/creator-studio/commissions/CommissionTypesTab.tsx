@@ -158,7 +158,7 @@ export function CommissionTypesTab({
             {/* Will Do / Won't Do Lists */}
             {type.dos && type.dos.length > 0 && (
               <div>
-                <h5 className="font-medium text-green-700 mb-2 text-sm">✓ Will Do:</h5>
+                <h5 className="font-medium text-green-700 mb-2 text-sm">Will Do:</h5>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {type.dos.slice(0, 3).map((item, index) => (
                     <li key={index}>• {item}</li>
@@ -172,7 +172,7 @@ export function CommissionTypesTab({
 
             {type.donts && type.donts.length > 0 && (
               <div>
-                <h5 className="font-medium text-red-700 mb-2 text-sm">✗ Won't Do:</h5>
+                <h5 className="font-medium text-red-700 mb-2 text-sm">Won't Do:</h5>
                 <ul className="text-xs text-muted-foreground space-y-1">
                   {type.donts.slice(0, 2).map((item, index) => (
                     <li key={index}>• {item}</li>

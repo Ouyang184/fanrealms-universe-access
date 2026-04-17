@@ -101,7 +101,7 @@ export function CommissionPreviewModal({
           {/* Will Do List */}
           {commissionType.dos && commissionType.dos.length > 0 && (
             <div>
-              <h3 className="font-semibold text-green-700 mb-2">✓ Will Do:</h3>
+              <h3 className="font-semibold text-green-700 mb-2">Will Do:</h3>
               <ul className="space-y-1">
                 {commissionType.dos.map((item, index) => (
                   <li key={index} className="text-sm">• {item}</li>
@@ -113,7 +113,7 @@ export function CommissionPreviewModal({
           {/* Won't Do List */}
           {commissionType.donts && commissionType.donts.length > 0 && (
             <div>
-              <h3 className="font-semibold text-red-700 mb-2">✗ Won't Do:</h3>
+              <h3 className="font-semibold text-red-700 mb-2">Won't Do:</h3>
               <ul className="space-y-1">
                 {commissionType.donts.map((item, index) => (
                   <li key={index} className="text-sm">• {item}</li>

@@ -164,7 +164,7 @@ export function CommissionTypeDisplay({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
             {commissionType.dos.length > 0 && (
               <div>
-                <h5 className="font-medium text-green-700 mb-2">✓ Will Do:</h5>
+                <h5 className="font-medium text-green-700 mb-2">Will Do:</h5>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {commissionType.dos.map((item, index) => (
                     <li key={index}>• {item}</li>
@@ -175,7 +175,7 @@ export function CommissionTypeDisplay({
             
             {commissionType.donts.length > 0 && (
               <div>
-                <h5 className="font-medium text-red-700 mb-2">✗ Won't Do:</h5>
+                <h5 className="font-medium text-red-700 mb-2">Won't Do:</h5>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {commissionType.donts.map((item, index) => (
                     <li key={index}>• {item}</li>

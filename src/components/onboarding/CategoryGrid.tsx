@@ -1,21 +1,19 @@
-
-import { Check } from "lucide-react";
+import { Check, Palette, Gamepad2, Music, PenTool, Camera, BookOpen, Mic, ChefHat, Dumbbell, Code2, Shirt, Film, LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// Sample categories for onboarding
-const categories = [
-  { id: 1, name: "Art & Illustration", icon: "🎨", selected: false, route: "art-illustration" },
-  { id: 2, name: "Gaming", icon: "🎮", selected: false, route: "gaming" },
-  { id: 3, name: "Music", icon: "🎵", selected: false, route: "music" },
-  { id: 4, name: "Writing", icon: "✍️", selected: false, route: "writing" },
-  { id: 5, name: "Photography", icon: "📷", selected: false, route: "photography" },
-  { id: 6, name: "Education", icon: "📚", selected: false, route: "education" },
-  { id: 7, name: "Podcasts", icon: "🎙️", selected: false, route: "podcasts" },
-  { id: 8, name: "Cooking", icon: "🍳", selected: false, route: "cooking" },
-  { id: 9, name: "Fitness", icon: "💪", selected: false, route: "fitness" },
-  { id: 10, name: "Technology", icon: "💻", selected: false, route: "technology" },
-  { id: 11, name: "Fashion", icon: "👗", selected: false, route: "fashion" },
-  { id: 12, name: "Film & Video", icon: "🎬", selected: false, route: "film-video" },
+const categories: { id: number; name: string; Icon: LucideIcon; route: string }[] = [
+  { id: 1, name: "Art & Illustration", Icon: Palette, route: "art-illustration" },
+  { id: 2, name: "Gaming", Icon: Gamepad2, route: "gaming" },
+  { id: 3, name: "Music", Icon: Music, route: "music" },
+  { id: 4, name: "Writing", Icon: PenTool, route: "writing" },
+  { id: 5, name: "Photography", Icon: Camera, route: "photography" },
+  { id: 6, name: "Education", Icon: BookOpen, route: "education" },
+  { id: 7, name: "Podcasts", Icon: Mic, route: "podcasts" },
+  { id: 8, name: "Cooking", Icon: ChefHat, route: "cooking" },
+  { id: 9, name: "Fitness", Icon: Dumbbell, route: "fitness" },
+  { id: 10, name: "Technology", Icon: Code2, route: "technology" },
+  { id: 11, name: "Fashion", Icon: Shirt, route: "fashion" },
+  { id: 12, name: "Film & Video", Icon: Film, route: "film-video" },
 ];
 
 interface CategoryGridProps {
@@ -25,51 +23,42 @@ interface CategoryGridProps {
 }
 
 export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = false }: CategoryGridProps) {
-  const renderCategory = (category: { id: number; name: string; icon: string; route: string }) => {
+  const renderCategory = (category: { id: number; name: string; Icon: LucideIcon; route: string }) => {
     const isSelected = selectedCategories.includes(category.id);
-    
+    const { Icon } = category;
+
     const categoryContent = (
       <>
         {isSelected && (
           <div className="absolute top-2 right-2 bg-primary rounded-full p-0.5">
-            <Check className="h-3 w-3" />
+            <Check className="h-3 w-3 text-primary-foreground" />
           </div>
         )}
         <div className="flex flex-col items-center text-center gap-2">
-          <span className="text-2xl">{category.icon}</span>
+          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <Icon className="h-5 w-5" />
+          </div>
           <span className="text-sm font-medium">{category.name}</span>
         </div>
       </>
     );
 
-    const categoryClasses = `
-      relative p-4 rounded-lg border cursor-pointer transition-all
-      ${
-        isSelected
-          ? "bg-primary/10 border-primary"
-          : "bg-gray-800 border-gray-700 hover:border-gray-600"
-      }
-    `;
+    const categoryClasses = `relative p-4 rounded-xl border cursor-pointer transition-all ${
+      isSelected
+        ? "bg-primary/10 border-primary"
+        : "bg-card border-border hover:border-primary/50"
+    }`;
 
-    // If linkToCategory is true, render as Link, otherwise as a div with onClick
     if (linkToCategory) {
       return (
-        <Link
-          key={category.id}
-          to={`/explore/${category.route}`}
-          className={categoryClasses}
-        >
+        <Link key={category.id} to={`/explore/${category.route}`} className={categoryClasses}>
           {categoryContent}
         </Link>
       );
     }
 
     return (
-      <div
-        key={category.id}
-        className={categoryClasses}
-        onClick={() => onToggle(category.id)}
-      >
+      <div key={category.id} className={categoryClasses} onClick={() => onToggle(category.id)}>
         {categoryContent}
       </div>
     );
