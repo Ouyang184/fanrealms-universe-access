@@ -19,18 +19,18 @@ export function CommunitySection() {
 
   return (
     <section className="mb-10">
-      <Card className="bg-gray-900 border-gray-800">
+      <Card className="bg-card border-border">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
               <h2 className="text-3xl font-bold mb-4">Join Our Creator Community</h2>
-              <p className="text-gray-300 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Start sharing your passion and expertise with subscribers around the world. Build your audience and
                 earn from your content on FanRealms.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button 
-                  className="bg-primary hover:bg-[#3a7aab]"
+                  className="bg-primary hover:bg-primary/90"
                   onClick={handleBecomeCreatorClick}
                 >
                   Become a Creator

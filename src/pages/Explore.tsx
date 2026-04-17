@@ -266,7 +266,7 @@ export default function ExplorePage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Most Liked Posts</h2>
             <Link to="/posts" aria-label="View all posts">
-              <Button variant="link" className="text-purple-400">
+              <Button variant="link" className="text-primary">
                 View All <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>

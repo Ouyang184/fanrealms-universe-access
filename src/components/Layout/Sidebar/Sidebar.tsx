@@ -63,7 +63,7 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
           </Button>
         </DrawerTrigger>
         <DrawerContent className="h-[85vh]">
-          <div className="flex flex-col h-full bg-[#111] text-white">
+          <div className="flex flex-col h-full bg-sidebar text-white">
             <SidebarContent />
           </div>
         </DrawerContent>
@@ -74,7 +74,7 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
   return (
     <div
       className={cn(
-        "flex flex-col transition-all duration-300 ease-in-out bg-[#111] flex-shrink-0",
+        "flex flex-col transition-all duration-300 ease-in-out bg-sidebar flex-shrink-0",
         collapsed ? "w-14" : "w-56",
       )}
     >

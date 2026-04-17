@@ -75,11 +75,11 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
 
   return (
     <Card 
-      className="group cursor-pointer hover:shadow-lg transition-shadow bg-gray-900 border-gray-800 text-white overflow-hidden"
+      className="group cursor-pointer hover:shadow-lg transition-shadow bg-card border-border text-white overflow-hidden"
       onClick={handleClick}
     >
       {/* Media Section or Banner */}
-      <div className="relative aspect-video bg-gray-800">
+      <div className="relative aspect-video bg-secondary">
         {postHasMedia ? (
           <PostCardMedia attachments={post.attachments} />
         ) : (
@@ -112,14 +112,14 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
       <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
         {/* Title - only show if media exists (since banner already shows title) */}
         {postHasMedia && (
-          <h3 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 group-hover:text-purple-400 transition-colors break-words hyphens-auto">
+          <h3 className="font-semibold text-sm sm:text-base leading-tight line-clamp-2 group-hover:text-primary transition-colors break-words hyphens-auto">
             {post.title}
           </h3>
         )}
         
         {/* Content preview with responsive formatting */}
         <div className="space-y-2">
-          <p className="text-gray-300 text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3 break-words hyphens-auto">
+          <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3 break-words hyphens-auto">
             {getPreviewContent(post.content)}
           </p>
           {Array.isArray(post.tags) && post.tags.length > 0 && (
@@ -142,13 +142,13 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
                   src={avatarUrl} 
                   alt={displayName} 
                 />
-                <AvatarFallback className="text-xs bg-gray-700 text-gray-300">
+                <AvatarFallback className="text-xs bg-muted text-muted-foreground">
                   {displayName.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </Link>
             <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
-              <Link to={creatorUrl} onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium text-gray-300 truncate hover:text-primary transition-colors">
+              <Link to={creatorUrl} onClick={(e) => e.stopPropagation()} className="text-xs sm:text-sm font-medium text-muted-foreground truncate hover:text-primary transition-colors">
                 {displayName}
               </Link>
               {post.tier_id ? (
@@ -168,7 +168,7 @@ export function ContentItem({ post, type, onPostClick }: ContentItemProps) {
           </div>
 
           {/* Engagement stats with interactive buttons */}
-          <div className="flex items-center gap-2 sm:gap-3 text-gray-400 flex-shrink-0 ml-4 sm:ml-6 md:ml-8">
+          <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground flex-shrink-0 ml-4 sm:ml-6 md:ml-8">
             <Button
               variant="ghost"
               size="sm"

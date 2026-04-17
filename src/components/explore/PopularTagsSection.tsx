@@ -26,11 +26,11 @@ export function PopularTagsSection() {
       <h2 className="text-2xl font-bold mb-6 text-white">Popular Tags</h2>
       <div className="flex flex-wrap gap-3">
         {popularTags.map((tag, index) => (
-          <Badge key={index} className="bg-gray-800 hover:bg-gray-700 cursor-pointer text-sm py-1.5 px-3 text-white">
+          <Badge key={index} className="bg-secondary hover:bg-muted cursor-pointer text-sm py-1.5 px-3 text-white">
             {tag}
           </Badge>
         ))}
-        <Button variant="ghost" size="sm" className="text-purple-400">
+        <Button variant="ghost" size="sm" className="text-primary">
           View All Tags
         </Button>
       </div>
