@@ -57,7 +57,7 @@ serve(async (req) => {
         message: parseError.message,
         name: parseError.name
       });
-      return createJsonResponse({ error: 'Invalid JSON body', details: parseError.message }, 400);
+      return createJsonResponse({ error: 'Invalid JSON body' }, 400);
     }
 
     // Validate environment variables - USE TEST/SANDBOX KEYS FIRST
@@ -100,10 +100,7 @@ serve(async (req) => {
         type: stripeTestError.type,
         code: stripeTestError.code
       });
-      return createJsonResponse({ 
-        error: 'Invalid Stripe configuration', 
-        details: stripeTestError.message 
-      }, 500);
+      return createJsonResponse({ error: 'Payment service unavailable' }, 500);
     }
 
     // Initialize clients
@@ -127,10 +124,7 @@ serve(async (req) => {
         name: authError.name,
         stack: authError.stack?.substring(0, 200) + '...'
       });
-      return createJsonResponse({ 
-        error: 'Authentication failed', 
-        details: authError.message 
-      }, 401);
+      return createJsonResponse({ error: 'Authentication failed' }, 401);
     }
 
     // Handle different actions
@@ -274,20 +268,15 @@ serve(async (req) => {
               success: false,
               cancelled: body.clientSecret?.split('_secret_')[0],
               error: 'Payment intent cannot be cancelled in current state',
-              stripe_error_code: error.code,
               message: 'Payment may have already been processed or cancelled'
-            }, 200); // Return 200 instead of 500 for expected state errors
+            }, 200);
           }
 
-          // For other errors, still return a more graceful response
           return createJsonResponse({ 
             success: false,
             error: 'Failed to cancel payment intent',
-            details: error.message,
-            stripe_error_type: error.type,
-            stripe_error_code: error.code,
             message: 'Payment cancellation failed but you can still navigate away'
-          }, 200); // Return 200 instead of 500 to allow cleanup to continue
+          }, 200);
         }
         
       default:
@@ -302,9 +291,6 @@ serve(async (req) => {
       name: error.name
     });
 
-    return createJsonResponse({ 
-      error: 'Internal server error',
-      details: error.message
-    }, 500);
+    return createJsonResponse({ error: 'Internal server error' }, 500);
   }
 });

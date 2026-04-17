@@ -227,15 +227,11 @@ export async function handleCreateSubscription(
     if (message.includes("No such destination") || message.includes("transfer_data[destination]")) {
       return createJsonResponse({ 
         error: 'Creator is not fully connected to Stripe in LIVE mode. Please ask the creator to complete live onboarding and try again.',
-        details: message,
         creatorNeedsStripeLive: true
       }, 400);
     }
 
-    return createJsonResponse({ 
-      error: 'Failed to create subscription',
-      details: message 
-    }, 500);
+    return createJsonResponse({ error: 'Failed to create subscription' }, 500);
   }
 }
 

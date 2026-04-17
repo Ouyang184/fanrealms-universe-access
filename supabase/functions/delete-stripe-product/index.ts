@@ -9,81 +9,96 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('=== DELETE STRIPE PRODUCT FUNCTION START ===');
-
-    // Verify user authentication
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
-    const supabaseClient = createClient(
+    const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
+
     if (authError || !user) {
-      throw new Error('Authentication failed');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
     }
 
-    console.log('User authenticated:', user.id);
-
-    // Get request body
     const { productId } = await req.json();
-    console.log('Delete request for product:', productId);
-
-    if (!productId) {
-      throw new Error('Product ID is required');
+    if (!productId || typeof productId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Invalid request', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
 
-    // Initialize Stripe
+    // Ownership verification: ensure this product belongs to a tier owned by the caller
+    const { data: tier, error: tierError } = await supabaseService
+      .from('membership_tiers')
+      .select('id, creator_id')
+      .eq('stripe_product_id', productId)
+      .maybeSingle();
+
+    if (tierError || !tier) {
+      console.error('Ownership lookup failed (tier not found)');
+      return new Response(
+        JSON.stringify({ error: 'Forbidden', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    const { data: creator, error: creatorError } = await supabaseService
+      .from('creators')
+      .select('id')
+      .eq('id', tier.creator_id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (creatorError || !creator) {
+      console.error('Ownership lookup failed (creator mismatch)', { userId: user.id });
+      return new Response(
+        JSON.stringify({ error: 'Forbidden', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
 
-    // Simply delete the product - Stripe should handle the cascading deletion
     try {
-      console.log('Deleting Stripe product:', productId);
-      const deletedProduct = await stripe.products.del(productId);
-      console.log('Product deleted successfully:', deletedProduct);
+      await stripe.products.del(productId);
     } catch (productError) {
-      console.error('Error deleting product:', productError);
-      throw new Error(`Failed to delete Stripe product: ${productError.message}`);
+      console.error('Stripe delete product error:', productError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to delete product', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Product deleted successfully',
-        productId 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
+      JSON.stringify({ success: true, productId }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
 
   } catch (error) {
     console.error('Delete product error:', error);
-    
     return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Failed to delete product',
-        success: false 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
+      JSON.stringify({ error: 'Internal server error', success: false }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }
 });
