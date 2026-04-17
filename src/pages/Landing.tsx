@@ -127,7 +127,7 @@ export default function LandingPage() {
       {products && products.length > 0 ? (
         <section className="max-w-6xl mx-auto px-6 py-10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-bold tracking-[-0.3px]">New in Marketplace</h2>
+            <h2 className="text-[15px] font-bold tracking-[-0.3px]">New Godot assets</h2>
             <Link to="/marketplace" className="text-[13px] font-semibold text-primary hover:underline">See all</Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -170,9 +170,9 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-3">
               <ShoppingBag className="w-4 h-4 text-[#bbb]" />
             </div>
-            <div className="text-[16px] font-bold text-[#111] mb-1">The marketplace is open</div>
+            <div className="text-[16px] font-bold text-[#111] mb-1">Be the first to list a Godot asset</div>
             <div className="text-[13px] text-[#888] mb-4 max-w-sm mx-auto">
-              No assets listed yet — be the first creator to sell your work here.
+              Upload a plugin, shader pack, or sprite set — and be the first seller on the marketplace.
             </div>
             <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
               Start selling →
@@ -255,8 +255,8 @@ export default function LandingPage() {
               <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
                 <Briefcase className="w-4 h-4 text-[#bbb]" />
               </div>
-              <div className="text-[15px] font-bold text-[#111] mb-1">No jobs yet</div>
-              <div className="text-[12px] text-[#999] mb-4">Post a gig and find talented indie creators.</div>
+              <div className="text-[15px] font-bold text-[#111] mb-1">Post a Godot gig</div>
+              <div className="text-[12px] text-[#999] mb-4">Looking for a GDScript dev, pixel artist, or sound designer?</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
                 Post a job
               </Link>
@@ -265,8 +265,8 @@ export default function LandingPage() {
               <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
                 <MessageSquare className="w-4 h-4 text-[#bbb]" />
               </div>
-              <div className="text-[15px] font-bold text-[#111] mb-1">Forum is quiet</div>
-              <div className="text-[12px] text-[#999] mb-4">Start the first conversation with the community.</div>
+              <div className="text-[15px] font-bold text-[#111] mb-1">Start the first Godot thread</div>
+              <div className="text-[12px] text-[#999] mb-4">Ask a question, share a devlog, or introduce your project.</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
                 Start a thread
               </Link>
