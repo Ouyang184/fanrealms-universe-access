@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { MarketplaceTopNav } from "@/components/marketplace/MarketplaceTopNav";
-import { Footer } from "@/components/Layout/Footer";
+import Footer from "@/components/Layout/Footer";
 
 interface MarketplaceLayoutProps {
   children: ReactNode;
