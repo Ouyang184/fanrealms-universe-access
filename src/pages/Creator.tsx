@@ -1,7 +1,7 @@
 
 import React, { useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { MainLayout } from "@/components/Layout/MainLayout";
+import { MarketplaceLayout } from "@/components/Layout/MarketplaceLayout";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -113,18 +113,18 @@ const CreatorPage: React.FC = () => {
   
   if (isLoadingCreator) {
     return (
-      <MainLayout>
+      <MarketplaceLayout>
         <div className="flex justify-center items-center h-[60vh]">
           <LoadingSpinner />
           <span className="ml-2">Loading creator profile...</span>
         </div>
-      </MainLayout>
+      </MarketplaceLayout>
     );
   }
   
   if (!creator) {
     return (
-      <MainLayout>
+      <MarketplaceLayout>
         <div className="max-w-3xl mx-auto text-center py-20">
           <h2 className="text-2xl font-bold mb-4">Creator Not Found</h2>
           <p className="text-muted-foreground mb-6">
@@ -134,12 +134,12 @@ const CreatorPage: React.FC = () => {
             <a href="/explore">Explore Creators</a>
           </Button>
         </div>
-      </MainLayout>
+      </MarketplaceLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <MarketplaceLayout>
       <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-6">
         <div className="pt-2">
           <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
@@ -207,7 +207,7 @@ const CreatorPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </MarketplaceLayout>
   );
 };
 

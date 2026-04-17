@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { MarketplaceLayout } from '@/components/Layout/MarketplaceLayout';
 import { useIndieGames, GAME_GENRES } from '@/hooks/useIndieGames';
 import { GameCard } from '@/components/games/GameCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,7 +13,7 @@ export default function GamesPage() {
   const { user } = useAuth();
 
   return (
-    <MainLayout>
+    <MarketplaceLayout>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -78,6 +78,6 @@ export default function GamesPage() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </MarketplaceLayout>
   );
 }

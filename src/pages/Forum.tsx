@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { MarketplaceLayout } from '@/components/Layout/MarketplaceLayout';
 import { useForumThreads, FORUM_CATEGORIES } from '@/hooks/useForum';
 import { ThreadCard } from '@/components/forum/ThreadCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ export default function Forum() {
   const { data: threads, isLoading } = useForumThreads(category) as { data: any[] | undefined; isLoading: boolean };
 
   return (
-    <MainLayout>
+    <MarketplaceLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -83,6 +83,6 @@ export default function Forum() {
           </div>
         )}
       </div>
-    </MainLayout>
+    </MarketplaceLayout>
   );
 }
