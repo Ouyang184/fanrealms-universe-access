@@ -278,7 +278,10 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer className="bg-[#111] text-[#666]">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
-          <Logo variant="dark" />
+          <div>
+            <Logo variant="dark" />
+            <div className="text-[11px] text-[#555] mt-1">The Godot asset hub.</div>
+          </div>
           <div className="flex gap-6 text-[12px]">
             {[
               { label: "About", to: "/about" },
