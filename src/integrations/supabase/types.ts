@@ -963,6 +963,38 @@ export type Database = {
         }
         Relationships: []
       }
+      game_ratings: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_ratings_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "indie_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       indie_games: {
         Row: {
           created_at: string
@@ -1698,6 +1730,44 @@ export type Database = {
             columns: ["tier_id"]
             isOneToOne: false
             referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          review: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          rating: number
+          review?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          review?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ratings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
             referencedColumns: ["id"]
           },
         ]
