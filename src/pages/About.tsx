@@ -11,9 +11,9 @@ export default function About() {
         <div>
           <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-2">About FanRealms</h1>
           <p className="text-[15px] text-[#666] leading-relaxed">
-            FanRealms is an indie creator marketplace for game developers, artists, and freelancers.
-            It's a place to buy and sell digital assets, showcase indie games, find work, and connect
-            with other people building things.
+            FanRealms is a Godot-first asset hub for game developers, artists, and freelancers.
+            It's a place to buy and sell Godot assets, showcase Godot-made indie games, find work,
+            and connect with other people building things with Godot — and eventually any engine.
           </p>
         </div>
 
@@ -22,10 +22,10 @@ export default function About() {
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">What you can do</h2>
           <div className="grid sm:grid-cols-2 gap-3">
             {[
-              { Icon: ShoppingBag, title: "Marketplace", desc: "Buy and sell game art, templates, tools, music, and other digital assets." },
-              { Icon: Gamepad2, title: "Games", desc: "List your indie game and get it in front of the FanRealms community." },
-              { Icon: Briefcase, title: "Jobs", desc: "Post or find freelance gigs, bounties, and contract work." },
-              { Icon: MessageSquare, title: "Forum", desc: "Share devlogs, ask questions, and talk with other creators." },
+              { Icon: ShoppingBag, title: "Marketplace", desc: "Buy and sell Godot plugins, shaders, sprites, audio, and other game assets." },
+              { Icon: Gamepad2, title: "Games", desc: "List your Godot-made indie game and get it in front of players." },
+              { Icon: Briefcase, title: "Jobs", desc: "Post or find Godot freelance gigs, bounties, and contract work." },
+              { Icon: MessageSquare, title: "Forum", desc: "Share devlogs, ask GDScript questions, and connect with Godot developers." },
             ].map(({ Icon, title, desc }) => (
               <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4 flex gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white border border-[#eee] flex items-center justify-center flex-shrink-0 mt-0.5">
