@@ -35,7 +35,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
     if (success) {
       setShowForm(false);
     }
-    return success;
   };
 
   const handleDeleteRating = async () => {
@@ -43,7 +42,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
     if (success) {
       setShowForm(false);
     }
-    return success;
   };
 
   return (
@@ -77,7 +75,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
                       </div>
                     ) : showForm ? (
                       <RatingForm
-                        creatorName={creatorName}
                         initialRating={userRating?.rating || 0}
                         initialReview={userRating?.review_text || ""}
                         isEditing={!!userRating}
