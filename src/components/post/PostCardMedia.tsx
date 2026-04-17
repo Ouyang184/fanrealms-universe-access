@@ -155,8 +155,8 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
               e.currentTarget.style.display = 'none';
             }}
           />
-          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
-            <span>🖼</span>
+          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs text-white flex items-center gap-1">
+            <FileImage className="h-3 w-3" />
             <span>Image</span>
           </div>
         </div>
@@ -189,8 +189,8 @@ export function PostCardMedia({ attachments }: PostCardMediaProps) {
             <source src={urlToRender || firstMedia.url} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs flex items-center gap-1">
-            <span>🎥</span>
+          <div className="absolute bottom-1 left-1 bg-black/70 px-1 py-0.5 rounded text-xs text-white flex items-center gap-1">
+            <Video className="h-3 w-3" />
             <span>Video File</span>
           </div>
         </div>

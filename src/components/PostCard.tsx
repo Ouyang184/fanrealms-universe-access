@@ -212,7 +212,7 @@ const PostCard: React.FC<PostCardProps> = ({
             <div className="p-3 bg-[#fafafa] border border-[#eee] rounded-lg">
               <div className="flex items-center gap-2 text-[#555]">
                 <Lock className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">✓ Members-only content unlocked</span>
+                <span className="text-sm font-medium">Members-only content unlocked</span>
                 <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                   Subscribed
                 </Badge>

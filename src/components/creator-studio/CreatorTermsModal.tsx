@@ -164,13 +164,13 @@ export function CreatorTermsModal({ open, onOpenChange, onAccept, onDecline }: C
             htmlFor="terms-agreement" 
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
-            ✅ I Agree to All Terms
+            I Agree to All Terms
           </label>
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
           <Button variant="outline" onClick={handleDecline}>
-            ❌ I Do Not Agree (Exit)
+            I Do Not Agree (Exit)
           </Button>
           <Button 
             onClick={handleAccept}

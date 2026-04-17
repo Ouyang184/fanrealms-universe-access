@@ -307,7 +307,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                 
                 {type.dos && type.dos.length > 0 && (
                   <div>
-                    <h5 className="font-medium text-green-700 mb-2">✓ Will Do:</h5>
+                    <h5 className="font-medium text-green-700 mb-2">Will Do:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       {type.dos.map((item, index) => (
                         <li key={index}>• {item}</li>
@@ -318,7 +318,7 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
                 
                 {type.donts && type.donts.length > 0 && (
                   <div>
-                    <h5 className="font-medium text-red-700 mb-2">✗ Won't Do:</h5>
+                    <h5 className="font-medium text-red-700 mb-2">Won't Do:</h5>
                     <ul className="text-sm text-muted-foreground space-y-1">
                       {type.donts.map((item, index) => (
                         <li key={index}>• {item}</li>
