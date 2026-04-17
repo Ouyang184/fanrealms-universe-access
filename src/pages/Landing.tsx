@@ -52,7 +52,7 @@ export default function LandingPage() {
           <div>
             <h1 className="text-5xl font-bold tracking-[-1.5px] leading-[1.1]">
               Where Godot devs<br />
-              <span className="text-primary">buy, sell & ship.</span>
+              <span className="text-primary">buy, sell &amp; ship.</span>
             </h1>
             <p className="mt-4 text-[15px] text-[#777] leading-relaxed max-w-md">
               Assets, indie games, freelance gigs, and a community — all built around the Godot engine.
