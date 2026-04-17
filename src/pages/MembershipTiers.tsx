@@ -21,51 +21,49 @@ import {
 // Sample data for membership tiers
 const tiers = [
   {
-    id: "basic",
-    name: "Basic",
-    price: 5,
-    description: "Perfect for casual fans who want to support their favorite creators",
+    id: "supporter",
+    name: "Supporter",
+    price: 3,
+    description: "Back a Godot dev and get access to their subscriber-only posts and devlogs.",
     color: "blue",
     features: [
-      "Access to subscriber-only posts",
-      "Join community discussions",
-      "Early access to public content",
-      "Direct message with creators (limited)",
+      "Subscriber-only posts & devlogs",
+      "Early access to free asset releases",
+      "Community Discord role",
+      "Direct message with the seller",
     ],
     popular: false,
     icon: Users,
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: 15,
-    description: "Enhanced access with exclusive content and more interaction",
+    id: "pro",
+    name: "Pro",
+    price: 10,
+    description: "Full source code access and priority support for active Godot developers.",
     color: "purple",
     features: [
-      "All Basic tier features",
-      "Exclusive premium content",
-      "Monthly Q&A sessions",
-      "Discount on merchandise",
-      "Ad-free experience",
-      "Priority support",
+      "All Supporter benefits",
+      "Full GDScript source code for all assets",
+      "Monthly exclusive asset pack",
+      "Priority bug reports & feature requests",
+      "Access to WIP / unreleased builds",
     ],
     popular: true,
     icon: Star,
   },
   {
-    id: "vip",
-    name: "VIP",
-    price: 30,
-    description: "The ultimate fan experience with maximum access and benefits",
+    id: "studio",
+    name: "Studio",
+    price: 25,
+    description: "Team license, commercial use, and direct collaboration with the developer.",
     color: "amber",
     features: [
-      "All Premium tier features",
-      "1-on-1 sessions with creators",
-      "Behind-the-scenes content",
-      "Early access to all content",
-      "Exclusive VIP events",
-      "Input on future content",
-      "Custom profile badge",
+      "All Pro benefits",
+      "Commercial use license for all assets",
+      "Team seat — up to 5 devs",
+      "Monthly 1-on-1 call with the seller",
+      "Input on asset roadmap",
+      "Priority commission queue",
     ],
     popular: false,
     icon: Crown,
@@ -75,48 +73,58 @@ const tiers = [
 // Sample data for creator categories
 const creatorCategories = [
   {
-    id: "art",
-    name: "Artists & Illustrators",
+    id: "plugins",
+    name: "Plugin & Addon Devs",
+    icon: Zap,
+    count: "Godot plugins & addons",
+    tierBenefits: {
+      supporter: ["Devlog posts & update notes", "Early access to free plugin releases", "Community Discord role"],
+      pro: ["Full GDScript source for all plugins", "Monthly exclusive addon pack", "Priority bug reports"],
+      studio: ["Commercial use license", "Team seat — up to 5 devs", "Monthly 1-on-1 with the dev"],
+    },
+  },
+  {
+    id: "shaders",
+    name: "Shader Artists",
     icon: ImageIcon,
+    count: "GLSL & visual shaders",
     tierBenefits: {
-      basic: ["Access to sketch collections", "Monthly wallpapers", "Process videos (selected)"],
-      premium: ["Full process videos", "PSD/source files", "Monthly art tutorials", "Request sketches"],
-      vip: ["Custom artwork (monthly)", "1-on-1 art critique", "Early merchandise access", "Commission discounts"],
+      supporter: ["Subscriber-only shader devlogs", "Early access to free shader drops", "Discord role"],
+      pro: ["Full GLSL & VisualShader source files", "Monthly shader pack", "Priority feature requests"],
+      studio: ["Commercial use license", "Team seat — up to 5 devs", "Input on shader roadmap"],
     },
   },
   {
-    id: "music",
-    name: "Musicians & Producers",
+    id: "artists",
+    name: "Pixel & 2D Artists",
+    icon: ImageIcon,
+    count: "Sprites, tilesets & UI",
+    tierBenefits: {
+      supporter: ["Subscriber-only art devlogs", "Early access to free asset drops", "Discord role"],
+      pro: ["Full source files (Aseprite/PNG)", "Monthly exclusive asset pack", "Priority requests"],
+      studio: ["Commercial use license", "Team seat — up to 5 devs", "Commission queue priority"],
+    },
+  },
+  {
+    id: "audio",
+    name: "Audio Producers",
     icon: Music,
+    count: "SFX, loops & music",
     tierBenefits: {
-      basic: ["Unreleased tracks", "Playlist access", "Livestream performances"],
-      premium: ["Stem downloads", "Production breakdowns", "Early album access", "Voting on next singles"],
-      vip: ["Virtual studio sessions", "Custom song elements", "Producer credit opportunities", "Private concerts"],
+      supporter: ["Subscriber-only audio devlogs", "Early access to free sound drops", "Discord role"],
+      pro: ["Full uncompressed audio source files", "Monthly exclusive audio pack", "Priority requests"],
+      studio: ["Commercial use license", "Team seat — up to 5 devs", "Input on audio roadmap"],
     },
   },
   {
-    id: "video",
-    name: "Video Creators",
-    icon: Video,
-    tierBenefits: {
-      basic: ["Ad-free videos", "Extended cuts", "Blooper reels"],
-      premium: ["Behind-the-scenes footage", "Early video access", "Monthly Q&A videos", "Vote on future topics"],
-      vip: ["Name in credits", "Video call sessions", "Appear in videos", "Custom video messages"],
-    },
-  },
-  {
-    id: "writing",
-    name: "Writers & Journalists",
+    id: "devs",
+    name: "Indie Game Devs",
     icon: FileText,
+    count: "Full Godot game projects",
     tierBenefits: {
-      basic: ["Exclusive articles", "Early chapter access", "Monthly newsletters"],
-      premium: [
-        "Full manuscript access",
-        "Character development insights",
-        "Writing process notes",
-        "Beta reader opportunities",
-      ],
-      vip: ["Name a character", "Plot input sessions", "Personalized stories", "Editing workshops"],
+      supporter: ["Devlog posts & behind-the-scenes", "Early access to public demos", "Discord role"],
+      pro: ["Full Godot project source code", "Monthly build access (WIP)", "Priority bug reports"],
+      studio: ["Commercial use license", "Team seat — up to 5 devs", "Monthly 1-on-1 with the dev"],
     },
   },
 ]
@@ -127,62 +135,62 @@ const testimonials = [
     id: 1,
     name: "Alex Johnson",
     avatar: "/placeholder.svg?height=80&width=80",
-    tier: "Premium",
-    creator: "ArtistAlley",
+    tier: "Pro",
+    creator: "GodotShaderLab",
     quote:
-      "The Premium tier gives me so much value. I love getting early access to new artwork and the monthly tutorials have improved my own skills!",
+      "The Pro plan is worth every penny. Having the full GLSL source files means I can actually learn from and adapt the shaders for my own Godot projects.",
   },
   {
     id: 2,
     name: "Sarah Williams",
     avatar: "/placeholder.svg?height=80&width=80",
-    tier: "VIP",
-    creator: "Music Production Hub",
+    tier: "Studio",
+    creator: "PixelForge Assets",
     quote:
-      "As a VIP member, I've had amazing 1-on-1 sessions with my favorite producer. The exclusive content and personal attention is absolutely worth it.",
+      "The Studio plan covers our whole team. The commercial license alone saves us hours of back-and-forth, and the monthly 1-on-1 calls have shaped our game's visual style.",
   },
   {
     id: 3,
     name: "Michael Chen",
     avatar: "/placeholder.svg?height=80&width=80",
-    tier: "Basic",
-    creator: "GameDev Masters",
+    tier: "Supporter",
+    creator: "GDScript Toolkit",
     quote:
-      "Even the Basic tier offers great value. I get to support my favorite game developer while getting access to content I wouldn't see otherwise.",
+      "Even the Supporter plan is great value. I get the devlogs early and a Discord role that lets me ask the dev questions directly. Solid way to stay close to Godot tooling.",
   },
 ]
 
 // Sample data for FAQs
 const faqs = [
   {
-    question: "How do I upgrade or downgrade my membership tier?",
+    question: "How do I upgrade or downgrade my seller plan?",
     answer:
-      "You can change your membership tier at any time from your subscription settings. Changes will take effect at the start of your next billing cycle. Upgrading gives you immediate access to higher tier benefits.",
+      "You can change your plan at any time from your subscription settings. Changes will take effect at the start of your next billing cycle. Upgrading gives you immediate access to higher tier benefits, including source code and asset packs.",
   },
   {
-    question: "Are membership tiers the same for all creators?",
+    question: "Are the plans the same for all sellers?",
     answer:
-      "While the tier structure (Basic, Premium, VIP) is consistent across FanRealms, each creator customizes the specific benefits and content offered at each tier. You can view the detailed benefits on each creator's profile page.",
+      "While the plan structure (Supporter, Pro, Studio) is consistent across FanRealms, each seller customizes the specific assets and benefits offered at each tier. You can view the detailed benefits on each seller's profile page.",
   },
   {
-    question: "Can I subscribe to multiple creators with different tiers?",
+    question: "Can I subscribe to multiple sellers with different plans?",
     answer:
-      "Yes! You can subscribe to as many creators as you want, and choose different membership tiers for each one based on your level of interest and the specific benefits offered.",
+      "Yes! You can subscribe to as many Godot sellers as you want, and choose different plans for each based on how deeply you want access to their source code, asset packs, and support.",
   },
   {
     question: "How is my subscription fee distributed?",
     answer:
-      "The majority of your subscription (85%) goes directly to the creator, while FanRealms retains a small platform fee (15%) to maintain and improve the service.",
+      "The majority of your subscription (85%) goes directly to the seller, while FanRealms retains a small platform fee (15%) to maintain and improve the marketplace.",
   },
   {
-    question: "What happens if a creator doesn't deliver the promised benefits?",
+    question: "What happens if a seller doesn't deliver the promised assets or source code?",
     answer:
-      "FanRealms has a satisfaction guarantee. If a creator consistently fails to deliver the promised tier benefits, you can report this through our help center and may be eligible for a refund.",
+      "FanRealms has a satisfaction guarantee. If a seller consistently fails to deliver the promised plan benefits, you can report this through our help center and may be eligible for a refund.",
   },
   {
-    question: "Can I gift a membership to someone else?",
+    question: "Does the Studio plan cover commercial Godot projects?",
     answer:
-      "Yes! You can purchase gift subscriptions for any tier and any creator. Gift subscriptions can be set for 1, 3, 6, or 12 months.",
+      "Yes! The Studio plan includes a commercial use license for all of the seller's assets, covering up to 5 team members. This means you can ship games and products built with those assets without additional licensing fees.",
   },
 ]
 
@@ -191,10 +199,9 @@ export default function MembershipTiersPage() {
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Membership Tiers</h1>
+        <h1 className="text-4xl font-bold mb-4">Seller Plans</h1>
         <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-          Choose the perfect membership level to support your favorite creators and unlock exclusive content and
-          benefits.
+          Choose the right plan to access source code, monthly asset packs, and premium Godot assets from the sellers you follow.
         </p>
       </div>
 
@@ -284,7 +291,7 @@ export default function MembershipTiersPage() {
             </thead>
             <tbody>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Subscriber-only posts</td>
+                <td className="py-4 px-6 font-medium">Subscriber-only posts & devlogs</td>
                 <td className="py-4 px-6 text-center">
                   <Check className="h-5 w-5 mx-auto text-blue-400" />
                 </td>
@@ -296,7 +303,7 @@ export default function MembershipTiersPage() {
                 </td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Community discussions</td>
+                <td className="py-4 px-6 font-medium">Community Discord role</td>
                 <td className="py-4 px-6 text-center">
                   <Check className="h-5 w-5 mx-auto text-blue-400" />
                 </td>
@@ -308,13 +315,13 @@ export default function MembershipTiersPage() {
                 </td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Direct messaging</td>
-                <td className="py-4 px-6 text-center text-sm">Limited</td>
-                <td className="py-4 px-6 text-center text-sm">Full access</td>
+                <td className="py-4 px-6 font-medium">Direct message with seller</td>
+                <td className="py-4 px-6 text-center text-sm">Included</td>
+                <td className="py-4 px-6 text-center text-sm">Included</td>
                 <td className="py-4 px-6 text-center text-sm">Priority access</td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Exclusive content</td>
+                <td className="py-4 px-6 font-medium">GDScript source code</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
                   <Check className="h-5 w-5 mx-auto text-purple-400" />
@@ -324,19 +331,19 @@ export default function MembershipTiersPage() {
                 </td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Q&A sessions</td>
+                <td className="py-4 px-6 font-medium">1-on-1 call with seller</td>
                 <td className="py-4 px-6 text-center">-</td>
-                <td className="py-4 px-6 text-center text-sm">Monthly group</td>
-                <td className="py-4 px-6 text-center text-sm">Monthly 1-on-1</td>
+                <td className="py-4 px-6 text-center">-</td>
+                <td className="py-4 px-6 text-center text-sm">Monthly</td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Merchandise discounts</td>
+                <td className="py-4 px-6 font-medium">Monthly exclusive asset pack</td>
                 <td className="py-4 px-6 text-center">-</td>
-                <td className="py-4 px-6 text-center text-sm">10% off</td>
-                <td className="py-4 px-6 text-center text-sm">25% off</td>
+                <td className="py-4 px-6 text-center text-sm">Included</td>
+                <td className="py-4 px-6 text-center text-sm">Included</td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Behind-the-scenes</td>
+                <td className="py-4 px-6 font-medium">Commercial use license</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
@@ -344,7 +351,7 @@ export default function MembershipTiersPage() {
                 </td>
               </tr>
               <tr className="border-b border-gray-800">
-                <td className="py-4 px-6 font-medium">Input on future content</td>
+                <td className="py-4 px-6 font-medium">Input on asset roadmap</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
@@ -352,7 +359,7 @@ export default function MembershipTiersPage() {
                 </td>
               </tr>
               <tr>
-                <td className="py-4 px-6 font-medium">Custom profile badge</td>
+                <td className="py-4 px-6 font-medium">Team seat (up to 5 devs)</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">-</td>
                 <td className="py-4 px-6 text-center">
@@ -366,10 +373,9 @@ export default function MembershipTiersPage() {
 
       {/* Creator Category Benefits */}
       <div className="mb-16">
-        <h2 className="text-3xl font-bold text-center mb-8">Benefits by Creator Category</h2>
+        <h2 className="text-3xl font-bold text-center mb-8">Benefits by Seller Type</h2>
         <p className="text-center text-gray-400 mb-8 max-w-3xl mx-auto">
-          Different creator categories offer unique benefits at each tier. Explore what you can expect from your
-          favorite creator types.
+          Different seller types offer unique benefits at each plan level. Explore what you can expect from the Godot devs you support.
         </p>
 
         <Tabs defaultValue="art" className="w-full">
@@ -490,7 +496,7 @@ export default function MembershipTiersPage() {
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
           <p className="text-gray-400 max-w-3xl mx-auto">
-            Got questions about our membership tiers? Find answers to common questions below.
+            Got questions about Godot seller plans? Find answers to common questions below.
           </p>
         </div>
 
@@ -513,16 +519,16 @@ export default function MembershipTiersPage() {
 
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-xl p-8 text-center mb-8">
-        <h2 className="text-2xl font-bold mb-4">Ready to join the community?</h2>
+        <h2 className="text-2xl font-bold mb-4">Ready to access source code & premium Godot assets?</h2>
         <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-          Choose your perfect membership tier and start enjoying exclusive content from your favorite creators today.
+          Pick the right plan and get instant access to GDScript source code, monthly asset packs, and more from the Godot sellers you follow.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
             Get Started
           </Button>
           <Button size="lg" variant="outline" className="border-purple-600 text-purple-400">
-            Explore Creators
+            Browse Sellers
           </Button>
         </div>
       </div>
