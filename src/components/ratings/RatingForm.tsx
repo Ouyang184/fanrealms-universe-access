@@ -1,30 +1,27 @@
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StarRating } from "./StarRating";
-import { Trash2 } from "lucide-react";
+import { useState } from 'react';
+import { StarRating } from './StarRating';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 interface RatingFormProps {
-  creatorName: string;
   initialRating?: number;
   initialReview?: string;
   isEditing?: boolean;
-  onSubmit: (rating: number, review?: string) => Promise<boolean>;
-  onDelete?: () => Promise<boolean>;
+  onSubmit: (rating: number, review?: string) => Promise<void>;
+  onDelete?: () => Promise<void>;
   onCancel?: () => void;
   isSubmitting?: boolean;
 }
 
 export function RatingForm({
-  creatorName,
   initialRating = 0,
-  initialReview = "",
+  initialReview = '',
   isEditing = false,
   onSubmit,
   onDelete,
   onCancel,
-  isSubmitting = false
+  isSubmitting = false,
 }: RatingFormProps) {
   const [rating, setRating] = useState(initialRating);
   const [review, setReview] = useState(initialReview);
@@ -32,94 +29,64 @@ export function RatingForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) return;
-
-    const success = await onSubmit(rating, review.trim() || undefined);
-    if (success && onCancel) {
-      onCancel();
-    }
-  };
-
-  const handleDelete = async () => {
-    if (onDelete) {
-      const success = await onDelete();
-      if (success && onCancel) {
-        onCancel();
-      }
-    }
+    await onSubmit(rating, review.trim() || undefined);
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">
-          {isEditing ? "Edit Your Rating" : "Rate Your Experience"} with {creatorName}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Rating *
-            </label>
-            <StarRating
-              rating={rating}
-              onRatingChange={setRating}
-              size="lg"
-            />
-            {rating === 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Please select a rating
-              </p>
-            )}
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <div className="text-[13px] font-medium text-[#333] mb-2">Your rating</div>
+        <StarRating rating={rating} onRatingChange={setRating} size="lg" />
+        {rating === 0 && (
+          <p className="text-[12px] text-[#aaa] mt-1">Click a star to rate</p>
+        )}
+      </div>
 
-          <div>
-            <label htmlFor="review" className="block text-sm font-medium mb-2">
-              Review (optional)
-            </label>
-            <Textarea
-              id="review"
-              value={review}
-              onChange={(e) => setReview(e.target.value)}
-              placeholder="Share your experience with this creator..."
-              rows={4}
-              maxLength={1000}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {review.length}/1000 characters
-            </p>
-          </div>
+      <div>
+        <div className="text-[13px] font-medium text-[#333] mb-1.5">
+          Review <span className="text-[#aaa] font-normal">(optional)</span>
+        </div>
+        <Textarea
+          value={review}
+          onChange={(e) => setReview(e.target.value)}
+          placeholder="What did you think of this product?"
+          rows={3}
+          maxLength={1000}
+          className="text-[13px] resize-none"
+        />
+        <p className="text-[11px] text-[#ccc] mt-1 text-right">{review.length}/1000</p>
+      </div>
 
-          <div className="flex justify-between">
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                disabled={rating === 0 || isSubmitting}
-                className="min-w-20"
-              >
-                {isSubmitting ? "Saving..." : isEditing ? "Update" : "Submit"}
-              </Button>
-              {onCancel && (
-                <Button type="button" variant="outline" onClick={onCancel}>
-                  Cancel
-                </Button>
-              )}
-            </div>
-            {isEditing && onDelete && (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isSubmitting}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Delete
-              </Button>
-            )}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            size="sm"
+            disabled={rating === 0 || isSubmitting}
+            className="text-[13px]"
+          >
+            {isSubmitting ? 'Saving…' : isEditing ? 'Update review' : 'Submit review'}
+          </Button>
+          {onCancel && (
+            <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="text-[13px]">
+              Cancel
+            </Button>
+          )}
+        </div>
+        {isEditing && onDelete && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onDelete}
+            disabled={isSubmitting}
+            className="text-[13px] text-[#aaa] hover:text-red-500"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1" />
+            Remove
+          </Button>
+        )}
+      </div>
+    </form>
   );
 }

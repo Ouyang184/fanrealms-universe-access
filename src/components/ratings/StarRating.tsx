@@ -1,65 +1,50 @@
-import React from "react";
-import { Star } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { Star } from 'lucide-react';
 
 interface StarRatingProps {
-  rating: number;
+  rating: number;       // current value 0–5
   onRatingChange?: (rating: number) => void;
-  size?: "sm" | "md" | "lg";
+  size?: 'sm' | 'md' | 'lg';
   readonly?: boolean;
-  showNumber?: boolean;
-  className?: string;
 }
 
-export function StarRating({ 
-  rating, 
-  onRatingChange, 
-  size = "md", 
+export function StarRating({
+  rating,
+  onRatingChange,
+  size = 'md',
   readonly = false,
-  showNumber = false,
-  className 
 }: StarRatingProps) {
-  const sizes = {
-    sm: "h-4 w-4",
-    md: "h-5 w-5", 
-    lg: "h-6 w-6"
-  };
-
-  const handleStarClick = (starRating: number) => {
-    if (!readonly && onRatingChange) {
-      onRatingChange(starRating);
-    }
-  };
+  const [hovered, setHovered] = useState(0);
+  const active = hovered || rating;
+  const px = { sm: 'w-3.5 h-3.5', md: 'w-4 h-4', lg: 'w-5 h-5' }[size];
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div
+      className={`flex items-center gap-0.5 ${!readonly ? 'cursor-pointer' : ''}`}
+      onMouseLeave={() => !readonly && setHovered(0)}
+    >
       {[1, 2, 3, 4, 5].map((star) => (
-        <button
+        <Star
           key={star}
-          type="button"
-          onClick={() => handleStarClick(star)}
-          disabled={readonly}
-          className={cn(
-            "transition-colors",
-            !readonly && "hover:scale-105 cursor-pointer",
-            readonly && "cursor-default"
-          )}
-        >
-          <Star
-            className={cn(
-              sizes[size],
-              star <= rating
-                ? "fill-yellow-400 text-yellow-400"
-                : "fill-muted text-muted-foreground"
-            )}
-          />
-        </button>
+          className={`${px} transition-colors ${
+            star <= active ? 'fill-amber-400 text-amber-400' : 'fill-none text-[#ddd]'
+          } ${!readonly ? 'hover:fill-amber-400 hover:text-amber-400' : ''}`}
+          onMouseEnter={() => !readonly && setHovered(star)}
+          onClick={() => !readonly && onRatingChange?.(star)}
+        />
       ))}
-      {showNumber && (
-        <span className="ml-2 text-sm text-muted-foreground">
-          {rating.toFixed(1)}
-        </span>
-      )}
+    </div>
+  );
+}
+
+/** Compact inline: ★ 4.2 (18) */
+export function RatingSummary({ average, count }: { average: number; count: number }) {
+  if (count === 0) return null;
+  return (
+    <div className="flex items-center gap-1">
+      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+      <span className="text-[12px] font-semibold text-[#333]">{average.toFixed(1)}</span>
+      <span className="text-[11px] text-[#aaa]">({count})</span>
     </div>
   );
 }

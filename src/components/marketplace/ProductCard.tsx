@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useProductRatingSummary } from '@/hooks/useProductRatings';
+import { RatingSummary } from '@/components/ratings/StarRating';
 
 interface Product {
   id: string;
@@ -22,6 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const authorName = product.creators?.display_name || product.creators?.username || 'Unknown';
   const priceDisplay = product.price === 0 ? 'Free' : `$${(product.price / 100).toFixed(2)}`;
   const imageUrl = product.cover_image_url;
+  const ratingSummary = useProductRatingSummary(product.id);
 
   return (
     <Link
@@ -44,7 +47,10 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="p-3">
         <div className="text-[13px] font-semibold leading-snug truncate">{product.title}</div>
         <div className="text-[11px] text-[#aaa] mt-0.5 truncate">{authorName}</div>
-        <div className="flex items-center justify-between mt-2.5">
+        <div className="flex items-center justify-between mt-2">
+          <RatingSummary average={ratingSummary.average} count={ratingSummary.count} />
+        </div>
+        <div className="flex items-center justify-between mt-1.5">
           <span className="text-[14px] font-bold">{priceDisplay}</span>
           {product.category && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fff0f3] text-primary">

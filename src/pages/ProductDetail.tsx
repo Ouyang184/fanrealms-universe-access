@@ -9,10 +9,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSection';
+import { useProductRatingSummary } from '@/hooks/useProductRatings';
+import { RatingSummary } from '@/components/ratings/StarRating';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const { data: product, isLoading } = useProduct(productId || '');
+  const ratingSummary = useProductRatingSummary(productId || '');
   const [searchParams] = useSearchParams();
   const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
 
@@ -67,6 +71,9 @@ export default function ProductDetail() {
                 by {product.creators.display_name || product.creators.username}
               </p>
             )}
+            <div className="mt-1.5">
+              <RatingSummary average={ratingSummary.average} count={ratingSummary.count} />
+            </div>
           </div>
           <div className="text-right">
             <p className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
@@ -88,6 +95,10 @@ export default function ProductDetail() {
         >
           {checkoutLoading ? 'Redirecting to checkout…' : `Buy Now — $${product.price.toFixed(2)}`}
         </Button>
+
+        <div className="border-t border-[#eee] pt-6">
+          <ProductRatingsSection productId={product.id} />
+        </div>
       </div>
     </MainLayout>
   );
