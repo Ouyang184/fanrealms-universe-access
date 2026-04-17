@@ -159,7 +159,7 @@ export default function PreferencesPage() {
               </div>
               
               <Button
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-primary hover:bg-[#3a7aab]"
                 onClick={handleSavePreferences}
                 disabled={isSubmitting || selectedCategories.length < 4}
               >

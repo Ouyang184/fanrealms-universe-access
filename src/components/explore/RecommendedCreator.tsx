@@ -84,7 +84,7 @@ export function RecommendedCreator({ creator }: RecommendedCreatorProps) {
             <span className="font-medium">{getPricingDisplay(creator)}</span>
           </div>
           <Link to={creatorLink}>
-            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+            <Button size="sm" className="bg-primary hover:bg-[#3a7aab]">
               View Creator
             </Button>
           </Link>

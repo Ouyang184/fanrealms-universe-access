@@ -34,7 +34,7 @@ export default function Logout() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild className="bg-purple-600 hover:bg-purple-700 min-w-[150px]">
+                <Button asChild className="bg-primary hover:bg-[#3a7aab] min-w-[150px]">
                   <Link to="/login">Log back in</Link>
                 </Button>
                 <Button asChild variant="outline" className="border-gray-700 hover:bg-gray-800 min-w-[150px]">
@@ -65,13 +65,13 @@ export default function Logout() {
             <div className="text-center text-sm text-gray-500">
               <p>© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
               <div className="flex justify-center gap-4 mt-2">
-                <Link to="/terms" className="text-purple-400 hover:text-purple-300">
+                <Link to="/terms" className="text-primary hover:text-primary/80">
                   Terms
                 </Link>
-                <Link to="/privacy" className="text-purple-400 hover:text-purple-300">
+                <Link to="/privacy" className="text-primary hover:text-primary/80">
                   Privacy
                 </Link>
-                <Link to="/help" className="text-purple-400 hover:text-purple-300">
+                <Link to="/help" className="text-primary hover:text-primary/80">
                   Help Center
                 </Link>
               </div>

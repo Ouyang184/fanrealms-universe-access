@@ -54,7 +54,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
           {categoryFilter ? `${categoryFilter} Creators` : 'Creators'}
         </h2>
         <Link to="/explore/all">
-          <Button variant="link" className="text-purple-400">
+          <Button variant="link" className="text-primary">
             View All <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </Link>
@@ -154,7 +154,7 @@ export function FeaturedCreators({ creators, isLoading, categoryFilter }: Featur
                       )}
                     </div>
                     <Link to={creatorLink}>
-                      <Button className="bg-purple-600 hover:bg-purple-700">View Creator</Button>
+                      <Button className="bg-primary hover:bg-[#3a7aab]">View Creator</Button>
                     </Link>
                   </div>
                 </CardContent>

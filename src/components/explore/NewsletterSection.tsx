@@ -7,7 +7,7 @@ import { Bell } from "lucide-react";
 export function NewsletterSection() {
   return (
     <section>
-      <Card className="bg-purple-900/30 border-purple-800">
+      <Card className="bg-primary/10 border-primary/20">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
@@ -19,13 +19,13 @@ export function NewsletterSection() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Input
                   placeholder="Enter your email"
-                  className="bg-gray-900/80 border-gray-700 focus-visible:ring-purple-500"
+                  className="bg-gray-900/80 border-gray-700 focus-visible:ring-primary"
                 />
-                <Button className="bg-purple-600 hover:bg-purple-700 whitespace-nowrap">Subscribe</Button>
+                <Button className="bg-primary hover:bg-[#3a7aab] whitespace-nowrap">Subscribe</Button>
               </div>
             </div>
             <div className="flex-shrink-0 hidden md:block">
-              <Bell className="h-20 w-20 text-purple-400 opacity-80" />
+              <Bell className="h-20 w-20 text-primary opacity-80" />
             </div>
           </div>
         </CardContent>

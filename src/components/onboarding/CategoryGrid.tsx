@@ -31,7 +31,7 @@ export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = fa
     const categoryContent = (
       <>
         {isSelected && (
-          <div className="absolute top-2 right-2 bg-purple-500 rounded-full p-0.5">
+          <div className="absolute top-2 right-2 bg-primary rounded-full p-0.5">
             <Check className="h-3 w-3" />
           </div>
         )}
@@ -46,7 +46,7 @@ export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = fa
       relative p-4 rounded-lg border cursor-pointer transition-all
       ${
         isSelected
-          ? "bg-purple-900/30 border-purple-500"
+          ? "bg-primary/10 border-primary"
           : "bg-gray-800 border-gray-700 hover:border-gray-600"
       }
     `;

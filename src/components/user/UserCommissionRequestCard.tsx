@@ -46,7 +46,7 @@ const getStatusColor = (status: string) => {
     case 'rejected':
       return 'bg-red-100 text-red-800';
     case 'in_progress':
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-primary/10 text-primary';
     case 'completed':
       return 'bg-emerald-100 text-emerald-800';
     case 'delivered':

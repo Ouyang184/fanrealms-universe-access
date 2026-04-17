@@ -146,7 +146,7 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
             {tiers.map((tier) => (
               <div 
                 key={tier.id} 
-                className="flex items-center space-x-3 p-3 rounded-lg border bg-purple-50 hover:bg-purple-100 transition-colors"
+                className="flex items-center space-x-3 p-3 rounded-lg border bg-primary/5 hover:bg-primary/10 transition-colors"
               >
                 <Checkbox
                   id={tier.id}
@@ -156,13 +156,13 @@ export function TierSelect({ onSelect, value, disabled = false }: TierSelectProp
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-purple-600" />
-                    <span className="font-medium text-purple-800">{tier.title}</span>
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-purple-200">
+                    <Crown className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-primary">{tier.title}</span>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                       ${tier.price}/mo
                     </Badge>
                   </div>
-                  <p className="text-xs text-purple-700 mt-1">
+                  <p className="text-xs text-primary/70 mt-1">
                     Only subscribers of this tier can view
                   </p>
                 </div>

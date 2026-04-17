@@ -179,7 +179,7 @@ const ForgotPassword = () => {
                             placeholder="you@example.com"
                             type="email"
                             autoComplete="email"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -218,7 +218,7 @@ const ForgotPassword = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting || !captchaToken}>
+                <Button type="submit" className="w-full bg-primary hover:bg-[#3a7aab]" disabled={isSubmitting || !captchaToken}>
                   {isSubmitting ? (
                     <div className="flex items-center">
                       <svg

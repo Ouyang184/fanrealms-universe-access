@@ -53,7 +53,7 @@ const categories = [
 const getTierColor = (color: string | undefined) => {
   switch (color) {
     case "purple":
-      return "bg-purple-600";
+      return "bg-primary";
     case "green":
       return "bg-green-600";
     case "blue":
@@ -187,7 +187,7 @@ export default function FollowingPage() {
       {/* Categories Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="bg-gray-900 border-gray-800">
-          <TabsTrigger value="All" className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2">
+          <TabsTrigger value="All" className="data-[state=active]:bg-primary/10 relative flex items-center gap-2">
             <Users className="h-4 w-4" />
             All
             <Badge variant="outline" className="ml-1">{followedCreators.length}</Badge>
@@ -196,7 +196,7 @@ export default function FollowingPage() {
             <TabsTrigger
               key={category.name}
               value={category.name}
-              className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2"
+              className="data-[state=active]:bg-primary/10 relative flex items-center gap-2"
             >
               {category.icon}
               {category.name}
@@ -205,7 +205,7 @@ export default function FollowingPage() {
               </Badge>
             </TabsTrigger>
           ))}
-          <TabsTrigger value="Favorites" className="data-[state=active]:bg-purple-900/30 relative flex items-center gap-2">
+          <TabsTrigger value="Favorites" className="data-[state=active]:bg-primary/10 relative flex items-center gap-2">
             <Heart className="h-4 w-4" />
             Favorites
             <Badge variant="outline" className="ml-1">

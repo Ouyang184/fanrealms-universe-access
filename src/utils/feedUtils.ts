@@ -20,7 +20,7 @@ export function isEventContent(content: ContentType): content is EventContent {
 export const getTierColor = (color: string) => {
   switch (color) {
     case "purple":
-      return "bg-purple-600";
+      return "bg-primary";
     case "green":
       return "bg-green-600";
     case "blue":
@@ -34,7 +34,7 @@ export const getTierColor = (color: string) => {
     case "red":
       return "bg-red-600";
     default:
-      return "bg-purple-600";
+      return "bg-primary";
   }
 };
 

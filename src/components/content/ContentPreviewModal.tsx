@@ -59,7 +59,7 @@ export function ContentPreviewModal({ open, onOpenChange, content }: ContentPrev
             <Lock className="h-12 w-12 text-white/60 mb-2" />
             <p className="text-xl font-medium text-white">Premium Content</p>
             <p className="text-sm text-gray-300 mt-1">Subscribe to unlock this content</p>
-            <Button className="mt-4 bg-purple-600 hover:bg-purple-700">
+            <Button className="mt-4 bg-primary hover:bg-[#3a7aab]">
               Subscribe Now
             </Button>
           </div>
@@ -171,12 +171,12 @@ export function ContentPreviewModal({ open, onOpenChange, content }: ContentPrev
               <div className="text-sm text-gray-400">
                 {content.type === 'download' ? 'These are sample files' : 'This is a preview of the content'}
               </div>
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-primary hover:bg-[#3a7aab]">
                 Visit Creator Page
               </Button>
             </div>
           ) : (
-            <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700">
+            <Button className="w-full sm:w-auto bg-primary hover:bg-[#3a7aab]">
               Subscribe to Access
             </Button>
           )}

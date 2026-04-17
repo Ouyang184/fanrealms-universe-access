@@ -50,12 +50,12 @@ export default function OnboardingPage() {
           <CardContent>
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-                <TabsTrigger value="interests" className="data-[state=active]:bg-purple-900/30">
+                <TabsTrigger value="interests" className="data-[state=active]:bg-primary/10">
                   1. Select Interests
                 </TabsTrigger>
                 <TabsTrigger
                   value="creators"
-                  className="data-[state=active]:bg-purple-900/30"
+                  className="data-[state=active]:bg-primary/10"
                   disabled={selectedCategories.length === 0}
                 >
                   2. Follow Creators
@@ -101,7 +101,7 @@ export default function OnboardingPage() {
               <div></div>
             )}
             <Button
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-[#3a7aab]"
               onClick={handleContinue}
               disabled={
                 (currentTab === "interests" && selectedCategories.length < 3) ||

@@ -121,20 +121,20 @@ export function CreatorList({ selectedCreators, onToggle, selectedCategories }: 
               relative p-4 rounded-lg border cursor-pointer transition-all flex items-center gap-4
               ${
                 isSelected
-                  ? "bg-purple-900/30 border-purple-500"
+                  ? "bg-primary/10 border-primary"
                   : "bg-gray-800 border-gray-700 hover:border-gray-600"
               }
             `}
             onClick={() => onToggle(numericId)}
           >
             {isSelected && (
-              <div className="absolute top-2 right-2 bg-purple-500 rounded-full p-0.5">
+              <div className="absolute top-2 right-2 bg-primary rounded-full p-0.5">
                 <Check className="h-3 w-3" />
               </div>
             )}
             <Avatar className="h-12 w-12">
               <AvatarImage src={creator.avatar_url || creator.profile_image_url || ''} alt={displayName} />
-              <AvatarFallback className="bg-purple-900">{displayName.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-[#111]">{displayName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center justify-between">

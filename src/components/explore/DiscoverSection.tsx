@@ -14,7 +14,7 @@ export function DiscoverSection() {
     <section className="mb-10">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">Discover More</h2>
-        <Button variant="link" className="text-purple-400">
+        <Button variant="link" className="text-primary">
           View All <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
@@ -36,7 +36,7 @@ export function DiscoverSection() {
               </div>
             </div>
             <CardFooter className="p-4">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700" asChild>
+              <Button className="w-full bg-primary hover:bg-[#3a7aab]" asChild>
                 <Link to="/explore?category=top">Explore Top Rated</Link>
               </Button>
             </CardFooter>
@@ -57,7 +57,7 @@ export function DiscoverSection() {
               </div>
             </div>
             <CardFooter className="p-4">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700" asChild>
+              <Button className="w-full bg-primary hover:bg-[#3a7aab]" asChild>
                 <Link to="/explore?category=new">Discover New Talent</Link>
               </Button>
             </CardFooter>
@@ -78,7 +78,7 @@ export function DiscoverSection() {
               </div>
             </div>
             <CardFooter className="p-4">
-              <Button className="w-full bg-purple-600 hover:bg-purple-700" asChild>
+              <Button className="w-full bg-primary hover:bg-[#3a7aab]" asChild>
                 <Link to="/explore?category=free">Browse Free Content</Link>
               </Button>
             </CardFooter>
@@ -88,7 +88,7 @@ export function DiscoverSection() {
         <div className="text-center py-8 bg-gray-900 border border-gray-800 rounded-lg">
           <h3 className="text-xl font-bold mb-2">No Creators Yet</h3>
           <p className="text-gray-400 mb-4">Be the first to create content on FanRealms!</p>
-          <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+          <Button className="bg-primary hover:bg-[#3a7aab]" asChild>
             <Link to="/creator-studio/settings">Become a Creator</Link>
           </Button>
         </div>

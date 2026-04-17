@@ -192,7 +192,7 @@ const LoginForm = () => {
                     placeholder="you@example.com"
                     type="email"
                     autoComplete="email"
-                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                     {...field}
                   />
                 </FormControl>
@@ -208,7 +208,7 @@ const LoginForm = () => {
             <FormItem className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-sm text-purple-400 hover:text-purple-300">
+                <Link to="/forgot-password" className="text-sm text-primary hover:text-primary/80">
                   Forgot password?
                 </Link>
               </div>
@@ -220,7 +220,7 @@ const LoginForm = () => {
                     placeholder="••••••••"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                     {...field}
                   />
                 </FormControl>
@@ -286,7 +286,7 @@ const LoginForm = () => {
           )}
         />
         
-        <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700" disabled={isSubmitting || !captchaToken}>
+        <Button type="submit" className="w-full bg-primary hover:bg-[#3a7aab]" disabled={isSubmitting || !captchaToken}>
           {isSubmitting ? (
             <div className="flex items-center">
               <svg

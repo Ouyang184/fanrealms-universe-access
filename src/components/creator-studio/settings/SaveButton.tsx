@@ -16,7 +16,7 @@ export function SaveButton({ onSave, isLoading = false, hasChanges = false }: Sa
       <Button 
         onClick={onSave}
         disabled={isLoading}
-        className="bg-purple-600 hover:bg-purple-700 shadow-lg"
+        className="bg-primary hover:bg-[#3a7aab] shadow-lg"
         size="lg"
       >
         <Save className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />

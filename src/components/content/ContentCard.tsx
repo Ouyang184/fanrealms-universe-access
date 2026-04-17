@@ -222,7 +222,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             {content.date}
           </span>
           <div className="flex items-center gap-2">
-            <Badge className={`${isPremium ? 'bg-purple-600' : 'bg-green-600'}`}>
+            <Badge className={`${isPremium ? 'bg-primary' : 'bg-green-600'}`}>
               {isPremium ? "Premium" : "Free"}
             </Badge>
             <Button 

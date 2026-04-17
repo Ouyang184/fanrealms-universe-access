@@ -203,7 +203,7 @@ const ResetPassword = () => {
 
                 {isValidatingSession && !error && (
                   <div className="text-center py-4">
-                    <div className="animate-spin h-6 w-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
                     <p className="text-sm text-gray-400">Verifying your session...</p>
                   </div>
                 )}
@@ -224,7 +224,7 @@ const ResetPassword = () => {
                                 placeholder="••••••••"
                                 type={showPassword ? "text" : "password"}
                                 autoComplete="new-password"
-                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                                 {...field}
                               />
                             </FormControl>
@@ -257,7 +257,7 @@ const ResetPassword = () => {
                                 placeholder="••••••••"
                                 type={showConfirmPassword ? "text" : "password"}
                                 autoComplete="new-password"
-                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                                className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                                 {...field}
                               />
                             </FormControl>
@@ -278,7 +278,7 @@ const ResetPassword = () => {
 
                     <Button 
                       type="submit" 
-                      className="w-full bg-purple-600 hover:bg-purple-700" 
+                      className="w-full bg-primary hover:bg-[#3a7aab]"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? (

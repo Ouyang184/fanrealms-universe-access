@@ -79,7 +79,7 @@ export function CommissionRequestCard({
       case 'refunded':
         return 'bg-orange-500';
       case 'in_progress':
-        return 'bg-purple-500';
+        return 'bg-primary';
       case 'completed':
         return 'bg-emerald-500';
       default:

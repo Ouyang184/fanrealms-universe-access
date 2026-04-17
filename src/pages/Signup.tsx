@@ -147,7 +147,7 @@ const Signup = () => {
                             placeholder="John Doe"
                             type="text"
                             autoComplete="name"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -171,7 +171,7 @@ const Signup = () => {
                             placeholder="name@example.com"
                             type="email"
                             autoComplete="email"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -195,7 +195,7 @@ const Signup = () => {
                             placeholder="Create a strong password"
                             type={showPassword ? "text" : "password"}
                             autoComplete="new-password"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-purple-500"
+                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -288,7 +288,7 @@ const Signup = () => {
                             <button
                               type="button"
                               onClick={() => setShowTermsModal(true)}
-                              className="text-purple-400 hover:text-purple-300 underline"
+                              className="text-primary hover:text-primary/80 underline"
                             >
                               Terms of Service
                             </button>
@@ -328,7 +328,7 @@ const Signup = () => {
                   )}
                 />
 
-                <Alert className="bg-purple-900/20 border-purple-800 text-purple-200">
+                <Alert className="bg-primary/10 border-primary/20 text-white">
                   <AlertDescription className="text-xs">
                     By signing up, you'll receive updates about your account, new features, and creator content you
                     follow.
@@ -337,7 +337,7 @@ const Signup = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700"
+                  className="w-full bg-primary hover:bg-[#3a7aab]"
                   disabled={isSubmitting || passwordStrength < 3 || !captchaToken}
                 >
                   {isSubmitting ? (
@@ -361,7 +361,7 @@ const Signup = () => {
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-400">
               Already have an account?{" "}
-              <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+              <Link to="/login" className="text-primary hover:text-primary/80 font-medium">
                 Sign in
               </Link>
             </p>

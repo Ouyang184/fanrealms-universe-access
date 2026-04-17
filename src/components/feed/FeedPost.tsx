@@ -113,7 +113,7 @@ export const FeedPostComponent: React.FC<FeedPostProps> = ({ post }) => {
             {/* Preview Badge */}
             {!post.content.preview && (
               <div className="absolute top-2 right-2">
-                <Badge className="bg-purple-600">Subscribers Only</Badge>
+                <Badge className="bg-primary">Subscribers Only</Badge>
               </div>
             )}
           </div>

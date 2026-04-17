@@ -456,7 +456,7 @@ function PostCard({ post }: { post: CreatorPost }) {
 
   return (
     <>
-      <Card className={isPremiumPost && !hasFullAccess ? "border-amber-200 bg-amber-50/30" : ""}>
+      <Card className={isPremiumPost && !hasFullAccess ? "border-[#eee] bg-white" : ""}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-1">

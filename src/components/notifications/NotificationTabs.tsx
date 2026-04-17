@@ -38,43 +38,43 @@ export const NotificationTabs: React.FC<NotificationTabsProps> = ({
   return (
     <Tabs defaultValue="all" className="mb-8">
       <TabsList className="bg-gray-900 border-gray-800">
-        <TabsTrigger value="all" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="all" className="data-[state=active]:bg-primary/10 relative">
           All
           {unreadCounts.all > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.all}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="follows" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="follows" className="data-[state=active]:bg-primary/10 relative">
           Follows
           {unreadCounts.follow > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.follow}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="mentions" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="mentions" className="data-[state=active]:bg-primary/10 relative">
           Mentions
           {unreadCounts.mentions > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.mentions}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="comments" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="comments" className="data-[state=active]:bg-primary/10 relative">
           Comments
           {unreadCounts.comments > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.comments}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="likes" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="likes" className="data-[state=active]:bg-primary/10 relative">
           Likes
           {unreadCounts.likes > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.likes}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="commissions" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="commissions" className="data-[state=active]:bg-primary/10 relative">
           Commissions
           {unreadCounts.commission > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.commission}</Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="system" className="data-[state=active]:bg-purple-900/30 relative">
+        <TabsTrigger value="system" className="data-[state=active]:bg-primary/10 relative">
           System
           {unreadCounts.system > 0 && (
             <Badge className="ml-2 bg-red-500 h-5 min-w-[20px] px-1">{unreadCounts.system}</Badge>

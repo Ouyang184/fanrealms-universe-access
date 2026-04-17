@@ -30,7 +30,7 @@ export function CommunitySection() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button 
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-primary hover:bg-[#3a7aab]"
                   onClick={handleBecomeCreatorClick}
                 >
                   Become a Creator

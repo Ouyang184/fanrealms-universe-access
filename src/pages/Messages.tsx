@@ -273,7 +273,7 @@ export default function MessagesPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search by name..."
-              className="pl-10 bg-gray-900 border-gray-700 focus-visible:ring-purple-500"
+              className="pl-10 bg-gray-900 border-gray-700 focus-visible:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -305,7 +305,7 @@ export default function MessagesPage() {
                     <div className="relative flex-shrink-0">
                       <Avatar className={cn("border border-gray-700", isMobile ? "h-12 w-12" : "h-10 w-10")}>
                         <AvatarImage src={avatarUrl || undefined} alt={displayName} />
-                        <AvatarFallback className="bg-purple-900">
+                        <AvatarFallback className="bg-[#111]">
                           {displayName.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -318,7 +318,7 @@ export default function MessagesPage() {
                         <div className="flex items-center gap-1.5">
                           <span className={cn("font-medium truncate", isMobile ? "text-base" : "text-sm")}>{displayName}</span>
                           {isCreator && (
-                            <Badge variant="outline" className="h-5 border-purple-500 text-purple-400 text-xs">
+                            <Badge variant="outline" className="h-5 border-primary/50 text-primary text-xs">
                               Creator
                             </Badge>
                           )}
@@ -347,7 +347,7 @@ export default function MessagesPage() {
                       )}
                     </div>
                     {!isBlocked && conversation.unread_count > 0 && (
-                      <Badge className="bg-purple-600 hover:bg-purple-600">
+                      <Badge className="bg-primary hover:bg-primary">
                         {conversation.unread_count}
                       </Badge>
                     )}
@@ -389,7 +389,7 @@ export default function MessagesPage() {
                       alt={selectedConvData.creator_profile?.display_name || 
                            selectedConvData.other_user?.username || 'User'} 
                     />
-                    <AvatarFallback className="bg-purple-900">
+                    <AvatarFallback className="bg-[#111]">
                       {(selectedConvData.creator_profile?.display_name || 
                         selectedConvData.other_user?.username || 'U').charAt(0).toUpperCase()}
                     </AvatarFallback>
@@ -405,7 +405,7 @@ export default function MessagesPage() {
                        selectedConvData.other_user?.username || 'Unknown User'}
                     </h2>
                     {selectedConvData.creator_profile && (
-                      <Badge variant="outline" className="h-5 border-purple-500 text-purple-400 text-xs">
+                      <Badge variant="outline" className="h-5 border-primary/50 text-primary text-xs">
                         Creator
                       </Badge>
                     )}
@@ -492,7 +492,7 @@ export default function MessagesPage() {
                               src={selectedConvData.creator_profile?.profile_image_url || 
                                    selectedConvData.other_user?.profile_picture || undefined} 
                             />
-                            <AvatarFallback className="bg-purple-900">
+                            <AvatarFallback className="bg-[#111]">
                               {(selectedConvData.creator_profile?.display_name || 
                                 selectedConvData.other_user?.username || 'U').charAt(0).toUpperCase()}
                             </AvatarFallback>
@@ -504,9 +504,9 @@ export default function MessagesPage() {
                               "rounded-lg p-3 transition-colors",
                               isMobile ? "text-sm" : "text-base",
                               message.sender_id === user?.id
-                                ? "bg-purple-600 text-white rounded-tr-none"
+                                ? "bg-primary text-white rounded-tr-none"
                                 : "bg-gray-800 text-white rounded-tl-none",
-                              message.sender_id === user?.id && "cursor-pointer hover:bg-purple-700"
+                              message.sender_id === user?.id && "cursor-pointer hover:bg-[#3a7aab]"
                             )}
                             onClick={() => handleMessageClick(message.id, message.sender_id === user?.id)}
                             title={message.sender_id === user?.id ? "Click to delete message" : ""}
@@ -550,7 +550,7 @@ export default function MessagesPage() {
                   <div className="flex-1">
                     <Input
                       placeholder="Type a message..."
-                      className="bg-gray-900 border-gray-700 focus-visible:ring-purple-500"
+                      className="bg-gray-900 border-gray-700 focus-visible:ring-primary"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyPress={(e) => {
@@ -564,7 +564,7 @@ export default function MessagesPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="bg-purple-600 hover:bg-purple-700"
+                    className="bg-primary hover:bg-[#3a7aab]"
                     size="icon"
                     disabled={!newMessage.trim() || isSendingMessage || isUploadingImage}
                   >
