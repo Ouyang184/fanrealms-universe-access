@@ -51,11 +51,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 py-16 flex items-center justify-between gap-12">
           <div>
             <h1 className="text-5xl font-bold tracking-[-1.5px] leading-[1.1]">
-              The indie creator<br />
-              <span className="text-primary">marketplace.</span>
+              Where Godot devs<br />
+              <span className="text-primary">buy, sell & ship.</span>
             </h1>
             <p className="mt-4 text-[15px] text-[#777] leading-relaxed max-w-md">
-              Buy and sell game assets, discover indie games, find freelance work, and connect with other creators.
+              Assets, indie games, freelance gigs, and a community — all built around the Godot engine.
             </p>
             <div className="flex gap-3 mt-6">
               <Link to="/marketplace" className="px-5 py-2.5 text-[14px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
@@ -69,10 +69,10 @@ export default function LandingPage() {
           </div>
           <div className="hidden md:grid grid-cols-2 gap-3 flex-shrink-0 w-[320px]">
             {[
-              { Icon: ShoppingBag, title: "Sell Digital Assets", desc: "Game art, templates, tools & more" },
-              { Icon: Gamepad2, title: "Showcase Games", desc: "Get your indie game discovered" },
-              { Icon: Briefcase, title: "Find Work", desc: "Gigs, bounties & freelance jobs" },
-              { Icon: MessageSquare, title: "Join the Community", desc: "Forum, devlogs & creator support" },
+              { Icon: ShoppingBag, title: "Godot Assets", desc: "Plugins, shaders, sprites & tools" },
+              { Icon: Gamepad2,    title: "Indie Games",  desc: "Play & discover Godot-made games" },
+              { Icon: Briefcase,   title: "Jobs & Gigs",  desc: "Hire or get hired as a Godot dev" },
+              { Icon: MessageSquare, title: "Community",  desc: "Forum, devlogs & help" },
             ].map(({ Icon, title, desc }) => (
               <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4">
                 <div className="w-8 h-8 rounded-lg bg-white border border-[#eee] flex items-center justify-center mb-2.5">
