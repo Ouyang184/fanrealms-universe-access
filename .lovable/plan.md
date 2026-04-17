@@ -1,45 +1,57 @@
 
-## Plan: Global Teal/Cyan Light Theme
+## Plan: Full Marketplace Redesign + Emoji Purge
 
 ### Goal
-Switch the entire site from the current dark blue scheme to a clean light theme with a teal/cyan accent.
+Convert the entire site from a Patreon-style subscription feed into an itch.io-inspired digital marketplace. Remove all decorative emojis sitewide.
 
-### Changes
+### Scope (all pages)
+- Landing (`/`), Explore (`/explore`), Home dashboard, Creator profile, Commissions, Job Board, Forum, Search results, Category pages.
 
-**1. `src/index.css` — `:root` tokens (light is now default)**
-- `--background: 180 20% 98%` (near-white, faint teal tint)
-- `--foreground: 200 25% 12%` (deep slate)
-- `--card` / `--popover`: `0 0% 100%`
-- `--primary: 184 72% 40%` (teal-cyan)
-- `--primary-foreground: 0 0% 100%`
-- `--secondary / --muted / --accent: 185 30% 95%`
-- `--secondary-foreground / --accent-foreground: 200 25% 15%`
-- `--muted-foreground: 200 10% 40%`
-- `--border / --input: 185 20% 88%`
-- `--ring: 184 72% 40%`
-- Sidebar tokens mirrored to the light teal palette
-- Scrollbar colors updated to light-mode greys (`hsl(185 15% 75%)` thumb)
+### Design system additions
+- **`ProductCard`** — cover image, title, creator handle, price chip, rating (stars + count), category pills. Replaces `ContentItem` in marketplace contexts.
+- **`MarketplaceHero`** — large search bar + category quick-pills (no big "Subscribe" CTA, no hero copy fluff).
+- **`FilterSidebar`** — facets: category, price range (Free / Paid / Pay-what-you-want), rating, tags, sort (Popular / New / Top rated / Price).
+- **`CategoryTileGrid`** — compact tile grid with icon + name + count.
+- **`StorefrontHeader`** (creator profile) — banner, avatar, name, rating, follow button, tabs: Products / Commissions / Devlogs / About.
 
-**2. `src/index.css` — `.dark` retained but retuned to teal**
-- Keep dark mode functional with same teal accent (`184 72% 50%`) so users who toggle dark still get the new brand.
+### Page-by-page changes
 
-**3. Default theme**
-- `src/components/theme-provider.tsx`: confirm `defaultTheme` consumers pass `"light"`. Inspect `App.tsx` / wherever `ThemeProvider` is mounted and switch its `defaultTheme` prop to `"light"`.
+**Landing (`src/pages/Index.tsx` + `src/components/home/*`)**
+- Replace `HeroSection` → `MarketplaceHero` (search-first).
+- Replace `ContentTabs` (For You / Trending / Recent feed) → product grids: "Trending now", "New releases", "Top rated this week".
+- Drop `CommissionSection` hero block → small "Hire creators" tile in a 3-up promo row.
+- Keep `FeaturedCreators` but restyle as storefront cards (avatar + product count + rating).
+- `CategoriesSection` → `CategoryTileGrid`.
+- Remove `HowItWorks` (Patreon-y); replace with "Browse by category" + "Recently updated" rows.
 
-**4. Hardcoded color cleanup (high-traffic only)**
-Replace common hardcoded dark classes that would look broken on light bg with semantic tokens. Targeted sweep via search for: `bg-gray-900`, `bg-gray-800`, `text-gray-300`, `border-gray-700/800`, `bg-[#3a7aab]`, `text-purple-400`.
-- Swap `bg-gray-900/800` → `bg-card` or `bg-secondary`
-- `text-gray-300/400` → `text-muted-foreground`
-- `border-gray-700/800` → `border-border`
-- `bg-[#3a7aab]` (primary hover) → `hover:bg-primary/90`
-- `text-purple-400` → `text-primary`
+**Explore (`src/pages/Explore.tsx`)**
+- 2-column layout: `FilterSidebar` (left, sticky) + `ProductCard` grid (right, 3–4 cols responsive).
+- Remove `CommunitySection`, `NewsletterSection`, `DiscoverSection` (subscription-marketing blocks).
+- Keep `PopularTagsSection` as a horizontal chip rail above the grid.
+- Top toolbar: result count, sort dropdown, view toggle (grid/list).
 
-Scope of sweep: `src/components/explore/*`, `src/components/home/*`, `src/components/Layout/*`, `src/pages/Explore.tsx`, plus any other files surfaced by the search. I'll batch-update only the color utility classes — no structural/layout changes.
+**Home dashboard (`src/components/home/HomeDashboard.tsx`)**
+- Pivot from social feed → buyer dashboard: "Your Library" (purchased), "Wishlist", "Recommended for you", "Continue browsing".
 
-### Out of scope
-- No new components, no layout changes, no logo redesign (logo blue `#478CBF` will remain as-is or get a quick teal tweak if you want — say the word).
+**Creator profile**
+- Replace tier/subscription emphasis with `StorefrontHeader` + product grid as default tab. Tiers move under a secondary "Membership" tab.
+
+**Commissions / Job Board / Forum**
+- Apply marketplace card styling, consistent filter sidebar pattern, remove decorative emojis from category labels and seed data.
+
+### Emoji purge
+- Sweep all `src/**/*.{ts,tsx}` for unicode emoji ranges (`\u{1F300}-\u{1FAFF}`, `\u{2600}-\u{27BF}`, `\u{1F900}-\u{1F9FF}`).
+- Decorative → delete.
+- Meaningful (category icons, status) → replace with `lucide-react` (e.g., 🎨 → `<Palette/>`, 🎮 → `<Gamepad2/>`, 📚 → `<BookOpen/>`, ✨ → `<Sparkles/>` only if structural, else remove).
+- Sweep DB seed/category labels via a migration if categories table stores emojis in names.
 
 ### Technical notes
-- All colors stay in HSL token form so future re-theming is a one-file change.
-- Tailwind config already maps tokens; no `tailwind.config.ts` edits needed.
-- After applying, I'll spot-check Explore, Home, and a creator page for any residual hardcoded dark colors and fix them.
+- New components in `src/components/marketplace/`.
+- Reuse existing semantic tokens (teal/cyan light theme already in place).
+- No DB schema changes required for the visual redesign; only a data-cleanup migration if category names contain emojis.
+- Existing hooks (`usePosts`, `useCreators`, etc.) are reused — `ProductCard` accepts the same `Post`/creator shape so swap is mechanical.
+- Preserve all routes and auth flows; this is a presentation-layer overhaul.
+
+### Out of scope
+- New backend features, payment changes, new tables.
+- Logo redesign.
