@@ -21,7 +21,7 @@ export default function GamesPage() {
             <p className="text-[13px] text-[#888] mt-0.5">Discover games made by the FanRealms community</p>
           </div>
           {user && (
-            <button className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#be123c] transition-colors">
+            <button className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors">
               Add your game
             </button>
           )}
@@ -71,7 +71,7 @@ export default function GamesPage() {
             </p>
             <Link
               to="/signup"
-              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors"
             >
               Add your game
             </Link>

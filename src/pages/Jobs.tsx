@@ -76,7 +76,7 @@ export default function Jobs() {
             </p>
             <Link
               to="/signup"
-              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors"
             >
               Post a job
             </Link>

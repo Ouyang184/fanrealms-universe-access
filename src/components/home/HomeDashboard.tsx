@@ -141,7 +141,7 @@ export function HomeDashboard() {
                   <span className="text-[14px] font-bold">
                     {product.price === 0 ? "Free" : `$${(product.price / 100).toFixed(2)}`}
                   </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fff0f3] text-primary">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eef4fb] text-primary">
                     {product.category}
                   </span>
                 </div>

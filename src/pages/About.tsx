@@ -94,7 +94,7 @@ export default function About() {
         <div className="flex gap-3 pt-2">
           <Link
             to="/signup"
-            className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+            className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors"
           >
             Create an account
           </Link>

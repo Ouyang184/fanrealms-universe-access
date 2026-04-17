@@ -22,7 +22,7 @@ export default function Marketplace() {
           </div>
           <Link
             to="/creator-studio/products"
-            className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#be123c] transition-colors"
+            className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors"
           >
             Sell something
           </Link>
@@ -72,7 +72,7 @@ export default function Marketplace() {
             </p>
             <Link
               to="/signup"
-              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors"
+              className="px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors"
             >
               Start selling
             </Link>

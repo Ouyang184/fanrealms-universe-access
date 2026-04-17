@@ -53,7 +53,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center justify-between mt-1.5">
           <span className="text-[14px] font-bold">{priceDisplay}</span>
           {product.category && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fff0f3] text-primary">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eef4fb] text-primary">
               {product.category}
             </span>
           )}

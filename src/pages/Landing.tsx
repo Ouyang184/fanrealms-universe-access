@@ -39,7 +39,7 @@ export default function LandingPage() {
             <Link to="/login" className="px-4 py-2 text-[13px] font-semibold text-[#555] border border-[#e5e5e5] rounded-lg hover:border-[#ccc] transition-colors">
               Log in
             </Link>
-            <Link to="/signup" className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#be123c] transition-colors">
+            <Link to="/signup" className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors">
               Sign up
             </Link>
           </div>
@@ -58,7 +58,7 @@ export default function LandingPage() {
               Buy and sell game assets, discover indie games, find freelance work, and connect with other creators.
             </p>
             <div className="flex gap-3 mt-6">
-              <Link to="/marketplace" className="px-5 py-2.5 text-[14px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors">
+              <Link to="/marketplace" className="px-5 py-2.5 text-[14px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
                 Browse assets
               </Link>
               <Link to="/signup" className="px-5 py-2.5 text-[14px] font-semibold text-[#333] bg-[#f5f5f5] rounded-[10px] hover:bg-[#eee] transition-colors">
@@ -155,7 +155,7 @@ export default function LandingPage() {
                     <span className="text-[14px] font-bold">
                       {product.price === 0 ? "Free" : `$${(product.price / 100).toFixed(2)}`}
                     </span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#fff0f3] text-primary">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eef4fb] text-primary">
                       {product.category}
                     </span>
                   </div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
             <div className="text-[13px] text-[#888] mb-4 max-w-sm mx-auto">
               No assets listed yet — be the first creator to sell your work here.
             </div>
-            <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#be123c] transition-colors">
+            <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
               Start selling →
             </Link>
           </div>
