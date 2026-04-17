@@ -33,7 +33,7 @@ export default function FollowingPage() {
   
   // Set document title when component mounts
   useEffect(() => {
-    document.title = "Following | Creator Platform";
+    document.title = "Following | FanRealms";
   }, []);
 
   const { data: allCreators, isLoading: loadingCreators, refetch: refetchCreators } = useCreators();
@@ -133,7 +133,7 @@ export default function FollowingPage() {
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Following</h1>
             <p className="text-muted-foreground">
-              Creators you follow and recommendations for you
+              Sellers you follow and recommendations
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export default function FollowingPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search creators..."
+                placeholder="Search sellers..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -198,8 +198,8 @@ export default function FollowingPage() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <Users className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Categories</p>
@@ -222,18 +222,18 @@ export default function FollowingPage() {
               {filteredCreators.length === 0 ? (
                 <div className="text-center py-12">
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No creators found</h3>
+                  <h3 className="text-lg font-semibold mb-2">No sellers found</h3>
                   <p className="text-muted-foreground">
-                    {searchTerm || selectedCategory !== "all" 
+                    {searchTerm || selectedCategory !== "all"
                       ? "Try adjusting your search or filters"
-                      : "Start following creators to see them here"
+                      : "Start following sellers to see them here"
                     }
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCreators.map((creator) => {
-                    const displayName = creator.display_name || creator.username || 'Creator';
+                    const displayName = creator.display_name || creator.username || 'Seller';
                     return (
                       <Card key={creator.id} className="overflow-hidden bg-card border">
                         <CardContent className="p-0">
@@ -294,9 +294,9 @@ export default function FollowingPage() {
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                {creator.bio || "Creator on the platform"}
+                                {creator.bio || "Seller on FanRealms"}
                               </p>
-                              
+
                               {/* Metrics - Changed to show followers only */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
@@ -304,16 +304,16 @@ export default function FollowingPage() {
                                   <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
                                 </div>
                               </div>
-                              
+
                               {/* Action Buttons */}
                               <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   className="flex-1"
                                   onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
                                 >
-                                  View Content
+                                  View shop
                                 </Button>
                                 <Button 
                                   variant="outline" 
@@ -339,13 +339,13 @@ export default function FollowingPage() {
                   <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No recommendations available</h3>
                   <p className="text-muted-foreground">
-                    You're already following all available creators or there are no other creators on the platform yet.
+                    You're already following all available sellers, or no other sellers have joined yet.
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {recommendedCreators.map((creator) => {
-                    const displayName = creator.display_name || creator.username || 'Creator';
+                    const displayName = creator.display_name || creator.username || 'Seller';
                     return (
                       <Card key={creator.id} className="overflow-hidden bg-card border">
                         <CardContent className="p-0">
@@ -381,9 +381,9 @@ export default function FollowingPage() {
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                {creator.bio || "Creator on the platform"}
+                                {creator.bio || "Seller on FanRealms"}
                               </p>
-                              
+
                               {/* Metrics - Changed to show followers only */}
                               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                 <div className="flex items-center gap-1">
@@ -391,18 +391,18 @@ export default function FollowingPage() {
                                   <span>{(creator.follower_count || 0).toLocaleString()} followers</span>
                                 </div>
                               </div>
-                              
+
                               {/* Action Buttons */}
                               <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
+                                <Button
+                                  size="sm"
                                   className="flex-1"
                                   onClick={() => handleFollow(creator.id)}
                                 >
                                   Follow
                                 </Button>
-                                <Button 
-                                  variant="outline" 
+                                <Button
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => window.location.href = `/creator/${creator.username || creator.id}`}
                                 >
