@@ -28,7 +28,7 @@ export function useProductRatings(productId: string) {
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as ProductRating[];
+      return (data ?? []) as unknown as ProductRating[];
     },
     enabled: !!productId,
   });

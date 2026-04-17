@@ -35,7 +35,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
     if (success) {
       setShowForm(false);
     }
-    return success;
   };
 
   const handleDeleteRating = async () => {
@@ -43,7 +42,6 @@ export function CreatorRatings({ creatorId, creatorName, className }: CreatorRat
     if (success) {
       setShowForm(false);
     }
-    return success;
   };
 
   return (
