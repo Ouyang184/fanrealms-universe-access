@@ -50,19 +50,15 @@ export default function Forum() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-[68px] w-full rounded-xl" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-[180px] w-full rounded-xl" />
             ))}
           </div>
         ) : threads && threads.length > 0 ? (
-          <div className="bg-white rounded-xl border border-[#eee] overflow-hidden">
-            {threads.map((thread, i) => (
-              <ThreadCard
-                key={thread.id}
-                thread={thread}
-                isLast={i === threads.length - 1}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {threads.map((thread) => (
+              <ThreadCard key={thread.id} thread={thread} />
             ))}
           </div>
         ) : (

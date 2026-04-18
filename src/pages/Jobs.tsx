@@ -50,19 +50,15 @@ export default function Jobs() {
         </div>
 
         {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-[180px] w-full rounded-xl" />
             ))}
           </div>
         ) : listings && listings.length > 0 ? (
-          <div className="bg-white rounded-xl border border-[#eee] overflow-hidden">
-            {listings.map((listing, i) => (
-              <JobListingCard
-                key={listing.id}
-                listing={listing}
-                isLast={i === listings.length - 1}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {listings.map((listing) => (
+              <JobListingCard key={listing.id} listing={listing} />
             ))}
           </div>
         ) : (
