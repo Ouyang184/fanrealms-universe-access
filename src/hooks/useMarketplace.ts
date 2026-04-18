@@ -122,12 +122,104 @@ export function useUserPurchases() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchases')
-        .select('*, digital_products(title, cover_image_url), creators(username, display_name)')
+        .select('*, digital_products(title, cover_image_url, asset_url), creators(username, display_name)')
         .eq('buyer_id', user!.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (product: {
+      id: string;
+      title?: string;
+      description?: string;
+      price?: number;
+      category?: string;
+      tags?: string[];
+      cover_image_url?: string;
+      asset_url?: string;
+      status?: string;
+    }) => {
+      const { id, ...updates } = product;
+      const { data, error } = await supabase
+        .from('digital_products')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['creator-products'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
+      toast.success('Asset updated');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to update: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('digital_products')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['creator-products'] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
+      toast.success('Asset deleted');
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to delete: ' + error.message);
+    },
+  });
+}
+
+export function useSellerSales() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['seller-sales', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data: creator } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (!creator) return { sales: [], totals: { gross: 0, fees: 0, net: 0 } };
+
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('*, digital_products(title, cover_image_url)')
+        .eq('creator_id', creator.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const sales = data ?? [];
+      const gross = sales.reduce((sum, p) => sum + ((p as any).amount ?? 0), 0);
+      const fees = sales.reduce((sum, p) => sum + ((p as any).platform_fee ?? 0), 0);
+      const net = sales.reduce((sum, p) => sum + ((p as any).net_amount ?? 0), 0);
+
+      return { sales, totals: { gross, fees, net } };
     },
   });
 }
