@@ -31,9 +31,9 @@ const AuthGuard = ({
       return;
     }
 
-    // If user exists but trying to access login/signup pages, redirect to home
+    // If user exists but trying to access login/signup pages, redirect to dashboard
     if (user && ['/login', '/signup'].includes(location.pathname)) {
-      navigate('/home');
+      navigate('/dashboard');
       return;
     }
 

@@ -2,7 +2,6 @@
 import { cn } from "@/lib/utils";
 import { SidebarHeader } from "./SidebarHeader";
 import { MainNavigation } from "./MainNavigation";
-import { CreatorStudioMenu } from "./CreatorStudioMenu";
 import { SidebarFooter } from "./SidebarFooter";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
@@ -44,7 +43,6 @@ export function Sidebar({ collapsed, toggleSidebar, onSignOut }: SidebarProps) {
         style={{ scrollBehavior: 'auto' }}
       >
         <MainNavigation collapsed={collapsed} isMobile={isMobile} />
-        <CreatorStudioMenu collapsed={collapsed} isMobile={isMobile} />
       </div>
       <SidebarFooter collapsed={collapsed} onSignOut={onSignOut} />
     </>
