@@ -1,136 +1,140 @@
+import { Link } from 'react-router-dom';
+import { MainLayout } from '@/components/Layout/MainLayout';
+import { useUserPurchases, useCreatorProducts } from '@/hooks/useMarketplace';
+import { ProductCard } from '@/components/marketplace/ProductCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ShoppingBag, Package, Plus, ExternalLink } from 'lucide-react';
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { formatRelativeDate } from "@/utils/auth-helpers";
-import { Button } from "@/components/ui/button";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
-import { CreatorsSection } from "@/components/dashboard/CreatorsSection";
-import { PostsSection } from "@/components/dashboard/PostsSection";
-
-export default function Dashboard() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("feed");
-  
-  // Fetch user's posts
-  const { 
-    data: posts = [], 
-    isLoading: isLoadingPosts,
-  } = useQuery({
-    queryKey: ['userPosts', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data: userPosts, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          users:author_id (
-            username,
-            profile_picture
-          )
-        `)
-        .eq('author_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error fetching posts:', error);
-        toast({
-          title: "Error fetching posts",
-          description: "Failed to load your posts. Please try again.",
-          variant: "destructive"
-        });
-        return [];
-      }
-
-      return userPosts.map((post: any) => ({
-        ...post,
-        authorName: post.users.username,
-        authorAvatar: post.users.profile_picture,
-        date: formatRelativeDate(post.created_at)
-      }));
-    },
-    enabled: !!user?.id
-  });
-
-  // Query to check if user is a creator
-  const { 
-    data: creatorProfile,
-    isLoading: isLoadingCreator
-  } = useQuery({
-    queryKey: ['userCreator', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase
-        .from('creators')
-        .select(`
-          *,
-          membership_tiers (
-            id,
-            title,
-            description,
-            price
-          )
-        `)
-        .eq('user_id', user.id)
-        .single();
-        
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking creator status:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load creator profile. Please try again.",
-          variant: "destructive"
-        });
-        return null;
-      }
-      
-      return data;
-    },
-    enabled: !!user?.id
-  });
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center py-20">
-          <h2 className="text-2xl font-semibold mb-4">Please sign in</h2>
-          <p className="text-muted-foreground mb-6">You need to be signed in to view your dashboard.</p>
-          <Button asChild>
-            <Link to="/login">Sign In</Link>
-          </Button>
-        </div>
-      </div>
-    );
+function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
+  if (!assetUrl) {
+    return <span className="text-[11px] text-[#aaa]">No file linked</span>;
   }
-  
-  if (isLoadingPosts || isLoadingCreator) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center min-h-[60vh]">
-          <LoadingSpinner />
-        </div>
-      </div>
-    );
-  }
+  return (
+    <a
+      href={assetUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+    >
+      <ExternalLink className="w-3.5 h-3.5" />
+      Download
+    </a>
+  );
+}
+
+export default function DashboardPage() {
+  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
+  const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
+
+  const publishedAssets = myAssets?.filter((a) => a.status === 'published') ?? [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="space-y-8">
-        <CreatorsSection />
-        <PostsSection 
-          posts={posts}
-          isLoading={isLoadingPosts}
-          isCreator={!!creatorProfile}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
+    <MainLayout>
+      <div className="max-w-5xl mx-auto space-y-10">
+        <div>
+          <h1 className="text-[20px] font-bold tracking-[-0.5px]">Dashboard</h1>
+          <p className="text-[13px] text-[#888] mt-0.5">Your purchases and listings</p>
+        </div>
+
+        {/* Purchases */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold tracking-[-0.3px]">Purchases</h2>
+            <Link to="/marketplace" className="text-[13px] font-semibold text-primary hover:underline">
+              Browse marketplace
+            </Link>
+          </div>
+
+          {purchasesLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : purchases && purchases.length > 0 ? (
+            <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
+              {purchases.map((p, i) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center gap-4 px-4 py-3.5 ${i < purchases.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-[#f5f5f5] overflow-hidden flex-shrink-0">
+                    {(p.digital_products as any)?.cover_image_url && (
+                      <img
+                        src={(p.digital_products as any).cover_image_url}
+                        className="w-full h-full object-cover"
+                        alt=""
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold truncate">
+                      {(p.digital_products as any)?.title ?? 'Asset'}
+                    </div>
+                    <div className="text-[11px] text-[#aaa]">
+                      by {(p.creators as any)?.display_name || (p.creators as any)?.username}
+                    </div>
+                  </div>
+                  <DownloadButton assetUrl={(p.digital_products as any)?.asset_url} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
+              <ShoppingBag className="w-8 h-8 text-[#ccc] mx-auto mb-3" />
+              <p className="text-[14px] font-semibold text-[#111] mb-1">No purchases yet</p>
+              <p className="text-[12px] text-[#999] mb-4">Browse the marketplace to find Godot assets.</p>
+              <Link
+                to="/marketplace"
+                className="px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors"
+              >
+                Browse marketplace
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* My assets */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold tracking-[-0.3px]">Your Assets</h2>
+            <Link to="/dashboard/assets" className="text-[13px] font-semibold text-primary hover:underline">
+              Manage all
+            </Link>
+          </div>
+
+          {assetsLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : publishedAssets.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {publishedAssets.slice(0, 4).map((a) => (
+                <ProductCard key={a.id} product={a} />
+              ))}
+            </div>
+          ) : (
+            <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
+              <Package className="w-8 h-8 text-[#ccc] mx-auto mb-3" />
+              <p className="text-[14px] font-semibold text-[#111] mb-1">No assets listed yet</p>
+              <p className="text-[12px] text-[#999] mb-4">Upload your first Godot asset and start selling.</p>
+              <Link
+                to="/dashboard/assets"
+                className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Upload an asset
+              </Link>
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </MainLayout>
   );
 }
