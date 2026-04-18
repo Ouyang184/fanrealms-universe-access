@@ -30,7 +30,7 @@ export default function DashboardPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto space-y-10">
+      <div className="w-full space-y-10">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Dashboard</h1>
           <p className="text-[13px] text-[#888] mt-0.5">Your purchases and listings</p>

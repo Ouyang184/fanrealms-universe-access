@@ -36,7 +36,7 @@ export default function DashboardAssetsPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[20px] font-bold tracking-[-0.5px]">Your Assets</h1>

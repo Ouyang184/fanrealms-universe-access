@@ -13,7 +13,7 @@ export default function DashboardSalesPage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="w-full space-y-8">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Sales</h1>
           <p className="text-[13px] text-[#888] mt-0.5">Your revenue overview</p>

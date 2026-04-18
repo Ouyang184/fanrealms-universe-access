@@ -29,7 +29,7 @@ export default function SellerProfilePage() {
 
   return (
     <MainLayout>
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="w-full space-y-8">
         {/* Header */}
         <div className="flex items-start gap-5">
           {sellerLoading ? (
