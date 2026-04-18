@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { MarketplaceLayout } from '@/components/Layout/MarketplaceLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useProduct } from '@/hooks/useMarketplace';
 import { useMarketplaceCheckout } from '@/hooks/useMarketplaceCheckout';
 import { Button } from '@/components/ui/button';
@@ -28,30 +28,30 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="space-y-4 max-w-3xl mx-auto">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="aspect-video w-full" />
           <Skeleton className="h-6 w-3/4" />
           <Skeleton className="h-20 w-full" />
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
   if (!product) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Product not found.</p>
           <Button asChild variant="link"><Link to="/marketplace">Back to Marketplace</Link></Button>
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <MarketplaceLayout>
+    <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/marketplace"><ArrowLeft className="h-4 w-4 mr-2" />Back to Marketplace</Link>
@@ -100,6 +100,6 @@ export default function ProductDetail() {
           <ProductRatingsSection productId={product.id} />
         </div>
       </div>
-    </MarketplaceLayout>
+    </MainLayout>
   );
 }

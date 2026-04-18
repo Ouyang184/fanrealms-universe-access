@@ -1,5 +1,5 @@
 
-import { MarketplaceLayout } from "@/components/Layout/MarketplaceLayout";
+import { MainLayout } from "@/components/Layout/MainLayout";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useCreators } from "@/hooks/useCreators";
@@ -53,7 +53,7 @@ export default function SearchResultsPage() {
   };
 
   return (
-    <MarketplaceLayout>
+    <MainLayout>
       <div className="max-w-7xl mx-auto p-6 bg-white">
         {/* Header */}
         <div className="mb-8">
@@ -185,6 +185,6 @@ export default function SearchResultsPage() {
           </div>
         )}
       </div>
-    </MarketplaceLayout>
+    </MainLayout>
   );
 }

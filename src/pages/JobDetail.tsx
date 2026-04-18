@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MarketplaceLayout } from '@/components/Layout/MarketplaceLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useJobListing } from '@/hooks/useJobs';
 import { JobApplicationDialog } from '@/components/jobs/JobApplicationDialog';
 import { Button } from '@/components/ui/button';
@@ -15,24 +15,24 @@ export default function JobDetail() {
 
   if (isLoading) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="max-w-3xl mx-auto space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-6 w-3/4" />
           <Skeleton className="h-40 w-full" />
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
   if (!listing) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Job listing not found.</p>
           <Button asChild variant="link"><Link to="/jobs">Back to Jobs</Link></Button>
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
@@ -44,7 +44,7 @@ export default function JobDetail() {
   };
 
   return (
-    <MarketplaceLayout>
+    <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/jobs"><ArrowLeft className="h-4 w-4 mr-2" />Back to Jobs</Link>
@@ -88,6 +88,6 @@ export default function JobDetail() {
 
         <JobApplicationDialog listingId={listing.id} jobTitle={listing.title} />
       </div>
-    </MarketplaceLayout>
+    </MainLayout>
   );
 }

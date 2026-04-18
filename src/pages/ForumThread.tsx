@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { MarketplaceLayout } from '@/components/Layout/MarketplaceLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThread, useForumReplies } from '@/hooks/useForum';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { Button } from '@/components/ui/button';
@@ -44,29 +44,29 @@ export default function ForumThread() {
 
   if (threadLoading) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="max-w-3xl mx-auto space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-6 w-3/4" />
           <Skeleton className="h-40 w-full" />
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
   if (!thread) {
     return (
-      <MarketplaceLayout>
+      <MainLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Thread not found.</p>
           <Button asChild variant="link"><Link to="/forum">Back to Forum</Link></Button>
         </div>
-      </MarketplaceLayout>
+      </MainLayout>
     );
   }
 
   return (
-    <MarketplaceLayout>
+    <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/forum"><ArrowLeft className="h-4 w-4 mr-2" />Back to Forum</Link>
@@ -125,6 +125,6 @@ export default function ForumThread() {
           </>
         )}
       </div>
-    </MarketplaceLayout>
+    </MainLayout>
   );
 }
