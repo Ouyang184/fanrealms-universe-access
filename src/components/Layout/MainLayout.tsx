@@ -1,41 +1,18 @@
-
-import { useState } from 'react';
-import { useAuth } from "@/contexts/AuthContext";
-import { Sidebar } from "./Sidebar/Sidebar";
-import { Header } from "./Header/Header";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { TopNav } from "./TopNav/TopNav";
 
 interface MainLayoutProps {
   children: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { user, profile, signOut } = useAuth();
-  const isMobile = useIsMobile();
-  
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
   return (
-    <div className="flex h-screen bg-[#f5f5f5] text-foreground overflow-hidden">
-      <Sidebar 
-        collapsed={isMobile ? true : sidebarCollapsed} 
-        toggleSidebar={toggleSidebar} 
-        onSignOut={signOut} 
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <Header />
-
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto p-4 sm:p-6">
-          <div className="max-w-full">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div className="min-h-screen bg-[#fafafa] text-foreground flex flex-col">
+      <TopNav />
+      <main className="flex-1 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

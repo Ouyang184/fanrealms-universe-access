@@ -1,5 +1,4 @@
-
-import { Settings, User, HelpCircle, LogOut, Palette } from "lucide-react";
+import { Settings, User, HelpCircle, LogOut, LayoutDashboard, Package, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -13,21 +12,26 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
 
+const menuItemClass = cn(
+  "flex items-center gap-2 p-2 rounded-md text-sm",
+  "hover:bg-accent transition-colors duration-200"
+);
+
 export function UserDropdownMenu() {
   const { user, profile, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { getAvatarUrl, isCreator } = useUnifiedAvatar();
-  
+  const { getAvatarUrl } = useUnifiedAvatar();
+
   if (!user) return null;
-  
-  const initials = profile?.username 
+
+  const initials = profile?.username
     ? profile.username.substring(0, 2).toUpperCase()
     : user.email?.substring(0, 2).toUpperCase() || "U";
-  
+
   const email = profile?.email || user.email || "";
   const displayName = profile?.username || email.split('@')[0];
-  
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -44,7 +48,7 @@ export function UserDropdownMenu() {
       });
     }
   };
-  
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -63,43 +67,45 @@ export function UserDropdownMenu() {
           <div className="text-sm text-muted-foreground">{email}</div>
         </div>
         <Separator />
+
+        {/* Seller / dashboard shortcuts */}
         <div className="p-1">
-          <Link to="/profile" className={cn(
-            "flex items-center gap-2 p-2 rounded-md text-sm",
-            "hover:bg-accent transition-colors duration-200"
-          )}>
-            <User className="h-4 w-4" />
-            <span>Profile</span>
+          <Link to="/dashboard" className={menuItemClass}>
+            <LayoutDashboard className="h-4 w-4" />
+            <span>Dashboard</span>
           </Link>
-          
-          {isCreator && (
-            <Link to="/creator-studio/settings" className={cn(
-              "flex items-center gap-2 p-2 rounded-md text-sm",
-              "hover:bg-accent transition-colors duration-200"
-            )}>
-              <Palette className="h-4 w-4" />
-              <span>Creator Profile</span>
+          <Link to="/dashboard/assets" className={menuItemClass}>
+            <Package className="h-4 w-4" />
+            <span>My Assets</span>
+          </Link>
+          <Link to="/dashboard/sales" className={menuItemClass}>
+            <TrendingUp className="h-4 w-4" />
+            <span>Sales</span>
+          </Link>
+        </div>
+        <Separator />
+
+        {/* Account */}
+        <div className="p-1">
+          {profile?.username && (
+            <Link to={`/${profile.username}`} className={menuItemClass}>
+              <User className="h-4 w-4" />
+              <span>View my profile</span>
             </Link>
           )}
-          
-          <Link to="/settings" className={cn(
-            "flex items-center gap-2 p-2 rounded-md text-sm",
-            "hover:bg-accent transition-colors duration-200"
-          )}>
+          <Link to="/settings" className={menuItemClass}>
             <Settings className="h-4 w-4" />
             <span>Settings</span>
           </Link>
-          <Link to="/help" className={cn(
-            "flex items-center gap-2 p-2 rounded-md text-sm",
-            "hover:bg-accent transition-colors duration-200"
-          )}>
+          <Link to="/help" className={menuItemClass}>
             <HelpCircle className="h-4 w-4" />
             <span>Help & Support</span>
           </Link>
         </div>
         <Separator />
+
         <div className="p-1">
-          <button 
+          <button
             onClick={handleSignOut}
             className={cn(
               "w-full flex items-center gap-2 p-2 rounded-md text-sm",
