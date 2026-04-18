@@ -36,7 +36,7 @@ import ForumThread from "./pages/ForumThread";
 import GamesPage from "./pages/Games";
 // New pages — will be uncommented as each is built in subsequent tasks
 import DashboardPage from "./pages/Dashboard";
-// import DashboardAssetsPage from "./pages/DashboardAssets";
+import DashboardAssetsPage from "./pages/DashboardAssets";
 // import DashboardSalesPage from "./pages/DashboardSales";
 import SellerProfilePage from "./pages/SellerProfile";
 
@@ -84,7 +84,7 @@ export default function App() {
 
                 {/* Dashboard (protected) — uncomment as each page is built */}
                 <Route path="/dashboard" element={<AuthGuard><DashboardPage /></AuthGuard>} />
-                {/* <Route path="/dashboard/assets" element={<AuthGuard><DashboardAssetsPage /></AuthGuard>} /> */}
+                <Route path="/dashboard/assets" element={<AuthGuard><DashboardAssetsPage /></AuthGuard>} />
                 {/* <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} /> */}
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
 
