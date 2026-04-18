@@ -38,7 +38,7 @@ import GamesPage from "./pages/Games";
 // import DashboardPage from "./pages/Dashboard";
 // import DashboardAssetsPage from "./pages/DashboardAssets";
 // import DashboardSalesPage from "./pages/DashboardSales";
-// import SellerProfilePage from "./pages/SellerProfile";
+import SellerProfilePage from "./pages/SellerProfile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -107,7 +107,7 @@ export default function App() {
                 <Route path="/loading" element={<LoadingPage />} />
 
                 {/* Seller profile — /:username catch-all, must be second-to-last */}
-                {/* <Route path="/:username" element={<SellerProfilePage />} /> */}
+                <Route path="/:username" element={<SellerProfilePage />} />
 
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
