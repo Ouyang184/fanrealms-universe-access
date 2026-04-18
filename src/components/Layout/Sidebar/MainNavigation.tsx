@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, Store, Gamepad2, MessagesSquare, Briefcase, Users, MessageSquare } from "lucide-react";
+import { Store, Gamepad2, MessagesSquare, Briefcase, LayoutDashboard, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MainNavigationProps {
@@ -9,17 +9,15 @@ interface MainNavigationProps {
 }
 
 const DISCOVER_ITEMS = [
-  { path: "/home", icon: Home, label: "Home" },
-  { path: "/explore", icon: Compass, label: "Explore" },
   { path: "/marketplace", icon: Store, label: "Marketplace" },
   { path: "/games", icon: Gamepad2, label: "Indie Games" },
-];
-
-const COMMUNITY_ITEMS = [
   { path: "/forum", icon: MessagesSquare, label: "Forum" },
   { path: "/jobs", icon: Briefcase, label: "Jobs" },
-  { path: "/following", icon: Users, label: "Following" },
-  { path: "/messages", icon: MessageSquare, label: "Messages" },
+];
+
+const ACCOUNT_ITEMS = [
+  { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { path: "/dashboard/assets", icon: Package, label: "My Assets" },
 ];
 
 function SectionLabel({ label, collapsed, isMobile }: { label: string; collapsed: boolean; isMobile: boolean }) {
@@ -36,7 +34,7 @@ function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick }: {
   collapsed: boolean; isMobile: boolean; onClick?: () => void;
 }) {
   const location = useLocation();
-  const isActive = location.pathname === path;
+  const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
     <Link
@@ -62,12 +60,12 @@ function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick }: {
 export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }: MainNavigationProps) {
   return (
     <div className="py-2">
-      <SectionLabel label="Discover" collapsed={collapsed} isMobile={isMobile} />
+      <SectionLabel label="Browse" collapsed={collapsed} isMobile={isMobile} />
       {DISCOVER_ITEMS.map((item) => (
         <NavItem key={item.path} {...item} collapsed={collapsed} isMobile={isMobile} onClick={onMobileNavClick} />
       ))}
-      <SectionLabel label="Community" collapsed={collapsed} isMobile={isMobile} />
-      {COMMUNITY_ITEMS.map((item) => (
+      <SectionLabel label="Sell" collapsed={collapsed} isMobile={isMobile} />
+      {ACCOUNT_ITEMS.map((item) => (
         <NavItem key={item.path} {...item} collapsed={collapsed} isMobile={isMobile} onClick={onMobileNavClick} />
       ))}
     </div>
