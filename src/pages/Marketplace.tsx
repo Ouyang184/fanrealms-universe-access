@@ -53,7 +53,7 @@ export default function Marketplace() {
   );
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="w-full space-y-4">
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">
