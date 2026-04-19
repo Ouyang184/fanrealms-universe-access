@@ -11,7 +11,7 @@ const PAGE_SIZE = 24;
 const ALL_CATEGORIES = [...JOB_CATEGORIES] as const;
 
 export default function Jobs() {
-  const [category, setCategory] = useState<string>('all');
+  const [category, setCategory] = useState<string>(JOB_CATEGORIES[0]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { data: listings, isLoading } = useJobListings(category) as { data: any[] | undefined; isLoading: boolean };
   const { user } = useAuth();
@@ -61,7 +61,7 @@ export default function Jobs() {
         <section>
           <div className="flex items-baseline justify-between border-b border-border pb-2 mb-4">
             <h2 className="text-[13px] font-bold uppercase tracking-wider text-foreground">
-              {category === 'all' ? 'All jobs' : category}
+              {category}
             </h2>
             {!isLoading && listings && (
               <span className="text-[11px] text-muted-foreground">
