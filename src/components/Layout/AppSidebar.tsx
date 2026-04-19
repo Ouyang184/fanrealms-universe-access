@@ -81,7 +81,7 @@ export function AppSidebar() {
             <NavigationMenu collapsed={isCollapsed} onMobileNavClick={handleMobileNavClick} />
             
             <SidebarSeparator className="my-3" />
-            
+
             <CreatorStudioMenu collapsed={isCollapsed} onMobileNavClick={handleMobileNavClick} />
 
             <SidebarSeparator className="my-3" />
