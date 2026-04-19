@@ -82,10 +82,10 @@ const Signup = () => {
       
       // Store the user's full name to be saved during onboarding
       localStorage.setItem("user_fullname", values.fullName);
-      
+
       // In the success case
-      toast.success("Account created successfully!");
-      navigate("/onboarding", { replace: true });
+      toast.success("Account created successfully! Please check your email to verify.");
+      navigate("/dashboard", { replace: true });
       
     } catch (error: any) {
       console.error("Signup error:", error);
