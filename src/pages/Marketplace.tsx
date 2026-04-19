@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
 import { useForumThreads } from '@/hooks/useForum';
 import { useJobListings } from '@/hooks/useJobs';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, DollarSign, Zap, Package, MessageSquare, Briefcase, ArrowRight, Sparkles, Search } from 'lucide-react';
+import { Upload, DollarSign, Zap, Package, MessageSquare, Briefcase, ArrowRight } from 'lucide-react';
 
 const CATEGORIES = ['Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
 const PRICE_FILTERS = [
@@ -22,17 +22,9 @@ const SORTS = [
 ];
 
 export default function Marketplace() {
-  const navigate = useNavigate();
   const [category, setCategory] = useState<string>('all');
   const [price, setPrice] = useState<string>('all');
   const [sort, setSort] = useState<string>('newest');
-  const [searchQ, setSearchQ] = useState<string>('');
-
-  const submitSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQ.trim();
-    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-  };
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
 
@@ -51,46 +43,37 @@ export default function Marketplace() {
   return (
     <MainLayout>
       <div className="w-full space-y-8">
-        {/* Brand hero */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#478cbf] via-[#3a7aab] to-[#2d5d82] p-8 sm:p-10 text-white">
-          <div className="relative z-10 max-w-2xl">
-            <h1 className="text-[28px] sm:text-[36px] font-bold tracking-[-1px] leading-[1.1]">
-              Sell your game assets. Keep 95%.
+        {/* Brand hero — flat, sharp */}
+        <section className="rounded-xl bg-[#0f0f0f] text-white px-8 sm:px-10 py-10 sm:py-12 border border-[#0f0f0f]">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-primary uppercase tracking-[0.12em] mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              Founding creators · now open
+            </div>
+            <h1 className="text-[32px] sm:text-[44px] font-bold tracking-[-1.2px] leading-[1.05]">
+              Sell your game assets.<br />
+              <span className="text-primary">Keep 95%.</span>
             </h1>
-            <p className="text-[14px] text-white/80 mt-3 leading-relaxed">
+            <p className="text-[14px] text-[#999] mt-4 leading-relaxed max-w-lg">
               A marketplace for indie creators — no gatekeepers, no subscription fees. Upload art, templates, tools, music, or tutorials and start earning.
             </p>
-
-            <form onSubmit={submitSearch} className="mt-6 relative max-w-md">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#888]" />
-              <input
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Search assets, tools, templates..."
-                className="w-full h-11 pl-11 pr-4 rounded-[10px] bg-white text-[#111] placeholder:text-[#888] text-[13px] focus:outline-none focus:ring-2 focus:ring-white/50"
-              />
-            </form>
-
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3 mt-7">
               <Link
                 to="/dashboard/assets"
-                className="px-5 py-2.5 rounded-[10px] bg-white text-[#111] text-[13px] font-semibold hover:bg-white/90 transition-colors inline-flex items-center gap-1.5"
+                className="px-5 h-10 rounded-[8px] bg-primary text-white text-[13px] font-semibold hover:bg-[#3a7aab] transition-colors inline-flex items-center gap-1.5"
               >
                 <Upload className="w-4 h-4" />
                 Upload an asset
               </Link>
               <Link
                 to="/signup"
-                className="px-5 py-2.5 rounded-[10px] bg-white/10 border border-white/20 backdrop-blur-sm text-white text-[13px] font-semibold hover:bg-white/15 transition-colors inline-flex items-center gap-1.5"
+                className="px-5 h-10 rounded-[8px] border border-[#2a2a2a] text-white text-[13px] font-semibold hover:border-[#444] hover:bg-white/[0.02] transition-colors inline-flex items-center gap-1.5"
               >
                 Create an account
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
-          {/* Decorative bg */}
-          <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute -right-20 bottom-0 w-48 h-48 rounded-full bg-white/5 blur-2xl" />
         </section>
 
         {/* Two-column: sidebar + main */}
