@@ -28,7 +28,7 @@ export default function SellerProfilePage() {
   const initials = (seller?.display_name || seller?.username || '?').slice(0, 2).toUpperCase();
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="w-full space-y-8">
         {/* Header */}
         <div className="flex items-start gap-5">

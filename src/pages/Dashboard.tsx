@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const publishedAssets = myAssets?.filter((a) => a.status === 'published') ?? [];
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="w-full space-y-10">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Dashboard</h1>

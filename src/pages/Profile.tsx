@@ -195,7 +195,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <AuthGuard>
-      <MainLayout>
+      <MainLayout fullWidth>
         <div className="max-w-3xl mx-auto">
           <Card>
             <CardHeader>

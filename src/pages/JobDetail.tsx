@@ -44,7 +44,7 @@ export default function JobDetail() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/jobs"><ArrowLeft className="h-4 w-4 mr-2" />Back to Jobs</Link>

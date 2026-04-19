@@ -66,7 +66,7 @@ export default function ForumThread() {
   }
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/forum"><ArrowLeft className="h-4 w-4 mr-2" />Back to Forum</Link>
