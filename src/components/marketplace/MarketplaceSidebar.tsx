@@ -34,7 +34,7 @@ export function MarketplaceSidebar({
   const dollarLabel = isAny ? 'Any price' : maxPriceCents === 0 ? 'Free only' : `Up to $${(maxPriceCents / 100).toFixed(0)}`;
 
   return (
-    <aside className="space-y-6 text-[13px] lg:sticky lg:top-20 lg:self-start">
+    <aside className="space-y-5 text-[13px] lg:sticky lg:top-20 lg:self-start">
       <Section title="Browse">
         <UtilLink active={category === 'all'} onClick={() => onCategory('all')}>
           All categories
