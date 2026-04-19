@@ -54,7 +54,9 @@ export default function Marketplace() {
 
   return (
     <MainLayout>
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-4 -mx-4 sm:-mx-6 px-4 sm:px-6 max-w-none">
+        <style>{`main > div:has(> .marketplace-full) { max-width: none !important; padding-left: 1rem; padding-right: 1rem; }`}</style>
+        <div className="marketplace-full hidden" />
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">
           FanRealms is a marketplace for indie creators — keep 95% of every sale.{' '}
