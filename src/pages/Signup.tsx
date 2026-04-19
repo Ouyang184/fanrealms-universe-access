@@ -118,7 +118,7 @@ const Signup = () => {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="inline-block">
-            <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
+            <h1 className="text-2xl font-bold text-white">FanRealms</h1>
           </Link>
         </div>
 
