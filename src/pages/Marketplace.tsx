@@ -1,25 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
-import { useForumThreads } from '@/hooks/useForum';
-import { useJobListings } from '@/hooks/useJobs';
-import { ProductCard } from '@/components/marketplace/ProductCard';
+import { usePopularTags } from '@/hooks/useTags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, DollarSign, Zap, Package, MessageSquare, Briefcase, ArrowRight } from 'lucide-react';
-
-const CATEGORIES = ['Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
-const PRICE_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'free', label: 'Free' },
-  { key: 'under5', label: 'Under $5' },
-  { key: 'under15', label: 'Under $15' },
-];
-const SORTS = [
-  { key: 'newest', label: 'Newest' },
-  { key: 'price_asc', label: 'Price: Low to High' },
-  { key: 'price_desc', label: 'Price: High to Low' },
-];
+import { MarketplaceSidebar } from '@/components/marketplace/MarketplaceSidebar';
+import { FeaturedSpotlight } from '@/components/marketplace/FeaturedSpotlight';
+import { ProductGridDense } from '@/components/marketplace/ProductGridDense';
 
 export default function Marketplace() {
   const [category, setCategory] = useState<string>('all');
@@ -27,131 +14,88 @@ export default function Marketplace() {
   const [sort, setSort] = useState<string>('newest');
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
+  const { data: popularTags = [] } = usePopularTags(20);
 
-  // Client-side price filter + sort
   const products = useMemo(() => {
     if (!allProducts) return [];
     let list = [...allProducts];
-    if (price === 'free') list = list.filter((p: any) => (p.price_cents ?? 0) === 0);
-    if (price === 'under5') list = list.filter((p: any) => (p.price_cents ?? 0) < 500);
-    if (price === 'under15') list = list.filter((p: any) => (p.price_cents ?? 0) < 1500);
-    if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price_cents ?? 0) - (b.price_cents ?? 0));
-    if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price_cents ?? 0) - (a.price_cents ?? 0));
+    if (price === 'free') list = list.filter((p: any) => (p.price ?? 0) === 0);
+    if (price === 'paid') list = list.filter((p: any) => (p.price ?? 0) > 0);
+    if (price === 'under5') list = list.filter((p: any) => (p.price ?? 0) < 500);
+    if (price === 'under15') list = list.filter((p: any) => (p.price ?? 0) < 1500);
+    if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
+    if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price ?? 0) - (a.price ?? 0));
     return list;
   }, [allProducts, price, sort]);
 
+  const featured = products[0];
+  const newest = products.slice(1, 13);
+  const free = useMemo(
+    () => (allProducts ?? []).filter((p: any) => (p.price ?? 0) === 0).slice(0, 8),
+    [allProducts]
+  );
+  const topPicks = useMemo(
+    () => (allProducts ?? []).filter((p: any) => (p.price ?? 0) > 0).slice(0, 8),
+    [allProducts]
+  );
+
   return (
     <MainLayout>
-      <div className="w-full space-y-8">
-        {/* Brand hero — flat, sharp */}
-        <section className="rounded-xl bg-primary text-white px-8 sm:px-10 py-10 sm:py-12">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-white/80 uppercase tracking-[0.12em] mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
-              Founding creators · now open
-            </div>
-            <h1 className="text-[32px] sm:text-[44px] font-bold tracking-[-1.2px] leading-[1.05]">
-              Sell your game assets.<br />
-              Keep 95%.
-            </h1>
-            <p className="text-[14px] text-white/80 mt-4 leading-relaxed max-w-lg">
-              A marketplace for indie creators — no gatekeepers, no subscription fees. Upload art, templates, tools, music, or tutorials and start earning.
-            </p>
-            <div className="flex gap-3 mt-7">
-              <Link
-                to="/dashboard/assets"
-                className="px-5 h-10 rounded-[8px] bg-white text-primary text-[13px] font-semibold hover:bg-white/90 transition-colors inline-flex items-center gap-1.5"
-              >
-                <Upload className="w-4 h-4" />
-                Upload an asset
-              </Link>
-              <Link
-                to="/signup"
-                className="px-5 h-10 rounded-[8px] border border-white/30 text-white text-[13px] font-semibold hover:border-white/60 hover:bg-white/[0.08] transition-colors inline-flex items-center gap-1.5"
-              >
-                Create an account
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
+      <div className="w-full space-y-6">
+        {/* Slim info strip */}
+        <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">
+          FanRealms is a marketplace for indie creators — keep 95% of every sale.{' '}
+          <Link to="/dashboard/assets" className="text-primary hover:underline font-medium">
+            Upload an asset
+          </Link>
+          {' · '}
+          <Link to="/signup" className="text-primary hover:underline font-medium">
+            Create an account
+          </Link>
+        </div>
 
-        {/* Two-column: sidebar + main */}
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
-          {/* Sidebar */}
-          <aside className="space-y-6 lg:sticky lg:top-20 lg:self-start">
-            <SidebarSection title="Category">
-              <SidebarItem active={category === 'all'} onClick={() => setCategory('all')}>All</SidebarItem>
-              {CATEGORIES.map((c) => (
-                <SidebarItem key={c} active={category === c} onClick={() => setCategory(c)}>{c}</SidebarItem>
-              ))}
-            </SidebarSection>
+          <MarketplaceSidebar
+            category={category}
+            price={price}
+            sort={sort}
+            popularTags={popularTags}
+            onCategory={setCategory}
+            onPrice={setPrice}
+            onSort={setSort}
+          />
 
-            <SidebarSection title="Price">
-              {PRICE_FILTERS.map((p) => (
-                <SidebarItem key={p.key} active={price === p.key} onClick={() => setPrice(p.key)}>{p.label}</SidebarItem>
-              ))}
-            </SidebarSection>
-
-            <SidebarSection title="Sort by">
-              {SORTS.map((s) => (
-                <SidebarItem key={s.key} active={sort === s.key} onClick={() => setSort(s.key)}>{s.label}</SidebarItem>
-              ))}
-            </SidebarSection>
-
-            <div className="rounded-xl bg-white border border-[#eee] p-4">
-              <div className="text-[12px] font-bold text-[#111] mb-1">New creator?</div>
-              <p className="text-[11px] text-[#666] leading-relaxed mb-3">
-                Upload your first asset in under 2 minutes. No review, no approval needed.
-              </p>
-              <Link
-                to="/dashboard/assets"
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-              >
-                Start selling
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </aside>
-
-          {/* Main content */}
           <main className="space-y-10 min-w-0">
-            {/* Result count */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-[15px] font-bold text-[#111]">
-                {category === 'all' ? 'All assets' : category}
-                {!isLoading && products.length > 0 && (
-                  <span className="ml-2 text-[13px] font-normal text-[#888]">({products.length})</span>
-                )}
-              </h2>
-            </div>
-
-            {/* Products grid / empty / loading */}
             {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="aspect-[4/3] w-full rounded-xl" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : products.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {products.map((product: any) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <LoadingState />
+            ) : products.length === 0 ? (
+              <EmptyState />
             ) : (
-              <FounderEmpty />
+              <>
+                {featured && <FeaturedSpotlight product={featured as any} />}
+
+                {newest.length > 0 && (
+                  <SectionBlock
+                    title={category === 'all' ? 'New & noteworthy' : category}
+                    meta={`${products.length} ${products.length === 1 ? 'asset' : 'assets'}`}
+                  >
+                    <ProductGridDense products={newest as any} />
+                  </SectionBlock>
+                )}
+
+                {topPicks.length > 0 && (
+                  <SectionBlock title="Top picks" meta="Paid assets">
+                    <ProductGridDense products={topPicks as any} />
+                  </SectionBlock>
+                )}
+
+                {free.length > 0 && (
+                  <SectionBlock title="Free this week" meta="No cost · grab and go">
+                    <ProductGridDense products={free as any} />
+                  </SectionBlock>
+                )}
+              </>
             )}
-
-            {/* How it works */}
-            <HowItWorks />
-
-            {/* Cross content */}
-            <CrossContent />
           </main>
         </div>
       </div>
@@ -159,124 +103,54 @@ export default function Marketplace() {
   );
 }
 
-function SidebarSection({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionBlock({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <div className="text-[10px] font-bold uppercase tracking-wider text-[#999] mb-2 px-2">{title}</div>
-      <div className="space-y-0.5">{children}</div>
-    </div>
-  );
-}
-
-function SidebarItem({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left px-2 py-1.5 rounded-md text-[13px] transition-colors ${
-        active ? 'bg-primary/10 text-primary font-semibold' : 'text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]'
-      }`}
-    >
+    <section>
+      <div className="flex items-baseline justify-between border-b border-border pb-2 mb-4">
+        <h2 className="text-[13px] font-bold uppercase tracking-wider text-foreground">
+          {title}
+        </h2>
+        {meta && <span className="text-[11px] text-muted-foreground">{meta}</span>}
+      </div>
       {children}
-    </button>
-  );
-}
-
-function FounderEmpty() {
-  return (
-    <div className="rounded-2xl bg-gradient-to-br from-[#fafafa] to-white border border-[#eee] p-10 text-center">
-      <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
-        <Package className="w-6 h-6 text-primary" />
-      </div>
-      <h3 className="text-[20px] font-bold text-[#111] mb-2">Your asset could be the first listed</h3>
-      <p className="text-[13px] text-[#666] max-w-md mx-auto mb-6 leading-relaxed">
-        FanRealms launched recently. Early sellers get prime visibility, founding-creator status, and our full support growing your audience.
-      </p>
-      <div className="flex gap-3 justify-center">
-        <Link
-          to="/dashboard/assets"
-          className="px-5 py-2.5 rounded-[10px] bg-primary text-white text-[13px] font-semibold hover:bg-[#3a7aab] transition-colors inline-flex items-center gap-1.5"
-        >
-          <Upload className="w-4 h-4" />
-          Upload your first asset
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function HowItWorks() {
-  const steps = [
-    { icon: Upload, title: 'Upload', body: 'Drop your file, set a price, add a cover. Takes under 2 minutes.' },
-    { icon: Zap, title: 'Share', body: 'Share your listing URL anywhere. No review queue, live instantly.' },
-    { icon: DollarSign, title: 'Get paid', body: 'Keep 95% per sale. Payouts via Stripe once you hit $25.' },
-  ];
-  return (
-    <section className="rounded-2xl bg-white border border-[#eee] p-6 sm:p-8">
-      <div className="flex items-baseline justify-between mb-6">
-        <h2 className="text-[16px] font-bold text-[#111]">How selling works</h2>
-        <span className="text-[11px] text-[#888]">3 steps · ~2 minutes</span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {steps.map((s, i) => (
-          <div key={s.title} className="flex gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <s.icon className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <div className="text-[13px] font-bold text-[#111] mb-0.5">
-                <span className="text-[#bbb] mr-1">{i + 1}.</span>{s.title}
-              </div>
-              <p className="text-[12px] text-[#666] leading-relaxed">{s.body}</p>
-            </div>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
 
-function CrossContent() {
-  const { data: threads } = useForumThreads() as { data: any[] | undefined };
-  const { data: jobs } = useJobListings() as { data: any[] | undefined };
-
+function LoadingState() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <Link to="/forum" className="group rounded-xl bg-white border border-[#eee] hover:border-[#ccc] p-5 transition-colors">
-        <div className="flex items-center gap-2 mb-3">
-          <MessageSquare className="w-4 h-4 text-primary" />
-          <span className="text-[12px] font-bold text-[#111]">Latest discussions</span>
-          <ArrowRight className="w-3 h-3 ml-auto text-[#bbb] group-hover:text-primary transition-colors" />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="aspect-[4/3] w-full" />
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
         </div>
-        {threads && threads.length > 0 ? (
-          <div className="space-y-2">
-            {threads.slice(0, 3).map((t: any) => (
-              <div key={t.id} className="text-[12px] text-[#555] truncate">· {t.title}</div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[12px] text-[#888] leading-relaxed">
-            The forum is quiet — start a thread about your game or indie dev life.
-          </p>
-        )}
-      </Link>
+      ))}
+    </div>
+  );
+}
 
-      <Link to="/jobs" className="group rounded-xl bg-white border border-[#eee] hover:border-[#ccc] p-5 transition-colors">
-        <div className="flex items-center gap-2 mb-3">
-          <Briefcase className="w-4 h-4 text-primary" />
-          <span className="text-[12px] font-bold text-[#111]">Open jobs</span>
-          <ArrowRight className="w-3 h-3 ml-auto text-[#bbb] group-hover:text-primary transition-colors" />
-        </div>
-        {jobs && jobs.length > 0 ? (
-          <div className="space-y-2">
-            {jobs.slice(0, 3).map((j: any) => (
-              <div key={j.id} className="text-[12px] text-[#555] truncate">· {j.title}</div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[12px] text-[#888] leading-relaxed">
-            No open jobs yet — post a gig or freelance opportunity.
-          </p>
-        )}
+function EmptyState() {
+  return (
+    <div className="border border-border bg-card p-10 text-center">
+      <h3 className="text-[18px] font-bold mb-2">No assets match these filters</h3>
+      <p className="text-[13px] text-muted-foreground mb-5">
+        Try clearing the price or category filter — or be the first to upload an asset in this category.
+      </p>
+      <Link
+        to="/dashboard/assets"
+        className="inline-flex items-center px-4 h-9 bg-primary text-primary-foreground text-[13px] font-semibold hover:bg-primary/90 transition-colors"
+      >
+        Upload an asset
       </Link>
     </div>
   );
