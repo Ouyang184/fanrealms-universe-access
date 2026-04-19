@@ -40,7 +40,7 @@ export function TopNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto flex items-center gap-4 px-4 sm:px-6 h-14">
+      <div className="w-full flex items-center gap-4 px-4 sm:px-6 h-14">
         {/* Logo */}
         <Link to="/" className="flex items-center flex-shrink-0">
           <Logo collapsed={false} variant="light" />
@@ -104,7 +104,7 @@ export function TopNav() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t border-[#eee] bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-1">
+          <div className="w-full px-4 sm:px-6 py-3 flex flex-col gap-1">
             <div className="sm:hidden mb-2">
               <SearchBar />
             </div>
