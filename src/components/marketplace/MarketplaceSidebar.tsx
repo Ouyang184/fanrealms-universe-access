@@ -46,7 +46,7 @@ export function MarketplaceSidebar({
         ))}
       </Section>
 
-      <Section title="Assets by price">
+      <Section title="By price">
         <div className="px-1 pt-1 space-y-3">
           <div className="flex items-baseline justify-between">
             <span className="text-[13px] font-semibold text-foreground">{dollarLabel}</span>
@@ -131,7 +131,7 @@ function UtilLink({
     <button
       onClick={onClick}
       className={`block w-full text-left px-1 py-1 text-[13px] transition-colors ${
-        active ? 'text-foreground font-semibold' : 'text-primary hover:underline'
+        active ? 'text-foreground font-semibold' : 'text-foreground hover:underline'
       }`}
     >
       {children}
