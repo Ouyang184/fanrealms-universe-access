@@ -12,7 +12,7 @@ export default function Forum() {
   const { data: threads, isLoading } = useForumThreads(category) as { data: any[] | undefined; isLoading: boolean };
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>

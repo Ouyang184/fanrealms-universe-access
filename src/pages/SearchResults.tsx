@@ -53,8 +53,8 @@ export default function SearchResultsPage() {
   };
 
   return (
-    <MainLayout>
-      <div className="max-w-7xl mx-auto p-6 bg-white">
+    <MainLayout fullWidth>
+      <div className="w-full">
         {/* Header */}
         <div className="mb-8">
           <Link to="/marketplace">

@@ -12,7 +12,7 @@ export default function DashboardSalesPage() {
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   return (
-    <MainLayout>
+    <MainLayout fullWidth>
       <div className="w-full space-y-8">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Sales</h1>
