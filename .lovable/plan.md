@@ -1,42 +1,6 @@
 
-## Two Layout Modes — Home vs Marketplace
+Remove the ⌘ and K keyboard shortcut hint badges from the search bar.
 
-You're right — the marketplace deserves a top-nav storefront feel, while Home/dashboard work better with the sidebar. Here's the clean split:
+**Change** (`src/components/Layout/Header/SearchBar.tsx`): Delete the `<div>` containing the two `<kbd>` elements (lines 12–15).
 
-### Two distinct shells
-
-**Marketplace shell (top nav)** — `MarketplaceLayout`
-Public storefront feel (itch.io / Steam-like). Search-first, category nav, no sidebar.
-
-**App shell (sidebar)** — `MainLayout`
-Logged-in workspace feel. Dark sidebar with Discover / Community / Creator Studio.
-
-### Route assignments
-
-| Route | Layout |
-|---|---|
-| `/` (landing) | Marketplace top-nav |
-| `/marketplace` | Marketplace top-nav |
-| `/games` | Marketplace top-nav |
-| `/product/:id` | Marketplace top-nav |
-| `/search` | Marketplace top-nav |
-| `/creator/:username` | Marketplace top-nav (public storefront) |
-| `/home` | Sidebar |
-| `/creator-studio/*` | Sidebar |
-| `/messages`, `/settings`, `/purchases` | Sidebar |
-| `/forum`, `/jobs` | Sidebar (community/app features) |
-
-### Bridges between them
-- Marketplace top nav has a "Dashboard" icon (when logged in) → `/home`
-- Sidebar has "Marketplace" / "Indie Games" links → `/marketplace`
-- Logo always returns to `/`
-
-### What changes
-- Audit `src/App.tsx` and wrap each marketplace-y route in `MarketplaceLayout` instead of `MainLayout`
-- Keep `/home` and creator studio on `MainLayout`
-- No new components, no design changes — purely a routing reassignment
-
-### Out of scope
-- New layouts or components
-- Visual redesign of either shell
-- New routes
+Also note: there's a pre-existing build error unrelated to this change — `AppSidebar.tsx` imports `./Sidebar/CreatorStudioMenu` which doesn't exist. I'll fix that alongside by either creating the missing file or removing the import, depending on what `AppSidebar` does with it (will inspect first).
