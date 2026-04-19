@@ -62,7 +62,6 @@ const Signup = () => {
 
   const password = form.watch("password");
   
-  // Password strength checks
   const hasMinLength = password?.length >= 8;
   const hasUppercase = /[A-Z]/.test(password || "");
   const hasNumber = /[0-9]/.test(password || "");
@@ -80,10 +79,8 @@ const Signup = () => {
         return;
       }
       
-      // Store the user's full name to be saved during onboarding
       localStorage.setItem("user_fullname", values.fullName);
 
-      // In the success case
       toast.success("Account created successfully! Please check your email to verify.");
       navigate("/dashboard", { replace: true });
       
@@ -114,18 +111,18 @@ const Signup = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="inline-block">
-            <h1 className="text-2xl font-bold text-white">FanRealms</h1>
+            <h1 className="text-[22px] font-bold tracking-[-0.5px] text-[#111]">FanRealms</h1>
           </Link>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800 text-white">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Create your account</CardTitle>
-            <CardDescription className="text-center text-gray-400">
+        <Card className="bg-white border border-[#eee] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-[20px] font-bold tracking-[-0.5px] text-center text-[#111]">Create your account</CardTitle>
+            <CardDescription className="text-[13px] text-center text-[#888] mt-1">
               Join FanRealms to support your favorite creators
             </CardDescription>
           </CardHeader>
@@ -138,16 +135,16 @@ const Signup = () => {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="fullName">Full Name</Label>
+                      <Label htmlFor="fullName" className="text-[13px] font-semibold text-[#111]">Full Name</Label>
                       <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <User className="absolute left-3 top-3 h-4 w-4 text-[#aaa]" />
                         <FormControl>
                           <Input
                             id="fullName"
                             placeholder="John Doe"
                             type="text"
                             autoComplete="name"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                            className="pl-10 bg-white border-[#e5e5e5] text-[#111] focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -162,16 +159,16 @@ const Signup = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email" className="text-[13px] font-semibold text-[#111]">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-[#aaa]" />
                         <FormControl>
                           <Input
                             id="email"
                             placeholder="name@example.com"
                             type="email"
                             autoComplete="email"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                            className="pl-10 bg-white border-[#e5e5e5] text-[#111] focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -186,16 +183,16 @@ const Signup = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="password" className="text-[13px] font-semibold text-[#111]">Password</Label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-[#aaa]" />
                         <FormControl>
                           <Input
                             id="password"
                             placeholder="Create a strong password"
                             type={showPassword ? "text" : "password"}
                             autoComplete="new-password"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                            className="pl-10 bg-white border-[#e5e5e5] text-[#111] focus-visible:ring-primary"
                             {...field}
                           />
                         </FormControl>
@@ -203,7 +200,7 @@ const Signup = () => {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-2 top-2 h-8 w-8 text-gray-400 hover:text-white"
+                          className="absolute right-2 top-2 h-8 w-8 text-[#aaa] hover:text-[#111] hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -215,51 +212,27 @@ const Signup = () => {
                       {password && (
                         <div className="mt-2 space-y-2">
                           <div className="flex gap-1">
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 0 ? "bg-red-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 1 ? "bg-yellow-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 2 ? "bg-green-500" : "bg-gray-700"}`}
-                            ></div>
-                            <div
-                              className={`h-1 flex-1 rounded-full ${passwordStrength > 3 ? "bg-green-500" : "bg-gray-700"}`}
-                            ></div>
+                            <div className={`h-1 flex-1 rounded-full ${passwordStrength > 0 ? "bg-red-500" : "bg-[#eee]"}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${passwordStrength > 1 ? "bg-yellow-500" : "bg-[#eee]"}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${passwordStrength > 2 ? "bg-green-500" : "bg-[#eee]"}`}></div>
+                            <div className={`h-1 flex-1 rounded-full ${passwordStrength > 3 ? "bg-green-500" : "bg-[#eee]"}`}></div>
                           </div>
 
-                          <ul className="text-xs space-y-1 text-gray-400">
+                          <ul className="text-[11px] space-y-1 text-[#888]">
                             <li className="flex items-center gap-1">
-                              {hasMinLength ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
+                              {hasMinLength ? <Check className="h-3 w-3 text-green-500" /> : <AlertCircle className="h-3 w-3 text-[#ccc]" />}
                               At least 8 characters
                             </li>
                             <li className="flex items-center gap-1">
-                              {hasUppercase ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
+                              {hasUppercase ? <Check className="h-3 w-3 text-green-500" /> : <AlertCircle className="h-3 w-3 text-[#ccc]" />}
                               At least one uppercase letter
                             </li>
                             <li className="flex items-center gap-1">
-                              {hasNumber ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
+                              {hasNumber ? <Check className="h-3 w-3 text-green-500" /> : <AlertCircle className="h-3 w-3 text-[#ccc]" />}
                               At least one number
                             </li>
                             <li className="flex items-center gap-1">
-                              {hasSpecialChar ? (
-                                <Check className="h-3 w-3 text-green-500" />
-                              ) : (
-                                <AlertCircle className="h-3 w-3 text-gray-500" />
-                              )}
+                              {hasSpecialChar ? <Check className="h-3 w-3 text-green-500" /> : <AlertCircle className="h-3 w-3 text-[#ccc]" />}
                               At least one special character
                             </li>
                           </ul>
@@ -276,19 +249,15 @@ const Signup = () => {
                     <FormItem>
                       <div className="flex items-start space-x-3">
                         <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            className="mt-1"
-                          />
+                          <Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-1" />
                         </FormControl>
                         <div className="flex-1">
-                          <Label className="text-sm text-gray-300 leading-relaxed">
+                          <Label className="text-[13px] text-[#555] leading-relaxed">
                             I agree to the{" "}
                             <button
                               type="button"
                               onClick={() => setShowTermsModal(true)}
-                              className="text-primary hover:text-primary/80 underline"
+                              className="text-primary hover:text-[#3a7aab] underline font-semibold"
                             >
                               Terms of Service
                             </button>
@@ -305,22 +274,13 @@ const Signup = () => {
                   name="captcha"
                   render={({ field }) => (
                     <FormItem>
-                      <Label>Security Check</Label>
+                      <Label className="text-[13px] font-semibold text-[#111]">Security Check</Label>
                       <FormControl>
                         <Turnstile
                           siteKey={TURNSTILE_SITE_KEY}
-                          onSuccess={(token) => {
-                            setCaptchaToken(token);
-                            field.onChange(token);
-                          }}
-                          onError={() => {
-                            setCaptchaToken("");
-                            field.onChange("");
-                          }}
-                          onExpire={() => {
-                            setCaptchaToken("");
-                            field.onChange("");
-                          }}
+                          onSuccess={(token) => { setCaptchaToken(token); field.onChange(token); }}
+                          onError={() => { setCaptchaToken(""); field.onChange(""); }}
+                          onExpire={() => { setCaptchaToken(""); field.onChange(""); }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -328,16 +288,15 @@ const Signup = () => {
                   )}
                 />
 
-                <Alert className="bg-primary/10 border-primary/20 text-white">
-                  <AlertDescription className="text-xs">
-                    By signing up, you'll receive updates about your account, new features, and creator content you
-                    follow.
+                <Alert className="bg-primary/5 border-primary/20 text-[#555]">
+                  <AlertDescription className="text-[11px] leading-relaxed">
+                    By signing up, you'll receive updates about your account, new features, and creator content you follow.
                   </AlertDescription>
                 </Alert>
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary hover:bg-[#3a7aab]"
+                  className="w-full bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold"
                   disabled={isSubmitting || passwordStrength < 3 || !captchaToken}
                 >
                   {isSubmitting ? (
@@ -358,10 +317,10 @@ const Signup = () => {
             <SocialLoginOptions />
           </CardContent>
           
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-400">
+          <CardFooter className="flex justify-center border-t border-[#f5f5f5] pt-5">
+            <p className="text-[13px] text-[#888]">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:text-primary/80 font-medium">
+              <Link to="/login" className="text-primary hover:text-[#3a7aab] font-semibold">
                 Sign in
               </Link>
             </p>
