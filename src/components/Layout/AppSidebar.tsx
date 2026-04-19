@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MainNavigation as NavigationMenu } from './Sidebar/MainNavigation';
-import { CreatorStudioMenu } from './Sidebar/CreatorStudioMenu';
+
 import { SidebarFooterContent } from './Sidebar/SidebarFooterContent';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
