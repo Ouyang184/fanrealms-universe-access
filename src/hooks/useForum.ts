@@ -6,10 +6,11 @@ import { toast } from 'sonner';
 export const FORUM_CATEGORIES = [
   'General',
   'Game Dev',
-  'Web Dev',
-  'Data Science',
+  'Art & Assets',
+  'Audio & Music',
   'Design',
   'Showcase',
+  'Playtesting',
   'Help',
 ] as const;
 
