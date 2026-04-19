@@ -39,7 +39,7 @@ export default function Jobs() {
           <div className="flex divide-x divide-border min-w-max">
             {ALL_CATEGORIES.map((c) => {
               const active = category === c;
-              const label = c === 'all' ? 'All' : c;
+              const label = c;
               return (
                 <button
                   key={c}
