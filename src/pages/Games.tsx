@@ -52,7 +52,7 @@ export default function GamesPage() {
         {/* Segmented genre bar */}
         <div className="border border-border bg-card overflow-x-auto">
           <div className="flex divide-x divide-border min-w-max">
-            {GAME_GENRES.map((g) => {
+            {GAME_GENRES.filter((g) => g !== 'All').map((g) => {
               const active = genre === g;
               return (
                 <button

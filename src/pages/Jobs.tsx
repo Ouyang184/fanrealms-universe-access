@@ -8,7 +8,7 @@ import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 24;
-const ALL_CATEGORIES = ['all', ...JOB_CATEGORIES] as const;
+const ALL_CATEGORIES = [...JOB_CATEGORIES] as const;
 
 export default function Jobs() {
   const [category, setCategory] = useState<string>('all');

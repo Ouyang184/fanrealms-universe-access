@@ -8,7 +8,7 @@ import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 24;
-const ALL_CATEGORIES = ['all', ...FORUM_CATEGORIES] as const;
+const ALL_CATEGORIES = [...FORUM_CATEGORIES] as const;
 
 export default function Forum() {
   const [category, setCategory] = useState<string>('all');
