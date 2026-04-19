@@ -1,14 +1,7 @@
 import { Link } from 'react-router-dom';
+import { Slider } from '@/components/ui/slider';
 
 const CATEGORIES = ['Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
-
-const PRICES: { key: string; label: string }[] = [
-  { key: 'all', label: 'Any price' },
-  { key: 'free', label: 'Free' },
-  { key: 'under5', label: '$5 or less' },
-  { key: 'under15', label: '$15 or less' },
-  { key: 'paid', label: 'Paid' },
-];
 
 const SORTS: { key: string; label: string }[] = [
   { key: 'newest', label: 'Newest' },
@@ -16,25 +9,30 @@ const SORTS: { key: string; label: string }[] = [
   { key: 'price_desc', label: 'Price: High to Low' },
 ];
 
+export const PRICE_MAX_CENTS = 10000; // $100 — anything above is treated as "any"
+
 interface Props {
   category: string;
-  price: string;
+  maxPriceCents: number;
   sort: string;
   popularTags: string[];
   onCategory: (c: string) => void;
-  onPrice: (p: string) => void;
+  onMaxPriceCents: (cents: number) => void;
   onSort: (s: string) => void;
 }
 
 export function MarketplaceSidebar({
   category,
-  price,
+  maxPriceCents,
   sort,
   popularTags,
   onCategory,
-  onPrice,
+  onMaxPriceCents,
   onSort,
 }: Props) {
+  const isAny = maxPriceCents >= PRICE_MAX_CENTS;
+  const dollarLabel = isAny ? 'Any price' : maxPriceCents === 0 ? 'Free only' : `Up to $${(maxPriceCents / 100).toFixed(0)}`;
+
   return (
     <aside className="space-y-6 text-[13px] lg:sticky lg:top-20 lg:self-start">
       <Section title="Browse">
@@ -49,11 +47,30 @@ export function MarketplaceSidebar({
       </Section>
 
       <Section title="Assets by price">
-        {PRICES.map((p) => (
-          <UtilLink key={p.key} active={price === p.key} onClick={() => onPrice(p.key)}>
-            {p.label}
-          </UtilLink>
-        ))}
+        <div className="px-1 pt-1 space-y-3">
+          <div className="flex items-baseline justify-between">
+            <span className="text-[13px] font-semibold text-foreground">{dollarLabel}</span>
+            {!isAny && (
+              <button
+                onClick={() => onMaxPriceCents(PRICE_MAX_CENTS)}
+                className="text-[11px] text-primary hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+          <Slider
+            value={[Math.min(maxPriceCents, PRICE_MAX_CENTS)]}
+            onValueChange={(v) => onMaxPriceCents(v[0])}
+            min={0}
+            max={PRICE_MAX_CENTS}
+            step={100}
+          />
+          <div className="flex justify-between text-[10.5px] text-muted-foreground">
+            <span>Free</span>
+            <span>${PRICE_MAX_CENTS / 100}+</span>
+          </div>
+        </div>
       </Section>
 
       <Section title="Sort by">
@@ -114,9 +131,7 @@ function UtilLink({
     <button
       onClick={onClick}
       className={`block w-full text-left px-1 py-1 text-[13px] transition-colors ${
-        active
-          ? 'text-foreground font-semibold'
-          : 'text-primary hover:underline'
+        active ? 'text-foreground font-semibold' : 'text-primary hover:underline'
       }`}
     >
       {children}

@@ -4,13 +4,13 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
 import { usePopularTags } from '@/hooks/useTags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MarketplaceSidebar } from '@/components/marketplace/MarketplaceSidebar';
+import { MarketplaceSidebar, PRICE_MAX_CENTS } from '@/components/marketplace/MarketplaceSidebar';
 import { FeaturedSpotlight } from '@/components/marketplace/FeaturedSpotlight';
 import { ProductGridDense } from '@/components/marketplace/ProductGridDense';
 
 export default function Marketplace() {
   const [category, setCategory] = useState<string>('all');
-  const [price, setPrice] = useState<string>('all');
+  const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
@@ -19,14 +19,13 @@ export default function Marketplace() {
   const products = useMemo(() => {
     if (!allProducts) return [];
     let list = [...allProducts];
-    if (price === 'free') list = list.filter((p: any) => (p.price ?? 0) === 0);
-    if (price === 'paid') list = list.filter((p: any) => (p.price ?? 0) > 0);
-    if (price === 'under5') list = list.filter((p: any) => (p.price ?? 0) < 500);
-    if (price === 'under15') list = list.filter((p: any) => (p.price ?? 0) < 1500);
+    if (maxPriceCents < PRICE_MAX_CENTS) {
+      list = list.filter((p: any) => (p.price ?? 0) <= maxPriceCents);
+    }
     if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
     if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price ?? 0) - (a.price ?? 0));
     return list;
-  }, [allProducts, price, sort]);
+  }, [allProducts, maxPriceCents, sort]);
 
   const featured = products[0];
   const newest = products.slice(1, 13);
@@ -57,11 +56,11 @@ export default function Marketplace() {
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8">
           <MarketplaceSidebar
             category={category}
-            price={price}
+            maxPriceCents={maxPriceCents}
             sort={sort}
             popularTags={popularTags}
             onCategory={setCategory}
-            onPrice={setPrice}
+            onMaxPriceCents={setMaxPriceCents}
             onSort={setSort}
           />
 
