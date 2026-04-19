@@ -54,10 +54,6 @@ export default function Marketplace() {
         {/* Brand hero */}
         <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#478cbf] via-[#3a7aab] to-[#2d5d82] p-8 sm:p-10 text-white">
           <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-sm text-[11px] font-semibold mb-4">
-              <Sparkles className="w-3 h-3" />
-              FanRealms is new — be one of the founding creators
-            </div>
             <h1 className="text-[28px] sm:text-[36px] font-bold tracking-[-1px] leading-[1.1]">
               Sell your game assets. Keep 95%.
             </h1>
