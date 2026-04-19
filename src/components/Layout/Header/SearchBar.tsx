@@ -10,10 +10,6 @@ export function SearchBar() {
         placeholder="Search for creators..."
         className="pl-10 w-full"
       />
-      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 hidden sm:flex items-center gap-1">
-        <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">⌘</kbd>
-        <kbd className="px-1.5 py-0.5 text-xs bg-muted rounded-md">K</kbd>
-      </div>
     </div>
   );
 }
