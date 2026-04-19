@@ -1,28 +1,36 @@
 
-Looking at the screenshot: the empty state panel is huge and centered in a sea of whitespace because there are no products. But the bigger issue the user is pointing at is the overall page feels empty/loose — the sidebar is narrow, the main column has one big empty card, and there's nothing filling the page.
+The screenshot shows the populated state still has tons of empty space below the fold because there are no real products. The empty state's category tiles fill ~1/3 of the viewport width, leaving a huge blank area below. The sidebar also ends around y=750 with nothing under it.
 
-Two things to fix:
+### Plan: Fill the page with browseable content
 
-### 1. Tighten the empty state
-Currently the "No assets match these filters" panel is full-width and very tall with big padding. Make it compact — smaller padding, smaller heading, left-aligned, hairline border. It should feel like a utility notice, not a hero.
+**1. Expand category tiles to a richer browse zone**
+Current tiles are plain text in 4 columns. Make them denser, taller, and 2-row with more info:
+- 4 columns × 2 rows of category cards
+- Each card: category name (bold), short tagline ("Sprites, tilesets, characters…"), and a count placeholder ("Browse →")
+- Sharp borders, hover state, fills more vertical space meaningfully
 
-### 2. Fill the page when empty
-itch.io never shows a blank page — even with no results, it shows browseable content. Add a **"Browse by category"** tile grid below the empty notice (6 category tiles: Game Assets, Templates, Tools, Tutorials, Music, Art, Other) that click through to filter the marketplace. Dense, sharp-edged, 3-4 across.
+**2. Add "Featured creators" strip**
+Below categories, a horizontal row of 4–6 creator avatars + names pulled from `creators` table (top creators or newest). Dense, itch.io-style.
 
-Also add a **"Popular tags cloud"** block below that — pulls from `usePopularTags` (already loaded in `Marketplace.tsx` but currently only shown in sidebar). Inline tag pills, dense.
+**3. Add "Recently joined" / community block**
+A two-column block:
+- Left: "Latest forum discussions" (3–4 recent posts, title + author)
+- Right: "Open job listings" (3–4 recent gigs, title + budget)
+This makes the marketplace feel like a hub even with zero products, and uses existing data from the other two pillars.
 
-### 3. Reduce vertical gaps
-- `space-y-10` between main sections → `space-y-6`
-- `space-y-6` outer → `space-y-4`
-- Sidebar `space-y-6` → `space-y-5`
-- Info strip `pb-3` is fine, but the gap below (`gap-8`) → `gap-6`
+**4. Add a footer-info strip at bottom**
+Three columns: "For creators" (Upload, Pricing, FAQ), "Explore" (Marketplace, Forum, Jobs), "About" (links). Pure text, dense, fills the bottom edge.
+
+**5. Sidebar**
+Add an extra section at the bottom: "**Quick links**" with Forum, Jobs, Become a creator, FAQ — fills the sidebar's empty bottom area.
 
 ### Files to change
-- `src/pages/Marketplace.tsx` — tighten `EmptyState` (compact notice + category tiles + tag cloud), reduce spacing
-- `src/components/marketplace/MarketplaceSidebar.tsx` — minor: tighten `space-y-6` → `space-y-5`
+- `src/pages/Marketplace.tsx` — expand `EmptyState` with richer category cards, add Featured creators strip, add Forum+Jobs cross-pillar block, add footer info strip
+- `src/components/marketplace/MarketplaceSidebar.tsx` — add "Quick links" section at the bottom
+- `src/hooks/useCreators.ts` *(reuse if exists, else a small inline query)* — fetch top creators
+- May reuse existing forum/job hooks — will inspect `src/hooks/` for `useForumPosts`, `useJobs` or equivalent before implementing
 
 ### Out of scope
-- Loading fake/demo products
-- Changing the populated-state layout (only shows when empty)
-- Sidebar restructure
-
+- Creating fake/demo products
+- Touching populated state (only changes when product list is empty)
+- New backend tables
