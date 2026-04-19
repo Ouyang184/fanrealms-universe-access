@@ -8,10 +8,10 @@ import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 24;
-const ALL_CATEGORIES = ['all', ...FORUM_CATEGORIES] as const;
+const ALL_CATEGORIES = [...FORUM_CATEGORIES] as const;
 
 export default function Forum() {
-  const [category, setCategory] = useState<string>('all');
+  const [category, setCategory] = useState<string>(FORUM_CATEGORIES[0]);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { data: threads, isLoading } = useForumThreads(category) as { data: any[] | undefined; isLoading: boolean };
   const { user } = useAuth();
@@ -39,7 +39,7 @@ export default function Forum() {
           <div className="flex divide-x divide-border min-w-max">
             {ALL_CATEGORIES.map((c) => {
               const active = category === c;
-              const label = c === 'all' ? 'All' : c;
+              const label = c;
               return (
                 <button
                   key={c}
@@ -61,7 +61,7 @@ export default function Forum() {
         <section>
           <div className="flex items-baseline justify-between border-b border-border pb-2 mb-4">
             <h2 className="text-[13px] font-bold uppercase tracking-wider text-foreground">
-              {category === 'all' ? 'All threads' : category}
+              {category}
             </h2>
             {!isLoading && threads && (
               <span className="text-[11px] text-muted-foreground">
