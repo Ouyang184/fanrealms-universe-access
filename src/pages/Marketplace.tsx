@@ -44,30 +44,30 @@ export default function Marketplace() {
     <MainLayout>
       <div className="w-full space-y-8">
         {/* Brand hero — flat, sharp */}
-        <section className="rounded-xl bg-[#0f0f0f] text-white px-8 sm:px-10 py-10 sm:py-12 border border-[#0f0f0f]">
+        <section className="rounded-xl bg-primary text-white px-8 sm:px-10 py-10 sm:py-12">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-primary uppercase tracking-[0.12em] mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <div className="inline-flex items-center gap-2 text-[11px] font-semibold text-white/80 uppercase tracking-[0.12em] mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
               Founding creators · now open
             </div>
             <h1 className="text-[32px] sm:text-[44px] font-bold tracking-[-1.2px] leading-[1.05]">
               Sell your game assets.<br />
-              <span className="text-primary">Keep 95%.</span>
+              Keep 95%.
             </h1>
-            <p className="text-[14px] text-[#999] mt-4 leading-relaxed max-w-lg">
+            <p className="text-[14px] text-white/80 mt-4 leading-relaxed max-w-lg">
               A marketplace for indie creators — no gatekeepers, no subscription fees. Upload art, templates, tools, music, or tutorials and start earning.
             </p>
             <div className="flex gap-3 mt-7">
               <Link
                 to="/dashboard/assets"
-                className="px-5 h-10 rounded-[8px] bg-primary text-white text-[13px] font-semibold hover:bg-[#3a7aab] transition-colors inline-flex items-center gap-1.5"
+                className="px-5 h-10 rounded-[8px] bg-white text-primary text-[13px] font-semibold hover:bg-white/90 transition-colors inline-flex items-center gap-1.5"
               >
                 <Upload className="w-4 h-4" />
                 Upload an asset
               </Link>
               <Link
                 to="/signup"
-                className="px-5 h-10 rounded-[8px] border border-[#2a2a2a] text-white text-[13px] font-semibold hover:border-[#444] hover:bg-white/[0.02] transition-colors inline-flex items-center gap-1.5"
+                className="px-5 h-10 rounded-[8px] border border-white/30 text-white text-[13px] font-semibold hover:border-white/60 hover:bg-white/[0.08] transition-colors inline-flex items-center gap-1.5"
               >
                 Create an account
                 <ArrowRight className="w-4 h-4" />
