@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 
 export const JOB_CATEGORIES = [
   'Game Dev',
-  'Data Science',
   'iOS',
   'Web',
   'Design',
