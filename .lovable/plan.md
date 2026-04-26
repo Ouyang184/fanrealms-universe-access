@@ -1,36 +1,31 @@
+## Export the FanRealms logo (mark only)
 
-You raised three things — let me address each, then propose a plan.
+I'll extract the castle SVG from `src/components/Logo.tsx` (the blue rounded square with white merlons + tower) and render it to the formats you picked. Nothing in the app changes — these are downloadable files only.
 
-### 1. "One stripe across all the words"
-Right now each genre is its own bordered box, which reads as 10 disconnected chips. I'll convert it into a **single segmented bar**: one outer border, genres separated by thin vertical dividers, active genre filled. Same marketplace tokens, just unified visually.
+### What you'll get in `/mnt/documents/`
 
-### 2. "Option for more games"
-Two interpretations — I'll do both since they're cheap:
-- **Pagination**: Show 24 games initially with a "Load more" button (or just the count if under 24).
-- **Persistent submit CTA**: Keep the "Add your game" button visible in the header (already there) and add an inline submit-prompt card at the end of the grid so it's visible even when scrolled.
+**Transparent PNG (1024px)**
+- `fanrealms-mark-1024.png` — high-res, transparent background, the blue mark on its own. Good for slides, social, README headers.
 
-### 3. "Do we need games if we have marketplace?"
-My take: **keep both, but clarify the distinction**. They serve different purposes:
-- **Marketplace** = paid digital products you sell (assets, templates, tools) — Stripe Connect, money flows through FanRealms.
-- **Games** = free showcase of finished indie games linking out to itch.io / Steam — discovery, not commerce.
+**Favicon set**
+- `favicon.ico` — multi-size ICO (16, 32, 48) for browser tabs
+- `favicon-16.png`
+- `favicon-32.png`
+- `favicon-192.png` — Android home-screen
+- `favicon-512.png` — PWA / maskable
 
-Removing Games would lose the "show off what you built" pillar that complements Marketplace's "sell what you made". But if it feels redundant, an alternative is to **merge Games as a category inside Marketplace** with an "External link" product type. That's a bigger refactor though.
+All exports use the **exact SVG** from `Logo.tsx` (blue `#478CBF` background, white castle), so they match what's rendered in the app today. Background is transparent **outside** the rounded square; the square itself stays solid blue (that's the logo).
 
-I'll proceed with **keeping Games separate** for now and just improving it. If you'd rather merge or delete, say the word and I'll do that instead.
+### How
+1. Build the standalone SVG markup (just the `<svg>` block from `Logo.tsx`, no React wrapper).
+2. Use ImageMagick (via `nix run nixpkgs#imagemagick`) to rasterize at 16/32/48/192/512/1024.
+3. Combine the 16/32/48 PNGs into a single `favicon.ico`.
+4. QA: open each PNG to confirm the castle is centered, crisp, and not clipped at small sizes.
+5. Emit `<lov-artifact>` tags so each file shows up as a download.
 
-### Plan
+### Not included (let me know if you want them)
+- SVG / PDF vector versions
+- Full logo with "FanRealms" wordmark
+- Replacing the site's current `public/favicon.ico` with the new one
 
-**File: `src/pages/Games.tsx`**
-1. Replace the chip row with a segmented bar:
-   - One outer `border border-border bg-card` wrapper, `flex`, `divide-x divide-border`.
-   - Each genre = `flex-1 px-3 h-9 text-[12px] font-semibold` button.
-   - Active = `bg-primary text-primary-foreground`; inactive = `hover:bg-accent`.
-   - Horizontally scrollable on narrow viewports (`overflow-x-auto`), no wrap.
-2. Add pagination: track `visibleCount` state (default 24), slice `games`, show "Load more (N remaining)" button below grid when more exist.
-3. Add an end-of-grid "Submit your game" prompt card matching the empty-state style, shown when there's at least 1 game.
-4. Add a one-line clarifier under the info strip: *"Free showcase — for paid assets, see the Marketplace."* with a link to `/marketplace`.
-
-### Out of scope
-- Merging Games into Marketplace (separate decision).
-- Changing `GameCard` internals.
-- Backend pagination (client-side slice is fine until volume grows).
+Approve and I'll generate the files.
