@@ -36,7 +36,7 @@ export async function handleCheckoutWebhook(
     }
 
     const amount = Number(product?.price ?? 0);
-    const platformFee = parseFloat((amount * 0.1).toFixed(2));   // 10% platform fee
+    const platformFee = parseFloat((amount * 0.05).toFixed(2));   // 5% platform fee
     const netAmount = parseFloat((amount - platformFee).toFixed(2));
 
     const { error: insertError } = await supabaseService.from('purchases').insert({
