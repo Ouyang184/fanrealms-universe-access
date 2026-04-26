@@ -45,25 +45,29 @@ const AuthCallback = () => {
           return;
         }
         
-        // For regular auth flows, process the session normally
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("AuthCallback: Error getting session", error);
-          throw error;
+        // Exchange the OAuth code for a session (PKCE flow)
+        const code = searchParams.get('code');
+        let session = null;
+
+        if (code) {
+          const { data: exchanged, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw exchangeError;
+          session = exchanged?.session;
+        } else {
+          // Fallback: implicit flow (token in hash)
+          const { data, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          session = data?.session;
         }
-        
-        console.log("AuthCallback: Session data for regular auth", { 
-          hasSession: !!data?.session, 
-          user: data?.session?.user?.email 
-        });
-        
-        if (data?.session?.user) {
+
+        console.log("AuthCallback: Session resolved", { hasSession: !!session, user: session?.user?.email });
+
+        if (session?.user) {
           toast({
             title: "Authentication successful",
             description: "You have been successfully authenticated.",
           });
-          navigate("/home", { replace: true });
+          navigate("/dashboard", { replace: true });
         } else {
           toast({
             title: "Authentication failed",
