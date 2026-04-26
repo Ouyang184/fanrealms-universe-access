@@ -121,7 +121,7 @@ serve(async (req) => {
     }
 
     const totalAmount = Math.round(commissionRequest.agreed_price * 100); // Convert to cents
-    const platformFee = Math.round(totalAmount * 0.05); // 5% platform fee
+    const platformFee = Math.round(totalAmount * 0.01); // 1% platform fee
     
     console.log('Payment details:', { 
       totalAmount, 

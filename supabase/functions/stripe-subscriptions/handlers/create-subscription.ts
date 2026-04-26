@@ -143,7 +143,7 @@ export async function handleCreateSubscription(
         user_id: user.id,
         creator_id: creatorId,
         tier_id: tierId,
-        platform_fee_percent: '4'
+        platform_fee_percent: '1'
       }
     });
 

@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
-import { useProduct } from '@/hooks/useMarketplace';
+import { useProduct, useHasPurchased } from '@/hooks/useMarketplace';
 import { useMarketplaceCheckout } from '@/hooks/useMarketplaceCheckout';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSection';
 import { useProductRatingSummary } from '@/hooks/useProductRatings';
@@ -15,16 +16,29 @@ import { RatingSummary } from '@/components/ratings/StarRating';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
+  const { user } = useAuth();
   const { data: product, isLoading } = useProduct(productId || '');
   const ratingSummary = useProductRatingSummary(productId || '');
   const [searchParams] = useSearchParams();
   const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
+  const { data: hasPurchased } = useHasPurchased(productId || '');
+
+  const isFree = !product?.price || Number(product.price) === 0;
+  const canDownload = isFree || hasPurchased;
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      toast.success('Purchase complete! Check your email for your download link.');
+      toast.success('Purchase complete! Your download is ready below.');
     }
   }, []);
+
+  const handleDownload = () => {
+    if (!product?.asset_url) {
+      toast.error('Download link not available.');
+      return;
+    }
+    window.open(product.asset_url, '_blank', 'noopener,noreferrer');
+  };
 
   if (isLoading) {
     return (
@@ -76,7 +90,11 @@ export default function ProductDetail() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
+            {isFree ? (
+              <p className="text-3xl font-bold text-green-600">Free</p>
+            ) : (
+              <p className="text-3xl font-bold text-primary">${Number(product.price).toFixed(2)}</p>
+            )}
             {product.category && <Badge variant="outline">{product.category}</Badge>}
           </div>
         </div>
@@ -87,14 +105,33 @@ export default function ProductDetail() {
           </CardContent>
         </Card>
 
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={() => checkout(product.id)}
-          disabled={checkoutLoading}
-        >
-          {checkoutLoading ? 'Redirecting to checkout…' : `Buy Now — $${product.price.toFixed(2)}`}
-        </Button>
+        {/* CTA */}
+        {canDownload ? (
+          <Button size="lg" className="w-full" onClick={handleDownload} disabled={!product.asset_url}>
+            <Download className="h-4 w-4 mr-2" />
+            {isFree ? 'Download' : 'Download your purchase'}
+          </Button>
+        ) : user ? (
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => checkout(product.id)}
+            disabled={checkoutLoading}
+          >
+            {checkoutLoading ? 'Redirecting to checkout…' : `Buy Now — $${Number(product.price).toFixed(2)}`}
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <Button size="lg" className="w-full" asChild>
+              <Link to={`/login?redirect=/marketplace/${productId}`}>
+                Sign in to buy — ${Number(product.price).toFixed(2)}
+              </Link>
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Don't have an account? <Link to="/signup" className="text-primary hover:underline">Sign up free</Link>
+            </p>
+          </div>
+        )}
 
         <div className="border-t border-[#eee] pt-6">
           <ProductRatingsSection productId={product.id} />

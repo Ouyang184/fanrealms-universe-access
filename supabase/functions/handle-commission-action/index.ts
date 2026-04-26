@@ -208,7 +208,7 @@ serve(async (req) => {
         console.log('Payment captured successfully:', paymentIntent.id);
         
         const capturedAmount = paymentIntent.amount_received;
-        const platformFeeAmount = Math.round(capturedAmount * 0.05); // 5% platform fee
+        const platformFeeAmount = Math.round(capturedAmount * 0.01); // 1% platform fee
         const creatorNetAmount = capturedAmount - platformFeeAmount;
         
         console.log('Fee calculation:', { 

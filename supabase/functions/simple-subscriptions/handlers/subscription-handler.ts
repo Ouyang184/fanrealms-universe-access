@@ -94,7 +94,7 @@ async function handleTierUpdate(stripe: any, supabase: any, user: any, existingS
           user_id: user.id,
           creator_id: existingSubscription.creator_id,
           tier_id: tierId,
-          platform_fee_percent: '4'
+          platform_fee_percent: '1'
         }
       }
     );
@@ -199,7 +199,7 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
       user_id: user.id,
       creator_id: creatorId,
       tier_id: tierId,
-      platform_fee_percent: '4'
+      platform_fee_percent: '1'
     }
   });
 

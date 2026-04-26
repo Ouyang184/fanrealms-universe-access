@@ -126,7 +126,7 @@ serve(async (req) => {
       if (chargeDate < thirtyDaysAgo) continue;
 
       const amount = charge.amount / 100; // Convert from cents
-      const platformFee = amount * 0.05; // 5% platform fee
+      const platformFee = amount * 0.01; // 1% platform fee
       const netAmount = amount - platformFee;
 
       // Check if we already have this earning recorded

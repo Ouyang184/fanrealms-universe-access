@@ -67,6 +67,25 @@ export function useProduct(productId: string) {
   });
 }
 
+export function useHasPurchased(productId: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['has-purchased', productId, user?.id],
+    enabled: !!productId && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('id')
+        .eq('product_id', productId)
+        .eq('buyer_id', user!.id)
+        .eq('status', 'completed')
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+  });
+}
+
 export function useCreateProduct() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
