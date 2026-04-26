@@ -30,3 +30,4 @@ supabase/.temp/
 
 # Superpowers brainstorm sessions
 .superpowers/
+.mcp.json
