@@ -12,8 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, CreditCard, Shield, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Use live publishable key for subscription payments
-const stripePromise = loadStripe('pk_live_51RSMPcCli7UywJenKnYQOCg0GW8YrW9nRY3vfMf0TYZyVV8eLPFEz6QzZFN7W2D8MMGtVHEFxOC6XgKYRhJ8lJjl00yjqfyF1L');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '');
 
 interface PaymentFormProps {
   clientSecret: string;
