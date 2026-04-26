@@ -28,17 +28,17 @@ const SocialLoginOptions = () => {
     <div className="mt-6">
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full bg-gray-800" />
+          <Separator className="w-full bg-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-gray-900 px-2 text-gray-400">Or continue with</span>
+          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
         </div>
       </div>
 
       <div className="mt-6">
-        <Button 
-          variant="outline" 
-          className="w-full bg-gray-800 border-gray-700 hover:bg-gray-700"
+        <Button
+          variant="outline"
+          className="w-full"
           onClick={handleDiscordLogin}
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
