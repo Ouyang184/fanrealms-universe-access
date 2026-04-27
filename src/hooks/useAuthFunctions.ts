@@ -18,7 +18,7 @@ export const useAuthFunctions = () => {
         email,
         password,
         options: {
-          captchaToken
+          ...(captchaToken ? { captchaToken } : {})
         }
       });
 
