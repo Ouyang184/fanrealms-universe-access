@@ -164,7 +164,7 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
                       <li>Contact information.</li>
                       <li>A statement of good faith belief that the use is unauthorized.</li>
                     </ul>
-                    <p>Submit claims to: legal@fanrealms.com</p>
+                    <p>Submit claims to: jake.yanouyang@gmail.com</p>
                   </div>
                 </div>
 

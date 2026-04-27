@@ -32,7 +32,7 @@ export default function Support() {
             {[
               { label: 'General support', email: 'support@fanrealms.com', desc: 'Account, buying, selling, payouts' },
               { label: 'Marketplace disputes', email: 'disputes@fanrealms.com', desc: 'Refunds, chargebacks, seller issues' },
-              { label: 'Legal & DMCA', email: 'legal@fanrealms.com', desc: 'Takedowns, copyright, trademarks' },
+              { label: 'Legal & DMCA', email: 'jake.yanouyang@gmail.com', desc: 'Takedowns, copyright, trademarks' },
             ].map(({ label, email, desc }, i, arr) => (
               <div
                 key={email}

@@ -99,8 +99,8 @@ export default function CreatorGuidelines() {
               support@fanrealms.com
             </a>
             . DMCA and copyright:{' '}
-            <a href="mailto:legal@fanrealms.com" className="text-primary font-medium hover:underline">
-              legal@fanrealms.com
+            <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
+              jake.yanouyang@gmail.com
             </a>
             .
           </p>
