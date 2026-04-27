@@ -27,27 +27,9 @@ const AuthCallback = () => {
       return;
     }
 
-    // Listen for auth state — Supabase client handles code exchange automatically
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('AuthCallback: event', event, 'session', !!session);
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        subscription.unsubscribe();
-        toast({ title: "Signed in successfully!" });
-        navigate('/dashboard', { replace: true });
-        return;
-      }
-
-      if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') return;
-
-      // If we get an error or no session after a short wait, fall back
-    });
-
-    // Fallback: if onAuthStateChange doesn't fire within 5s, try getSession manually
-    const timeout = setTimeout(async () => {
-      subscription.unsubscribe();
-
+    const go = async () => {
       try {
+        // Step 1: try PKCE code exchange (Google/Discord OAuth)
         const code = searchParams.get('code');
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -56,27 +38,44 @@ const AuthCallback = () => {
             navigate('/dashboard', { replace: true });
             return;
           }
+          console.warn('AuthCallback: code exchange failed', error?.message);
         }
 
+        // Step 2: check if session already exists (implicit flow / token in hash)
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
           toast({ title: "Signed in successfully!" });
           navigate('/dashboard', { replace: true });
-        } else {
+          return;
+        }
+
+        // Step 3: wait briefly for onAuthStateChange to fire
+        await new Promise<void>((resolve) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+              subscription.unsubscribe();
+              toast({ title: "Signed in successfully!" });
+              navigate('/dashboard', { replace: true });
+              resolve();
+            }
+          });
+          setTimeout(() => { subscription.unsubscribe(); resolve(); }, 3000);
+        });
+
+        // If still no session, give up
+        const { data: final } = await supabase.auth.getSession();
+        if (!final.session?.user) {
           toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
           navigate('/login', { replace: true });
         }
       } catch (err) {
-        console.error('AuthCallback fallback error:', err);
+        console.error('AuthCallback error:', err);
         toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
         navigate('/login', { replace: true });
       }
-    }, 5000);
-
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
     };
+
+    go();
   }, []);
 
   return (
