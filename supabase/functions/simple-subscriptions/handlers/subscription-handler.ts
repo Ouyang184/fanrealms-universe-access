@@ -183,11 +183,11 @@ async function createNewSubscription(stripe: any, supabase: any, user: any, tier
       .eq('id', tierId);
   }
 
-  // Create Stripe subscription with 4% platform fee
+  // Create Stripe subscription with 1% platform fee
   const subscription = await stripe.subscriptions.create({
     customer: stripeCustomerId,
     items: [{ price: stripePriceId }],
-    application_fee_percent: 4,
+    application_fee_percent: 1,
     transfer_data: { destination: tier.creators.stripe_account_id },
     payment_behavior: 'default_incomplete',
     payment_settings: { 

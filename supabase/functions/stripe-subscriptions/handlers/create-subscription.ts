@@ -131,7 +131,7 @@ export async function handleCreateSubscription(
     const subscription = await stripe.subscriptions.create({
       customer: stripeCustomerId,
       items: [{ price: stripePriceId }],
-      application_fee_percent: 4,
+      application_fee_percent: 1,
       transfer_data: { destination: tier.creators.stripe_account_id },
       payment_behavior: 'default_incomplete',
       payment_settings: { 
