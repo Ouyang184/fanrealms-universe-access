@@ -30,7 +30,7 @@ export default function Support() {
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Contact us</h2>
           <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
             {[
-              { label: 'General support', email: 'support@fanrealms.com', desc: 'Account, buying, selling, payouts' },
+              { label: 'General support', email: 'jake.yanouyang@gmail.com', desc: 'Account, buying, selling, payouts' },
               { label: 'Marketplace disputes', email: 'disputes@fanrealms.com', desc: 'Refunds, chargebacks, seller issues' },
               { label: 'Legal & DMCA', email: 'jake.yanouyang@gmail.com', desc: 'Takedowns, copyright, trademarks' },
             ].map(({ label, email, desc }, i, arr) => (

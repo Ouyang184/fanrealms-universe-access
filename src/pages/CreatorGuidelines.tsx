@@ -95,8 +95,8 @@ export default function CreatorGuidelines() {
           <div className="text-[14px] font-bold text-[#111] mb-1">Need help?</div>
           <p className="text-[13px] text-[#666] leading-relaxed">
             Seller support:{' '}
-            <a href="mailto:support@fanrealms.com" className="text-primary font-medium hover:underline">
-              support@fanrealms.com
+            <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
+              jake.yanouyang@gmail.com
             </a>
             . DMCA and copyright:{' '}
             <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">

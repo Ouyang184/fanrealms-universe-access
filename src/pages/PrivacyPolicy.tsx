@@ -68,7 +68,7 @@ export default function PrivacyPolicy() {
             <li>Object to processing, or restrict it</li>
           </ul>
           <p className="text-[13px] text-[#555] leading-relaxed mt-3">
-            Email <a href="mailto:privacy@fanrealms.com" className="text-primary font-medium hover:underline">privacy@fanrealms.com</a> to exercise any of these rights.
+            Email <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">jake.yanouyang@gmail.com</a> to exercise any of these rights.
             EU (GDPR) and California (CCPA) residents have additional rights under those laws.
           </p>
         </Section>
@@ -84,8 +84,8 @@ export default function PrivacyPolicy() {
         <Section title="Contact">
           <p className="text-[13px] text-[#555] leading-relaxed">
             Questions about this policy? Email{' '}
-            <a href="mailto:privacy@fanrealms.com" className="text-primary font-medium hover:underline">
-              privacy@fanrealms.com
+            <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
+              jake.yanouyang@gmail.com
             </a>.
           </p>
         </Section>
