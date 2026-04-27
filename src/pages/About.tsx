@@ -83,8 +83,8 @@ export default function About() {
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Contact</h2>
           <p className="text-[13px] text-[#666]">
             Questions or issues? Email us at{" "}
-            <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
-              jake.yanouyang@gmail.com
+            <a href="mailto:jack520088@gmail.com" className="text-primary font-medium hover:underline">
+              jack520088@gmail.com
             </a>
             . We usually respond within a day.
           </p>

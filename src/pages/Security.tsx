@@ -88,8 +88,8 @@ export default function Security() {
             <div className="text-[14px] font-bold text-[#111] mb-1">DMCA / content issues</div>
             <p className="text-[13px] text-[#666] leading-relaxed">
               To report stolen assets, copyright infringement, or DMCA takedown requests, email{' '}
-              <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
-                jake.yanouyang@gmail.com
+              <a href="mailto:jack520088@gmail.com" className="text-primary font-medium hover:underline">
+                jack520088@gmail.com
               </a>.
             </p>
           </div>

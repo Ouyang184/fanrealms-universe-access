@@ -81,8 +81,8 @@ export default function CommunityGuidelines() {
             <p className="text-[13px] text-[#666] leading-relaxed">
               First offense is usually a warning. Repeated or serious violations result in content
               removal, suspension, or a permanent ban. You can appeal any action by emailing{' '}
-              <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
-                jake.yanouyang@gmail.com
+              <a href="mailto:jack520088@gmail.com" className="text-primary font-medium hover:underline">
+                jack520088@gmail.com
               </a>.
             </p>
           </div>

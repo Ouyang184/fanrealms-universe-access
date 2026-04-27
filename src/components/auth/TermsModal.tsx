@@ -164,7 +164,7 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
                       <li>Contact information.</li>
                       <li>A statement of good faith belief that the use is unauthorized.</li>
                     </ul>
-                    <p>Submit claims to: jake.yanouyang@gmail.com</p>
+                    <p>Submit claims to: jack520088@gmail.com</p>
                   </div>
                 </div>
 
@@ -185,7 +185,7 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
               <CardContent>
                 <ul className="list-disc pl-6 space-y-2">
                   <li>We may terminate accounts for violations without refunds.</li>
-                  <li>Users may appeal bans via jake.yanouyang@gmail.com</li>
+                  <li>Users may appeal bans via jack520088@gmail.com</li>
                 </ul>
               </CardContent>
             </Card>
@@ -273,7 +273,7 @@ export default function TermsModal({ open, onAccept, onDecline }: TermsModalProp
                 <div>
                   <h3 className="text-lg font-semibold mb-3">8.4 User Rights (GDPR/CCPA)</h3>
                   <ul className="list-disc pl-6 space-y-2">
-                    <li><strong>Access/Delete Data:</strong> Email jake.yanouyang@gmail.com</li>
+                    <li><strong>Access/Delete Data:</strong> Email jack520088@gmail.com</li>
                     <li><strong>Opt-Out (CCPA):</strong> Contact us for data deletion requests</li>
                     <li><strong>EU Users:</strong> Withdraw consent anytime</li>
                   </ul>

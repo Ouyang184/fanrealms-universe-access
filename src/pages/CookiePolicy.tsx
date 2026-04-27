@@ -66,8 +66,8 @@ export default function CookiePolicy() {
         <Section title="Contact">
           <p className="text-[13px] text-[#555] leading-relaxed">
             Questions? Email{' '}
-            <a href="mailto:jake.yanouyang@gmail.com" className="text-primary font-medium hover:underline">
-              jake.yanouyang@gmail.com
+            <a href="mailto:jack520088@gmail.com" className="text-primary font-medium hover:underline">
+              jack520088@gmail.com
             </a>.
           </p>
         </Section>
