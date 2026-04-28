@@ -1,31 +1,21 @@
-## Export the FanRealms logo (mark only)
+## Problem
 
-I'll extract the castle SVG from `src/components/Logo.tsx` (the blue rounded square with white merlons + tower) and render it to the formats you picked. Nothing in the app changes — these are downloadable files only.
+The two existing forum threads (the Game Jam and Asset Competition posts) are stored under the **Showcase** category. The Forum page opens on the **General** tab by default and shows no indicator that other categories have content, so the threads appear "missing".
 
-### What you'll get in `/mnt/documents/`
+## Fix
 
-**Transparent PNG (1024px)**
-- `fanrealms-mark-1024.png` — high-res, transparent background, the blue mark on its own. Good for slides, social, README headers.
+Update `src/pages/Forum.tsx` so users can see all threads immediately and can tell which categories have activity.
 
-**Favicon set**
-- `favicon.ico` — multi-size ICO (16, 32, 48) for browser tabs
-- `favicon-16.png`
-- `favicon-32.png`
-- `favicon-192.png` — Android home-screen
-- `favicon-512.png` — PWA / maskable
+1. **Add an "All" tab** as the first segmented option, set as the default selection. When active, `useForumThreads` is called without a category filter so every published thread is listed.
 
-All exports use the **exact SVG** from `Logo.tsx` (blue `#478CBF` background, white castle), so they match what's rendered in the app today. Background is transparent **outside** the rounded square; the square itself stays solid blue (that's the logo).
+2. **Show per-category counts** in the segmented bar. Fetch thread counts grouped by category once (lightweight query) and render a small number next to each label, so users can see Showcase has 2 threads even when they're on another tab.
 
-### How
-1. Build the standalone SVG markup (just the `<svg>` block from `Logo.tsx`, no React wrapper).
-2. Use ImageMagick (via `nix run nixpkgs#imagemagick`) to rasterize at 16/32/48/192/512/1024.
-3. Combine the 16/32/48 PNGs into a single `favicon.ico`.
-4. QA: open each PNG to confirm the castle is centered, crisp, and not clipped at small sizes.
-5. Emit `<lov-artifact>` tags so each file shows up as a download.
+3. **Empty-state hint**: when a specific category has 0 threads but other categories do, add a one-line link like "2 threads in Showcase" that switches the tab, so content is always one click away.
 
-### Not included (let me know if you want them)
-- SVG / PDF vector versions
-- Full logo with "FanRealms" wordmark
-- Replacing the site's current `public/favicon.ico` with the new one
+No database, RLS, or backend changes needed — the threads are already published and visible. This is purely a frontend discoverability fix in `src/pages/Forum.tsx` (and a small addition to `src/hooks/useForum.ts` for the counts query).
 
-Approve and I'll generate the files.
+## Technical notes
+
+- New hook `useForumThreadCounts()` in `src/hooks/useForum.ts`: selects `category` from `forum_threads` where `status = 'published'`, reduces to `{ [category]: count }` client-side. Cached with React Query.
+- `ALL_CATEGORIES` becomes `['All', ...FORUM_CATEGORIES]`; passing `'All'` (or `undefined`) to `useForumThreads` skips the `.eq('category', ...)` filter (already supported via the `'all'` branch — rename to match).
+- Keep the existing Clean & Minimal styling, no emojis in UI copy.

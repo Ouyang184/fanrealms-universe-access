@@ -25,13 +25,35 @@ export function useForumThreads(category?: string) {
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (category && category !== 'all') {
+      if (category && category !== 'all' && category !== 'All') {
         query = query.eq('category', category);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+  });
+}
+
+export function useForumThreadCounts() {
+  return useQuery({
+    queryKey: ['forum-thread-counts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('forum_threads')
+        .select('category')
+        .eq('status', 'published');
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      let total = 0;
+      for (const row of data ?? []) {
+        const c = (row as any).category || 'General';
+        counts[c] = (counts[c] || 0) + 1;
+        total += 1;
+      }
+      counts['All'] = total;
+      return counts;
     },
   });
 }

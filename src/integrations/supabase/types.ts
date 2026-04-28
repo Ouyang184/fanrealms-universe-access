@@ -731,12 +731,16 @@ export type Database = {
           creator_id: string
           description: string | null
           id: string
+          license: string | null
           price: number
+          screenshots: string[] | null
+          short_description: string | null
           status: string
           stripe_price_id: string | null
           tags: string[] | null
           title: string
           updated_at: string | null
+          version: string | null
         }
         Insert: {
           asset_url?: string | null
@@ -746,12 +750,16 @@ export type Database = {
           creator_id: string
           description?: string | null
           id?: string
+          license?: string | null
           price?: number
+          screenshots?: string[] | null
+          short_description?: string | null
           status?: string
           stripe_price_id?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string | null
+          version?: string | null
         }
         Update: {
           asset_url?: string | null
@@ -761,12 +769,16 @@ export type Database = {
           creator_id?: string
           description?: string | null
           id?: string
+          license?: string | null
           price?: number
+          screenshots?: string[] | null
+          short_description?: string | null
           status?: string
           stripe_price_id?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+          version?: string | null
         }
         Relationships: [
           {
