@@ -1,6 +1,7 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThread, useForumReplies } from '@/hooks/useForum';
+import { useAuth } from '@/contexts/AuthContext';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
