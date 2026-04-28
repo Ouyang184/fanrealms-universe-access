@@ -1,6 +1,7 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThread, useForumReplies } from '@/hooks/useForum';
+import { useAuth } from '@/contexts/AuthContext';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,8 @@ function MarkdownContent({ content }: { content: string }) {
 
 export default function ForumThread() {
   const { threadId } = useParams<{ threadId: string }>();
+  const { user } = useAuth();
+  const location = useLocation();
   const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '') as { data: any; isLoading: boolean };
   const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '') as { data: any[] | undefined; isLoading: boolean };
 
@@ -118,10 +121,31 @@ export default function ForumThread() {
         {!thread.is_locked && (
           <>
             <Separator />
-            <div>
-              <h3 className="font-semibold mb-3">Post a Reply</h3>
-              <ReplyEditor threadId={thread.id} />
-            </div>
+            {user ? (
+              <div>
+                <h3 className="font-semibold mb-3">Post a Reply</h3>
+                <ReplyEditor threadId={thread.id} />
+              </div>
+            ) : (
+              <div className="border border-border bg-card px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h3 className="text-[13px] font-semibold text-foreground">
+                    Sign in to join the conversation
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground">
+                    Create a free account to reply, post threads, and follow creators.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/login?redirect=${encodeURIComponent(location.pathname)}`}>Log in</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link to={`/signup?redirect=${encodeURIComponent(location.pathname)}`}>Sign up</Link>
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
