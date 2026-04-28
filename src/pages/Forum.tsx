@@ -40,18 +40,25 @@ export default function Forum() {
           <div className="flex divide-x divide-border min-w-max">
             {ALL_CATEGORIES.map((c) => {
               const active = category === c;
-              const label = c;
+              const count = counts?.[c] ?? 0;
               return (
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
-                  className={`flex-1 px-4 h-9 text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                  className={`flex-1 px-4 h-9 text-[12px] font-semibold whitespace-nowrap transition-colors inline-flex items-center justify-center gap-1.5 ${
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:bg-accent'
                   }`}
                 >
-                  {label}
+                  <span>{c}</span>
+                  {count > 0 && (
+                    <span className={`text-[10px] font-semibold px-1.5 rounded-full ${
+                      active ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
