@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
-import { useForumThreads, FORUM_CATEGORIES } from '@/hooks/useForum';
+import { useForumThreads, useForumThreadCounts, FORUM_CATEGORIES } from '@/hooks/useForum';
 import { ThreadCard } from '@/components/forum/ThreadCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PAGE_SIZE = 24;
-const ALL_CATEGORIES = [...FORUM_CATEGORIES] as const;
+const ALL_CATEGORIES = ['All', ...FORUM_CATEGORIES] as const;
 
 export default function Forum() {
-  const [category, setCategory] = useState<string>(FORUM_CATEGORIES[0]);
+  const [category, setCategory] = useState<string>('All');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const { data: threads, isLoading } = useForumThreads(category) as { data: any[] | undefined; isLoading: boolean };
+  const { data: counts } = useForumThreadCounts();
   const { user } = useAuth();
 
   useEffect(() => {
