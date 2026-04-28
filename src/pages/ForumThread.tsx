@@ -40,6 +40,8 @@ function MarkdownContent({ content }: { content: string }) {
 
 export default function ForumThread() {
   const { threadId } = useParams<{ threadId: string }>();
+  const { user } = useAuth();
+  const location = useLocation();
   const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '') as { data: any; isLoading: boolean };
   const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '') as { data: any[] | undefined; isLoading: boolean };
 
