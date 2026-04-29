@@ -4,13 +4,19 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Always use the canonical non-www HTTPS URL so the PKCE code_verifier
+// stored in localStorage survives any Cloudflare www↔non-www redirect.
+const OAUTH_REDIRECT = import.meta.env.PROD
+  ? 'https://fanrealms.com/auth/callback'
+  : `${window.location.origin}/auth/callback`;
+
 const SocialLoginOptions = () => {
   const handleGoogleLogin = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: OAUTH_REDIRECT,
         }
       });
 
@@ -29,7 +35,7 @@ const SocialLoginOptions = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: OAUTH_REDIRECT,
         }
       });
 
