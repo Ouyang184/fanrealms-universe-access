@@ -1,21 +1,25 @@
-## Problem
+## Update the Game Jam forum post
 
-The two existing forum threads (the Game Jam and Asset Competition posts) are stored under the **Showcase** category. The Forum page opens on the **General** tab by default and shows no indicator that other categories have content, so the threads appear "missing".
+Rewrite the existing Game Jam thread (id `7e40e6ad-bc74-45c2-bd99-dd81128646b4`) with the new rules. No emojis, plain tone, no AI flourishes.
 
-## Fix
+### Changes
 
-Update `src/pages/Forum.tsx` so users can see all threads immediately and can tell which categories have activity.
+- **Duration:** 1 week (was 72 hours)
+- **Theme:** Open — any indie game, any genre, any style (was "3 Buttons Only")
+- **Team size:** Solo or teams of any size, anyone can join (was max 3)
+- **Prizes paid via:** Cash App (was PayPal/Venmo)
+- **Submission method:** Post your game on the FanRealms Games page (which accepts an external link to your build — itch.io, hosted zip, web build, etc.) and reply in the thread with the link. No file-upload feature is required — the existing Games page already supports external URL submissions.
 
-1. **Add an "All" tab** as the first segmented option, set as the default selection. When active, `useForumThreads` is called without a category filter so every published thread is listed.
+### Prize structure (kept the same unless you say otherwise)
 
-2. **Show per-category counts** in the segmented bar. Fetch thread counts grouped by category once (lightweight query) and render a small number next to each label, so users can see Showcase has 2 threads even when they're on another tab.
+- 1st: $60
+- 2nd: $30
+- 3rd: $10
 
-3. **Empty-state hint**: when a specific category has 0 threads but other categories do, add a one-line link like "2 threads in Showcase" that switches the tab, so content is always one click away.
+### Implementation
 
-No database, RLS, or backend changes needed — the threads are already published and visible. This is purely a frontend discoverability fix in `src/pages/Forum.tsx` (and a small addition to `src/hooks/useForum.ts` for the counts query).
+Single SQL update to the `forum_threads` row to replace `title` and `content` with the new plain-text/markdown body.
 
-## Technical notes
+### Do we need an upload feature?
 
-- New hook `useForumThreadCounts()` in `src/hooks/useForum.ts`: selects `category` from `forum_threads` where `status = 'published'`, reduces to `{ [category]: count }` client-side. Cached with React Query.
-- `ALL_CATEGORIES` becomes `['All', ...FORUM_CATEGORIES]`; passing `'All'` (or `undefined`) to `useForumThreads` skips the `.eq('category', ...)` filter (already supported via the `'all'` branch — rename to match).
-- Keep the existing Clean & Minimal styling, no emojis in UI copy.
+No. The Games page (`/games`) already lets logged-in creators add a game by submitting an `external_url` (e.g., itch.io page or hosted build). Submitters link their game from there and reply to the thread with the link. We can revisit a true file-upload flow later if you want jams to host builds directly on FanRealms.
