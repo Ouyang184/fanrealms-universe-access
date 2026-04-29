@@ -51,6 +51,7 @@ export function TopNav() {
           {NAV_ITEMS.map((item) => (
             <DesktopNavLink key={item.to} {...item} />
           ))}
+          {user && <DesktopNavLink to="/dashboard" label="Dashboard" />}
         </nav>
 
         {/* Search — flex-grow */}
