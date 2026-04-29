@@ -68,6 +68,35 @@ serve(async (req) => {
     let stripePriceId = null;
 
     if (isUpdate && tierId && tierData.existingStripeProductId) {
+      // SECURITY: Verify the tier + Stripe product belong to this creator before mutating Stripe
+      const { data: ownedTier, error: ownershipError } = await supabaseService
+        .from('membership_tiers')
+        .select('id, creator_id, stripe_product_id')
+        .eq('id', tierId)
+        .eq('creator_id', creatorData.id)
+        .eq('stripe_product_id', tierData.existingStripeProductId)
+        .maybeSingle();
+
+      if (ownershipError) {
+        console.error('Ownership lookup failed:', ownershipError);
+        return new Response(JSON.stringify({ error: 'Ownership verification failed' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
+
+      if (!ownedTier) {
+        console.warn('Forbidden: tier/product does not belong to creator', {
+          tierId,
+          creatorId: creatorData.id,
+          stripeProductId: tierData.existingStripeProductId,
+        });
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        });
+      }
+
       // Update existing Stripe product without creating a new price
       console.log('Updating existing Stripe product:', tierData.existingStripeProductId);
       
