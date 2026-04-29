@@ -11,13 +11,15 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="prose prose-sm dark:prose-invert max-w-none">
+    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h1:mt-2 prose-h2:text-xl prose-h3:text-lg prose-p:leading-relaxed prose-table:text-sm prose-hr:my-6 prose-li:my-1">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           code({ node, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
