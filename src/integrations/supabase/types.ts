@@ -2818,6 +2818,13 @@ export type Database = {
           type: string
         }[]
       }
+      get_membership_tier_stripe_ids: {
+        Args: { _tier_id: string }
+        Returns: {
+          stripe_price_id: string
+          stripe_product_id: string
+        }[]
+      }
       get_my_creator_earnings: {
         Args: {
           p_end_date?: string
