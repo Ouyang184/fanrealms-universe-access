@@ -51,6 +51,7 @@ export function TopNav() {
           {NAV_ITEMS.map((item) => (
             <DesktopNavLink key={item.to} {...item} />
           ))}
+          {user && <DesktopNavLink to="/dashboard" label="Dashboard" />}
         </nav>
 
         {/* Search — flex-grow */}
@@ -126,14 +127,30 @@ export function TopNav() {
               </NavLink>
             ))}
             {user && (
-              <Link
-                to="/dashboard/assets"
-                onClick={() => setMobileOpen(false)}
-                className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Upload an asset
-              </Link>
+              <>
+                <NavLink
+                  to="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    cn(
+                      'px-3 py-2 rounded-md text-[14px] font-medium transition-colors',
+                      isActive
+                        ? 'bg-[#f5f5f5] text-[#111]'
+                        : 'text-[#555] hover:bg-[#fafafa] hover:text-[#111]'
+                    )
+                  }
+                >
+                  Dashboard
+                </NavLink>
+                <Link
+                  to="/dashboard/assets"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Upload an asset
+                </Link>
+              </>
             )}
           </div>
         </div>
