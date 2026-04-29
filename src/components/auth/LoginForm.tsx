@@ -192,7 +192,7 @@ const LoginForm = () => {
                     placeholder="you@example.com"
                     type="email"
                     autoComplete="email"
-                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                    className="pl-10 bg-background border-input focus-visible:ring-primary"
                     {...field}
                   />
                 </FormControl>
@@ -220,7 +220,7 @@ const LoginForm = () => {
                     placeholder="••••••••"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
-                    className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                    className="pl-10 bg-background border-input focus-visible:ring-primary"
                     {...field}
                   />
                 </FormControl>
