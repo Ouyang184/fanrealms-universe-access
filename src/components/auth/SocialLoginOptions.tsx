@@ -1,97 +1,81 @@
-import { useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const GOOGLE_CLIENT_ID = '161130354973-cbn4hvrmajm5pqnlng23irqo2qfnqkfn.apps.googleusercontent.com';
-
-declare global {
-  interface Window {
-    google?: any;
-  }
-}
+// The relay origin — Lovable's stable domain, no Cloudflare proxy.
+// OAuth starts and completes there, session is sent back via postMessage.
+const RELAY_ORIGIN = 'https://fanrealms-universe-access.lovable.app';
 
 const SocialLoginOptions = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const googleInitialized = useRef(false);
 
   const getReturnTo = () => {
     const params = new URLSearchParams(location.search);
     return params.get('returnTo') || '/dashboard';
   };
 
-  useEffect(() => {
-    // Load Google Identity Services script
-    if (document.getElementById('google-gsi-script')) return;
-    const script = document.createElement('script');
-    script.id = 'google-gsi-script';
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-  }, []);
+  const openOAuthPopup = (provider: 'google' | 'discord') => {
+    const width = 500;
+    const height = 620;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
 
-  const handleGoogleLogin = async () => {
-    if (!window.google) {
-      toast.error('Google Sign-In not ready. Please try again in a moment.');
+    const popup = window.open(
+      `${RELAY_ORIGIN}/oauth-popup?provider=${provider}`,
+      'fanrealms-oauth',
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+    );
+
+    if (!popup) {
+      toast.error('Popup was blocked. Please allow popups for fanrealms.com and try again.');
       return;
     }
 
-    // Use Google Identity Services to get an ID token via popup
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (response: { credential: string }) => {
-        try {
-          const { error } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: response.credential,
-          });
+    // Listen for the session sent back from the popup
+    const handler = async (event: MessageEvent) => {
+      if (event.origin !== RELAY_ORIGIN) return;
+      if (event.data?.type !== 'fanrealms:oauth') return;
 
-          if (error) {
-            toast.error('Sign in failed: ' + error.message);
-            return;
-          }
+      window.removeEventListener('message', handler);
 
-          toast.success('Signed in successfully!');
-          navigate(getReturnTo(), { replace: true });
-        } catch (err) {
-          toast.error('Sign in failed. Please try again.');
-        }
-      },
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      itp_support: true,
-    });
-
-    // Show the Google account picker popup
-    window.google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        // One Tap was suppressed — fall back to the Google button rendered below
-        const btn = document.getElementById('google-signin-btn');
-        if (btn) btn.click();
+      if (event.data.error) {
+        toast.error('Sign in failed. Please try again.');
+        return;
       }
-    });
-  };
 
-  const handleDiscordLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'discord',
-        options: {
-          redirectTo: import.meta.env.PROD
-            ? 'https://fanrealms.com/auth/callback'
-            : `${window.location.origin}/auth/callback`,
-        }
+      const { session } = event.data;
+      if (!session?.access_token) {
+        toast.error('Sign in failed. Please try again.');
+        return;
+      }
+
+      // Establish the session on this origin (fanrealms.com)
+      const { error } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
       });
+
       if (error) {
-        toast.error('Failed to login with Discord. Please try again.');
+        toast.error('Sign in failed: ' + error.message);
+        return;
       }
-    } catch {
-      toast.error('An unexpected error occurred. Please try again.');
-    }
+
+      toast.success('Signed in successfully!');
+      navigate(getReturnTo(), { replace: true });
+    };
+
+    window.addEventListener('message', handler);
+
+    // Clean up listener if popup is closed without completing auth
+    const pollClosed = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollClosed);
+        window.removeEventListener('message', handler);
+      }
+    }, 500);
   };
 
   return (
@@ -109,7 +93,7 @@ const SocialLoginOptions = () => {
         <Button
           variant="outline"
           className="w-full"
-          onClick={handleGoogleLogin}
+          onClick={() => openOAuthPopup('google')}
           type="button"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -124,7 +108,7 @@ const SocialLoginOptions = () => {
         <Button
           variant="outline"
           className="w-full"
-          onClick={handleDiscordLogin}
+          onClick={() => openOAuthPopup('discord')}
           type="button"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">

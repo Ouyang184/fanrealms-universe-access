@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
+const FANREALMS_ORIGIN = 'https://fanrealms.com';
+
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -14,18 +16,20 @@ const AuthCallback = () => {
   const navigated = useRef(false);
 
   // Once AuthContext confirms the user is set, redirect to dashboard.
-  // This fires AFTER onAuthStateChange updates the context — no race condition.
+  // Only runs when NOT in relay/popup mode.
   useEffect(() => {
-    if (!loading && user && !navigated.current) {
+    const isRelay = searchParams.get('relay') === 'true';
+    if (!isRelay && !loading && user && !navigated.current) {
       navigated.current = true;
       navigate('/dashboard', { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, searchParams]);
 
   useEffect(() => {
     if (handled.current) return;
     handled.current = true;
 
+    const isRelay = searchParams.get('relay') === 'true';
     const currentUrl = window.location.href;
 
     // Password reset flow — redirect immediately
@@ -41,48 +45,79 @@ const AuthCallback = () => {
 
     const go = async () => {
       try {
-        // PKCE code exchange (Google / Discord OAuth with flowType: 'pkce')
+        // PKCE code exchange
         const code = searchParams.get('code');
         if (code) {
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (!error && data.session?.user) {
-            // onAuthStateChange fires → AuthContext sets user → first useEffect handles navigation
+            if (isRelay && window.opener) {
+              // Running inside the popup opened from fanrealms.com — send session back
+              window.opener.postMessage(
+                { type: 'fanrealms:oauth', session: data.session },
+                FANREALMS_ORIGIN
+              );
+              window.close();
+              return;
+            }
             toast({ title: "Signed in successfully!" });
-            return;
+            return; // first useEffect handles navigation
           }
           console.warn('AuthCallback: code exchange failed', error?.message);
         }
 
-        // Implicit flow fallback — session already set via URL hash
+        // Implicit flow fallback
         const { data: existing } = await supabase.auth.getSession();
         if (existing.session?.user) {
+          if (isRelay && window.opener) {
+            window.opener.postMessage(
+              { type: 'fanrealms:oauth', session: existing.session },
+              FANREALMS_ORIGIN
+            );
+            window.close();
+            return;
+          }
           toast({ title: "Signed in successfully!" });
-          return; // first useEffect handles navigation once context updates
+          return;
         }
 
-        // Wait up to 5s for onAuthStateChange to fire
+        // Wait up to 5s for onAuthStateChange
         await new Promise<void>((resolve) => {
           const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_IN' && session?.user) {
               subscription.unsubscribe();
-              toast({ title: "Signed in successfully!" });
+              if (isRelay && window.opener) {
+                window.opener.postMessage(
+                  { type: 'fanrealms:oauth', session },
+                  FANREALMS_ORIGIN
+                );
+                window.close();
+              } else {
+                toast({ title: "Signed in successfully!" });
+              }
               resolve();
             }
           });
           setTimeout(() => { subscription.unsubscribe(); resolve(); }, 5000);
         });
 
-        // Final check — if still no session, give up
+        // Final check
         const { data: final } = await supabase.auth.getSession();
         if (!final.session?.user) {
           toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
-          navigate('/login', { replace: true });
+          if (!isRelay) navigate('/login', { replace: true });
+          else if (window.opener) {
+            window.opener.postMessage({ type: 'fanrealms:oauth', error: 'auth_failed' }, FANREALMS_ORIGIN);
+            window.close();
+          }
         }
-        // If session exists now, first useEffect will handle navigation
       } catch (err) {
         console.error('AuthCallback error:', err);
         toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
-        navigate('/login', { replace: true });
+        if (!isRelay) navigate('/login', { replace: true });
+        else if (window.opener) {
+          window.opener.postMessage({ type: 'fanrealms:oauth', error: 'auth_failed' }, FANREALMS_ORIGIN);
+          window.close();
+        }
       }
     };
 
