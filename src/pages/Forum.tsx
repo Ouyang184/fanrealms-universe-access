@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThreads, useForumThreadCounts, FORUM_CATEGORIES } from '@/hooks/useForum';
-import { ThreadCard } from '@/components/forum/ThreadCard';
+import { ThreadRow } from '@/components/forum/ThreadRow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
