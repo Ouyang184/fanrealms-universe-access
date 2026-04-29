@@ -3132,17 +3132,31 @@ export type Database = {
           username: string
         }[]
       }
-      get_public_membership_tiers: {
-        Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
-        Returns: {
-          active: boolean
-          creator_id: string
-          description: string
-          id: string
-          price: number
-          title: string
-        }[]
-      }
+      get_public_membership_tiers:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              active: boolean
+              created_at: string
+              creator_id: string
+              description: string
+              id: string
+              price: number
+              title: string
+              updated_at: string
+            }[]
+          }
+        | {
+            Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
+            Returns: {
+              active: boolean
+              creator_id: string
+              description: string
+              id: string
+              price: number
+              title: string
+            }[]
+          }
       get_public_posts_secure: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
