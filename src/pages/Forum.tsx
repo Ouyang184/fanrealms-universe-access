@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThreads, useForumThreadCounts, FORUM_CATEGORIES } from '@/hooks/useForum';
-import { ThreadCard } from '@/components/forum/ThreadCard';
+import { ThreadRow } from '@/components/forum/ThreadRow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,16 +79,16 @@ export default function Forum() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-[180px] w-full rounded-none" />
+            <div className="border border-border bg-card divide-y divide-border">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-[60px] w-full rounded-none" />
               ))}
             </div>
           ) : threads && threads.length > 0 ? (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              <div className="border border-border bg-card">
                 {visibleThreads.map((thread) => (
-                  <ThreadCard key={thread.id} thread={thread} />
+                  <ThreadRow key={thread.id} thread={thread} />
                 ))}
               </div>
 
