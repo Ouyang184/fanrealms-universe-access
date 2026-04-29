@@ -31,7 +31,20 @@ export function useForumThreads(category?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) return [];
+
+      // Fetch author info for all threads
+      const authorIds = [...new Set(data.map((t: any) => t.author_id))];
+      const { data: usersData } = await supabase
+        .from('users')
+        .select('id, username, profile_picture')
+        .in('id', authorIds);
+      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
+
+      return data.map((t: any) => ({
+        ...t,
+        users: usersMap.get(t.author_id) || null,
+      }));
     },
   });
 }
