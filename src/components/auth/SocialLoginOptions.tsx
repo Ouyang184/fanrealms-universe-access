@@ -2,80 +2,25 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useNavigate, useLocation } from 'react-router-dom';
-
-// The relay origin — Lovable's stable domain, no Cloudflare proxy.
-// OAuth starts and completes there, session is sent back via postMessage.
-const RELAY_ORIGIN = 'https://fanrealms-universe-access.lovable.app';
+import { useLocation } from 'react-router-dom';
 
 const SocialLoginOptions = () => {
-  const navigate = useNavigate();
   const location = useLocation();
 
-  const getReturnTo = () => {
+  const signInWith = async (provider: 'google' | 'discord') => {
     const params = new URLSearchParams(location.search);
-    return params.get('returnTo') || '/dashboard';
-  };
+    const returnTo = params.get('returnTo') || '/dashboard';
 
-  const openOAuthPopup = (provider: 'google' | 'discord') => {
-    const width = 500;
-    const height = 620;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+    const redirectTo = `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
 
-    const popup = window.open(
-      `${RELAY_ORIGIN}/oauth-popup?provider=${provider}`,
-      'fanrealms-oauth',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-    );
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo },
+    });
 
-    if (!popup) {
-      toast.error('Popup was blocked. Please allow popups for fanrealms.com and try again.');
-      return;
+    if (error) {
+      toast.error(`Sign in failed: ${error.message}`);
     }
-
-    // Listen for the session sent back from the popup
-    const handler = async (event: MessageEvent) => {
-      if (event.origin !== RELAY_ORIGIN) return;
-      if (event.data?.type !== 'fanrealms:oauth') return;
-
-      window.removeEventListener('message', handler);
-
-      if (event.data.error) {
-        toast.error('Sign in failed. Please try again.');
-        return;
-      }
-
-      const { session } = event.data;
-      if (!session?.access_token) {
-        toast.error('Sign in failed. Please try again.');
-        return;
-      }
-
-      // Establish the session on this origin (fanrealms.com)
-      const { error } = await supabase.auth.setSession({
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      });
-
-      if (error) {
-        toast.error('Sign in failed: ' + error.message);
-        return;
-      }
-
-      toast.success('Signed in successfully!');
-      navigate(getReturnTo(), { replace: true });
-    };
-
-    window.addEventListener('message', handler);
-
-    // Clean up listener if popup is closed without completing auth
-    const pollClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(pollClosed);
-        window.removeEventListener('message', handler);
-      }
-    }, 500);
   };
 
   return (
@@ -93,7 +38,7 @@ const SocialLoginOptions = () => {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => openOAuthPopup('google')}
+          onClick={() => signInWith('google')}
           type="button"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -108,7 +53,7 @@ const SocialLoginOptions = () => {
         <Button
           variant="outline"
           className="w-full"
-          onClick={() => openOAuthPopup('discord')}
+          onClick={() => signInWith('discord')}
           type="button"
         >
           <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
