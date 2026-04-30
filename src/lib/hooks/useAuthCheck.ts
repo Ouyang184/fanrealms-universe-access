@@ -1,7 +1,8 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { buildLoginUrl, isAuthPath } from '@/utils/auth-redirects';
 
 export function useAuthCheck(
   requireAuth: boolean = true,
@@ -12,19 +13,45 @@ export function useAuthCheck(
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Loop guard
+  const lastNavRef = useRef<string | null>(null);
+  const redirectCountRef = useRef(0);
+  const MAX_REDIRECTS = 3;
+
   useEffect(() => {
-    if (!loading) {
-      if (requireAuth && !user) {
-        // Save the current location to redirect back after login
-        const returnTo = location.pathname + location.search;
-        navigate(`${redirect}?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
-      } else if (!requireAuth && user) {
-        // Redirect to dashboard if user is already logged in and trying to access public routes
-        navigate('/dashboard', { replace: true });
+    if (loading) return;
+
+    const safeNavigate = (target: string) => {
+      const currentFull = location.pathname + location.search;
+      if (
+        target === currentFull ||
+        target === lastNavRef.current ||
+        redirectCountRef.current >= MAX_REDIRECTS
+      ) {
+        return;
       }
-      setIsChecking(false);
+      lastNavRef.current = target;
+      redirectCountRef.current += 1;
+      navigate(target, { replace: true });
+    };
+
+    if (requireAuth && !user) {
+      if (!isAuthPath(location.pathname)) {
+        const target =
+          redirect === '/login'
+            ? buildLoginUrl(location.pathname, location.search)
+            : redirect;
+        safeNavigate(target);
+      }
+    } else if (!requireAuth && user) {
+      // Only bounce away from explicit auth pages — don't yank users off
+      // arbitrary public routes (landing, marketplace, etc.).
+      if (isAuthPath(location.pathname) && location.pathname !== '/dashboard') {
+        safeNavigate('/dashboard');
+      }
     }
-  }, [user, loading, requireAuth, redirect, navigate, location]);
+    setIsChecking(false);
+  }, [user, loading, requireAuth, redirect, navigate, location.pathname, location.search]);
 
   return { isChecking: loading || isChecking, user };
 }
