@@ -47,4 +47,5 @@ export interface AuthResult {
   factors?: any[];
   emailMfaRequired?: boolean;
   email?: string;
+  needsEmailConfirmation?: boolean;
 }
