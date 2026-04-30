@@ -19,58 +19,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
-    console.log('AuthContext: Setting up auth state management');
-    
+    console.log('[AUTH][Context] Setting up auth state management', {
+      href: window.location.href,
+      pathname: window.location.pathname,
+    });
+
     // First, check for existing session
+    const t0 = performance.now();
     supabase.auth.getSession()
-      .then(({ data: { session: initialSession } }) => {
-        console.log('AuthContext: Initial session check:', initialSession ? 'exists' : 'none');
-        
+      .then(({ data: { session: initialSession }, error }) => {
+        const dt = Math.round(performance.now() - t0);
+        console.log('[AUTH][Context] Initial getSession()', {
+          durationMs: dt,
+          hasSession: !!initialSession,
+          userId: initialSession?.user?.id,
+          email: initialSession?.user?.email,
+          expiresAt: initialSession?.expires_at,
+          error: error?.message,
+        });
+
         if (initialSession) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
-          
+
           if (initialSession?.user) {
             setTimeout(() => {
               fetchUserProfile(initialSession.user.id).then(userProfile => {
-                if (userProfile) {
-                  setProfile(userProfile);
-                }
+                console.log('[AUTH][Context] Initial profile fetch', { found: !!userProfile });
+                if (userProfile) setProfile(userProfile);
               });
             }, 0);
           }
         }
-        
+
         setLoading(false);
       })
       .catch(error => {
-        console.error("AuthContext: Error getting session:", error);
+        console.error('[AUTH][Context] Error getting session:', error);
         setLoading(false);
       });
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('AuthContext: Auth state change event:', event);
-        console.log('AuthContext: Current session:', currentSession ? 'exists' : 'none');
-        
-        // Update session and user state
+        console.log('[AUTH][Context] onAuthStateChange', {
+          event,
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id,
+          email: currentSession?.user?.email,
+          provider: currentSession?.user?.app_metadata?.provider,
+          pathname: window.location.pathname,
+        });
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
+
         if (currentSession?.user) {
-          console.log('AuthContext: User authenticated, fetching profile');
           setTimeout(() => {
             fetchUserProfile(currentSession.user.id).then(userProfile => {
-              if (userProfile) {
-                setProfile(userProfile);
-                console.log('AuthContext: Profile loaded');
-              }
+              console.log('[AUTH][Context] Profile fetch on auth change', { found: !!userProfile });
+              if (userProfile) setProfile(userProfile);
             });
           }, 0);
         } else {
-          // Clear profile when no session exists
-          console.log('AuthContext: No session, clearing profile');
           setProfile(null);
         }
       }

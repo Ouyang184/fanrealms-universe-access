@@ -13,13 +13,36 @@ const SocialLoginOptions = () => {
 
     const redirectTo = `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log('[AUTH][OAuth] Initiating sign-in', {
       provider,
-      options: { redirectTo },
+      origin: window.location.origin,
+      currentHref: window.location.href,
+      returnTo,
+      redirectTo,
+      hasLocalStorage: typeof localStorage !== 'undefined',
+      timestamp: new Date().toISOString(),
     });
 
-    if (error) {
-      toast.error(`Sign in failed: ${error.message}`);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo },
+      });
+
+      console.log('[AUTH][OAuth] signInWithOAuth response', {
+        provider,
+        hasUrl: !!data?.url,
+        url: data?.url,
+        error: error?.message,
+      });
+
+      if (error) {
+        console.error('[AUTH][OAuth] signInWithOAuth error', error);
+        toast.error(`Sign in failed: ${error.message}`);
+      }
+    } catch (err: any) {
+      console.error('[AUTH][OAuth] Unexpected error during signInWithOAuth', err);
+      toast.error(`Sign in failed: ${err?.message || 'unknown error'}`);
     }
   };
 
