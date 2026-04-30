@@ -77,11 +77,11 @@ const AuthGuard = ({
         }
 
         setSessionRestorePending(true);
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (cancelled) return;
         setSessionRestorePending(false);
 
-        if (!data.session?.user) {
+        if (error || !data.session?.user) {
           const loginUrl = buildLoginUrl(location.pathname, location.search);
           safeNavigate(loginUrl);
           return;
