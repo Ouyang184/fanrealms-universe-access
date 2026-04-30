@@ -88,6 +88,16 @@ const AuthCallback = () => {
       timestamp: new Date().toISOString(),
     });
 
+    recordOAuthDebug({
+      callbackAt: new Date().toISOString(),
+      callbackUrl: currentUrl,
+      callbackSearch: allSearchKeys,
+      callbackHash: allHashKeys,
+      hasCode: !!searchParams.get('code'),
+      oauthError: searchParams.get('error') || hashParams.get('error') || null,
+      oauthErrorDescription: searchParams.get('error_description') || hashParams.get('error_description') || null,
+    });
+
     // Password reset flow
     const isRecovery =
       searchParams.get('type') === 'recovery' ||
@@ -134,6 +144,13 @@ const AuthCallback = () => {
             error: error?.message,
             errorStatus: (error as any)?.status,
             pkceStorageAfter: inspectPkceStorage(),
+          });
+          recordOAuthDebug({
+            exchangeDurationMs: dt,
+            exchangeStatus: (error as any)?.status ?? null,
+            exchangeError: error?.message ?? null,
+            resultUserId: data?.session?.user?.id ?? null,
+            resultEmail: data?.session?.user?.email ?? null,
           });
           if (!error && data.session?.user) {
             toast({ title: "Signed in successfully!" });
