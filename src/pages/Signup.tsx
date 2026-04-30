@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
-import TermsModal from "@/components/auth/TermsModal";
 
 const signupSchema = z
   .object({
@@ -32,9 +30,6 @@ const signupSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    agreeToTerms: z.boolean().refine(val => val === true, {
-      message: "You must agree to the Terms of Service to continue"
-    }),
     captcha: z.string().min(1, "Please complete the captcha"),
   });
 
@@ -44,7 +39,6 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { signUp } = useAuth();
@@ -56,7 +50,6 @@ const Signup = () => {
       fullName: "",
       email: "",
       password: "",
-      agreeToTerms: false,
       captcha: "",
     },
   });
@@ -98,16 +91,6 @@ const Signup = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleTermsAccept = () => {
-    form.setValue("agreeToTerms", true);
-    setShowTermsModal(false);
-  };
-
-  const handleTermsDecline = () => {
-    form.setValue("agreeToTerms", false);
-    setShowTermsModal(false);
   };
 
   if (isChecking) {
@@ -308,41 +291,6 @@ const Signup = () => {
 
                 <FormField
                   control={form.control}
-                  name="agreeToTerms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-start space-x-3">
-                        <FormControl>
-                          <Checkbox
-                            id="agreeToTerms"
-                            checked={field.value}
-                            onCheckedChange={(checked) => field.onChange(checked === true)}
-                            className="mt-1"
-                          />
-                        </FormControl>
-                        <div className="flex-1">
-                          <Label htmlFor="agreeToTerms" className="text-[13px] text-[#555] leading-relaxed">
-                            I agree to the{" "}
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                setShowTermsModal(true);
-                              }}
-                              className="text-primary hover:text-[#3a7aab] underline font-semibold"
-                            >
-                              Terms of Service
-                            </button>
-                          </Label>
-                        </div>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="captcha"
                   render={({ field }) => (
                     <FormItem>
@@ -401,12 +349,6 @@ const Signup = () => {
       </div>
 
       <AuthFooter />
-
-      <TermsModal
-        open={showTermsModal}
-        onAccept={handleTermsAccept}
-        onDecline={handleTermsDecline}
-      />
     </div>
   );
 };
