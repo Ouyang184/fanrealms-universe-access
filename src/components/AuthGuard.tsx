@@ -1,9 +1,10 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
+import { buildLoginUrl, isAuthPath } from "@/utils/auth-redirects";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -21,28 +22,68 @@ const AuthGuard = ({
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
+  // Loop-prevention: remember the last destination we navigated to from this
+  // guard so we never bounce to the same place twice in a row, and bail out
+  // entirely if we exceed a small redirect budget.
+  const lastNavRef = useRef<string | null>(null);
+  const redirectCountRef = useRef(0);
+  const MAX_REDIRECTS = 3;
+
+  const safeNavigate = (target: string) => {
+    if (redirectCountRef.current >= MAX_REDIRECTS) {
+      console.warn('[AuthGuard] Redirect budget exceeded, refusing to navigate', {
+        target,
+        from: location.pathname,
+      });
+      setHasCheckedAuth(true);
+      return false;
+    }
+    const currentFull = location.pathname + location.search;
+    if (target === currentFull || target === lastNavRef.current) {
+      // Already there (or just sent there) — don't loop.
+      setHasCheckedAuth(true);
+      return false;
+    }
+    lastNavRef.current = target;
+    redirectCountRef.current += 1;
+    navigate(target, { replace: true });
+    return true;
+  };
+
   useEffect(() => {
     if (loading) return;
     let cancelled = false;
 
     const run = async () => {
-      // If no user in context but a session might still be in storage from a
-      // just-completed OAuth callback, double-check before bouncing to /login.
+      // Authenticated user landing on auth pages → send to dashboard (once).
+      if (user && isAuthPath(location.pathname)) {
+        if (location.pathname !== '/dashboard') {
+          safeNavigate('/dashboard');
+        } else {
+          setHasCheckedAuth(true);
+        }
+        return;
+      }
+
+      // No user in context but a session may still be in storage from a
+      // just-completed OAuth callback — double-check before bouncing to /login.
       if (requireAuth && !user) {
+        // If we're already on an auth page, never redirect to /login again.
+        if (isAuthPath(location.pathname)) {
+          setHasCheckedAuth(true);
+          return;
+        }
+
         const { data } = await supabase.auth.getSession();
         if (cancelled) return;
+
         if (!data.session?.user) {
-          const returnTo = location.pathname + location.search;
-          navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+          const loginUrl = buildLoginUrl(location.pathname, location.search);
+          safeNavigate(loginUrl);
           return;
         }
         // Session exists; AuthContext.onAuthStateChange will populate `user`
         // shortly. Wait one more render — don't redirect.
-        return;
-      }
-
-      if (user && ['/login', '/signup'].includes(location.pathname)) {
-        navigate('/dashboard');
         return;
       }
 
@@ -53,7 +94,8 @@ const AuthGuard = ({
     return () => {
       cancelled = true;
     };
-  }, [user, profile, loading, navigate, location, requireAuth, requireCompleteProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
   if (loading || !hasCheckedAuth) {
     return (
