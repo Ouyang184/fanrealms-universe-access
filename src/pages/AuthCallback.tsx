@@ -104,11 +104,18 @@ const AuthCallback = () => {
     const oauthErrorDesc = searchParams.get('error_description') || hashParams.get('error_description');
     if (oauthError) {
       console.error('[AUTH][Callback] OAuth provider returned error', { oauthError, oauthErrorDesc });
+      toast({
+        title: 'Sign in failed',
+        description: oauthErrorDesc || oauthError,
+        variant: 'destructive',
+      });
+      navigate('/login', { replace: true });
+      return;
     }
 
     const go = async () => {
       try {
-        // PKCE code exchange
+        // PKCE code exchange (only when a code is actually present)
         const code = searchParams.get('code');
         console.log('[AUTH][Callback] PKCE code present?', { hasCode: !!code, codePreview: code?.substring(0, 12) });
 
@@ -131,7 +138,16 @@ const AuthCallback = () => {
             toast({ title: "Signed in successfully!" });
             return; // first useEffect handles navigation
           }
-          console.warn('[AUTH][Callback] code exchange failed', error?.message);
+          if (error) {
+            console.warn('[AUTH][Callback] code exchange failed', error.message);
+            toast({
+              title: 'Sign in failed',
+              description: error.message,
+              variant: 'destructive',
+            });
+            navigate('/login', { replace: true });
+            return;
+          }
         }
 
         // Implicit flow / existing session fallback
