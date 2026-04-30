@@ -46,6 +46,7 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -71,19 +72,26 @@ const Signup = () => {
   const onSubmit = async (values: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      
+
       const result = await signUp(values.email, values.password, values.captcha);
-      
+
       if (result.success === false) {
         toast.error(result.error.message);
         return;
       }
-      
+
       localStorage.setItem("user_fullname", values.fullName);
 
-      toast.success("Account created successfully! Please check your email to verify.");
+      // Email confirmation required — no session yet. Show confirm-email screen.
+      if (result.needsEmailConfirmation || !result.session) {
+        setPendingEmail(values.email);
+        return;
+      }
+
+      // Session already active (email confirmation disabled in Supabase).
+      toast.success("Account created successfully!");
       navigate("/dashboard", { replace: true });
-      
+
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error?.message || "An error occurred during signup");
@@ -106,6 +114,62 @@ const Signup = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-8">
+            <Link to="/" className="inline-block">
+              <h1 className="text-[22px] font-bold tracking-[-0.5px] text-[#111]">FanRealms</h1>
+            </Link>
+          </div>
+
+          <Card className="bg-white border border-[#eee] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            <CardHeader className="pb-4 text-center">
+              <div className="flex justify-center mb-3">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <CardTitle className="text-[20px] font-bold tracking-[-0.5px] text-[#111]">
+                Check your email
+              </CardTitle>
+              <CardDescription className="text-[13px] text-[#888] mt-2">
+                We sent a confirmation link to{" "}
+                <span className="font-semibold text-[#111]">{pendingEmail}</span>.
+                Click the link in the email to activate your account, then you can sign in.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Alert className="bg-primary/5 border-primary/20">
+                <AlertDescription className="text-[12px] text-[#555] leading-relaxed">
+                  Didn't get the email? Check your spam folder, or wait a minute and try again.
+                  The link will expire in 24 hours.
+                </AlertDescription>
+              </Alert>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setPendingEmail(null);
+                  form.reset();
+                }}
+              >
+                Use a different email
+              </Button>
+              <Link to="/login" className="block">
+                <Button className="w-full bg-primary hover:bg-[#3a7aab] text-white">
+                  Go to sign in
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+        <AuthFooter />
       </div>
     );
   }
