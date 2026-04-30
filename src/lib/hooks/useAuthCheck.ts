@@ -40,10 +40,10 @@ export function useAuthCheck(
     const run = async () => {
       if (requireAuth && !user) {
         if (!isAuthPath(location.pathname)) {
-          const { data } = await supabase.auth.getSession();
+          const { data, error } = await supabase.auth.getSession();
           if (cancelled) return;
 
-          if (!data.session?.user) {
+          if (error || !data.session?.user) {
             const target =
               redirect === '/login'
                 ? buildLoginUrl(location.pathname, location.search)
