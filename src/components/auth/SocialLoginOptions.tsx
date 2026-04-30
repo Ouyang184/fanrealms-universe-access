@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from 'react-router-dom';
+import { recordOAuthDebug } from '@/pages/AuthDebug';
 
 const SocialLoginOptions = () => {
   const location = useLocation();
