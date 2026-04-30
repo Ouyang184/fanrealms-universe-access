@@ -46,6 +46,7 @@ const Signup = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -71,19 +72,26 @@ const Signup = () => {
   const onSubmit = async (values: SignupFormValues) => {
     try {
       setIsSubmitting(true);
-      
+
       const result = await signUp(values.email, values.password, values.captcha);
-      
+
       if (result.success === false) {
         toast.error(result.error.message);
         return;
       }
-      
+
       localStorage.setItem("user_fullname", values.fullName);
 
-      toast.success("Account created successfully! Please check your email to verify.");
+      // Email confirmation required — no session yet. Show confirm-email screen.
+      if (result.needsEmailConfirmation || !result.session) {
+        setPendingEmail(values.email);
+        return;
+      }
+
+      // Session already active (email confirmation disabled in Supabase).
+      toast.success("Account created successfully!");
       navigate("/dashboard", { replace: true });
-      
+
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error?.message || "An error occurred during signup");
