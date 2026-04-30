@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthResult } from "@/lib/types/auth";
+import { sanitizeReturnTo } from "@/utils/auth-redirects";
 import { MFAChallenge } from "@/components/auth/MFAChallenge";
 import { EmailTwoFactorChallenge } from "@/components/auth/EmailTwoFactorChallenge";
 import { useMFA } from "@/hooks/useMFA";
@@ -102,8 +103,8 @@ const LoginForm = () => {
       
       console.log("LoginForm: Sign in successful, redirecting...");
       const params = new URLSearchParams(location.search);
-      const returnTo = params.get('returnTo');
-      navigate(returnTo || '/home', { replace: true });
+      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/home');
+      navigate(returnTo, { replace: true });
     } catch (error: any) {
       console.error("LoginForm: Login error:", error);
       setLoginError(error?.message || "Unexpected error occurred");
@@ -120,8 +121,8 @@ const LoginForm = () => {
   const handleMFASuccess = () => {
     console.log("LoginForm: MFA verification successful, redirecting...");
     const params = new URLSearchParams(location.search);
-    const returnTo = params.get('returnTo');
-    navigate(returnTo || '/home', { replace: true });
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/home');
+    navigate(returnTo, { replace: true });
   };
 
   const handleMFACancel = () => {
@@ -139,8 +140,8 @@ const LoginForm = () => {
 
     // Navigate to success page - user is already authenticated
     const params = new URLSearchParams(location.search);
-    const returnTo = params.get('returnTo');
-    navigate(returnTo || '/home', { replace: true });
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/home');
+    navigate(returnTo, { replace: true });
   };
 
   const handleEmailMFACancel = () => {
