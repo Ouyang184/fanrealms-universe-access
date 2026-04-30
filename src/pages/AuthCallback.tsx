@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { sanitizeReturnTo } from "@/utils/auth-redirects";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const handled = useRef(false);
 
-  const returnTo = searchParams.get('returnTo') || '/dashboard';
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'), '/dashboard');
   const flow = searchParams.get('flow');
   const isSignupConfirmation =
     flow === 'signup' ||
