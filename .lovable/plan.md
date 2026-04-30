@@ -1,72 +1,61 @@
-## Goal
 
-Fix "Continue with Google" on fanrealms.com so that clicking it reliably signs the user in.
+# Fix Google sign-in / sign-up
 
-## What's broken today
+## Diagnosis
 
-The current flow is unusually complex:
+From the Supabase auth logs and the codebase, three real blockers were identified:
 
-1. User clicks Google on `fanrealms.com`.
-2. A popup opens pointed at `fanrealms-universe-access.lovable.app/oauth-popup` (the "relay origin").
-3. The relay calls `supabase.auth.signInWithOAuth` — Supabase stores a PKCE `code_verifier` in **localStorage of the relay origin**.
-4. Google redirects back to the relay's `/auth/callback?relay=true`.
-5. The relay exchanges the code for a session, then `postMessage`s the session back to `fanrealms.com`.
-6. `fanrealms.com` calls `supabase.auth.setSession({ access_token, refresh_token })` to log the user in on the main origin.
+1. **Conflicting Google client in `src/main.tsx`**
+   The app wraps the entire React tree in `<GoogleOAuthProvider>` from `@react-oauth/google` with a hardcoded Google client ID. The actual sign-in goes through **Supabase OAuth** (`supabase.auth.signInWithOAuth`). Running both Google Identity Services *and* Supabase OAuth on the same page can hijack the popup/redirect and corrupt the PKCE flow. The session replay confirms `Google Identity Services client library` is being injected on page load even though no GIS button is rendered.
 
-This was built to work around Cloudflare proxy issues on `fanrealms.com`. In practice the popup completes Google auth (auth logs show the redirect succeeds) but the session never lands on `fanrealms.com` — likely causes:
+2. **`/auth/callback` is not a public route in `AuthGuard` terms, but the redirect race still hurts it**
+   `AuthCallback` calls `exchangeCodeForSession`, but `AuthContext` runs its own `getSession()` on mount. If `AuthContext` resolves first with no session, any guarded page the user lands on right after redirect (`/dashboard`) bounces to `/login?returnTo=…` before the freshly-exchanged session is committed. The Supabase logs show repeated `/authorize → /callback` cycles consistent with this loop.
 
-- The `session` object sent via `postMessage` is missing `refresh_token` (Supabase only returns it once during code exchange and structured-clone of the full session can drop nested fields), so `setSession` silently fails.
-- Popup blockers / Safari ITP block cross-origin `postMessage` and third-party storage.
-- Two separate Supabase localStorage entries (one per origin) get out of sync.
+3. **PKCE verifier may not be present on `/auth/callback` after the redirect from Google**
+   When the user starts OAuth on `https://www.fanrealms.com` but Supabase returns to `https://fanrealms.com/auth/callback` (or vice-versa), the PKCE `code-verifier` stored in `localStorage` is on a different origin and `exchangeCodeForSession` fails silently. Today we don't surface this clearly and we don't ensure a single canonical origin.
 
-## Fix
+## What we'll change
 
-Replace the popup-relay with a **standard same-origin OAuth redirect** on `fanrealms.com`. This is the supported Supabase pattern and removes every cross-origin moving part.
+### 1. Remove the conflicting Google provider
+- In `src/main.tsx`, delete the `<GoogleOAuthProvider>` wrapper and its `@react-oauth/google` import. Render `<App />` directly inside `React.StrictMode`.
+- Remove the `@react-oauth/google` dependency from `package.json`.
 
-### What changes
+### 2. Patch the callback flow (`src/pages/AuthCallback.tsx`)
+- Stop relying on `useAuth()` to drive navigation. Inside the callback, after `exchangeCodeForSession` succeeds, navigate to `returnTo` directly using `window.location.replace(returnTo)`. This guarantees the next page boots with the new session already in `localStorage` and avoids the AuthContext race.
+- If no `code` is present and `getSession()` returns nothing, redirect to `/login` with a clear toast instead of waiting 5s.
+- Keep the existing recovery + provider error branches.
 
-1. **`SocialLoginOptions.tsx`** — replace `openOAuthPopup` with a direct call:
-   ```ts
-   await supabase.auth.signInWithOAuth({
-     provider,
-     options: { redirectTo: `${window.location.origin}/auth/callback` },
-   });
-   ```
-   No popup, no relay origin, no postMessage. The browser navigates to Google and back.
+### 3. Make `AuthGuard` wait one tick after a fresh login
+- In `src/components/AuthGuard.tsx`, when `loading === false` and `user === null`, call `supabase.auth.getSession()` once before bouncing to `/login`. If a session exists in storage, set `user` via the next `onAuthStateChange` and stop the redirect. This closes the post-callback race window without changing existing protected-page behavior.
 
-2. **`AuthCallback.tsx`** — strip out all `relay` / `window.opener` / `postMessage` branches. Keep only:
-   - PKCE code exchange (`exchangeCodeForSession`)
-   - Recovery redirect
-   - Navigate to `/dashboard` (or `returnTo`) on success, `/login` on failure
+### 4. Normalize the OAuth origin (`src/components/auth/SocialLoginOptions.tsx`)
+- Compute `redirectTo` from a single canonical host: if `window.location.hostname === 'www.fanrealms.com'`, use `https://fanrealms.com/auth/callback?...`; otherwise keep `window.location.origin`. This ensures the PKCE verifier written before redirect is read on the same origin after redirect.
+- Remove the `recordOAuthDebug` calls and the `/auth/debug` page (no longer needed once the flow works). Drop the route from `src/App.tsx` and delete `src/pages/AuthDebug.tsx`.
 
-3. **`OAuthPopup.tsx`** — delete the file and remove its route from `App.tsx`.
+### 5. Verify
+- After changes, open `/login` in the preview, click "Continue with Google", complete Google's consent, and confirm we land on `/dashboard` with a session. Capture console logs and the Supabase auth logs to confirm the `/callback → /authorize` loop is gone.
 
-### Supabase dashboard settings the user must verify
+## Required Supabase dashboard settings (cannot be set from code)
 
-(I'll list these in chat after the code change so the user can confirm them in the Supabase dashboard — they cannot be changed from code):
+For the fix to take effect on the live site, in **Supabase Dashboard → Authentication → URL Configuration**:
 
 - **Site URL**: `https://fanrealms.com`
-- **Redirect URLs** (allow-list): add
+- **Additional Redirect URLs** must include all of:
   - `https://fanrealms.com/auth/callback`
   - `https://www.fanrealms.com/auth/callback`
   - `https://fanrealms-universe-access.lovable.app/auth/callback`
   - `https://id-preview--77a75b15-d40c-4de1-9a69-95e5c12211ff.lovable.app/auth/callback`
-- **Google provider**: Client ID + Secret configured, and the Supabase callback URL `https://eaeqyctjljbtcatlohky.supabase.co/auth/v1/callback` is registered in Google Cloud Console as an Authorized redirect URI.
+  - `https://77a75b15-d40c-4de1-9a69-95e5c12211ff.lovableproject.com/auth/callback`
 
-### Cloudflare note
-
-The original popup workaround was added because of a suspected Cloudflare proxy issue. The standard OAuth flow only uses `GET` redirects (no `POST` to Supabase from the browser during sign-in), so Cloudflare proxying does not interfere. Email/password sign-in continues to work today through the same Cloudflare layer, confirming the proxy is fine for normal Supabase requests.
+And in the **Google Cloud Console** OAuth client → Authorized redirect URIs, keep only Supabase's:
+`https://eaeqyctjljbtcatlohky.supabase.co/auth/v1/callback`
 
 ## Files touched
 
-- `src/components/auth/SocialLoginOptions.tsx` — simplify to direct `signInWithOAuth` redirect
-- `src/pages/AuthCallback.tsx` — remove relay / postMessage code paths
-- `src/pages/OAuthPopup.tsx` — delete
-- `src/App.tsx` — remove `/oauth-popup` route and import
-
-## Verification after implementation
-
-1. Open `https://fanrealms.com/login`, click **Continue with Google**, complete Google auth → should land on `/dashboard` signed in.
-2. Repeat for Discord.
-3. Confirm email/password login still works.
-4. Check Supabase auth logs for a successful `/token?grant_type=pkce` exchange following the `/callback` 302.
+- `src/main.tsx` — remove GoogleOAuthProvider
+- `package.json` — drop `@react-oauth/google`
+- `src/pages/AuthCallback.tsx` — patch exchange + navigation
+- `src/components/AuthGuard.tsx` — re-check session before bouncing
+- `src/components/auth/SocialLoginOptions.tsx` — canonical redirect host, remove debug recorder
+- `src/App.tsx` — remove `/auth/debug` route + import
+- `src/pages/AuthDebug.tsx` — delete
