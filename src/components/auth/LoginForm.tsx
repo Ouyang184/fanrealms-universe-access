@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthResult } from "@/lib/types/auth";
+import { sanitizeReturnTo } from "@/utils/auth-redirects";
 import { MFAChallenge } from "@/components/auth/MFAChallenge";
 import { EmailTwoFactorChallenge } from "@/components/auth/EmailTwoFactorChallenge";
 import { useMFA } from "@/hooks/useMFA";
