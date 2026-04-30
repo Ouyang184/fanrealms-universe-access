@@ -32,7 +32,7 @@ export interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
   signInWithMagicLink: (email: string) => Promise<void>;
-  signUp: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
+  signUp: (email: string, password: string, captchaToken?: string, fullName?: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
   updateProfile: (data: Partial<Profile>) => Promise<Profile | null>;
 }
