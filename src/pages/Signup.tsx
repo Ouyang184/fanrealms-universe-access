@@ -349,12 +349,6 @@ const Signup = () => {
       </div>
 
       <AuthFooter />
-
-      <TermsModal
-        open={showTermsModal}
-        onAccept={handleTermsAccept}
-        onDecline={handleTermsDecline}
-      />
     </div>
   );
 };
