@@ -5,6 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
 
+let activeCallbackKey: string | null = null;
+
+const waitForSession = async (timeoutMs = 6000) => {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) return data.session;
+    await new Promise((resolve) => window.setTimeout(resolve, 200));
+  }
+  return null;
+};
+
 const AuthCallback = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,19 +74,41 @@ const AuthCallback = () => {
         const code = searchParams.get('code');
 
         if (code) {
-          if (sessionStorage.getItem(callbackStorageKey) === 'handled') {
-            const { data: existing } = await supabase.auth.getSession();
-            if (existing.session?.user) {
-              finish(returnTo);
-              return;
-            }
-            navigate('/login', { replace: true });
+          if (activeCallbackKey === callbackStorageKey) {
+            console.log('[AUTH][Callback] Duplicate callback mount ignored while exchange is active');
             return;
           }
 
-          sessionStorage.setItem(callbackStorageKey, 'handled');
+          activeCallbackKey = callbackStorageKey;
+          const callbackStatus = sessionStorage.getItem(callbackStorageKey);
+
+          if (callbackStatus === 'processing') {
+            const session = await waitForSession();
+            if (session?.user) {
+              sessionStorage.setItem(callbackStorageKey, 'succeeded');
+              finish(returnTo);
+              return;
+            }
+          }
+
+          if (callbackStatus === 'succeeded') {
+            const session = await waitForSession(1000);
+            if (session?.user) {
+              finish(returnTo);
+              return;
+            }
+          }
+
+          sessionStorage.setItem(callbackStorageKey, 'processing');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
+            const session = await waitForSession(1000);
+            if (session?.user) {
+              sessionStorage.setItem(callbackStorageKey, 'succeeded');
+              finish(returnTo);
+              return;
+            }
+            sessionStorage.setItem(callbackStorageKey, `failed:${Date.now()}`);
             toast({
               title: 'Sign in failed',
               description: error.message,
@@ -84,6 +118,7 @@ const AuthCallback = () => {
             return;
           }
           if (data?.session?.user) {
+            sessionStorage.setItem(callbackStorageKey, 'succeeded');
             toast({ title: 'Signed in successfully!' });
             finish(returnTo);
             return;
@@ -108,12 +143,17 @@ const AuthCallback = () => {
         });
         navigate('/login', { replace: true });
       } catch (err: any) {
+        sessionStorage.setItem(callbackStorageKey, `failed:${Date.now()}`);
         toast({
           title: isSignupConfirmation ? 'Confirmation failed' : 'Sign in failed',
           description: err?.message || 'Please try again.',
           variant: 'destructive',
         });
         navigate('/login', { replace: true });
+      } finally {
+        if (activeCallbackKey === callbackStorageKey) {
+          activeCallbackKey = null;
+        }
       }
     };
 
