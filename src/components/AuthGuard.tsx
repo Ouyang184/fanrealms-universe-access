@@ -21,6 +21,7 @@ const AuthGuard = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
+  const [sessionRestorePending, setSessionRestorePending] = useState(false);
 
   // Loop-prevention: remember the last destination we navigated to from this
   // guard so we never bounce to the same place twice in a row, and bail out
@@ -53,6 +54,7 @@ const AuthGuard = ({
   useEffect(() => {
     if (loading) return;
     let cancelled = false;
+    setHasCheckedAuth(false);
 
     const run = async () => {
       // Authenticated user landing on auth pages → send to dashboard (once).
@@ -74,16 +76,19 @@ const AuthGuard = ({
           return;
         }
 
+        setSessionRestorePending(true);
         const { data } = await supabase.auth.getSession();
         if (cancelled) return;
+        setSessionRestorePending(false);
 
         if (!data.session?.user) {
           const loginUrl = buildLoginUrl(location.pathname, location.search);
           safeNavigate(loginUrl);
           return;
         }
-        // Session exists; AuthContext.onAuthStateChange will populate `user`
-        // shortly. Wait one more render — don't redirect.
+        // Session exists; render protected content now instead of waiting on
+        // AuthContext and risking a spinner or redirect loop.
+        setHasCheckedAuth(true);
         return;
       }
 
@@ -97,7 +102,7 @@ const AuthGuard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
-  if (loading || !hasCheckedAuth) {
+  if (loading || sessionRestorePending || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
