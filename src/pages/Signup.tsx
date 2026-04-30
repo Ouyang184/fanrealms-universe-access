@@ -93,16 +93,6 @@ const Signup = () => {
     }
   };
 
-  const handleTermsAccept = () => {
-    form.setValue("agreeToTerms", true);
-    setShowTermsModal(false);
-  };
-
-  const handleTermsDecline = () => {
-    form.setValue("agreeToTerms", false);
-    setShowTermsModal(false);
-  };
-
   if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -295,41 +285,6 @@ const Signup = () => {
                           </ul>
                         </div>
                       )}
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="agreeToTerms"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-start space-x-3">
-                        <FormControl>
-                          <Checkbox
-                            id="agreeToTerms"
-                            checked={field.value}
-                            onCheckedChange={(checked) => field.onChange(checked === true)}
-                            className="mt-1"
-                          />
-                        </FormControl>
-                        <div className="flex-1">
-                          <Label htmlFor="agreeToTerms" className="text-[13px] text-[#555] leading-relaxed">
-                            I agree to the{" "}
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                setShowTermsModal(true);
-                              }}
-                              className="text-primary hover:text-[#3a7aab] underline font-semibold"
-                            >
-                              Terms of Service
-                            </button>
-                          </Label>
-                        </div>
-                      </div>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
