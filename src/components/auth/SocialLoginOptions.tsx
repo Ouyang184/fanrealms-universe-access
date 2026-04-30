@@ -3,7 +3,16 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from 'react-router-dom';
-import { recordOAuthDebug } from '@/pages/AuthDebug';
+
+const getCanonicalOrigin = () => {
+  const { hostname, origin, protocol } = window.location;
+  // Force a single canonical host so the PKCE verifier written before the
+  // redirect is read on the same origin after Google sends us back.
+  if (hostname === 'www.fanrealms.com') {
+    return 'https://fanrealms.com';
+  }
+  return origin || `${protocol}//${hostname}`;
+};
 
 const SocialLoginOptions = () => {
   const location = useLocation();
@@ -12,40 +21,18 @@ const SocialLoginOptions = () => {
     const params = new URLSearchParams(location.search);
     const returnTo = params.get('returnTo') || '/dashboard';
 
-    const redirectTo = `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
-
-    console.log('[AUTH][OAuth] Initiating sign-in', {
-      provider,
-      origin: window.location.origin,
-      currentHref: window.location.href,
-      returnTo,
-      redirectTo,
-      hasLocalStorage: typeof localStorage !== 'undefined',
-      timestamp: new Date().toISOString(),
-    });
-
-    recordOAuthDebug({
-      initiatedAt: new Date().toISOString(),
-      provider,
-      origin: window.location.origin,
-      redirectTo,
-      signInError: null,
-      providerUrl: null,
-      callbackAt: undefined,
-      callbackUrl: undefined,
-      callbackSearch: undefined,
-      callbackHash: undefined,
-      hasCode: undefined,
-      oauthError: null,
-      oauthErrorDescription: null,
-      exchangeError: null,
-      exchangeStatus: null,
-      exchangeDurationMs: null,
-      resultUserId: null,
-      resultEmail: null,
-    });
+    const canonicalOrigin = getCanonicalOrigin();
+    const redirectTo = `${canonicalOrigin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
 
     try {
+      // If the user started OAuth on www.fanrealms.com but the canonical host
+      // is fanrealms.com, hop there first so the PKCE verifier is written on
+      // the same origin Supabase will redirect back to.
+      if (window.location.origin !== canonicalOrigin) {
+        window.location.assign(`${canonicalOrigin}/login?returnTo=${encodeURIComponent(returnTo)}`);
+        return;
+      }
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -57,20 +44,7 @@ const SocialLoginOptions = () => {
         },
       });
 
-      console.log('[AUTH][OAuth] signInWithOAuth response', {
-        provider,
-        hasUrl: !!data?.url,
-        url: data?.url,
-        error: error?.message,
-      });
-
-      recordOAuthDebug({
-        signInError: error?.message ?? null,
-        providerUrl: data?.url ?? null,
-      });
-
       if (error) {
-        console.error('[AUTH][OAuth] signInWithOAuth error', error);
         toast.error(`Sign in failed: ${error.message}`);
         return;
       }
@@ -81,12 +55,9 @@ const SocialLoginOptions = () => {
         toast.error('Sign in failed: no redirect URL returned by Supabase.');
       }
     } catch (err: any) {
-      console.error('[AUTH][OAuth] Unexpected error during signInWithOAuth', err);
-      recordOAuthDebug({ signInError: err?.message || 'unknown error' });
       toast.error(`Sign in failed: ${err?.message || 'unknown error'}`);
     }
   };
-
 
   return (
     <div className="mt-6">
