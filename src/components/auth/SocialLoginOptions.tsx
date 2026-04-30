@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from 'react-router-dom';
+import { recordOAuthDebug } from '@/pages/AuthDebug';
 
 const SocialLoginOptions = () => {
   const location = useLocation();
@@ -23,13 +24,32 @@ const SocialLoginOptions = () => {
       timestamp: new Date().toISOString(),
     });
 
+    recordOAuthDebug({
+      initiatedAt: new Date().toISOString(),
+      provider,
+      origin: window.location.origin,
+      redirectTo,
+      signInError: null,
+      providerUrl: null,
+      callbackAt: undefined,
+      callbackUrl: undefined,
+      callbackSearch: undefined,
+      callbackHash: undefined,
+      hasCode: undefined,
+      oauthError: null,
+      oauthErrorDescription: null,
+      exchangeError: null,
+      exchangeStatus: null,
+      exchangeDurationMs: null,
+      resultUserId: null,
+      resultEmail: null,
+    });
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
-          // Build the URL ourselves so we can do a top-level redirect.
-          // Avoids iframe/popup edge cases in the preview.
           skipBrowserRedirect: true,
           queryParams: provider === 'google'
             ? { access_type: 'offline', prompt: 'select_account' }
@@ -44,6 +64,11 @@ const SocialLoginOptions = () => {
         error: error?.message,
       });
 
+      recordOAuthDebug({
+        signInError: error?.message ?? null,
+        providerUrl: data?.url ?? null,
+      });
+
       if (error) {
         console.error('[AUTH][OAuth] signInWithOAuth error', error);
         toast.error(`Sign in failed: ${error.message}`);
@@ -51,16 +76,17 @@ const SocialLoginOptions = () => {
       }
 
       if (data?.url) {
-        // Force a full top-level navigation to the provider.
         window.location.assign(data.url);
       } else {
         toast.error('Sign in failed: no redirect URL returned by Supabase.');
       }
     } catch (err: any) {
       console.error('[AUTH][OAuth] Unexpected error during signInWithOAuth', err);
+      recordOAuthDebug({ signInError: err?.message || 'unknown error' });
       toast.error(`Sign in failed: ${err?.message || 'unknown error'}`);
     }
   };
+
 
   return (
     <div className="mt-6">
