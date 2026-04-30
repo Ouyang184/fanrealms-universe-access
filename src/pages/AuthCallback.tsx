@@ -19,6 +19,7 @@ const AuthCallback = () => {
     searchParams.get('type') === 'email_change';
   const loadingTitle = isSignupConfirmation ? 'Confirming your email…' : 'Signing you in…';
   const loadingDescription = isSignupConfirmation ? 'Activating your account.' : 'Just a moment.';
+  const callbackStorageKey = `auth-callback:${searchParams.get('code') || window.location.hash || 'session'}`;
 
   useEffect(() => {
     if (handled.current) return;
@@ -61,6 +62,17 @@ const AuthCallback = () => {
         const code = searchParams.get('code');
 
         if (code) {
+          if (sessionStorage.getItem(callbackStorageKey) === 'handled') {
+            const { data: existing } = await supabase.auth.getSession();
+            if (existing.session?.user) {
+              finish(returnTo);
+              return;
+            }
+            navigate('/login', { replace: true });
+            return;
+          }
+
+          sessionStorage.setItem(callbackStorageKey, 'handled');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             toast({
@@ -106,7 +118,7 @@ const AuthCallback = () => {
     };
 
     go();
-  }, [navigate, searchParams, toast, returnTo, isSignupConfirmation]);
+  }, [navigate, searchParams, toast, returnTo, isSignupConfirmation, callbackStorageKey]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
