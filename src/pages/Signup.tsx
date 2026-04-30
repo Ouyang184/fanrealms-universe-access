@@ -73,7 +73,7 @@ const Signup = () => {
     try {
       setIsSubmitting(true);
 
-      const result = await signUp(values.email, values.password, values.captcha);
+      const result = await signUp(values.email, values.password, values.captcha, values.fullName);
 
       if (result.success === false) {
         toast.error(result.error.message);
@@ -313,14 +313,22 @@ const Signup = () => {
                     <FormItem>
                       <div className="flex items-start space-x-3">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} className="mt-1" />
+                          <Checkbox
+                            id="agreeToTerms"
+                            checked={field.value}
+                            onCheckedChange={(checked) => field.onChange(checked === true)}
+                            className="mt-1"
+                          />
                         </FormControl>
                         <div className="flex-1">
-                          <Label className="text-[13px] text-[#555] leading-relaxed">
+                          <Label htmlFor="agreeToTerms" className="text-[13px] text-[#555] leading-relaxed">
                             I agree to the{" "}
                             <button
                               type="button"
-                              onClick={() => setShowTermsModal(true)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                setShowTermsModal(true);
+                              }}
                               className="text-primary hover:text-[#3a7aab] underline font-semibold"
                             >
                               Terms of Service

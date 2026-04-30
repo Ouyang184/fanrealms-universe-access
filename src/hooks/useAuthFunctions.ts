@@ -117,14 +117,18 @@ export const useAuthFunctions = () => {
     }
   }, [toast]);
 
-  const signUp = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
+  const signUp = useCallback(async (email: string, password: string, captchaToken?: string, fullName?: string): Promise<AuthResult> => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup`,
-          captchaToken
+          captchaToken,
+          data: {
+            full_name: fullName,
+            name: fullName,
+          }
         }
       });
 
