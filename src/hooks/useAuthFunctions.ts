@@ -168,6 +168,9 @@ export const useAuthFunctions = () => {
           session: data.session!
         };
       } else {
+        // Email confirmation is required by Supabase — no session yet.
+        // Tell the caller so it can show a "check your email" screen instead
+        // of trying to navigate into protected routes.
         toast({
           title: "Verification required",
           description: "Please check your email to confirm your account.",
@@ -176,7 +179,8 @@ export const useAuthFunctions = () => {
         return {
           success: true,
           user: data.user!,
-          session: data.session!
+          session: undefined,
+          needsEmailConfirmation: true,
         };
       }
     } catch (error: any) {
