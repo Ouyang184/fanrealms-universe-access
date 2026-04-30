@@ -123,7 +123,7 @@ export const useAuthFunctions = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?flow=signup`,
           captchaToken
         }
       });
@@ -208,7 +208,7 @@ export const useAuthFunctions = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?flow=magiclink`,
         },
       });
 

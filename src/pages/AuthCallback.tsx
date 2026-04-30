@@ -38,6 +38,10 @@ const AuthCallback = () => {
   const navigated = useRef(false);
 
   const returnTo = searchParams.get('returnTo') || '/dashboard';
+  const flow = searchParams.get('flow');
+  const isSignupConfirmation = flow === 'signup' || searchParams.get('type') === 'signup' || searchParams.get('type') === 'email_change';
+  const loadingTitle = isSignupConfirmation ? 'Confirming your email…' : 'Signing you in…';
+  const loadingDescription = isSignupConfirmation ? 'Activating your account.' : 'Just a moment.';
 
   // Once AuthContext confirms the user is set, redirect.
   useEffect(() => {
@@ -47,6 +51,8 @@ const AuthCallback = () => {
       userId: user?.id,
       email: user?.email,
       returnTo,
+      flow,
+      isSignupConfirmation,
       navigated: navigated.current,
     });
     if (!loading && user && !navigated.current) {
@@ -73,6 +79,8 @@ const AuthCallback = () => {
       pathname: window.location.pathname,
       search: window.location.search,
       hash: window.location.hash,
+      flow,
+      isSignupConfirmation,
       searchKeys: allSearchKeys,
       hashKeys: allHashKeys,
       pkceStorage: inspectPkceStorage(),
@@ -169,7 +177,13 @@ const AuthCallback = () => {
         });
         if (!final.session?.user) {
           console.error('[AUTH][Callback] Sign-in did not complete — no session after fallbacks');
-          toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
+          toast({
+            title: isSignupConfirmation ? "Email confirmed" : "Sign in failed",
+            description: isSignupConfirmation
+              ? "Your account is active. Please sign in with your email and password."
+              : "Please try again.",
+            variant: isSignupConfirmation ? "default" : "destructive",
+          });
           navigate('/login', { replace: true });
         }
       } catch (err: any) {
@@ -178,7 +192,11 @@ const AuthCallback = () => {
           name: err?.name,
           stack: err?.stack,
         });
-        toast({ title: "Sign in failed", description: "Please try again.", variant: "destructive" });
+        toast({
+          title: isSignupConfirmation ? "Confirmation failed" : "Sign in failed",
+          description: "Please try again.",
+          variant: "destructive",
+        });
         navigate('/login', { replace: true });
       }
     };
@@ -190,8 +208,8 @@ const AuthCallback = () => {
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <LoadingSpinner className="mx-auto mb-4" />
-        <h2 className="text-xl font-medium mb-2">Signing you in…</h2>
-        <p className="text-muted-foreground">Just a moment.</p>
+        <h2 className="text-xl font-medium mb-2">{loadingTitle}</h2>
+        <p className="text-muted-foreground">{loadingDescription}</p>
       </div>
     </div>
   );
