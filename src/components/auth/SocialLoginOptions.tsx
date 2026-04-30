@@ -26,7 +26,15 @@ const SocialLoginOptions = () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          // Build the URL ourselves so we can do a top-level redirect.
+          // Avoids iframe/popup edge cases in the preview.
+          skipBrowserRedirect: true,
+          queryParams: provider === 'google'
+            ? { access_type: 'offline', prompt: 'select_account' }
+            : undefined,
+        },
       });
 
       console.log('[AUTH][OAuth] signInWithOAuth response', {
@@ -39,6 +47,14 @@ const SocialLoginOptions = () => {
       if (error) {
         console.error('[AUTH][OAuth] signInWithOAuth error', error);
         toast.error(`Sign in failed: ${error.message}`);
+        return;
+      }
+
+      if (data?.url) {
+        // Force a full top-level navigation to the provider.
+        window.location.assign(data.url);
+      } else {
+        toast.error('Sign in failed: no redirect URL returned by Supabase.');
       }
     } catch (err: any) {
       console.error('[AUTH][OAuth] Unexpected error during signInWithOAuth', err);
