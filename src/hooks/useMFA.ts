@@ -17,6 +17,12 @@ export function useMFA() {
   const fetchFactors = async () => {
     try {
       setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setFactors([]);
+        return;
+      }
+
       const { data, error } = await supabase.auth.mfa.listFactors();
       
       if (error) throw error;
@@ -31,6 +37,11 @@ export function useMFA() {
       
       setFactors(mappedFactors);
     } catch (error: any) {
+      if (error?.name === 'AuthSessionMissingError') {
+        setFactors([]);
+        return;
+      }
+
       console.error('Error fetching MFA factors:', error);
       toast({
         title: "Error",

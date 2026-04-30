@@ -1,7 +1,8 @@
 
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { sanitizeReturnTo } from "@/utils/auth-redirects";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -11,13 +12,23 @@ import AuthFooter from "@/components/auth/AuthFooter";
 
 const Login = () => {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!loading) setIsReady(true);
   }, [loading]);
 
-  if (loading || !isReady) {
+  useEffect(() => {
+    if (loading || !user) return;
+
+    const params = new URLSearchParams(location.search);
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
+    navigate(returnTo, { replace: true });
+  }, [loading, user, location.search, navigate]);
+
+  if (loading || !isReady || user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />

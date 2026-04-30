@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/lib/types/auth';
@@ -14,17 +14,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const profileRequestRef = useRef(0);
   
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
   const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
 
   useEffect(() => {
+    let cancelled = false;
+
     console.log('[AUTH][Context] Setting up auth state management', {
       href: window.location.href,
       pathname: window.location.pathname,
     });
 
-    // First, check for existing session
+    const applySession = (currentSession: Session | null, source: string) => {
+      if (cancelled) return;
+
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+
+      const requestId = ++profileRequestRef.current;
+      if (currentSession?.user) {
+        setTimeout(() => {
+          fetchUserProfile(currentSession.user.id).then(userProfile => {
+            if (cancelled || requestId !== profileRequestRef.current) return;
+            console.log('[AUTH][Context] Profile fetch', { source, found: !!userProfile });
+            setProfile(userProfile);
+          });
+        }, 0);
+      } else {
+        setProfile(null);
+      }
+    };
+
+    // Set up listener before getSession so session restoration events cannot be missed.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        console.log('[AUTH][Context] onAuthStateChange', {
+          event,
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id,
+          email: currentSession?.user?.email,
+          provider: currentSession?.user?.app_metadata?.provider,
+          pathname: window.location.pathname,
+        });
+
+        applySession(currentSession, event);
+        setLoading(false);
+      }
+    );
+
+    // Explicitly restore the persisted session after the listener is active.
     const t0 = performance.now();
     supabase.auth.getSession()
       .then(({ data: { session: initialSession }, error }) => {
@@ -38,56 +78,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           error: error?.message,
         });
 
-        if (initialSession) {
-          setSession(initialSession);
-          setUser(initialSession?.user ?? null);
-
-          if (initialSession?.user) {
-            setTimeout(() => {
-              fetchUserProfile(initialSession.user.id).then(userProfile => {
-                console.log('[AUTH][Context] Initial profile fetch', { found: !!userProfile });
-                if (userProfile) setProfile(userProfile);
-              });
-            }, 0);
-          }
-        }
-
+        applySession(initialSession, 'getSession');
         setLoading(false);
       })
       .catch(error => {
+        if (cancelled) return;
         console.error('[AUTH][Context] Error getting session:', error);
+        applySession(null, 'getSession:error');
         setLoading(false);
       });
 
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
-        console.log('[AUTH][Context] onAuthStateChange', {
-          event,
-          hasSession: !!currentSession,
-          userId: currentSession?.user?.id,
-          email: currentSession?.user?.email,
-          provider: currentSession?.user?.app_metadata?.provider,
-          pathname: window.location.pathname,
-        });
-
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-
-        if (currentSession?.user) {
-          setTimeout(() => {
-            fetchUserProfile(currentSession.user.id).then(userProfile => {
-              console.log('[AUTH][Context] Profile fetch on auth change', { found: !!userProfile });
-              if (userProfile) setProfile(userProfile);
-            });
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, [fetchUserProfile]);
