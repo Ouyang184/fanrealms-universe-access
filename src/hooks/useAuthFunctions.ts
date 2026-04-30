@@ -135,24 +135,31 @@ export const useAuthFunctions = () => {
           title: "Account created!",
           description: "Your account has been created successfully.",
         });
-        
+
         if (data.user) {
+          // Generate a unique-ish username to avoid unique constraint collisions
+          const baseUsername = (email.split('@')[0] || 'user')
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, '')
+            .slice(0, 20) || 'user';
+          const suffix = data.user.id.replace(/-/g, '').slice(0, 6);
+          const username = `${baseUsername}_${suffix}`;
+
           const { error: userError } = await supabase
             .from('users')
-            .insert([{ 
-              id: data.user.id, 
+            .insert([{
+              id: data.user.id,
               email: data.user.email || '',
-              username: email.split('@')[0],
-            }])
-            .single();
+              username,
+            }]);
 
           if (userError) {
-            console.error('Error creating user profile:', userError);
-            throw userError;
+            // Don't block sign-in on profile-row creation issues; log only
+            console.error('[AUTH][signUp] users row insert failed (non-fatal):', userError);
           }
-          
-          // Navigate to preferences page after successful signup
-          navigate('/preferences');
+
+          // Navigate to dashboard after successful signup
+          navigate('/dashboard', { replace: true });
         }
 
         return {
@@ -165,7 +172,7 @@ export const useAuthFunctions = () => {
           title: "Verification required",
           description: "Please check your email to confirm your account.",
         });
-        
+
         return {
           success: true,
           user: data.user!,
