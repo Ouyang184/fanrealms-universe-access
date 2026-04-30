@@ -131,36 +131,14 @@ export const useAuthFunctions = () => {
       if (error) throw error;
       
       if (data.session) {
+        // Profile row in public.users is auto-created by the
+        // on_auth_user_created trigger — no client-side insert needed.
         toast({
           title: "Account created!",
           description: "Your account has been created successfully.",
         });
 
-        if (data.user) {
-          // Generate a unique-ish username to avoid unique constraint collisions
-          const baseUsername = (email.split('@')[0] || 'user')
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '')
-            .slice(0, 20) || 'user';
-          const suffix = data.user.id.replace(/-/g, '').slice(0, 6);
-          const username = `${baseUsername}_${suffix}`;
-
-          const { error: userError } = await supabase
-            .from('users')
-            .insert([{
-              id: data.user.id,
-              email: data.user.email || '',
-              username,
-            }]);
-
-          if (userError) {
-            // Don't block sign-in on profile-row creation issues; log only
-            console.error('[AUTH][signUp] users row insert failed (non-fatal):', userError);
-          }
-
-          // Navigate to dashboard after successful signup
-          navigate('/dashboard', { replace: true });
-        }
+        navigate('/dashboard', { replace: true });
 
         return {
           success: true,
