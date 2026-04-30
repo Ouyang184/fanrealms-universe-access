@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +19,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
-import TermsModal from "@/components/auth/TermsModal";
 
 const signupSchema = z
   .object({
@@ -32,9 +30,6 @@ const signupSchema = z
       .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-    agreeToTerms: z.boolean().refine(val => val === true, {
-      message: "You must agree to the Terms of Service to continue"
-    }),
     captcha: z.string().min(1, "Please complete the captcha"),
   });
 
@@ -44,7 +39,6 @@ const Signup = () => {
   const { isChecking } = useAuthCheck(false, "/dashboard");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTermsModal, setShowTermsModal] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const { signUp } = useAuth();
@@ -56,7 +50,6 @@ const Signup = () => {
       fullName: "",
       email: "",
       password: "",
-      agreeToTerms: false,
       captcha: "",
     },
   });
