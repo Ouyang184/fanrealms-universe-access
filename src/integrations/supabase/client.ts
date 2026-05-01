@@ -15,6 +15,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     flowType: 'pkce',
-    detectSessionInUrl: true,
+    // AuthCallback owns the OAuth code exchange. Leaving Supabase auto-detection
+    // on can consume the one-time Google PKCE code before AuthCallback finishes,
+    // which sends the user back to /login after a successful provider redirect.
+    detectSessionInUrl: false,
   }
 });
