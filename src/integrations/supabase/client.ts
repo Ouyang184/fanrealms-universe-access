@@ -11,13 +11,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    storageKey: 'sb-eaeqyctjljbtcatlohky-auth-token',
     persistSession: true,
     autoRefreshToken: true,
     flowType: 'pkce',
-    // AuthCallback owns the OAuth code exchange. Leaving Supabase auto-detection
-    // on can consume the one-time Google PKCE code before AuthCallback finishes,
-    // which sends the user back to /login after a successful provider redirect.
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   }
 });

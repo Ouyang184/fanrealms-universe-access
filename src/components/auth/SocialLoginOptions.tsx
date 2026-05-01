@@ -36,11 +36,10 @@ const SocialLoginOptions = () => {
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo,
-          skipBrowserRedirect: true,
           queryParams: provider === 'google'
             ? { access_type: 'offline', prompt: 'select_account' }
             : undefined,
@@ -49,14 +48,8 @@ const SocialLoginOptions = () => {
 
       if (error) {
         toast.error(`Sign in failed: ${error.message}`);
-        return;
       }
-
-      if (data?.url) {
-        window.location.assign(data.url);
-      } else {
-        toast.error('Sign in failed: no redirect URL returned by Supabase.');
-      }
+      // Supabase handles the redirect to Google itself; nothing else to do.
     } catch (err: any) {
       toast.error(`Sign in failed: ${err?.message || 'unknown error'}`);
     }
