@@ -4,6 +4,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
+import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo } from "@/utils/oauth-storage";
 
 // Module-level promise: ensures only ONE exchangeCodeForSession runs per
 // code, even across StrictMode double-mounts within the same tab.
@@ -25,7 +26,7 @@ const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const handled = useRef(false);
 
-  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'), '/dashboard');
+  const returnTo = sanitizeReturnTo(searchParams.get('returnTo'), getStoredOAuthReturnTo('/dashboard'));
   const flow = searchParams.get('flow');
   const isSignupConfirmation =
     flow === 'signup' ||
@@ -66,6 +67,7 @@ const AuthCallback = () => {
     }
 
     const finish = (target: string) => {
+      clearStoredOAuthReturnTo();
       // Hard navigate so the next page boots with the session already
       // committed to localStorage and AuthContext re-initialises cleanly.
       window.location.replace(target);
