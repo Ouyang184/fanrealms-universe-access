@@ -5,9 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
 
-let activeCallbackKey: string | null = null;
+// Module-level promise: ensures only ONE exchangeCodeForSession runs per
+// code, even across StrictMode double-mounts within the same tab.
+const inflightExchanges = new Map<string, Promise<boolean>>();
 
-const waitForSession = async (timeoutMs = 6000) => {
+const waitForSession = async (timeoutMs = 8000) => {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const { data } = await supabase.auth.getSession();
@@ -31,7 +33,6 @@ const AuthCallback = () => {
     searchParams.get('type') === 'email_change';
   const loadingTitle = isSignupConfirmation ? 'Confirming your email…' : 'Signing you in…';
   const loadingDescription = isSignupConfirmation ? 'Activating your account.' : 'Just a moment.';
-  const callbackStorageKey = `auth-callback:${searchParams.get('code') || window.location.hash || 'session'}`;
 
   useEffect(() => {
     if (handled.current) return;
@@ -54,6 +55,7 @@ const AuthCallback = () => {
     const oauthErrorDesc =
       searchParams.get('error_description') || hashParams.get('error_description');
     if (oauthError) {
+      console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc });
       toast({
         title: 'Sign in failed',
         description: oauthErrorDesc || oauthError,
@@ -69,63 +71,84 @@ const AuthCallback = () => {
       window.location.replace(target);
     };
 
+    const runExchange = async (code: string): Promise<boolean> => {
+      // De-dupe across StrictMode double-mounts in the same tab.
+      const existing = inflightExchanges.get(code);
+      if (existing) {
+        console.log('[AUTH][Callback] Joining in-flight exchange for code');
+        return existing;
+      }
+
+      const promise = (async () => {
+        // Maybe a previous attempt already produced a session.
+        const { data: pre } = await supabase.auth.getSession();
+        if (pre.session?.user) {
+          console.log('[AUTH][Callback] Session already present before exchange');
+          return true;
+        }
+
+        console.log('[AUTH][Callback] Calling exchangeCodeForSession');
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (data?.session?.user) {
+          console.log('[AUTH][Callback] Exchange succeeded', { userId: data.session.user.id });
+          return true;
+        }
+
+        if (error) {
+          console.warn('[AUTH][Callback] Exchange returned error, polling for session', {
+            message: error.message,
+          });
+          // The exchange may have actually succeeded on another mount/tab —
+          // give Supabase a moment to surface the session.
+          const session = await waitForSession(3000);
+          return !!session?.user;
+        }
+
+        // No error, no session — keep polling briefly just in case.
+        const session = await waitForSession(2000);
+        return !!session?.user;
+      })();
+
+      inflightExchanges.set(code, promise);
+      try {
+        return await promise;
+      } finally {
+        // Keep the resolved value around for a moment so duplicate mounts
+        // observe the same outcome instead of starting a new exchange.
+        window.setTimeout(() => inflightExchanges.delete(code), 5000);
+      }
+    };
+
     const go = async () => {
       try {
         const code = searchParams.get('code');
 
         if (code) {
-          if (activeCallbackKey === callbackStorageKey) {
-            console.log('[AUTH][Callback] Duplicate callback mount ignored while exchange is active');
-            return;
-          }
-
-          activeCallbackKey = callbackStorageKey;
-          const callbackStatus = sessionStorage.getItem(callbackStorageKey);
-
-          if (callbackStatus === 'processing') {
-            const session = await waitForSession();
-            if (session?.user) {
-              sessionStorage.setItem(callbackStorageKey, 'succeeded');
-              finish(returnTo);
-              return;
-            }
-          }
-
-          if (callbackStatus === 'succeeded') {
-            const session = await waitForSession(1000);
-            if (session?.user) {
-              finish(returnTo);
-              return;
-            }
-          }
-
-          sessionStorage.setItem(callbackStorageKey, 'processing');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) {
-            const session = await waitForSession(1000);
-            if (session?.user) {
-              sessionStorage.setItem(callbackStorageKey, 'succeeded');
-              finish(returnTo);
-              return;
-            }
-            sessionStorage.setItem(callbackStorageKey, `failed:${Date.now()}`);
-            toast({
-              title: 'Sign in failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-            navigate('/login', { replace: true });
-            return;
-          }
-          if (data?.session?.user) {
-            sessionStorage.setItem(callbackStorageKey, 'succeeded');
+          const ok = await runExchange(code);
+          if (ok) {
             toast({ title: 'Signed in successfully!' });
             finish(returnTo);
             return;
           }
+
+          // Last-chance check: maybe another tab / earlier attempt logged us in.
+          const fallback = await waitForSession(2000);
+          if (fallback?.user) {
+            finish(returnTo);
+            return;
+          }
+
+          toast({
+            title: 'Sign in failed',
+            description: 'Could not complete the sign-in. Please try again.',
+            variant: 'destructive',
+          });
+          navigate('/login', { replace: true });
+          return;
         }
 
-        // Implicit flow / existing session fallback
+        // Implicit flow / existing session fallback (no ?code= in URL)
         const { data: existing } = await supabase.auth.getSession();
         if (existing.session?.user) {
           toast({ title: 'Signed in successfully!' });
@@ -133,7 +156,13 @@ const AuthCallback = () => {
           return;
         }
 
-        // Nothing to do — bounce back to login.
+        // Sometimes the session hasn't been persisted by the time we land here.
+        const polled = await waitForSession(3000);
+        if (polled?.user) {
+          finish(returnTo);
+          return;
+        }
+
         toast({
           title: isSignupConfirmation ? 'Email confirmed' : 'Sign in failed',
           description: isSignupConfirmation
@@ -143,22 +172,24 @@ const AuthCallback = () => {
         });
         navigate('/login', { replace: true });
       } catch (err: any) {
-        sessionStorage.setItem(callbackStorageKey, `failed:${Date.now()}`);
+        console.error('[AUTH][Callback] Unexpected error', err);
+        // One more chance — maybe a session showed up despite the error.
+        const session = await waitForSession(2000);
+        if (session?.user) {
+          finish(returnTo);
+          return;
+        }
         toast({
           title: isSignupConfirmation ? 'Confirmation failed' : 'Sign in failed',
           description: err?.message || 'Please try again.',
           variant: 'destructive',
         });
         navigate('/login', { replace: true });
-      } finally {
-        if (activeCallbackKey === callbackStorageKey) {
-          activeCallbackKey = null;
-        }
       }
     };
 
     go();
-  }, [navigate, searchParams, toast, returnTo, isSignupConfirmation, callbackStorageKey]);
+  }, [navigate, searchParams, toast, returnTo, isSignupConfirmation]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
