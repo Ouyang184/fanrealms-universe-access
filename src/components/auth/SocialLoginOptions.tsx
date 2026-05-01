@@ -3,6 +3,8 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from 'react-router-dom';
+import { sanitizeReturnTo } from "@/utils/auth-redirects";
+import { storeOAuthReturnTo } from "@/utils/oauth-storage";
 
 const getCanonicalOrigin = () => {
   const { hostname, origin, protocol } = window.location;
@@ -19,10 +21,11 @@ const SocialLoginOptions = () => {
 
   const signInWith = async (provider: 'google' | 'discord') => {
     const params = new URLSearchParams(location.search);
-    const returnTo = params.get('returnTo') || '/dashboard';
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
+    storeOAuthReturnTo(returnTo);
 
     const canonicalOrigin = getCanonicalOrigin();
-    const redirectTo = `${canonicalOrigin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`;
+    const redirectTo = `${canonicalOrigin}/auth/callback`;
 
     try {
       // If the user started OAuth on www.fanrealms.com but the canonical host
