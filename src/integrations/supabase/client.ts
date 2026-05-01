@@ -14,5 +14,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     flowType: 'pkce',
+    // The app handles /auth/callback explicitly. Disable the SDK's automatic
+    // URL detection so it does not consume the PKCE verifier before that page
+    // calls exchangeCodeForSession().
+    detectSessionInUrl: false,
   }
 });
