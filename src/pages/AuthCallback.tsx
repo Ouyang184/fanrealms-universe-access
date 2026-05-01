@@ -191,7 +191,7 @@ const AuthCallback = () => {
           description: err?.message || 'Please try again.',
           variant: 'destructive',
         });
-        navigate('/login', { replace: true });
+        redirectToLogin('unexpected callback error');
       }
     };
 
