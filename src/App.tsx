@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
 
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,43 @@ import DashboardAssetsPage from "./pages/DashboardAssets";
 import DashboardSalesPage from "./pages/DashboardSales";
 import SellerProfilePage from "./pages/SellerProfile";
 
+const OAuthCallbackRedirector = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.pathname === '/auth/callback') return;
+
+    const searchParams = new URLSearchParams(location.search);
+    const hashParams = new URLSearchParams(location.hash.substring(1));
+    const hasOAuthPayload =
+      searchParams.has('code') ||
+      searchParams.has('error') ||
+      searchParams.has('error_description') ||
+      hashParams.has('access_token') ||
+      hashParams.has('refresh_token') ||
+      hashParams.has('error') ||
+      hashParams.get('type') === 'recovery';
+
+    if (!hasOAuthPayload) return;
+
+    if (!searchParams.has('returnTo')) {
+      searchParams.set('returnTo', '/dashboard');
+    }
+
+    navigate(
+      {
+        pathname: '/auth/callback',
+        search: `?${searchParams.toString()}`,
+        hash: location.hash,
+      },
+      { replace: true }
+    );
+  }, [location.hash, location.pathname, location.search, navigate]);
+
+  return null;
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -62,6 +100,7 @@ export default function App() {
         <AuthProvider>
           <TooltipProvider>
             <RootLayout>
+              <OAuthCallbackRedirector />
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<LandingPage />} />
