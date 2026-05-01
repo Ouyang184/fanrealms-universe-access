@@ -11,12 +11,10 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
+    storageKey: 'sb-eaeqyctjljbtcatlohky-auth-token',
     persistSession: true,
     autoRefreshToken: true,
     flowType: 'pkce',
-    // The app handles /auth/callback explicitly. Disable the SDK's automatic
-    // URL detection so it does not consume the PKCE verifier before that page
-    // calls exchangeCodeForSession().
-    detectSessionInUrl: false,
+    detectSessionInUrl: true,
   }
 });
