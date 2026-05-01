@@ -122,6 +122,11 @@ const AuthCallback = () => {
       }
     };
 
+    const redirectToLogin = (reason: string) => {
+      console.warn('[AUTH][Callback] Redirecting to login', { reason });
+      navigate('/login', { replace: true });
+    };
+
     const go = async () => {
       try {
         const code = searchParams.get('code');
@@ -146,7 +151,7 @@ const AuthCallback = () => {
             description: 'Could not complete the sign-in. Please try again.',
             variant: 'destructive',
           });
-          navigate('/login', { replace: true });
+          redirectToLogin('code exchange failed');
           return;
         }
 
@@ -172,7 +177,7 @@ const AuthCallback = () => {
             : 'Please try again.',
           variant: isSignupConfirmation ? 'default' : 'destructive',
         });
-        navigate('/login', { replace: true });
+        redirectToLogin('no code or existing session found');
       } catch (err: any) {
         console.error('[AUTH][Callback] Unexpected error', err);
         // One more chance — maybe a session showed up despite the error.
