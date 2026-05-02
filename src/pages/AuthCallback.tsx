@@ -1,16 +1,16 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
 import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo } from "@/utils/oauth-storage";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const handled = useRef(false);
+  const [callbackError, setCallbackError] = useState<string | null>(null);
 
   const returnTo = sanitizeReturnTo(
     searchParams.get('returnTo'),
@@ -45,12 +45,9 @@ const AuthCallback = () => {
       searchParams.get('error_description') || hashParams.get('error_description');
     if (oauthError) {
       console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc });
-      toast({
-        title: 'Sign in failed',
-        description: oauthErrorDesc || oauthError,
-        variant: 'destructive',
-      });
-      navigate('/login', { replace: true });
+      const message = oauthErrorDesc || oauthError;
+      setCallbackError(message);
+      toast.error('Sign in failed', { description: message });
       return;
     }
 
@@ -70,7 +67,7 @@ const AuthCallback = () => {
       console.log('[AUTH][Callback] onAuthStateChange', { event, hasSession: !!session });
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
         resolved = true;
-        toast({ title: 'Signed in successfully!' });
+        toast.success('Signed in successfully!');
         finish(returnTo);
       }
     }).data.subscription;
@@ -88,7 +85,7 @@ const AuthCallback = () => {
       if (data.session?.user) {
         resolved = true;
         window.clearInterval(interval);
-        toast({ title: 'Signed in successfully!' });
+        toast.success('Signed in successfully!');
         finish(returnTo);
         return;
       }
@@ -97,13 +94,11 @@ const AuthCallback = () => {
         if (resolved) return;
         resolved = true;
         console.warn('[AUTH][Callback] No session after timeout, redirecting to login');
-        toast({
-          title: isSignupConfirmation ? 'Email confirmed' : 'Sign in failed',
-          description: isSignupConfirmation
-            ? 'Your account is active. Please sign in.'
-            : 'Please try again.',
-          variant: isSignupConfirmation ? 'default' : 'destructive',
-        });
+        if (isSignupConfirmation) {
+          toast.success('Email confirmed', { description: 'Your account is active. Please sign in.' });
+        } else {
+          toast.error('Sign in failed', { description: 'Please try again.' });
+        }
         navigate('/login', { replace: true });
       }
     }, 250);
@@ -112,7 +107,25 @@ const AuthCallback = () => {
       subscription.unsubscribe();
       window.clearInterval(interval);
     };
-  }, [navigate, searchParams, toast, returnTo, isSignupConfirmation]);
+  }, [navigate, searchParams, returnTo, isSignupConfirmation]);
+
+  if (callbackError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center space-y-4">
+          <h2 className="text-xl font-medium">Google sign-in failed</h2>
+          <p className="text-sm text-muted-foreground">{callbackError}</p>
+          <button
+            type="button"
+            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            onClick={() => navigate('/login', { replace: true })}
+          >
+            Back to login
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center">
