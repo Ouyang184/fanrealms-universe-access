@@ -4,7 +4,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
-import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo } from "@/utils/oauth-storage";
+import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo, getStoredOAuthIntent, clearStoredOAuthIntent } from "@/utils/oauth-storage";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -24,6 +24,16 @@ const AuthCallback = () => {
   const loadingTitle = isSignupConfirmation ? 'Confirming your email…' : 'Signing you in…';
   const loadingDescription = isSignupConfirmation ? 'Activating your account.' : 'Just a moment.';
 
+  // Read OAuth intent up-front so error UI knows which page to send the user back to.
+  const queryIntent = searchParams.get('intent');
+  const initialIntent: 'login' | 'signup' | null =
+    queryIntent === 'login' || queryIntent === 'signup'
+      ? queryIntent
+      : (typeof window !== 'undefined' ? getStoredOAuthIntent() : null);
+  const [intentState] = useState<'login' | 'signup' | null>(initialIntent);
+  const errorBackPath = intentState === 'signup' ? '/signup' : '/login';
+  const errorBackLabel = intentState === 'signup' ? 'Back to sign up' : 'Back to login';
+
   useEffect(() => {
     if (handled.current) return;
     handled.current = true;
@@ -39,30 +49,28 @@ const AuthCallback = () => {
       return;
     }
 
-    // Surface OAuth provider errors immediately
+    // Surface OAuth provider errors immediately, with intent-aware messaging.
     const oauthError = searchParams.get('error') || hashParams.get('error');
     const oauthErrorDesc =
       searchParams.get('error_description') || hashParams.get('error_description');
     if (oauthError) {
-      console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc });
-      const message = oauthErrorDesc || oauthError;
+      console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc, intent: intentState });
+      const rawMessage = oauthErrorDesc || oauthError;
+      const looksLikeMissingUser = /user not found|no.?account|signups? not allowed/i.test(rawMessage);
+      const message = intentState === 'signup' && looksLikeMissingUser
+        ? "We couldn't create your account from Google. Please try again, or sign up with email below."
+        : rawMessage;
       setCallbackError(message);
-      toast.error('Sign in failed', { description: message });
+      const title = intentState === 'signup' ? 'Sign-up failed' : 'Sign in failed';
+      toast.error(title, { description: message });
       return;
     }
 
-    // Read OAuth intent (set by SocialLoginOptions before redirecting to Google)
-    let intent: 'login' | 'signup' | null = null;
-    try {
-      const stored = sessionStorage.getItem('oauth_intent');
-      if (stored === 'login' || stored === 'signup') intent = stored;
-    } catch {
-      // ignore
-    }
+    const intent = intentState;
 
     const finish = (target: string) => {
       clearStoredOAuthReturnTo();
-      try { sessionStorage.removeItem('oauth_intent'); } catch {}
+      clearStoredOAuthIntent();
       // Hard navigate so the next page boots with the session committed.
       window.location.replace(target);
     };
@@ -80,7 +88,7 @@ const AuthCallback = () => {
           } else if (data?.error === 'account_exists') {
             // Signed up but account already existed -> sign out, redirect to login.
             await supabase.auth.signOut();
-            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            clearStoredOAuthIntent();
             const message = 'An account already exists for this Google address. Please log in instead.';
             setCallbackError(message);
             toast.error('Account already exists', { description: message });
@@ -89,7 +97,7 @@ const AuthCallback = () => {
           } else if (data?.error === 'no_account') {
             // Tried to log in with a brand-new Google account -> account was deleted by the function.
             await supabase.auth.signOut();
-            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            clearStoredOAuthIntent();
             const message = "No account found for this Google address. Please sign up first.";
             setCallbackError(message);
             toast.error('No account found', { description: message });
@@ -137,13 +145,17 @@ const AuthCallback = () => {
         window.clearInterval(interval);
         if (resolved) return;
         resolved = true;
-        console.warn('[AUTH][Callback] No session after timeout, redirecting to login');
+        console.warn('[AUTH][Callback] No session after timeout', { intent: intentState });
         if (isSignupConfirmation) {
           toast.success('Email confirmed', { description: 'Your account is active. Please sign in.' });
+          navigate('/login', { replace: true });
+        } else if (intentState === 'signup') {
+          toast.error('Sign up failed', { description: 'Please try again.' });
+          navigate('/signup', { replace: true });
         } else {
           toast.error('Sign in failed', { description: 'Please try again.' });
+          navigate('/login', { replace: true });
         }
-        navigate('/login', { replace: true });
       }
     }, 250);
 
@@ -151,20 +163,20 @@ const AuthCallback = () => {
       subscription.unsubscribe();
       window.clearInterval(interval);
     };
-  }, [navigate, searchParams, returnTo, isSignupConfirmation]);
+  }, [navigate, searchParams, returnTo, isSignupConfirmation, intentState]);
 
   if (callbackError) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center space-y-4">
-          <h2 className="text-xl font-medium">Sign-in issue</h2>
+          <h2 className="text-xl font-medium">{intentState === 'signup' ? 'Sign-up issue' : 'Sign-in issue'}</h2>
           <p className="text-sm text-muted-foreground">{callbackError}</p>
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate('/login', { replace: true })}
+            onClick={() => navigate(errorBackPath, { replace: true })}
           >
-            Back to login
+            {errorBackLabel}
           </button>
         </div>
       </div>

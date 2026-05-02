@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLocation } from 'react-router-dom';
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
-import { storeOAuthReturnTo } from "@/utils/oauth-storage";
+import { storeOAuthReturnTo, storeOAuthIntent } from "@/utils/oauth-storage";
 
 const getCanonicalOrigin = () => {
   const { hostname, origin, protocol } = window.location;
@@ -27,21 +27,20 @@ const SocialLoginOptions = ({ mode = 'login' }: SocialLoginOptionsProps) => {
     const params = new URLSearchParams(location.search);
     const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
     storeOAuthReturnTo(returnTo);
-    try {
-      sessionStorage.setItem('oauth_intent', mode);
-    } catch {
-      // ignore storage errors
-    }
+    storeOAuthIntent(mode);
 
     const canonicalOrigin = getCanonicalOrigin();
-    const redirectTo = `${canonicalOrigin}/auth/callback`;
+    // Pass intent on the callback URL as a third fallback (in case storage is wiped).
+    const redirectTo = `${canonicalOrigin}/auth/callback?intent=${mode}`;
 
     try {
       // If the user started OAuth on www.fanrealms.com but the canonical host
       // is fanrealms.com, hop there first so the PKCE verifier is written on
-      // the same origin Supabase will redirect back to.
+      // the same origin Supabase will redirect back to. Preserve mode so the
+      // user lands on the right entry page (signup vs login).
       if (window.location.origin !== canonicalOrigin) {
-        window.location.assign(`${canonicalOrigin}/login?returnTo=${encodeURIComponent(returnTo)}`);
+        const entryPath = mode === 'signup' ? '/signup' : '/login';
+        window.location.assign(`${canonicalOrigin}${entryPath}?returnTo=${encodeURIComponent(returnTo)}`);
         return;
       }
 
