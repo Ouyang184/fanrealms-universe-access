@@ -1,45 +1,42 @@
-## Diagnosis
+## Goal
 
-The database cleanup worked for `public.users`: there are now **0 orphan profile rows**, the `users_id_fkey` cascade constraint exists, and the `handle_new_auth_user` trigger is hardened.
+Make forum thread replies use the same visual format as the original post (OP) at the top of the thread page.
 
-The remaining issue is a different auth-state problem:
+## Current state
 
-- There are still **2 orphan rows in `auth.identities`** that point to deleted `auth.users` rows.
-- The current callback screen displays provider/session errors using a generic **“Sign-in issue / User not found / Back to login”** message, even when the user started from Signup.
-- The signup intent is currently stored only in `sessionStorage`, which can be unreliable across OAuth redirects and canonical host hops.
-- The deployed `oauth-intent-validate` function has no recent logs, so the failure is happening before that validation function is reached.
+- **OP card**: padded `p-6`, title row with optional category badge, author line prefixed with "by", markdown body.
+- **Reply cards**: smaller padding `p-4`, no title, no "by" prefix, just username · date and markdown body.
 
-## Plan
+## Changes (single file: `src/pages/ForumThread.tsx`)
 
-1. **Clean remaining broken Supabase auth identity data**
-   - Remove orphan rows from `auth.identities` where the referenced auth user no longer exists.
-   - This is the likely remaining data conflict behind Supabase returning `User not found` during Google signup.
+Update the reply `Card` to mirror the OP card:
 
-2. **Make OAuth intent survive redirects**
-   - Store `oauth_intent` in `localStorage` alongside the existing return path, not only `sessionStorage`.
-   - Include the intent in the callback URL query string as a fallback.
-   - Preserve the correct intent when redirecting from `www.fanrealms.com` to `fanrealms.com`; right now that canonical hop always goes through `/login`, which can overwrite Signup intent.
+1. Use the same `CardContent` padding (`p-6`) as the OP.
+2. Render a header row matching the OP — but since replies don't have a title or category, use a consistent reply header:
+   - Show "Reply" label (or reply index like "Reply #1") at the same heading weight/size as the OP title row, OR
+   - Keep no title and just match the author meta line format.
+3. Match the author meta line exactly: `by {username} · {formatted date}` using the same `text-sm text-muted-foreground mb-4` classes as the OP (currently `mb-2`).
+4. Keep the `MarkdownContent` rendering as-is (already shared).
 
-3. **Fix the callback copy and redirect behavior**
-   - If the user started from Signup and Supabase returns `User not found`, show a signup-specific message instead of “Sign-in issue”.
-   - Send signup failures back to `/signup`, not `/login`.
-   - Keep login failures pointing to `/login`.
+## Open detail
 
-4. **Add lightweight diagnostic logging in the callback**
-   - Log the detected OAuth intent, whether a provider error was returned, and whether a session was established.
-   - Avoid logging tokens or secrets.
+Replies have no title or category. Two reasonable interpretations of "same format":
 
-5. **Validate after changes**
-   - Re-check the orphan identity count is 0.
-   - Confirm the callback reads signup intent correctly from the Signup Google button path.
-   - Check Edge Function/auth logs if the issue still appears after the cleanup.
+- **A. Match container/spacing/meta only** — same padding (`p-6`), same `by ... · date` author line, same bottom margin before content. No title row added. (Recommended — least invasive, visually consistent.)
+- **B. Add a "Reply #N" pseudo-title** so replies have a title row like the OP.
 
-## Files expected to change
+Default to **A** unless you prefer B.
 
-- `src/components/auth/SocialLoginOptions.tsx`
-- `src/pages/AuthCallback.tsx`
-- `src/utils/oauth-storage.ts`
+## Technical details
 
-## Database operation
+```text
+Reply Card (after):
+┌─────────────────────────────────────────┐
+│ p-6                                     │
+│  by {username} · {Mon D, YYYY h:mm a}   │  text-sm text-muted-foreground mb-4
+│                                         │
+│  <MarkdownContent />                    │
+└─────────────────────────────────────────┘
+```
 
-- Delete orphan rows from `auth.identities` that have no matching `auth.users` row.
+No new dependencies, no other files touched.
