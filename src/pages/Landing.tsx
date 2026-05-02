@@ -276,11 +276,11 @@ export default function LandingPage() {
       )}
 
       {/* FOOTER */}
-      <footer className="bg-[#111] text-[#666]">
+      <footer className="bg-[#fafafa] border-t border-[#eee] text-[#777]">
         <div className="px-4 sm:px-6 py-8 flex items-center justify-between">
           <div>
-            <Logo variant="dark" />
-            <div className="text-[11px] text-[#555] mt-1">The Godot asset hub.</div>
+            <Logo />
+            <div className="text-[11px] text-[#888] mt-1">The Godot asset hub.</div>
           </div>
           <div className="flex gap-6 text-[12px]">
             {[
@@ -289,10 +289,10 @@ export default function LandingPage() {
               { label: "Privacy", to: "/privacy-policy" },
               { label: "Help", to: "/help" },
             ].map(({ label, to }) => (
-              <Link key={label} to={to} className="hover:text-[#999] transition-colors">{label}</Link>
+              <Link key={label} to={to} className="hover:text-[#111] transition-colors">{label}</Link>
             ))}
           </div>
-          <div className="text-[12px] text-[#444]">© 2026 FanRealms</div>
+          <div className="text-[12px] text-[#aaa]">© 2026 FanRealms</div>
         </div>
       </footer>
     </div>
