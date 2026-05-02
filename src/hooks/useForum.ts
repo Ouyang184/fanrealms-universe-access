@@ -33,13 +33,11 @@ export function useForumThreads(category?: string) {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch author info for all threads
+      // Fetch author info for all threads via security-definer RPC (works for anon)
       const authorIds = [...new Set(data.map((t: any) => t.author_id))];
       const { data: usersData } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', authorIds);
-      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
+        .rpc('get_public_user_profiles', { _user_ids: authorIds });
+      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
 
       return data.map((t: any) => ({
         ...t,
@@ -84,13 +82,11 @@ export function useForumThread(threadId: string) {
 
       if (error) throw error;
 
-      // Fetch author info separately
+      // Fetch author info via security-definer RPC (works for anon)
       if (data) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('username, profile_picture')
-          .eq('id', data.author_id)
-          .single();
+        const { data: userRows } = await supabase
+          .rpc('get_public_user_profiles', { _user_ids: [data.author_id] });
+        const userData = ((userRows as any[]) || [])[0] || null;
         return { ...data, users: userData };
       }
       return data;
@@ -115,14 +111,12 @@ export function useForumReplies(threadId: string) {
       if (error) throw error;
       if (!data) return [];
 
-      // Fetch user info for all replies
+      // Fetch user info for all replies via security-definer RPC (works for anon)
       const authorIds = [...new Set(data.map((r) => r.author_id))];
       const { data: usersData } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', authorIds);
+        .rpc('get_public_user_profiles', { _user_ids: authorIds });
 
-      const usersMap = new Map((usersData || []).map((u) => [u.id, u]));
+      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
       return data.map((r) => ({
         ...r,
         users: usersMap.get(r.author_id) || null,
