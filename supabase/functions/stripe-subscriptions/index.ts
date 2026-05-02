@@ -206,6 +206,24 @@ serve(async (req) => {
             });
           }
 
+          // Verify the payment intent belongs to the authenticated user's Stripe customer
+          const { data: customerRow } = await supabase
+            .from('stripe_customers')
+            .select('stripe_customer_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          const callerCustomerId = customerRow?.stripe_customer_id;
+          if (!callerCustomerId || currentPaymentIntent.customer !== callerCustomerId) {
+            console.warn('🚫 [STRIPE-SUBSCRIPTIONS] cancel_payment_intent ownership mismatch', {
+              paymentIntentId,
+              piCustomer: currentPaymentIntent.customer,
+              callerCustomerId,
+              userId: user.id,
+            });
+            return createJsonResponse({ error: 'Forbidden' }, 403);
+          }
+
           // Check if payment intent is in a cancellable state
           if (currentPaymentIntent.status === 'canceled') {
             console.log('✅ [STRIPE-SUBSCRIPTIONS] Payment intent already cancelled');

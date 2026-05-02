@@ -207,6 +207,16 @@ serve(async (req) => {
       }
 
       if (action === 'set_default' && paymentMethodId) {
+        // Verify the payment method belongs to this user's Stripe customer
+        const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        if (pm.customer !== stripeCustomerId) {
+          console.warn('[PAYMENT-METHODS] set_default ownership mismatch', { paymentMethodId, user: user.id });
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
         // Set payment method as default
         await stripe.customers.update(stripeCustomerId, {
           invoice_settings: {
@@ -234,6 +244,16 @@ serve(async (req) => {
       }
 
       if (action === 'delete' && paymentMethodId) {
+        // Verify the payment method belongs to this user's Stripe customer
+        const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        if (pm.customer !== stripeCustomerId) {
+          console.warn('[PAYMENT-METHODS] delete ownership mismatch', { paymentMethodId, user: user.id });
+          return new Response(JSON.stringify({ error: 'Forbidden' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
         // Detach payment method
         await stripe.paymentMethods.detach(paymentMethodId);
 
