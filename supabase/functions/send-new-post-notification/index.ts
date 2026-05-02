@@ -34,6 +34,32 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Require an authenticated caller
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Auth client (uses caller's JWT) for identity verification
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const callerUserId = claimsData.claims.sub;
+
+    // Service-role client for the rest of the work (bypasses RLS for follower lookups, etc.)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -41,14 +67,43 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { postId, creatorId }: PostNotificationRequest = await req.json();
 
+    if (!postId || !creatorId) {
+      return new Response(JSON.stringify({ error: 'postId and creatorId are required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log('Processing notification for post:', postId, 'creator:', creatorId);
 
-    // Get post details
+    // Verify the caller owns the creator account they're sending notifications for
+    const { data: creatorOwner, error: ownerError } = await supabase
+      .from('creators')
+      .select('user_id')
+      .eq('id', creatorId)
+      .single();
+
+    if (ownerError || !creatorOwner || creatorOwner.user_id !== callerUserId) {
+      console.error('Caller is not the owner of the creator account', { callerUserId, creatorId });
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Get post details and verify it belongs to this creator
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('title, content, created_at')
+      .select('title, content, created_at, creator_id, author_id')
       .eq('id', postId)
       .single();
+
+    if (post && post.creator_id && post.creator_id !== creatorId) {
+      return new Response(JSON.stringify({ error: 'Post does not belong to this creator' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (postError || !post) {
       console.error('Error fetching post:', postError);
