@@ -153,10 +153,10 @@ serve(async (req) => {
         );
 
       case 'get_user_subscriptions':
+        // SECURITY: Ignore client-supplied userId; handler uses authenticated user.id only
         return await handleGetUserSubscriptions(
           supabase,
-          user,
-          body.userId
+          user
         );
 
       case 'cancel_payment_intent':
