@@ -16,13 +16,22 @@ const getCanonicalOrigin = () => {
   return origin || `${protocol}//${hostname}`;
 };
 
-const SocialLoginOptions = () => {
+interface SocialLoginOptionsProps {
+  mode?: 'login' | 'signup';
+}
+
+const SocialLoginOptions = ({ mode = 'login' }: SocialLoginOptionsProps) => {
   const location = useLocation();
 
   const signInWith = async (provider: 'google' | 'discord') => {
     const params = new URLSearchParams(location.search);
     const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
     storeOAuthReturnTo(returnTo);
+    try {
+      sessionStorage.setItem('oauth_intent', mode);
+    } catch {
+      // ignore storage errors
+    }
 
     const canonicalOrigin = getCanonicalOrigin();
     const redirectTo = `${canonicalOrigin}/auth/callback`;
