@@ -51,29 +51,74 @@ const AuthCallback = () => {
       return;
     }
 
+    // Read OAuth intent (set by SocialLoginOptions before redirecting to Google)
+    let intent: 'login' | 'signup' | null = null;
+    try {
+      const stored = sessionStorage.getItem('oauth_intent');
+      if (stored === 'login' || stored === 'signup') intent = stored;
+    } catch {
+      // ignore
+    }
+
     const finish = (target: string) => {
       clearStoredOAuthReturnTo();
+      try { sessionStorage.removeItem('oauth_intent'); } catch {}
       // Hard navigate so the next page boots with the session committed.
       window.location.replace(target);
     };
 
+    const handleSession = async (session: any) => {
+      // If we have an OAuth intent, validate it before committing the session.
+      if (intent) {
+        try {
+          const { data, error } = await supabase.functions.invoke('oauth-intent-validate', {
+            body: { intent },
+          });
+          if (error) {
+            console.error('[AUTH][Callback] validator error', error);
+            // Fail open — let the user in rather than blocking on infra issues.
+          } else if (data?.error === 'account_exists') {
+            // Signed up but account already existed -> sign out, redirect to login.
+            await supabase.auth.signOut();
+            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            const message = 'An account already exists for this Google address. Please log in instead.';
+            setCallbackError(message);
+            toast.error('Account already exists', { description: message });
+            setTimeout(() => navigate('/login', { replace: true }), 2500);
+            return;
+          } else if (data?.error === 'no_account') {
+            // Tried to log in with a brand-new Google account -> account was deleted by the function.
+            await supabase.auth.signOut();
+            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            const message = "No account found for this Google address. Please sign up first.";
+            setCallbackError(message);
+            toast.error('No account found', { description: message });
+            setTimeout(() => navigate('/signup', { replace: true }), 2500);
+            return;
+          }
+        } catch (e) {
+          console.error('[AUTH][Callback] validator exception', e);
+          // Fail open
+        }
+      }
+
+      toast.success('Signed in successfully!');
+      finish(returnTo);
+    };
+
     // Strategy: rely on the Supabase SDK (detectSessionInUrl=true) to perform
     // the PKCE exchange. Listen for SIGNED_IN, and as a fallback poll
-    // getSession() — never call exchangeCodeForSession ourselves, because the
-    // SDK has already consumed the one-time PKCE code by the time we mount.
+    // getSession() — never call exchangeCodeForSession ourselves.
     let resolved = false;
     const subscription = supabase.auth.onAuthStateChange((event, session) => {
       if (resolved) return;
       console.log('[AUTH][Callback] onAuthStateChange', { event, hasSession: !!session });
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
         resolved = true;
-        toast.success('Signed in successfully!');
-        finish(returnTo);
+        handleSession(session);
       }
     }).data.subscription;
 
-    // Poll as a safety net (covers cases where the SDK already had a session
-    // and never re-fires the event after we mount the listener).
     const started = Date.now();
     const TIMEOUT_MS = 10000;
     const interval = window.setInterval(async () => {
@@ -85,8 +130,7 @@ const AuthCallback = () => {
       if (data.session?.user) {
         resolved = true;
         window.clearInterval(interval);
-        toast.success('Signed in successfully!');
-        finish(returnTo);
+        handleSession(data.session);
         return;
       }
       if (Date.now() - started > TIMEOUT_MS) {
@@ -113,7 +157,7 @@ const AuthCallback = () => {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center space-y-4">
-          <h2 className="text-xl font-medium">Google sign-in failed</h2>
+          <h2 className="text-xl font-medium">Sign-in issue</h2>
           <p className="text-sm text-muted-foreground">{callbackError}</p>
           <button
             type="button"

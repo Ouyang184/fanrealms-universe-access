@@ -334,7 +334,7 @@ const Signup = () => {
               </form>
             </Form>
 
-            <SocialLoginOptions />
+            <SocialLoginOptions mode="signup" />
           </CardContent>
           
           <CardFooter className="flex justify-center border-t border-[#f5f5f5] pt-5">
