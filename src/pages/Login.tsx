@@ -50,7 +50,7 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <LoginForm />
-            <SocialLoginOptions />
+            <SocialLoginOptions mode="login" />
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-muted-foreground">
