@@ -111,14 +111,12 @@ export function useForumReplies(threadId: string) {
       if (error) throw error;
       if (!data) return [];
 
-      // Fetch user info for all replies
+      // Fetch user info for all replies via security-definer RPC (works for anon)
       const authorIds = [...new Set(data.map((r) => r.author_id))];
       const { data: usersData } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', authorIds);
+        .rpc('get_public_user_profiles', { _user_ids: authorIds });
 
-      const usersMap = new Map((usersData || []).map((u) => [u.id, u]));
+      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
       return data.map((r) => ({
         ...r,
         users: usersMap.get(r.author_id) || null,
