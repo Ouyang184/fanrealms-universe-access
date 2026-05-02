@@ -1,6 +1,43 @@
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
 
 const OAUTH_RETURN_TO_KEY = "fanrealms.oauth.returnTo";
+const OAUTH_INTENT_KEY = "fanrealms.oauth.intent";
+
+export type OAuthIntent = "login" | "signup";
+
+export const storeOAuthIntent = (intent: OAuthIntent) => {
+  try {
+    window.localStorage.setItem(OAUTH_INTENT_KEY, intent);
+  } catch {
+    // ignore
+  }
+  try {
+    window.sessionStorage.setItem("oauth_intent", intent);
+  } catch {
+    // ignore
+  }
+};
+
+export const getStoredOAuthIntent = (): OAuthIntent | null => {
+  try {
+    const fromSession = window.sessionStorage.getItem("oauth_intent");
+    if (fromSession === "login" || fromSession === "signup") return fromSession;
+  } catch {
+    // ignore
+  }
+  try {
+    const fromLocal = window.localStorage.getItem(OAUTH_INTENT_KEY);
+    if (fromLocal === "login" || fromLocal === "signup") return fromLocal;
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+export const clearStoredOAuthIntent = () => {
+  try { window.sessionStorage.removeItem("oauth_intent"); } catch { /* ignore */ }
+  try { window.localStorage.removeItem(OAUTH_INTENT_KEY); } catch { /* ignore */ }
+};
 
 export const storeOAuthReturnTo = (returnTo: string) => {
   try {
