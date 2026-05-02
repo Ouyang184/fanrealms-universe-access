@@ -152,13 +152,6 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Successful 2FA verification`)
 
-    // Log successful verification attempt
-    await supabase.from('rate_limit_events').insert({
-      ip,
-      email,
-      action: 'verify_code'
-    });
-
     return new Response(
       JSON.stringify({ 
         success: true, 
