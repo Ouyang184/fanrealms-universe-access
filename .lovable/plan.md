@@ -1,61 +1,72 @@
+## Why Google sign-up is failing
 
-# Fix Google sign-in / sign-up
+Investigation found two real problems and one UX gap:
 
-## Diagnosis
+**Problem 1 — Orphan profile rows are blocking signups (root cause of "User not found").**
+`public.users` has 13 rows but `auth.users` has only 10. Three profile rows exist with no matching auth user:
+- `agoniamoejdusi@gmail.com`
+- `jake.yanouyang@gmail.com`
+- `jack520088@gmail.com`
 
-From the Supabase auth logs and the codebase, three real blockers were identified:
+The `public.users` table has `UNIQUE (email)`. When someone signs up via Google with one of those emails, the `handle_new_auth_user` trigger tries to insert a profile row, hits the unique-email violation, the EXCEPTION handler swallows it — but the auth-user record is then in a half-provisioned state and Supabase surfaces it as `User not found` on the redirect back. (Likely your test account is `jake.yanouyang@gmail.com`.)
 
-1. **Conflicting Google client in `src/main.tsx`**
-   The app wraps the entire React tree in `<GoogleOAuthProvider>` from `@react-oauth/google` with a hardcoded Google client ID. The actual sign-in goes through **Supabase OAuth** (`supabase.auth.signInWithOAuth`). Running both Google Identity Services *and* Supabase OAuth on the same page can hijack the popup/redirect and corrupt the PKCE flow. The session replay confirms `Google Identity Services client library` is being injected on page load even though no GIS button is rendered.
+**Problem 2 — How OAuth actually works (important UX context).**
+Supabase's `signInWithOAuth` is a single endpoint that auto-creates accounts when "Allow new sign-ups" is on. It does **not** distinguish "I want to sign up" from "I want to sign in". You asked for **strict separation** between Login and Sign-up Google buttons — that requires custom logic on our side, because Supabase won't enforce it natively.
 
-2. **`/auth/callback` is not a public route in `AuthGuard` terms, but the redirect race still hurts it**
-   `AuthCallback` calls `exchangeCodeForSession`, but `AuthContext` runs its own `getSession()` on mount. If `AuthContext` resolves first with no session, any guarded page the user lands on right after redirect (`/dashboard`) bounces to `/login?returnTo=…` before the freshly-exchanged session is committed. The Supabase logs show repeated `/authorize → /callback` cycles consistent with this loop.
+**Problem 3 — Trigger fragility.**
+`handle_new_auth_user` swallows all exceptions silently. We have no way to see why a signup failed in production. Needs structured logging.
 
-3. **PKCE verifier may not be present on `/auth/callback` after the redirect from Google**
-   When the user starts OAuth on `https://www.fanrealms.com` but Supabase returns to `https://fanrealms.com/auth/callback` (or vice-versa), the PKCE `code-verifier` stored in `localStorage` is on a different origin and `exchangeCodeForSession` fails silently. Today we don't surface this clearly and we don't ensure a single canonical origin.
+---
 
-## What we'll change
+## Plan
 
-### 1. Remove the conflicting Google provider
-- In `src/main.tsx`, delete the `<GoogleOAuthProvider>` wrapper and its `@react-oauth/google` import. Render `<App />` directly inside `React.StrictMode`.
-- Remove the `@react-oauth/google` dependency from `package.json`.
+### 1. Database cleanup + hardened trigger (migration)
+- Delete the 3 orphan rows in `public.users` that have no matching `auth.users` entry. (These belong to deleted/never-completed accounts; safe to remove.)
+- Add a one-time guard so future deletes from `auth.users` cascade properly: add `ON DELETE CASCADE` from `public.users.id` → `auth.users.id` (currently no FK exists, which is why orphans accumulate).
+- Rewrite `handle_new_auth_user` to:
+  - Detect email-collision against orphan rows and reclaim the row (update its `id` to match `NEW.id`) instead of failing.
+  - Write to a small `public.auth_trigger_errors` log table on any unexpected failure (id, email, sqlstate, sqlerrm, occurred_at) so we can see future failures in the dashboard. Still `RETURN NEW` to avoid blocking auth.
 
-### 2. Patch the callback flow (`src/pages/AuthCallback.tsx`)
-- Stop relying on `useAuth()` to drive navigation. Inside the callback, after `exchangeCodeForSession` succeeds, navigate to `returnTo` directly using `window.location.replace(returnTo)`. This guarantees the next page boots with the new session already in `localStorage` and avoids the AuthContext race.
-- If no `code` is present and `getSession()` returns nothing, redirect to `/login` with a clear toast instead of waiting 5s.
-- Keep the existing recovery + provider error branches.
+### 2. Strict Sign-up vs Sign-in separation (edge function + UI)
 
-### 3. Make `AuthGuard` wait one tick after a fresh login
-- In `src/components/AuthGuard.tsx`, when `loading === false` and `user === null`, call `supabase.auth.getSession()` once before bouncing to `/login`. If a session exists in storage, set `user` via the next `onAuthStateChange` and stop the redirect. This closes the post-callback race window without changing existing protected-page behavior.
+Because Supabase can't enforce this, we'll do a **pre-check** before launching the OAuth redirect:
 
-### 4. Normalize the OAuth origin (`src/components/auth/SocialLoginOptions.tsx`)
-- Compute `redirectTo` from a single canonical host: if `window.location.hostname === 'www.fanrealms.com'`, use `https://fanrealms.com/auth/callback?...`; otherwise keep `window.location.origin`. This ensures the PKCE verifier written before redirect is read on the same origin after redirect.
-- Remove the `recordOAuthDebug` calls and the `/auth/debug` page (no longer needed once the flow works). Drop the route from `src/App.tsx` and delete `src/pages/AuthDebug.tsx`.
+- New edge function `oauth-precheck` (public, no JWT required): accepts `{ email?, mode: 'signup' | 'login' }`. For OAuth we don't have email up front, so this function will be called from the **callback** after OAuth returns, before we commit the session.
+- Actual flow:
+  1. User clicks "Continue with Google" on **Sign-up** page → we set `sessionStorage.oauth_intent = 'signup'` then launch OAuth.
+  2. User clicks "Continue with Google" on **Login** page → we set `sessionStorage.oauth_intent = 'login'` then launch OAuth.
+  3. After Google redirects back to `/auth/callback`, the SDK exchanges the code and we get a session with the user's email + a flag for whether the auth user was just created (we'll detect this by checking `created_at` vs `last_sign_in_at` from `auth.users` via the edge function using service role).
+  4. Edge function `oauth-precheck` (rename to `oauth-intent-validate`) compares `intent` vs `is_new_user`:
+     - `intent=signup` + existing user → sign them out, return `{ error: 'account_exists' }`. UI shows "An account already exists for this Google address. Please log in instead." with a button to `/login`.
+     - `intent=login` + new user → sign them out **and delete the just-created auth user** (service-role call), return `{ error: 'no_account' }`. UI shows "No account found for this Google address. Please sign up first." with a button to `/signup`.
+     - Matching intent → proceed normally to `returnTo`.
 
-### 5. Verify
-- After changes, open `/login` in the preview, click "Continue with Google", complete Google's consent, and confirm we land on `/dashboard` with a session. Capture console logs and the Supabase auth logs to confirm the `/callback → /authorize` loop is gone.
+### 3. UI updates
+- `SocialLoginOptions.tsx` — accept a `mode: 'login' | 'signup'` prop, write it to sessionStorage before redirecting. Update Login.tsx and Signup.tsx to pass the right mode.
+- `AuthCallback.tsx` — after session is established, call `oauth-intent-validate`, handle the three outcomes (success / account_exists / no_account) with the appropriate redirect + toast + on-page message.
 
-## Required Supabase dashboard settings (cannot be set from code)
+### 4. Verification
+- Re-query `public.users` vs `auth.users` counts — should match.
+- Check the new `auth_trigger_errors` table is empty after a successful test signup.
+- Manual test matrix:
+  - New Gmail on Sign-up page → account created, lands on dashboard.
+  - Same Gmail on Sign-up page again → "Account already exists" message, redirected to login.
+  - Existing Gmail on Login page → signs in, lands on dashboard.
+  - Brand-new Gmail on Login page → "No account found" message, redirected to signup, no orphan auth user left behind.
 
-For the fix to take effect on the live site, in **Supabase Dashboard → Authentication → URL Configuration**:
+---
 
-- **Site URL**: `https://fanrealms.com`
-- **Additional Redirect URLs** must include all of:
-  - `https://fanrealms.com/auth/callback`
-  - `https://www.fanrealms.com/auth/callback`
-  - `https://fanrealms-universe-access.lovable.app/auth/callback`
-  - `https://id-preview--77a75b15-d40c-4de1-9a69-95e5c12211ff.lovable.app/auth/callback`
-  - `https://77a75b15-d40c-4de1-9a69-95e5c12211ff.lovableproject.com/auth/callback`
+## Technical notes
 
-And in the **Google Cloud Console** OAuth client → Authorized redirect URIs, keep only Supabase's:
-`https://eaeqyctjljbtcatlohky.supabase.co/auth/v1/callback`
+- Migration is the only DB change; touches `public.users` (3 row deletes, FK add), `handle_new_auth_user` (rewrite), new `public.auth_trigger_errors` table with RLS allowing only service_role.
+- `oauth-intent-validate` edge function uses `SUPABASE_SERVICE_ROLE_KEY` (already available) to (a) read `auth.users.created_at`/`last_sign_in_at` and (b) hard-delete a wrongly-created auth user when intent was login. Caller passes its own JWT for identification; function validates it.
+- The "delete just-created auth user" step is gated by checking `created_at` is within the last 60 seconds AND `last_sign_in_at` is null/equal to `created_at`, so we can never accidentally nuke an established account.
+- No changes to Supabase Auth dashboard settings required; "Allow new sign-ups" stays ON.
 
 ## Files touched
-
-- `src/main.tsx` — remove GoogleOAuthProvider
-- `package.json` — drop `@react-oauth/google`
-- `src/pages/AuthCallback.tsx` — patch exchange + navigation
-- `src/components/AuthGuard.tsx` — re-check session before bouncing
-- `src/components/auth/SocialLoginOptions.tsx` — canonical redirect host, remove debug recorder
-- `src/App.tsx` — remove `/auth/debug` route + import
-- `src/pages/AuthDebug.tsx` — delete
+- New migration (orphan cleanup, FK, trigger rewrite, error log table)
+- New `supabase/functions/oauth-intent-validate/index.ts`
+- `src/components/auth/SocialLoginOptions.tsx` (add mode prop)
+- `src/pages/Login.tsx` (pass `mode="login"`)
+- `src/pages/Signup.tsx` (pass `mode="signup"`)
+- `src/pages/AuthCallback.tsx` (call validator, handle outcomes)
