@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -15,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import AuthFooter from "@/components/auth/AuthFooter";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -43,35 +43,22 @@ const ForgotPassword = () => {
       setIsSubmitting(true);
       setError(null);
 
-      console.log("ForgotPassword: Sending reset email to:", values.email);
-
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
         redirectTo: `${window.location.origin}/reset-password`,
         captchaToken: values.captcha,
       });
 
-      if (error) {
-        console.error("ForgotPassword: Reset email error:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log("ForgotPassword: Reset email sent successfully");
       setIsSuccess(true);
     } catch (error: any) {
-      console.error("Password reset error:", error);
-      
-      // Reset captcha on error
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
-      }
+      if (turnstileRef.current) turnstileRef.current.reset();
       setCaptchaToken("");
       form.setValue("captcha", "");
-      
-      // Handle rate limiting gracefully
+
       if (error.message?.includes("rate_limit") || error.message?.includes("rate limit")) {
         setError("Too many reset requests. Please wait a moment before trying again.");
       } else if (error.message?.includes("not found") || error.message?.includes("user not found")) {
-        // For security, we still show success even if email doesn't exist
         setIsSuccess(true);
       } else if (error.message?.includes("captcha")) {
         setError("Security verification failed. Please try again.");
@@ -85,43 +72,39 @@ const ForgotPassword = () => {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-8">
-            <Link to="/" className="inline-block">
-              <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
-            </Link>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <Link to="/" className="text-xl font-bold">FanRealms</Link>
           </div>
 
-          <Card className="bg-gray-900 border-gray-800 text-white">
+          <Card>
             <CardHeader className="text-center">
               <div className="flex justify-center mb-4">
-                <CheckCircle className="h-12 w-12 text-green-500" />
+                <CheckCircle className="h-12 w-12 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-              <CardDescription className="text-gray-400">
+              <CardTitle className="text-xl">Check your email</CardTitle>
+              <CardDescription>
                 We've sent a password reset link to your email address.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-gray-400 text-center">
+              <p className="text-sm text-muted-foreground text-center">
                 If you don't see the email in your inbox, check your spam folder. The link will expire in 1 hour.
               </p>
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   Didn't receive the email?
                 </p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full"
                   onClick={() => {
                     setIsSuccess(false);
                     setError(null);
                     setCaptchaToken("");
                     form.reset();
-                    if (turnstileRef.current) {
-                      turnstileRef.current.reset();
-                    }
+                    if (turnstileRef.current) turnstileRef.current.reset();
                   }}
                 >
                   Try again
@@ -136,23 +119,22 @@ const ForgotPassword = () => {
             </CardContent>
           </Card>
         </div>
+        <AuthFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <Link to="/" className="inline-block">
-            <h1 className="text-2xl font-bold gradient-text">FanRealms</h1>
-          </Link>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <Link to="/" className="text-xl font-bold">FanRealms</Link>
         </div>
 
-        <Card className="bg-gray-900 border-gray-800 text-white">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Reset your password</CardTitle>
-            <CardDescription className="text-center text-gray-400">
+            <CardTitle className="text-xl text-center">Reset your password</CardTitle>
+            <CardDescription className="text-center">
               Enter your email address and we'll send you a link to reset your password.
             </CardDescription>
           </CardHeader>
@@ -172,14 +154,14 @@ const ForgotPassword = () => {
                     <FormItem className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <FormControl>
                           <Input
                             id="email"
                             placeholder="you@example.com"
                             type="email"
                             autoComplete="email"
-                            className="pl-10 bg-gray-800 border-gray-700 focus-visible:ring-primary"
+                            className="pl-10"
                             {...field}
                           />
                         </FormControl>
@@ -218,34 +200,8 @@ const ForgotPassword = () => {
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-primary hover:bg-[#3a7aab]" disabled={isSubmitting || !captchaToken}>
-                  {isSubmitting ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Sending reset link...
-                    </div>
-                  ) : (
-                    "Send reset link"
-                  )}
+                <Button type="submit" className="w-full" disabled={isSubmitting || !captchaToken}>
+                  {isSubmitting ? "Sending reset link..." : "Send reset link"}
                 </Button>
 
                 <Link to="/login">
@@ -259,6 +215,8 @@ const ForgotPassword = () => {
           </CardContent>
         </Card>
       </div>
+
+      <AuthFooter />
     </div>
   );
 };
