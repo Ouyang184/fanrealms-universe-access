@@ -78,12 +78,20 @@ Deno.serve(async (req) => {
       .gte('created_at', since);
 
     const attempts = Math.max(ipCount ?? 0, emailCount ?? 0);
-    if (attempts >= 8) {
+    if (attempts >= 5) {
       return new Response(
         JSON.stringify({ error: 'Too many attempts. Please try again later.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Log EVERY attempt BEFORE the code lookup so failed guesses are rate-limited
+    await supabase.from('rate_limit_events').insert({
+      ip,
+      email,
+      action: 'verify_code'
+    });
+
     // Check if code exists and is valid
     const { data: codeData, error: fetchError } = await supabase
       .from('email_2fa_codes')
@@ -143,13 +151,6 @@ Deno.serve(async (req) => {
     }
 
     console.log(`✅ Successful 2FA verification`)
-
-    // Log successful verification attempt
-    await supabase.from('rate_limit_events').insert({
-      ip,
-      email,
-      action: 'verify_code'
-    });
 
     return new Response(
       JSON.stringify({ 
