@@ -157,7 +157,7 @@ const AuthCallback = () => {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center space-y-4">
-          <h2 className="text-xl font-medium">Google sign-in failed</h2>
+          <h2 className="text-xl font-medium">Sign-in issue</h2>
           <p className="text-sm text-muted-foreground">{callbackError}</p>
           <button
             type="button"
