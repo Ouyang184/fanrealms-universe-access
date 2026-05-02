@@ -4,12 +4,13 @@ import { createJsonResponse } from '../utils/cors.ts';
 export async function handleGetUserSubscriptions(
   supabaseService: any,
   user: any,
-  userId?: string
+  _ignoredUserId?: string
 ) {
-  const targetUserId = userId || user?.id;
-  
+  // SECURITY: Always use the authenticated caller's id; never trust client-supplied userId (IDOR fix)
+  const targetUserId = user?.id;
+
   if (!targetUserId) {
-    return createJsonResponse({ error: 'User ID required' }, 400);
+    return createJsonResponse({ error: 'Authentication required' }, 401);
   }
 
   console.log('Getting user subscriptions for user:', targetUserId);
