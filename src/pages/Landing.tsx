@@ -16,7 +16,7 @@ export default function LandingPage() {
 
       {/* NAV */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#eee]">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-2">
+        <div className="px-4 sm:px-6 h-14 flex items-center gap-2">
           <Logo className="mr-4" />
           <nav className="hidden md:flex gap-1">
             {[
@@ -48,7 +48,7 @@ export default function LandingPage() {
 
       {/* HERO */}
       <section className="border-b border-[#eee] bg-white">
-        <div className="max-w-6xl mx-auto px-6 py-16 flex items-center justify-between gap-12">
+        <div className="px-4 sm:px-6 py-16 flex items-center justify-between gap-12">
           <div>
             <h1 className="text-5xl font-bold tracking-[-1.5px] leading-[1.1]">
               Where Godot devs<br />
@@ -88,7 +88,7 @@ export default function LandingPage() {
 
       {/* HOW IT WORKS */}
       <section className="border-b border-[#eee] bg-[#fafafa]">
-        <div className="max-w-6xl mx-auto px-6 py-12">
+        <div className="px-4 sm:px-6 py-12">
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px] text-center mb-8">How it works</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -125,7 +125,7 @@ export default function LandingPage() {
 
       {/* MARKETPLACE PREVIEW */}
       {products && products.length > 0 ? (
-        <section className="max-w-6xl mx-auto px-6 py-10">
+        <section className="px-4 sm:px-6 py-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[15px] font-bold tracking-[-0.3px]">New Godot assets</h2>
             <Link to="/marketplace" className="text-[13px] font-semibold text-primary hover:underline">See all</Link>
@@ -165,7 +165,7 @@ export default function LandingPage() {
           </div>
         </section>
       ) : (
-        <section className="max-w-6xl mx-auto px-6 py-10">
+        <section className="px-4 sm:px-6 py-10">
           <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
             <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-3">
               <ShoppingBag className="w-4 h-4 text-[#bbb]" />
@@ -183,7 +183,7 @@ export default function LandingPage() {
 
       {/* JOBS + FORUM */}
       {((jobs && jobs.length > 0) || (threads && threads.length > 0)) ? (
-        <section className="max-w-6xl mx-auto px-6 pb-10">
+        <section className="px-4 sm:px-6 pb-10">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Jobs */}
             <div>
@@ -249,7 +249,7 @@ export default function LandingPage() {
           </div>
         </section>
       ) : (
-        <section className="max-w-6xl mx-auto px-6 pb-10">
+        <section className="px-4 sm:px-6 pb-10">
           <div className="grid md:grid-cols-2 gap-4">
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
               <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
@@ -277,7 +277,7 @@ export default function LandingPage() {
 
       {/* FOOTER */}
       <footer className="bg-[#111] text-[#666]">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-8 flex items-center justify-between">
           <div>
             <Logo variant="dark" />
             <div className="text-[11px] text-[#555] mt-1">The Godot asset hub.</div>
