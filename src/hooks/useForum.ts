@@ -33,13 +33,11 @@ export function useForumThreads(category?: string) {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch author info for all threads
+      // Fetch author info for all threads via security-definer RPC (works for anon)
       const authorIds = [...new Set(data.map((t: any) => t.author_id))];
       const { data: usersData } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', authorIds);
-      const usersMap = new Map((usersData || []).map((u: any) => [u.id, u]));
+        .rpc('get_public_user_profiles', { _user_ids: authorIds });
+      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
 
       return data.map((t: any) => ({
         ...t,

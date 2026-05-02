@@ -3209,6 +3209,14 @@ export type Database = {
           username: string
         }[]
       }
+      get_public_user_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          id: string
+          profile_picture: string
+          username: string
+        }[]
+      }
       get_safe_creator_profile: {
         Args: { creator_id_param?: string; username_param?: string }
         Returns: {
