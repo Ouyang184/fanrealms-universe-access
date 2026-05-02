@@ -88,7 +88,7 @@ const AuthCallback = () => {
           } else if (data?.error === 'account_exists') {
             // Signed up but account already existed -> sign out, redirect to login.
             await supabase.auth.signOut();
-            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            clearStoredOAuthIntent();
             const message = 'An account already exists for this Google address. Please log in instead.';
             setCallbackError(message);
             toast.error('Account already exists', { description: message });
@@ -97,7 +97,7 @@ const AuthCallback = () => {
           } else if (data?.error === 'no_account') {
             // Tried to log in with a brand-new Google account -> account was deleted by the function.
             await supabase.auth.signOut();
-            try { sessionStorage.removeItem('oauth_intent'); } catch {}
+            clearStoredOAuthIntent();
             const message = "No account found for this Google address. Please sign up first.";
             setCallbackError(message);
             toast.error('No account found', { description: message });
@@ -145,13 +145,17 @@ const AuthCallback = () => {
         window.clearInterval(interval);
         if (resolved) return;
         resolved = true;
-        console.warn('[AUTH][Callback] No session after timeout, redirecting to login');
+        console.warn('[AUTH][Callback] No session after timeout', { intent: intentState });
         if (isSignupConfirmation) {
           toast.success('Email confirmed', { description: 'Your account is active. Please sign in.' });
+          navigate('/login', { replace: true });
+        } else if (intentState === 'signup') {
+          toast.error('Sign up failed', { description: 'Please try again.' });
+          navigate('/signup', { replace: true });
         } else {
           toast.error('Sign in failed', { description: 'Please try again.' });
+          navigate('/login', { replace: true });
         }
-        navigate('/login', { replace: true });
       }
     }, 250);
 
@@ -159,20 +163,20 @@ const AuthCallback = () => {
       subscription.unsubscribe();
       window.clearInterval(interval);
     };
-  }, [navigate, searchParams, returnTo, isSignupConfirmation]);
+  }, [navigate, searchParams, returnTo, isSignupConfirmation, intentState]);
 
   if (callbackError) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center space-y-4">
-          <h2 className="text-xl font-medium">Sign-in issue</h2>
+          <h2 className="text-xl font-medium">{intentState === 'signup' ? 'Sign-up issue' : 'Sign-in issue'}</h2>
           <p className="text-sm text-muted-foreground">{callbackError}</p>
           <button
             type="button"
             className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            onClick={() => navigate('/login', { replace: true })}
+            onClick={() => navigate(errorBackPath, { replace: true })}
           >
-            Back to login
+            {errorBackLabel}
           </button>
         </div>
       </div>
