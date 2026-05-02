@@ -107,9 +107,9 @@ export default function ForumThread() {
           ) : replies && replies.length > 0 ? (
             replies.map((reply) => (
               <Card key={reply.id}>
-                <CardContent className="p-4">
-                  <div className="text-sm text-muted-foreground mb-2">
-                    {reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
+                <CardContent className="p-6">
+                  <div className="text-sm text-muted-foreground mb-4">
+                    by {reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
                   </div>
                   <MarkdownContent content={reply.content} />
                 </CardContent>
