@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_trigger_errors: {
+        Row: {
+          email: string | null
+          id: string
+          occurred_at: string
+          sqlerrm: string | null
+          sqlstate: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          occurred_at?: string
+          sqlerrm?: string | null
+          sqlstate?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          occurred_at?: string
+          sqlerrm?: string | null
+          sqlstate?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
