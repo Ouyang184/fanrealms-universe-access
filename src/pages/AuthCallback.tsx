@@ -4,7 +4,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { sanitizeReturnTo } from "@/utils/auth-redirects";
-import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo } from "@/utils/oauth-storage";
+import { clearStoredOAuthReturnTo, getStoredOAuthReturnTo, getStoredOAuthIntent, clearStoredOAuthIntent } from "@/utils/oauth-storage";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -24,6 +24,16 @@ const AuthCallback = () => {
   const loadingTitle = isSignupConfirmation ? 'Confirming your email…' : 'Signing you in…';
   const loadingDescription = isSignupConfirmation ? 'Activating your account.' : 'Just a moment.';
 
+  // Read OAuth intent up-front so error UI knows which page to send the user back to.
+  const queryIntent = searchParams.get('intent');
+  const initialIntent: 'login' | 'signup' | null =
+    queryIntent === 'login' || queryIntent === 'signup'
+      ? queryIntent
+      : (typeof window !== 'undefined' ? getStoredOAuthIntent() : null);
+  const [intentState] = useState<'login' | 'signup' | null>(initialIntent);
+  const errorBackPath = intentState === 'signup' ? '/signup' : '/login';
+  const errorBackLabel = intentState === 'signup' ? 'Back to sign up' : 'Back to login';
+
   useEffect(() => {
     if (handled.current) return;
     handled.current = true;
@@ -39,30 +49,28 @@ const AuthCallback = () => {
       return;
     }
 
-    // Surface OAuth provider errors immediately
+    // Surface OAuth provider errors immediately, with intent-aware messaging.
     const oauthError = searchParams.get('error') || hashParams.get('error');
     const oauthErrorDesc =
       searchParams.get('error_description') || hashParams.get('error_description');
     if (oauthError) {
-      console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc });
-      const message = oauthErrorDesc || oauthError;
+      console.error('[AUTH][Callback] Provider error', { oauthError, oauthErrorDesc, intent: intentState });
+      const rawMessage = oauthErrorDesc || oauthError;
+      const looksLikeMissingUser = /user not found|no.?account|signups? not allowed/i.test(rawMessage);
+      const message = intentState === 'signup' && looksLikeMissingUser
+        ? "We couldn't create your account from Google. Please try again, or sign up with email below."
+        : rawMessage;
       setCallbackError(message);
-      toast.error('Sign in failed', { description: message });
+      const title = intentState === 'signup' ? 'Sign-up failed' : 'Sign in failed';
+      toast.error(title, { description: message });
       return;
     }
 
-    // Read OAuth intent (set by SocialLoginOptions before redirecting to Google)
-    let intent: 'login' | 'signup' | null = null;
-    try {
-      const stored = sessionStorage.getItem('oauth_intent');
-      if (stored === 'login' || stored === 'signup') intent = stored;
-    } catch {
-      // ignore
-    }
+    const intent = intentState;
 
     const finish = (target: string) => {
       clearStoredOAuthReturnTo();
-      try { sessionStorage.removeItem('oauth_intent'); } catch {}
+      clearStoredOAuthIntent();
       // Hard navigate so the next page boots with the session committed.
       window.location.replace(target);
     };
