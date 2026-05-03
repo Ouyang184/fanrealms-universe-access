@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
 export default function CompleteProfile() {
-  const { user, loading, isProfileComplete, refreshProfile } = useAuth();
+  const { user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,14 +22,9 @@ export default function CompleteProfile() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; displayName?: string }>({});
 
-  // If profile is already complete, skip to destination
-  useEffect(() => {
-    if (!loading && isProfileComplete) {
-      const params = new URLSearchParams(location.search);
-      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
-      navigate(returnTo, { replace: true });
-    }
-  }, [loading, isProfileComplete, navigate, location.search]);
+  // No "skip if already complete" effect here — AuthGuard wraps this
+  // route and handles the already-complete case in one place.
+
 
   const validate = (): boolean => {
     const errors: { username?: string; displayName?: string } = {};

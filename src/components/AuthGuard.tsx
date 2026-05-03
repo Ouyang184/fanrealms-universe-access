@@ -79,34 +79,46 @@ const AuthGuard = ({
 
   useEffect(() => {
     if (loading) return;
-    let cancelled = false;
     setHasCheckedAuth(false);
 
-    const run = async () => {
-      // Authenticated user landing on an auth page → skip to dashboard or complete-profile.
-      if (user && isAuthPath(location.pathname)) {
-        if (location.pathname !== '/dashboard') {
-          safeNavigate('/dashboard');
-        } else {
+    const run = () => {
+      // ── Authenticated user on an auth page (/login, /signup) ──
+      // Send them straight to their correct destination in ONE hop:
+      // dashboard if profile complete, /complete-profile otherwise.
+      if (user && isAuthPath(location.pathname) && location.pathname !== '/complete-profile') {
+        const target = isProfileComplete
+          ? '/dashboard'
+          : resolveCompletionRoute(false, '/dashboard');
+        if (location.pathname + location.search === target) {
           setHasCheckedAuth(true);
+          return;
         }
+        safeNavigate(target);
         return;
       }
 
-      // No user — AuthContext has already restored the session via getSession()
-      // at startup, so trust it here instead of re-querying on every navigation.
+      // ── Authenticated user already on /complete-profile but complete ──
+      // Honor the returnTo query if present, else dashboard.
+      if (user && isProfileComplete && location.pathname === '/complete-profile') {
+        const params = new URLSearchParams(location.search);
+        const returnTo = params.get('returnTo') || '/dashboard';
+        safeNavigate(returnTo);
+        return;
+      }
+
+      // ── No user on a protected route → /login?returnTo=… ──
+      // AuthContext has already restored the session via getSession() at
+      // startup; trust it here and don't re-query on every navigation.
       if (requireAuth && !user) {
         if (isAuthPath(location.pathname)) {
           setHasCheckedAuth(true);
           return;
         }
-        const loginUrl = buildLoginUrl(location.pathname, location.search);
-        safeNavigate(loginUrl);
+        safeNavigate(buildLoginUrl(location.pathname, location.search));
         return;
       }
 
-      // Authenticated user with incomplete profile → redirect to /complete-profile.
-      // Only runs when requireCompleteProfile is true and we are NOT already there.
+      // ── Authenticated user with incomplete profile → /complete-profile ──
       if (
         requireCompleteProfile &&
         user &&
@@ -121,11 +133,8 @@ const AuthGuard = ({
     };
 
     run();
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
+  }, [user, profile, loading, isProfileComplete, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
   // While a sign-out is in flight we must NEVER render protected children
   // again — even for one frame — or the user will see authed UI flash
