@@ -5,6 +5,7 @@ import { useJobListings } from "@/hooks/useJobs";
 import { useForumThreads } from "@/hooks/useForum";
 import { formatDistanceToNow } from "date-fns";
 import { ShoppingBag, Gamepad2, Briefcase, MessageSquare } from "lucide-react";
+import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
 
 export default function LandingPage() {
   const { data: products } = useMarketplaceProducts("all");
