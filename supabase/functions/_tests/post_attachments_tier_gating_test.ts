@@ -19,10 +19,10 @@ async function callSeed(action: "setup" | "teardown", payload: Record<string, un
   return JSON.parse(text);
 }
 
-async function tryDownload(email: string | null, password: string, path: string): Promise<"allow" | "deny"> {
+async function tryDownload(tokenHash: string | null, path: string): Promise<"allow" | "deny"> {
   const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
-  if (email) {
-    const { error } = await client.auth.signInWithPassword({ email, password });
+  if (tokenHash) {
+    const { error } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
     if (error) return "deny";
   }
   const { data, error } = await client.storage.from("post-attachments").download(path);
@@ -37,35 +37,35 @@ Deno.test({
   sanitizeResources: false,
   fn: async () => {
     const ctx = await callSeed("setup");
-    const { password, creator, bronze, gold, stranger, publicPath, bronzePath, goldPath } = ctx;
+    const { creator, bronze, gold, stranger, publicPath, bronzePath, goldPath } = ctx;
 
     try {
       const matrix: Array<[string, string | null, string, "allow" | "deny"]> = [
-        ["anon-public",   null,            publicPath, "deny"],
-        ["anon-bronze",   null,            bronzePath, "deny"],
-        ["anon-gold",     null,            goldPath,   "deny"],
+        ["anon-public",   null,                 publicPath, "deny"],
+        ["anon-bronze",   null,                 bronzePath, "deny"],
+        ["anon-gold",     null,                 goldPath,   "deny"],
 
-        ["stranger-public", stranger.email, publicPath, "deny"],
-        ["stranger-bronze", stranger.email, bronzePath, "deny"],
-        ["stranger-gold",   stranger.email, goldPath,   "deny"],
+        ["stranger-public", stranger.token_hash, publicPath, "deny"],
+        ["stranger-bronze", stranger.token_hash, bronzePath, "deny"],
+        ["stranger-gold",   stranger.token_hash, goldPath,   "deny"],
 
-        ["bronze-public", bronze.email,    publicPath, "allow"],
-        ["bronze-bronze", bronze.email,    bronzePath, "allow"],
-        ["bronze-gold",   bronze.email,    goldPath,   "deny"],
+        ["bronze-public", bronze.token_hash,    publicPath, "allow"],
+        ["bronze-bronze", bronze.token_hash,    bronzePath, "allow"],
+        ["bronze-gold",   bronze.token_hash,    goldPath,   "deny"],
 
-        ["gold-public",   gold.email,      publicPath, "allow"],
-        ["gold-bronze",   gold.email,      bronzePath, "deny"],
-        ["gold-gold",     gold.email,      goldPath,   "allow"],
+        ["gold-public",   gold.token_hash,      publicPath, "allow"],
+        ["gold-bronze",   gold.token_hash,      bronzePath, "deny"],
+        ["gold-gold",     gold.token_hash,      goldPath,   "allow"],
 
-        ["creator-public", creator.email,  publicPath, "allow"],
-        ["creator-bronze", creator.email,  bronzePath, "allow"],
-        ["creator-gold",   creator.email,  goldPath,   "allow"],
+        ["creator-public", creator.token_hash,  publicPath, "allow"],
+        ["creator-bronze", creator.token_hash,  bronzePath, "allow"],
+        ["creator-gold",   creator.token_hash,  goldPath,   "allow"],
       ];
 
       const results: Record<string, string> = {};
       const failures: string[] = [];
-      for (const [label, email, path, expected] of matrix) {
-        const actual = await tryDownload(email, password, path);
+      for (const [label, tok, path, expected] of matrix) {
+        const actual = await tryDownload(tok, path);
         results[label] = `${actual} (want ${expected})`;
         if (actual !== expected) failures.push(`${label}: got ${actual}, expected ${expected}`);
       }

@@ -33,7 +33,16 @@ serve(async (req) => {
           email, password, email_confirm: true,
         });
         if (error) throw new Error(`${label}: ${error.message}`);
-        return { id: data.user!.id, email };
+        // Generate a magiclink so the test runner can verifyOtp without captcha
+        const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+          type: "magiclink", email,
+        });
+        if (linkErr) throw new Error(`${label} link: ${linkErr.message}`);
+        return {
+          id: data.user!.id,
+          email,
+          token_hash: (linkData as any).properties?.hashed_token,
+        };
       };
 
       const creator = await mkUser("creator");
