@@ -45,6 +45,7 @@ import DashboardSalesPage from "./pages/DashboardSales";
 import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import SellerProfilePage from "./pages/SellerProfile";
+import BecomeCreator from "./pages/BecomeCreator";
 
 const OAuthCallbackRedirector = () => {
   const location = useLocation();
