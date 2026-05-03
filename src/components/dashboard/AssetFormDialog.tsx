@@ -41,12 +41,14 @@ interface Asset {
   license?: string | null;
   godot_version?: string | null;
   status: string;
+  project_id?: string | null;
 }
 
 interface AssetFormDialogProps {
   open: boolean;
   onClose: () => void;
   asset?: Asset | null;
+  defaultProjectId?: string | null;
 }
 
 export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) {
