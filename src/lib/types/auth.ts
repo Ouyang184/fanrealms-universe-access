@@ -33,6 +33,8 @@ export interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isProfileComplete: boolean;
+  /** True from the moment signOut() is invoked until it resolves. */
+  signingOut: boolean;
   refreshProfile: () => Promise<Profile | null>;
   /**
    * Re-fetches the profile and returns the route the user should be on
