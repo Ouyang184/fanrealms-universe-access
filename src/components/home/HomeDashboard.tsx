@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -97,13 +98,10 @@ export function HomeDashboard() {
                 to={`/forum/${thread.id}`}
                 className={`flex items-center gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors ${i < 4 ? "border-b border-[#f5f5f5]" : ""}`}
               >
-                <div className="w-8 h-8 rounded-lg bg-sidebar flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 overflow-hidden">
-                  {thread.users?.profile_picture ? (
-                    <img src={thread.users.profile_picture} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    (thread.users?.username || "?").slice(0, 2).toUpperCase()
-                  )}
-                </div>
+                <ThreadAuthorAvatar
+                  user={thread.users}
+                  fallbackClassName="bg-sidebar text-white"
+                />
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-semibold truncate">{thread.title}</div>
                   <div className="text-[11px] text-[#aaa]">{thread.category} · {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true })}</div>

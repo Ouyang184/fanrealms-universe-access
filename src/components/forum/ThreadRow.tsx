@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { MessageCircle, Eye, Pin } from 'lucide-react';
+import { ThreadAuthorAvatar } from './ThreadAuthorAvatar';
 
 interface Thread {
   id: string;
@@ -21,7 +22,6 @@ interface ThreadRowProps {
 
 export function ThreadRow({ thread }: ThreadRowProps) {
   const author = thread.users?.username || 'Anonymous';
-  const initials = author.slice(0, 2).toUpperCase();
   const lastActivity = thread.updated_at || thread.created_at;
 
   return (
@@ -29,14 +29,7 @@ export function ThreadRow({ thread }: ThreadRowProps) {
       to={`/forum/${thread.id}`}
       className="group flex items-center gap-4 px-4 py-3 border-b border-border bg-card hover:bg-accent/40 transition-colors"
     >
-      {/* Avatar */}
-      <div className="w-9 h-9 rounded-full bg-foreground/90 flex items-center justify-center text-background text-[11px] font-bold flex-shrink-0 overflow-hidden">
-        {thread.users?.profile_picture ? (
-          <img src={thread.users.profile_picture} alt="" className="w-full h-full object-cover" />
-        ) : (
-          initials
-        )}
-      </div>
+      <ThreadAuthorAvatar user={thread.users} className="w-9 h-9 rounded-full" />
 
       {/* Title + meta */}
       <div className="flex-1 min-w-0">

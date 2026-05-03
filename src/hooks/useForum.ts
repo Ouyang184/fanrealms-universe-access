@@ -14,6 +14,38 @@ export const FORUM_CATEGORIES = [
   'Help',
 ] as const;
 
+export interface PublicUserProfile {
+  id: string;
+  username: string | null;
+  profile_picture: string | null;
+}
+
+/**
+ * Batch-fetch public user profiles via the security-definer RPC and return
+ * a Map keyed by user id. Works for anonymous callers.
+ */
+async function fetchPublicUserProfiles(
+  authorIds: string[],
+): Promise<Map<string, PublicUserProfile>> {
+  const uniqueIds = [...new Set(authorIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return new Map();
+
+  const { data } = await supabase
+    .rpc('get_public_user_profiles', { _user_ids: uniqueIds });
+
+  return new Map(((data as PublicUserProfile[]) ?? []).map((u) => [u.id, u]));
+}
+
+function attachAuthor<T extends { author_id: string }>(
+  rows: T[],
+  usersMap: Map<string, PublicUserProfile>,
+): Array<T & { users: PublicUserProfile | null }> {
+  return rows.map((row) => ({
+    ...row,
+    users: usersMap.get(row.author_id) ?? null,
+  }));
+}
+
 export function useForumThreads(category?: string) {
   return useQuery({
     queryKey: ['forum-threads', category],
@@ -33,16 +65,8 @@ export function useForumThreads(category?: string) {
       if (error) throw error;
       if (!data || data.length === 0) return [];
 
-      // Fetch author info for all threads via security-definer RPC (works for anon)
-      const authorIds = [...new Set(data.map((t: any) => t.author_id))];
-      const { data: usersData } = await supabase
-        .rpc('get_public_user_profiles', { _user_ids: authorIds });
-      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
-
-      return data.map((t: any) => ({
-        ...t,
-        users: usersMap.get(t.author_id) || null,
-      }));
+      const usersMap = await fetchPublicUserProfiles(data.map((t) => t.author_id));
+      return attachAuthor(data, usersMap);
     },
   });
 }
@@ -56,10 +80,11 @@ export function useForumThreadCounts() {
         .select('category')
         .eq('status', 'published');
       if (error) throw error;
+
       const counts: Record<string, number> = {};
       let total = 0;
       for (const row of data ?? []) {
-        const c = (row as any).category || 'General';
+        const c = row.category || 'General';
         counts[c] = (counts[c] || 0) + 1;
         total += 1;
       }
@@ -81,14 +106,10 @@ export function useForumThread(threadId: string) {
         .single();
 
       if (error) throw error;
-
-      // Fetch author info via security-definer RPC (works for anon)
       if (!data) return data;
 
-      const { data: userRows } = await supabase
-        .rpc('get_public_user_profiles', { _user_ids: [data.author_id] });
-      const userData = ((userRows as any[]) || [])[0] || null;
-      return { ...data, users: userData };
+      const usersMap = await fetchPublicUserProfiles([data.author_id]);
+      return { ...data, users: usersMap.get(data.author_id) ?? null };
     },
   });
 }
@@ -107,16 +128,8 @@ export function useForumReplies(threadId: string) {
       if (error) throw error;
       if (!data) return [];
 
-      // Fetch user info for all replies via security-definer RPC (works for anon)
-      const authorIds = [...new Set(data.map((r) => r.author_id))];
-      const { data: usersData } = await supabase
-        .rpc('get_public_user_profiles', { _user_ids: authorIds });
-
-      const usersMap = new Map(((usersData as any[]) || []).map((u: any) => [u.id, u]));
-      return data.map((r) => ({
-        ...r,
-        users: usersMap.get(r.author_id) || null,
-      }));
+      const usersMap = await fetchPublicUserProfiles(data.map((r) => r.author_id));
+      return attachAuthor(data, usersMap);
     },
   });
 }
