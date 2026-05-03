@@ -52,6 +52,11 @@ const decideTarget = (params: {
   const { hasUser, isComplete, pathname, search } = params;
   const here = pathname + search;
 
+  // Unauthed user on a protected route → /login?returnTo=…
+  if (!hasUser && isAuthSensitive(pathname) && !isAuthPath(pathname)) {
+    return buildLoginUrl(pathname, search);
+  }
+
   // Authed user on /login or /signup → straight to correct destination.
   if (hasUser && isAuthPath(pathname) && pathname !== "/complete-profile") {
     return isComplete ? "/dashboard" : resolveCompletionRoute(false, "/dashboard");
