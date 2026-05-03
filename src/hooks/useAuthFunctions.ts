@@ -212,26 +212,78 @@ export const useAuthFunctions = () => {
   }, [toast]);
 
   const signOut = useCallback(async () => {
+    console.log("useAuthFunctions: Attempting sign out");
+
+    // Wait for the SIGNED_OUT event before navigating, so AuthContext's
+    // user/session state is already null when /login mounts. This avoids
+    // a brief flash of authed UI and prevents AuthGuard from bouncing
+    // back to /dashboard mid-logout.
+    const waitForSignedOut = new Promise<void>((resolve) => {
+      const timeout = window.setTimeout(() => {
+        sub?.subscription.unsubscribe();
+        resolve();
+      }, 3000);
+      const sub = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') {
+          window.clearTimeout(timeout);
+          sub.subscription.unsubscribe();
+          resolve();
+        }
+      }).data;
+    });
+
     try {
-      console.log("useAuthFunctions: Attempting sign out");
-      
-      await supabase.auth.signOut({ scope: 'local' });
-      
-      toast({
-        title: "Signed out successfully",
-        description: "You have been signed out.",
-      });
-      
-      // Navigate to the root page
-      navigate('/', { replace: true });
+      // scope: 'global' revokes the refresh token server-side too, so the
+      // session cannot be resumed from another tab/device.
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) {
+        // Network/server failure — fall back to local-only sign out so the
+        // browser session is still cleared.
+        console.warn("useAuthFunctions: Global sign out failed, falling back to local", error);
+        await supabase.auth.signOut({ scope: 'local' });
+      }
     } catch (error: any) {
       console.error("useAuthFunctions: Sign out error:", error);
-      toast({
-        title: "Sign out failed",
-        description: error.message || "An error occurred during sign out. Please try again.",
-        variant: "destructive"
-      });
+      try {
+        await supabase.auth.signOut({ scope: 'local' });
+      } catch {
+        /* ignore */
+      }
     }
+
+    // Confirm the SIGNED_OUT event fired (or timed out as a safety net).
+    await waitForSignedOut;
+
+    // Belt-and-suspenders: scrub any leftover Supabase auth keys from
+    // localStorage / sessionStorage in case the SDK missed any.
+    try {
+      const purge = (storage: Storage) => {
+        const keys: string[] = [];
+        for (let i = 0; i < storage.length; i++) {
+          const k = storage.key(i);
+          if (!k) continue;
+          if (
+            k === 'fanrealms-auth' ||
+            k.startsWith('sb-') ||
+            k.startsWith('supabase.auth.')
+          ) {
+            keys.push(k);
+          }
+        }
+        keys.forEach((k) => storage.removeItem(k));
+      };
+      purge(window.localStorage);
+      purge(window.sessionStorage);
+    } catch {
+      /* ignore storage errors (private mode, etc.) */
+    }
+
+    toast({
+      title: "Signed out",
+      description: "You have been signed out.",
+    });
+
+    navigate('/login', { replace: true });
   }, [navigate, toast]);
 
   return {
