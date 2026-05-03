@@ -35,6 +35,12 @@ export interface AuthContextType {
   isProfileComplete: boolean;
   /** True from the moment signOut() is invoked until it resolves. */
   signingOut: boolean;
+  /**
+   * True only after BOTH the initial getSession() has resolved AND the
+   * first onAuthStateChange event has fired. Use this for sensitive
+   * route gates that must not render with an indeterminate auth state.
+   */
+  authReady: boolean;
   refreshProfile: () => Promise<Profile | null>;
   /**
    * Re-fetches the profile and returns the route the user should be on
