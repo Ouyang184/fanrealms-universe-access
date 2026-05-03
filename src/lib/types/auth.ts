@@ -33,7 +33,13 @@ export interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isProfileComplete: boolean;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<Profile | null>;
+  /**
+   * Re-fetches the profile and returns the route the user should be on
+   * given completion state. Use this after login or any profile mutation
+   * to avoid relying on async React state updates before navigating.
+   */
+  resolvePostAuthRoute: (returnTo?: string) => Promise<string>;
   signIn: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signUp: (email: string, password: string, captchaToken?: string, fullName?: string) => Promise<AuthResult>;
