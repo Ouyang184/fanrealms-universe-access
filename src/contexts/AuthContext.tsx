@@ -46,6 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
   const { signIn, signInWithMagicLink, signUp, signOut: rawSignOut } = useAuthFunctions();
 
+  // Resolver wired to the next SIGNED_OUT event from Supabase. Set by
+  // signOut() before kicking off the async work; cleared by the
+  // onAuthStateChange listener (or the timeout fallback) so signingOut
+  // only flips back to false once the SDK has fully torn down the session.
+  const signedOutResolverRef = useRef<(() => void) | null>(null);
+
   // Wrap signOut so we can set a `signingOut` flag *synchronously* before the
   // async work begins. AuthGuard reads this flag and hides protected UI
   // immediately, so users never see authed content flash on the way to /login.
@@ -57,9 +63,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserSafe(null);
     setSessionSafe(null);
     setProfileSafe(null);
+
+    // Wait for the actual SIGNED_OUT event before lowering the flag — that
+    // is the SDK's signal that storage and tokens have been cleared. If
+    // the event never arrives (network hiccup, Supabase throws), fall
+    // back to a 4s timeout so signingOut can never get stuck on.
+    const signedOutEvent = new Promise<void>((resolve) => {
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        signedOutResolverRef.current = null;
+        window.clearTimeout(timer);
+        resolve();
+      };
+      const timer = window.setTimeout(finish, 4000);
+      signedOutResolverRef.current = finish;
+    });
+
     try {
       await rawSignOut();
     } finally {
+      await signedOutEvent;
       setSigningOut(false);
     }
   }, [rawSignOut]);
