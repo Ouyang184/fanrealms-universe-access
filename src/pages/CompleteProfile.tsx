@@ -11,7 +11,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
 export default function CompleteProfile() {
-  const { user, loading, isProfileComplete, refreshProfile } = useAuth();
+  const { user, loading, isProfileComplete, resolvePostAuthRoute } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -82,13 +82,14 @@ export default function CompleteProfile() {
         .update({ username: cleanUsername })
         .eq('id', user!.id);
 
-      // Refresh profile in AuthContext so isProfileComplete becomes true
-      await refreshProfile();
-
-      // Navigate to intended destination
+      // Re-fetch the profile and route based on actual completion state.
+      // resolvePostAuthRoute returns either the returnTo destination
+      // (profile complete) or back to /complete-profile (still missing
+      // required fields), so we never strand the user on a stale page.
       const params = new URLSearchParams(location.search);
       const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
-      navigate(returnTo, { replace: true });
+      const target = await resolvePostAuthRoute(returnTo);
+      navigate(target, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
