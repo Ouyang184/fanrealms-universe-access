@@ -105,6 +105,7 @@ export function useCreateProduct() {
       license?: string;
       godot_version?: string;
       status?: string;
+      project_id?: string | null;
     }) => {
       const { data: creator } = await supabase
         .from('creators')
