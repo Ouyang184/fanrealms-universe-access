@@ -42,6 +42,8 @@ import GamesPage from "./pages/Games";
 import DashboardPage from "./pages/Dashboard";
 import DashboardAssetsPage from "./pages/DashboardAssets";
 import DashboardSalesPage from "./pages/DashboardSales";
+import DashboardProjectsPage from "./pages/DashboardProjects";
+import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import SellerProfilePage from "./pages/SellerProfile";
 
 const OAuthCallbackRedirector = () => {
