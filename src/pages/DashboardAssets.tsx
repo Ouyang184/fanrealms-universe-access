@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useCreatorProducts, useDeleteProduct } from '@/hooks/useMarketplace';
 import { AssetFormDialog } from '@/components/dashboard/AssetFormDialog';
@@ -23,6 +24,16 @@ export default function DashboardAssetsPage() {
   const deleteProduct = useDeleteProduct();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<any | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const projectParam = searchParams.get('project');
+
+  // If arriving with ?project=..., open the create dialog prefilled
+  useEffect(() => {
+    if (projectParam) {
+      setEditingAsset(null);
+      setDialogOpen(true);
+    }
+  }, [projectParam]);
 
   const handleEdit = (asset: any) => {
     setEditingAsset(asset);
@@ -32,6 +43,15 @@ export default function DashboardAssetsPage() {
   const handleNew = () => {
     setEditingAsset(null);
     setDialogOpen(true);
+  };
+
+  const handleClose = () => {
+    setDialogOpen(false);
+    if (projectParam) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('project');
+      setSearchParams(next, { replace: true });
+    }
   };
 
   return (
