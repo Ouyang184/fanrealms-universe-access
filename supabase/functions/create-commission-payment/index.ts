@@ -8,6 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ALLOWED_ORIGINS = [
+  'https://fanrealms.com',
+  'https://www.fanrealms.com',
+  'https://fanrealms-universe-access.lovable.app',
+];
+const DEFAULT_ORIGIN = 'https://fanrealms.com';
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,6 +23,9 @@ serve(async (req) => {
   try {
     console.log('Create commission payment function started');
     
+    const reqOrigin = req.headers.get('Origin') ?? '';
+    const SAFE_ORIGIN = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : DEFAULT_ORIGIN;
+
     const { commissionId } = await req.json();
     
     if (!commissionId) {

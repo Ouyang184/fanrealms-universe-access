@@ -7,12 +7,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ALLOWED_ORIGINS = [
+  "https://fanrealms.com",
+  "https://www.fanrealms.com",
+  "https://fanrealms-universe-access.lovable.app",
+];
+const DEFAULT_ORIGIN = "https://fanrealms.com";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const reqOrigin = req.headers.get("Origin") ?? "";
+    const SAFE_ORIGIN = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : DEFAULT_ORIGIN;
     const { commissionRequestId, revisionNotes } = await req.json();
 
     if (!commissionRequestId || !revisionNotes) {
@@ -123,8 +132,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/commissions/revision-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/commissions/${commissionRequestId}`,
+      success_url: `${SAFE_ORIGIN}/commissions/revision-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SAFE_ORIGIN}/commissions/${commissionRequestId}`,
       metadata: {
         commission_request_id: commissionRequestId,
         revision_notes: revisionNotes,
