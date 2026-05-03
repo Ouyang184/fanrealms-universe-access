@@ -7,6 +7,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Hardcoded allowlist — never trust client-supplied Origin for redirect URLs
+const ALLOWED_ORIGINS = [
+  "https://fanrealms.com",
+  "https://www.fanrealms.com",
+  "https://fanrealms-universe-access.lovable.app",
+];
+const DEFAULT_ORIGIN = "https://fanrealms.com";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -51,7 +59,7 @@ serve(async (req) => {
     const { productId } = body as { productId?: string };
     if (!productId) throw new Error("productId is required");
 
-    // Fetch product (join creators to get creator's user_id for self-purchase guard)
+    // Fetch product
     const { data: product, error: productError } = await supabaseServiceClient
       .from("digital_products")
       .select("id, title, price, creator_id, creators(user_id)")
@@ -62,23 +70,19 @@ serve(async (req) => {
     if (productError) throw productError;
     if (!product) throw new Error("Product not found or not published");
 
-    // Self-purchase guard — compare auth user id to creator's user_id
+    // Self-purchase guard
     const creatorUserId = (product.creators as any)?.user_id;
     if (creatorUserId && creatorUserId === user.id) {
       throw new Error("You cannot purchase your own product");
     }
 
-    // Convert price to cents
     const amountCents = Math.round(Number(product.price) * 100);
     if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
 
-    // Determine origin for redirect URLs
-    const origin =
-      req.headers.get("Origin") ||
-      req.headers.get("Referer")?.replace(/\/$/, "") ||
-      "https://fanrealms.com";
+    // Use allowlist — never trust attacker-controlled Origin header
+    const requestOrigin = req.headers.get("Origin") ?? "";
+    const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : DEFAULT_ORIGIN;
 
-    // Create Stripe Checkout Session
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 
     const session = await stripe.checkout.sessions.create({
@@ -98,7 +102,7 @@ serve(async (req) => {
       metadata: {
         product_id: product.id,
         buyer_id: user.id,
-        creator_id: product.creator_id,   // creators.id (not auth.users.id)
+        creator_id: product.creator_id,
       },
       success_url: `${origin}/marketplace/${productId}?success=true`,
       cancel_url: `${origin}/marketplace/${productId}`,
