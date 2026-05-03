@@ -51,10 +51,11 @@ interface AssetFormDialogProps {
   defaultProjectId?: string | null;
 }
 
-export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) {
+export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null }: AssetFormDialogProps) {
   const { user } = useAuth();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const { projects } = useCreatorProjects();
   const isEdit = !!asset;
 
   const [title, setTitle] = useState('');
@@ -71,6 +72,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | ''>('');
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -88,6 +90,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setScreenshots(asset.screenshots?.length ? asset.screenshots : ['']);
       setStatus(asset.status === 'published' ? 'published' : 'draft');
       setCoverPreview(asset.cover_image_url ?? null);
+      setProjectId(asset.project_id ?? '');
     } else {
       setTitle(''); setShortDescription(''); setDescription('');
       setPriceStr('0'); setCategory('Game Assets'); setTagsStr('');
@@ -95,8 +98,17 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');
       setCoverFile(null); setCoverPreview(null);
+      setProjectId(defaultProjectId ?? '');
     }
-  }, [asset, open]);
+  }, [asset, open, defaultProjectId]);
+
+  // Auto-select the only project if creator has exactly one and none chosen
+  useEffect(() => {
+    if (!isEdit && !projectId && projects.length === 1 && !defaultProjectId) {
+      setProjectId(projects[0].id);
+    }
+  }, [projects, isEdit, projectId, defaultProjectId]);
+
 
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const MAX_COVER_SIZE_MB = 5;
