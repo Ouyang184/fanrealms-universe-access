@@ -210,6 +210,13 @@ export default function ProductDetail() {
                 </div>
               )}
 
+              {p.godot_version && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-muted-foreground flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Godot</span>
+                  <span className="font-medium">{p.godot_version}</span>
+                </div>
+              )}
+
               {p.version && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-muted-foreground flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" />Version</span>

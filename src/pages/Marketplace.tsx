@@ -12,20 +12,24 @@ import { FeaturedSpotlight } from '@/components/marketplace/FeaturedSpotlight';
 import { ProductGridDense } from '@/components/marketplace/ProductGridDense';
 
 const BROWSE_CATEGORIES: { name: string; tagline: string }[] = [
-  { name: 'Game Assets', tagline: 'Sprites, tilesets, characters' },
+  { name: 'Plugins & Addons', tagline: 'GDExtensions, editor plugins' },
+  { name: 'Shaders', tagline: 'Visual effects for Godot' },
+  { name: 'Scripts & Systems', tagline: 'GDScript, game systems' },
+  { name: '2D Assets', tagline: 'Sprites, tilesets, UI' },
+  { name: '3D Assets', tagline: 'Models, textures, environments' },
+  { name: 'Complete Games', tagline: 'Full Godot game projects' },
   { name: 'Templates', tagline: 'Starter kits & boilerplates' },
-  { name: 'Tools', tagline: 'Utilities for creators' },
-  { name: 'Tutorials', tagline: 'Learn from indie pros' },
-  { name: 'Music', tagline: 'Loops, tracks & SFX' },
-  { name: 'Art', tagline: 'Illustration & concept art' },
+  { name: 'Tools', tagline: 'Utilities & editor helpers' },
+  { name: 'Tutorials', tagline: 'Learn from Godot pros' },
+  { name: 'Music & SFX', tagline: 'Loops, tracks & sound effects' },
   { name: 'Other', tagline: 'Everything else' },
-  { name: 'Uncategorized', tagline: 'Browse all uploads' },
 ];
 
 export default function Marketplace() {
   const [category, setCategory] = useState<string>('all');
   const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
+  const [godotVersion, setGodotVersion] = useState<string>('all');
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
   const { data: popularTags = [] } = usePopularTags(20);
@@ -36,10 +40,13 @@ export default function Marketplace() {
     if (maxPriceCents < PRICE_MAX_CENTS) {
       list = list.filter((p: any) => (p.price ?? 0) <= maxPriceCents);
     }
+    if (godotVersion !== 'all') {
+      list = list.filter((p: any) => p.godot_version === godotVersion);
+    }
     if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
     if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price ?? 0) - (a.price ?? 0));
     return list;
-  }, [allProducts, maxPriceCents, sort]);
+  }, [allProducts, maxPriceCents, godotVersion, sort]);
 
   const featured = products[0];
   const newest = products.slice(1, 13);
@@ -73,9 +80,11 @@ export default function Marketplace() {
             maxPriceCents={maxPriceCents}
             sort={sort}
             popularTags={popularTags}
+            godotVersion={godotVersion}
             onCategory={setCategory}
             onMaxPriceCents={setMaxPriceCents}
             onSort={setSort}
+            onGodotVersion={setGodotVersion}
           />
 
           <main className="space-y-6 min-w-0">

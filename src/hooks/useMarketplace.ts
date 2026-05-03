@@ -94,11 +94,16 @@ export function useCreateProduct() {
     mutationFn: async (product: {
       title: string;
       description?: string;
+      short_description?: string;
       price: number;
       category?: string;
       tags?: string[];
       cover_image_url?: string;
       asset_url?: string;
+      screenshots?: string[];
+      version?: string;
+      license?: string;
+      godot_version?: string;
       status?: string;
     }) => {
       const { data: creator } = await supabase
@@ -159,11 +164,16 @@ export function useUpdateProduct() {
       id: string;
       title?: string;
       description?: string;
+      short_description?: string;
       price?: number;
       category?: string;
       tags?: string[];
       cover_image_url?: string;
       asset_url?: string;
+      screenshots?: string[];
+      version?: string;
+      license?: string;
+      godot_version?: string;
       status?: string;
     }) => {
       const { id, ...updates } = product;

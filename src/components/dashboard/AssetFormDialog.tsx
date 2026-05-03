@@ -9,7 +9,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Upload, Plus, X } from 'lucide-react';
 
-const CATEGORIES = ['Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
+const CATEGORIES = [
+  'Plugins & Addons',
+  'Shaders',
+  'Scripts & Systems',
+  '2D Assets',
+  '3D Assets',
+  'Complete Games',
+  'Templates',
+  'Tools',
+  'Tutorials',
+  'Music & SFX',
+  'Other',
+];
+const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x', 'Any / Not applicable'];
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 
 interface Asset {
@@ -25,6 +38,7 @@ interface Asset {
   screenshots?: string[] | null;
   version?: string | null;
   license?: string | null;
+  godot_version?: string | null;
   status: string;
 }
 
@@ -49,6 +63,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
   const [downloadUrl, setDownloadUrl] = useState('');
   const [version, setVersion] = useState('');
   const [license, setLicense] = useState('Standard');
+  const [godotVersion, setGodotVersion] = useState('Godot 4.3+');
   const [screenshots, setScreenshots] = useState<string[]>(['']);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -66,6 +81,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setDownloadUrl(asset.asset_url ?? '');
       setVersion(asset.version ?? '');
       setLicense(asset.license ?? 'Standard');
+      setGodotVersion(asset.godot_version ?? 'Godot 4.3+');
       setScreenshots(asset.screenshots?.length ? asset.screenshots : ['']);
       setStatus(asset.status === 'published' ? 'published' : 'draft');
       setCoverPreview(asset.cover_image_url ?? null);
@@ -73,6 +89,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setTitle(''); setShortDescription(''); setDescription('');
       setPriceStr('0'); setCategory('Game Assets'); setTagsStr('');
       setDownloadUrl(''); setVersion(''); setLicense('Standard');
+      setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');
       setCoverFile(null); setCoverPreview(null);
     }
@@ -127,6 +144,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
         screenshots: cleanScreenshots.length ? cleanScreenshots : undefined,
         version: version.trim() || undefined,
         license,
+        godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
         status,
       };
 
@@ -215,7 +233,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
             </div>
           </div>
 
-          {/* Category + Price */}
+          {/* Category + Godot Version */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Category</label>
@@ -225,10 +243,19 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
               </select>
             </div>
             <div>
-              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Price (USD)</label>
-              <Input type="number" min="0" step="0.01" value={priceStr} onChange={e => setPriceStr(e.target.value)} placeholder="0.00" />
-              <p className="text-[11px] text-[#aaa] mt-0.5">Set 0 for free</p>
+              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
+              <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             </div>
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Price (USD)</label>
+            <Input type="number" min="0" step="0.01" value={priceStr} onChange={e => setPriceStr(e.target.value)} placeholder="0.00" className="max-w-[160px]" />
+            <p className="text-[11px] text-[#aaa] mt-0.5">Set 0 for free</p>
           </div>
 
           {/* Version + License */}

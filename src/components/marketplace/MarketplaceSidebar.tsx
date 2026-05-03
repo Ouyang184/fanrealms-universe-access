@@ -1,7 +1,19 @@
 import { Link } from 'react-router-dom';
 import { Slider } from '@/components/ui/slider';
 
-const CATEGORIES = ['Game Assets', 'Templates', 'Tools', 'Tutorials', 'Music', 'Art', 'Other'];
+const CATEGORIES = [
+  'Plugins & Addons',
+  'Shaders',
+  'Scripts & Systems',
+  '2D Assets',
+  '3D Assets',
+  'Complete Games',
+  'Templates',
+  'Tools',
+  'Tutorials',
+  'Music & SFX',
+  'Other',
+];
 
 const SORTS: { key: string; label: string }[] = [
   { key: 'newest', label: 'Newest' },
@@ -16,9 +28,11 @@ interface Props {
   maxPriceCents: number;
   sort: string;
   popularTags: string[];
+  godotVersion: string;
   onCategory: (c: string) => void;
   onMaxPriceCents: (cents: number) => void;
   onSort: (s: string) => void;
+  onGodotVersion: (v: string) => void;
 }
 
 export function MarketplaceSidebar({
@@ -26,9 +40,11 @@ export function MarketplaceSidebar({
   maxPriceCents,
   sort,
   popularTags,
+  godotVersion,
   onCategory,
   onMaxPriceCents,
   onSort,
+  onGodotVersion,
 }: Props) {
   const isAny = maxPriceCents >= PRICE_MAX_CENTS;
   const dollarLabel = isAny ? 'Any price' : maxPriceCents === 0 ? 'Free only' : `Up to $${(maxPriceCents / 100).toFixed(0)}`;
@@ -103,6 +119,15 @@ export function MarketplaceSidebar({
           </Link>
         </Section>
       )}
+
+      <Section title="Godot version">
+        <UtilLink active={godotVersion === 'all'} onClick={() => onGodotVersion('all')}>Any version</UtilLink>
+        {['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x'].map((v) => (
+          <UtilLink key={v} active={godotVersion === v} onClick={() => onGodotVersion(v)}>
+            {v}
+          </UtilLink>
+        ))}
+      </Section>
 
       <Section title="Quick links">
         <Link to="/forum" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Forum</Link>
