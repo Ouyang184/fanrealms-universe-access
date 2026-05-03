@@ -23,18 +23,17 @@ const Login = () => {
   useEffect(() => {
     if (loading || !user) return;
 
+    const params = new URLSearchParams(location.search);
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
+
     if (!isProfileComplete) {
-      const params = new URLSearchParams(location.search);
-      const returnTo = params.get('returnTo') ?? '/dashboard';
       navigate(
-        `/complete-profile?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo, '/dashboard'))}`,
+        `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`,
         { replace: true }
       );
       return;
     }
 
-    const params = new URLSearchParams(location.search);
-    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
     navigate(returnTo, { replace: true });
   }, [loading, user, isProfileComplete, location.search, navigate]);
 
