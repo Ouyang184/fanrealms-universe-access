@@ -158,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
+    signingOut,
     isProfileComplete,
     refreshProfile,
     resolvePostAuthRoute,
