@@ -52,15 +52,22 @@ function ProjectsList() {
               key={p.id}
               className={`flex items-center gap-4 px-4 py-3.5 ${i < projects.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
             >
-              <div className="w-12 h-12 rounded-lg bg-[#f5f5f5] overflow-hidden flex-shrink-0">
-                {p.cover_image_url && (
-                  <img src={p.cover_image_url} className="w-full h-full object-cover" alt="" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold truncate">{p.title}</div>
-                <div className="text-[11px] text-[#aaa] truncate">{p.description ?? 'No description'}</div>
-              </div>
+              <Link
+                to={`/dashboard/projects/${p.id}`}
+                className="flex items-center gap-4 flex-1 min-w-0 group"
+              >
+                <div className="w-12 h-12 rounded-lg bg-[#f5f5f5] overflow-hidden flex-shrink-0">
+                  {p.cover_image_url && (
+                    <img src={p.cover_image_url} className="w-full h-full object-cover" alt="" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold truncate group-hover:text-primary transition-colors">
+                    {p.title}
+                  </div>
+                  <div className="text-[11px] text-[#aaa] truncate">{p.description ?? 'No description'}</div>
+                </div>
+              </Link>
               {p.website_url && (
                 <a
                   href={p.website_url}

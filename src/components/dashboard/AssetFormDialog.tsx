@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useMarketplace';
+import { useCreatorProjects } from '@/hooks/useProjects';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -40,18 +41,21 @@ interface Asset {
   license?: string | null;
   godot_version?: string | null;
   status: string;
+  project_id?: string | null;
 }
 
 interface AssetFormDialogProps {
   open: boolean;
   onClose: () => void;
   asset?: Asset | null;
+  defaultProjectId?: string | null;
 }
 
-export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) {
+export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null }: AssetFormDialogProps) {
   const { user } = useAuth();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const { projects } = useCreatorProjects();
   const isEdit = !!asset;
 
   const [title, setTitle] = useState('');
@@ -68,6 +72,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | ''>('');
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -85,6 +90,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setScreenshots(asset.screenshots?.length ? asset.screenshots : ['']);
       setStatus(asset.status === 'published' ? 'published' : 'draft');
       setCoverPreview(asset.cover_image_url ?? null);
+      setProjectId(asset.project_id ?? '');
     } else {
       setTitle(''); setShortDescription(''); setDescription('');
       setPriceStr('0'); setCategory('Game Assets'); setTagsStr('');
@@ -92,8 +98,17 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');
       setCoverFile(null); setCoverPreview(null);
+      setProjectId(defaultProjectId ?? '');
     }
-  }, [asset, open]);
+  }, [asset, open, defaultProjectId]);
+
+  // Auto-select the only project if creator has exactly one and none chosen
+  useEffect(() => {
+    if (!isEdit && !projectId && projects.length === 1 && !defaultProjectId) {
+      setProjectId(projects[0].id);
+    }
+  }, [projects, isEdit, projectId, defaultProjectId]);
+
 
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const MAX_COVER_SIZE_MB = 5;
@@ -162,6 +177,7 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
         license,
         godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
         status,
+        project_id: projectId || null,
       };
 
       if (isEdit && asset) {
@@ -200,6 +216,31 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
               )}
               <input id="cover-input" type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
             </div>
+          </div>
+
+          {/* Project */}
+          <div>
+            <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+              Project <span className="font-normal text-[#999]">(group this asset under one of your projects)</span>
+            </label>
+            {projects.length === 0 ? (
+              <div className="text-[12px] text-[#888] px-3 py-2 border border-dashed border-[#e5e5e5] rounded-lg">
+                You have no projects yet. Create one from{' '}
+                <a href="/dashboard/projects/new" className="text-primary hover:underline">Projects → Upload new project</a>{' '}
+                to group your assets.
+              </div>
+            ) : (
+              <select
+                value={projectId}
+                onChange={e => setProjectId(e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">— Standalone (no project) —</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Title */}

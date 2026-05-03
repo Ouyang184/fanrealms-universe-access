@@ -761,6 +761,7 @@ export type Database = {
           id: string
           license: string | null
           price: number
+          project_id: string | null
           screenshots: string[] | null
           short_description: string | null
           status: string
@@ -781,6 +782,7 @@ export type Database = {
           id?: string
           license?: string | null
           price?: number
+          project_id?: string | null
           screenshots?: string[] | null
           short_description?: string | null
           status?: string
@@ -801,6 +803,7 @@ export type Database = {
           id?: string
           license?: string | null
           price?: number
+          project_id?: string | null
           screenshots?: string[] | null
           short_description?: string | null
           status?: string
@@ -816,6 +819,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digital_products_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
