@@ -94,13 +94,8 @@ const Signup = () => {
     }
   };
 
-  if (authLoading || user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  // No loading gate here — AuthGuard already blocks rendering until
+  // session restoration is complete and redirects authed users away.
 
   if (pendingEmail) {
     return (
