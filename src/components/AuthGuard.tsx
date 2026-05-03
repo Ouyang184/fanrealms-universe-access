@@ -20,7 +20,7 @@ const AuthGuard = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
-  const [sessionRestorePending, setSessionRestorePending] = useState(false);
+  // Session restoration is handled centrally by AuthContext.
 
   // Loop-prevention: remember the last destination we navigated to from this
   // guard so we never bounce to the same place twice in a row, and bail out
@@ -101,7 +101,7 @@ const AuthGuard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
-  if (loading || sessionRestorePending || !hasCheckedAuth) {
+  if (loading || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
