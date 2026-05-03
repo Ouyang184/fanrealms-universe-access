@@ -174,8 +174,9 @@ export default function DashboardAssetsPage() {
 
         <AssetFormDialog
           open={dialogOpen}
-          onClose={() => setDialogOpen(false)}
+          onClose={handleClose}
           asset={editingAsset}
+          defaultProjectId={projectParam}
         />
       </div>
     </DashboardLayout>
