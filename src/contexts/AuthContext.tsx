@@ -14,10 +14,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
   const profileRequestRef = useRef(0);
-  
+
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
-  const { signIn, signInWithMagicLink, signUp, signOut } = useAuthFunctions();
+  const { signIn, signInWithMagicLink, signUp, signOut: rawSignOut } = useAuthFunctions();
+
+  // Wrap signOut so we can set a `signingOut` flag *synchronously* before the
+  // async work begins. AuthGuard reads this flag and hides protected UI
+  // immediately, so users never see authed content flash on the way to /login.
+  const signOut = React.useCallback(async () => {
+    setSigningOut(true);
+    // Optimistically clear local user/session so any consumer reading
+    // `user` re-renders to a logged-out state on the same tick.
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    try {
+      await rawSignOut();
+    } finally {
+      setSigningOut(false);
+    }
+  }, [rawSignOut]);
 
   useEffect(() => {
     let cancelled = false;
