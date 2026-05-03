@@ -17,15 +17,15 @@ async function callSeed(action: "setup" | "teardown", payload: Record<string, un
   return JSON.parse(text);
 }
 
-async function loginClient(tokenHash: string) {
-  const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+async function loginClient(tokenHash: string): Promise<any> {
+  const client: any = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
   if (error) throw new Error(`verifyOtp: ${error.message}`);
   if (!data.session) throw new Error("no session from verifyOtp");
   return client;
 }
 
-async function tryDownload(client: ReturnType<typeof createClient> | null, path: string): Promise<"allow" | "deny"> {
+async function tryDownload(client: any, path: string): Promise<"allow" | "deny"> {
   const c = client ?? createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
   const { data, error } = await c.storage.from("post-attachments").download(path);
   if (error || !data) return "deny";
@@ -48,7 +48,7 @@ Deno.test({
       const goldC = await loginClient(gold.token_hash);
       const strangerC = await loginClient(stranger.token_hash);
 
-      const matrix: Array<[string, ReturnType<typeof createClient> | null, string, "allow" | "deny"]> = [
+      const matrix: Array<[string, any, string, "allow" | "deny"]> = [
         ["anon-public",   null,      publicPath, "deny"],
         ["anon-bronze",   null,      bronzePath, "deny"],
         ["anon-gold",     null,      goldPath,   "deny"],
