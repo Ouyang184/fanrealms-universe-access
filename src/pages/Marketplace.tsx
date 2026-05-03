@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
 import { usePopularTags } from '@/hooks/useTags';
@@ -26,10 +26,18 @@ const BROWSE_CATEGORIES: { name: string; tagline: string }[] = [
 ];
 
 export default function Marketplace() {
+  const [searchParams] = useSearchParams();
   const [category, setCategory] = useState<string>('all');
   const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
   const [godotVersion, setGodotVersion] = useState<string>('all');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  // Read ?tag= from URL on mount and when URL changes
+  useEffect(() => {
+    const tag = searchParams.get('tag');
+    setActiveTag(tag || null);
+  }, [searchParams]);
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
   const { data: popularTags = [] } = usePopularTags(20);
@@ -43,10 +51,13 @@ export default function Marketplace() {
     if (godotVersion !== 'all') {
       list = list.filter((p: any) => p.godot_version === godotVersion);
     }
+    if (activeTag) {
+      list = list.filter((p: any) => Array.isArray(p.tags) && p.tags.includes(activeTag));
+    }
     if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
     if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price ?? 0) - (a.price ?? 0));
     return list;
-  }, [allProducts, maxPriceCents, godotVersion, sort]);
+  }, [allProducts, maxPriceCents, godotVersion, activeTag, sort]);
 
   const featured = products[0];
   const newest = products.slice(1, 13);
@@ -231,7 +242,7 @@ function EmptyState({
             <h2 className="text-[13px] font-bold uppercase tracking-wider text-foreground">
               Featured creators
             </h2>
-            <Link to="/explore" className="text-[11px] text-primary hover:underline">
+            <Link to="/marketplace" className="text-[11px] text-primary hover:underline">
               See all →
             </Link>
           </div>
@@ -336,7 +347,7 @@ function EmptyState({
             <h2 className="text-[13px] font-bold uppercase tracking-wider text-foreground">
               Popular tags
             </h2>
-            <Link to="/marketplace/tags" className="text-[11px] text-primary hover:underline">
+            <Link to="/marketplace" className="text-[11px] text-primary hover:underline">
               View all →
             </Link>
           </div>
@@ -374,14 +385,14 @@ function FooterStrip() {
           <li><Link to="/marketplace" className="hover:text-foreground hover:underline">Marketplace</Link></li>
           <li><Link to="/forum" className="hover:text-foreground hover:underline">Forum</Link></li>
           <li><Link to="/jobs" className="hover:text-foreground hover:underline">Jobs</Link></li>
-          <li><Link to="/explore" className="hover:text-foreground hover:underline">Discover creators</Link></li>
+          <li><Link to="/marketplace" className="hover:text-foreground hover:underline">Discover creators</Link></li>
         </ul>
       </div>
       <div>
         <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground mb-2">Community</h4>
         <ul className="space-y-1 text-muted-foreground">
           <li><Link to="/forum" className="hover:text-foreground hover:underline">Discussions</Link></li>
-          <li><Link to="/marketplace/tags" className="hover:text-foreground hover:underline">Browse tags</Link></li>
+          <li><Link to="/marketplace" className="hover:text-foreground hover:underline">Browse tags</Link></li>
         </ul>
       </div>
       <div>
@@ -389,7 +400,7 @@ function FooterStrip() {
         <ul className="space-y-1 text-muted-foreground">
           <li><Link to="/about" className="hover:text-foreground hover:underline">About FanRealms</Link></li>
           <li><Link to="/terms" className="hover:text-foreground hover:underline">Terms</Link></li>
-          <li><Link to="/privacy" className="hover:text-foreground hover:underline">Privacy</Link></li>
+          <li><Link to="/privacy-policy" className="hover:text-foreground hover:underline">Privacy</Link></li>
         </ul>
       </div>
     </section>

@@ -30,6 +30,8 @@ export default function DashboardPage() {
   const { isCreator, isLoading: creatorLoading } = useCreatorProfile();
 
   const publishedAssets = myAssets?.filter((a) => a.status === 'published') ?? [];
+  const draftAssets = myAssets?.filter((a) => a.status === 'draft') ?? [];
+  const allAssets = myAssets ?? [];
 
   return (
     <DashboardLayout>
@@ -133,16 +135,30 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : publishedAssets.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {publishedAssets.slice(0, 4).map((a) => (
-                <ProductCard key={a.id} product={a} />
-              ))}
+          ) : allAssets.length > 0 ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {allAssets.slice(0, 4).map((a) => (
+                  <div key={a.id} className="relative">
+                    <ProductCard product={a} />
+                    {a.status === 'draft' && (
+                      <span className="absolute top-2 left-2 bg-[#f5f5f5] border border-[#ddd] text-[10px] font-bold text-[#888] px-1.5 py-0.5 rounded">
+                        DRAFT
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {draftAssets.length > 0 && (
+                <p className="text-[12px] text-[#999]">
+                  {draftAssets.length} draft{draftAssets.length > 1 ? 's' : ''} — <Link to="/dashboard/assets" className="text-primary hover:underline">publish from Assets</Link>
+                </p>
+              )}
             </div>
           ) : (
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
               <Package className="w-8 h-8 text-[#ccc] mx-auto mb-3" />
-              <p className="text-[14px] font-semibold text-[#111] mb-1">No assets listed yet</p>
+              <p className="text-[14px] font-semibold text-[#111] mb-1">No assets yet</p>
               <p className="text-[12px] text-[#999] mb-4">Upload your first Godot asset and start selling.</p>
               <Link
                 to="/dashboard/assets"

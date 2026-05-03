@@ -62,7 +62,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
   const [priceStr, setPriceStr] = useState('0');
-  const [category, setCategory] = useState('Game Assets');
+  const [category, setCategory] = useState('Plugins & Addons');
   const [tagsStr, setTagsStr] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [version, setVersion] = useState('');
@@ -81,7 +81,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setShortDescription(asset.short_description ?? '');
       setDescription(asset.description ?? '');
       setPriceStr(asset.price === 0 ? '0' : (asset.price / 100).toFixed(2));
-      setCategory(asset.category ?? 'Game Assets');
+      setCategory(asset.category ?? 'Plugins & Addons');
       setTagsStr((asset.tags ?? []).join(', '));
       setDownloadUrl(asset.asset_url ?? '');
       setVersion(asset.version ?? '');
@@ -93,7 +93,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setProjectId(asset.project_id ?? '');
     } else {
       setTitle(''); setShortDescription(''); setDescription('');
-      setPriceStr('0'); setCategory('Game Assets'); setTagsStr('');
+      setPriceStr('0'); setCategory('Plugins & Addons'); setTagsStr('');
       setDownloadUrl(''); setVersion(''); setLicense('Standard');
       setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');

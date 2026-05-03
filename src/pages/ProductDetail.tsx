@@ -90,7 +90,7 @@ export default function ProductDetail() {
             {p.creators && (
               <span className="text-[13px] text-muted-foreground">
                 by{' '}
-                <Link to={`/seller/${p.creators.username}`} className="text-primary hover:underline font-medium">
+                <Link to={`/${p.creators.username}`} className="text-primary hover:underline font-medium">
                   {p.creators.display_name || p.creators.username}
                 </Link>
               </span>
@@ -245,7 +245,7 @@ export default function ProductDetail() {
 
             {/* Creator card */}
             {p.creators && (
-              <Link to={`/seller/${p.creators.username}`}
+              <Link to={`/${p.creators.username}`}
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-primary transition-colors">
                 {p.creators.profile_image_url ? (
                   <img src={p.creators.profile_image_url} alt="" className="w-10 h-10 rounded-full object-cover" />
