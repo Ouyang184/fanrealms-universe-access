@@ -112,7 +112,13 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    const origin = req.headers.get('origin') || 'http://localhost:3000'
+    const ALLOWED_ORIGINS = [
+      'https://fanrealms.com',
+      'https://www.fanrealms.com',
+      'https://fanrealms-universe-access.lovable.app',
+    ];
+    const reqOrigin = req.headers.get('Origin') ?? req.headers.get('origin') ?? '';
+    const origin = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : 'https://fanrealms.com';
     console.log('Origin:', origin)
     console.log('Action:', action)
 
