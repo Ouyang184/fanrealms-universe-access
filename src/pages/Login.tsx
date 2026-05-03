@@ -11,7 +11,7 @@ import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 
 const Login = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isProfileComplete } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
@@ -23,10 +23,20 @@ const Login = () => {
   useEffect(() => {
     if (loading || !user) return;
 
+    if (!isProfileComplete) {
+      const params = new URLSearchParams(location.search);
+      const returnTo = params.get('returnTo') ?? '/dashboard';
+      navigate(
+        `/complete-profile?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo, '/dashboard'))}`,
+        { replace: true }
+      );
+      return;
+    }
+
     const params = new URLSearchParams(location.search);
     const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
     navigate(returnTo, { replace: true });
-  }, [loading, user, location.search, navigate]);
+  }, [loading, user, isProfileComplete, location.search, navigate]);
 
   if (loading || !isReady || user) {
     return (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle, Check } from "lucide-react";
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -18,7 +18,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { useAuthCheck } from "@/lib/hooks/useAuthCheck";
 
 const signupSchema = z
   .object({
@@ -36,13 +35,22 @@ const signupSchema = z
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
-  const { isChecking } = useAuthCheck(false, "/dashboard");
+  const { user, loading: authLoading, isProfileComplete, signUp } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const { signUp } = useAuth();
-  const navigate = useNavigate();
+
+  // Skip page if already logged in
+  useEffect(() => {
+    if (authLoading || !user) return;
+    if (!isProfileComplete) {
+      navigate('/complete-profile', { replace: true });
+      return;
+    }
+    navigate('/dashboard', { replace: true });
+  }, [authLoading, user, isProfileComplete, navigate]);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -93,7 +101,7 @@ const Signup = () => {
     }
   };
 
-  if (isChecking) {
+  if (authLoading || user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
