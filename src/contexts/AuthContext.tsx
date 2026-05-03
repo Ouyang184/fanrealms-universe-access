@@ -103,18 +103,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updatedProfile;
   };
 
-  const refreshProfile = async () => {
-    if (!user) return;
+  const refreshProfile = async (): Promise<Profile | null> => {
+    if (!user) return null;
     const requestId = ++profileRequestRef.current;
     const userProfile = await fetchUserProfile(user.id);
-    if (requestId !== profileRequestRef.current) return; // discard stale
+    if (requestId !== profileRequestRef.current) return profile; // discard stale
     if (userProfile !== null) {
       setProfile(userProfile as Profile | null);
+      return userProfile as Profile | null;
     }
-    // If null (fetch failed), keep existing profile — don't clear it
+    // Fetch failed — keep existing profile.
+    return profile;
   };
 
-  const isProfileComplete = !!(profile?.display_name?.trim());
+  const isComplete = (p: Profile | null | undefined) =>
+    !!(p?.display_name && p.display_name.trim());
+
+  const isProfileComplete = isComplete(profile);
+
+  /**
+   * Single source of truth for "where should the user be after auth?".
+   * Re-fetches the profile so the decision is based on freshly persisted
+   * data, not stale React state.
+   */
+  const resolvePostAuthRoute = async (returnTo: string = '/dashboard'): Promise<string> => {
+    if (!user) return '/login';
+    const fresh = await refreshProfile();
+    if (!isComplete(fresh)) {
+      return `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`;
+    }
+    return returnTo;
+  };
 
   const value: AuthContextType = {
     session,
@@ -123,6 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isProfileComplete,
     refreshProfile,
+    resolvePostAuthRoute,
     signIn,
     signInWithMagicLink,
     signUp,
