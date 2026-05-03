@@ -238,7 +238,7 @@ export function useSellerSales() {
 
       const { data, error } = await supabase
         .from('purchases')
-        .select('*, digital_products(title, cover_image_url)')
+        .select('*, digital_products(title, cover_image_url, project_id, projects:project_id(id, title))')
         .eq('creator_id', creator.id)
         .eq('status', 'completed')
         .order('created_at', { ascending: false });
