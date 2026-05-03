@@ -12,7 +12,7 @@ const PASSWORD = "TestPass!" + crypto.randomUUID();
 const SUFFIX = crypto.randomUUID().slice(0, 8);
 
 interface Ctx {
-  admin: ReturnType<typeof createClient>;
+  admin: any;
   creatorUserId: string;
   creatorId: string;
   bronzeTierId: string;
@@ -29,7 +29,7 @@ interface Ctx {
   emails: { bronze: string; gold: string; stranger: string; creator: string };
 }
 
-async function createUser(admin: ReturnType<typeof createClient>, email: string) {
+async function createUser(admin: any, email: string) {
   const { data, error } = await admin.auth.admin.createUser({
     email, password: PASSWORD, email_confirm: true,
   });
@@ -38,7 +38,7 @@ async function createUser(admin: ReturnType<typeof createClient>, email: string)
 }
 
 async function setup(): Promise<Ctx> {
-  const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  const admin: any = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
   const emails = {
     creator: `creator-${SUFFIX}@tiergate.test`,
