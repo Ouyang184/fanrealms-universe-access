@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
 import { buildLoginUrl, isAuthPath } from "@/utils/auth-redirects";
 
