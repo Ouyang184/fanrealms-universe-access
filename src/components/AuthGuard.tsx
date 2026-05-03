@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "./LoadingSpinner";
 import { buildLoginUrl, isAuthPath } from "@/utils/auth-redirects";
 
@@ -21,7 +20,7 @@ const AuthGuard = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
-  const [sessionRestorePending, setSessionRestorePending] = useState(false);
+  // Session restoration is handled centrally by AuthContext.
 
   // Loop-prevention: remember the last destination we navigated to from this
   // guard so we never bounce to the same place twice in a row, and bail out
@@ -67,24 +66,15 @@ const AuthGuard = ({
         return;
       }
 
-      // No user in context — double-check storage before bouncing to /login.
+      // No user — AuthContext has already restored the session via getSession()
+      // at startup, so trust it here instead of re-querying on every navigation.
       if (requireAuth && !user) {
         if (isAuthPath(location.pathname)) {
           setHasCheckedAuth(true);
           return;
         }
-
-        setSessionRestorePending(true);
-        const { data, error } = await supabase.auth.getSession();
-        if (cancelled) return;
-        setSessionRestorePending(false);
-
-        if (error || !data.session?.user) {
-          const loginUrl = buildLoginUrl(location.pathname, location.search);
-          safeNavigate(loginUrl);
-          return;
-        }
-        setHasCheckedAuth(true);
+        const loginUrl = buildLoginUrl(location.pathname, location.search);
+        safeNavigate(loginUrl);
         return;
       }
 
@@ -111,7 +101,7 @@ const AuthGuard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
-  if (loading || sessionRestorePending || !hasCheckedAuth) {
+  if (loading || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
