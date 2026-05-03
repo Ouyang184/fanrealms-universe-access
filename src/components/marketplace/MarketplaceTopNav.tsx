@@ -116,12 +116,6 @@ export function MarketplaceTopNav() {
         >
           Forum
         </Link>
-        <Link
-          to="/explore"
-          className="px-3 py-1.5 text-xs font-semibold rounded-md text-muted-foreground hover:text-foreground hover:bg-muted whitespace-nowrap"
-        >
-          Creators
-        </Link>
       </nav>
     </header>
   );

@@ -22,7 +22,6 @@ export default function LandingPage() {
           <nav className="hidden md:flex gap-1">
             {[
               { to: "/marketplace", label: "Marketplace" },
-              { to: "/explore", label: "Explore" },
               { to: "/games", label: "Games" },
               { to: "/jobs", label: "Jobs" },
               { to: "/forum", label: "Forum" },
