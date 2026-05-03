@@ -64,10 +64,18 @@ function SidebarLink({ to, label, icon: Icon, end }: Item & { end?: boolean }) {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { isCreator } = useCreatorProfile();
-  const profile = useProfile();
-  const username = profile?.profile?.username;
+  const { data: usernameData } = useQuery({
+    queryKey: ['dash-sidebar-username', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase.from('users').select('username').eq('id', user.id).maybeSingle();
+      return data?.username ?? null;
+    },
+    enabled: !!user?.id,
+  });
+  const username = usernameData ?? null;
 
   const ACCOUNT: Item[] = [
     { to: username ? `/${username}` : '/dashboard', label: 'View profile', icon: User },
