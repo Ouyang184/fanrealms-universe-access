@@ -16,7 +16,7 @@ const AuthGuard = ({
   requireAuth = true,
   requireCompleteProfile = true
 }: AuthGuardProps) => {
-  const { user, profile, loading, isProfileComplete } = useAuth();
+  const { user, profile, loading, signingOut, isProfileComplete } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
@@ -101,7 +101,10 @@ const AuthGuard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, profile, loading, location.pathname, location.search, requireAuth, requireCompleteProfile]);
 
-  if (loading || !hasCheckedAuth) {
+  // While a sign-out is in flight we must NEVER render protected children
+  // again — even for one frame — or the user will see authed UI flash
+  // before the redirect to /login lands.
+  if (loading || signingOut || !hasCheckedAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
