@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases, useCreatorProducts } from '@/hooks/useMarketplace';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const publishedAssets = myAssets?.filter((a) => a.status === 'published') ?? [];
 
   return (
-    <MainLayout fullWidth>
+    <DashboardLayout>
       <div className="w-full space-y-10">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Dashboard</h1>
@@ -135,6 +135,6 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }

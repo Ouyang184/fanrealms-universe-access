@@ -1,4 +1,4 @@
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useSellerSales } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function DashboardSalesPage() {
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
   return (
-    <MainLayout fullWidth>
+    <DashboardLayout>
       <div className="w-full space-y-8">
         <div>
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Sales</h1>
@@ -99,6 +99,6 @@ export default function DashboardSalesPage() {
           )}
         </div>
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }
