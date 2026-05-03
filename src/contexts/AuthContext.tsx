@@ -15,7 +15,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
+
+  // Refs that always mirror the latest committed state. Async functions
+  // (refreshProfile, resolvePostAuthRoute, handleUpdateProfile) read from
+  // these instead of from closure-captured state so they never act on
+  // stale values when auth or profile changes during their execution.
+  const userRef = useRef<User | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const profileRef = useRef<Profile | null>(null);
+
+  // Monotonic token used to discard stale async results. Every operation
+  // that mutates auth/profile state (session change, refresh, update,
+  // sign-out) bumps this; any fetch whose token doesn't match the current
+  // value when it resolves is discarded.
   const profileRequestRef = useRef(0);
+
+  const setSessionSafe = (s: Session | null) => {
+    sessionRef.current = s;
+    setSession(s);
+  };
+  const setUserSafe = (u: User | null) => {
+    userRef.current = u;
+    setUser(u);
+  };
+  const setProfileSafe = (p: Profile | null) => {
+    profileRef.current = p;
+    setProfile(p);
+  };
 
   const { fetchUserProfile, updateProfile: updateUserProfile } = useProfile();
   const { signIn, signInWithMagicLink, signUp, signOut: rawSignOut } = useAuthFunctions();
@@ -25,11 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // immediately, so users never see authed content flash on the way to /login.
   const signOut = React.useCallback(async () => {
     setSigningOut(true);
-    // Optimistically clear local user/session so any consumer reading
-    // `user` re-renders to a logged-out state on the same tick.
-    setUser(null);
-    setSession(null);
-    setProfile(null);
+    // Bump the request token so any in-flight profile fetch is dropped on
+    // arrival and cannot resurrect a profile after sign-out.
+    profileRequestRef.current += 1;
+    setUserSafe(null);
+    setSessionSafe(null);
+    setProfileSafe(null);
     try {
       await rawSignOut();
     } finally {
@@ -48,20 +75,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const applySession = (currentSession: Session | null, source: string) => {
       if (cancelled) return;
 
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
+      setSessionSafe(currentSession);
+      setUserSafe(currentSession?.user ?? null);
 
       const requestId = ++profileRequestRef.current;
-      if (currentSession?.user) {
+      const userId = currentSession?.user?.id ?? null;
+
+      if (userId) {
+        // Defer to next tick so React commits the user/session change first.
         setTimeout(() => {
-          fetchUserProfile(currentSession.user.id).then(userProfile => {
-            if (cancelled || requestId !== profileRequestRef.current) return;
+          fetchUserProfile(userId).then(userProfile => {
+            if (cancelled) return;
+            // Discard if a newer auth/profile op has started OR the user
+            // id has changed mid-flight (e.g. fast user switch).
+            if (requestId !== profileRequestRef.current) return;
+            if (userRef.current?.id !== userId) return;
             console.log('[AUTH][Context] Profile fetch', { source, found: !!userProfile });
-            setProfile(userProfile);
+            setProfileSafe(userProfile);
           });
         }, 0);
       } else {
-        setProfile(null);
+        setProfileSafe(null);
       }
     };
 
@@ -72,8 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           event,
           hasSession: !!currentSession,
           userId: currentSession?.user?.id,
-          email: currentSession?.user?.email,
-          provider: currentSession?.user?.app_metadata?.provider,
           pathname: window.location.pathname,
         });
 
@@ -83,19 +115,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Explicitly restore the persisted session after the listener is active.
-    const t0 = performance.now();
     supabase.auth.getSession()
       .then(({ data: { session: initialSession }, error }) => {
-        const dt = Math.round(performance.now() - t0);
         console.log('[AUTH][Context] Initial getSession()', {
-          durationMs: dt,
           hasSession: !!initialSession,
           userId: initialSession?.user?.id,
-          email: initialSession?.user?.email,
-          expiresAt: initialSession?.expires_at,
           error: error?.message,
         });
-
         applySession(initialSession, 'getSession');
         setLoading(false);
       })
@@ -113,25 +139,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchUserProfile]);
 
   const handleUpdateProfile = async (data: Partial<Profile>) => {
-    if (!user) throw new Error("No user logged in");
-    const updatedProfile = await updateUserProfile(user.id, data);
+    const currentUser = userRef.current;
+    if (!currentUser) throw new Error("No user logged in");
+    // Bump token BEFORE awaiting so any in-flight applySession fetch is
+    // discarded and cannot overwrite our newer write.
+    const requestId = ++profileRequestRef.current;
+    const updatedProfile = await updateUserProfile(currentUser.id, data);
+    // Drop our own write if a newer op (e.g. user signed out) superseded us.
+    if (requestId !== profileRequestRef.current) return updatedProfile;
+    if (userRef.current?.id !== currentUser.id) return updatedProfile;
     if (updatedProfile) {
-      setProfile(updatedProfile);
+      setProfileSafe(updatedProfile);
     }
     return updatedProfile;
   };
 
   const refreshProfile = async (): Promise<Profile | null> => {
-    if (!user) return null;
+    const currentUser = userRef.current;
+    if (!currentUser) return null;
     const requestId = ++profileRequestRef.current;
-    const userProfile = await fetchUserProfile(user.id);
-    if (requestId !== profileRequestRef.current) return profile; // discard stale
+    const userId = currentUser.id;
+    const userProfile = await fetchUserProfile(userId);
+    // Stale-result guards: token bumped OR user changed underneath us.
+    if (requestId !== profileRequestRef.current) return profileRef.current;
+    if (userRef.current?.id !== userId) return profileRef.current;
     if (userProfile !== null) {
-      setProfile(userProfile as Profile | null);
+      setProfileSafe(userProfile as Profile | null);
       return userProfile as Profile | null;
     }
     // Fetch failed — keep existing profile.
-    return profile;
+    return profileRef.current;
   };
 
   const isComplete = (p: Profile | null | undefined) =>
@@ -142,11 +179,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   /**
    * Single source of truth for "where should the user be after auth?".
    * Re-fetches the profile so the decision is based on freshly persisted
-   * data, not stale React state.
+   * data, not stale React state, AND ties its answer to the user that
+   * was current when the call started — if the user changes (sign-out,
+   * account switch) mid-resolve, returns the appropriate fallback.
    */
   const resolvePostAuthRoute = async (returnTo: string = '/dashboard'): Promise<string> => {
-    if (!user) return '/login';
+    const startUser = userRef.current;
+    if (!startUser) return '/login';
     const fresh = await refreshProfile();
+    // If the user changed underneath us, the original answer is meaningless.
+    const nowUser = userRef.current;
+    if (!nowUser) return '/login';
+    if (nowUser.id !== startUser.id) {
+      // A different user is signed in now — recompute against current state.
+      return isComplete(profileRef.current)
+        ? returnTo
+        : `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`;
+    }
     if (!isComplete(fresh)) {
       return `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`;
     }
