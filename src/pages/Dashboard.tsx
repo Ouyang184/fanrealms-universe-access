@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases, useCreatorProducts } from '@/hooks/useMarketplace';
+import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShoppingBag, Package, Plus, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ShoppingBag, Package, Plus, ExternalLink, Sparkles } from 'lucide-react';
 
 function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
   if (!assetUrl) {
