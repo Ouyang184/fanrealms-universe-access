@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { buildLoginUrl, isAuthPath } from '@/utils/auth-redirects';
-import { supabase } from '@/integrations/supabase/client';
+
 
 export function useAuthCheck(
   requireAuth: boolean = true,
@@ -40,16 +40,12 @@ export function useAuthCheck(
     const run = async () => {
       if (requireAuth && !user) {
         if (!isAuthPath(location.pathname)) {
-          const { data, error } = await supabase.auth.getSession();
-          if (cancelled) return;
-
-          if (error || !data.session?.user) {
-            const target =
-              redirect === '/login'
-                ? buildLoginUrl(location.pathname, location.search)
-                : redirect;
-            safeNavigate(target);
-          }
+          // Trust AuthContext's restored session; don't re-query on each nav.
+          const target =
+            redirect === '/login'
+              ? buildLoginUrl(location.pathname, location.search)
+              : redirect;
+          safeNavigate(target);
         }
       } else if (!requireAuth && user) {
         // Only bounce away from explicit auth pages — don't yank users off
