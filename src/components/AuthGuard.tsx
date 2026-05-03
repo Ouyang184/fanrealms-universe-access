@@ -22,14 +22,39 @@ const AuthGuard = ({
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
   // Session restoration is handled centrally by AuthContext.
 
-  // Loop-prevention: remember the last destination we navigated to from this
-  // guard so we never bounce to the same place twice in a row, and bail out
-  // entirely if we exceed a small redirect budget.
+  // Loop-prevention: a redirect "transition" is a unique combination of
+  // (auth state × current path). Within a single transition we permit AT
+  // MOST ONE navigation; the next render with the same transition key
+  // becomes a no-op even if the effect re-runs. The budget is a final
+  // hard stop in case transitions churn unexpectedly.
   const lastNavRef = useRef<string | null>(null);
+  const transitionKeyRef = useRef<string | null>(null);
+  const navigatedThisTransitionRef = useRef(false);
   const redirectCountRef = useRef(0);
   const MAX_REDIRECTS = 3;
 
+  // Compose a transition key from the inputs that should reset the
+  // "already navigated" latch. Auth identity, profile completeness,
+  // sign-out flag, and the path the user is currently on.
+  const transitionKey = [
+    user?.id ?? 'anon',
+    isProfileComplete ? 'complete' : 'incomplete',
+    signingOut ? 'signing-out' : 'stable',
+    location.pathname + location.search,
+  ].join('|');
+
+  if (transitionKeyRef.current !== transitionKey) {
+    transitionKeyRef.current = transitionKey;
+    navigatedThisTransitionRef.current = false;
+  }
+
   const safeNavigate = (target: string) => {
+    if (navigatedThisTransitionRef.current) {
+      // Already redirected once for this auth transition — refuse to
+      // navigate again until inputs change. Prevents infinite reload loops.
+      setHasCheckedAuth(true);
+      return false;
+    }
     if (redirectCountRef.current >= MAX_REDIRECTS) {
       console.warn('[AuthGuard] Redirect budget exceeded, refusing to navigate', {
         target,
@@ -45,6 +70,7 @@ const AuthGuard = ({
       return false;
     }
     lastNavRef.current = target;
+    navigatedThisTransitionRef.current = true;
     redirectCountRef.current += 1;
     navigate(target, { replace: true });
     return true;
