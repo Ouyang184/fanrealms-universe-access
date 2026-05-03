@@ -3152,29 +3152,51 @@ export type Database = {
           website: string
         }[]
       }
-      get_public_creators_list: {
-        Args: {
-          p_limit?: number
-          p_offset?: number
-          p_search?: string
-          p_sort?: string
-        }
-        Returns: {
-          banner_url: string
-          bio: string
-          created_at: string
-          creator_name: string
-          display_name: string
-          follower_count: number
-          id: string
-          is_nsfw: boolean
-          profile_image_url: string
-          tags: string[]
-          user_id: string
-          user_profile_picture: string
-          username: string
-        }[]
-      }
+      get_public_creators_list:
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_sort?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_sort?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              creator_name: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              user_profile_picture: string
+              username: string
+            }[]
+          }
       get_public_membership_tiers:
         | {
             Args: { p_creator_id: string }
