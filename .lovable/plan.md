@@ -1,56 +1,78 @@
-# Plan: End-to-End Test for Post Attachment Tier Gating
+# Auth navigation E2E test (Playwright + mocked Supabase)
 
-## Goal
-Prove the new `user_can_access_post_attachment` policy actually denies low-tier subscribers access to high-tier post attachments, and allows the right cases — using a self-contained Deno test that seeds, asserts, and cleans up.
+Add a Playwright suite that drives the running Vite dev server, mocks Supabase auth in the browser, navigates between the four auth-related routes, and asserts no auth listener is registered twice and no redirect loops occur.
 
-## Approach
-Create a Deno test at `supabase/functions/_tests/post_attachments_tier_gating_test.ts` that runs against the live Supabase project using the service role key for setup/teardown, and the anon key + per-user JWTs to exercise the storage policy as real users.
+## What gets added
 
-## Test Matrix
+1. **Dev dependencies** (devDependencies in `package.json`):
+   - `@playwright/test`
+2. **`playwright.config.ts`** at project root:
+   - `testDir: './e2e'`
+   - `webServer: { command: 'npm run dev', url: 'http://localhost:8080', reuseExistingServer: true }` (port comes from `vite.config.ts`)
+   - One project: `chromium`, `baseURL: 'http://localhost:8080'`
+   - `use: { trace: 'retain-on-failure' }`
+3. **`package.json` scripts**:
+   - `"test:e2e": "playwright test"`
+   - `"test:e2e:install": "playwright install --with-deps chromium"`
+4. **`e2e/fixtures/mockSupabase.ts`** — exposes a Playwright fixture `withAuthState(page, state)` where `state` is one of:
+   - `loggedOut`
+   - `loggedInIncompleteProfile`
+   - `loggedInCompleteProfile`
 
-For one synthetic creator with two tiers (Bronze, Gold) and three posts (public, Bronze-only, Gold-only):
+   It uses `page.addInitScript` to install instrumentation **before any app code runs**:
+   - Replace `window.localStorage.getItem('fanrealms-auth')` to return a fake session (or null) matching `state`.
+   - Patch `fetch` so any request to `*.supabase.co/auth/v1/*` and `/rest/v1/users|creators*` returns canned JSON matching `state` (no real network).
+   - Wrap `history.pushState` / `history.replaceState` and record every `(method, url)` into `window.__navLog`.
+   - After the Supabase client is created, patch `supabase.auth.onAuthStateChange` via a `Proxy` on `globalThis.__fanrealms_supabase_client__` (the singleton key already added in `client.ts`) to increment `window.__authListenerCount` on each call. A `MutationObserver`/microtask waits until the singleton exists, then patches it once.
+   - Listen for `console` messages and push errors/warnings into `window.__consoleErrors`.
+5. **`e2e/auth-navigation.spec.ts`** — three tests:
 
-| Caller | Public file | Bronze file | Gold file | Expected |
-|---|---|---|---|---|
-| Anonymous | deny | deny | deny | all 401/403 |
-| Bronze subscriber | allow | allow | deny | gold blocked |
-| Gold subscriber | allow | allow* | allow | full access |
-| Creator (owner) | allow | allow | allow | always |
-| Unrelated user | deny | deny | deny | all blocked |
+   **Test A — Logged-out flow**
+   - Apply `loggedOut` fixture.
+   - Visit `/dashboard` → expect final URL `/login?returnTo=%2Fdashboard`.
+   - Click link to `/signup`, then back to `/login`, then visit `/complete-profile` → expect bounce to `/login?returnTo=%2Fcomplete-profile`.
+   - Assertions:
+     - `window.__authListenerCount === 1`
+     - No two consecutive entries in `window.__navLog` target the same URL (no double redirect).
+     - `window.__consoleErrors` contains no entry matching `/Redirect budget exceeded|Multiple GoTrueClient/`.
 
-*Gold tier holder also gets Bronze content only if the post lists Gold (via `post_tiers`) or Gold = Bronze tier on the post — we will explicitly test the documented rule: "subscriber must hold the specific tier on that post." If Gold ≠ Bronze and the Bronze post is gated to Bronze only, Gold subscriber is denied. We'll assert that exact behavior.
+   **Test B — Logged-in, incomplete profile**
+   - Apply `loggedInIncompleteProfile`.
+   - Visit `/dashboard` → expect redirect to `/complete-profile?returnTo=%2Fdashboard`.
+   - Visit `/login` → expect redirect to `/dashboard` (auth page bounce) → which then bounces to `/complete-profile`. Assert the **final** URL is `/complete-profile?...` and that `__navLog` shows that target appearing only once consecutively.
+   - Same listener-count + console-error assertions.
 
-## Steps
+   **Test C — Logged-in, complete profile**
+   - Apply `loggedInCompleteProfile`.
+   - Visit `/login` → expect `/dashboard`.
+   - Visit `/signup` → expect `/dashboard`.
+   - Visit `/complete-profile` → page renders (AuthGuard with `requireCompleteProfile={false}` allows it; assert no redirect away).
+   - Visit `/dashboard` → stays on `/dashboard`.
+   - Same listener-count + console-error assertions.
+   - Additional assertion: `window.__navLog.filter(e => e.url.endsWith('/dashboard')).length <= 2` to catch repeat pushes.
 
-1. **Setup (service role)**
-   - Create one creator row + corresponding `auth.users` entry (via `supabase.auth.admin.createUser`).
-   - Create two `membership_tiers`: Bronze, Gold.
-   - Create three `auth.users`: bronzeUser, goldUser, strangerUser.
-   - Insert active `user_subscriptions` for bronzeUser→Bronze and goldUser→Gold.
-   - Upload three placeholder files to `post-attachments/<creator_id>/test-public.txt`, `test-bronze.txt`, `test-gold.txt`.
-   - Insert three `posts` rows referencing those file paths in `attachments` jsonb, with `tier_id` set to NULL / Bronze / Gold respectively.
+6. **`e2e/README.md`** — short note: run `npm run test:e2e:install` once, then `npm run test:e2e`. Tests assume dev server on `:8080` (Playwright spawns it automatically).
 
-2. **Assertions** — for each caller, `signInWithPassword` to get a JWT, then call `storage.from('post-attachments').createSignedUrl(path, 60)` (or `.download()`) and assert allowed/denied per the matrix above.
+## Why this works
 
-3. **Teardown (always runs in `finally`)**
-   - Delete posts, subscriptions, tiers, storage objects, creator row, and the four test users.
+- The app already enforces a single Supabase client via the `__fanrealms_supabase_client__` global singleton, so the test can reach in and wrap `onAuthStateChange` deterministically.
+- `AuthContext` registers exactly one listener at provider mount. Any regression that re-registers per route or per HMR will push `__authListenerCount` above 1 and fail Test A/B/C immediately.
+- `AuthGuard` logs `[AuthGuard] Redirect budget exceeded` when its loop guard trips; capturing console output catches loops even if the final URL happens to settle.
 
-## Technical Details
+## Technical details
 
-- File: `supabase/functions/_tests/post_attachments_tier_gating_test.ts`
-- Imports: `Deno.test`, `assertEquals`, `@supabase/supabase-js`, `dotenv/load.ts`.
-- Requires secrets: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (already in `.env`), and `SUPABASE_SERVICE_ROLE_KEY` (already configured as edge function secret — confirm it's readable from the test runner; if not, fall back to seeding via a one-shot edge function helper).
-- Always consume response bodies (`await res.text()`).
-- Use unique suffix (`crypto.randomUUID()`) on emails/file names so re-runs don't collide.
-- Test uses `try/finally` so cleanup runs even on assertion failure.
+- Vite dev server port is `8080` (per `vite.config.ts`); confirm and reuse in `playwright.config.ts`.
+- Mock session shape stored under `localStorage['fanrealms-auth']` matches what `@supabase/supabase-js` v2 persists: `{ currentSession: { access_token, refresh_token, expires_at, user: {...} }, expiresAt }`. Use a far-future `expires_at` to skip refresh.
+- Fetch interception covers:
+  - `POST /auth/v1/token?grant_type=refresh_token` → 200 with same fake session (defensive; should not be hit).
+  - `GET /auth/v1/user` → 200 with fake user or 401 for logged-out.
+  - `GET /rest/v1/users?...` → row with `display_name` populated for `complete`, empty for `incomplete`.
+  - `GET /rest/v1/creators?...` → empty array.
+- `__navLog` records both `pushState` and `replaceState`; we treat consecutive entries with identical pathname+search as a duplicate redirect.
+- The `[AUTH][Context]` console.log lines from `AuthContext` are not errors; only `console.error` and `console.warn` feed `__consoleErrors`, filtered by the regex above.
+- No source files in `src/` are modified — only new files under `e2e/`, plus `playwright.config.ts` and `package.json` script/devDep additions.
 
-## Deliverables
+## Out of scope
 
-- New test file (no production code changes).
-- Test runs via `supabase--test_edge_functions` with `{"functions": ["_tests"]}` or a name pattern.
-- I'll execute the test after creating it and report pass/fail per row of the matrix.
-
-## Risks / Notes
-
-- If `SUPABASE_SERVICE_ROLE_KEY` isn't available to the Deno test runner, I'll need to add a minimal `_test-seed` edge function that performs setup/teardown server-side and is invoked by the test. I'll know after the first run.
-- Test creates and deletes real auth users in the live project (cleaned up immediately). No real user data is touched.
+- Wiring this into Lovable's auto-test harness (Lovable runs Vitest, not Playwright). User runs `npm run test:e2e` manually or in their own CI.
+- Real Supabase auth, Turnstile, OAuth — all stubbed.
