@@ -66,24 +66,15 @@ const AuthGuard = ({
         return;
       }
 
-      // No user in context — double-check storage before bouncing to /login.
+      // No user — AuthContext has already restored the session via getSession()
+      // at startup, so trust it here instead of re-querying on every navigation.
       if (requireAuth && !user) {
         if (isAuthPath(location.pathname)) {
           setHasCheckedAuth(true);
           return;
         }
-
-        setSessionRestorePending(true);
-        const { data, error } = await supabase.auth.getSession();
-        if (cancelled) return;
-        setSessionRestorePending(false);
-
-        if (error || !data.session?.user) {
-          const loginUrl = buildLoginUrl(location.pathname, location.search);
-          safeNavigate(loginUrl);
-          return;
-        }
-        setHasCheckedAuth(true);
+        const loginUrl = buildLoginUrl(location.pathname, location.search);
+        safeNavigate(loginUrl);
         return;
       }
 
