@@ -166,8 +166,8 @@ serve(async (req) => {
           creator_net_cents: (totalAmount - platformFee).toString(),
         },
       },
-      success_url: `${req.headers.get('origin')}/commission-payment/${commissionId}/success`,
-      cancel_url: `${req.headers.get('origin')}/commission-payment/${commissionId}`,
+      success_url: `${SAFE_ORIGIN}/commission-payment/${commissionId}/success`,
+      cancel_url: `${SAFE_ORIGIN}/commission-payment/${commissionId}`,
       metadata: {
         commission_id: commissionId,
         platform_fee_amount: (platformFee / 100).toString(),
