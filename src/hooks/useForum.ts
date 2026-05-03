@@ -83,16 +83,12 @@ export function useForumThread(threadId: string) {
       if (error) throw error;
 
       // Fetch author info via security-definer RPC (works for anon)
-      if (data) {
-        const { data: userRows } = await supabase
-          .rpc('get_public_user_profiles', { _user_ids: [data.author_id] });
-        const userData = ((userRows as any[]) || [])[0] || null;
-        return { ...data, users: userData };
-      }
-      return data;
+      if (!data) return data;
 
-      if (error) throw error;
-      return data;
+      const { data: userRows } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: [data.author_id] });
+      const userData = ((userRows as any[]) || [])[0] || null;
+      return { ...data, users: userData };
     },
   });
 }
