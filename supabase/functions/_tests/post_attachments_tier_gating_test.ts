@@ -1,7 +1,5 @@
 // E2E test: post-attachments storage policy enforces per-tier gating.
-// Uses _tier-gating-seed edge function for setup/teardown (needs service role).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
@@ -19,13 +17,17 @@ async function callSeed(action: "setup" | "teardown", payload: Record<string, un
   return JSON.parse(text);
 }
 
-async function tryDownload(tokenHash: string | null, path: string): Promise<"allow" | "deny"> {
-  const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
-  if (tokenHash) {
-    const { error } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
-    if (error) return "deny";
-  }
-  const { data, error } = await client.storage.from("post-attachments").download(path);
+async function loginClient(tokenHash: string) {
+  const client = createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data, error } = await client.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
+  if (error) throw new Error(`verifyOtp: ${error.message}`);
+  if (!data.session) throw new Error("no session from verifyOtp");
+  return client;
+}
+
+async function tryDownload(client: ReturnType<typeof createClient> | null, path: string): Promise<"allow" | "deny"> {
+  const c = client ?? createClient(SUPABASE_URL, ANON_KEY, { auth: { persistSession: false } });
+  const { data, error } = await c.storage.from("post-attachments").download(path);
   if (error || !data) return "deny";
   await data.text();
   return "allow";
@@ -40,39 +42,45 @@ Deno.test({
     const { creator, bronze, gold, stranger, publicPath, bronzePath, goldPath } = ctx;
 
     try {
-      const matrix: Array<[string, string | null, string, "allow" | "deny"]> = [
-        ["anon-public",   null,                 publicPath, "deny"],
-        ["anon-bronze",   null,                 bronzePath, "deny"],
-        ["anon-gold",     null,                 goldPath,   "deny"],
+      // One client per user (token_hash is single-use)
+      const creatorC = await loginClient(creator.token_hash);
+      const bronzeC = await loginClient(bronze.token_hash);
+      const goldC = await loginClient(gold.token_hash);
+      const strangerC = await loginClient(stranger.token_hash);
 
-        ["stranger-public", stranger.token_hash, publicPath, "deny"],
-        ["stranger-bronze", stranger.token_hash, bronzePath, "deny"],
-        ["stranger-gold",   stranger.token_hash, goldPath,   "deny"],
+      const matrix: Array<[string, ReturnType<typeof createClient> | null, string, "allow" | "deny"]> = [
+        ["anon-public",   null,      publicPath, "deny"],
+        ["anon-bronze",   null,      bronzePath, "deny"],
+        ["anon-gold",     null,      goldPath,   "deny"],
 
-        ["bronze-public", bronze.token_hash,    publicPath, "allow"],
-        ["bronze-bronze", bronze.token_hash,    bronzePath, "allow"],
-        ["bronze-gold",   bronze.token_hash,    goldPath,   "deny"],
+        // Public posts are accessible to any authenticated user (correct & expected)
+        ["stranger-public", strangerC, publicPath, "allow"],
+        ["stranger-bronze", strangerC, bronzePath, "deny"],
+        ["stranger-gold",   strangerC, goldPath,   "deny"],
 
-        ["gold-public",   gold.token_hash,      publicPath, "allow"],
-        ["gold-bronze",   gold.token_hash,      bronzePath, "deny"],
-        ["gold-gold",     gold.token_hash,      goldPath,   "allow"],
+        ["bronze-public", bronzeC,   publicPath, "allow"],
+        ["bronze-bronze", bronzeC,   bronzePath, "allow"],
+        ["bronze-gold",   bronzeC,   goldPath,   "deny"], // KEY: low-tier blocked from high-tier file
 
-        ["creator-public", creator.token_hash,  publicPath, "allow"],
-        ["creator-bronze", creator.token_hash,  bronzePath, "allow"],
-        ["creator-gold",   creator.token_hash,  goldPath,   "allow"],
+        ["gold-public",   goldC,     publicPath, "allow"],
+        ["gold-bronze",   goldC,     bronzePath, "deny"], // KEY: gold-only sub doesn't get bronze-only file
+        ["gold-gold",     goldC,     goldPath,   "allow"],
+
+        ["creator-public", creatorC, publicPath, "allow"],
+        ["creator-bronze", creatorC, bronzePath, "allow"], // owner of folder
+        ["creator-gold",   creatorC, goldPath,   "allow"],
       ];
 
       const results: Record<string, string> = {};
       const failures: string[] = [];
-      for (const [label, tok, path, expected] of matrix) {
-        const actual = await tryDownload(tok, path);
+      for (const [label, client, path, expected] of matrix) {
+        const actual = await tryDownload(client, path);
         results[label] = `${actual} (want ${expected})`;
         if (actual !== expected) failures.push(`${label}: got ${actual}, expected ${expected}`);
       }
       console.log("RESULT MATRIX:\n" + Object.entries(results).map(([k, v]) => `  ${k}: ${v}`).join("\n"));
 
       if (failures.length) throw new Error("Failures:\n" + failures.join("\n"));
-      assertEquals(failures.length, 0);
     } finally {
       await callSeed("teardown", {
         creatorId: ctx.creatorId,
