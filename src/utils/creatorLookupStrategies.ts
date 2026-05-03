@@ -130,21 +130,20 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
     
     if (creatorByDisplayName) {
       console.log("Found creator by display_name:", creatorByDisplayName);
-      
-      // Create the display name once and use it for both properties
-      const displayNameValue = creatorByDisplayName.display_name || creatorByDisplayName.username;
+      const c = creatorByDisplayName as any;
+      const displayNameValue = c.display_name || c.username;
       
       const creatorProfile = {
-        ...creatorByDisplayName,
-        id: creatorByDisplayName.id,         // Primary key from creators table
-        user_id: creatorByDisplayName.user_id,   // Keep user_id from auth
-        username: creatorByDisplayName.username || `user-${creatorByDisplayName.user_id.substring(0, 8)}`,
+        ...c,
+        id: c.id,
+        user_id: c.user_id,
+        username: c.username || (c.user_id ? `user-${c.user_id.substring(0, 8)}` : ''),
         email: "",
         fullName: displayNameValue,
         display_name: displayNameValue,
-        displayName: displayNameValue, // Add this required property
-        avatar_url: creatorByDisplayName.profile_image_url || null,
-        tags: creatorByDisplayName.tags || []
+        displayName: displayNameValue,
+        avatar_url: c.profile_image_url || null,
+        tags: c.tags || []
       };
       
       return creatorProfile as CreatorProfile;
