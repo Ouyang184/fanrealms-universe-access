@@ -117,8 +117,22 @@ export default function App() {
                 <Route path="/search" element={<SearchResultsPage />} />
 
                 {/* Auth */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
+                <Route
+                  path="/login"
+                  element={
+                    <AuthGuard requireAuth={false} requireCompleteProfile={false}>
+                      <Login />
+                    </AuthGuard>
+                  }
+                />
+                <Route
+                  path="/signup"
+                  element={
+                    <AuthGuard requireAuth={false} requireCompleteProfile={false}>
+                      <Signup />
+                    </AuthGuard>
+                  }
+                />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route

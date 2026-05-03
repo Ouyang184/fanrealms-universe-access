@@ -35,22 +35,15 @@ const signupSchema = z
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
-  const { user, loading: authLoading, isProfileComplete, signUp } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string>("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
-  // Skip page if already logged in
-  useEffect(() => {
-    if (authLoading || !user) return;
-    if (!isProfileComplete) {
-      navigate('/complete-profile', { replace: true });
-      return;
-    }
-    navigate('/dashboard', { replace: true });
-  }, [authLoading, user, isProfileComplete, navigate]);
+  // Redirect logic for already-signed-in users lives in AuthGuard
+  // (wrapping /signup in App.tsx) — single source of truth.
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),

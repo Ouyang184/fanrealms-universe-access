@@ -1,53 +1,14 @@
-
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { sanitizeReturnTo } from "@/utils/auth-redirects";
+import { Link } from "react-router-dom";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import LoginForm from "@/components/auth/LoginForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 
+// Auth/profile redirect logic lives in AuthGuard (wrapping /login in
+// App.tsx). This page just renders the form; the guard handles every
+// "already-signed-in" / "profile-incomplete" decision exactly once.
 const Login = () => {
-  const { user, loading, resolvePostAuthRoute } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (!loading) setIsReady(true);
-  }, [loading]);
-
-  useEffect(() => {
-    if (loading || !user) return;
-    let cancelled = false;
-
-    (async () => {
-      const params = new URLSearchParams(location.search);
-      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
-      // Re-fetch the profile and route accordingly. This guarantees we
-      // never flash /dashboard for a user whose profile is still
-      // incomplete (or vice versa) due to stale React state.
-      const target = await resolvePostAuthRoute(returnTo);
-      if (cancelled) return;
-      navigate(target, { replace: true });
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [loading, user, location.search, navigate, resolvePostAuthRoute]);
-
-  if (loading || !isReady || user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm">
