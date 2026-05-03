@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases, useCreatorProducts } from '@/hooks/useMarketplace';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
