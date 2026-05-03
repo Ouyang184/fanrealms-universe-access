@@ -25,7 +25,7 @@ export function HeroSection() {
         Showcase projects, sell digital products, find gigs, and connect with a community of builders.
       </p>
       <div className="flex gap-3 mt-8">
-        <Link to="/explore">
+        <Link to="/marketplace">
           <Button size="lg">Browse Projects</Button>
         </Link>
         <Button

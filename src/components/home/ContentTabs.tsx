@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
-import { ContentItem } from "@/components/explore/ContentItem";
+import { ContentItem } from "@/components/marketplace?category=ContentItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types";
 import { Link } from "react-router-dom";
@@ -52,7 +52,7 @@ export function ContentTabs({ forYouPosts, trendingPosts, recentPosts, onPostCli
           <TabsTrigger value="trending">Trending</TabsTrigger>
           <TabsTrigger value="recent">Recent</TabsTrigger>
         </TabsList>
-        <Link to="/explore">
+        <Link to="/marketplace">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>

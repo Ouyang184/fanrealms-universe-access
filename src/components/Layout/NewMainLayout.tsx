@@ -205,13 +205,13 @@ export function NewMainLayout({ children }: MainLayoutProps) {
                 {!sidebarCollapsed && <span>Feed</span>}
               </Button>
             </Link>
-            <Link to="/explore" className="block">
+            <Link to="/marketplace" className="block">
               <Button
-                variant={isActive("/explore") ? "secondary" : "ghost"}
+                variant={isActive("/marketplace") ? "secondary" : "ghost"}
                 className={cn(
                   "w-full font-medium",
                   sidebarCollapsed ? "justify-center px-2" : "justify-start gap-3",
-                  isActive("/explore") && "bg-primary/30",
+                  isActive("/marketplace") && "bg-primary/30",
                 )}
               >
                 <Compass className="h-5 w-5" />

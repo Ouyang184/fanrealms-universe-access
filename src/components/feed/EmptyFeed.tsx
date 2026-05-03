@@ -13,7 +13,7 @@ export const EmptyFeed: React.FC = () => {
         Follow some creators to see their posts in your feed. Discover new creators and start building your personalized feed.
       </p>
       <Button asChild>
-        <Link to="/explore">Discover Creators</Link>
+        <Link to="/marketplace">Discover Creators</Link>
       </Button>
     </div>
   );

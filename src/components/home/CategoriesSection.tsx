@@ -31,7 +31,7 @@ export function CategoriesSection() {
     <section className="mb-16">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Browse by category</h2>
-        <Link to="/explore">
+        <Link to="/marketplace">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
@@ -42,7 +42,7 @@ export function CategoriesSection() {
         {categories.map(({ name, route, Icon }) => (
           <Link
             key={route}
-            to={`/explore/${route}`}
+            to={`/marketplace?category=${route}`}
             className="group flex flex-col items-center text-center gap-2 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-sm transition-all"
           >
             <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">

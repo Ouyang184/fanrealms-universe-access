@@ -29,8 +29,8 @@ export function TagDisplay({
 
   const handleTagClick = (tag: string) => {
     if (clickable) {
-      // Navigate to search/explore page with tag filter
-      navigate(`/explore?tag=${encodeURIComponent(tag)}`);
+      // Navigate to search/marketplace page with tag filter
+      navigate(`/marketplace?tag=${encodeURIComponent(tag)}`);
     }
   };
 

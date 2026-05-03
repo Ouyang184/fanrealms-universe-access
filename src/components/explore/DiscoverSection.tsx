@@ -37,7 +37,7 @@ export function DiscoverSection() {
             </div>
             <CardFooter className="p-4">
               <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                <Link to="/explore?category=top">Explore Top Rated</Link>
+                <Link to="/marketplace?category=top">Explore Top Rated</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -58,7 +58,7 @@ export function DiscoverSection() {
             </div>
             <CardFooter className="p-4">
               <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                <Link to="/explore?category=new">Discover New Talent</Link>
+                <Link to="/marketplace?category=new">Discover New Talent</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -79,7 +79,7 @@ export function DiscoverSection() {
             </div>
             <CardFooter className="p-4">
               <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                <Link to="/explore?category=free">Browse Free Content</Link>
+                <Link to="/marketplace?category=free">Browse Free Content</Link>
               </Button>
             </CardFooter>
           </Card>

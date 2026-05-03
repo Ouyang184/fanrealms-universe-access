@@ -22,7 +22,7 @@ export function HowItWorks() {
         ))}
       </div>
       <div className="mt-8">
-        <Link to="/explore">
+        <Link to="/marketplace">
           <Button variant="outline">Get started</Button>
         </Link>
       </div>
