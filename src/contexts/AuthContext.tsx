@@ -108,7 +108,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const requestId = ++profileRequestRef.current;
     const userProfile = await fetchUserProfile(user.id);
     if (requestId !== profileRequestRef.current) return; // discard stale
-    setProfile(userProfile as Profile | null);
+    if (userProfile !== null) {
+      setProfile(userProfile as Profile | null);
+    }
+    // If null (fetch failed), keep existing profile — don't clear it
   };
 
   const isProfileComplete = !!(profile?.display_name?.trim());
