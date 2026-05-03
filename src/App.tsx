@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import RootLayout from "@/components/RootLayout";
 import AuthGuard from "@/components/AuthGuard";
+import AuthGate from "@/components/AuthGate";
 import SearchResultsPage from "./pages/SearchResults";
 import Logout from "./pages/Logout";
 import LogoutLoading from "./pages/LogoutLoading";
@@ -102,6 +103,7 @@ export default function App() {
           <TooltipProvider>
             <RootLayout>
               <OAuthCallbackRedirector />
+              <AuthGate>
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<LandingPage />} />
@@ -160,6 +162,7 @@ export default function App() {
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </AuthGate>
               <Toaster />
             </RootLayout>
           </TooltipProvider>
