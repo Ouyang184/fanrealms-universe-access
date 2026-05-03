@@ -22,14 +22,9 @@ export default function CompleteProfile() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ username?: string; displayName?: string }>({});
 
-  // If profile is already complete, skip to destination
-  useEffect(() => {
-    if (!loading && isProfileComplete) {
-      const params = new URLSearchParams(location.search);
-      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
-      navigate(returnTo, { replace: true });
-    }
-  }, [loading, isProfileComplete, navigate, location.search]);
+  // No "skip if already complete" effect here — AuthGuard wraps this
+  // route and handles the already-complete case in one place.
+
 
   const validate = (): boolean => {
     const errors: { username?: string; displayName?: string } = {};
