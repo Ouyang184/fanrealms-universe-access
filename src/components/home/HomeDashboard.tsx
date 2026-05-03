@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
 
 function getGreeting() {
   const h = new Date().getHours();
