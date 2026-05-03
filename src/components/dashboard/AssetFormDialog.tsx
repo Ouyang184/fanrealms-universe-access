@@ -218,6 +218,31 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
             </div>
           </div>
 
+          {/* Project */}
+          <div>
+            <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+              Project <span className="font-normal text-[#999]">(group this asset under one of your projects)</span>
+            </label>
+            {projects.length === 0 ? (
+              <div className="text-[12px] text-[#888] px-3 py-2 border border-dashed border-[#e5e5e5] rounded-lg">
+                You have no projects yet. Create one from{' '}
+                <a href="/dashboard/projects/new" className="text-primary hover:underline">Projects → Upload new project</a>{' '}
+                to group your assets.
+              </div>
+            ) : (
+              <select
+                value={projectId}
+                onChange={e => setProjectId(e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="">— Standalone (no project) —</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Title */}
           <div>
             <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Title *</label>
