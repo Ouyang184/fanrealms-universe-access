@@ -103,11 +103,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updatedProfile;
   };
 
+  const refreshProfile = async () => {
+    if (!user) return;
+    const requestId = ++profileRequestRef.current;
+    const userProfile = await fetchUserProfile(user.id);
+    if (requestId !== profileRequestRef.current) return; // discard stale
+    setProfile(userProfile as Profile | null);
+  };
+
+  const isProfileComplete = !!(profile?.display_name?.trim());
+
   const value: AuthContextType = {
     session,
     user,
     profile,
     loading,
+    isProfileComplete,
+    refreshProfile,
     signIn,
     signInWithMagicLink,
     signUp,

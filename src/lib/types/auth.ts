@@ -21,6 +21,8 @@ export interface Profile {
   full_name?: string;
   bio?: string;
   profile_picture?: string;
+  display_name?: string | null;   // ← new
+  creator_id?: string | null;     // ← new
   created_at?: string;
   updated_at?: string;
 }
@@ -30,6 +32,8 @@ export interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  isProfileComplete: boolean;                          // ← new
+  refreshProfile: () => Promise<void>;                 // ← new
   signIn: (email: string, password: string, captchaToken?: string) => Promise<AuthResult>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signUp: (email: string, password: string, captchaToken?: string, fullName?: string) => Promise<AuthResult>;
