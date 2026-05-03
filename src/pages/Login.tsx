@@ -11,7 +11,7 @@ import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
 
 const Login = () => {
-  const { user, loading, isProfileComplete } = useAuth();
+  const { user, loading, resolvePostAuthRoute } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isReady, setIsReady] = useState(false);
@@ -22,20 +22,23 @@ const Login = () => {
 
   useEffect(() => {
     if (loading || !user) return;
+    let cancelled = false;
 
-    const params = new URLSearchParams(location.search);
-    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
+      // Re-fetch the profile and route accordingly. This guarantees we
+      // never flash /dashboard for a user whose profile is still
+      // incomplete (or vice versa) due to stale React state.
+      const target = await resolvePostAuthRoute(returnTo);
+      if (cancelled) return;
+      navigate(target, { replace: true });
+    })();
 
-    if (!isProfileComplete) {
-      navigate(
-        `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`,
-        { replace: true }
-      );
-      return;
-    }
-
-    navigate(returnTo, { replace: true });
-  }, [loading, user, isProfileComplete, location.search, navigate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, location.search, navigate, resolvePostAuthRoute]);
 
   if (loading || !isReady || user) {
     return (
