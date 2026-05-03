@@ -6,6 +6,11 @@ import type { Profile } from '@/lib/types/auth';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
 import type { AuthContextType } from '@/lib/types/auth';
+import {
+  isProfileComplete as isComplete,
+  fetchProfileCompletion,
+  resolveCompletionRoute,
+} from '@/lib/auth/profileCompletion';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -216,35 +221,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return profileRef.current;
   };
 
-  const isComplete = (p: Profile | null | undefined) =>
-    !!(p?.display_name && p.display_name.trim());
-
+  // Shared completion rule + Supabase-direct fetch — see lib/auth/profileCompletion.
+  // All redirect decisions across the app go through these helpers so the
+  // /dashboard vs /complete-profile choice is computed identically everywhere.
   const isProfileComplete = isComplete(profile);
 
   /**
    * Single source of truth for "where should the user be after auth?".
-   * Re-fetches the profile so the decision is based on freshly persisted
-   * data, not stale React state, AND ties its answer to the user that
-   * was current when the call started — if the user changes (sign-out,
-   * account switch) mid-resolve, returns the appropriate fallback.
+   * Queries Supabase directly (via fetchProfileCompletion) so the decision
+   * is based on freshly persisted data — never stale React state — AND
+   * ties its answer to the user that was current when the call started:
+   * if the user changes (sign-out, account switch) mid-resolve, returns
+   * the appropriate fallback.
    */
   const resolvePostAuthRoute = async (returnTo: string = '/dashboard'): Promise<string> => {
     const startUser = userRef.current;
     if (!startUser) return '/login';
-    const fresh = await refreshProfile();
-    // If the user changed underneath us, the original answer is meaningless.
+    const complete = await fetchProfileCompletion(startUser.id);
+    // Refresh local profile state in the background so subsequent renders
+    // (and isProfileComplete consumers) see the same answer we just used.
+    void refreshProfile();
     const nowUser = userRef.current;
     if (!nowUser) return '/login';
     if (nowUser.id !== startUser.id) {
       // A different user is signed in now — recompute against current state.
-      return isComplete(profileRef.current)
-        ? returnTo
-        : `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`;
+      return resolveCompletionRoute(isComplete(profileRef.current), returnTo);
     }
-    if (!isComplete(fresh)) {
-      return `/complete-profile?returnTo=${encodeURIComponent(returnTo)}`;
-    }
-    return returnTo;
+    return resolveCompletionRoute(complete, returnTo);
   };
 
   const value: AuthContextType = {

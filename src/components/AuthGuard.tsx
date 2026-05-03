@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
 import { buildLoginUrl, isAuthPath } from "@/utils/auth-redirects";
+import { resolveCompletionRoute } from "@/lib/auth/profileCompletion";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -112,8 +113,7 @@ const AuthGuard = ({
         !isProfileComplete &&
         location.pathname !== '/complete-profile'
       ) {
-        const returnTo = encodeURIComponent(location.pathname + location.search);
-        safeNavigate(`/complete-profile?returnTo=${returnTo}`);
+        safeNavigate(resolveCompletionRoute(false, location.pathname + location.search));
         return;
       }
 
