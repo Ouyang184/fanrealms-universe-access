@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useCreatorProducts, useDeleteProduct } from '@/hooks/useMarketplace';
-import { AssetFormDialog } from '@/components/dashboard/AssetFormDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,38 +18,18 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export default function DashboardAssetsPage() {
-  const { data: assets, isLoading } = useCreatorProducts();
-  const deleteProduct = useDeleteProduct();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<any | null>(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const projectParam = searchParams.get('project');
 
-  // If arriving with ?project=..., open the create dialog prefilled
-  useEffect(() => {
-    if (projectParam) {
-      setEditingAsset(null);
-      setDialogOpen(true);
-    }
-  }, [projectParam]);
-
-  const handleEdit = (asset: any) => {
-    setEditingAsset(asset);
-    setDialogOpen(true);
-  };
+  const { data: assets, isLoading } = useCreatorProducts();
+  const deleteProduct = useDeleteProduct();
 
   const handleNew = () => {
-    setEditingAsset(null);
-    setDialogOpen(true);
-  };
-
-  const handleClose = () => {
-    setDialogOpen(false);
-    if (projectParam) {
-      const next = new URLSearchParams(searchParams);
-      next.delete('project');
-      setSearchParams(next, { replace: true });
-    }
+    const url = projectParam
+      ? `/dashboard/assets/new?project=${encodeURIComponent(projectParam)}`
+      : '/dashboard/assets/new';
+    navigate(url);
   };
 
   return (
@@ -79,39 +57,43 @@ export default function DashboardAssetsPage() {
           </div>
         ) : assets && assets.length > 0 ? (
           <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
-            {/* Table header */}
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-3 border-b border-[#f5f5f5] text-[11px] font-bold text-[#aaa] uppercase tracking-[0.5px]">
               <span>Asset</span>
               <span className="text-right">Price</span>
               <span>Status</span>
               <span></span>
             </div>
+
             {assets.map((asset, i) => (
               <div
                 key={asset.id}
-                className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3.5 ${i < assets.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+                className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3.5 ${
+                  i < assets.length - 1 ? 'border-b border-[#f5f5f5]' : ''
+                }`}
               >
-                {/* Asset info */}
-                <div className="flex items-center gap-3 min-w-0">
+                <Link
+                  to={`/dashboard/assets/${asset.id}`}
+                  className="flex items-center gap-3 min-w-0 group"
+                >
                   <div className="w-10 h-10 rounded-lg bg-[#f5f5f5] overflow-hidden flex-shrink-0">
                     {asset.cover_image_url && (
                       <img src={asset.cover_image_url} className="w-full h-full object-cover" alt="" />
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold truncate">{asset.title}</div>
+                    <div className="text-[13px] font-semibold truncate group-hover:text-primary transition-colors">
+                      {asset.title}
+                    </div>
                     {asset.category && (
                       <div className="text-[11px] text-[#aaa]">{asset.category}</div>
                     )}
                   </div>
-                </div>
+                </Link>
 
-                {/* Price */}
                 <div className="text-[13px] font-bold text-right">
                   {asset.price === 0 ? 'Free' : `$${(asset.price / 100).toFixed(2)}`}
                 </div>
 
-                {/* Status */}
                 <div>
                   {asset.status === 'published' ? (
                     <Badge className="bg-green-50 text-green-700 border-green-200 text-[10px]">Published</Badge>
@@ -120,41 +102,30 @@ export default function DashboardAssetsPage() {
                   )}
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-[#777] hover:text-[#111]"
-                    onClick={() => handleEdit(asset)}
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[#777] hover:text-red-500">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete asset?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          "{asset.title}" will be permanently removed from the marketplace. This cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-red-500 hover:bg-red-600"
-                          onClick={() => deleteProduct.mutate(asset.id)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-[#777] hover:text-red-500">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete asset?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        "{asset.title}" will be permanently removed from the marketplace. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-500 hover:bg-red-600"
+                        onClick={() => deleteProduct.mutate(asset.id)}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>
@@ -171,13 +142,6 @@ export default function DashboardAssetsPage() {
             </Button>
           </div>
         )}
-
-        <AssetFormDialog
-          open={dialogOpen}
-          onClose={handleClose}
-          asset={editingAsset}
-          defaultProjectId={projectParam}
-        />
       </div>
     </DashboardLayout>
   );
