@@ -176,6 +176,7 @@ export function useUpdateProduct() {
       license?: string;
       godot_version?: string;
       status?: string;
+      project_id?: string | null;
     }) => {
       const { id, ...updates } = product;
       const { data, error } = await supabase
