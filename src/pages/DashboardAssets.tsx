@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
+import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useCreatorProducts, useDeleteProduct } from '@/hooks/useMarketplace';
 import { AssetFormDialog } from '@/components/dashboard/AssetFormDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,7 +35,7 @@ export default function DashboardAssetsPage() {
   };
 
   return (
-    <MainLayout fullWidth>
+    <DashboardLayout>
       <div className="w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -158,6 +158,6 @@ export default function DashboardAssetsPage() {
           asset={editingAsset}
         />
       </div>
-    </MainLayout>
+    </DashboardLayout>
   );
 }
