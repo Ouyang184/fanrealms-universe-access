@@ -17,7 +17,7 @@ const AuthGuard = ({
   requireAuth = true,
   requireCompleteProfile = true
 }: AuthGuardProps) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isProfileComplete } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
@@ -57,7 +57,7 @@ const AuthGuard = ({
     setHasCheckedAuth(false);
 
     const run = async () => {
-      // Authenticated user landing on auth pages → send to dashboard (once).
+      // Authenticated user landing on an auth page → skip to dashboard or complete-profile.
       if (user && isAuthPath(location.pathname)) {
         if (location.pathname !== '/dashboard') {
           safeNavigate('/dashboard');
@@ -67,10 +67,8 @@ const AuthGuard = ({
         return;
       }
 
-      // No user in context but a session may still be in storage from a
-      // just-completed OAuth callback — double-check before bouncing to /login.
+      // No user in context — double-check storage before bouncing to /login.
       if (requireAuth && !user) {
-        // If we're already on an auth page, never redirect to /login again.
         if (isAuthPath(location.pathname)) {
           setHasCheckedAuth(true);
           return;
@@ -86,9 +84,20 @@ const AuthGuard = ({
           safeNavigate(loginUrl);
           return;
         }
-        // Session exists; render protected content now instead of waiting on
-        // AuthContext and risking a spinner or redirect loop.
         setHasCheckedAuth(true);
+        return;
+      }
+
+      // Authenticated user with incomplete profile → redirect to /complete-profile.
+      // Only runs when requireCompleteProfile is true and we are NOT already there.
+      if (
+        requireCompleteProfile &&
+        user &&
+        !isProfileComplete &&
+        location.pathname !== '/complete-profile'
+      ) {
+        const returnTo = encodeURIComponent(location.pathname + location.search);
+        safeNavigate(`/complete-profile?returnTo=${returnTo}`);
         return;
       }
 
