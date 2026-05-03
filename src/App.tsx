@@ -45,6 +45,7 @@ import DashboardSalesPage from "./pages/DashboardSales";
 import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import SellerProfilePage from "./pages/SellerProfile";
+import BecomeCreator from "./pages/BecomeCreator";
 
 const OAuthCallbackRedirector = () => {
   const location = useLocation();
@@ -155,6 +156,7 @@ export default function App() {
                 <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} />
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
+                <Route path="/become-creator" element={<AuthGuard><BecomeCreator /></AuthGuard>} />
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
 
                 {/* Settings */}
