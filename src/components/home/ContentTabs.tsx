@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight } from "lucide-react";
-import { ContentItem } from "@/components/marketplace?category=ContentItem";
+import { ContentItem } from "@/components/explore/ContentItem";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Post } from "@/types";
 import { Link } from "react-router-dom";
