@@ -14,6 +14,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // `authReady` only flips true after BOTH the initial getSession() has
+  // resolved AND the first onAuthStateChange event has fired. AuthGate
+  // uses this to block sensitive routes (/login, /signup, /dashboard,
+  // /complete-profile) from rendering with an indeterminate auth state.
+  const [authReady, setAuthReady] = useState(false);
+  const gotInitialSessionRef = useRef(false);
+  const gotInitialEventRef = useRef(false);
   const [signingOut, setSigningOut] = useState(false);
 
   // Refs that always mirror the latest committed state. Async functions
@@ -136,6 +143,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         applySession(currentSession, event);
         setLoading(false);
+        gotInitialEventRef.current = true;
+        if (gotInitialSessionRef.current) setAuthReady(true);
 
         // Resolve any in-flight signOut() waiter the moment the SDK
         // confirms the sign-out. This is what flips signingOut back to
@@ -156,12 +165,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         applySession(initialSession, 'getSession');
         setLoading(false);
+        gotInitialSessionRef.current = true;
+        if (gotInitialEventRef.current) setAuthReady(true);
       })
       .catch(error => {
         if (cancelled) return;
         console.error('[AUTH][Context] Error getting session:', error);
         applySession(null, 'getSession:error');
         setLoading(false);
+        gotInitialSessionRef.current = true;
+        if (gotInitialEventRef.current) setAuthReady(true);
       });
 
     return () => {
@@ -239,6 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
+    authReady,
     signingOut,
     isProfileComplete,
     refreshProfile,
