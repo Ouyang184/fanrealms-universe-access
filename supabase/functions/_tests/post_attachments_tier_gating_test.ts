@@ -9,7 +9,7 @@ const ANON_KEY = Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("
 const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
 async function callSeed(action: "setup" | "teardown", payload: Record<string, unknown> = {}) {
-  const res = await fetch(`${FUNCTIONS_URL}/_tier-gating-seed`, {
+  const res = await fetch(`${FUNCTIONS_URL}/tier-gating-seed`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "apikey": ANON_KEY, "Authorization": `Bearer ${ANON_KEY}` },
     body: JSON.stringify({ action, ...payload }),
