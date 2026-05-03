@@ -3529,6 +3529,10 @@ export type Database = {
           website: string
         }[]
       }
+      user_can_access_post_attachment: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
       user_can_see_full_post_content: {
         Args: { post_id_param: string }
         Returns: boolean
