@@ -49,12 +49,13 @@ export default function CompleteProfile() {
       const cleanUsername = username.trim().toLowerCase();
       const cleanDisplayName = displayName.trim();
 
-      // Check username uniqueness (exclude the current user's own row)
+      // Check username uniqueness against public.users (the source of truth
+      // for ALL accounts, not just creators). Exclude this user's own row.
       const { data: existing } = await supabase
-        .from('creators')
+        .from('users')
         .select('id')
-        .eq('username', cleanUsername)
-        .neq('user_id', user!.id)
+        .ilike('username', cleanUsername)
+        .neq('id', user!.id)
         .maybeSingle();
 
       if (existing) {
@@ -62,21 +63,15 @@ export default function CompleteProfile() {
         return;
       }
 
-      // Upsert the creators row with username + display_name
-      const { error: upsertError } = await supabase
-        .from('creators')
-        .upsert(
-          { user_id: user!.id, username: cleanUsername, display_name: cleanDisplayName },
-          { onConflict: 'user_id' }
-        );
-
-      if (upsertError) throw upsertError;
-
-      // Also keep users.username in sync
-      await supabase
+      // Update the user row (auto-created by on_auth_user_created trigger).
+      // Becoming a creator is a separate, opt-in flow — we do NOT create a
+      // creators row here. Non-creators can use marketplace/forum/jobs without one.
+      const { error: updateError } = await supabase
         .from('users')
-        .update({ username: cleanUsername })
+        .update({ username: cleanUsername, display_name: cleanDisplayName })
         .eq('id', user!.id);
+
+      if (updateError) throw updateError;
 
       // Verify completion against the freshly-persisted Supabase row, not
       // React state. Only navigate when the database itself agrees the
