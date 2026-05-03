@@ -39,12 +39,14 @@ export const useProfile = () => {
 
       // Note: creatorError is not thrown as it's optional - user might not be a creator
 
-      // Combine the data
+      // Combine the data. display_name now lives on public.users (set during
+      // /complete-profile for ALL users). Fall back to the creators row for
+      // legacy records that haven't been backfilled.
       const profileData: ProfileData = {
         ...userData,
         bio: creatorData?.bio || null,
         tags: creatorData?.tags || [],
-        display_name: creatorData?.display_name || null,
+        display_name: (userData as any)?.display_name ?? creatorData?.display_name ?? null,
         creator_id: creatorData?.id || null
       };
       

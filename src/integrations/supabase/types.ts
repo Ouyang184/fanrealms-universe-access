@@ -2233,6 +2233,7 @@ export type Database = {
           created_at: string
           creator_name: string | null
           date_of_birth: string | null
+          display_name: string | null
           email: string
           email_2fa_enabled: boolean
           id: string
@@ -2248,6 +2249,7 @@ export type Database = {
           created_at?: string
           creator_name?: string | null
           date_of_birth?: string | null
+          display_name?: string | null
           email: string
           email_2fa_enabled?: boolean
           id?: string
@@ -2263,6 +2265,7 @@ export type Database = {
           created_at?: string
           creator_name?: string | null
           date_of_birth?: string | null
+          display_name?: string | null
           email?: string
           email_2fa_enabled?: boolean
           id?: string

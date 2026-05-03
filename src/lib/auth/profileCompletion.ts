@@ -82,9 +82,9 @@ export const fetchProfileCompletion = async (
   if (!userId || typeof userId !== 'string') return false;
   try {
     const { data, error } = await supabase
-      .from('creators')
+      .from('users')
       .select('display_name, username')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .maybeSingle();
     if (error) {
       console.warn('[auth] fetchProfileCompletion failed', error);
