@@ -121,11 +121,25 @@ export function useCreateProject() {
     mutationFn: async (input: {
       title: string;
       description?: string;
+      short_description?: string;
       tags?: string[];
       website_url?: string;
       repository_url?: string;
       status?: string;
       creator_id: string;
+      cover_image_url?: string;
+      classification?: string;
+      kind?: string;
+      release_status?: string;
+      pricing_model?: string;
+      suggested_price_cents?: number;
+      video_url?: string;
+      screenshots?: string[];
+      genre?: string;
+      ai_disclosure?: string;
+      app_store_links?: Record<string, string>;
+      community_mode?: string;
+      visibility?: string;
     }) => {
       if (!user) throw new Error('Not authenticated');
       const slug = generateSlug(input.title) + '-' + Date.now().toString(36);
@@ -136,10 +150,24 @@ export function useCreateProject() {
           title: input.title,
           slug,
           description: input.description || null,
+          short_description: input.short_description || null,
           tags: input.tags || [],
           website_url: input.website_url || null,
           repository_url: input.repository_url || null,
-          status: input.status || 'published',
+          status: input.status || (input.visibility === 'public' ? 'published' : 'draft'),
+          cover_image_url: input.cover_image_url || null,
+          classification: input.classification || 'game',
+          kind: input.kind || 'downloadable',
+          release_status: input.release_status || 'released',
+          pricing_model: input.pricing_model || 'free',
+          suggested_price_cents: input.suggested_price_cents ?? 0,
+          video_url: input.video_url || null,
+          screenshots: input.screenshots || [],
+          genre: input.genre || null,
+          ai_disclosure: input.ai_disclosure || null,
+          app_store_links: input.app_store_links || {},
+          community_mode: input.community_mode || 'comments',
+          visibility: input.visibility || 'draft',
         })
         .select()
         .single();

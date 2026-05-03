@@ -1826,45 +1826,84 @@ export type Database = {
       }
       projects: {
         Row: {
+          ai_disclosure: string | null
+          app_store_links: Json | null
+          classification: string | null
+          community_mode: string | null
           cover_image_url: string | null
           created_at: string
           creator_id: string
           description: string | null
+          genre: string | null
           id: string
+          kind: string | null
+          pricing_model: string | null
+          release_status: string | null
           repository_url: string | null
+          screenshots: string[] | null
+          short_description: string | null
           slug: string
           status: string
+          suggested_price_cents: number | null
           tags: string[] | null
           title: string
           updated_at: string | null
+          video_url: string | null
+          visibility: string | null
           website_url: string | null
         }
         Insert: {
+          ai_disclosure?: string | null
+          app_store_links?: Json | null
+          classification?: string | null
+          community_mode?: string | null
           cover_image_url?: string | null
           created_at?: string
           creator_id: string
           description?: string | null
+          genre?: string | null
           id?: string
+          kind?: string | null
+          pricing_model?: string | null
+          release_status?: string | null
           repository_url?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
           slug: string
           status?: string
+          suggested_price_cents?: number | null
           tags?: string[] | null
           title: string
           updated_at?: string | null
+          video_url?: string | null
+          visibility?: string | null
           website_url?: string | null
         }
         Update: {
+          ai_disclosure?: string | null
+          app_store_links?: Json | null
+          classification?: string | null
+          community_mode?: string | null
           cover_image_url?: string | null
           created_at?: string
           creator_id?: string
           description?: string | null
+          genre?: string | null
           id?: string
+          kind?: string | null
+          pricing_model?: string | null
+          release_status?: string | null
           repository_url?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
           slug?: string
           status?: string
+          suggested_price_cents?: number | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
+          video_url?: string | null
+          visibility?: string | null
           website_url?: string | null
         }
         Relationships: [
