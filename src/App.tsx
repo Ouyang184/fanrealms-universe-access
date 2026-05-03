@@ -47,7 +47,7 @@ import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
-import ExplorePage from "./pages/Explore";
+
 import BecomeCreator from "./pages/BecomeCreator";
 
 const OAuthCallbackRedirector = () => {
@@ -120,7 +120,8 @@ export default function App() {
                 <Route path="/forum" element={<Forum />} />
                 <Route path="/forum/:threadId" element={<ForumThread />} />
                 <Route path="/games" element={<GamesPage />} />
-                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/explore" element={<Navigate to="/marketplace" replace />} />
+                <Route path="/explore/*" element={<Navigate to="/marketplace" replace />} />
                 <Route path="/search" element={<SearchResultsPage />} />
 
                 {/* Auth */}
