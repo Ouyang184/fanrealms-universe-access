@@ -41,6 +41,7 @@ import GamesPage from "./pages/Games";
 // New pages — will be uncommented as each is built in subsequent tasks
 import DashboardPage from "./pages/Dashboard";
 import DashboardAssetsPage from "./pages/DashboardAssets";
+import DashboardAssetDetail from "./pages/DashboardAssetDetail";
 import DashboardSalesPage from "./pages/DashboardSales";
 import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
@@ -154,6 +155,8 @@ export default function App() {
                 {/* Dashboard (protected) — uncomment as each page is built */}
                 <Route path="/dashboard" element={<AuthGuard><DashboardPage /></AuthGuard>} />
                 <Route path="/dashboard/assets" element={<AuthGuard><DashboardAssetsPage /></AuthGuard>} />
+                <Route path="/dashboard/assets/new" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
+                <Route path="/dashboard/assets/:assetId" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
                 <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} />
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
