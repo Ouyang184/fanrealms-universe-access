@@ -28,7 +28,6 @@ export const supabase: SupabaseClient<Database> =
         autoRefreshToken: true,
         flowType: 'pkce',
         detectSessionInUrl: true,
-        storageKey: 'fanrealms-auth',
       },
     }
   ));
