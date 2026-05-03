@@ -77,8 +77,16 @@ export default function DashboardSalesPage() {
                       <div className="text-[13px] font-semibold truncate">
                         {(sale.digital_products as any)?.title ?? 'Asset'}
                       </div>
-                      <div className="text-[11px] text-[#aaa]">
-                        {formatDistanceToNow(new Date((sale as any).created_at), { addSuffix: true })}
+                      <div className="text-[11px] text-[#aaa] flex items-center gap-2">
+                        <span>{formatDistanceToNow(new Date((sale as any).created_at), { addSuffix: true })}</span>
+                        {(sale.digital_products as any)?.projects?.title && (
+                          <a
+                            href={`/dashboard/projects/${(sale.digital_products as any).projects.id}`}
+                            className="text-primary hover:underline truncate"
+                          >
+                            · {(sale.digital_products as any).projects.title}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
