@@ -38,8 +38,8 @@ export function CreatorCheck({ children }: CreatorCheckProps) {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
           <h2 className="text-2xl font-semibold mb-4">Become a Creator</h2>
-          <p className="text-muted-foreground mb-6">
-            You don't have a Creator Profile yet. Click the button below to create one and start posting!
+          <p className="text-muted-foreground mb-6 max-w-md">
+            Set up your creator profile to upload projects, list assets, and earn from your work.
           </p>
           <Button onClick={handleBecomeCreatorClick}>
             Become a Creator
