@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { sanitizeReturnTo } from '@/utils/auth-redirects';
+import { fetchProfileCompletion, resolveCompletionRoute } from '@/lib/auth/profileCompletion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
 export default function CompleteProfile() {
-  const { user, loading, isProfileComplete, resolvePostAuthRoute } = useAuth();
+  const { user, loading, isProfileComplete, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -82,13 +83,23 @@ export default function CompleteProfile() {
         .update({ username: cleanUsername })
         .eq('id', user!.id);
 
-      // Re-fetch the profile and route based on actual completion state.
-      // resolvePostAuthRoute returns either the returnTo destination
-      // (profile complete) or back to /complete-profile (still missing
-      // required fields), so we never strand the user on a stale page.
+      // Verify completion against the freshly-persisted Supabase row, not
+      // React state. Only navigate when the database itself agrees the
+      // profile is complete — otherwise show an inline error and stay
+      // here so the user is never silently bounced back.
+      const complete = await fetchProfileCompletion(user!.id);
+      if (!complete) {
+        setError("We couldn't verify your profile was saved. Please try again.");
+        return;
+      }
+
+      // Sync AuthContext with the persisted truth so AuthGuard on the
+      // destination route sees isProfileComplete=true on first render.
+      await refreshProfile();
+
       const params = new URLSearchParams(location.search);
       const returnTo = sanitizeReturnTo(params.get('returnTo'), '/dashboard');
-      const target = await resolvePostAuthRoute(returnTo);
+      const target = resolveCompletionRoute(true, returnTo);
       navigate(target, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
