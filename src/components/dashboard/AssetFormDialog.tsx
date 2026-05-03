@@ -177,6 +177,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
         license,
         godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
         status,
+        project_id: projectId || null,
       };
 
       if (isEdit && asset) {
