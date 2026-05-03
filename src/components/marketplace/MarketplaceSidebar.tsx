@@ -132,7 +132,7 @@ export function MarketplaceSidebar({
       <Section title="Quick links">
         <Link to="/forum" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Forum</Link>
         <Link to="/jobs" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Jobs</Link>
-        <Link to="/explore" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Discover creators</Link>
+        <Link to="/marketplace" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Discover creators</Link>
         <Link to="/dashboard/assets" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Become a creator</Link>
         <Link to="/about" className="block px-1 py-1 text-[13px] text-foreground hover:underline">About</Link>
       </Section>

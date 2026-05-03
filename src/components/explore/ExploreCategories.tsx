@@ -17,11 +17,11 @@ export function ExploreCategories() {
   const handleCategorySelect = (category: string) => {
     console.log('Category selected:', category);
     if (category === "all") {
-      console.log('Navigating to /explore (all categories)');
-      navigate("/explore");
+      console.log('Navigating to /marketplace (all categories)');
+      navigate("/marketplace");
     } else {
       console.log('Navigating to /explore/ with category:', category);
-      navigate(`/explore/${category}`);
+      navigate(`/marketplace?category=${category}`);
     }
   };
 
@@ -39,7 +39,7 @@ export function ExploreCategories() {
           <DropdownMenuContent className="bg-secondary border-border z-50">
             <DropdownMenuItem 
               onClick={() => {
-                console.log('All Categories clicked - should navigate to /explore');
+                console.log('All Categories clicked - should navigate to /marketplace');
                 handleCategorySelect("all");
               }}
               className="cursor-pointer"

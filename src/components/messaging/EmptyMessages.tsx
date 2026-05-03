@@ -13,7 +13,7 @@ export const EmptyMessages: React.FC = () => {
         You don't have any messages yet. Follow creators to start conversations and receive messages.
       </p>
       <Button asChild>
-        <Link to="/explore">Discover Creators</Link>
+        <Link to="/marketplace">Discover Creators</Link>
       </Button>
     </div>
   );

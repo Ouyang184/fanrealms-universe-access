@@ -21,7 +21,7 @@ export function EmptySubscriptionsState({ onRefresh, isRefreshing }: EmptySubscr
         </p>
         <div className="flex gap-3">
           <Button asChild>
-            <Link to="/explore">Explore Creators</Link>
+            <Link to="/marketplace">Explore Creators</Link>
           </Button>
           <Button variant="outline" onClick={onRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />

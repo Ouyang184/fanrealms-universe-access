@@ -13,7 +13,7 @@ export const EmptyNotifications: React.FC = () => {
         You don't have any notifications at the moment. Notifications will appear here when creators you follow post new content, mention you, or when there are updates about your account.
       </p>
       <Button asChild>
-        <Link to="/explore">Discover Creators</Link>
+        <Link to="/marketplace">Discover Creators</Link>
       </Button>
     </div>
   );

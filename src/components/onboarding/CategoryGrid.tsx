@@ -51,7 +51,7 @@ export function CategoryGrid({ selectedCategories, onToggle, linkToCategory = fa
 
     if (linkToCategory) {
       return (
-        <Link key={category.id} to={`/explore/${category.route}`} className={categoryClasses}>
+        <Link key={category.id} to={`/marketplace?category=${category.route}`} className={categoryClasses}>
           {categoryContent}
         </Link>
       );

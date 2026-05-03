@@ -47,7 +47,7 @@ export function CategoryTileGrid({ limit }: CategoryTileGridProps) {
       {items.map(({ name, route, Icon }) => (
         <Link
           key={route}
-          to={`/explore/${route}`}
+          to={`/marketplace?category=${route}`}
           className="group flex flex-col items-center justify-center text-center gap-2 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-sm transition-all"
         >
           <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">

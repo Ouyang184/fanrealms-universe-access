@@ -87,7 +87,7 @@ export function PostsSection({
               message="Follow some creators to see their posts here!"
               action={
                 <Button asChild variant="outline">
-                  <Link to="/explore">Discover Creators</Link>
+                  <Link to="/marketplace">Discover Creators</Link>
                 </Button>
               }
             />

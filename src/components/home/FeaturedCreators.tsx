@@ -44,7 +44,7 @@ export function FeaturedCreators({ creators = [], isLoading = false }: FeaturedC
     <section className="mb-16">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold">Featured Creators</h2>
-        <Link to="/explore">
+        <Link to="/marketplace">
           <Button variant="ghost" size="sm" className="text-muted-foreground">
             View all <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
