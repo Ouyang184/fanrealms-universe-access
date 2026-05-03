@@ -21,6 +21,12 @@ export function useMarketplaceCheckout() {
       if (error) throw new Error(error.message ?? 'Failed to create checkout session');
       if (!data?.url) throw new Error('No checkout URL returned from server');
 
+      // Validate the URL is a real Stripe checkout URL before redirecting
+      const checkoutUrl = new URL(data.url);
+      if (checkoutUrl.protocol !== 'https:' || !checkoutUrl.hostname.endsWith('stripe.com')) {
+        throw new Error('Invalid checkout URL received');
+      }
+
       // Redirect to Stripe-hosted checkout — no need to setIsLoading(false)
       // because the page is navigating away
       window.location.href = data.url;

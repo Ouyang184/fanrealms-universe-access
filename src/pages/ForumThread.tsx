@@ -140,10 +140,10 @@ export default function ForumThread() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
-                    <Link to={`/login?redirect=${encodeURIComponent(location.pathname)}`}>Log in</Link>
+                    <Link to={`/login?returnTo=${encodeURIComponent(location.pathname)}`}>Log in</Link>
                   </Button>
                   <Button asChild size="sm">
-                    <Link to={`/signup?redirect=${encodeURIComponent(location.pathname)}`}>Sign up</Link>
+                    <Link to={`/signup?returnTo=${encodeURIComponent(location.pathname)}`}>Sign up</Link>
                   </Button>
                 </div>
               </div>

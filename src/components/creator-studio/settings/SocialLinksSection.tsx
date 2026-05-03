@@ -184,11 +184,12 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
   };
 
   const isValidUrl = (url: string) => {
-    // Add default http:// prefix if no protocol is specified
+    // Add default https:// prefix if no protocol is specified
     const urlToCheck = url.match(/^https?:\/\//) ? url : `https://${url}`;
     try {
-      new URL(urlToCheck);
-      return true;
+      const parsed = new URL(urlToCheck);
+      // Only allow http and https — reject javascript:, data:, etc.
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
     } catch {
       return false;
     }

@@ -95,9 +95,20 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
     }
   }, [asset, open]);
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const MAX_COVER_SIZE_MB = 5;
+
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('Cover must be a JPEG, PNG, WebP, or GIF image');
+      return;
+    }
+    if (file.size > MAX_COVER_SIZE_MB * 1024 * 1024) {
+      toast.error(`Cover image must be smaller than ${MAX_COVER_SIZE_MB}MB`);
+      return;
+    }
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
   };
@@ -129,6 +140,11 @@ export function AssetFormDialog({ open, onClose, asset }: AssetFormDialogProps) 
       }
 
       const priceInCents = Math.round(parseFloat(priceStr || '0') * 100);
+      if (isNaN(priceInCents) || priceInCents < 0) {
+        toast.error('Please enter a valid price (0 or greater)');
+        setUploading(false);
+        return;
+      }
       const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
       const cleanScreenshots = screenshots.map(s => s.trim()).filter(Boolean);
 
