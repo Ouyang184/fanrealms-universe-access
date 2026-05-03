@@ -62,8 +62,8 @@ function NewProjectForm() {
   const { user } = useAuth();
   const { creatorProfile } = useCreatorProjects();
   const create = useCreateProject();
-  const { data: stripeStatus } = useCreatorStripeStatus();
-  const hasPayment = !!stripeStatus?.charges_enabled;
+  const { isCreatorStripeReady } = useCreatorStripeStatus(creatorProfile?.id);
+  const hasPayment = !!isCreatorStripeReady;
 
   // Basics
   const [title, setTitle] = useState('');
