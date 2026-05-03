@@ -229,8 +229,12 @@ export default function LandingPage() {
                     to={`/forum/${thread.id}`}
                     className={`flex items-center gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors ${i < 3 ? "border-b border-[#f5f5f5]" : ""}`}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#111] flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">
-                      {(thread.users?.username || "?").slice(0, 2).toUpperCase()}
+                    <div className="w-8 h-8 rounded-lg bg-[#111] flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 overflow-hidden">
+                      {thread.users?.profile_picture ? (
+                        <img src={thread.users.profile_picture} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (thread.users?.username || "?").slice(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold leading-snug truncate">{thread.title}</div>
