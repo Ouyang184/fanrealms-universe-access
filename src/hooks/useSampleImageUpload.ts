@@ -8,13 +8,23 @@ export function useSampleImageUpload() {
   const [sampleImagePreview, setSampleImagePreview] = useState<string | null>(null);
   const [uploadingSample, setUploadingSample] = useState(false);
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const MAX_SIZE_MB = 10;
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSampleImage(file);
-      const preview = URL.createObjectURL(file);
-      setSampleImagePreview(preview);
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast({ title: 'Invalid file type', description: 'Please upload a JPEG, PNG, WebP, or GIF image.', variant: 'destructive' });
+      return;
     }
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      toast({ title: 'File too large', description: `Image must be smaller than ${MAX_SIZE_MB}MB.`, variant: 'destructive' });
+      return;
+    }
+    setSampleImage(file);
+    const preview = URL.createObjectURL(file);
+    setSampleImagePreview(preview);
   };
 
   const removeSampleImage = () => {

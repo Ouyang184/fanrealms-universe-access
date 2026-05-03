@@ -6,37 +6,53 @@ interface CreatorAboutProps {
   creator: CreatorProfile;
 }
 
+// Only allow https URLs for embedded media to prevent javascript:/data: abuse
+const isSafeHttpsUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 // Helper function to parse and render rich content
 const renderRichContent = (content: string) => {
   if (!content) return "No information provided.";
-  
+
   // Split content by lines to handle different media types
   const lines = content.split('\n');
-  
+
   return lines.map((line, index) => {
     const trimmedLine = line.trim();
-    
+
     // Check if line contains an image URL
     const imageMatch = trimmedLine.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
     if (imageMatch) {
       const [, altText, imageUrl] = imageMatch;
+      // Only render images from https:// URLs
+      if (!isSafeHttpsUrl(imageUrl)) return null;
       return (
         <div key={index} className="my-4">
-          <img 
-            src={imageUrl} 
-            alt={altText || "Embedded image"} 
+          <img
+            src={imageUrl}
+            alt={altText || "Embedded image"}
             className="max-w-full h-auto rounded-lg shadow-md mx-auto"
             loading="lazy"
+            referrerPolicy="no-referrer"
           />
         </div>
       );
     }
-    
+
     // Check if line contains a video URL (YouTube, Vimeo, etc.)
     const videoMatch = trimmedLine.match(/^@\[([^\]]*)\]\(([^)]+)\)$/);
     if (videoMatch) {
       const [, title, videoUrl] = videoMatch;
-      
+
+      // Only process https:// video URLs
+      if (!isSafeHttpsUrl(videoUrl)) return null;
+
       // Handle YouTube URLs
       if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
         let videoId = '';
@@ -45,8 +61,8 @@ const renderRichContent = (content: string) => {
         } else if (videoUrl.includes('youtube.com/watch?v=')) {
           videoId = videoUrl.split('v=')[1].split('&')[0];
         }
-        
-        if (videoId) {
+        // Sanitise: videoId must be alphanumeric/dash/underscore only
+        if (videoId && /^[\w-]+$/.test(videoId)) {
           return (
             <div key={index} className="my-4">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' /* 16:9 aspect ratio */ }}>
@@ -63,11 +79,12 @@ const renderRichContent = (content: string) => {
           );
         }
       }
-      
+
       // Handle Vimeo URLs
       if (videoUrl.includes('vimeo.com')) {
         const videoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
-        if (videoId) {
+        // Sanitise: videoId must be numeric only
+        if (videoId && /^\d+$/.test(videoId)) {
           return (
             <div key={index} className="my-4">
               <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
@@ -84,12 +101,12 @@ const renderRichContent = (content: string) => {
           );
         }
       }
-      
-      // Fallback for other video URLs
+
+      // Fallback for other https video URLs — direct video element
       return (
         <div key={index} className="my-4">
-          <video 
-            controls 
+          <video
+            controls
             className="max-w-full h-auto rounded-lg shadow-md mx-auto"
             preload="metadata"
           >
