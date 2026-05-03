@@ -136,6 +136,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         applySession(currentSession, event);
         setLoading(false);
+
+        // Resolve any in-flight signOut() waiter the moment the SDK
+        // confirms the sign-out. This is what flips signingOut back to
+        // false in AuthContext (and unblocks AuthGuard).
+        if (event === 'SIGNED_OUT') {
+          signedOutResolverRef.current?.();
+        }
       }
     );
 
