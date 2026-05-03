@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
 export default function CompleteProfile() {
-  const { user, loading, isProfileComplete, refreshProfile } = useAuth();
+  const { user, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
