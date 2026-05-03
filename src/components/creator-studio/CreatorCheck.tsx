@@ -18,11 +18,11 @@ export function CreatorCheck({ children }: CreatorCheckProps) {
 
   const handleBecomeCreatorClick = () => {
     if (!user) {
-      const returnTo = encodeURIComponent('/complete-profile');
+      const returnTo = encodeURIComponent('/become-creator');
       navigate(`/login?returnTo=${returnTo}`);
       return;
     }
-    navigate('/complete-profile');
+    navigate('/become-creator');
   };
 
   if (isLoading) {
