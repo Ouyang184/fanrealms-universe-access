@@ -17,23 +17,19 @@ export default function CompleteProfile() {
   const location = useLocation();
 
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string; displayName?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
 
   // No "skip if already complete" effect here — AuthGuard wraps this
   // route and handles the already-complete case in one place.
 
 
   const validate = (): boolean => {
-    const errors: { username?: string; displayName?: string } = {};
+    const errors: { username?: string } = {};
     if (!USERNAME_RE.test(username)) {
       errors.username =
         'Username must be 3–30 characters and contain only lowercase letters, numbers, underscores, or hyphens.';
-    }
-    if (!displayName.trim() || displayName.trim().length > 60) {
-      errors.displayName = 'Display name must be between 1 and 60 characters.';
     }
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -47,7 +43,6 @@ export default function CompleteProfile() {
 
     try {
       const cleanUsername = username.trim().toLowerCase();
-      const cleanDisplayName = displayName.trim();
 
       // Check username uniqueness against public.users (the source of truth
       // for ALL accounts, not just creators). Exclude this user's own row.
@@ -68,7 +63,7 @@ export default function CompleteProfile() {
       // creators row here. Non-creators can use marketplace/forum/jobs without one.
       const { error: updateError } = await supabase
         .from('users')
-        .update({ username: cleanUsername, display_name: cleanDisplayName })
+        .update({ username: cleanUsername })
         .eq('id', user!.id);
 
       if (updateError) throw updateError;
@@ -115,9 +110,9 @@ export default function CompleteProfile() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl text-center">Set up your profile</CardTitle>
+            <CardTitle className="text-xl text-center">Choose your username</CardTitle>
             <CardDescription className="text-center">
-              Choose a username and display name to get started.
+              Pick a username to get started. You can change other profile details later.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -132,52 +127,23 @@ export default function CompleteProfile() {
                 <label htmlFor="username" className="text-sm font-medium">
                   Username
                 </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                    fanrealms.com/
-                  </span>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={e => {
-                      setUsername(e.target.value.toLowerCase());
-                      setFieldErrors(prev => ({ ...prev, username: undefined }));
-                    }}
-                    placeholder="yourname"
-                    className="pl-[120px]"
-                    autoComplete="username"
-                    maxLength={30}
-                    disabled={submitting}
-                  />
-                </div>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={e => {
+                    setUsername(e.target.value.toLowerCase());
+                    setFieldErrors(prev => ({ ...prev, username: undefined }));
+                  }}
+                  placeholder="yourname"
+                  autoComplete="username"
+                  maxLength={30}
+                  disabled={submitting}
+                />
                 {fieldErrors.username && (
                   <p className="text-xs text-destructive">{fieldErrors.username}</p>
                 )}
                 <p className="text-xs text-muted-foreground">
                   3–30 chars · lowercase letters, numbers, _ and - only
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <label htmlFor="displayName" className="text-sm font-medium">
-                  Display name
-                </label>
-                <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={e => {
-                    setDisplayName(e.target.value);
-                    setFieldErrors(prev => ({ ...prev, displayName: undefined }));
-                  }}
-                  placeholder="e.g. Jake's Studio"
-                  maxLength={60}
-                  disabled={submitting}
-                />
-                {fieldErrors.displayName && (
-                  <p className="text-xs text-destructive">{fieldErrors.displayName}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Shown publicly on your profile and listings
                 </p>
               </div>
 

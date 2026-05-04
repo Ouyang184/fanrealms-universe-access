@@ -51,15 +51,9 @@ export const isProfileComplete = (
 ): boolean => {
   if (!profile) return false;
   const shape = profile as CompletionShape;
-  if (!isValidDisplayName(shape.display_name)) return false;
-  // Username is optional on the input type for backwards-compat with
-  // older callers that only had display_name. If it's present at all
-  // it must validate; if it's truly absent (undefined) we accept on
-  // display_name alone — but the Supabase fetch below always provides it.
-  if (shape.username !== undefined && shape.username !== null && !isValidUsername(shape.username)) {
-    return false;
-  }
-  return true;
+  // Username is the only required field for profile completeness.
+  // display_name is optional and can be set later from settings.
+  return isValidUsername(shape.username);
 };
 
 /**
