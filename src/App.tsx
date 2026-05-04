@@ -50,6 +50,11 @@ import SellerProfilePage from "./pages/SellerProfile";
 
 import BecomeCreator from "./pages/BecomeCreator";
 
+const CreatorRedirect = () => {
+  const { username } = useParams();
+  return <Navigate to={`/${username ?? ''}`} replace />;
+};
+
 const OAuthCallbackRedirector = () => {
   const location = useLocation();
   const navigate = useNavigate();
