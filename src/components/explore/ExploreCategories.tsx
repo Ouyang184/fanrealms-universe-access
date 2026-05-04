@@ -15,12 +15,9 @@ export function ExploreCategories() {
   const navigate = useNavigate();
 
   const handleCategorySelect = (category: string) => {
-    console.log('Category selected:', category);
     if (category === "all") {
-      console.log('Navigating to /marketplace (all categories)');
       navigate("/marketplace");
     } else {
-      console.log('Navigating to /explore/ with category:', category);
       navigate(`/marketplace?category=${category}`);
     }
   };
