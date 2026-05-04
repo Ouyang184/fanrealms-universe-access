@@ -1,37 +1,51 @@
-## Goal
+# Full App Workflow Sweep
 
-Only show users on "Featured Creators" / public creator listings if they have actually set up a creator presence — meaning they have at least one **project** or one **digital product (asset)**. Users who only opted in via "Become a Creator" but never uploaded anything should be hidden.
+Goal: walk through every major flow end-to-end in the live preview, fix any breakage I find, and report back a clean bill of health (or list what was fixed).
 
-## Approach
+## Scope of flows to verify
 
-The public creator list is powered by a single Postgres RPC, `get_public_creators_list`, used by:
-- `src/hooks/useCreators.ts`
-- `src/hooks/usePopularCreators.ts`
-- `src/hooks/useCreatorFetch.ts`
-- `src/utils/creatorLookupStrategies.ts`
-- `src/components/home/FeaturedCreators.tsx`, `src/components/explore/FeaturedCreators.tsx`, `src/components/marketplace/FeaturedSpotlight.tsx` (via the hooks above)
+1. **Auth**
+   - Signup (email) → profile completion → dashboard
+   - Login (email) → dashboard (or → /complete-profile if incomplete)
+   - Logout → /logout/loading → landing
+   - Forgot password / reset password page loads
+   - OAuth callback redirector
+   - AuthGuard funnels: protected routes redirect to /login, auth pages redirect away when logged in
+2. **Public browse**
+   - Landing nav links (Marketplace, Games, Jobs, Forum)
+   - Marketplace list + product detail
+   - Jobs list + job detail
+   - Forum list + thread detail
+   - Games page
+   - Search results
+   - Seller profile (`/:username` catch-all)
+3. **Dashboard (logged in)**
+   - /dashboard, /dashboard/assets (+ new + detail), /dashboard/sales
+   - /dashboard/projects (+ new + detail)
+   - Sidebar links (Explore / Create / Account sections)
+   - Become creator flow
+4. **Settings & legal**
+   - /settings tabs render
+   - All legal/footer pages return 200 (Terms, Privacy, Cookies, Support, About, Payments, Security, Community/Creator Guidelines)
+5. **Cleanup leftovers from recent /explore removal**
+   - `src/App.tsx` still has `/explore` → `/marketplace` redirect routes (keep as safety net — confirm intentional)
+   - `src/components/explore/ExploreCategories.tsx` still has a `console.log('Navigating to /explore/...')` — verify the actual nav target is `/marketplace?...` and remove the stale log
+   - Confirm no broken imports remain (`@/components/explore/...` files should still exist where referenced — `ContentItem`, `PostPreviewModal`)
 
-Filtering at the RPC level fixes every surface in one shot — no component changes needed.
+## Method
 
-## Database migration
+For each flow:
+- Use the browser tool to navigate, click through, and screenshot key states
+- Check console + network for errors
+- For backend-heavy pages, also peek at edge function logs / `supabase--read_query` if data looks wrong
+- Fix any bug inline (small, surgical edits — match existing style per project memory)
 
-Update `public.get_public_creators_list` to add an `EXISTS` filter requiring the creator to own at least one project or one digital product:
+## Out of scope (won't touch unless broken)
 
-```sql
-WHERE (
-  EXISTS (SELECT 1 FROM public.projects p WHERE p.creator_id = c.id)
-  OR EXISTS (SELECT 1 FROM public.digital_products d WHERE d.creator_id = c.id)
-)
-AND (p_search IS NULL OR ...)
-```
+- Stripe/payment live flows (won't run real checkouts; will only verify the UI mounts and the create-checkout-session call shape looks right)
+- Sending real emails (Mailgun) — verify call shape only
+- Visual polish / redesign work
 
-Same signature, same return columns — no client/type changes required.
+## Deliverable
 
-## Out of scope
-
-- The single-creator profile page (`/creator/:username`) is not affected; users visiting a direct profile URL will still see it.
-- "Become a Creator" flow is unchanged — users can still opt in; they just won't appear in featured listings until they publish a project or asset.
-
-## Verification
-
-After the migration, reload `/marketplace` and the home page — users with no projects/assets should disappear from Featured/Popular Creators lists.
+A short report listing: ✅ flows verified clean, 🔧 issues found and fixed (with file refs), ⚠️ issues found that need your decision before fixing.

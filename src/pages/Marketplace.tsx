@@ -292,7 +292,7 @@ function EmptyState({
               {recentThreads.map((t: any) => (
                 <li key={t.id}>
                   <Link
-                    to={`/forum/thread/${t.id}`}
+                    to={`/forum/${t.id}`}
                     className="block px-3 py-2 hover:bg-accent transition-colors"
                   >
                     <div className="text-[12.5px] font-semibold text-foreground truncate">{t.title}</div>

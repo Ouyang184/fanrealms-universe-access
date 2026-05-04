@@ -4,7 +4,7 @@ import Signup from "./pages/Signup";
 import AuthCallback from "./pages/AuthCallback";
 
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -49,6 +49,11 @@ import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
 
 import BecomeCreator from "./pages/BecomeCreator";
+
+const CreatorRedirect = () => {
+  const { username } = useParams();
+  return <Navigate to={`/${username ?? ''}`} replace />;
+};
 
 const OAuthCallbackRedirector = () => {
   const location = useLocation();
@@ -122,6 +127,7 @@ export default function App() {
                 <Route path="/games" element={<GamesPage />} />
                 <Route path="/explore" element={<Navigate to="/marketplace" replace />} />
                 <Route path="/explore/*" element={<Navigate to="/marketplace" replace />} />
+                <Route path="/creator/:username" element={<CreatorRedirect />} />
                 <Route path="/search" element={<SearchResultsPage />} />
 
                 {/* Auth */}
