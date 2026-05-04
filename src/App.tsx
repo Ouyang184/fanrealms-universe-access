@@ -122,6 +122,7 @@ export default function App() {
                 <Route path="/games" element={<GamesPage />} />
                 <Route path="/explore" element={<Navigate to="/marketplace" replace />} />
                 <Route path="/explore/*" element={<Navigate to="/marketplace" replace />} />
+                <Route path="/creator/:username" element={<CreatorRedirect />} />
                 <Route path="/search" element={<SearchResultsPage />} />
 
                 {/* Auth */}
