@@ -48,7 +48,7 @@ import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
 
-import BecomeCreator from "./pages/BecomeCreator";
+
 
 const CreatorRedirect = () => {
   const { username } = useParams();
