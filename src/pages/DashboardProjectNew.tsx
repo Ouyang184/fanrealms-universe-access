@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { CreatorCheck } from '@/components/creator-studio/CreatorCheck';
+
 import { useCreatorProjects, useCreateProject } from '@/hooks/useProjects';
 import { useCreatorStripeStatus } from '@/hooks/useCreatorStripeStatus';
 import { Button } from '@/components/ui/button';
@@ -15,9 +15,7 @@ import { ArrowLeft, Loader2, Upload, Plus, X, Image as ImageIcon } from 'lucide-
 export default function DashboardProjectNewPage() {
   return (
     <DashboardLayout>
-      <CreatorCheck>
-        <NewProjectForm />
-      </CreatorCheck>
+      <NewProjectForm />
     </DashboardLayout>
   );
 }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { CreatorCheck } from '@/components/creator-studio/CreatorCheck';
+
 import { useCreatorProjects, useDeleteProject } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,9 +13,7 @@ import {
 export default function DashboardProjectsPage() {
   return (
     <DashboardLayout>
-      <CreatorCheck>
-        <ProjectsList />
-      </CreatorCheck>
+      <ProjectsList />
     </DashboardLayout>
   );
 }

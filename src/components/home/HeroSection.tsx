@@ -9,11 +9,11 @@ export function HeroSection() {
 
   const handleBecomeCreatorClick = () => {
     if (!user) {
-      const returnTo = encodeURIComponent('/complete-profile');
+      const returnTo = encodeURIComponent('/dashboard/projects/new');
       navigate(`/login?returnTo=${returnTo}`);
       return;
     }
-    navigate('/complete-profile');
+    navigate('/dashboard/projects/new');
   };
 
   return (

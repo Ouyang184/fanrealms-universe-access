@@ -48,7 +48,7 @@ import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
 
-import BecomeCreator from "./pages/BecomeCreator";
+
 
 const CreatorRedirect = () => {
   const { username } = useParams();
@@ -170,7 +170,7 @@ export default function App() {
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/:projectId" element={<AuthGuard><DashboardProjectDetailPage /></AuthGuard>} />
-                <Route path="/become-creator" element={<AuthGuard><BecomeCreator /></AuthGuard>} />
+                
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
 
                 {/* Settings */}
