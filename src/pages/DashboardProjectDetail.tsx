@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '@/hooks/useProjects';
 import { useSellerSales } from '@/hooks/useMarketplace';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { CreatorCheck } from '@/components/creator-studio/CreatorCheck';
+
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Plus, Package, TrendingUp, ExternalLink } from 'lucide-react';
@@ -16,9 +16,7 @@ import { formatDistanceToNow } from 'date-fns';
 export default function DashboardProjectDetailPage() {
   return (
     <DashboardLayout>
-      <CreatorCheck>
-        <ProjectDetail />
-      </CreatorCheck>
+      <ProjectDetail />
     </DashboardLayout>
   );
 }
