@@ -1,11 +1,9 @@
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases, useCreatorProducts } from '@/hooks/useMarketplace';
-import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { ShoppingBag, Package, Plus, ExternalLink, Sparkles } from 'lucide-react';
+import { ShoppingBag, Package, Plus, ExternalLink } from 'lucide-react';
 
 function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
   if (!assetUrl) {
@@ -27,7 +25,6 @@ function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
 export default function DashboardPage() {
   const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
-  const { isCreator, isLoading: creatorLoading } = useCreatorProfile();
 
   const publishedAssets = myAssets?.filter((a) => a.status === 'published') ?? [];
   const draftAssets = myAssets?.filter((a) => a.status === 'draft') ?? [];
@@ -40,23 +37,6 @@ export default function DashboardPage() {
           <h1 className="text-[20px] font-bold tracking-[-0.5px]">Dashboard</h1>
           <p className="text-[13px] text-[#888] mt-0.5">Your purchases and listings</p>
         </div>
-
-        {!creatorLoading && !isCreator && (
-          <div className="flex items-center gap-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[14px] font-bold text-[#111]">Become a Creator</div>
-              <div className="text-[12px] text-[#666]">
-                Upload projects, list assets in the marketplace, and earn from your work.
-              </div>
-            </div>
-            <Button asChild className="bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold">
-              <Link to="/become-creator">Get started</Link>
-            </Button>
-          </div>
-        )}
 
         {/* Purchases */}
         <section>
