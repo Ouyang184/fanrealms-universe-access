@@ -1,18 +1,14 @@
-## Devlog delete: confirmation modal + error toast
+## Goal
+When a logged-in user clicks the FanRealms logo (top-left), navigate to `/marketplace` instead of `/` (landing).
 
-Replace the native `confirm()` call in `src/pages/DashboardDevlogs.tsx` with a shadcn `AlertDialog`, and add an `onError` toast to the existing `useDeleteDevlog` mutation.
+## Changes
 
-### Changes
+1. **`src/components/Layout/TopNav/TopNav.tsx`** (line 44)
+   - Change `<Link to="/">` wrapping the `<Logo />` to `<Link to={user ? '/marketplace' : '/'}>`. `user` is already available from `useAuth()`.
 
-1. **`src/hooks/useDevlogs.ts`**
-   - Add `onError: (e: Error) => toast.error('Failed to delete: ' + e.message)` to `useDeleteDevlog` (currently only has `onSuccess`).
+2. **`src/components/marketplace/MarketplaceTopNav.tsx`** (line 39)
+   - Same change: `<Link to={user ? '/marketplace' : '/'}>` (the `user` from `useAuth()` is already imported).
 
-2. **`src/pages/DashboardDevlogs.tsx`**
-   - Import `AlertDialog` primitives from `@/components/ui/alert-dialog`.
-   - Track `deletingId` in local state.
-   - Replace the inline `confirm(...)` trash-icon handler with one that opens the dialog.
-   - Render a single `AlertDialog` controlled by `deletingId` with title "Delete devlog?", description warning that it's permanent, Cancel + Delete actions. Delete button calls `del.mutate(deletingId)` and closes the dialog.
-
-### Out of scope
-- No DB or RLS changes.
-- No bulk delete.
+## Out of scope
+- Sidebar logo (`AppSidebar`, `SidebarHeader`, `NewMainLayout`) — those are inside the authenticated dashboard and use `onClick` to toggle the sidebar, not navigation. No change.
+- Public landing logo behavior for logged-out users stays pointing to `/`.
