@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
