@@ -16,27 +16,31 @@ interface Props {
 }
 
 export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props) {
+  // Defensive: tolerate null/undefined/non-array inputs so the page never crashes
+  // when social_links is missing or stored as something unexpected upstream.
+  const safeLinks: SocialLinkDraft[] = Array.isArray(links) ? links : [];
+
   const update = (i: number, field: keyof SocialLinkDraft, value: string) => {
-    const next = [...links];
+    const next = [...safeLinks];
     next[i] = { ...next[i], [field]: value };
     onChange(next);
   };
-  const add = () => onChange([...links, { label: "", url: "" }]);
-  const remove = (i: number) => onChange(links.filter((_, idx) => idx !== i));
+  const add = () => onChange([...safeLinks, { label: "", url: "" }]);
+  const remove = (i: number) => onChange(safeLinks.filter((_, idx) => idx !== i));
 
   return (
     <div className="space-y-3">
-      {links.length === 0 && (
+      {safeLinks.length === 0 && (
         <p className="text-xs text-muted-foreground">No links added yet.</p>
       )}
-      {links.map((link, i) => (
+      {safeLinks.map((link, i) => (
         <div key={i} className="flex items-end gap-2">
           <div className="flex-1">
             <Label htmlFor={`sl-label-${i}`} className="text-xs">Label</Label>
             <Input
               id={`sl-label-${i}`}
               placeholder="Twitter"
-              value={link.label}
+              value={link.label ?? ""}
               maxLength={60}
               disabled={disabled}
               onChange={(e) => update(i, "label", e.target.value)}
@@ -47,7 +51,7 @@ export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props
             <Input
               id={`sl-url-${i}`}
               placeholder="https://"
-              value={link.url}
+              value={link.url ?? ""}
               maxLength={500}
               disabled={disabled}
               onChange={(e) => update(i, "url", e.target.value)}
@@ -65,7 +69,7 @@ export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props
           </Button>
         </div>
       ))}
-      {links.length < max && (
+      {safeLinks.length < max && (
         <Button
           type="button"
           variant="outline"
