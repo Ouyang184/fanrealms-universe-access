@@ -1,10 +1,13 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Profile } from '@/lib/types/auth';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
+import { purgeSupabaseAuthStorage } from '@/utils/auth-storage';
 import type { AuthContextType } from '@/lib/types/auth';
 import {
   isProfileComplete as isComplete,
