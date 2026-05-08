@@ -42,7 +42,7 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
       <div className="w-full flex items-center gap-4 px-4 sm:px-6 h-14">
         {/* Logo */}
-        <Link to="/" className="flex items-center flex-shrink-0">
+        <Link to={user ? '/marketplace' : '/'} className="flex items-center flex-shrink-0">
           <Logo collapsed={false} variant="light" />
         </Link>
 

@@ -36,7 +36,7 @@ export function MarketplaceTopNav() {
     <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border">
       {/* Top row: logo, search, account */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-4">
-        <Link to="/" className="flex items-center shrink-0">
+        <Link to={user ? '/marketplace' : '/'} className="flex items-center shrink-0">
           <Logo />
         </Link>
 
