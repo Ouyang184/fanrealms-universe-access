@@ -4,21 +4,6 @@ import { useCreatorProducts, useSellerSales } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Upload } from 'lucide-react';
 
-function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
-  if (!assetUrl) return <span className="text-[11px] text-[#aaa]">No file linked</span>;
-  return (
-    <a
-      href={assetUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
-    >
-      <ExternalLink className="w-3.5 h-3.5" />
-      Download
-    </a>
-  );
-}
-
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-white border border-[#eee] rounded-xl p-5">
@@ -29,7 +14,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function DashboardPage() {
-  const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
+  const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
   const { data: salesData, isLoading: salesLoading } = useSellerSales();
 
