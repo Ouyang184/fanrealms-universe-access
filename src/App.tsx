@@ -190,8 +190,6 @@ export default function App() {
 
                 <Route path="/loading" element={<LoadingPage />} />
 
-                <Route path="/become-creator" element={<Navigate to="/dashboard" replace />} />
-
                 {/* Seller profile — /:username catch-all, must be second-to-last */}
                 <Route path="/:username" element={<SellerProfilePage />} />
 
