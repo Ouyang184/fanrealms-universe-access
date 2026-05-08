@@ -8,6 +8,7 @@ import type { Profile } from '@/lib/types/auth';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
 import { purgeSupabaseAuthStorage } from '@/utils/auth-storage';
+import { toast } from 'sonner';
 import type { AuthContextType } from '@/lib/types/auth';
 import {
   isProfileComplete as isComplete,
