@@ -16,13 +16,17 @@ interface Props {
 }
 
 export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props) {
+  // Defensive: tolerate null/undefined/non-array inputs so the page never crashes
+  // when social_links is missing or stored as something unexpected upstream.
+  const safeLinks: SocialLinkDraft[] = Array.isArray(links) ? links : [];
+
   const update = (i: number, field: keyof SocialLinkDraft, value: string) => {
-    const next = [...links];
+    const next = [...safeLinks];
     next[i] = { ...next[i], [field]: value };
     onChange(next);
   };
-  const add = () => onChange([...links, { label: "", url: "" }]);
-  const remove = (i: number) => onChange(links.filter((_, idx) => idx !== i));
+  const add = () => onChange([...safeLinks, { label: "", url: "" }]);
+  const remove = (i: number) => onChange(safeLinks.filter((_, idx) => idx !== i));
 
   return (
     <div className="space-y-3">
