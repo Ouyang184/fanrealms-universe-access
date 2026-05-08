@@ -127,7 +127,7 @@ export default function SellerProfilePage() {
             ) : projects && projects.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {projects.map((p: any) => (
-                  <Link key={p.id} to={`/projects/${p.slug}`} className="group">
+                  <div key={p.id} className="group">
                     <div className="aspect-[4/3] rounded-xl bg-[#f5f5f5] overflow-hidden mb-2">
                       {p.cover_image_url && (
                         <img src={p.cover_image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
@@ -137,7 +137,7 @@ export default function SellerProfilePage() {
                     {p.short_description && (
                       <div className="text-[11px] text-[#888] line-clamp-2">{p.short_description}</div>
                     )}
-                  </Link>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -181,10 +181,9 @@ export default function SellerProfilePage() {
             {devlogs && devlogs.length > 0 ? (
               <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
                 {devlogs.map((d: any, i: number) => (
-                  <Link
+                  <div
                     key={d.id}
-                    to={d.projects?.slug ? `/projects/${d.projects.slug}` : '#'}
-                    className={`flex items-center gap-3 px-4 py-3 hover:bg-[#fafafa] ${i < devlogs.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+                    className={`flex items-center gap-3 px-4 py-3 ${i < devlogs.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
                   >
                     <FileText className="w-4 h-4 text-[#aaa] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -193,7 +192,7 @@ export default function SellerProfilePage() {
                         {d.projects?.title ?? 'Project'} · {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             ) : (
