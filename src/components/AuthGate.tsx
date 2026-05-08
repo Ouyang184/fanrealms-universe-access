@@ -24,12 +24,17 @@ import { resolveCompletionRoute } from "@/lib/auth/profileCompletion";
  * those conditions hold; it relies on this gate to actually navigate.
  */
 
+// Routes that depend on auth state. AuthGate watches these and, the
+// instant `user` flips to null (sign-out in this tab OR cross-tab via
+// the SIGNED_OUT listener in AuthContext), redirects to /login. Keep
+// in sync with the <AuthGuard> wrapped routes in App.tsx.
 const AUTH_SENSITIVE_PREFIXES = [
   "/login",
   "/signup",
   "/complete-profile",
   "/dashboard",
   "/settings",
+  "/library",
 ];
 
 const isAuthSensitive = (pathname: string) =>
