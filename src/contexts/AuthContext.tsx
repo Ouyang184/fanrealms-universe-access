@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, queryClient, navigate]);
 
   const handleUpdateProfile = async (data: Partial<Profile>) => {
     const currentUser = userRef.current;
