@@ -60,12 +60,26 @@ export default function CompleteProfile() {
         return;
       }
 
+      // Normalize + validate optional social links before persisting.
+      const normalizedLinks: SocialLinkDraft[] = [];
+      for (let i = 0; i < socialLinks.length; i++) {
+        const link = socialLinks[i];
+        const rawUrl = link.url.trim();
+        if (!rawUrl && !link.label.trim()) continue; // skip fully empty rows
+        const normalized = normalizeSocialUrl(rawUrl);
+        if (!normalized) {
+          setFieldErrors({ socialLinks: `Link #${i + 1} has an invalid URL.` });
+          return;
+        }
+        normalizedLinks.push({ label: link.label.trim().slice(0, 60), url: normalized });
+      }
+
       // Update the user row (auto-created by on_auth_user_created trigger).
       // Becoming a creator is a separate, opt-in flow — we do NOT create a
       // creators row here. Non-creators can use marketplace/forum/jobs without one.
       const { error: updateError } = await supabase
         .from('users')
-        .update({ username: cleanUsername })
+        .update({ username: cleanUsername, social_links: normalizedLinks })
         .eq('id', user!.id);
 
       if (updateError) throw updateError;
