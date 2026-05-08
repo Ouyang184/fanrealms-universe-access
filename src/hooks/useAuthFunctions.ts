@@ -258,10 +258,9 @@ export const useAuthFunctions = () => {
     // Belt-and-suspenders: scrub any leftover Supabase auth keys.
     purgeSupabaseAuthStorage();
 
-    toast({
-      title: "Signed out",
-      description: "You have been signed out.",
-    });
+    // Note: the "Signed out" toast is fired by AuthContext from the
+    // SIGNED_OUT auth event so it shows exactly once, whether the
+    // sign-out was initiated here or in another tab.
 
     // Note: navigation to /login is owned by AuthContext.signOut so it
     // only fires after the SIGNED_OUT event (or timeout fallback) has
