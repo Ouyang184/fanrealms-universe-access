@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { SocialLinksEditor, normalizeSocialUrl, type SocialLinkDraft } from '@/components/profile/SocialLinksEditor';
 
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
