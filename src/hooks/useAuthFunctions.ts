@@ -254,37 +254,19 @@ export const useAuthFunctions = () => {
     // Confirm the SIGNED_OUT event fired (or timed out as a safety net).
     await waitForSignedOut;
 
-    // Belt-and-suspenders: scrub any leftover Supabase auth keys from
-    // localStorage / sessionStorage in case the SDK missed any.
-    try {
-      const purge = (storage: Storage) => {
-        const keys: string[] = [];
-        for (let i = 0; i < storage.length; i++) {
-          const k = storage.key(i);
-          if (!k) continue;
-          if (
-            k === 'fanrealms-auth' ||
-            k.startsWith('sb-') ||
-            k.startsWith('supabase.auth.')
-          ) {
-            keys.push(k);
-          }
-        }
-        keys.forEach((k) => storage.removeItem(k));
-      };
-      purge(window.localStorage);
-      purge(window.sessionStorage);
-    } catch {
-      /* ignore storage errors (private mode, etc.) */
-    }
+    // Belt-and-suspenders: scrub any leftover Supabase auth keys.
+    purgeSupabaseAuthStorage();
 
     toast({
       title: "Signed out",
       description: "You have been signed out.",
     });
 
-    navigate('/login', { replace: true });
-  }, [navigate, toast]);
+    // Note: navigation to /login is owned by AuthContext.signOut so it
+    // only fires after the SIGNED_OUT event (or timeout fallback) has
+    // settled. Avoid navigating here to prevent a flash of /login while
+    // signingOut is still true.
+  }, [toast]);
 
   return {
     signIn,
