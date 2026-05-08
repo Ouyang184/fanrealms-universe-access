@@ -163,6 +163,24 @@ export default function CompleteProfile() {
                 </p>
               </div>
 
+              <div className="space-y-2 pt-2 border-t">
+                <div>
+                  <h3 className="text-sm font-medium">Social links <span className="text-muted-foreground font-normal">(optional)</span></h3>
+                  <p className="text-xs text-muted-foreground">Add links to your website, Twitter, YouTube, etc.</p>
+                </div>
+                <SocialLinksEditor
+                  links={socialLinks}
+                  onChange={(next) => {
+                    setSocialLinks(next);
+                    setFieldErrors(prev => ({ ...prev, socialLinks: undefined }));
+                  }}
+                  disabled={submitting}
+                />
+                {fieldErrors.socialLinks && (
+                  <p className="text-xs text-destructive">{fieldErrors.socialLinks}</p>
+                )}
+              </div>
+
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? 'Saving…' : 'Continue'}
               </Button>
