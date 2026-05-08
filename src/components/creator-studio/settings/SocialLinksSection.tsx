@@ -198,17 +198,53 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
     }
   };
 
-  const isValidUrl = (url: string) => {
-    // Add default https:// prefix if no protocol is specified
-    const urlToCheck = url.match(/^https?:\/\//) ? url : `https://${url}`;
+  const normalizeUrl = (raw: string): string | null => {
+    let value = raw.trim();
+    if (!value) return null;
+    // Reject obviously dangerous schemes outright
+    if (/^(javascript|data|vbscript|file):/i.test(value)) return null;
+    // Allow mailto: as-is when valid
+    if (/^mailto:/i.test(value)) {
+      const email = value.slice(7);
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? `mailto:${email.toLowerCase()}` : null;
+    }
+    if (!/^https?:\/\//i.test(value)) value = `https://${value}`;
     try {
-      const parsed = new URL(urlToCheck);
-      // Only allow http and https — reject javascript:, data:, etc.
-      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+      const u = new URL(value);
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+      if (!u.hostname || !u.hostname.includes('.')) return null;
+      // Strip trailing slash on bare host
+      let out = u.toString();
+      if (u.pathname === '/' && !u.search && !u.hash) out = out.replace(/\/$/, '');
+      return out;
     } catch {
-      return false;
+      return null;
     }
   };
+
+  const validateForPlatform = (label: string | null | undefined, url: string): string | null => {
+    const l = (label || '').toLowerCase();
+    let host = '';
+    try { host = new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch { return 'invalid URL'; }
+    const matchers: Array<{ keys: string[]; hosts: string[]; name: string }> = [
+      { keys: ['twitter', 'x.com', 'x '], hosts: ['twitter.com', 'x.com'], name: 'Twitter/X' },
+      { keys: ['youtube'], hosts: ['youtube.com', 'youtu.be'], name: 'YouTube' },
+      { keys: ['discord'], hosts: ['discord.com', 'discord.gg', 'discordapp.com'], name: 'Discord' },
+      { keys: ['instagram'], hosts: ['instagram.com'], name: 'Instagram' },
+      { keys: ['github'], hosts: ['github.com'], name: 'GitHub' },
+      { keys: ['twitch'], hosts: ['twitch.tv'], name: 'Twitch' },
+    ];
+    for (const m of matchers) {
+      if (m.keys.some(k => l.includes(k))) {
+        if (!m.hosts.some(h => host === h || host.endsWith(`.${h}`))) {
+          return `expected a ${m.name} URL`;
+        }
+      }
+    }
+    return null;
+  };
+
+  const isValidUrl = (url: string) => normalizeUrl(url) !== null;
 
   return (
     <Card>
