@@ -69,7 +69,7 @@ export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props
           </Button>
         </div>
       ))}
-      {links.length < max && (
+      {safeLinks.length < max && (
         <Button
           type="button"
           variant="outline"
