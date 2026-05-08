@@ -146,10 +146,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           pathname: window.location.pathname,
         });
 
-        applySession(currentSession, event);
+        // INITIAL_SESSION fires right after getSession() resolves with the
+        // same data. Skip re-applying it to avoid a duplicate profile
+        // fetch and an extra render — but still use it to mark the
+        // listener as "settled" for authReady.
+        const isInitial = event === 'INITIAL_SESSION';
+        const sameAsCurrent =
+          (currentSession?.user?.id ?? null) === (sessionRef.current?.user?.id ?? null);
+
+        if (!(isInitial && sameAsCurrent && gotInitialSessionRef.current)) {
+          applySession(currentSession, event);
+        }
         setLoading(false);
-        gotInitialEventRef.current = true;
-        if (gotInitialSessionRef.current) setAuthReady(true);
+        if (!gotInitialEventRef.current) {
+          gotInitialEventRef.current = true;
+          if (gotInitialSessionRef.current) setAuthReady(true);
+        }
 
         // Resolve any in-flight signOut() waiter the moment the SDK
         // confirms the sign-out. This is what flips signingOut back to
@@ -161,26 +173,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Explicitly restore the persisted session after the listener is active.
-    supabase.auth.getSession()
-      .then(({ data: { session: initialSession }, error }) => {
-        console.log('[AUTH][Context] Initial getSession()', {
-          hasSession: !!initialSession,
-          userId: initialSession?.user?.id,
-          error: error?.message,
+    // Guarded so StrictMode's double-mount in dev cannot trigger two
+    // concurrent session checks.
+    if (!gotInitialSessionRef.current) {
+      supabase.auth.getSession()
+        .then(({ data: { session: initialSession }, error }) => {
+          if (cancelled) return;
+          console.log('[AUTH][Context] Initial getSession()', {
+            hasSession: !!initialSession,
+            userId: initialSession?.user?.id,
+            error: error?.message,
+          });
+          applySession(initialSession, 'getSession');
+          setLoading(false);
+          gotInitialSessionRef.current = true;
+          if (gotInitialEventRef.current) setAuthReady(true);
+        })
+        .catch(error => {
+          if (cancelled) return;
+          console.error('[AUTH][Context] Error getting session:', error);
+          applySession(null, 'getSession:error');
+          setLoading(false);
+          gotInitialSessionRef.current = true;
+          if (gotInitialEventRef.current) setAuthReady(true);
         });
-        applySession(initialSession, 'getSession');
-        setLoading(false);
-        gotInitialSessionRef.current = true;
-        if (gotInitialEventRef.current) setAuthReady(true);
-      })
-      .catch(error => {
-        if (cancelled) return;
-        console.error('[AUTH][Context] Error getting session:', error);
-        applySession(null, 'getSession:error');
-        setLoading(false);
-        gotInitialSessionRef.current = true;
-        if (gotInitialEventRef.current) setAuthReady(true);
-      });
+    }
 
     return () => {
       cancelled = true;
