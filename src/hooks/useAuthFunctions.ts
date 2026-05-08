@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { purgeSupabaseAuthStorage } from '@/utils/auth-storage';
 import type { AuthResult } from '@/lib/types/auth';
 
 export const useAuthFunctions = () => {
