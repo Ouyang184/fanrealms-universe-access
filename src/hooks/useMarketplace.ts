@@ -116,9 +116,16 @@ export function useCreateProduct() {
 
       if (!creator) {
         // Auto-provision a creators row if one doesn't exist
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('username')
+          .eq('id', user!.id)
+          .maybeSingle();
+        if (!userRow?.username) throw new Error('Please complete your profile (username) before creating a project.');
+
         const { data: newCreator, error: createError } = await supabase
           .from('creators')
-          .insert({ user_id: user!.id })
+          .insert({ user_id: user!.id, username: userRow.username })
           .select('id')
           .single();
         if (createError || !newCreator) throw new Error('Could not set up your creator profile. Please try again.');
