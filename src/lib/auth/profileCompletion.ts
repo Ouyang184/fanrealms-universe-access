@@ -47,13 +47,15 @@ const isValidUsername = (value: unknown): value is string => {
  * another would reject.
  */
 export const isProfileComplete = (
-  profile: (Pick<Profile, 'display_name'> & { username?: string | null }) | null | undefined
+  _profile: (Pick<Profile, 'display_name'> & { username?: string | null }) | null | undefined
 ): boolean => {
-  if (!profile) return false;
-  const shape = profile as CompletionShape;
-  // Username is the only required field for profile completeness.
-  // display_name is optional and can be set later from settings.
-  return isValidUsername(shape.username);
+  // Profile completion is no longer required at signup. Users (including
+  // future creators) can browse, post, and use the platform without
+  // filling in a username, social links, or uploading assets first.
+  // Anything they want to set later is reachable from /settings.
+  // Returning true here makes AuthGate/AuthGuard skip the forced
+  // /complete-profile redirect for every account.
+  return true;
 };
 
 /**
@@ -71,25 +73,11 @@ export const isProfileComplete = (
  * to /complete-profile rather than risking a bounce loop.
  */
 export const fetchProfileCompletion = async (
-  userId: string
+  _userId: string
 ): Promise<boolean> => {
-  if (!userId || typeof userId !== 'string') return false;
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('display_name, username')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) {
-      console.warn('[auth] fetchProfileCompletion failed', error);
-      return false;
-    }
-    if (!data) return false;
-    return isProfileComplete(data as CompletionShape);
-  } catch (err) {
-    console.warn('[auth] fetchProfileCompletion threw', err);
-    return false;
-  }
+  // See isProfileComplete — completion is no longer enforced. Always true
+  // so post-auth flows resolve straight to the destination route.
+  return true;
 };
 
 /**
