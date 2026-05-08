@@ -1,15 +1,16 @@
-## Remove "Become a Creator" banner from Dashboard
+## Problem
 
-Every signed-up user with a completed profile is already a creator on FanRealms (matching itch.io's model), so the upsell banner is unnecessary friction.
+On `/dashboard/projects/new`, the form is wrapped in `max-w-5xl` (1024px) inside a `<main>` that has no max-width. On wide screens like the current 1037px viewport (and especially wider), this leaves a large empty area on the right of the form card.
 
-### Change
+## Fix
 
-**`src/pages/Dashboard.tsx`**
-- Remove the conditional `Become a Creator` banner block (the `!creatorLoading && !isCreator && (...)` card with the `Sparkles` icon and "Get started" link to `/become-creator`).
-- Remove now-unused imports: `useCreatorProfile`, `Sparkles`, `Button` (verify each is unused after removal — keep if still referenced elsewhere in the file).
-- Remove the `isCreator` / `creatorLoading` destructure.
+In `src/pages/DashboardProjectNew.tsx`, drop the `max-w-5xl` constraint on the outer wrapper so the form card stretches to fill the dashboard content area (which is already padded by `DashboardLayout`'s `<main>`).
 
-### Out of scope (not touched in this pass)
+```text
+- <div className="max-w-5xl space-y-6">
++ <div className="space-y-6">
+```
 
-- The `/become-creator` route and `BecomeCreator.tsx` page itself — leaving in place in case it's still linked from settings or other flows. Can be removed in a follow-up if you confirm.
-- Sidebar `Create` section in `DashboardLayout` (already gated on `isCreator`) — leaving as-is for now; tell me if you want it always-visible too.
+The two-column inner grid (`lg:grid-cols-[1fr_280px]`) keeps the cover/media sidebar at a fixed 280px and lets the left column grow naturally — no other layout changes needed.
+
+No other pages are affected.

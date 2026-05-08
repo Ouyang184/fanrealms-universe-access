@@ -186,7 +186,7 @@ function NewProjectForm() {
   );
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="space-y-6">
       <button
         onClick={() => navigate('/dashboard/projects')}
         className="inline-flex items-center gap-1.5 text-[13px] text-[#777] hover:text-[#111]"
