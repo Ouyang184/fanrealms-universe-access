@@ -92,20 +92,38 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
   };
 
   const saveLinks = async () => {
-    // Validate links before saving (only if there are links)
+    // Validate + normalize links before saving
+    let normalizedLinks = links;
     if (links.length > 0) {
-      const invalidLinks = links.filter(link => 
-        !link.url.trim() || !isValidUrl(link.url)
-      );
-      
-      if (invalidLinks.length > 0) {
+      const errors: string[] = [];
+      normalizedLinks = links.map((link, idx) => {
+        const rawUrl = link.url.trim();
+        if (!rawUrl) {
+          errors.push(`Link #${idx + 1}: URL is required`);
+          return link;
+        }
+        const normalized = normalizeUrl(rawUrl);
+        if (!normalized) {
+          errors.push(`Link #${idx + 1}: invalid URL`);
+          return link;
+        }
+        const platformError = validateForPlatform(link.label, normalized);
+        if (platformError) {
+          errors.push(`Link #${idx + 1}: ${platformError}`);
+          return link;
+        }
+        return { ...link, url: normalized };
+      });
+
+      if (errors.length > 0) {
         toast({
           title: "Validation Error",
-          description: "Please provide valid URLs for all links",
+          description: errors.join(" • "),
           variant: "destructive",
         });
         return;
       }
+      setLinks(normalizedLinks);
     }
 
     setIsSaving(true);
