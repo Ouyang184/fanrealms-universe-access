@@ -120,14 +120,14 @@ export function PostsSection({
               message={
                 isCreator 
                   ? "Share your first post with your followers!"
-                  : "Become a creator to start sharing posts."
+                  : "Create a project to start sharing posts."
               }
               action={
                 isCreator ? (
                   <CreatePostForm />
                 ) : (
                   <Button asChild>
-                    <Link to="/settings">Become a Creator</Link>
+                    <Link to="/dashboard/projects/new">Create a project</Link>
                   </Button>
                 )
               }

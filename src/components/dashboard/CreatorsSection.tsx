@@ -48,7 +48,7 @@ export function CreatorsSection() {
               Be the first to start creating content on FanRealms!
             </p>
             <Button asChild>
-              <Link to="/settings">Become a Creator</Link>
+              <Link to="/dashboard/projects/new">Create a project</Link>
             </Button>
           </CardContent>
         </Card>

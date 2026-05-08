@@ -89,7 +89,7 @@ export function DiscoverSection() {
           <h3 className="text-xl font-bold mb-2">No Creators Yet</h3>
           <p className="text-muted-foreground mb-4">Be the first to create content on FanRealms!</p>
           <Button className="bg-primary hover:bg-primary/90" asChild>
-            <Link to="/creator-studio/settings">Become a Creator</Link>
+            <Link to="/dashboard/projects/new">Create a project</Link>
           </Button>
         </div>
       )}
