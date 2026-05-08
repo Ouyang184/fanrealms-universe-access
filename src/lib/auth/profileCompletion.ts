@@ -73,25 +73,11 @@ export const isProfileComplete = (
  * to /complete-profile rather than risking a bounce loop.
  */
 export const fetchProfileCompletion = async (
-  userId: string
+  _userId: string
 ): Promise<boolean> => {
-  if (!userId || typeof userId !== 'string') return false;
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('display_name, username')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) {
-      console.warn('[auth] fetchProfileCompletion failed', error);
-      return false;
-    }
-    if (!data) return false;
-    return isProfileComplete(data as CompletionShape);
-  } catch (err) {
-    console.warn('[auth] fetchProfileCompletion threw', err);
-    return false;
-  }
+  // See isProfileComplete — completion is no longer enforced. Always true
+  // so post-auth flows resolve straight to the destination route.
+  return true;
 };
 
 /**
