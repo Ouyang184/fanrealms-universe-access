@@ -51,7 +51,7 @@ export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props
             <Input
               id={`sl-url-${i}`}
               placeholder="https://"
-              value={link.url}
+              value={link.url ?? ""}
               maxLength={500}
               disabled={disabled}
               onChange={(e) => update(i, "url", e.target.value)}
