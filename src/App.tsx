@@ -47,6 +47,11 @@ import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
+import LibraryPage from "./pages/Library";
+import LibraryReviewsPage from "./pages/LibraryReviews";
+import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
+import DashboardDevlogsPage from "./pages/DashboardDevlogs";
+import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
 
 
 
