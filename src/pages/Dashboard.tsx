@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { useUserPurchases, useCreatorProducts, useSellerSales } from '@/hooks/useMarketplace';
+import { useCreatorProducts, useSellerSales } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShoppingBag, Plus, ExternalLink, Upload } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 
 function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
   if (!assetUrl) return <span className="text-[11px] text-[#aaa]">No file linked</span>;
