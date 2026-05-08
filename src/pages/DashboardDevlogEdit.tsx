@@ -20,7 +20,7 @@ export default function DashboardDevlogEditPage() {
   const [projectId, setProjectId] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [status, setStatus] = useState<'draft' | 'published'>('published');
+  const [status, setStatus] = useState<'draft' | 'published'>('draft');
 
   useEffect(() => {
     if (existing) {
@@ -31,10 +31,11 @@ export default function DashboardDevlogEditPage() {
     }
   }, [existing]);
 
-  const onSave = () => {
+  const onSave = (overrideStatus?: 'draft' | 'published') => {
     if (!projectId || !title.trim() || !content.trim()) return;
+    const finalStatus = overrideStatus ?? status;
     save.mutate(
-      { id, project_id: projectId, title: title.trim(), content, status },
+      { id, project_id: projectId, title: title.trim(), content, status: finalStatus },
       { onSuccess: () => nav('/dashboard/devlogs') }
     );
   };
@@ -62,22 +63,35 @@ export default function DashboardDevlogEditPage() {
             <Label className="text-[12px] font-semibold">Content (Markdown)</Label>
             <Textarea className="mt-1.5 min-h-[300px] font-mono text-[13px]" value={content} onChange={(e) => setContent(e.target.value)} placeholder="Write your update..." />
           </div>
-          <div>
-            <Label className="text-[12px] font-semibold">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as any)}>
-              <SelectTrigger className="mt-1.5 w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!isNew && (
+            <div>
+              <Label className="text-[12px] font-semibold">Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as any)}>
+                <SelectTrigger className="mt-1.5 w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="published">Published</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => nav('/dashboard/devlogs')}>Cancel</Button>
-            <Button onClick={onSave} disabled={save.isPending} className="bg-primary hover:bg-[#3a7aab] text-white">
-              {save.isPending ? 'Saving...' : 'Save'}
-            </Button>
+            {isNew ? (
+              <>
+                <Button variant="outline" onClick={() => onSave('draft')} disabled={save.isPending}>
+                  Save draft
+                </Button>
+                <Button onClick={() => onSave('published')} disabled={save.isPending} className="bg-primary hover:bg-[#3a7aab] text-white">
+                  {save.isPending ? 'Saving...' : 'Publish'}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => onSave()} disabled={save.isPending} className="bg-primary hover:bg-[#3a7aab] text-white">
+                {save.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

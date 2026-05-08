@@ -102,6 +102,7 @@ export function useProjectDevlogs(projectId?: string) {
         .from('devlogs')
         .select('*')
         .eq('project_id', projectId)
+        .eq('status', 'published')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as Devlog[];
