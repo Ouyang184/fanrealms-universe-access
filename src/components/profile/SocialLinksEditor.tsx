@@ -30,17 +30,17 @@ export function SocialLinksEditor({ links, onChange, disabled, max = 10 }: Props
 
   return (
     <div className="space-y-3">
-      {links.length === 0 && (
+      {safeLinks.length === 0 && (
         <p className="text-xs text-muted-foreground">No links added yet.</p>
       )}
-      {links.map((link, i) => (
+      {safeLinks.map((link, i) => (
         <div key={i} className="flex items-end gap-2">
           <div className="flex-1">
             <Label htmlFor={`sl-label-${i}`} className="text-xs">Label</Label>
             <Input
               id={`sl-label-${i}`}
               placeholder="Twitter"
-              value={link.label}
+              value={link.label ?? ""}
               maxLength={60}
               disabled={disabled}
               onChange={(e) => update(i, "label", e.target.value)}
