@@ -150,8 +150,14 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   });
   if (pendingTarget && pendingTarget !== location.pathname + location.search) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <LoadingSpinner />
+        <p className="text-sm text-muted-foreground">Verifying your session…</p>
       </div>
     );
   }
