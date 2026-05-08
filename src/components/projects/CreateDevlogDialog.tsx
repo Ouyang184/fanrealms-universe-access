@@ -40,12 +40,12 @@ export function CreateDevlogDialog({ projectId }: CreateDevlogDialogProps) {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          New Devlog
+          New Post
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Post Devlog Update</DialogTitle>
+          <DialogTitle>Post Update</DialogTitle>
           <DialogDescription>Share your development progress with your audience.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -83,7 +83,7 @@ export function CreateDevlogDialog({ projectId }: CreateDevlogDialogProps) {
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={createDevlog.isPending || !title.trim() || !content.trim()}>
-              {createDevlog.isPending ? "Publishing..." : "Publish Devlog"}
+              {createDevlog.isPending ? "Publishing..." : "Publish Post"}
             </Button>
           </div>
         </form>

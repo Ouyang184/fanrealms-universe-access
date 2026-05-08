@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  Compass, Library, Sparkles, LayoutDashboard, FileText, Upload,
+  Compass, Library, Heart, LayoutDashboard, FileText, Upload,
   TrendingUp, Package, User, Settings, LogOut,
 } from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
@@ -23,13 +23,13 @@ interface Item {
 const EXPLORE: Item[] = [
   { to: '/marketplace', label: 'Marketplace', icon: Compass },
   { to: '/library', label: 'My library', icon: Library },
-  { to: '/library/recommendations', label: 'Recommendations', icon: Sparkles },
+  { to: '/library/recommendations', label: 'Recommendations', icon: Heart },
 ];
 
 const CREATE: Item[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/dashboard/projects/new', label: 'Upload new project', icon: Upload },
-  { to: '/dashboard/devlogs', label: 'Devlogs', icon: FileText },
+  { to: '/dashboard/devlogs', label: 'Posts', icon: FileText },
   { to: '/dashboard/assets', label: 'Assets', icon: Package },
   { to: '/dashboard/sales', label: 'Sales & bundles', icon: TrendingUp },
 ];
