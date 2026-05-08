@@ -84,12 +84,12 @@ const decideTarget = (params: {
 };
 
 const AuthGate = ({ children }: { children: React.ReactNode }) => {
-  const { loading, authReady, user, isProfileComplete } = useAuth();
+  const { loading, authReady, user, isProfileComplete, signingOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const sensitive = isAuthSensitive(location.pathname);
-  const blocked = loading || (sensitive && !authReady);
+  const blocked = loading || signingOut || (sensitive && !authReady);
 
   // Loop-prevention: a "transition" is a unique combination of inputs
   // that drive the redirect decision. Within a single transition we
