@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases, useCreatorProducts, useSellerSales } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShoppingBag, Package, Plus, ExternalLink, Upload } from 'lucide-react';
+import { ShoppingBag, Plus, ExternalLink, Upload } from 'lucide-react';
 
 function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
   if (!assetUrl) return <span className="text-[11px] text-[#aaa]">No file linked</span>;
@@ -128,17 +128,28 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : (
-            <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
-              <Package className="w-8 h-8 text-[#ccc] mx-auto mb-3" />
-              <p className="text-[14px] font-semibold text-[#111] mb-1">No assets yet</p>
-              <p className="text-[12px] text-[#999] mb-4">Upload your first Godot asset and start selling.</p>
+            <div className="border border-dashed border-[#e5e5e5] rounded-2xl py-16 px-8 text-center">
+              <p className="text-[22px] font-bold tracking-[-0.5px] text-[#111] mb-2">
+                Ready to share your work?
+              </p>
+              <p className="text-[14px] text-[#888] mb-8">
+                Upload your first Godot asset and start selling.
+              </p>
               <Link
                 to="/dashboard/assets/new"
-                className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 text-[14px] font-semibold text-white bg-primary rounded-lg hover:bg-[#3a7aab] transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Upload an asset
               </Link>
+              <div className="mt-4">
+                <Link
+                  to="/marketplace"
+                  className="text-[13px] text-[#aaa] hover:text-[#555] hover:underline transition-colors"
+                >
+                  Browse the marketplace →
+                </Link>
+              </div>
             </div>
           )}
         </section>
