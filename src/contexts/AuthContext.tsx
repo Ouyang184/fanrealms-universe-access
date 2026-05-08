@@ -70,19 +70,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Wrap signOut so we can set a `signingOut` flag *synchronously* before the
   // async work begins. AuthGuard reads this flag and hides protected UI
   // immediately, so users never see authed content flash on the way to /login.
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const signOut = React.useCallback(async () => {
     setSigningOut(true);
-    // Bump the request token so any in-flight profile fetch is dropped on
-    // arrival and cannot resurrect a profile after sign-out.
     profileRequestRef.current += 1;
     setUserSafe(null);
     setSessionSafe(null);
     setProfileSafe(null);
 
-    // Wait for the actual SIGNED_OUT event before lowering the flag — that
-    // is the SDK's signal that storage and tokens have been cleared. If
-    // the event never arrives (network hiccup, Supabase throws), fall
-    // back to a 4s timeout so signingOut can never get stuck on.
+    // Drop all cached server data tied to the previous user.
+    try {
+      queryClient.clear();
+    } catch {
+      /* ignore */
+    }
+
     const signedOutEvent = new Promise<void>((resolve) => {
       let done = false;
       const finish = () => {
@@ -100,9 +104,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await rawSignOut();
     } finally {
       await signedOutEvent;
+      // Final defensive scrub for the timeout-fallback path.
+      purgeSupabaseAuthStorage();
       setSigningOut(false);
+      navigate('/login', { replace: true });
     }
-  }, [rawSignOut]);
+  }, [rawSignOut, queryClient, navigate]);
 
   useEffect(() => {
     let cancelled = false;
