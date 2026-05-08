@@ -18,9 +18,10 @@ export default function CompleteProfile() {
   const location = useLocation();
 
   const [username, setUsername] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinkDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; socialLinks?: string }>({});
 
   // No "skip if already complete" effect here — AuthGuard wraps this
   // route and handles the already-complete case in one place.
