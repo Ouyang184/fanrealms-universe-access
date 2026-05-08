@@ -1,1 +1,3767 @@
-﻿{"types":"export type Json =\n  | string\n  | number\n  | boolean\n  | null\n  | { [key: string]: Json | undefined }\n  | Json[]\n\nexport type Database = {\n  // Allows to automatically instantiate createClient with right options\n  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)\n  __InternalSupabase: {\n    PostgrestVersion: \"13.0.5\"\n  }\n  public: {\n    Tables: {\n      api_rate_limits: {\n        Row: {\n          created_at: string | null\n          endpoint: string\n          id: string\n          ip_address: unknown\n          request_count: number | null\n          window_start: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          endpoint: string\n          id?: string\n          ip_address: unknown\n          request_count?: number | null\n          window_start?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          endpoint?: string\n          id?: string\n          ip_address?: unknown\n          request_count?: number | null\n          window_start?: string | null\n        }\n        Relationships: []\n      }\n      auth_trigger_errors: {\n        Row: {\n          email: string | null\n          id: string\n          occurred_at: string\n          sqlerrm: string | null\n          sqlstate: string | null\n          user_id: string | null\n        }\n        Insert: {\n          email?: string | null\n          id?: string\n          occurred_at?: string\n          sqlerrm?: string | null\n          sqlstate?: string | null\n          user_id?: string | null\n        }\n        Update: {\n          email?: string | null\n          id?: string\n          occurred_at?: string\n          sqlerrm?: string | null\n          sqlstate?: string | null\n          user_id?: string | null\n        }\n        Relationships: []\n      }\n      comments: {\n        Row: {\n          content: string\n          created_at: string\n          id: string\n          post_id: string\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          content: string\n          created_at?: string\n          id?: string\n          post_id: string\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          content?: string\n          created_at?: string\n          id?: string\n          post_id?: string\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"comments_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"comments_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      commission_deliverables: {\n        Row: {\n          commission_request_id: string\n          created_at: string\n          delivered_at: string\n          delivery_notes: string | null\n          external_links: string[]\n          file_urls: string[]\n          id: string\n          updated_at: string\n        }\n        Insert: {\n          commission_request_id: string\n          created_at?: string\n          delivered_at?: string\n          delivery_notes?: string | null\n          external_links?: string[]\n          file_urls?: string[]\n          id?: string\n          updated_at?: string\n        }\n        Update: {\n          commission_request_id?: string\n          created_at?: string\n          delivered_at?: string\n          delivery_notes?: string | null\n          external_links?: string[]\n          file_urls?: string[]\n          id?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"commission_deliverables_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_deliverables_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests_creator_view\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_deliverables_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests_customer_view\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      commission_requests: {\n        Row: {\n          agreed_price: number | null\n          budget_range_max: number | null\n          budget_range_min: number | null\n          commission_type_id: string\n          created_at: string\n          creator_id: string\n          creator_notes: string | null\n          customer_id: string\n          customer_notes: string | null\n          deadline: string | null\n          description: string\n          id: string\n          platform_fee_amount: number | null\n          reference_images: string[] | null\n          revision_count: number\n          selected_addons: Json | null\n          status: string\n          stripe_payment_intent_id: string | null\n          title: string\n          updated_at: string\n        }\n        Insert: {\n          agreed_price?: number | null\n          budget_range_max?: number | null\n          budget_range_min?: number | null\n          commission_type_id: string\n          created_at?: string\n          creator_id: string\n          creator_notes?: string | null\n          customer_id: string\n          customer_notes?: string | null\n          deadline?: string | null\n          description: string\n          id?: string\n          platform_fee_amount?: number | null\n          reference_images?: string[] | null\n          revision_count?: number\n          selected_addons?: Json | null\n          status?: string\n          stripe_payment_intent_id?: string | null\n          title: string\n          updated_at?: string\n        }\n        Update: {\n          agreed_price?: number | null\n          budget_range_max?: number | null\n          budget_range_min?: number | null\n          commission_type_id?: string\n          created_at?: string\n          creator_id?: string\n          creator_notes?: string | null\n          customer_id?: string\n          customer_notes?: string | null\n          deadline?: string | null\n          description?: string\n          id?: string\n          platform_fee_amount?: number | null\n          reference_images?: string[] | null\n          revision_count?: number\n          selected_addons?: Json | null\n          status?: string\n          stripe_payment_intent_id?: string | null\n          title?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"commission_requests_commission_type_id_fkey\"\n            columns: [\"commission_type_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_types\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_customer_id_fkey\"\n            columns: [\"customer_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      commission_revisions: {\n        Row: {\n          commission_request_id: string\n          created_at: string\n          extra_revision_fee: number | null\n          id: string\n          is_extra_revision: boolean\n          request_notes: string\n          requester_id: string\n          revision_number: number\n          status: string\n          stripe_payment_intent_id: string | null\n          updated_at: string\n        }\n        Insert: {\n          commission_request_id: string\n          created_at?: string\n          extra_revision_fee?: number | null\n          id?: string\n          is_extra_revision?: boolean\n          request_notes: string\n          requester_id: string\n          revision_number: number\n          status?: string\n          stripe_payment_intent_id?: string | null\n          updated_at?: string\n        }\n        Update: {\n          commission_request_id?: string\n          created_at?: string\n          extra_revision_fee?: number | null\n          id?: string\n          is_extra_revision?: boolean\n          request_notes?: string\n          requester_id?: string\n          revision_number?: number\n          status?: string\n          stripe_payment_intent_id?: string | null\n          updated_at?: string\n        }\n        Relationships: []\n      }\n      commission_types: {\n        Row: {\n          base_price: number\n          created_at: string\n          creator_id: string\n          custom_addons: Json | null\n          description: string | null\n          donts: string[] | null\n          dos: string[] | null\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          max_revisions: number\n          name: string\n          price_per_character: number | null\n          price_per_revision: number | null\n          sample_art_url: string | null\n          tags: string[] | null\n          updated_at: string\n        }\n        Insert: {\n          base_price: number\n          created_at?: string\n          creator_id: string\n          custom_addons?: Json | null\n          description?: string | null\n          donts?: string[] | null\n          dos?: string[] | null\n          estimated_turnaround_days: number\n          id?: string\n          is_active?: boolean\n          max_revisions?: number\n          name: string\n          price_per_character?: number | null\n          price_per_revision?: number | null\n          sample_art_url?: string | null\n          tags?: string[] | null\n          updated_at?: string\n        }\n        Update: {\n          base_price?: number\n          created_at?: string\n          creator_id?: string\n          custom_addons?: Json | null\n          description?: string | null\n          donts?: string[] | null\n          dos?: string[] | null\n          estimated_turnaround_days?: number\n          id?: string\n          is_active?: boolean\n          max_revisions?: number\n          name?: string\n          price_per_character?: number | null\n          price_per_revision?: number | null\n          sample_art_url?: string | null\n          tags?: string[] | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"commission_types_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      conversation_participants: {\n        Row: {\n          conversation_id: string | null\n          created_at: string\n          id: string\n          last_message_at: string | null\n          other_user_id: string\n          user_id: string\n        }\n        Insert: {\n          conversation_id?: string | null\n          created_at?: string\n          id?: string\n          last_message_at?: string | null\n          other_user_id: string\n          user_id: string\n        }\n        Update: {\n          conversation_id?: string | null\n          created_at?: string\n          id?: string\n          last_message_at?: string | null\n          other_user_id?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"conversation_participants_conversation_id_fkey\"\n            columns: [\"conversation_id\"]\n            isOneToOne: false\n            referencedRelation: \"conversations\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"conversation_participants_other_user_id_fkey\"\n            columns: [\"other_user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"conversation_participants_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      conversations: {\n        Row: {\n          created_at: string\n          id: string\n          updated_at: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          updated_at?: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          updated_at?: string\n        }\n        Relationships: []\n      }\n      creator_earnings: {\n        Row: {\n          amount: number\n          commission_request_id: string | null\n          created_at: string | null\n          creator_id: string\n          earning_type: string | null\n          id: string\n          net_amount: number\n          payment_date: string | null\n          platform_fee: number\n          stripe_transfer_id: string | null\n          subscription_id: string | null\n        }\n        Insert: {\n          amount: number\n          commission_request_id?: string | null\n          created_at?: string | null\n          creator_id: string\n          earning_type?: string | null\n          id?: string\n          net_amount: number\n          payment_date?: string | null\n          platform_fee: number\n          stripe_transfer_id?: string | null\n          subscription_id?: string | null\n        }\n        Update: {\n          amount?: number\n          commission_request_id?: string | null\n          created_at?: string | null\n          creator_id?: string\n          earning_type?: string | null\n          id?: string\n          net_amount?: number\n          payment_date?: string | null\n          platform_fee?: number\n          stripe_transfer_id?: string | null\n          subscription_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creator_earnings_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"creator_earnings_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests_creator_view\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"creator_earnings_commission_request_id_fkey\"\n            columns: [\"commission_request_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_requests_customer_view\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"creator_earnings_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      creator_links: {\n        Row: {\n          created_at: string | null\n          creator_id: string | null\n          id: string\n          label: string | null\n          position: number | null\n          url: string\n        }\n        Insert: {\n          created_at?: string | null\n          creator_id?: string | null\n          id?: string\n          label?: string | null\n          position?: number | null\n          url: string\n        }\n        Update: {\n          created_at?: string | null\n          creator_id?: string | null\n          id?: string\n          label?: string | null\n          position?: number | null\n          url?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creator_links_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      creator_ratings: {\n        Row: {\n          created_at: string\n          creator_id: string\n          id: string\n          rating: number\n          rating_type: string\n          review_text: string | null\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          creator_id: string\n          id?: string\n          rating: number\n          rating_type?: string\n          review_text?: string | null\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          creator_id?: string\n          id?: string\n          rating?: number\n          rating_type?: string\n          review_text?: string | null\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creator_ratings_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      creator_stripe_accounts: {\n        Row: {\n          created_at: string\n          creator_id: string\n          id: string\n          stripe_account_id: string | null\n          stripe_charges_enabled: boolean | null\n          stripe_onboarding_complete: boolean | null\n          stripe_payouts_enabled: boolean | null\n          updated_at: string\n        }\n        Insert: {\n          created_at?: string\n          creator_id: string\n          id?: string\n          stripe_account_id?: string | null\n          stripe_charges_enabled?: boolean | null\n          stripe_onboarding_complete?: boolean | null\n          stripe_payouts_enabled?: boolean | null\n          updated_at?: string\n        }\n        Update: {\n          created_at?: string\n          creator_id?: string\n          id?: string\n          stripe_account_id?: string | null\n          stripe_charges_enabled?: boolean | null\n          stripe_onboarding_complete?: boolean | null\n          stripe_payouts_enabled?: boolean | null\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creator_stripe_accounts_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: true\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      creators: {\n        Row: {\n          accepts_commissions: boolean | null\n          banner_url: string | null\n          bio: string | null\n          commission_base_rate: number | null\n          commission_slots_available: number | null\n          commission_tos: string | null\n          commission_turnaround_days: number | null\n          created_at: string\n          creator_name: string | null\n          display_name: string | null\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string | null\n          tags: string[] | null\n          updated_at: string | null\n          user_id: string\n          user_profile_picture: string | null\n          username: string\n          website: string | null\n        }\n        Insert: {\n          accepts_commissions?: boolean | null\n          banner_url?: string | null\n          bio?: string | null\n          commission_base_rate?: number | null\n          commission_slots_available?: number | null\n          commission_tos?: string | null\n          commission_turnaround_days?: number | null\n          created_at?: string\n          creator_name?: string | null\n          display_name?: string | null\n          follower_count?: number\n          id?: string\n          is_nsfw?: boolean\n          profile_image_url?: string | null\n          tags?: string[] | null\n          updated_at?: string | null\n          user_id: string\n          user_profile_picture?: string | null\n          username: string\n          website?: string | null\n        }\n        Update: {\n          accepts_commissions?: boolean | null\n          banner_url?: string | null\n          bio?: string | null\n          commission_base_rate?: number | null\n          commission_slots_available?: number | null\n          commission_tos?: string | null\n          commission_turnaround_days?: number | null\n          created_at?: string\n          creator_name?: string | null\n          display_name?: string | null\n          follower_count?: number\n          id?: string\n          is_nsfw?: boolean\n          profile_image_url?: string | null\n          tags?: string[] | null\n          updated_at?: string | null\n          user_id?: string\n          user_profile_picture?: string | null\n          username?: string\n          website?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creators_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: true\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      devlogs: {\n        Row: {\n          author_id: string\n          content: string\n          created_at: string\n          id: string\n          project_id: string\n          status: string\n          tags: string[] | null\n          title: string\n          updated_at: string | null\n        }\n        Insert: {\n          author_id: string\n          content: string\n          created_at?: string\n          id?: string\n          project_id: string\n          status?: string\n          tags?: string[] | null\n          title: string\n          updated_at?: string | null\n        }\n        Update: {\n          author_id?: string\n          content?: string\n          created_at?: string\n          id?: string\n          project_id?: string\n          status?: string\n          tags?: string[] | null\n          title?: string\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"devlogs_author_id_fkey\"\n            columns: [\"author_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"devlogs_project_id_fkey\"\n            columns: [\"project_id\"]\n            isOneToOne: false\n            referencedRelation: \"projects\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      digital_products: {\n        Row: {\n          asset_url: string | null\n          category: string | null\n          cover_image_url: string | null\n          created_at: string\n          creator_id: string\n          description: string | null\n          godot_version: string | null\n          id: string\n          license: string | null\n          price: number\n          project_id: string | null\n          screenshots: string[] | null\n          short_description: string | null\n          status: string\n          stripe_price_id: string | null\n          tags: string[] | null\n          title: string\n          trailer_url: string | null\n          updated_at: string | null\n          version: string | null\n        }\n        Insert: {\n          asset_url?: string | null\n          category?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          creator_id: string\n          description?: string | null\n          godot_version?: string | null\n          id?: string\n          license?: string | null\n          price?: number\n          project_id?: string | null\n          screenshots?: string[] | null\n          short_description?: string | null\n          status?: string\n          stripe_price_id?: string | null\n          tags?: string[] | null\n          title: string\n          trailer_url?: string | null\n          updated_at?: string | null\n          version?: string | null\n        }\n        Update: {\n          asset_url?: string | null\n          category?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          creator_id?: string\n          description?: string | null\n          godot_version?: string | null\n          id?: string\n          license?: string | null\n          price?: number\n          project_id?: string | null\n          screenshots?: string[] | null\n          short_description?: string | null\n          status?: string\n          stripe_price_id?: string | null\n          tags?: string[] | null\n          title?: string\n          trailer_url?: string | null\n          updated_at?: string | null\n          version?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"digital_products_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"digital_products_project_id_fkey\"\n            columns: [\"project_id\"]\n            isOneToOne: false\n            referencedRelation: \"projects\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      email_2fa_codes: {\n        Row: {\n          code: string\n          created_at: string\n          email: string\n          expires_at: string\n        }\n        Insert: {\n          code: string\n          created_at?: string\n          email: string\n          expires_at: string\n        }\n        Update: {\n          code?: string\n          created_at?: string\n          email?: string\n          expires_at?: string\n        }\n        Relationships: []\n      }\n      feeds: {\n        Row: {\n          created_at: string\n          feed_type: string\n          id: string\n          post_id: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          feed_type: string\n          id?: string\n          post_id: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          feed_type?: string\n          id?: string\n          post_id?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"feeds_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"feeds_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      follows: {\n        Row: {\n          created_at: string\n          creator_id: string\n          id: number\n          updated_at: string | null\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          creator_id: string\n          id?: never\n          updated_at?: string | null\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          creator_id?: string\n          id?: never\n          updated_at?: string | null\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"follows_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      forum_replies: {\n        Row: {\n          author_id: string\n          content: string\n          created_at: string\n          id: string\n          parent_reply_id: string | null\n          thread_id: string\n          updated_at: string | null\n        }\n        Insert: {\n          author_id: string\n          content: string\n          created_at?: string\n          id?: string\n          parent_reply_id?: string | null\n          thread_id: string\n          updated_at?: string | null\n        }\n        Update: {\n          author_id?: string\n          content?: string\n          created_at?: string\n          id?: string\n          parent_reply_id?: string | null\n          thread_id?: string\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"forum_replies_parent_reply_id_fkey\"\n            columns: [\"parent_reply_id\"]\n            isOneToOne: false\n            referencedRelation: \"forum_replies\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"forum_replies_thread_id_fkey\"\n            columns: [\"thread_id\"]\n            isOneToOne: false\n            referencedRelation: \"forum_threads\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      forum_threads: {\n        Row: {\n          author_id: string\n          category: string | null\n          content: string\n          created_at: string\n          id: string\n          is_locked: boolean\n          is_pinned: boolean\n          reply_count: number\n          status: string\n          tags: string[] | null\n          title: string\n          updated_at: string | null\n          view_count: number\n        }\n        Insert: {\n          author_id: string\n          category?: string | null\n          content: string\n          created_at?: string\n          id?: string\n          is_locked?: boolean\n          is_pinned?: boolean\n          reply_count?: number\n          status?: string\n          tags?: string[] | null\n          title: string\n          updated_at?: string | null\n          view_count?: number\n        }\n        Update: {\n          author_id?: string\n          category?: string | null\n          content?: string\n          created_at?: string\n          id?: string\n          is_locked?: boolean\n          is_pinned?: boolean\n          reply_count?: number\n          status?: string\n          tags?: string[] | null\n          title?: string\n          updated_at?: string | null\n          view_count?: number\n        }\n        Relationships: []\n      }\n      game_ratings: {\n        Row: {\n          created_at: string\n          game_id: string\n          id: string\n          rating: number\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          game_id: string\n          id?: string\n          rating: number\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          game_id?: string\n          id?: string\n          rating?: number\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"game_ratings_game_id_fkey\"\n            columns: [\"game_id\"]\n            isOneToOne: false\n            referencedRelation: \"indie_games\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      indie_games: {\n        Row: {\n          created_at: string\n          description: string | null\n          external_platform: string | null\n          external_url: string\n          genre: string | null\n          id: string\n          thumbnail_url: string | null\n          title: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          description?: string | null\n          external_platform?: string | null\n          external_url: string\n          genre?: string | null\n          id?: string\n          thumbnail_url?: string | null\n          title: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          description?: string | null\n          external_platform?: string | null\n          external_url?: string\n          genre?: string | null\n          id?: string\n          thumbnail_url?: string | null\n          title?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      job_applications: {\n        Row: {\n          applicant_id: string\n          cover_letter: string | null\n          created_at: string\n          id: string\n          listing_id: string\n          portfolio_url: string | null\n          status: string\n          updated_at: string | null\n        }\n        Insert: {\n          applicant_id: string\n          cover_letter?: string | null\n          created_at?: string\n          id?: string\n          listing_id: string\n          portfolio_url?: string | null\n          status?: string\n          updated_at?: string | null\n        }\n        Update: {\n          applicant_id?: string\n          cover_letter?: string | null\n          created_at?: string\n          id?: string\n          listing_id?: string\n          portfolio_url?: string | null\n          status?: string\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"job_applications_listing_id_fkey\"\n            columns: [\"listing_id\"]\n            isOneToOne: false\n            referencedRelation: \"job_listings\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      job_listings: {\n        Row: {\n          budget_max: number | null\n          budget_min: number | null\n          budget_type: string\n          category: string\n          created_at: string\n          deadline: string | null\n          description: string | null\n          id: string\n          poster_id: string\n          requirements: string | null\n          status: string\n          tags: string[] | null\n          title: string\n          updated_at: string | null\n        }\n        Insert: {\n          budget_max?: number | null\n          budget_min?: number | null\n          budget_type?: string\n          category?: string\n          created_at?: string\n          deadline?: string | null\n          description?: string | null\n          id?: string\n          poster_id: string\n          requirements?: string | null\n          status?: string\n          tags?: string[] | null\n          title: string\n          updated_at?: string | null\n        }\n        Update: {\n          budget_max?: number | null\n          budget_min?: number | null\n          budget_type?: string\n          category?: string\n          created_at?: string\n          deadline?: string | null\n          description?: string | null\n          id?: string\n          poster_id?: string\n          requirements?: string | null\n          status?: string\n          tags?: string[] | null\n          title?: string\n          updated_at?: string | null\n        }\n        Relationships: []\n      }\n      likes: {\n        Row: {\n          created_at: string\n          id: string\n          post_id: string\n          updated_at: string | null\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          post_id: string\n          updated_at?: string | null\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          post_id?: string\n          updated_at?: string | null\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"likes_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"likes_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      membership_tiers: {\n        Row: {\n          active: boolean\n          created_at: string\n          creator_id: string\n          description: string\n          id: string\n          price: number\n          stripe_price_id: string | null\n          stripe_product_id: string | null\n          title: string\n          updated_at: string | null\n        }\n        Insert: {\n          active?: boolean\n          created_at?: string\n          creator_id: string\n          description: string\n          id?: string\n          price: number\n          stripe_price_id?: string | null\n          stripe_product_id?: string | null\n          title: string\n          updated_at?: string | null\n        }\n        Update: {\n          active?: boolean\n          created_at?: string\n          creator_id?: string\n          description?: string\n          id?: string\n          price?: number\n          stripe_price_id?: string | null\n          stripe_product_id?: string | null\n          title?: string\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"membership_tiers_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      messages: {\n        Row: {\n          blocked_at: string | null\n          created_at: string\n          deleted_at: string | null\n          id: string\n          is_read: boolean\n          message_text: string\n          receiver_id: string\n          sender_id: string\n        }\n        Insert: {\n          blocked_at?: string | null\n          created_at?: string\n          deleted_at?: string | null\n          id?: string\n          is_read?: boolean\n          message_text: string\n          receiver_id: string\n          sender_id: string\n        }\n        Update: {\n          blocked_at?: string | null\n          created_at?: string\n          deleted_at?: string | null\n          id?: string\n          is_read?: boolean\n          message_text?: string\n          receiver_id?: string\n          sender_id?: string\n        }\n        Relationships: []\n      }\n      notifications: {\n        Row: {\n          content: string\n          created_at: string\n          id: string\n          is_read: boolean | null\n          metadata: Json | null\n          related_id: string | null\n          related_user_id: string | null\n          title: string | null\n          type: string\n          user_id: string\n        }\n        Insert: {\n          content: string\n          created_at?: string\n          id?: string\n          is_read?: boolean | null\n          metadata?: Json | null\n          related_id?: string | null\n          related_user_id?: string | null\n          title?: string | null\n          type: string\n          user_id: string\n        }\n        Update: {\n          content?: string\n          created_at?: string\n          id?: string\n          is_read?: boolean | null\n          metadata?: Json | null\n          related_id?: string | null\n          related_user_id?: string | null\n          title?: string | null\n          type?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"notifications_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      payment_audit_log: {\n        Row: {\n          accessed_data: Json | null\n          created_at: string\n          id: string\n          ip_address: unknown\n          operation: string\n          table_name: string\n          user_agent: string | null\n          user_id: string | null\n        }\n        Insert: {\n          accessed_data?: Json | null\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          operation: string\n          table_name: string\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Update: {\n          accessed_data?: Json | null\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          operation?: string\n          table_name?: string\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Relationships: []\n      }\n      payment_metadata_encrypted: {\n        Row: {\n          created_at: string\n          encrypted_data: string | null\n          id: string\n          payment_method_id: string\n          updated_at: string\n        }\n        Insert: {\n          created_at?: string\n          encrypted_data?: string | null\n          id?: string\n          payment_method_id: string\n          updated_at?: string\n        }\n        Update: {\n          created_at?: string\n          encrypted_data?: string | null\n          id?: string\n          payment_method_id?: string\n          updated_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"payment_metadata_encrypted_payment_method_id_fkey\"\n            columns: [\"payment_method_id\"]\n            isOneToOne: false\n            referencedRelation: \"payment_methods\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      payment_methods: {\n        Row: {\n          card_brand: string | null\n          card_exp_month: number | null\n          card_exp_year: number | null\n          card_last4: string | null\n          created_at: string\n          id: string\n          is_default: boolean\n          stripe_payment_method_id: string\n          type: string\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          card_brand?: string | null\n          card_exp_month?: number | null\n          card_exp_year?: number | null\n          card_last4?: string | null\n          created_at?: string\n          id?: string\n          is_default?: boolean\n          stripe_payment_method_id: string\n          type: string\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          card_brand?: string | null\n          card_exp_month?: number | null\n          card_exp_year?: number | null\n          card_last4?: string | null\n          created_at?: string\n          id?: string\n          is_default?: boolean\n          stripe_payment_method_id?: string\n          type?: string\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      payment_rate_limits: {\n        Row: {\n          created_at: string\n          id: string\n          ip_address: unknown\n          operation: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          operation: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          operation?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      payment_secrets_vault: {\n        Row: {\n          created_at: string\n          encrypted_stripe_id: string | null\n          encryption_key_hash: string | null\n          id: string\n          last_accessed: string | null\n          payment_method_id: string\n        }\n        Insert: {\n          created_at?: string\n          encrypted_stripe_id?: string | null\n          encryption_key_hash?: string | null\n          id?: string\n          last_accessed?: string | null\n          payment_method_id: string\n        }\n        Update: {\n          created_at?: string\n          encrypted_stripe_id?: string | null\n          encryption_key_hash?: string | null\n          id?: string\n          last_accessed?: string | null\n          payment_method_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"payment_secrets_vault_payment_method_id_fkey\"\n            columns: [\"payment_method_id\"]\n            isOneToOne: false\n            referencedRelation: \"payment_methods\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      payment_security_alerts: {\n        Row: {\n          alert_type: string\n          attempted_data: Json | null\n          created_at: string\n          id: string\n          ip_address: unknown\n          user_agent: string | null\n          user_id: string | null\n        }\n        Insert: {\n          alert_type: string\n          attempted_data?: Json | null\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Update: {\n          alert_type?: string\n          attempted_data?: Json | null\n          created_at?: string\n          id?: string\n          ip_address?: unknown\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Relationships: []\n      }\n      payment_vault_encrypted: {\n        Row: {\n          access_count: number | null\n          created_at: string\n          encrypted_metadata: string | null\n          encrypted_stripe_id: string\n          encryption_version: number\n          id: string\n          key_fingerprint: string\n          last_accessed: string | null\n          payment_method_id: string\n        }\n        Insert: {\n          access_count?: number | null\n          created_at?: string\n          encrypted_metadata?: string | null\n          encrypted_stripe_id: string\n          encryption_version?: number\n          id?: string\n          key_fingerprint: string\n          last_accessed?: string | null\n          payment_method_id: string\n        }\n        Update: {\n          access_count?: number | null\n          created_at?: string\n          encrypted_metadata?: string | null\n          encrypted_stripe_id?: string\n          encryption_version?: number\n          id?: string\n          key_fingerprint?: string\n          last_accessed?: string | null\n          payment_method_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"payment_vault_encrypted_payment_method_id_fkey\"\n            columns: [\"payment_method_id\"]\n            isOneToOne: false\n            referencedRelation: \"payment_methods\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      post_reads: {\n        Row: {\n          created_at: string\n          id: string\n          post_id: string\n          read_at: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          post_id: string\n          read_at?: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          post_id?: string\n          read_at?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"post_reads_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      post_shares: {\n        Row: {\n          created_at: string\n          id: string\n          platform: string\n          post_id: string\n          shared_at: string\n          user_id: string | null\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          platform: string\n          post_id: string\n          shared_at?: string\n          user_id?: string | null\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          platform?: string\n          post_id?: string\n          shared_at?: string\n          user_id?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"post_shares_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      post_tiers: {\n        Row: {\n          created_at: string\n          id: string\n          post_id: string\n          tier_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          post_id: string\n          tier_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          post_id?: string\n          tier_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"post_tiers_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"post_tiers_tier_id_fkey\"\n            columns: [\"tier_id\"]\n            isOneToOne: false\n            referencedRelation: \"membership_tiers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      post_views: {\n        Row: {\n          id: string\n          post_id: string\n          user_id: string\n          view_type: string\n          viewed_at: string\n        }\n        Insert: {\n          id?: string\n          post_id: string\n          user_id: string\n          view_type?: string\n          viewed_at?: string\n        }\n        Update: {\n          id?: string\n          post_id?: string\n          user_id?: string\n          view_type?: string\n          viewed_at?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"post_views_post_id_fkey\"\n            columns: [\"post_id\"]\n            isOneToOne: false\n            referencedRelation: \"posts\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      posts: {\n        Row: {\n          attachments: Json | null\n          author_id: string\n          content: string\n          created_at: string\n          creator_id: string | null\n          id: string\n          is_nsfw: boolean\n          scheduled_for: string | null\n          status: string | null\n          tags: string[] | null\n          tier_id: string | null\n          title: string\n          updated_at: string | null\n        }\n        Insert: {\n          attachments?: Json | null\n          author_id: string\n          content: string\n          created_at?: string\n          creator_id?: string | null\n          id?: string\n          is_nsfw?: boolean\n          scheduled_for?: string | null\n          status?: string | null\n          tags?: string[] | null\n          tier_id?: string | null\n          title: string\n          updated_at?: string | null\n        }\n        Update: {\n          attachments?: Json | null\n          author_id?: string\n          content?: string\n          created_at?: string\n          creator_id?: string | null\n          id?: string\n          is_nsfw?: boolean\n          scheduled_for?: string | null\n          status?: string | null\n          tags?: string[] | null\n          tier_id?: string | null\n          title?: string\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"posts_author_id_fkey\"\n            columns: [\"author_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"posts_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"posts_tier_id_fkey\"\n            columns: [\"tier_id\"]\n            isOneToOne: false\n            referencedRelation: \"membership_tiers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      product_ratings: {\n        Row: {\n          created_at: string\n          id: string\n          product_id: string\n          rating: number\n          review: string | null\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          product_id: string\n          rating: number\n          review?: string | null\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          product_id?: string\n          rating?: number\n          review?: string | null\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"product_ratings_product_id_fkey\"\n            columns: [\"product_id\"]\n            isOneToOne: false\n            referencedRelation: \"digital_products\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      projects: {\n        Row: {\n          ai_disclosure: string | null\n          app_store_links: Json | null\n          classification: string | null\n          community_mode: string | null\n          cover_image_url: string | null\n          created_at: string\n          creator_id: string\n          description: string | null\n          genre: string | null\n          id: string\n          kind: string | null\n          pricing_model: string | null\n          release_status: string | null\n          repository_url: string | null\n          screenshots: string[] | null\n          short_description: string | null\n          slug: string\n          status: string\n          suggested_price_cents: number | null\n          tags: string[] | null\n          title: string\n          updated_at: string | null\n          video_url: string | null\n          visibility: string | null\n          website_url: string | null\n        }\n        Insert: {\n          ai_disclosure?: string | null\n          app_store_links?: Json | null\n          classification?: string | null\n          community_mode?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          creator_id: string\n          description?: string | null\n          genre?: string | null\n          id?: string\n          kind?: string | null\n          pricing_model?: string | null\n          release_status?: string | null\n          repository_url?: string | null\n          screenshots?: string[] | null\n          short_description?: string | null\n          slug: string\n          status?: string\n          suggested_price_cents?: number | null\n          tags?: string[] | null\n          title: string\n          updated_at?: string | null\n          video_url?: string | null\n          visibility?: string | null\n          website_url?: string | null\n        }\n        Update: {\n          ai_disclosure?: string | null\n          app_store_links?: Json | null\n          classification?: string | null\n          community_mode?: string | null\n          cover_image_url?: string | null\n          created_at?: string\n          creator_id?: string\n          description?: string | null\n          genre?: string | null\n          id?: string\n          kind?: string | null\n          pricing_model?: string | null\n          release_status?: string | null\n          repository_url?: string | null\n          screenshots?: string[] | null\n          short_description?: string | null\n          slug?: string\n          status?: string\n          suggested_price_cents?: number | null\n          tags?: string[] | null\n          title?: string\n          updated_at?: string | null\n          video_url?: string | null\n          visibility?: string | null\n          website_url?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"projects_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      purchases: {\n        Row: {\n          amount: number\n          buyer_id: string\n          created_at: string\n          creator_id: string\n          id: string\n          net_amount: number\n          platform_fee: number\n          product_id: string\n          status: string\n          stripe_payment_intent_id: string | null\n          stripe_session_id: string | null\n          updated_at: string | null\n        }\n        Insert: {\n          amount?: number\n          buyer_id: string\n          created_at?: string\n          creator_id: string\n          id?: string\n          net_amount?: number\n          platform_fee?: number\n          product_id: string\n          status?: string\n          stripe_payment_intent_id?: string | null\n          stripe_session_id?: string | null\n          updated_at?: string | null\n        }\n        Update: {\n          amount?: number\n          buyer_id?: string\n          created_at?: string\n          creator_id?: string\n          id?: string\n          net_amount?: number\n          platform_fee?: number\n          product_id?: string\n          status?: string\n          stripe_payment_intent_id?: string | null\n          stripe_session_id?: string | null\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"purchases_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"purchases_product_id_fkey\"\n            columns: [\"product_id\"]\n            isOneToOne: false\n            referencedRelation: \"digital_products\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      rate_limit_events: {\n        Row: {\n          action: string\n          created_at: string\n          email: string | null\n          id: string\n          ip: string\n        }\n        Insert: {\n          action: string\n          created_at?: string\n          email?: string | null\n          id?: string\n          ip: string\n        }\n        Update: {\n          action?: string\n          created_at?: string\n          email?: string | null\n          id?: string\n          ip?: string\n        }\n        Relationships: []\n      }\n      saved_posts: {\n        Row: {\n          created_at: string\n          id: string\n          post_id: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          post_id: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          post_id?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      security_events: {\n        Row: {\n          created_at: string | null\n          event_data: Json | null\n          event_type: string\n          id: string\n          ip_address: unknown\n          user_agent: string | null\n          user_id: string | null\n        }\n        Insert: {\n          created_at?: string | null\n          event_data?: Json | null\n          event_type: string\n          id?: string\n          ip_address?: unknown\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Update: {\n          created_at?: string | null\n          event_data?: Json | null\n          event_type?: string\n          id?: string\n          ip_address?: unknown\n          user_agent?: string | null\n          user_id?: string | null\n        }\n        Relationships: []\n      }\n      security_rate_limits: {\n        Row: {\n          action: string\n          created_at: string | null\n          id: string\n          ip_address: unknown\n          metadata: Json | null\n          user_id: string | null\n        }\n        Insert: {\n          action: string\n          created_at?: string | null\n          id?: string\n          ip_address: unknown\n          metadata?: Json | null\n          user_id?: string | null\n        }\n        Update: {\n          action?: string\n          created_at?: string | null\n          id?: string\n          ip_address?: unknown\n          metadata?: Json | null\n          user_id?: string | null\n        }\n        Relationships: []\n      }\n      stripe_customers: {\n        Row: {\n          created_at: string | null\n          id: string\n          stripe_customer_id: string\n          updated_at: string | null\n          user_id: string\n        }\n        Insert: {\n          created_at?: string | null\n          id?: string\n          stripe_customer_id: string\n          updated_at?: string | null\n          user_id: string\n        }\n        Update: {\n          created_at?: string | null\n          id?: string\n          stripe_customer_id?: string\n          updated_at?: string | null\n          user_id?: string\n        }\n        Relationships: []\n      }\n      tags: {\n        Row: {\n          category: string | null\n          created_at: string | null\n          flagged_reason: string | null\n          id: string\n          is_flagged: boolean | null\n          is_moderated: boolean | null\n          name: string\n          updated_at: string | null\n          usage_count: number | null\n        }\n        Insert: {\n          category?: string | null\n          created_at?: string | null\n          flagged_reason?: string | null\n          id?: string\n          is_flagged?: boolean | null\n          is_moderated?: boolean | null\n          name: string\n          updated_at?: string | null\n          usage_count?: number | null\n        }\n        Update: {\n          category?: string | null\n          created_at?: string | null\n          flagged_reason?: string | null\n          id?: string\n          is_flagged?: boolean | null\n          is_moderated?: boolean | null\n          name?: string\n          updated_at?: string | null\n          usage_count?: number | null\n        }\n        Relationships: []\n      }\n      user_preferences: {\n        Row: {\n          category_id: number\n          category_name: string\n          created_at: string\n          id: string\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          category_id: number\n          category_name: string\n          created_at?: string\n          id?: string\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          category_id?: number\n          category_name?: string\n          created_at?: string\n          id?: string\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      user_roles: {\n        Row: {\n          created_at: string\n          id: string\n          role: Database[\"public\"][\"Enums\"][\"app_role\"]\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          created_at?: string\n          id?: string\n          role: Database[\"public\"][\"Enums\"][\"app_role\"]\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          created_at?: string\n          id?: string\n          role?: Database[\"public\"][\"Enums\"][\"app_role\"]\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: []\n      }\n      user_subscriptions: {\n        Row: {\n          amount: number\n          billing_email: string | null\n          cancel_at_period_end: boolean | null\n          created_at: string\n          creator_id: string\n          current_period_end: string | null\n          current_period_start: string | null\n          id: string\n          status: string\n          stripe_customer_id: string | null\n          stripe_subscription_id: string | null\n          tier_id: string\n          updated_at: string\n          user_id: string\n        }\n        Insert: {\n          amount: number\n          billing_email?: string | null\n          cancel_at_period_end?: boolean | null\n          created_at?: string\n          creator_id: string\n          current_period_end?: string | null\n          current_period_start?: string | null\n          id?: string\n          status?: string\n          stripe_customer_id?: string | null\n          stripe_subscription_id?: string | null\n          tier_id: string\n          updated_at?: string\n          user_id: string\n        }\n        Update: {\n          amount?: number\n          billing_email?: string | null\n          cancel_at_period_end?: boolean | null\n          created_at?: string\n          creator_id?: string\n          current_period_end?: string | null\n          current_period_start?: string | null\n          id?: string\n          status?: string\n          stripe_customer_id?: string | null\n          stripe_subscription_id?: string | null\n          tier_id?: string\n          updated_at?: string\n          user_id?: string\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"fk_user_subscriptions_creator_id\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"fk_user_subscriptions_tier_id\"\n            columns: [\"tier_id\"]\n            isOneToOne: false\n            referencedRelation: \"membership_tiers\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"fk_user_subscriptions_user_id\"\n            columns: [\"user_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"user_subscriptions_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"user_subscriptions_tier_id_fkey\"\n            columns: [\"tier_id\"]\n            isOneToOne: false\n            referencedRelation: \"membership_tiers\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      users: {\n        Row: {\n          age_verified: boolean | null\n          created_at: string\n          creator_name: string | null\n          date_of_birth: string | null\n          display_name: string | null\n          email: string\n          email_2fa_enabled: boolean\n          id: string\n          is_nsfw_enabled: boolean\n          notification_preferences: Json | null\n          profile_picture: string | null\n          updated_at: string | null\n          username: string\n          website: string | null\n        }\n        Insert: {\n          age_verified?: boolean | null\n          created_at?: string\n          creator_name?: string | null\n          date_of_birth?: string | null\n          display_name?: string | null\n          email: string\n          email_2fa_enabled?: boolean\n          id?: string\n          is_nsfw_enabled?: boolean\n          notification_preferences?: Json | null\n          profile_picture?: string | null\n          updated_at?: string | null\n          username: string\n          website?: string | null\n        }\n        Update: {\n          age_verified?: boolean | null\n          created_at?: string\n          creator_name?: string | null\n          date_of_birth?: string | null\n          display_name?: string | null\n          email?: string\n          email_2fa_enabled?: boolean\n          id?: string\n          is_nsfw_enabled?: boolean\n          notification_preferences?: Json | null\n          profile_picture?: string | null\n          updated_at?: string | null\n          username?: string\n          website?: string | null\n        }\n        Relationships: []\n      }\n    }\n    Views: {\n      commission_requests_creator_view: {\n        Row: {\n          agreed_price: number | null\n          budget_range_max: number | null\n          budget_range_min: number | null\n          commission_type_id: string | null\n          created_at: string | null\n          creator_id: string | null\n          creator_notes: string | null\n          customer_id: string | null\n          customer_notes: string | null\n          deadline: string | null\n          description: string | null\n          id: string | null\n          platform_fee_amount: number | null\n          reference_images: string[] | null\n          revision_count: number | null\n          selected_addons: Json | null\n          status: string | null\n          stripe_payment_intent_id: string | null\n          title: string | null\n          updated_at: string | null\n        }\n        Insert: {\n          agreed_price?: number | null\n          budget_range_max?: never\n          budget_range_min?: never\n          commission_type_id?: string | null\n          created_at?: string | null\n          creator_id?: string | null\n          creator_notes?: string | null\n          customer_id?: string | null\n          customer_notes?: never\n          deadline?: string | null\n          description?: string | null\n          id?: string | null\n          platform_fee_amount?: never\n          reference_images?: string[] | null\n          revision_count?: number | null\n          selected_addons?: Json | null\n          status?: string | null\n          stripe_payment_intent_id?: never\n          title?: string | null\n          updated_at?: string | null\n        }\n        Update: {\n          agreed_price?: number | null\n          budget_range_max?: never\n          budget_range_min?: never\n          commission_type_id?: string | null\n          created_at?: string | null\n          creator_id?: string | null\n          creator_notes?: string | null\n          customer_id?: string | null\n          customer_notes?: never\n          deadline?: string | null\n          description?: string | null\n          id?: string | null\n          platform_fee_amount?: never\n          reference_images?: string[] | null\n          revision_count?: number | null\n          selected_addons?: Json | null\n          status?: string | null\n          stripe_payment_intent_id?: never\n          title?: string | null\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"commission_requests_commission_type_id_fkey\"\n            columns: [\"commission_type_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_types\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_customer_id_fkey\"\n            columns: [\"customer_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      commission_requests_customer_view: {\n        Row: {\n          agreed_price: number | null\n          budget_range_max: number | null\n          budget_range_min: number | null\n          commission_type_id: string | null\n          created_at: string | null\n          creator_id: string | null\n          creator_notes: string | null\n          customer_id: string | null\n          customer_notes: string | null\n          deadline: string | null\n          description: string | null\n          id: string | null\n          platform_fee_amount: number | null\n          reference_images: string[] | null\n          revision_count: number | null\n          selected_addons: Json | null\n          status: string | null\n          stripe_payment_intent_id: string | null\n          title: string | null\n          updated_at: string | null\n        }\n        Insert: {\n          agreed_price?: number | null\n          budget_range_max?: number | null\n          budget_range_min?: number | null\n          commission_type_id?: string | null\n          created_at?: string | null\n          creator_id?: string | null\n          creator_notes?: never\n          customer_id?: string | null\n          customer_notes?: string | null\n          deadline?: string | null\n          description?: string | null\n          id?: string | null\n          platform_fee_amount?: never\n          reference_images?: string[] | null\n          revision_count?: number | null\n          selected_addons?: Json | null\n          status?: string | null\n          stripe_payment_intent_id?: never\n          title?: string | null\n          updated_at?: string | null\n        }\n        Update: {\n          agreed_price?: number | null\n          budget_range_max?: number | null\n          budget_range_min?: number | null\n          commission_type_id?: string | null\n          created_at?: string | null\n          creator_id?: string | null\n          creator_notes?: never\n          customer_id?: string | null\n          customer_notes?: string | null\n          deadline?: string | null\n          description?: string | null\n          id?: string | null\n          platform_fee_amount?: never\n          reference_images?: string[] | null\n          revision_count?: number | null\n          selected_addons?: Json | null\n          status?: string | null\n          stripe_payment_intent_id?: never\n          title?: string | null\n          updated_at?: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"commission_requests_commission_type_id_fkey\"\n            columns: [\"commission_type_id\"]\n            isOneToOne: false\n            referencedRelation: \"commission_types\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: false\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"commission_requests_customer_id_fkey\"\n            columns: [\"customer_id\"]\n            isOneToOne: false\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n      creator_stripe_status: {\n        Row: {\n          creator_id: string | null\n          stripe_account_id: string | null\n          stripe_charges_enabled: boolean | null\n          stripe_onboarding_complete: boolean | null\n          stripe_payouts_enabled: boolean | null\n          user_id: string | null\n        }\n        Relationships: [\n          {\n            foreignKeyName: \"creator_stripe_accounts_creator_id_fkey\"\n            columns: [\"creator_id\"]\n            isOneToOne: true\n            referencedRelation: \"creators\"\n            referencedColumns: [\"id\"]\n          },\n          {\n            foreignKeyName: \"creators_user_id_fkey\"\n            columns: [\"user_id\"]\n            isOneToOne: true\n            referencedRelation: \"users\"\n            referencedColumns: [\"id\"]\n          },\n        ]\n      }\n    }\n    Functions: {\n      audit_payment_operation: {\n        Args: {\n          p_metadata?: Json\n          p_operation_type: string\n          p_payment_method_id: string\n          p_result: string\n        }\n        Returns: undefined\n      }\n      audit_user_data_security: {\n        Args: never\n        Returns: {\n          details: string\n          recommendation: string\n          security_check: string\n          status: string\n        }[]\n      }\n      can_read_post_attachment: {\n        Args: { _object_name: string; _user_id: string }\n        Returns: boolean\n      }\n      check_payment_rate_limit: {\n        Args: {\n          p_limit?: number\n          p_operation: string\n          p_user_id: string\n          p_window_minutes?: number\n        }\n        Returns: boolean\n      }\n      check_rate_limit: {\n        Args: {\n          p_endpoint: string\n          p_ip_address: unknown\n          p_max_requests?: number\n          p_window_minutes?: number\n        }\n        Returns: boolean\n      }\n      cleanup_expired_2fa_codes: { Args: never; Returns: undefined }\n      cleanup_old_payment_audit_logs: { Args: never; Returns: number }\n      detect_payment_intrusion: {\n        Args: { p_suspicious_behavior: string; p_table_accessed: string }\n        Returns: undefined\n      }\n      get_commission_request_secure_v2: {\n        Args: { p_request_id: string }\n        Returns: {\n          agreed_price: number\n          budget_range_max: number\n          budget_range_min: number\n          commission_type_id: string\n          created_at: string\n          creator_id: string\n          creator_notes: string\n          customer_id: string\n          customer_notes: string\n          deadline: string\n          description: string\n          id: string\n          reference_images: string[]\n          revision_count: number\n          selected_addons: Json\n          status: string\n          title: string\n          updated_at: string\n          user_role: string\n        }[]\n      }\n      get_commission_type_details_secure: {\n        Args: { p_commission_type_id: string }\n        Returns: {\n          base_price: number\n          creator_id: string\n          custom_addons: Json\n          description: string\n          donts: string[]\n          dos: string[]\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          max_revisions: number\n          name: string\n          price_per_character: number\n          price_per_revision: number\n          sample_art_url: string\n          tags: string[]\n        }[]\n      }\n      get_commission_types_for_authenticated: {\n        Args: {\n          p_creator_id: string\n          p_limit?: number\n          p_offset?: number\n          p_only_active?: boolean\n        }\n        Returns: {\n          base_price: number\n          creator_id: string\n          description: string\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          name: string\n          sample_art_url: string\n          tags: string[]\n        }[]\n      }\n      get_commission_types_public: {\n        Args: { p_creator_id: string }\n        Returns: {\n          base_price: number\n          creator_id: string\n          description: string\n          estimated_turnaround_days: number\n          id: string\n          name: string\n          sample_art_url: string\n          tags: string[]\n        }[]\n      }\n      get_commission_types_secure: {\n        Args: { p_creator_id?: string }\n        Returns: {\n          base_price: number\n          created_at: string\n          creator_id: string\n          custom_addons: Json\n          description: string\n          donts: string[]\n          dos: string[]\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          max_revisions: number\n          name: string\n          price_per_character: number\n          price_per_revision: number\n          sample_art_url: string\n          show_pricing: boolean\n          tags: string[]\n          updated_at: string\n        }[]\n      }\n      get_creator_business_profile_secure: {\n        Args: { p_creator_id: string }\n        Returns: {\n          accepts_commissions: boolean\n          banner_url: string\n          bio: string\n          commission_base_rate: number\n          commission_slots_available: number\n          commission_tos: string\n          commission_turnaround_days: number\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          stripe_account_id: string\n          stripe_charges_enabled: boolean\n          stripe_onboarding_complete: boolean\n          stripe_payouts_enabled: boolean\n          tags: string[]\n          user_id: string\n          username: string\n          website: string\n        }[]\n      }\n      get_creator_commission_info: {\n        Args: { p_creator_id: string }\n        Returns: {\n          accepts_commissions: boolean\n          commission_base_rate: number\n          commission_slots_available: number\n          commission_tos: string\n          commission_turnaround_days: number\n          id: string\n        }[]\n      }\n      get_creator_commission_status: {\n        Args: { p_creator_id: string }\n        Returns: boolean\n      }\n      get_creator_commission_types: {\n        Args: { p_creator_id: string }\n        Returns: {\n          base_price: number\n          created_at: string\n          creator_id: string\n          custom_addons: Json\n          description: string\n          donts: string[]\n          dos: string[]\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          max_revisions: number\n          name: string\n          sample_art_url: string\n          tags: string[]\n        }[]\n      }\n      get_creator_followers: {\n        Args: { p_creator_id: string; p_limit?: number; p_offset?: number }\n        Returns: {\n          profile_picture: string\n          user_id: string\n          username: string\n        }[]\n      }\n      get_creator_for_follow: {\n        Args: { p_creator_id: string }\n        Returns: {\n          display_name: string\n          id: string\n          user_id: string\n        }[]\n      }\n      get_creator_profile_public: {\n        Args: { p_creator_id: string }\n        Returns: {\n          banner_url: string\n          bio: string\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          user_id: string\n          website: string\n        }[]\n      }\n      get_creator_profile_secure:\n        | {\n            Args: { p_creator_id: string }\n            Returns: {\n              accepts_commissions: boolean\n              banner_url: string\n              bio: string\n              commission_base_rate: number\n              commission_slots_available: number\n              commission_turnaround_days: number\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              username: string\n              website: string\n            }[]\n          }\n        | {\n            Args: {\n              p_creator_id?: string\n              p_display_name?: string\n              p_username?: string\n            }\n            Returns: {\n              accepts_commissions: boolean\n              banner_url: string\n              bio: string\n              commission_base_rate: number\n              commission_slots_available: number\n              commission_tos: string\n              commission_turnaround_days: number\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              is_owner: boolean\n              profile_image_url: string\n              stripe_account_id: string\n              stripe_charges_enabled: boolean\n              stripe_onboarding_complete: boolean\n              stripe_payouts_enabled: boolean\n              tags: string[]\n              updated_at: string\n              user_id: string\n              website: string\n            }[]\n          }\n      get_creator_ratings: {\n        Args: {\n          p_creator_id: string\n          p_limit?: number\n          p_offset?: number\n          p_rating_type?: string\n        }\n        Returns: {\n          created_at: string\n          creator_id: string\n          id: string\n          profile_picture: string\n          rating: number\n          rating_type: string\n          review_text: string\n          user_id: string\n          username: string\n        }[]\n      }\n      get_creator_settings_secure: {\n        Args: { p_user_id: string }\n        Returns: {\n          accepts_commissions: boolean\n          banner_url: string\n          bio: string\n          commission_base_rate: number\n          commission_slots_available: number\n          commission_tos: string\n          commission_turnaround_days: number\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          stripe_account_id: string\n          stripe_charges_enabled: boolean\n          stripe_onboarding_complete: boolean\n          stripe_payouts_enabled: boolean\n          tags: string[]\n          updated_at: string\n          user_id: string\n          users: Json\n          website: string\n        }[]\n      }\n      get_featured_commissions: {\n        Args: { p_limit?: number; p_search_term?: string }\n        Returns: {\n          base_price: number\n          creator_display_name: string\n          creator_id: string\n          creator_profile_image_url: string\n          creator_user_id: string\n          description: string\n          estimated_turnaround_days: number\n          id: string\n          name: string\n          sample_art_url: string\n        }[]\n      }\n      get_masked_payment_methods: {\n        Args: { p_user_id: string }\n        Returns: {\n          card_brand: string\n          card_last4: string\n          exp_display: string\n          id: string\n          is_default: boolean\n          type: string\n        }[]\n      }\n      get_membership_tier_stripe_ids: {\n        Args: { _tier_id: string }\n        Returns: {\n          stripe_price_id: string\n          stripe_product_id: string\n        }[]\n      }\n      get_my_creator_earnings: {\n        Args: {\n          p_end_date?: string\n          p_limit?: number\n          p_offset?: number\n          p_start_date?: string\n        }\n        Returns: {\n          amount: number\n          commission_request_id: string\n          creator_id: string\n          earning_type: string\n          id: string\n          net_amount: number\n          payment_date: string\n          platform_fee: number\n          subscription_id: string\n        }[]\n      }\n      get_my_creator_earnings_summary: {\n        Args: { p_end_date?: string; p_start_date?: string }\n        Returns: {\n          count_records: number\n          total_amount: number\n          total_net: number\n          total_platform_fees: number\n        }[]\n      }\n      get_payment_method_for_processing: {\n        Args: { p_operation: string; p_payment_method_id: string }\n        Returns: {\n          id: string\n          stripe_payment_method_id: string\n          type: string\n          user_id: string\n        }[]\n      }\n      get_payment_method_for_processing_secure: {\n        Args: {\n          p_operation: string\n          p_payment_method_id: string\n          p_request_context?: Json\n        }\n        Returns: {\n          method_type: string\n          stripe_payment_method_id: string\n          user_id: string\n        }[]\n      }\n      get_payment_method_for_service: {\n        Args: { p_operation: string; p_payment_method_id: string }\n        Returns: {\n          id: string\n          stripe_payment_method_id: string\n          type: string\n          user_id: string\n        }[]\n      }\n      get_payment_security_summary: {\n        Args: never\n        Returns: {\n          newest_record: string\n          oldest_record: string\n          table_name: string\n          total_records: number\n          unique_users: number\n        }[]\n      }\n      get_post_like_count: { Args: { post_id_param: string }; Returns: number }\n      get_post_view_count: { Args: { post_id_param: string }; Returns: number }\n      get_public_commission_types:\n        | {\n            Args: { p_creator_id: string }\n            Returns: {\n              base_price: number\n              creator_id: string\n              description: string\n              estimated_turnaround_days: number\n              id: string\n              name: string\n              sample_art_url: string\n              tags: string[]\n            }[]\n          }\n        | {\n            Args: {\n              p_creator_id: string\n              p_limit?: number\n              p_offset?: number\n              p_only_active?: boolean\n            }\n            Returns: {\n              base_price: number\n              description: string\n              estimated_turnaround_days: number\n              id: string\n              is_active: boolean\n              name: string\n              sample_art_url: string\n              tags: string[]\n            }[]\n          }\n      get_public_commission_types_secure: {\n        Args: {\n          p_creator_id: string\n          p_limit?: number\n          p_offset?: number\n          p_only_active?: boolean\n        }\n        Returns: {\n          base_price: number\n          created_at: string\n          creator_id: string\n          custom_addons: Json\n          description: string\n          estimated_turnaround_days: number\n          id: string\n          is_active: boolean\n          max_revisions: number\n          name: string\n          price_per_character: number\n          price_per_revision: number\n          sample_art_url: string\n          tags: string[]\n        }[]\n      }\n      get_public_creator_commission_status: {\n        Args: { p_creator_id: string }\n        Returns: {\n          accepts_commissions: boolean\n          creator_id: string\n        }[]\n      }\n      get_public_creator_display: {\n        Args: {\n          p_creator_id?: string\n          p_limit?: number\n          p_offset?: number\n          p_search?: string\n        }\n        Returns: {\n          accepts_commissions: boolean\n          banner_url: string\n          bio: string\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          username: string\n          website: string\n        }[]\n      }\n      get_public_creator_profile:\n        | {\n            Args: { p_creator_id: string }\n            Returns: {\n              banner_url: string\n              bio: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              website: string\n            }[]\n          }\n        | {\n            Args: {\n              p_creator_id?: string\n              p_user_id?: string\n              p_username?: string\n            }\n            Returns: {\n              accepts_commissions: boolean\n              banner_url: string\n              bio: string\n              commission_base_rate: number\n              commission_slots_available: number\n              commission_turnaround_days: number\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n            }[]\n          }\n        | {\n            Args: {\n              p_creator_id?: string\n              p_user_id?: string\n              p_username?: string\n            }\n            Returns: {\n              banner_url: string\n              bio: string\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              username: string\n              website: string\n            }[]\n          }\n        | {\n            Args: { p_identifier: string }\n            Returns: {\n              accepts_commissions: boolean\n              banner_url: string\n              bio: string\n              commission_base_rate: number\n              commission_slots_available: number\n              commission_turnaround_days: number\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              website: string\n            }[]\n          }\n      get_public_creators:\n        | {\n            Args: { p_limit?: number; p_offset?: number; p_search?: string }\n            Returns: {\n              banner_url: string\n              bio: string\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              username: string\n              website: string\n            }[]\n          }\n        | {\n            Args: { p_limit?: number; p_offset?: number; p_search?: string }\n            Returns: {\n              banner_url: string\n              bio: string\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              username: string\n              website: string\n            }[]\n          }\n      get_public_creators_by_user_ids: {\n        Args: { p_user_ids: string[] }\n        Returns: {\n          banner_url: string\n          bio: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          user_id: string\n          website: string\n        }[]\n      }\n      get_public_creators_list:\n        | {\n            Args: {\n              p_limit?: number\n              p_offset?: number\n              p_search?: string\n              p_sort?: string\n            }\n            Returns: {\n              banner_url: string\n              bio: string\n              created_at: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              username: string\n              website: string\n            }[]\n          }\n        | {\n            Args: {\n              p_limit?: number\n              p_offset?: number\n              p_search?: string\n              p_sort?: string\n            }\n            Returns: {\n              banner_url: string\n              bio: string\n              created_at: string\n              creator_name: string\n              display_name: string\n              follower_count: number\n              id: string\n              is_nsfw: boolean\n              profile_image_url: string\n              tags: string[]\n              user_id: string\n              user_profile_picture: string\n              username: string\n            }[]\n          }\n      get_public_membership_tiers:\n        | {\n            Args: { p_creator_id: string }\n            Returns: {\n              active: boolean\n              created_at: string\n              creator_id: string\n              description: string\n              id: string\n              price: number\n              title: string\n              updated_at: string\n            }[]\n          }\n        | {\n            Args: { p_creator_id: string; p_limit?: number; p_offset?: number }\n            Returns: {\n              active: boolean\n              creator_id: string\n              description: string\n              id: string\n              price: number\n              title: string\n            }[]\n          }\n      get_public_posts_secure: {\n        Args: { p_limit?: number; p_offset?: number }\n        Returns: {\n          attachments: Json\n          content: string\n          created_at: string\n          creator_display_name: string\n          creator_profile_image: string\n          creator_username: string\n          id: string\n          is_nsfw: boolean\n          tags: string[]\n          title: string\n          updated_at: string\n        }[]\n      }\n      get_public_user_info: {\n        Args: { p_user_id?: string; p_username?: string }\n        Returns: {\n          created_at: string\n          id: string\n          profile_picture: string\n          username: string\n        }[]\n      }\n      get_public_user_profiles: {\n        Args: { _user_ids: string[] }\n        Returns: {\n          id: string\n          profile_picture: string\n          username: string\n        }[]\n      }\n      get_safe_creator_profile: {\n        Args: { creator_id_param?: string; username_param?: string }\n        Returns: {\n          banner_url: string\n          bio: string\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          updated_at: string\n          user_id: string\n          username: string\n          website: string\n        }[]\n      }\n      get_safe_creator_profiles: {\n        Args: {\n          p_limit?: number\n          p_offset?: number\n          p_search?: string\n          p_tags?: string[]\n        }\n        Returns: {\n          banner_url: string\n          bio: string\n          created_at: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          updated_at: string\n          user_id: string\n          username: string\n          website: string\n        }[]\n      }\n      get_safe_payment_display: {\n        Args: { p_user_id: string }\n        Returns: {\n          created_month: string\n          id: string\n          is_default: boolean\n          masked_display: string\n        }[]\n      }\n      get_safe_payment_methods: {\n        Args: { p_user_id: string }\n        Returns: {\n          card_brand: string\n          card_exp_month: number\n          card_exp_year: number\n          card_last4: string\n          created_at: string\n          id: string\n          is_default: boolean\n          type: string\n          updated_at: string\n          user_id: string\n        }[]\n      }\n      get_safe_user_info: {\n        Args: { p_user_ids: string[] }\n        Returns: {\n          id: string\n          profile_picture: string\n          username: string\n        }[]\n      }\n      get_secure_creator_commission_info: {\n        Args: { p_creator_id: string }\n        Returns: {\n          accepts_commissions: boolean\n          commission_base_rate: number\n          commission_slots_available: number\n          commission_turnaround_days: number\n          id: string\n        }[]\n      }\n      get_secure_payment_display: {\n        Args: { p_user_id: string }\n        Returns: {\n          card_type: string\n          created_at: string\n          display_text: string\n          id: string\n          is_default: boolean\n        }[]\n      }\n      get_security_headers: { Args: never; Returns: Json }\n      get_user_commission_requests_with_details: {\n        Args: { p_customer_id: string }\n        Returns: {\n          agreed_price: number\n          budget_range_max: number\n          budget_range_min: number\n          commission_type_base_price: number\n          commission_type_id: string\n          commission_type_max_revisions: number\n          commission_type_name: string\n          commission_type_price_per_revision: number\n          created_at: string\n          creator_display_name: string\n          creator_id: string\n          creator_notes: string\n          creator_profile_image_url: string\n          customer_id: string\n          customer_notes: string\n          deadline: string\n          description: string\n          id: string\n          platform_fee_amount: number\n          reference_images: string[]\n          revision_count: number\n          selected_addons: Json\n          status: string\n          stripe_payment_intent_id: string\n          title: string\n          updated_at: string\n        }[]\n      }\n      get_user_following: {\n        Args: { p_limit?: number; p_offset?: number; p_user_id: string }\n        Returns: {\n          banner_url: string\n          bio: string\n          creator_id: string\n          creator_user_id: string\n          display_name: string\n          followed_at: string\n          follower_count: number\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          username: string\n        }[]\n      }\n      get_user_payment_cards_display: {\n        Args: { p_user_id: string }\n        Returns: {\n          card_display: string\n          created_at: string\n          id: string\n          is_default: boolean\n        }[]\n      }\n      get_user_payment_methods_secure: {\n        Args: { p_user_id: string }\n        Returns: {\n          card_brand: string\n          card_exp_month: number\n          card_exp_year: number\n          card_last4: string\n          created_at: string\n          id: string\n          is_default: boolean\n          type: string\n        }[]\n      }\n      get_user_public_data: {\n        Args: { ids?: string[]; usernames?: string[] }\n        Returns: {\n          created_at: string\n          id: string\n          profile_picture: string\n          username: string\n          website: string\n        }[]\n      }\n      get_user_public_profiles_secure: {\n        Args: { ids?: string[]; usernames?: string[] }\n        Returns: {\n          created_at: string\n          id: string\n          profile_picture: string\n          username: string\n          website: string\n        }[]\n      }\n      get_zero_knowledge_payment_display: {\n        Args: { p_user_id: string }\n        Returns: {\n          added_date: string\n          id: string\n          is_default: boolean\n          method_type: string\n          status: string\n        }[]\n      }\n      has_role: {\n        Args: {\n          _role: Database[\"public\"][\"Enums\"][\"app_role\"]\n          _user_id: string\n        }\n        Returns: boolean\n      }\n      list_my_commission_requests: {\n        Args: {\n          p_limit?: number\n          p_offset?: number\n          p_role?: string\n          p_status?: string\n        }\n        Returns: {\n          agreed_price: number\n          commission_type_base_price: number\n          commission_type_id: string\n          commission_type_name: string\n          created_at: string\n          creator_id: string\n          customer_id: string\n          id: string\n          status: string\n          title: string\n          updated_at: string\n        }[]\n      }\n      log_creator_financial_access: {\n        Args: { p_creator_id: string; p_operation: string }\n        Returns: undefined\n      }\n      log_payment_access: {\n        Args: {\n          p_accessed_data?: Json\n          p_operation: string\n          p_table_name: string\n        }\n        Returns: undefined\n      }\n      log_secure_payment_access: {\n        Args: { p_metadata?: Json; p_operation: string; p_user_id: string }\n        Returns: undefined\n      }\n      log_security_event:\n        | {\n            Args: { p_event_data?: Json; p_event_type: string }\n            Returns: undefined\n          }\n        | {\n            Args: {\n              p_details?: Json\n              p_event_type: string\n              p_table_name: string\n            }\n            Returns: undefined\n          }\n      log_security_event_with_rate_limit: {\n        Args: {\n          p_action: string\n          p_metadata?: Json\n          p_rate_limit_max?: number\n          p_rate_limit_window?: string\n        }\n        Returns: boolean\n      }\n      log_sensitive_access_attempt: {\n        Args: { p_details?: Json; p_operation: string; p_table_name: string }\n        Returns: undefined\n      }\n      lookup_creator_by_identifier: {\n        Args: { p_identifier: string }\n        Returns: {\n          accepts_commissions: boolean\n          banner_url: string\n          bio: string\n          commission_base_rate: number\n          commission_slots_available: number\n          commission_tos: string\n          commission_turnaround_days: number\n          created_at: string\n          creator_name: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          updated_at: string\n          user_id: string\n          user_profile_picture: string\n          username: string\n          website: string\n        }[]\n      }\n      search_creators_public: {\n        Args: {\n          p_is_nsfw?: boolean\n          p_limit?: number\n          p_offset?: number\n          p_search_term?: string\n          p_tags?: string[]\n        }\n        Returns: {\n          banner_url: string\n          bio: string\n          display_name: string\n          follower_count: number\n          id: string\n          is_nsfw: boolean\n          profile_image_url: string\n          tags: string[]\n          user_id: string\n          website: string\n        }[]\n      }\n      user_can_access_post_attachment: {\n        Args: { object_name: string }\n        Returns: boolean\n      }\n      user_can_see_full_post_content: {\n        Args: { post_id_param: string }\n        Returns: boolean\n      }\n      user_has_tier_access: {\n        Args: { tier_id_param: string }\n        Returns: boolean\n      }\n      user_owns_creator_profile: {\n        Args: { creator_id_param: string }\n        Returns: boolean\n      }\n      user_owns_post: { Args: { post_id_param: string }; Returns: boolean }\n      validate_user_data_access: {\n        Args: never\n        Returns: {\n          access_type: string\n          description: string\n          is_secure: boolean\n        }[]\n      }\n    }\n    Enums: {\n      app_role: \"user\" | \"moderator\" | \"admin\"\n    }\n    CompositeTypes: {\n      [_ in never]: never\n    }\n  }\n}\n\ntype DatabaseWithoutInternals = Omit<Database, \"__InternalSupabase\">\n\ntype DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, \"public\">]\n\nexport type Tables<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof (DefaultSchema[\"Tables\"] & DefaultSchema[\"Views\"])\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"] &\n      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Views\"])[TableName] extends {\n      Row: infer R\n    }\n    ? R\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])\n    ? (DefaultSchema[\"Tables\"] &\n        DefaultSchema[\"Views\"])[DefaultSchemaTableNameOrOptions] extends {\n        Row: infer R\n      }\n      ? R\n      : never\n    : never\n\nexport type TablesInsert<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Insert: infer I\n    }\n    ? I\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Insert: infer I\n      }\n      ? I\n      : never\n    : never\n\nexport type TablesUpdate<\n  DefaultSchemaTableNameOrOptions extends\n    | keyof DefaultSchema[\"Tables\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  TableName extends DefaultSchemaTableNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"]\n    : never = never,\n> = DefaultSchemaTableNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions[\"schema\"]][\"Tables\"][TableName] extends {\n      Update: infer U\n    }\n    ? U\n    : never\n  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema[\"Tables\"]\n    ? DefaultSchema[\"Tables\"][DefaultSchemaTableNameOrOptions] extends {\n        Update: infer U\n      }\n      ? U\n      : never\n    : never\n\nexport type Enums<\n  DefaultSchemaEnumNameOrOptions extends\n    | keyof DefaultSchema[\"Enums\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  EnumName extends DefaultSchemaEnumNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"]\n    : never = never,\n> = DefaultSchemaEnumNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions[\"schema\"]][\"Enums\"][EnumName]\n  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema[\"Enums\"]\n    ? DefaultSchema[\"Enums\"][DefaultSchemaEnumNameOrOptions]\n    : never\n\nexport type CompositeTypes<\n  PublicCompositeTypeNameOrOptions extends\n    | keyof DefaultSchema[\"CompositeTypes\"]\n    | { schema: keyof DatabaseWithoutInternals },\n  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {\n    schema: keyof DatabaseWithoutInternals\n  }\n    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"]\n    : never = never,\n> = PublicCompositeTypeNameOrOptions extends {\n  schema: keyof DatabaseWithoutInternals\n}\n  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions[\"schema\"]][\"CompositeTypes\"][CompositeTypeName]\n  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema[\"CompositeTypes\"]\n    ? DefaultSchema[\"CompositeTypes\"][PublicCompositeTypeNameOrOptions]\n    : never\n\nexport const Constants = {\n  public: {\n    Enums: {\n      app_role: [\"user\", \"moderator\", \"admin\"],\n    },\n  },\n} as const\n"}
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.5"
+  }
+  public: {
+    Tables: {
+      api_rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: unknown
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
+      auth_trigger_errors: {
+        Row: {
+          email: string | null
+          id: string
+          occurred_at: string
+          sqlerrm: string | null
+          sqlstate: string | null
+          user_id: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          occurred_at?: string
+          sqlerrm?: string | null
+          sqlstate?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          occurred_at?: string
+          sqlerrm?: string | null
+          sqlstate?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_deliverables: {
+        Row: {
+          commission_request_id: string
+          created_at: string
+          delivered_at: string
+          delivery_notes: string | null
+          external_links: string[]
+          file_urls: string[]
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_request_id: string
+          created_at?: string
+          delivered_at?: string
+          delivery_notes?: string | null
+          external_links?: string[]
+          file_urls?: string[]
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_request_id?: string
+          created_at?: string
+          delivered_at?: string
+          delivery_notes?: string | null
+          external_links?: string[]
+          file_urls?: string[]
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_creator_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_deliverables_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_customer_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_requests: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string
+          created_at: string
+          creator_id: string
+          creator_notes: string | null
+          customer_id: string
+          customer_notes: string | null
+          deadline: string | null
+          description: string
+          id: string
+          platform_fee_amount: number | null
+          reference_images: string[] | null
+          revision_count: number
+          selected_addons: Json | null
+          status: string
+          stripe_payment_intent_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id: string
+          created_at?: string
+          creator_id: string
+          creator_notes?: string | null
+          customer_id: string
+          customer_notes?: string | null
+          deadline?: string | null
+          description: string
+          id?: string
+          platform_fee_amount?: number | null
+          reference_images?: string[] | null
+          revision_count?: number
+          selected_addons?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string
+          created_at?: string
+          creator_id?: string
+          creator_notes?: string | null
+          customer_id?: string
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string
+          id?: string
+          platform_fee_amount?: number | null
+          reference_images?: string[] | null
+          revision_count?: number
+          selected_addons?: Json | null
+          status?: string
+          stripe_payment_intent_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_revisions: {
+        Row: {
+          commission_request_id: string
+          created_at: string
+          extra_revision_fee: number | null
+          id: string
+          is_extra_revision: boolean
+          request_notes: string
+          requester_id: string
+          revision_number: number
+          status: string
+          stripe_payment_intent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_request_id: string
+          created_at?: string
+          extra_revision_fee?: number | null
+          id?: string
+          is_extra_revision?: boolean
+          request_notes: string
+          requester_id: string
+          revision_number: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_request_id?: string
+          created_at?: string
+          extra_revision_fee?: number | null
+          id?: string
+          is_extra_revision?: boolean
+          request_notes?: string
+          requester_id?: string
+          revision_number?: number
+          status?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      commission_types: {
+        Row: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json | null
+          description: string | null
+          donts: string[] | null
+          dos: string[] | null
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number | null
+          price_per_revision: number | null
+          sample_art_url: string | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          base_price: number
+          created_at?: string
+          creator_id: string
+          custom_addons?: Json | null
+          description?: string | null
+          donts?: string[] | null
+          dos?: string[] | null
+          estimated_turnaround_days: number
+          id?: string
+          is_active?: boolean
+          max_revisions?: number
+          name: string
+          price_per_character?: number | null
+          price_per_revision?: number | null
+          sample_art_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          creator_id?: string
+          custom_addons?: Json | null
+          description?: string | null
+          donts?: string[] | null
+          dos?: string[] | null
+          estimated_turnaround_days?: number
+          id?: string
+          is_active?: boolean
+          max_revisions?: number
+          name?: string
+          price_per_character?: number | null
+          price_per_revision?: number | null
+          sample_art_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_types_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_participants: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          id: string
+          last_message_at: string | null
+          other_user_id: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          other_user_id: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string | null
+          other_user_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_other_user_id_fkey"
+            columns: ["other_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      creator_earnings: {
+        Row: {
+          amount: number
+          commission_request_id: string | null
+          created_at: string | null
+          creator_id: string
+          earning_type: string | null
+          id: string
+          net_amount: number
+          payment_date: string | null
+          platform_fee: number
+          stripe_transfer_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          amount: number
+          commission_request_id?: string | null
+          created_at?: string | null
+          creator_id: string
+          earning_type?: string | null
+          id?: string
+          net_amount: number
+          payment_date?: string | null
+          platform_fee: number
+          stripe_transfer_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          amount?: number
+          commission_request_id?: string | null
+          created_at?: string | null
+          creator_id?: string
+          earning_type?: string | null
+          id?: string
+          net_amount?: number
+          payment_date?: string | null
+          platform_fee?: number
+          stripe_transfer_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_earnings_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_creator_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_commission_request_id_fkey"
+            columns: ["commission_request_id"]
+            isOneToOne: false
+            referencedRelation: "commission_requests_customer_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_links: {
+        Row: {
+          created_at: string | null
+          creator_id: string | null
+          id: string
+          label: string | null
+          position: number | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          label?: string | null
+          position?: number | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string | null
+          id?: string
+          label?: string | null
+          position?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_links_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_ratings: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          rating: number
+          rating_type: string
+          review_text: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          rating: number
+          rating_type?: string
+          review_text?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          rating?: number
+          rating_type?: string
+          review_text?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_ratings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_stripe_accounts: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: string
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: string
+          stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean | null
+          stripe_onboarding_complete?: boolean | null
+          stripe_payouts_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_stripe_accounts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creators: {
+        Row: {
+          accepts_commissions: boolean | null
+          banner_url: string | null
+          bio: string | null
+          commission_base_rate: number | null
+          commission_slots_available: number | null
+          commission_tos: string | null
+          commission_turnaround_days: number | null
+          created_at: string
+          creator_name: string | null
+          display_name: string | null
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string | null
+          tags: string[] | null
+          updated_at: string | null
+          user_id: string
+          user_profile_picture: string | null
+          username: string
+          website: string | null
+        }
+        Insert: {
+          accepts_commissions?: boolean | null
+          banner_url?: string | null
+          bio?: string | null
+          commission_base_rate?: number | null
+          commission_slots_available?: number | null
+          commission_tos?: string | null
+          commission_turnaround_days?: number | null
+          created_at?: string
+          creator_name?: string | null
+          display_name?: string | null
+          follower_count?: number
+          id?: string
+          is_nsfw?: boolean
+          profile_image_url?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          user_profile_picture?: string | null
+          username: string
+          website?: string | null
+        }
+        Update: {
+          accepts_commissions?: boolean | null
+          banner_url?: string | null
+          bio?: string | null
+          commission_base_rate?: number | null
+          commission_slots_available?: number | null
+          commission_tos?: string | null
+          commission_turnaround_days?: number | null
+          created_at?: string
+          creator_name?: string | null
+          display_name?: string | null
+          follower_count?: number
+          id?: string
+          is_nsfw?: boolean
+          profile_image_url?: string | null
+          tags?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          user_profile_picture?: string | null
+          username?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devlogs: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devlogs_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devlogs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      digital_products: {
+        Row: {
+          asset_url: string | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          godot_version: string | null
+          id: string
+          license: string | null
+          price: number
+          project_id: string | null
+          screenshots: string[] | null
+          short_description: string | null
+          status: string
+          stripe_price_id: string | null
+          tags: string[] | null
+          title: string
+          trailer_url: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          asset_url?: string | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          godot_version?: string | null
+          id?: string
+          license?: string | null
+          price?: number
+          project_id?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
+          status?: string
+          stripe_price_id?: string | null
+          tags?: string[] | null
+          title: string
+          trailer_url?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          asset_url?: string | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          godot_version?: string | null
+          id?: string
+          license?: string | null
+          price?: number
+          project_id?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
+          status?: string
+          stripe_price_id?: string | null
+          tags?: string[] | null
+          title?: string
+          trailer_url?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_products_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "digital_products_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_2fa_codes: {
+        Row: {
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          email: string
+          expires_at: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+        }
+        Relationships: []
+      }
+      feeds: {
+        Row: {
+          created_at: string
+          feed_type: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feed_type: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feed_type?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeds_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feeds_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          creator_id: string
+          id: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          id?: never
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          id?: never
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_replies: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          parent_reply_id: string | null
+          thread_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          parent_reply_id?: string | null
+          thread_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          parent_reply_id?: string | null
+          thread_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_replies_parent_reply_id_fkey"
+            columns: ["parent_reply_id"]
+            isOneToOne: false
+            referencedRelation: "forum_replies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forum_replies_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_threads: {
+        Row: {
+          author_id: string
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          is_locked: boolean
+          is_pinned: boolean
+          reply_count: number
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          view_count: number
+        }
+        Insert: {
+          author_id: string
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          is_pinned?: boolean
+          reply_count?: number
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          view_count?: number
+        }
+        Update: {
+          author_id?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_locked?: boolean
+          is_pinned?: boolean
+          reply_count?: number
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          view_count?: number
+        }
+        Relationships: []
+      }
+      game_ratings: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          rating: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_ratings_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "indie_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indie_games: {
+        Row: {
+          created_at: string
+          description: string | null
+          external_platform: string | null
+          external_url: string
+          genre: string | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          external_platform?: string | null
+          external_url: string
+          genre?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          external_platform?: string | null
+          external_url?: string
+          genre?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_applications: {
+        Row: {
+          applicant_id: string
+          cover_letter: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          portfolio_url: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          applicant_id: string
+          cover_letter?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          portfolio_url?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          applicant_id?: string
+          cover_letter?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          portfolio_url?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "job_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_listings: {
+        Row: {
+          budget_max: number | null
+          budget_min: number | null
+          budget_type: string
+          category: string
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: string
+          poster_id: string
+          requirements: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          budget_max?: number | null
+          budget_min?: number | null
+          budget_type?: string
+          category?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          poster_id: string
+          requirements?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          budget_max?: number | null
+          budget_min?: number | null
+          budget_type?: string
+          category?: string
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          poster_id?: string
+          requirements?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_tiers: {
+        Row: {
+          active: boolean
+          created_at: string
+          creator_id: string
+          description: string
+          id: string
+          price: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          creator_id: string
+          description: string
+          id?: string
+          price: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          creator_id?: string
+          description?: string
+          id?: string
+          price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_tiers_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          blocked_at: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_read: boolean
+          message_text: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          blocked_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_read?: boolean
+          message_text: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          blocked_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_read?: boolean
+          message_text?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          metadata: Json | null
+          related_id: string | null
+          related_user_id: string | null
+          title: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          metadata?: Json | null
+          related_id?: string | null
+          related_user_id?: string | null
+          title?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          metadata?: Json | null
+          related_id?: string | null
+          related_user_id?: string | null
+          title?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_audit_log: {
+        Row: {
+          accessed_data: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          operation: string
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          accessed_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          operation: string
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          accessed_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          operation?: string
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_metadata_encrypted: {
+        Row: {
+          created_at: string
+          encrypted_data: string | null
+          id: string
+          payment_method_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_data?: string | null
+          id?: string
+          payment_method_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_data?: string | null
+          id?: string
+          payment_method_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_metadata_encrypted_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          card_brand: string | null
+          card_exp_month: number | null
+          card_exp_year: number | null
+          card_last4: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          stripe_payment_method_id: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          operation: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          operation: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          operation?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_secrets_vault: {
+        Row: {
+          created_at: string
+          encrypted_stripe_id: string | null
+          encryption_key_hash: string | null
+          id: string
+          last_accessed: string | null
+          payment_method_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_stripe_id?: string | null
+          encryption_key_hash?: string | null
+          id?: string
+          last_accessed?: string | null
+          payment_method_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_stripe_id?: string | null
+          encryption_key_hash?: string | null
+          id?: string
+          last_accessed?: string | null
+          payment_method_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_secrets_vault_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_security_alerts: {
+        Row: {
+          alert_type: string
+          attempted_data: Json | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          attempted_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          attempted_data?: Json | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      payment_vault_encrypted: {
+        Row: {
+          access_count: number | null
+          created_at: string
+          encrypted_metadata: string | null
+          encrypted_stripe_id: string
+          encryption_version: number
+          id: string
+          key_fingerprint: string
+          last_accessed: string | null
+          payment_method_id: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string
+          encrypted_metadata?: string | null
+          encrypted_stripe_id: string
+          encryption_version?: number
+          id?: string
+          key_fingerprint: string
+          last_accessed?: string | null
+          payment_method_id: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string
+          encrypted_metadata?: string | null
+          encrypted_stripe_id?: string
+          encryption_version?: number
+          id?: string
+          key_fingerprint?: string
+          last_accessed?: string | null
+          payment_method_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_vault_encrypted_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_reads: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_reads_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_shares: {
+        Row: {
+          created_at: string
+          id: string
+          platform: string
+          post_id: string
+          shared_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform: string
+          post_id: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform?: string
+          post_id?: string
+          shared_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          tier_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          tier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          tier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_tiers_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_tiers_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_views: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          view_type: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          view_type?: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          view_type?: string
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          attachments: Json | null
+          author_id: string
+          content: string
+          created_at: string
+          creator_id: string | null
+          id: string
+          is_nsfw: boolean
+          scheduled_for: string | null
+          status: string | null
+          tags: string[] | null
+          tier_id: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          author_id: string
+          content: string
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          is_nsfw?: boolean
+          scheduled_for?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tier_id?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          author_id?: string
+          content?: string
+          created_at?: string
+          creator_id?: string | null
+          id?: string
+          is_nsfw?: boolean
+          scheduled_for?: string | null
+          status?: string | null
+          tags?: string[] | null
+          tier_id?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_ratings: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          review: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          rating: number
+          review?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          review?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ratings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          ai_disclosure: string | null
+          app_store_links: Json | null
+          classification: string | null
+          community_mode: string | null
+          cover_image_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          genre: string | null
+          id: string
+          kind: string | null
+          pricing_model: string | null
+          release_status: string | null
+          repository_url: string | null
+          screenshots: string[] | null
+          short_description: string | null
+          slug: string
+          status: string
+          suggested_price_cents: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          video_url: string | null
+          visibility: string | null
+          website_url: string | null
+        }
+        Insert: {
+          ai_disclosure?: string | null
+          app_store_links?: Json | null
+          classification?: string | null
+          community_mode?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          kind?: string | null
+          pricing_model?: string | null
+          release_status?: string | null
+          repository_url?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
+          slug: string
+          status?: string
+          suggested_price_cents?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          video_url?: string | null
+          visibility?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          ai_disclosure?: string | null
+          app_store_links?: Json | null
+          classification?: string | null
+          community_mode?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          genre?: string | null
+          id?: string
+          kind?: string | null
+          pricing_model?: string | null
+          release_status?: string | null
+          repository_url?: string | null
+          screenshots?: string[] | null
+          short_description?: string | null
+          slug?: string
+          status?: string
+          suggested_price_cents?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string | null
+          visibility?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchases: {
+        Row: {
+          amount: number
+          buyer_id: string
+          created_at: string
+          creator_id: string
+          id: string
+          net_amount: number
+          platform_fee: number
+          product_id: string
+          status: string
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          buyer_id: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          net_amount?: number
+          platform_fee?: number
+          product_id: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          net_amount?: number
+          platform_fee?: number
+          product_id?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_limit_events: {
+        Row: {
+          action: string
+          created_at: string
+          email: string | null
+          id: string
+          ip: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string
+        }
+        Relationships: []
+      }
+      saved_posts: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      security_rate_limits: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address: unknown
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      stripe_customers: {
+        Row: {
+          created_at: string | null
+          id: string
+          stripe_customer_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          flagged_reason: string | null
+          id: string
+          is_flagged: boolean | null
+          is_moderated: boolean | null
+          name: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          flagged_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_moderated?: boolean | null
+          name: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          flagged_reason?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_moderated?: boolean | null
+          name?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          category_id: number
+          category_name: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: number
+          category_name: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: number
+          category_name?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          amount: number
+          billing_email: string | null
+          cancel_at_period_end: boolean | null
+          created_at: string
+          creator_id: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          billing_email?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          creator_id: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          billing_email?: string | null
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          creator_id?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_subscriptions_creator_id"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_subscriptions_tier_id"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_subscriptions_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_subscriptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          age_verified: boolean | null
+          created_at: string
+          creator_name: string | null
+          date_of_birth: string | null
+          display_name: string | null
+          email: string
+          email_2fa_enabled: boolean
+          id: string
+          is_nsfw_enabled: boolean
+          notification_preferences: Json | null
+          profile_picture: string | null
+          updated_at: string | null
+          username: string
+          website: string | null
+        }
+        Insert: {
+          age_verified?: boolean | null
+          created_at?: string
+          creator_name?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          email: string
+          email_2fa_enabled?: boolean
+          id?: string
+          is_nsfw_enabled?: boolean
+          notification_preferences?: Json | null
+          profile_picture?: string | null
+          updated_at?: string | null
+          username: string
+          website?: string | null
+        }
+        Update: {
+          age_verified?: boolean | null
+          created_at?: string
+          creator_name?: string | null
+          date_of_birth?: string | null
+          display_name?: string | null
+          email?: string
+          email_2fa_enabled?: boolean
+          id?: string
+          is_nsfw_enabled?: boolean
+          notification_preferences?: Json | null
+          profile_picture?: string | null
+          updated_at?: string | null
+          username?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      commission_requests_creator_view: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          creator_notes: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          platform_fee_amount: number | null
+          reference_images: string[] | null
+          revision_count: number | null
+          selected_addons: Json | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: never
+          budget_range_min?: never
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: never
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: never
+          budget_range_min?: never
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: string | null
+          customer_id?: string | null
+          customer_notes?: never
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_requests_customer_view: {
+        Row: {
+          agreed_price: number | null
+          budget_range_max: number | null
+          budget_range_min: number | null
+          commission_type_id: string | null
+          created_at: string | null
+          creator_id: string | null
+          creator_notes: string | null
+          customer_id: string | null
+          customer_notes: string | null
+          deadline: string | null
+          description: string | null
+          id: string | null
+          platform_fee_amount: number | null
+          reference_images: string[] | null
+          revision_count: number | null
+          selected_addons: Json | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: never
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agreed_price?: number | null
+          budget_range_max?: number | null
+          budget_range_min?: number | null
+          commission_type_id?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          creator_notes?: never
+          customer_id?: string | null
+          customer_notes?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: string | null
+          platform_fee_amount?: never
+          reference_images?: string[] | null
+          revision_count?: number | null
+          selected_addons?: Json | null
+          status?: string | null
+          stripe_payment_intent_id?: never
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_requests_commission_type_id_fkey"
+            columns: ["commission_type_id"]
+            isOneToOne: false
+            referencedRelation: "commission_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_stripe_status: {
+        Row: {
+          creator_id: string | null
+          stripe_account_id: string | null
+          stripe_charges_enabled: boolean | null
+          stripe_onboarding_complete: boolean | null
+          stripe_payouts_enabled: boolean | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_stripe_accounts_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: true
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creators_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Functions: {
+      audit_payment_operation: {
+        Args: {
+          p_metadata?: Json
+          p_operation_type: string
+          p_payment_method_id: string
+          p_result: string
+        }
+        Returns: undefined
+      }
+      audit_user_data_security: {
+        Args: never
+        Returns: {
+          details: string
+          recommendation: string
+          security_check: string
+          status: string
+        }[]
+      }
+      can_read_post_attachment: {
+        Args: { _object_name: string; _user_id: string }
+        Returns: boolean
+      }
+      check_payment_rate_limit: {
+        Args: {
+          p_limit?: number
+          p_operation: string
+          p_user_id: string
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_ip_address: unknown
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
+      cleanup_old_payment_audit_logs: { Args: never; Returns: number }
+      detect_payment_intrusion: {
+        Args: { p_suspicious_behavior: string; p_table_accessed: string }
+        Returns: undefined
+      }
+      get_commission_request_secure_v2: {
+        Args: { p_request_id: string }
+        Returns: {
+          agreed_price: number
+          budget_range_max: number
+          budget_range_min: number
+          commission_type_id: string
+          created_at: string
+          creator_id: string
+          creator_notes: string
+          customer_id: string
+          customer_notes: string
+          deadline: string
+          description: string
+          id: string
+          reference_images: string[]
+          revision_count: number
+          selected_addons: Json
+          status: string
+          title: string
+          updated_at: string
+          user_role: string
+        }[]
+      }
+      get_commission_type_details_secure: {
+        Args: { p_commission_type_id: string }
+        Returns: {
+          base_price: number
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number
+          price_per_revision: number
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_for_authenticated: {
+        Args: {
+          p_creator_id: string
+          p_limit?: number
+          p_offset?: number
+          p_only_active?: boolean
+        }
+        Returns: {
+          base_price: number
+          creator_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_public: {
+        Args: { p_creator_id: string }
+        Returns: {
+          base_price: number
+          creator_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_commission_types_secure: {
+        Args: { p_creator_id?: string }
+        Returns: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number
+          price_per_revision: number
+          sample_art_url: string
+          show_pricing: boolean
+          tags: string[]
+          updated_at: string
+        }[]
+      }
+      get_creator_business_profile_secure: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          stripe_account_id: string
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
+          tags: string[]
+          user_id: string
+          username: string
+          website: string
+        }[]
+      }
+      get_creator_commission_info: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          id: string
+        }[]
+      }
+      get_creator_commission_status: {
+        Args: { p_creator_id: string }
+        Returns: boolean
+      }
+      get_creator_commission_types: {
+        Args: { p_creator_id: string }
+        Returns: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json
+          description: string
+          donts: string[]
+          dos: string[]
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_creator_followers: {
+        Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          profile_picture: string
+          user_id: string
+          username: string
+        }[]
+      }
+      get_creator_for_follow: {
+        Args: { p_creator_id: string }
+        Returns: {
+          display_name: string
+          id: string
+          user_id: string
+        }[]
+      }
+      get_creator_profile_public: {
+        Args: { p_creator_id: string }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          website: string
+        }[]
+      }
+      get_creator_profile_secure:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_display_name?: string
+              p_username?: string
+            }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_tos: string
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              is_owner: boolean
+              profile_image_url: string
+              stripe_account_id: string
+              stripe_charges_enabled: boolean
+              stripe_onboarding_complete: boolean
+              stripe_payouts_enabled: boolean
+              tags: string[]
+              updated_at: string
+              user_id: string
+              website: string
+            }[]
+          }
+      get_creator_ratings: {
+        Args: {
+          p_creator_id: string
+          p_limit?: number
+          p_offset?: number
+          p_rating_type?: string
+        }
+        Returns: {
+          created_at: string
+          creator_id: string
+          id: string
+          profile_picture: string
+          rating: number
+          rating_type: string
+          review_text: string
+          user_id: string
+          username: string
+        }[]
+      }
+      get_creator_settings_secure: {
+        Args: { p_user_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          stripe_account_id: string
+          stripe_charges_enabled: boolean
+          stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
+          tags: string[]
+          updated_at: string
+          user_id: string
+          users: Json
+          website: string
+        }[]
+      }
+      get_featured_commissions: {
+        Args: { p_limit?: number; p_search_term?: string }
+        Returns: {
+          base_price: number
+          creator_display_name: string
+          creator_id: string
+          creator_profile_image_url: string
+          creator_user_id: string
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          name: string
+          sample_art_url: string
+        }[]
+      }
+      get_masked_payment_methods: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_brand: string
+          card_last4: string
+          exp_display: string
+          id: string
+          is_default: boolean
+          type: string
+        }[]
+      }
+      get_membership_tier_stripe_ids: {
+        Args: { _tier_id: string }
+        Returns: {
+          stripe_price_id: string
+          stripe_product_id: string
+        }[]
+      }
+      get_my_creator_earnings: {
+        Args: {
+          p_end_date?: string
+          p_limit?: number
+          p_offset?: number
+          p_start_date?: string
+        }
+        Returns: {
+          amount: number
+          commission_request_id: string
+          creator_id: string
+          earning_type: string
+          id: string
+          net_amount: number
+          payment_date: string
+          platform_fee: number
+          subscription_id: string
+        }[]
+      }
+      get_my_creator_earnings_summary: {
+        Args: { p_end_date?: string; p_start_date?: string }
+        Returns: {
+          count_records: number
+          total_amount: number
+          total_net: number
+          total_platform_fees: number
+        }[]
+      }
+      get_payment_method_for_processing: {
+        Args: { p_operation: string; p_payment_method_id: string }
+        Returns: {
+          id: string
+          stripe_payment_method_id: string
+          type: string
+          user_id: string
+        }[]
+      }
+      get_payment_method_for_processing_secure: {
+        Args: {
+          p_operation: string
+          p_payment_method_id: string
+          p_request_context?: Json
+        }
+        Returns: {
+          method_type: string
+          stripe_payment_method_id: string
+          user_id: string
+        }[]
+      }
+      get_payment_method_for_service: {
+        Args: { p_operation: string; p_payment_method_id: string }
+        Returns: {
+          id: string
+          stripe_payment_method_id: string
+          type: string
+          user_id: string
+        }[]
+      }
+      get_payment_security_summary: {
+        Args: never
+        Returns: {
+          newest_record: string
+          oldest_record: string
+          table_name: string
+          total_records: number
+          unique_users: number
+        }[]
+      }
+      get_post_like_count: { Args: { post_id_param: string }; Returns: number }
+      get_post_view_count: { Args: { post_id_param: string }; Returns: number }
+      get_public_commission_types:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              base_price: number
+              creator_id: string
+              description: string
+              estimated_turnaround_days: number
+              id: string
+              name: string
+              sample_art_url: string
+              tags: string[]
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id: string
+              p_limit?: number
+              p_offset?: number
+              p_only_active?: boolean
+            }
+            Returns: {
+              base_price: number
+              description: string
+              estimated_turnaround_days: number
+              id: string
+              is_active: boolean
+              name: string
+              sample_art_url: string
+              tags: string[]
+            }[]
+          }
+      get_public_commission_types_secure: {
+        Args: {
+          p_creator_id: string
+          p_limit?: number
+          p_offset?: number
+          p_only_active?: boolean
+        }
+        Returns: {
+          base_price: number
+          created_at: string
+          creator_id: string
+          custom_addons: Json
+          description: string
+          estimated_turnaround_days: number
+          id: string
+          is_active: boolean
+          max_revisions: number
+          name: string
+          price_per_character: number
+          price_per_revision: number
+          sample_art_url: string
+          tags: string[]
+        }[]
+      }
+      get_public_creator_commission_status: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          creator_id: string
+        }[]
+      }
+      get_public_creator_display: {
+        Args: {
+          p_creator_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          username: string
+          website: string
+        }[]
+      }
+      get_public_creator_profile:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_user_id?: string
+              p_username?: string
+            }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_creator_id?: string
+              p_user_id?: string
+              p_username?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: { p_identifier: string }
+            Returns: {
+              accepts_commissions: boolean
+              banner_url: string
+              bio: string
+              commission_base_rate: number
+              commission_slots_available: number
+              commission_turnaround_days: number
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              website: string
+            }[]
+          }
+      get_public_creators:
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_search?: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_search?: string }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              username: string
+              website: string
+            }[]
+          }
+      get_public_creators_by_user_ids: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          banner_url: string
+          bio: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          website: string
+        }[]
+      }
+      get_public_creators_list:
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_sort?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              username: string
+              website: string
+            }[]
+          }
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_sort?: string
+            }
+            Returns: {
+              banner_url: string
+              bio: string
+              created_at: string
+              creator_name: string
+              display_name: string
+              follower_count: number
+              id: string
+              is_nsfw: boolean
+              profile_image_url: string
+              tags: string[]
+              user_id: string
+              user_profile_picture: string
+              username: string
+            }[]
+          }
+      get_public_membership_tiers:
+        | {
+            Args: { p_creator_id: string }
+            Returns: {
+              active: boolean
+              created_at: string
+              creator_id: string
+              description: string
+              id: string
+              price: number
+              title: string
+              updated_at: string
+            }[]
+          }
+        | {
+            Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
+            Returns: {
+              active: boolean
+              creator_id: string
+              description: string
+              id: string
+              price: number
+              title: string
+            }[]
+          }
+      get_public_posts_secure: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          attachments: Json
+          content: string
+          created_at: string
+          creator_display_name: string
+          creator_profile_image: string
+          creator_username: string
+          id: string
+          is_nsfw: boolean
+          tags: string[]
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_public_user_info: {
+        Args: { p_user_id?: string; p_username?: string }
+        Returns: {
+          created_at: string
+          id: string
+          profile_picture: string
+          username: string
+        }[]
+      }
+      get_public_user_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          id: string
+          profile_picture: string
+          username: string
+        }[]
+      }
+      get_safe_creator_profile: {
+        Args: { creator_id_param?: string; username_param?: string }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          username: string
+          website: string
+        }[]
+      }
+      get_safe_creator_profiles: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          banner_url: string
+          bio: string
+          created_at: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          username: string
+          website: string
+        }[]
+      }
+      get_safe_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          created_month: string
+          id: string
+          is_default: boolean
+          masked_display: string
+        }[]
+      }
+      get_safe_payment_methods: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_brand: string
+          card_exp_month: number
+          card_exp_year: number
+          card_last4: string
+          created_at: string
+          id: string
+          is_default: boolean
+          type: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_safe_user_info: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          id: string
+          profile_picture: string
+          username: string
+        }[]
+      }
+      get_secure_creator_commission_info: {
+        Args: { p_creator_id: string }
+        Returns: {
+          accepts_commissions: boolean
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_turnaround_days: number
+          id: string
+        }[]
+      }
+      get_secure_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_type: string
+          created_at: string
+          display_text: string
+          id: string
+          is_default: boolean
+        }[]
+      }
+      get_security_headers: { Args: never; Returns: Json }
+      get_user_commission_requests_with_details: {
+        Args: { p_customer_id: string }
+        Returns: {
+          agreed_price: number
+          budget_range_max: number
+          budget_range_min: number
+          commission_type_base_price: number
+          commission_type_id: string
+          commission_type_max_revisions: number
+          commission_type_name: string
+          commission_type_price_per_revision: number
+          created_at: string
+          creator_display_name: string
+          creator_id: string
+          creator_notes: string
+          creator_profile_image_url: string
+          customer_id: string
+          customer_notes: string
+          deadline: string
+          description: string
+          id: string
+          platform_fee_amount: number
+          reference_images: string[]
+          revision_count: number
+          selected_addons: Json
+          status: string
+          stripe_payment_intent_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_user_following: {
+        Args: { p_limit?: number; p_offset?: number; p_user_id: string }
+        Returns: {
+          banner_url: string
+          bio: string
+          creator_id: string
+          creator_user_id: string
+          display_name: string
+          followed_at: string
+          follower_count: number
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          username: string
+        }[]
+      }
+      get_user_payment_cards_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_display: string
+          created_at: string
+          id: string
+          is_default: boolean
+        }[]
+      }
+      get_user_payment_methods_secure: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_brand: string
+          card_exp_month: number
+          card_exp_year: number
+          card_last4: string
+          created_at: string
+          id: string
+          is_default: boolean
+          type: string
+        }[]
+      }
+      get_user_public_data: {
+        Args: { ids?: string[]; usernames?: string[] }
+        Returns: {
+          created_at: string
+          id: string
+          profile_picture: string
+          username: string
+          website: string
+        }[]
+      }
+      get_user_public_profiles_secure: {
+        Args: { ids?: string[]; usernames?: string[] }
+        Returns: {
+          created_at: string
+          id: string
+          profile_picture: string
+          username: string
+          website: string
+        }[]
+      }
+      get_zero_knowledge_payment_display: {
+        Args: { p_user_id: string }
+        Returns: {
+          added_date: string
+          id: string
+          is_default: boolean
+          method_type: string
+          status: string
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      list_my_commission_requests: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_role?: string
+          p_status?: string
+        }
+        Returns: {
+          agreed_price: number
+          commission_type_base_price: number
+          commission_type_id: string
+          commission_type_name: string
+          created_at: string
+          creator_id: string
+          customer_id: string
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      log_creator_financial_access: {
+        Args: { p_creator_id: string; p_operation: string }
+        Returns: undefined
+      }
+      log_payment_access: {
+        Args: {
+          p_accessed_data?: Json
+          p_operation: string
+          p_table_name: string
+        }
+        Returns: undefined
+      }
+      log_secure_payment_access: {
+        Args: { p_metadata?: Json; p_operation: string; p_user_id: string }
+        Returns: undefined
+      }
+      log_security_event:
+        | {
+            Args: { p_event_data?: Json; p_event_type: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_details?: Json
+              p_event_type: string
+              p_table_name: string
+            }
+            Returns: undefined
+          }
+      log_security_event_with_rate_limit: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_rate_limit_max?: number
+          p_rate_limit_window?: string
+        }
+        Returns: boolean
+      }
+      log_sensitive_access_attempt: {
+        Args: { p_details?: Json; p_operation: string; p_table_name: string }
+        Returns: undefined
+      }
+      lookup_creator_by_identifier: {
+        Args: { p_identifier: string }
+        Returns: {
+          accepts_commissions: boolean
+          banner_url: string
+          bio: string
+          commission_base_rate: number
+          commission_slots_available: number
+          commission_tos: string
+          commission_turnaround_days: number
+          created_at: string
+          creator_name: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          user_profile_picture: string
+          username: string
+          website: string
+        }[]
+      }
+      search_creators_public: {
+        Args: {
+          p_is_nsfw?: boolean
+          p_limit?: number
+          p_offset?: number
+          p_search_term?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          banner_url: string
+          bio: string
+          display_name: string
+          follower_count: number
+          id: string
+          is_nsfw: boolean
+          profile_image_url: string
+          tags: string[]
+          user_id: string
+          website: string
+        }[]
+      }
+      user_can_access_post_attachment: {
+        Args: { object_name: string }
+        Returns: boolean
+      }
+      user_can_see_full_post_content: {
+        Args: { post_id_param: string }
+        Returns: boolean
+      }
+      user_has_tier_access: {
+        Args: { tier_id_param: string }
+        Returns: boolean
+      }
+      user_owns_creator_profile: {
+        Args: { creator_id_param: string }
+        Returns: boolean
+      }
+      user_owns_post: { Args: { post_id_param: string }; Returns: boolean }
+      validate_user_data_access: {
+        Args: never
+        Returns: {
+          access_type: string
+          description: string
+          is_secure: boolean
+        }[]
+      }
+    }
+    Enums: {
+      app_role: "user" | "moderator" | "admin"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["user", "moderator", "admin"],
+    },
+  },
+} as const
