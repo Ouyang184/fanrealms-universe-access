@@ -152,13 +152,10 @@ export function SocialLinksSection({ creatorId }: SocialLinksSectionProps) {
       }
 
       // Only process links if there are any to save
-      if (links.length > 0) {
-        // Fix for GitHub issue: First, remove the isNew property from all links
-        // and ensure all links have creator_id set correctly
-        const linksToSave = links.map(({ isNew, ...link }) => ({
+      if (normalizedLinks.length > 0) {
+        const linksToSave = normalizedLinks.map(({ isNew, ...link }) => ({
           ...link,
           creator_id: creatorId,
-          // Important: Don't include id for new links, let the database generate it
         }));
 
         // First, insert new links (without IDs)
