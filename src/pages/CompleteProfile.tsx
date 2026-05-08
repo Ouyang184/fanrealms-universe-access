@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { SocialLinksEditor, normalizeSocialUrl, type SocialLinkDraft } from '@/components/profile/SocialLinksEditor';
 
 const USERNAME_RE = /^[a-z0-9_-]{3,30}$/;
 
@@ -17,9 +18,10 @@ export default function CompleteProfile() {
   const location = useLocation();
 
   const [username, setUsername] = useState('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinkDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ username?: string; socialLinks?: string }>({});
 
   // No "skip if already complete" effect here — AuthGuard wraps this
   // route and handles the already-complete case in one place.
@@ -58,12 +60,26 @@ export default function CompleteProfile() {
         return;
       }
 
+      // Normalize + validate optional social links before persisting.
+      const normalizedLinks: SocialLinkDraft[] = [];
+      for (let i = 0; i < socialLinks.length; i++) {
+        const link = socialLinks[i];
+        const rawUrl = link.url.trim();
+        if (!rawUrl && !link.label.trim()) continue; // skip fully empty rows
+        const normalized = normalizeSocialUrl(rawUrl);
+        if (!normalized) {
+          setFieldErrors({ socialLinks: `Link #${i + 1} has an invalid URL.` });
+          return;
+        }
+        normalizedLinks.push({ label: link.label.trim().slice(0, 60), url: normalized });
+      }
+
       // Update the user row (auto-created by on_auth_user_created trigger).
       // Becoming a creator is a separate, opt-in flow — we do NOT create a
       // creators row here. Non-creators can use marketplace/forum/jobs without one.
       const { error: updateError } = await supabase
         .from('users')
-        .update({ username: cleanUsername })
+        .update({ username: cleanUsername, social_links: normalizedLinks })
         .eq('id', user!.id);
 
       if (updateError) throw updateError;
@@ -103,7 +119,7 @@ export default function CompleteProfile() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="text-xl font-bold">FanRealms</Link>
         </div>
@@ -145,6 +161,24 @@ export default function CompleteProfile() {
                 <p className="text-xs text-muted-foreground">
                   3–30 chars · lowercase letters, numbers, _ and - only
                 </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <div>
+                  <h3 className="text-sm font-medium">Social links <span className="text-muted-foreground font-normal">(optional)</span></h3>
+                  <p className="text-xs text-muted-foreground">Add links to your website, Twitter, YouTube, etc.</p>
+                </div>
+                <SocialLinksEditor
+                  links={socialLinks}
+                  onChange={(next) => {
+                    setSocialLinks(next);
+                    setFieldErrors(prev => ({ ...prev, socialLinks: undefined }));
+                  }}
+                  disabled={submitting}
+                />
+                {fieldErrors.socialLinks && (
+                  <p className="text-xs text-destructive">{fieldErrors.socialLinks}</p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={submitting}>
