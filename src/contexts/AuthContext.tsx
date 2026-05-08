@@ -8,6 +8,7 @@ import type { Profile } from '@/lib/types/auth';
 import { useAuthFunctions } from '@/hooks/useAuthFunctions';
 import { useProfile } from '@/hooks/useProfile';
 import { purgeSupabaseAuthStorage } from '@/utils/auth-storage';
+import { toast } from 'sonner';
 import type { AuthContextType } from '@/lib/types/auth';
 import {
   isProfileComplete as isComplete,
@@ -179,6 +180,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_OUT') {
           const initiatedHere = !!signedOutResolverRef.current;
           signedOutResolverRef.current?.();
+
+          // Single source of truth for the "Signed out" toast — fires
+          // exactly once per SIGNED_OUT event regardless of whether the
+          // sign-out was initiated in this tab or another.
+          toast.success('Signed out', {
+            description: 'You have been signed out.',
+          });
+
 
           // Cross-tab sync: Supabase mirrors auth state across tabs via
           // its shared storage key, so SIGNED_OUT also fires in tabs
