@@ -108,13 +108,22 @@ export function useCreateProduct() {
       status?: string;
       project_id?: string | null;
     }) => {
-      const { data: creator } = await supabase
+      let { data: creator } = await supabase
         .from('creators')
         .select('id')
         .eq('user_id', user!.id)
-        .single();
+        .maybeSingle();
 
-      if (!creator) throw new Error('Creator profile not found');
+      if (!creator) {
+        // Auto-provision a creators row if one doesn't exist
+        const { data: newCreator, error: createError } = await supabase
+          .from('creators')
+          .insert({ user_id: user!.id })
+          .select('id')
+          .single();
+        if (createError || !newCreator) throw new Error('Could not set up your creator profile. Please try again.');
+        creator = newCreator;
+      }
 
       const { data, error } = await supabase
         .from('digital_products')

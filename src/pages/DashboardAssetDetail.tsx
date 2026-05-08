@@ -180,6 +180,12 @@ export default function DashboardAssetDetail() {
     const payload = buildPayload(overrideStatus);
     if (!payload) return null;
 
+    // Name your price is not yet fully implemented — block publishing with it
+    if (priceMode === 'name_your_price' && payload.status === 'published') {
+      toast.error('"Name your price" publishing is coming soon. Please use Free or Paid to publish.');
+      return null;
+    }
+
     setSaving(true);
     try {
       let coverImageUrl = (product as any)?.cover_image_url ?? null;
@@ -516,7 +522,7 @@ export default function DashboardAssetDetail() {
                 >
                   {saving
                     ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>
-                    : isNew ? 'Create asset' : 'Save & view page'
+                    : isNew ? 'Create asset' : status === 'published' ? 'Save & view page' : 'Save changes'
                   }
                 </Button>
                 <Button
