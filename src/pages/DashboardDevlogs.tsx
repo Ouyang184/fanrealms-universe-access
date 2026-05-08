@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserDevlogs, useDeleteDevlog } from '@/hooks/useDevlogs';
@@ -5,10 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, FileText, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function DashboardDevlogsPage() {
   const { data: devlogs, isLoading } = useUserDevlogs();
   const del = useDeleteDevlog();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   return (
     <DashboardLayout>
@@ -40,7 +52,7 @@ export default function DashboardDevlogsPage() {
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${d.status === 'published' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-[#f5f5f5] text-[#888] border border-[#ddd]'}`}>
                   {d.status === 'published' ? 'LIVE' : 'DRAFT'}
                 </span>
-                <button onClick={() => { if (confirm('Delete this devlog?')) del.mutate(d.id); }} className="text-[#aaa] hover:text-red-500 p-1">
+                <button onClick={() => setDeletingId(d.id)} className="text-[#aaa] hover:text-red-500 p-1">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -57,6 +69,29 @@ export default function DashboardDevlogsPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete devlog?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the devlog. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (deletingId) del.mutate(deletingId);
+                setDeletingId(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

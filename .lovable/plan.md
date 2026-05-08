@@ -1,22 +1,18 @@
-## Devlog draft vs published
+## Devlog delete: confirmation modal + error toast
 
-The `devlogs` table already has a `status` column (`'draft' | 'published'`), the editor already lets creators choose between them, and RLS already restricts public reads to `status = 'published'` on published projects. The remaining gap is the public-facing query in `useProjectDevlogs`, which currently fetches all statuses (creators viewing their own project would see drafts mixed in with published).
+Replace the native `confirm()` call in `src/pages/DashboardDevlogs.tsx` with a shadcn `AlertDialog`, and add an `onError` toast to the existing `useDeleteDevlog` mutation.
 
 ### Changes
 
-1. **`src/hooks/useProjects.ts` — `useProjectDevlogs`**
-   - Add `.eq('status', 'published')` to the query so the public project page only ever shows published devlogs, regardless of viewer.
+1. **`src/hooks/useDevlogs.ts`**
+   - Add `onError: (e: Error) => toast.error('Failed to delete: ' + e.message)` to `useDeleteDevlog` (currently only has `onSuccess`).
 
-2. **`src/pages/DashboardDevlogEdit.tsx`**
-   - Default `status` to `'draft'` for new devlogs (currently defaults to `'published'`) so creators publish intentionally.
-   - Add two save actions: "Save draft" (status=draft) and "Publish" (status=published) instead of a single Save + status dropdown, matching itch.io's pattern. Keep the status select for editing existing devlogs so a creator can unpublish.
-
-3. **`src/pages/DashboardDevlogs.tsx`**
-   - Already shows a LIVE/DRAFT badge — no change needed.
-   - Optional: add a quick "Publish" / "Unpublish" toggle button per row (uses the existing `useSaveDevlog` mutation).
+2. **`src/pages/DashboardDevlogs.tsx`**
+   - Import `AlertDialog` primitives from `@/components/ui/alert-dialog`.
+   - Track `deletingId` in local state.
+   - Replace the inline `confirm(...)` trash-icon handler with one that opens the dialog.
+   - Render a single `AlertDialog` controlled by `deletingId` with title "Delete devlog?", description warning that it's permanent, Cancel + Delete actions. Delete button calls `del.mutate(deletingId)` and closes the dialog.
 
 ### Out of scope
-
-- No DB migration (schema already correct).
-- No changes to RLS (already correct).
-- No scheduling / `publish_at` field.
+- No DB or RLS changes.
+- No bulk delete.
