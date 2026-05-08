@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -65,7 +64,6 @@ function SidebarLink({ to, label, icon: Icon, end }: Item & { end?: boolean }) {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
-  const { isCreator } = useCreatorProfile();
   const { data: usernameData } = useQuery({
     queryKey: ['dash-sidebar-username', user?.id],
     queryFn: async () => {
@@ -91,14 +89,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <SidebarLink key={it.to} {...it} end={it.to === '/dashboard'} />
           ))}
 
-          {isCreator && (
-            <>
-              <Section label="Create" />
-              {CREATE.map((it) => (
-                <SidebarLink key={it.to} {...it} end={it.to === '/dashboard'} />
-              ))}
-            </>
-          )}
+          <Section label="Create" />
+          {CREATE.map((it) => (
+            <SidebarLink key={it.to} {...it} end={it.to === '/dashboard'} />
+          ))}
 
           <Section label="Account" />
           {ACCOUNT.map((it) => (
