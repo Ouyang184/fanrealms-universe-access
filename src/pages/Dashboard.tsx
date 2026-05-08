@@ -15,7 +15,6 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 export default function DashboardPage() {
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
-  const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
   const { data: salesData, isLoading: salesLoading } = useSellerSales();
 
   const publishedCount = myAssets?.filter((a) => (a as any).status === 'published').length ?? 0;
