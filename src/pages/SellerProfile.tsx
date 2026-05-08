@@ -10,6 +10,8 @@ import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { FollowButton } from '@/components/profile/FollowButton';
+import { useState, useEffect } from 'react';
 
 export default function SellerProfilePage() {
   const { username } = useParams<{ username: string }>();
@@ -70,10 +72,22 @@ export default function SellerProfilePage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-[24px] font-bold tracking-[-0.5px]">
-                    {seller?.display_name || seller?.username}
-                  </h1>
-                  <p className="text-[13px] text-[#888]">@{seller?.username}</p>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h1 className="text-[24px] font-bold tracking-[-0.5px]">
+                        {seller?.display_name || seller?.username}
+                      </h1>
+                      <p className="text-[13px] text-[#888]">@{seller?.username}</p>
+                    </div>
+                    {seller?.id && (
+                      <FollowButton
+                        creatorId={seller.id}
+                        creatorUserId={seller.user_id}
+                        initialFollowerCount={followerCount}
+                        onCountChange={setFollowerCount}
+                      />
+                    )}
+                  </div>
                   {seller?.bio && (
                     <p className="text-[13px] text-[#444] mt-3 max-w-2xl leading-relaxed whitespace-pre-wrap">{seller.bio}</p>
                   )}
@@ -88,7 +102,7 @@ export default function SellerProfilePage() {
                     </span>
                     <span className="flex items-center gap-1.5 text-[12px] text-[#888]">
                       <Users className="w-3.5 h-3.5" />
-                      {seller?.follower_count ?? 0} followers
+                      {followerCount} followers
                     </span>
                     {(seller as any)?.website && (
                       <a
