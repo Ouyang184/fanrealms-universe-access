@@ -82,5 +82,6 @@ export function useDeleteDevlog() {
       qc.invalidateQueries({ queryKey: ['user-devlogs'] });
       toast.success('Devlog deleted');
     },
+    onError: (e: Error) => toast.error('Failed to delete: ' + e.message),
   });
 }
