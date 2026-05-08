@@ -177,7 +177,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // confirms the sign-out. This is what flips signingOut back to
         // false in AuthContext (and unblocks AuthGuard).
         if (event === 'SIGNED_OUT') {
+          const initiatedHere = !!signedOutResolverRef.current;
           signedOutResolverRef.current?.();
+
+          // Cross-tab sync: Supabase mirrors auth state across tabs via
+          // its shared storage key, so SIGNED_OUT also fires in tabs
+          // that did NOT initiate the sign-out (e.g. session expired,
+          // or user signed out from another tab). Run the same UX:
+          // flash the spinner and redirect to /login.
+          if (!initiatedHere) {
+            setSigningOut(true);
+            profileRequestRef.current += 1;
+            setUserSafe(null);
+            setSessionSafe(null);
+            setProfileSafe(null);
+            try { queryClient.clear(); } catch { /* ignore */ }
+            purgeSupabaseAuthStorage();
+            setSigningOut(false);
+            navigate('/login', { replace: true });
+          }
         }
       }
     );
@@ -213,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, queryClient, navigate]);
 
   const handleUpdateProfile = async (data: Partial<Profile>) => {
     const currentUser = userRef.current;
