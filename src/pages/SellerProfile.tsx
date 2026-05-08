@@ -19,6 +19,10 @@ export default function SellerProfilePage() {
   const { data: products, isLoading: productsLoading } = useSellerProducts(seller?.id ?? '');
   const { data: projects, isLoading: projectsLoading } = useSellerProjects(seller?.id ?? '');
   const { data: devlogs } = useSellerDevlogs(seller?.user_id ?? '');
+  const [followerCount, setFollowerCount] = useState(0);
+  useEffect(() => {
+    if (typeof seller?.follower_count === 'number') setFollowerCount(seller.follower_count);
+  }, [seller?.follower_count]);
 
   if (isError) {
     return (
