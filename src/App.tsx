@@ -47,6 +47,11 @@ import DashboardProjectsPage from "./pages/DashboardProjects";
 import DashboardProjectNewPage from "./pages/DashboardProjectNew";
 import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
 import SellerProfilePage from "./pages/SellerProfile";
+import LibraryPage from "./pages/Library";
+import LibraryReviewsPage from "./pages/LibraryReviews";
+import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
+import DashboardDevlogsPage from "./pages/DashboardDevlogs";
+import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
 
 
 
@@ -170,7 +175,16 @@ export default function App() {
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/:projectId" element={<AuthGuard><DashboardProjectDetailPage /></AuthGuard>} />
-                
+                <Route path="/dashboard/upload" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
+                <Route path="/dashboard/devlogs" element={<AuthGuard><DashboardDevlogsPage /></AuthGuard>} />
+                <Route path="/dashboard/devlogs/new" element={<AuthGuard><DashboardDevlogEditPage /></AuthGuard>} />
+                <Route path="/dashboard/devlogs/:id/edit" element={<AuthGuard><DashboardDevlogEditPage /></AuthGuard>} />
+
+                {/* Library (buyer side) */}
+                <Route path="/library" element={<AuthGuard><LibraryPage /></AuthGuard>} />
+                <Route path="/library/reviews" element={<AuthGuard><LibraryReviewsPage /></AuthGuard>} />
+                <Route path="/library/recommendations" element={<AuthGuard><LibraryRecommendationsPage /></AuthGuard>} />
+
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
 
                 {/* Settings */}

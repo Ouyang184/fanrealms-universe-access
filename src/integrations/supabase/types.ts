@@ -68,6 +68,106 @@ export type Database = {
         }
         Relationships: []
       }
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundle_purchases: {
+        Row: {
+          amount_paid: number
+          bundle_id: string
+          buyer_id: string
+          created_at: string
+          id: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          amount_paid: number
+          bundle_id: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          bundle_id?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_purchases_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "bundles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bundles: {
+        Row: {
+          bundle_price: number
+          cover_image_url: string | null
+          created_at: string
+          creator_id: string
+          description: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          bundle_price: number
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id: string
+          description?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          bundle_price?: number
+          cover_image_url?: string | null
+          created_at?: string
+          creator_id?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           content: string
@@ -2003,6 +2103,68 @@ export type Database = {
         }
         Relationships: []
       }
+      sale_items: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          sale_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          sale_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          created_at: string
+          creator_id: string
+          discount_percent: number
+          ends_at: string
+          id: string
+          name: string
+          starts_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          creator_id: string
+          discount_percent: number
+          ends_at: string
+          id?: string
+          name: string
+          starts_at: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          creator_id?: string
+          discount_percent?: number
+          ends_at?: string
+          id?: string
+          name?: string
+          starts_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       saved_posts: {
         Row: {
           created_at: string
@@ -3495,6 +3657,11 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_creator_owner: { Args: { _creator_id: string }; Returns: boolean }
+      is_project_sale_eligible: {
+        Args: { _project_id: string }
         Returns: boolean
       }
       list_my_commission_requests: {

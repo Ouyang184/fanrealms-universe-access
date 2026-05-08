@@ -22,14 +22,14 @@ interface Item {
 
 const EXPLORE: Item[] = [
   { to: '/marketplace', label: 'Marketplace', icon: Compass },
-  { to: '/dashboard', label: 'My library', icon: Library },
-  { to: '/games', label: 'Recommendations', icon: Sparkles },
+  { to: '/library', label: 'My library', icon: Library },
+  { to: '/library/recommendations', label: 'Recommendations', icon: Sparkles },
 ];
 
 const CREATE: Item[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, },
-  { to: '/dashboard/projects', label: 'Projects', icon: FileText },
+  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/dashboard/projects/new', label: 'Upload new project', icon: Upload },
+  { to: '/dashboard/devlogs', label: 'Devlogs', icon: FileText },
   { to: '/dashboard/assets', label: 'Assets', icon: Package },
   { to: '/dashboard/sales', label: 'Sales & bundles', icon: TrendingUp },
 ];
