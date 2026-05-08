@@ -27,11 +27,11 @@ export default function DashboardDevlogsPage() {
       <div className="w-full space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[20px] font-bold tracking-[-0.5px]">Devlogs</h1>
+            <h1 className="text-[20px] font-bold tracking-[-0.5px]">Posts</h1>
             <p className="text-[13px] text-[#888] mt-0.5">Updates & posts attached to your projects</p>
           </div>
           <Button asChild className="bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold">
-            <Link to="/dashboard/devlogs/new"><Plus className="w-4 h-4 mr-2" />New devlog</Link>
+            <Link to="/dashboard/devlogs/new"><Plus className="w-4 h-4 mr-2" />New post</Link>
           </Button>
         </div>
 
@@ -61,10 +61,10 @@ export default function DashboardDevlogsPage() {
         ) : (
           <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-16 text-center">
             <FileText className="w-8 h-8 text-[#ccc] mx-auto mb-3" />
-            <p className="text-[14px] font-semibold text-[#111] mb-1">No devlogs yet</p>
+            <p className="text-[14px] font-semibold text-[#111] mb-1">No posts yet</p>
             <p className="text-[12px] text-[#999] mb-4">Share progress on your projects.</p>
             <Button asChild className="bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold">
-              <Link to="/dashboard/devlogs/new"><Plus className="w-4 h-4 mr-2" />Write your first devlog</Link>
+              <Link to="/dashboard/devlogs/new"><Plus className="w-4 h-4 mr-2" />Write your first post</Link>
             </Button>
           </div>
         )}
@@ -73,9 +73,9 @@ export default function DashboardDevlogsPage() {
       <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete devlog?</AlertDialogTitle>
+            <AlertDialogTitle>Delete post?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the devlog. This action cannot be undone.
+              This permanently removes the post. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

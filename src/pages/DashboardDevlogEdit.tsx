@@ -43,7 +43,7 @@ export default function DashboardDevlogEditPage() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl space-y-6">
-        <h1 className="text-[20px] font-bold tracking-[-0.5px]">{isNew ? 'New devlog' : 'Edit devlog'}</h1>
+        <h1 className="text-[20px] font-bold tracking-[-0.5px]">{isNew ? 'New post' : 'Edit post'}</h1>
 
         <div className="space-y-4 bg-white border border-[#eee] rounded-xl p-6">
           <div>
