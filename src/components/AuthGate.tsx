@@ -129,13 +129,13 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   if (blocked) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center bg-background"
+        className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background"
         role="status"
         aria-live="polite"
         aria-busy="true"
       >
         <LoadingSpinner />
-        <span className="sr-only">Loading…</span>
+        <p className="text-sm text-muted-foreground">Verifying your session…</p>
       </div>
     );
   }
