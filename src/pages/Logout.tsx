@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
-import { ShoppingBag, Users, Sparkles, LucideIcon } from "lucide-react";
+import { ShoppingBag, Users, Store, LucideIcon } from "lucide-react";
 
 function FeatureCard({ title, description, Icon }: { title: string; description: string; Icon: LucideIcon }) {
   return (
@@ -60,7 +60,7 @@ export default function Logout() {
               <FeatureCard
                 title="Sell Your Work"
                 description="Open a storefront and reach an indie audience."
-                Icon={Sparkles}
+                Icon={Store}
               />
             </div>
           </CardContent>
