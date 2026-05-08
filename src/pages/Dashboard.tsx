@@ -31,7 +31,7 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export default function DashboardPage() {
   const { data: purchases, isLoading: purchasesLoading } = useUserPurchases();
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
-  const { data: salesData } = useSellerSales();
+  const { data: salesData, isLoading: salesLoading } = useSellerSales();
 
   const publishedCount = myAssets?.filter((a) => (a as any).status === 'published').length ?? 0;
   const salesCount = salesData?.sales.length ?? 0;
@@ -57,11 +57,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard label="Published assets" value={publishedCount} />
-          <StatCard label="Total sales" value={salesCount} />
-          <StatCard label="Total earnings" value={fmt(totalEarnings)} />
-        </div>
+        {salesLoading || assetsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard label="Published assets" value={publishedCount} />
+            <StatCard label="Total sales" value={salesCount} />
+            <StatCard label="Total earnings" value={fmt(totalEarnings)} />
+          </div>
+        )}
 
         {/* Your assets */}
         <section>
