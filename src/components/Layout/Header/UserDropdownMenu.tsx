@@ -34,12 +34,10 @@ export function UserDropdownMenu() {
 
   const handleSignOut = async () => {
     try {
+      // AuthContext.signOut() clears session, purges storage, waits for the
+      // SIGNED_OUT event (cross-tab), and redirects to /login. Don't
+      // double-toast or override the redirect here.
       await signOut();
-      toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account",
-      });
-      navigate('/');
     } catch (error: any) {
       toast({
         title: "Failed to log out",
