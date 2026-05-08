@@ -13,9 +13,6 @@ interface AuthGuardProps {
  * navigate — the global AuthGate (mounted once above the router) is
  * the single source of truth for "where should the user be?" and
  * dispatches at most one redirect per auth-state × path transition.
- *
- * This split eliminates the duplicate-redirect / infinite-reload class
- * of bugs: only one component ever calls navigate() for auth reasons.
  */
 const AuthGuard = ({
   children,
@@ -24,30 +21,22 @@ const AuthGuard = ({
 }: AuthGuardProps) => {
   const { user, loading, signingOut, isProfileComplete } = useAuth();
 
-  // While auth is restoring or a sign-out is in flight, never render
-  // protected children — even for one frame — so authed UI cannot flash
-  // before the global gate redirects to /login.
-  if (loading || signingOut) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const showSpinner =
+    loading ||
+    signingOut ||
+    (requireAuth && !user) ||
+    (requireCompleteProfile && user && !isProfileComplete);
 
-  // Conditions failing → AuthGate is about to (or has already) redirected.
-  // Show a spinner instead of the protected content in the meantime.
-  if (requireAuth && !user) {
+  if (showSpinner) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-3 bg-background"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <LoadingSpinner />
-      </div>
-    );
-  }
-  if (requireCompleteProfile && user && !isProfileComplete) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+        <p className="text-sm text-muted-foreground">Verifying your session…</p>
       </div>
     );
   }
