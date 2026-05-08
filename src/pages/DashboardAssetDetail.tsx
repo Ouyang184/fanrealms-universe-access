@@ -76,6 +76,13 @@ export default function DashboardAssetDetail() {
   const [saving, setSaving] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  // Revoke object URL when coverPreview changes to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    };
+  }, [coverPreview]);
+
   useEffect(() => {
     if (product && !isNew) {
       const p = product as any;
@@ -178,7 +185,8 @@ export default function DashboardAssetDetail() {
       let coverImageUrl = (product as any)?.cover_image_url ?? null;
       if (coverFile) {
         const uploaded = await uploadCover();
-        if (uploaded) coverImageUrl = uploaded;
+        if (!uploaded) return null; // uploadCover already showed error toast
+        coverImageUrl = uploaded;
       }
       const fullPayload = { ...payload, cover_image_url: coverImageUrl ?? undefined };
 
@@ -508,7 +516,7 @@ export default function DashboardAssetDetail() {
                 >
                   {saving
                     ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>
-                    : 'Save & view page'
+                    : isNew ? 'Create asset' : 'Save & view page'
                   }
                 </Button>
                 <Button
