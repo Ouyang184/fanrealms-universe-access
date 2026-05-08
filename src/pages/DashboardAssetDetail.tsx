@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
@@ -36,6 +36,8 @@ const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Go
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_COVER_SIZE_MB = 5;
+
+type PriceMode = 'free' | 'paid' | 'name_your_price';
 
 export default function DashboardAssetDetail() {
   const { assetId } = useParams<{ assetId: string }>();
@@ -54,14 +56,17 @@ export default function DashboardAssetDetail() {
   const assetNet = assetSales.reduce((sum: number, s: any) => sum + (s.net_amount ?? 0), 0);
   const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
+  // Form state
   const [title, setTitle] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
-  const [priceStr, setPriceStr] = useState('0');
+  const [priceMode, setPriceMode] = useState<PriceMode>('free');
+  const [priceStr, setPriceStr] = useState('');
   const [category, setCategory] = useState('Plugins & Addons');
   const [godotVersion, setGodotVersion] = useState('Godot 4.3+');
   const [tagsStr, setTagsStr] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
+  const [trailerUrl, setTrailerUrl] = useState('');
   const [version, setVersion] = useState('');
   const [license, setLicense] = useState('Standard');
   const [screenshots, setScreenshots] = useState<string[]>(['']);
@@ -69,6 +74,7 @@ export default function DashboardAssetDetail() {
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     if (product && !isNew) {
@@ -76,11 +82,19 @@ export default function DashboardAssetDetail() {
       setTitle(p.title ?? '');
       setShortDescription(p.short_description ?? '');
       setDescription(p.description ?? '');
-      setPriceStr(p.price === 0 ? '0' : (p.price / 100).toFixed(2));
+      const price = p.price ?? 0;
+      if (price > 0) {
+        setPriceMode('paid');
+        setPriceStr((price / 100).toFixed(2));
+      } else {
+        setPriceMode('free');
+        setPriceStr('');
+      }
       setCategory(p.category ?? 'Plugins & Addons');
       setGodotVersion(p.godot_version ?? 'Godot 4.3+');
       setTagsStr((p.tags ?? []).join(', '));
       setDownloadUrl(p.asset_url ?? '');
+      setTrailerUrl(p.trailer_url ?? '');
       setVersion(p.version ?? '');
       setLicense(p.license ?? 'Standard');
       setScreenshots(p.screenshots?.length ? p.screenshots : ['']);
@@ -120,18 +134,44 @@ export default function DashboardAssetDetail() {
   const updateScreenshot = (i: number, val: string) =>
     setScreenshots(s => s.map((v, idx) => (idx === i ? val : v)));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) { toast.error('Title is required'); return; }
-    if (status === 'published' && !downloadUrl.trim()) {
+  const buildPayload = (overrideStatus?: 'draft' | 'published') => {
+    const finalStatus = overrideStatus ?? status;
+    let priceInCents = 0;
+    if (priceMode === 'paid') {
+      priceInCents = Math.round(parseFloat(priceStr || '0') * 100);
+      if (isNaN(priceInCents) || priceInCents <= 0) {
+        toast.error('Please enter a valid price greater than $0');
+        return null;
+      }
+    }
+    // name_your_price: stores price=0 per spec (full implementation is a follow-up)
+    return {
+      title: title.trim(),
+      short_description: shortDescription.trim() || undefined,
+      description: description.trim() || undefined,
+      price: priceInCents,
+      category,
+      godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
+      tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+      asset_url: downloadUrl.trim() || undefined,
+      trailer_url: trailerUrl.trim() || undefined,
+      screenshots: screenshots.map(s => s.trim()).filter(Boolean),
+      version: version.trim() || undefined,
+      license,
+      status: finalStatus,
+    };
+  };
+
+  // Returns the saved asset ID on success, null on failure.
+  const doSave = async (overrideStatus?: 'draft' | 'published'): Promise<string | null> => {
+    if (!title.trim()) { toast.error('Title is required'); return null; }
+    const finalStatus = overrideStatus ?? status;
+    if (finalStatus === 'published' && !downloadUrl.trim()) {
       toast.error('A download URL is required to publish');
-      return;
+      return null;
     }
-    const priceInCents = Math.round(parseFloat(priceStr || '0') * 100);
-    if (isNaN(priceInCents) || priceInCents < 0) {
-      toast.error('Please enter a valid price (0 or greater)');
-      return;
-    }
+    const payload = buildPayload(overrideStatus);
+    if (!payload) return null;
 
     setSaving(true);
     try {
@@ -140,34 +180,42 @@ export default function DashboardAssetDetail() {
         const uploaded = await uploadCover();
         if (uploaded) coverImageUrl = uploaded;
       }
-
-      const payload = {
-        title: title.trim(),
-        short_description: shortDescription.trim() || undefined,
-        description: description.trim() || undefined,
-        price: priceInCents,
-        category,
-        godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
-        tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
-        cover_image_url: coverImageUrl ?? undefined,
-        asset_url: downloadUrl.trim() || undefined,
-        screenshots: screenshots.map(s => s.trim()).filter(Boolean),
-        version: version.trim() || undefined,
-        license,
-        status,
-      };
+      const fullPayload = { ...payload, cover_image_url: coverImageUrl ?? undefined };
 
       if (isNew) {
-        const created = await createProduct.mutateAsync(payload);
-        toast.success('Asset created!');
-        navigate(`/dashboard/assets/${(created as any).id}`, { replace: true });
+        const created = await createProduct.mutateAsync(fullPayload);
+        return (created as any).id;
       } else {
-        await updateProduct.mutateAsync({ id: assetId!, ...payload });
-        toast.success('Changes saved');
+        await updateProduct.mutateAsync({ id: assetId!, ...fullPayload });
+        return assetId!;
       }
+    } catch {
+      return null;
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveAndView = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const savedId = await doSave();
+    if (!savedId) return;
+    if (isNew) {
+      navigate(`/dashboard/assets/${savedId}`, { replace: true });
+    } else if (status === 'published') {
+      navigate(`/marketplace/${savedId}`);
+    }
+    // draft + existing: mutation already shows toast, we stay on page
+  };
+
+  const handleSaveAsDraft = async () => {
+    const savedId = await doSave('draft');
+    if (!savedId) return;
+    setStatus('draft');
+    if (isNew) {
+      navigate(`/dashboard/assets/${savedId}`, { replace: true });
+    }
+    // existing: mutation already shows toast
   };
 
   const handleDelete = async () => {
@@ -200,43 +248,297 @@ export default function DashboardAssetDetail() {
           Your assets
         </Link>
 
-        <div>
-          <h1 className="text-[20px] font-bold tracking-[-0.5px]">
-            {isNew ? 'New asset' : (productLoading ? '…' : (product as any)?.title)}
-          </h1>
-          <p className="text-[13px] text-[#888] mt-0.5">
-            {isNew ? 'Fill in the details and save to publish' : 'Edit your listing'}
-          </p>
-        </div>
+        <h1 className="text-[20px] font-bold tracking-[-0.5px]">
+          {isNew ? 'New asset' : (productLoading ? '…' : (product as any)?.title)}
+        </h1>
 
         {!isNew && productLoading ? (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             <div className="space-y-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full rounded-lg" />
               ))}
             </div>
             <div className="space-y-4">
-              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="aspect-video w-full rounded-xl" />
               <Skeleton className="h-24 w-full rounded-xl" />
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+
+            {/* LEFT COLUMN — main form fields */}
+            <form onSubmit={handleSaveAndView} className="space-y-6">
 
               <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Cover image</label>
+                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+                  Title <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="e.g. Godot Shader Pack Vol.1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+                  Tagline{' '}
+                  <span className="font-normal text-[#999]">(one line shown on listing cards)</span>
+                </label>
+                <Input
+                  value={shortDescription}
+                  onChange={e => setShortDescription(e.target.value)}
+                  placeholder="e.g. 20 ready-to-use shaders for Godot 4"
+                  maxLength={120}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Category</label>
+                  <select
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
+                  <select
+                    value={godotVersion}
+                    onChange={e => setGodotVersion(e.target.value)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Pricing radio group */}
+              <div>
+                <label className="text-[13px] font-semibold text-[#333] block mb-2">Pricing</label>
+                <div className="space-y-2.5">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="priceMode"
+                      value="free"
+                      checked={priceMode === 'free'}
+                      onChange={() => setPriceMode('free')}
+                      className="accent-primary"
+                    />
+                    <span className="text-[13px] font-medium text-[#333]">Free</span>
+                    <span className="text-[12px] text-[#999]">Anyone can download</span>
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="priceMode"
+                      value="paid"
+                      checked={priceMode === 'paid'}
+                      onChange={() => setPriceMode('paid')}
+                      className="accent-primary"
+                    />
+                    <span className="text-[13px] font-medium text-[#333]">Paid</span>
+                    {priceMode === 'paid' && (
+                      <div className="flex items-center gap-1 ml-1">
+                        <span className="text-[13px] text-[#555]">$</span>
+                        <Input
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={priceStr}
+                          onChange={e => setPriceStr(e.target.value)}
+                          placeholder="0.00"
+                          className="w-24 h-7 text-[13px]"
+                        />
+                      </div>
+                    )}
+                  </label>
+
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="priceMode"
+                      value="name_your_price"
+                      checked={priceMode === 'name_your_price'}
+                      onChange={() => setPriceMode('name_your_price')}
+                      className="accent-primary"
+                    />
+                    <span className="text-[13px] font-medium text-[#333]">Name your price</span>
+                    {priceMode === 'name_your_price' && (
+                      <div className="flex items-center gap-1 ml-1">
+                        <span className="text-[12px] text-[#999]">min $</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={priceStr}
+                          onChange={e => setPriceStr(e.target.value)}
+                          placeholder="0.00"
+                          className="w-24 h-7 text-[13px]"
+                        />
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+                  Download URL <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={downloadUrl}
+                  onChange={e => setDownloadUrl(e.target.value)}
+                  placeholder="https://drive.google.com/... or https://mega.nz/..."
+                  type="url"
+                />
+                <p className="text-[11px] text-[#aaa] mt-0.5">
+                  Google Drive, MEGA, Dropbox, or any direct link. Buyers see this only after purchase.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
+                  Full description{' '}
+                  <span className="font-normal text-[#999]">(shown on product page)</span>
+                </label>
+                <Textarea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder={"What's included?\nWho is it for?\nHow do you use it?"}
+                  rows={6}
+                />
+              </div>
+
+              {/* Collapsible Advanced section */}
+              <div className="border border-[#eee] rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setAdvancedOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-[13px] font-semibold text-[#333] hover:bg-[#fafafa] transition-colors"
+                >
+                  <span>Advanced</span>
+                  {advancedOpen
+                    ? <ChevronDown className="w-4 h-4 text-[#888]" />
+                    : <ChevronRight className="w-4 h-4 text-[#888]" />
+                  }
+                </button>
+                {advancedOpen && (
+                  <div className="px-4 pb-4 space-y-4 border-t border-[#eee]">
+                    <div className="grid grid-cols-2 gap-3 pt-4">
+                      <div>
+                        <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Version</label>
+                        <Input
+                          value={version}
+                          onChange={e => setVersion(e.target.value)}
+                          placeholder="e.g. 1.0.0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[13px] font-semibold text-[#333] block mb-1.5">License</label>
+                        <select
+                          value={license}
+                          onChange={e => setLicense(e.target.value)}
+                          className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                          {LICENSES.map(l => <option key={l} value={l}>{l}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Tags</label>
+                      <Input
+                        value={tagsStr}
+                        onChange={e => setTagsStr(e.target.value)}
+                        placeholder="godot4, shader, 2d (comma-separated)"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Visibility radio */}
+              <div>
+                <label className="text-[13px] font-semibold text-[#333] block mb-2">Visibility</label>
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="draft"
+                      checked={status === 'draft'}
+                      onChange={() => setStatus('draft')}
+                      className="accent-primary mt-0.5"
+                    />
+                    <div>
+                      <span className="text-[13px] font-medium text-[#333]">Draft</span>
+                      <span className="text-[12px] text-[#999] ml-2">Only you can see this</span>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="published"
+                      checked={status === 'published'}
+                      onChange={() => setStatus('published')}
+                      className="accent-primary mt-0.5"
+                    />
+                    <div>
+                      <span className="text-[13px] font-medium text-[#333]">Public</span>
+                      <span className="text-[12px] text-[#999] ml-2">Visible to everyone on the marketplace</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Save buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-primary hover:bg-[#3a7aab] text-white font-semibold"
+                >
+                  {saving
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</>
+                    : 'Save & view page'
+                  }
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={handleSaveAsDraft}
+                  className="font-semibold"
+                >
+                  Save as draft
+                </Button>
+              </div>
+            </form>
+
+            {/* RIGHT SIDEBAR */}
+            <aside className="lg:sticky lg:top-20 space-y-4">
+
+              {/* Cover image */}
+              <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Cover image</h3>
                 <div
-                  className="w-full aspect-[16/9] bg-[#f5f5f5] border border-[#eee] rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:bg-[#eee] transition-colors relative"
+                  className="w-full aspect-video bg-[#f5f5f5] border border-[#eee] rounded-lg overflow-hidden flex items-center justify-center cursor-pointer hover:bg-[#eee] transition-colors"
                   onClick={() => document.getElementById('cover-input-page')?.click()}
                 >
                   {coverPreview ? (
                     <img src={coverPreview} className="w-full h-full object-cover" alt="" />
                   ) : (
-                    <div className="text-center text-[#aaa]">
-                      <Upload className="w-6 h-6 mx-auto mb-1" />
-                      <span className="text-[12px]">Click to upload cover (16:9 recommended)</span>
+                    <div className="text-center text-[#aaa] p-4">
+                      <Upload className="w-5 h-5 mx-auto mb-1" />
+                      <span className="text-[11px]">Click to upload (16:9)</span>
                     </div>
                   )}
                   <input
@@ -249,114 +551,57 @@ export default function DashboardAssetDetail() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Title *</label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Godot Shader Pack Vol.1" required />
+              {/* Trailer URL */}
+              <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Trailer URL</h3>
+                <Input
+                  value={trailerUrl}
+                  onChange={e => setTrailerUrl(e.target.value)}
+                  placeholder="https://youtu.be/... or https://vimeo.com/..."
+                  type="url"
+                />
+                <p className="text-[11px] text-[#aaa]">YouTube or Vimeo link shown on the product page</p>
               </div>
 
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
-                  Tagline <span className="font-normal text-[#999]">(one line shown on listing cards)</span>
-                </label>
-                <Input value={shortDescription} onChange={e => setShortDescription(e.target.value)} placeholder="e.g. 20 ready-to-use shaders for Godot 4" maxLength={120} />
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
-                  Full description <span className="font-normal text-[#999]">(shown on product page)</span>
-                </label>
-                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={"What's included?\nWho is it for?\nHow do you use it?"} rows={6} />
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
-                  Screenshots <span className="font-normal text-[#999]">(image URLs, shown in gallery)</span>
-                </label>
+              {/* Screenshots */}
+              <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Screenshots</h3>
                 <div className="space-y-2">
                   {screenshots.map((url, i) => (
                     <div key={i} className="flex gap-2">
-                      <Input value={url} onChange={e => updateScreenshot(i, e.target.value)} placeholder="https://i.imgur.com/..." type="url" />
+                      <Input
+                        value={url}
+                        onChange={e => updateScreenshot(i, e.target.value)}
+                        placeholder="https://i.imgur.com/..."
+                        type="url"
+                        className="text-[12px]"
+                      />
                       {screenshots.length > 1 && (
-                        <button type="button" onClick={() => removeScreenshot(i)} className="p-2 text-[#aaa] hover:text-red-500 transition-colors">
-                          <X className="w-4 h-4" />
+                        <button
+                          type="button"
+                          onClick={() => removeScreenshot(i)}
+                          className="p-1.5 text-[#aaa] hover:text-red-500 transition-colors flex-shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   ))}
                   {screenshots.length < 5 && (
-                    <button type="button" onClick={addScreenshot} className="flex items-center gap-1 text-[12px] text-primary hover:underline">
+                    <button
+                      type="button"
+                      onClick={addScreenshot}
+                      className="flex items-center gap-1 text-[12px] text-primary hover:underline"
+                    >
                       <Plus className="w-3 h-3" /> Add screenshot
                     </button>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Category</label>
-                  <select value={category} onChange={e => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
-                  <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
-                    {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Price (USD)</label>
-                <Input type="number" min="0" step="0.01" value={priceStr} onChange={e => setPriceStr(e.target.value)} placeholder="0.00" className="max-w-[160px]" />
-                <p className="text-[11px] text-[#aaa] mt-0.5">Set 0 for free</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Version</label>
-                  <Input value={version} onChange={e => setVersion(e.target.value)} placeholder="e.g. 1.0.0" />
-                </div>
-                <div>
-                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">License</label>
-                  <select value={license} onChange={e => setLicense(e.target.value)}
-                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
-                    {LICENSES.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Tags</label>
-                <Input value={tagsStr} onChange={e => setTagsStr(e.target.value)} placeholder="godot4, shader, 2d (comma-separated)" />
-              </div>
-
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Download URL *</label>
-                <Input value={downloadUrl} onChange={e => setDownloadUrl(e.target.value)} placeholder="https://drive.google.com/... or https://mega.nz/..." type="url" />
-                <p className="text-[11px] text-[#aaa] mt-0.5">Google Drive, MEGA, Dropbox, or any direct link. Buyers see this only after purchase.</p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button type="button" onClick={() => setStatus(status === 'published' ? 'draft' : 'published')}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${status === 'published' ? 'bg-primary' : 'bg-[#ddd]'}`}>
-                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${status === 'published' ? 'left-5' : 'left-0.5'}`} />
-                </button>
-                <span className="text-[13px] text-[#555]">
-                  {status === 'published' ? 'Published — visible to everyone' : 'Draft — only you can see it'}
-                </span>
-              </div>
-
-              <Button type="submit" disabled={saving} className="bg-primary hover:bg-[#3a7aab] text-white font-semibold">
-                {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving…</> : isNew ? 'Create asset' : 'Save changes'}
-              </Button>
-            </form>
-
-            <aside className="lg:sticky lg:top-20 space-y-4">
+              {/* Sales stats (existing assets only) */}
               {!isNew && (
-                <div className="bg-white border border-[#eee] rounded-xl p-5 space-y-4">
+                <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-3">
                   <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Sales</h3>
                   {assetSales.length === 0 ? (
                     <p className="text-[13px] text-[#aaa]">No sales yet</p>
@@ -376,10 +621,14 @@ export default function DashboardAssetDetail() {
                 </div>
               )}
 
-              <div className="bg-white border border-[#eee] rounded-xl p-5 space-y-3">
+              {/* Actions */}
+              <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-3">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Actions</h3>
                 {!isNew && (
-                  <Link to={`/marketplace/${assetId}`} className="flex items-center gap-2 text-[13px] text-primary hover:underline font-medium">
+                  <Link
+                    to={`/marketplace/${assetId}`}
+                    className="flex items-center gap-2 text-[13px] text-primary hover:underline font-medium"
+                  >
                     <ExternalLink className="w-3.5 h-3.5" />
                     View public page
                   </Link>
@@ -401,15 +650,21 @@ export default function DashboardAssetDetail() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction className="bg-red-500 hover:bg-red-600" onClick={handleDelete}>
+                        <AlertDialogAction
+                          className="bg-red-500 hover:bg-red-600"
+                          onClick={handleDelete}
+                        >
                           Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-                {isNew && <p className="text-[12px] text-[#aaa]">Save your asset to see stats and actions.</p>}
+                {isNew && (
+                  <p className="text-[12px] text-[#aaa]">Save your asset to see stats and actions.</p>
+                )}
               </div>
+
             </aside>
           </div>
         )}
