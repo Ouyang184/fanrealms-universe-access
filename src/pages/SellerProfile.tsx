@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { FollowButton } from '@/components/profile/FollowButton';
+import { SocialLinks } from '@/components/SocialLinks';
 import { useState, useEffect } from 'react';
 
 export default function SellerProfilePage() {
@@ -94,6 +95,17 @@ export default function SellerProfilePage() {
                   </div>
                   {seller?.bio && (
                     <p className="text-[13px] text-[#444] mt-3 max-w-2xl leading-relaxed whitespace-pre-wrap">{seller.bio}</p>
+                  )}
+                  {seller?.id && (
+                    <div className="mt-3">
+                      <SocialLinks
+                        creatorId={seller.id}
+                        variant="outline"
+                        size="sm"
+                        showText={true}
+                        className="gap-2"
+                      />
+                    </div>
                   )}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3">
                     <span className="flex items-center gap-1.5 text-[12px] text-[#888]">
