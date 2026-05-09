@@ -115,7 +115,8 @@ export function useCreateProduct() {
         .maybeSingle();
 
       if (!creator) {
-        // Auto-provision a creators row if one doesn't exist
+        // Auto-provision a creators row if one doesn't exist.
+        // Fetch username from users table first — creators.username is non-nullable.
         const { data: userRow } = await supabase
           .from('users')
           .select('username')
@@ -206,9 +207,10 @@ export function useUpdateProduct() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
+      queryClient.invalidateQueries({ queryKey: ['product', (data as any).id] });
       toast.success('Asset updated');
     },
     onError: (error: Error) => {
