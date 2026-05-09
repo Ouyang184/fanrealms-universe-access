@@ -23,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   // `authReady` only flips true after BOTH the initial getSession() has
   // resolved AND the first onAuthStateChange event has fired. AuthGate
   // uses this to block sensitive routes (/login, /signup, /dashboard,
