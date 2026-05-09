@@ -32,6 +32,8 @@ export interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  /** True while a profile fetch is in flight for the current user. */
+  profileLoading: boolean;
   isProfileComplete: boolean;
   /** True from the moment signOut() is invoked until it resolves. */
   signingOut: boolean;

@@ -23,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
   // `authReady` only flips true after BOTH the initial getSession() has
   // resolved AND the first onAuthStateChange event has fired. AuthGate
   // uses this to block sensitive routes (/login, /signup, /dashboard,
@@ -130,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userId = currentSession?.user?.id ?? null;
 
       if (userId) {
+        setProfileLoading(true);
         // Defer to next tick so React commits the user/session change first.
         setTimeout(() => {
           fetchUserProfile(userId).then(userProfile => {
@@ -140,9 +142,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (userRef.current?.id !== userId) return;
             console.log('[AUTH][Context] Profile fetch', { source, found: !!userProfile });
             setProfileSafe(userProfile);
+            setProfileLoading(false);
+          }).catch(() => {
+            if (cancelled) return;
+            if (requestId !== profileRequestRef.current) return;
+            setProfileLoading(false);
           });
         }, 0);
       } else {
+        setProfileLoading(false);
         setProfileSafe(null);
       }
     };
@@ -309,6 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
+    profileLoading,
     authReady,
     signingOut,
     isProfileComplete,
