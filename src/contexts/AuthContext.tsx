@@ -131,6 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userId = currentSession?.user?.id ?? null;
 
       if (userId) {
+        setProfileLoading(true);
         // Defer to next tick so React commits the user/session change first.
         setTimeout(() => {
           fetchUserProfile(userId).then(userProfile => {
@@ -141,9 +142,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (userRef.current?.id !== userId) return;
             console.log('[AUTH][Context] Profile fetch', { source, found: !!userProfile });
             setProfileSafe(userProfile);
+            setProfileLoading(false);
+          }).catch(() => {
+            if (cancelled) return;
+            if (requestId !== profileRequestRef.current) return;
+            setProfileLoading(false);
           });
         }, 0);
       } else {
+        setProfileLoading(false);
         setProfileSafe(null);
       }
     };
