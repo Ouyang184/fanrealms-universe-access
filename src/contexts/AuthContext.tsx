@@ -317,6 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     profile,
     loading,
+    profileLoading,
     authReady,
     signingOut,
     isProfileComplete,
