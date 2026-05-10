@@ -118,9 +118,8 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   // the background so tab/app switching doesn't replace the current screen
   // with the verification spinner.
   const blocked =
-    loading ||
     signingOut ||
-    (sensitive && !authReady);
+    (sensitive && (loading || !authReady));
 
   // Loop-prevention: a "transition" is a unique combination of inputs
   // that drive the redirect decision. Within a single transition we
