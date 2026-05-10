@@ -107,7 +107,6 @@ export function UserDropdownMenu() {
               "hover:bg-accent text-destructive transition-colors duration-200"
             )}
           >
-            <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </button>
         </div>
