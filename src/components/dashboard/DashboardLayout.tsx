@@ -1,9 +1,5 @@
 import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  Compass, Library, Heart, LayoutDashboard, FileText, Upload,
-  TrendingUp, Package, User, Settings, LogOut,
-} from 'lucide-react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -17,21 +13,19 @@ interface DashboardLayoutProps {
 interface Item {
   to: string;
   label: string;
-  icon: typeof Compass;
 }
 
 const EXPLORE: Item[] = [
-  { to: '/marketplace', label: 'Marketplace', icon: Compass },
-  { to: '/library', label: 'My library', icon: Library },
-  { to: '/library/recommendations', label: 'Recommendations', icon: Heart },
+  { to: '/marketplace', label: 'Marketplace' },
+  { to: '/library', label: 'My library' },
 ];
 
 const CREATE: Item[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/dashboard/projects/new', label: 'Upload new project', icon: Upload },
-  { to: '/dashboard/devlogs', label: 'Posts', icon: FileText },
-  { to: '/dashboard/assets', label: 'Assets', icon: Package },
-  { to: '/dashboard/sales', label: 'Sales & bundles', icon: TrendingUp },
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/dashboard/projects/new', label: 'Upload new project' },
+  { to: '/dashboard/devlogs', label: 'Posts' },
+  { to: '/dashboard/assets', label: 'Assets' },
+  { to: '/dashboard/sales', label: 'Sales & bundles' },
 ];
 
 function Section({ label }: { label: string }) {
@@ -42,21 +36,20 @@ function Section({ label }: { label: string }) {
   );
 }
 
-function SidebarLink({ to, label, icon: Icon, end }: Item & { end?: boolean }) {
+function SidebarLink({ to, label, end }: Item & { end?: boolean }) {
   return (
     <NavLink
       to={to}
       end={end}
       className={({ isActive }) =>
         cn(
-          'flex items-center gap-2.5 px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
+          'flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
           isActive
             ? 'bg-[#f0f0f0] text-[#111]'
             : 'text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]'
         )
       }
     >
-      <Icon className="w-4 h-4 flex-shrink-0 text-[#888]" />
       <span className="truncate">{label}</span>
     </NavLink>
   );
@@ -76,8 +69,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const username = usernameData ?? null;
 
   const ACCOUNT: Item[] = [
-    { to: username ? `/${username}` : '/dashboard', label: 'View profile', icon: User },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: username ? `/${username}` : '/dashboard', label: 'View profile' },
+    { to: '/settings', label: 'Settings' },
   ];
 
   return (
@@ -86,7 +79,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <aside className="hidden md:block w-60 flex-shrink-0 border-r border-[#eee] bg-white py-4">
           <Section label="Explore" />
           {EXPLORE.map((it) => (
-            <SidebarLink key={it.to} {...it} end={it.to === '/dashboard'} />
+            <SidebarLink key={it.to} {...it} end />
           ))}
 
           <Section label="Create" />
@@ -100,9 +93,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
           <button
             onClick={() => signOut()}
-            className="w-full flex items-center gap-2.5 px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]"
+            className="w-full flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]"
           >
-            <LogOut className="w-4 h-4 text-[#888]" />
             <span>Log out</span>
           </button>
         </aside>
