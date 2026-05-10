@@ -89,9 +89,27 @@ const decideTarget = (params: {
 };
 
 const AuthGate = ({ children }: { children: React.ReactNode }) => {
-  const { loading, authReady, user, isProfileComplete, signingOut, profileLoading } = useAuth();
+  const { loading, authReady, user, isProfileComplete, signingOut, profileLoading, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // If an already-signed-in user navigates to /signup, sign them out so
+  // they can actually create a new account. Without this, AuthGate would
+  // bounce them straight to /dashboard on their existing account, which
+  // looks like "signup logged me in as someone else".
+  const signedOutForSignupRef = useRef(false);
+  useEffect(() => {
+    const onSignup =
+      location.pathname === "/signup" || location.pathname.startsWith("/signup/");
+    if (!onSignup) {
+      signedOutForSignupRef.current = false;
+      return;
+    }
+    if (authReady && user && !signingOut && !signedOutForSignupRef.current) {
+      signedOutForSignupRef.current = true;
+      void signOut();
+    }
+  }, [location.pathname, authReady, user, signingOut, signOut]);
 
   const sensitive = isAuthSensitive(location.pathname);
   // Wait for profile fetch on sensitive routes so we don't redirect a
