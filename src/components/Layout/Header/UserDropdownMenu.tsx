@@ -1,4 +1,3 @@
-import { Settings, User, HelpCircle, LogOut, LayoutDashboard, Package, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -66,18 +65,18 @@ export function UserDropdownMenu() {
         </div>
         <Separator />
 
-        {/* Seller / dashboard shortcuts */}
+        {/* User shortcuts */}
         <div className="p-1">
+          <Link to="/library" className={menuItemClass}>
+            <span>My Library</span>
+          </Link>
           <Link to="/dashboard" className={menuItemClass}>
-            <LayoutDashboard className="h-4 w-4" />
             <span>Dashboard</span>
           </Link>
           <Link to="/dashboard/assets" className={menuItemClass}>
-            <Package className="h-4 w-4" />
             <span>My Assets</span>
           </Link>
           <Link to="/dashboard/sales" className={menuItemClass}>
-            <TrendingUp className="h-4 w-4" />
             <span>Sales</span>
           </Link>
         </div>
@@ -87,16 +86,13 @@ export function UserDropdownMenu() {
         <div className="p-1">
           {profile?.username && (
             <Link to={`/${profile.username}`} className={menuItemClass}>
-              <User className="h-4 w-4" />
               <span>View my profile</span>
             </Link>
           )}
           <Link to="/settings" className={menuItemClass}>
-            <Settings className="h-4 w-4" />
             <span>Settings</span>
           </Link>
           <Link to="/help" className={menuItemClass}>
-            <HelpCircle className="h-4 w-4" />
             <span>Help & Support</span>
           </Link>
         </div>
@@ -110,7 +106,6 @@ export function UserDropdownMenu() {
               "hover:bg-accent text-destructive transition-colors duration-200"
             )}
           >
-            <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </button>
         </div>
