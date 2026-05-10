@@ -89,7 +89,7 @@ const decideTarget = (params: {
 };
 
 const AuthGate = ({ children }: { children: React.ReactNode }) => {
-  const { loading, authReady, user, isProfileComplete, signingOut, profileLoading, signOut } = useAuth();
+  const { loading, authReady, user, isProfileComplete, signingOut, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -114,14 +114,12 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   }, [location.pathname, authReady, user, signingOut, signOut]);
 
   const sensitive = isAuthSensitive(location.pathname);
-  // Wait for profile fetch on sensitive routes so we don't redirect a
-  // user with a complete profile to /complete-profile during the brief
-  // window between session restore and profile arrival.
+  // Block only for session restoration/sign-out. Profile fetches happen in
+  // the background so tab/app switching doesn't replace the current screen
+  // with the verification spinner.
   const blocked =
-    loading ||
     signingOut ||
-    (sensitive && !authReady) ||
-    (sensitive && !!user && profileLoading);
+    (sensitive && (loading || !authReady));
 
   // Loop-prevention: a "transition" is a unique combination of inputs
   // that drive the redirect decision. Within a single transition we

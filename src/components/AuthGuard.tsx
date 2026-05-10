@@ -19,13 +19,12 @@ const AuthGuard = ({
   requireAuth = true,
   requireCompleteProfile = true,
 }: AuthGuardProps) => {
-  const { user, loading, signingOut, isProfileComplete, profileLoading } = useAuth();
+  const { user, loading, signingOut, isProfileComplete } = useAuth();
 
   const showSpinner =
     loading ||
     signingOut ||
     (requireAuth && !user) ||
-    (requireAuth && !!user && profileLoading) ||
     (requireCompleteProfile && user && !isProfileComplete);
 
   if (showSpinner) {
