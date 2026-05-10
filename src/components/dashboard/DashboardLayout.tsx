@@ -21,6 +21,7 @@ const EXPLORE: Item[] = [
 ];
 
 const CREATE: Item[] = [
+  { to: '/library', label: 'My library' },
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/dashboard/projects/new', label: 'Upload new project' },
   { to: '/dashboard/devlogs', label: 'Posts' },
