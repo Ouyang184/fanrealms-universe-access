@@ -73,7 +73,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // async work begins. AuthGuard reads this flag and hides protected UI
   // immediately, so users never see authed content flash on the way to /login.
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
 
   const signOut = React.useCallback(async () => {
     setSigningOut(true);
@@ -109,9 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Final defensive scrub for the timeout-fallback path.
       purgeSupabaseAuthStorage();
       setSigningOut(false);
-      navigate('/login', { replace: true });
+      navigateRef.current('/login', { replace: true });
     }
-  }, [rawSignOut, queryClient, navigate]);
+  }, [rawSignOut, queryClient]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,7 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try { queryClient.clear(); } catch { /* ignore */ }
             purgeSupabaseAuthStorage();
             setSigningOut(false);
-            navigate('/login', { replace: true });
+            navigateRef.current('/login', { replace: true });
           }
         }
       }
@@ -255,7 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile, queryClient, navigate]);
+  }, [fetchUserProfile, queryClient]);
 
   const handleUpdateProfile = async (data: Partial<Profile>) => {
     const currentUser = userRef.current;
