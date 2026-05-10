@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Store, Gamepad2, MessagesSquare, Briefcase, LayoutDashboard, Package } from "lucide-react";
+import { Store, Gamepad2, MessagesSquare, Briefcase, Library, LayoutDashboard, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MainNavigationProps {
@@ -16,6 +16,7 @@ const DISCOVER_ITEMS = [
 ];
 
 const ACCOUNT_ITEMS = [
+  { path: "/library", icon: Library, label: "My Library" },
   { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { path: "/dashboard/assets", icon: Package, label: "My Assets" },
 ];
