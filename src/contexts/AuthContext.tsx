@@ -124,11 +124,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const applySession = (currentSession: Session | null, source: string) => {
       if (cancelled) return;
 
+      const userId = currentSession?.user?.id ?? null;
+      const sameUser = userId !== null && userRef.current?.id === userId;
+
       setSessionSafe(currentSession);
       setUserSafe(currentSession?.user ?? null);
 
+      // Silent token rotation / tab refocus for the same user — keep the
+      // existing profile and don't trigger a loading state. Without this,
+      // every TOKEN_REFRESHED event would flash the AuthGate spinner.
+      if (sameUser) return;
+
       const requestId = ++profileRequestRef.current;
-      const userId = currentSession?.user?.id ?? null;
 
       if (userId) {
         setProfileLoading(true);
