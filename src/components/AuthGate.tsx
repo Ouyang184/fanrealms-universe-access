@@ -107,7 +107,9 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
     }
     if (authReady && user && !signingOut && !signedOutForSignupRef.current) {
       signedOutForSignupRef.current = true;
-      void signOut();
+      // signOut() navigates to /login when it resolves; immediately bounce
+      // back to /signup so the user lands on the page they asked for.
+      void signOut().then(() => navigate("/signup", { replace: true }));
     }
   }, [location.pathname, authReady, user, signingOut, signOut]);
 
