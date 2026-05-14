@@ -40,28 +40,12 @@ function matchesPrefix(path: string, to: string) {
   return path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
 }
 
-function SidebarLink({ to, label, allPaths }: Item & { allPaths: string[] }) {
-  const location = useLocation();
-  const path = location.pathname;
-  // Deterministic winner: of all sibling paths that prefix-match the current
-  // pathname, pick the one with the longest `to`. Ties (same length) are broken
-  // by first occurrence in `allPaths` to avoid flickering active states.
-  const candidates = allPaths.filter((p) => matchesPrefix(path, p));
-  let winner: string | null = null;
-  let winnerIdx = -1;
-  for (let i = 0; i < candidates.length; i++) {
-    const c = candidates[i];
-    const idx = allPaths.indexOf(c);
-    if (
-      winner === null ||
-      c.length > winner.length ||
-      (c.length === winner.length && idx < winnerIdx)
-    ) {
-      winner = c;
-      winnerIdx = idx;
-    }
-  }
-  const isActive = winner === to;
+function SidebarLink({
+  to,
+  label,
+  activePath,
+}: Item & { activePath: string | null }) {
+  const isActive = activePath === to;
 
   return (
     <NavLink
@@ -96,31 +80,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { to: '/settings', label: 'Settings' },
   ];
 
+  const location = useLocation();
+  const path = location.pathname;
+
+  // Precompute the deterministic active path once per render. Build an index
+  // map so we never call allPaths.indexOf() inside the per-link loop.
+  const allItems = [...EXPLORE, ...CREATE, ...ACCOUNT];
+  const allPaths = allItems.map((i) => i.to);
+  const pathIndex = new Map<string, number>();
+  for (let i = 0; i < allPaths.length; i++) {
+    if (!pathIndex.has(allPaths[i])) pathIndex.set(allPaths[i], i);
+  }
+  let activePath: string | null = null;
+  let activeLen = -1;
+  let activeIdx = -1;
+  for (let i = 0; i < allPaths.length; i++) {
+    const p = allPaths[i];
+    if (!matchesPrefix(path, p)) continue;
+    const idx = pathIndex.get(p)!;
+    if (
+      activePath === null ||
+      p.length > activeLen ||
+      (p.length === activeLen && idx < activeIdx)
+    ) {
+      activePath = p;
+      activeLen = p.length;
+      activeIdx = idx;
+    }
+  }
+
   return (
     <MainLayout fullWidth>
       <div className="flex gap-6 -mx-4 sm:-mx-6 -my-6 sm:-my-8 min-h-[calc(100vh-3.5rem)]">
         <aside className="hidden md:block w-60 flex-shrink-0 border-r border-[#eee] bg-white py-4">
-          {(() => {
-            const allPaths = [...EXPLORE, ...CREATE, ...ACCOUNT].map((i) => i.to);
-            return (
-              <>
-                <Section label="Explore" />
-                {EXPLORE.map((it) => (
-                  <SidebarLink key={it.to} {...it} allPaths={allPaths} />
-                ))}
+          <Section label="Explore" />
+          {EXPLORE.map((it) => (
+            <SidebarLink key={it.to} {...it} activePath={activePath} />
+          ))}
 
-                <Section label="Create" />
-                {CREATE.map((it) => (
-                  <SidebarLink key={it.to} {...it} allPaths={allPaths} />
-                ))}
+          <Section label="Create" />
+          {CREATE.map((it) => (
+            <SidebarLink key={it.to} {...it} activePath={activePath} />
+          ))}
 
-                <Section label="Account" />
-                {ACCOUNT.map((it) => (
-                  <SidebarLink key={it.label} {...it} allPaths={allPaths} />
-                ))}
-              </>
-            );
-          })()}
+          <Section label="Account" />
+          {ACCOUNT.map((it) => (
+            <SidebarLink key={it.label} {...it} activePath={activePath} />
+          ))}
           <button
             onClick={() => signOut()}
             className="w-full flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]"
