@@ -102,20 +102,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const path = location.pathname;
   const profilePath = ACCOUNT[0].to;
 
-  // Keep the latest profile path in a ref so the memo below depends only on
-  // pathname. The profile path is read lazily inside the memo when it actually
-  // recomputes (i.e. on a route change), so a username arriving later just
-  // updates the ref — it doesn't invalidate the memo on its own. The memo is
-  // re-evaluated on the next route change, which is when the highlight matters.
-  const profilePathRef = useRef(profilePath);
-  profilePathRef.current = profilePath;
-
+  // Recompute when either the pathname OR the profile path changes. The
+  // profile path can land after the initial render (username loads async),
+  // and if the user is already sitting on /<username> we must invalidate the
+  // memo so "View profile" becomes the active winner instead of staying null
+  // / stale. Including profilePath in the deps is the only way to guarantee
+  // correctness — a ref would silently miss this transition.
   const activePath = useMemo<string | null>(() => {
-    const pp = profilePathRef.current;
     const allPaths =
-      pp === '/dashboard'
+      profilePath === '/dashboard'
         ? [...STATIC_PATHS, SETTINGS_PATH]
-        : [...STATIC_PATHS, pp, SETTINGS_PATH];
+        : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
 
     let winner: string | null = null;
     let winnerLen = -1;
@@ -134,7 +131,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       }
     }
     return winner;
-  }, [path]);
+  }, [path, profilePath]);
 
   return (
     <MainLayout fullWidth>
