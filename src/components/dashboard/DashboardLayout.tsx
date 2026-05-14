@@ -82,16 +82,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const ACCOUNT: Item[] = [
     { to: username ? `/${username}` : '/dashboard', label: 'View profile' },
-    { to: '/settings', label: 'Settings' },
+    { to: SETTINGS_PATH, label: 'Settings' },
   ];
 
   const location = useLocation();
   const path = location.pathname;
 
-  // Precompute the deterministic active path once per render. Build an index
-  // map so we never call allPaths.indexOf() inside the per-link loop.
-  const allItems = [...EXPLORE, ...CREATE, ...ACCOUNT];
-  const allPaths = allItems.map((i) => i.to);
+  // Append the (dynamic) profile path to the hoisted static paths. The index
+  // map gives O(1) sibling lookups so we never call indexOf inside the loop.
+  const profilePath = ACCOUNT[0].to;
+  const allPaths =
+    profilePath === '/dashboard'
+      ? [...STATIC_PATHS, SETTINGS_PATH]
+      : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
+
   const pathIndex = new Map<string, number>();
   for (let i = 0; i < allPaths.length; i++) {
     if (!pathIndex.has(allPaths[i])) pathIndex.set(allPaths[i], i);
