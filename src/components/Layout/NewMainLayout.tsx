@@ -51,16 +51,14 @@ export function NewMainLayout({ children }: MainLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
-  const location = useLocation();
+  const pathname = useNormalizedPath();
   const { user, profile, signOut } = useAuth();
-  
+
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => matchesPrefix(pathname, path);
 
   // Fetch unread messages count
   useEffect(() => {
