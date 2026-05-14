@@ -42,30 +42,6 @@ function Section({ label }: { label: string }) {
   );
 }
 
-// Normalize a pathname for matching:
-//   - undefined / null / empty / non-string  → "/"
-//   - collapse repeated slashes ("/a//b"     → "/a/b")
-//   - ensure a leading slash ("foo"          → "/foo")
-//   - strip trailing slash except root       ("/a/"  → "/a", "/"  → "/")
-//   - lowercase so casing differences don't break matching
-// Result: "/Dashboard/Assets/", "/dashboard//assets", "/dashboard/assets/"
-// and "/dashboard/assets" all normalize to "/dashboard/assets".
-function normalizePath(p: unknown): string {
-  if (typeof p !== 'string' || p.length === 0) return '/';
-  let n = p.replace(/\/{2,}/g, '/').toLowerCase();
-  if (!n.startsWith('/')) n = '/' + n;
-  if (n.length > 1 && n.endsWith('/')) n = n.slice(0, -1);
-  return n;
-}
-
-function matchesPrefix(path: unknown, to: unknown) {
-  const a = normalizePath(path);
-  const b = normalizePath(to);
-  if (a === b) return true;
-  // Root "/" should never prefix-match every other path.
-  if (b === '/') return false;
-  return a.startsWith(b + '/');
-}
 
 function SidebarLink({
   to,
