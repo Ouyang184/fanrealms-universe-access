@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, Gamepad2, MessagesSquare, Briefcase, Library, LayoutDashboard, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { matchesPrefix, useNormalizedPath } from "@/hooks/usePathMatching";
+import { useActivePath } from "@/hooks/usePathMatching";
 
 interface MainNavigationProps {
   collapsed: boolean;
@@ -60,29 +59,9 @@ function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick, isActi
 }
 
 export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }: MainNavigationProps) {
-  const pathname = useNormalizedPath();
-
   // Longest-prefix winner so /dashboard/assets highlights "My Assets" only,
   // not both "Dashboard" and "My Assets". Matches DashboardLayout semantics.
-  const activePath = useMemo<string | null>(() => {
-    let winner: string | null = null;
-    let winnerLen = -1;
-    let winnerIdx = -1;
-    for (let i = 0; i < ALL_PATHS.length; i++) {
-      const p = ALL_PATHS[i];
-      if (!matchesPrefix(pathname, p)) continue;
-      if (
-        winner === null ||
-        p.length > winnerLen ||
-        (p.length === winnerLen && i < winnerIdx)
-      ) {
-        winner = p;
-        winnerLen = p.length;
-        winnerIdx = i;
-      }
-    }
-    return winner;
-  }, [pathname]);
+  const activePath = useActivePath(ALL_PATHS);
 
   return (
     <div className="py-2">
