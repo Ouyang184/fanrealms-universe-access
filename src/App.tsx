@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import NotFound from "./pages/NotFound";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,6 +58,14 @@ import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
 const CreatorRedirect = () => {
   const { username } = useParams();
   return <Navigate to={`/${username ?? ''}`} replace />;
+};
+
+// Redirect logged-in users from the landing page to the marketplace
+const HomeRedirect = () => {
+  const { user, authReady } = useAuth();
+  if (!authReady) return null;
+  if (user) return <Navigate to="/marketplace" replace />;
+  return <LandingPage />;
 };
 
 const OAuthCallbackRedirector = () => {
@@ -122,7 +130,7 @@ export default function App() {
               <AuthGate>
               <Routes>
                 {/* Public */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<HomeRedirect />} />
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/marketplace/:productId" element={<ProductDetail />} />
                 <Route path="/jobs" element={<Jobs />} />
