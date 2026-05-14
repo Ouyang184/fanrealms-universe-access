@@ -79,7 +79,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <aside className="hidden md:block w-60 flex-shrink-0 border-r border-[#eee] bg-white py-4">
           <Section label="Explore" />
           {EXPLORE.map((it) => (
-            <SidebarLink key={it.to} {...it} end />
+            <SidebarLink key={it.to} {...it} end={it.to === '/marketplace'} />
           ))}
 
           <Section label="Create" />
