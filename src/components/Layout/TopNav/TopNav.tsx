@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Menu, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -8,6 +8,7 @@ import { Logo } from '@/components/Logo';
 import { SearchBar } from '../Header/SearchBar';
 import { HeaderNotifications } from '../Header/HeaderNotifications';
 import { UserDropdownMenu } from '../Header/UserDropdownMenu';
+import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
 
 const NAV_ITEMS = [
   { to: '/marketplace', label: 'Marketplace' },
@@ -16,27 +17,59 @@ const NAV_ITEMS = [
   { to: '/jobs', label: 'Jobs' },
 ];
 
-function DesktopNavLink({ to, label }: { to: string; label: string }) {
+function DesktopNavLink({
+  to,
+  label,
+  isActive,
+}: {
+  to: string;
+  label: string;
+  isActive: boolean;
+}) {
   return (
-    <NavLink
+    <Link
       to={to}
-      className={({ isActive }) =>
-        cn(
-          'px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors',
-          isActive
-            ? 'text-[#111]'
-            : 'text-[#666] hover:text-[#111]'
-        )
-      }
+      className={cn(
+        'px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors',
+        isActive ? 'text-[#111]' : 'text-[#666] hover:text-[#111]'
+      )}
     >
       {label}
-    </NavLink>
+    </Link>
+  );
+}
+
+function MobileNavLink({
+  to,
+  label,
+  isActive,
+  onClick,
+}: {
+  to: string;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={cn(
+        'px-3 py-2 rounded-md text-[14px] font-medium transition-colors',
+        isActive
+          ? 'bg-[#f5f5f5] text-[#111]'
+          : 'text-[#555] hover:bg-[#fafafa] hover:text-[#111]'
+      )}
+    >
+      {label}
+    </Link>
   );
 }
 
 export function TopNav() {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = useNormalizedPath();
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
@@ -49,9 +82,19 @@ export function TopNav() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1 ml-2">
           {NAV_ITEMS.map((item) => (
-            <DesktopNavLink key={item.to} {...item} />
+            <DesktopNavLink
+              key={item.to}
+              {...item}
+              isActive={matchesPrefix(pathname, item.to)}
+            />
           ))}
-          {user && <DesktopNavLink to="/dashboard" label="Dashboard" />}
+          {user && (
+            <DesktopNavLink
+              to="/dashboard"
+              label="Dashboard"
+              isActive={matchesPrefix(pathname, '/dashboard')}
+            />
+          )}
         </nav>
 
         {/* Search — flex-grow */}
@@ -110,38 +153,21 @@ export function TopNav() {
               <SearchBar />
             </div>
             {NAV_ITEMS.map((item) => (
-              <NavLink
+              <MobileNavLink
                 key={item.to}
-                to={item.to}
+                {...item}
+                isActive={matchesPrefix(pathname, item.to)}
                 onClick={() => setMobileOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    'px-3 py-2 rounded-md text-[14px] font-medium transition-colors',
-                    isActive
-                      ? 'bg-[#f5f5f5] text-[#111]'
-                      : 'text-[#555] hover:bg-[#fafafa] hover:text-[#111]'
-                  )
-                }
-              >
-                {item.label}
-              </NavLink>
+              />
             ))}
             {user && (
               <>
-                <NavLink
+                <MobileNavLink
                   to="/dashboard"
+                  label="Dashboard"
+                  isActive={matchesPrefix(pathname, '/dashboard')}
                   onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    cn(
-                      'px-3 py-2 rounded-md text-[14px] font-medium transition-colors',
-                      isActive
-                        ? 'bg-[#f5f5f5] text-[#111]'
-                        : 'text-[#555] hover:bg-[#fafafa] hover:text-[#111]'
-                    )
-                  }
-                >
-                  Dashboard
-                </NavLink>
+                />
                 <Link
                   to="/dashboard/assets"
                   onClick={() => setMobileOpen(false)}
