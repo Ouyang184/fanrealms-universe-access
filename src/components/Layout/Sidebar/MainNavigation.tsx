@@ -35,8 +35,8 @@ function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick }: {
   path: string; icon: React.ElementType; label: string;
   collapsed: boolean; isMobile: boolean; onClick?: () => void;
 }) {
-  const location = useLocation();
-  const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
+  const pathname = useNormalizedPath();
+  const isActive = matchesPrefix(pathname, path);
 
   return (
     <Link
