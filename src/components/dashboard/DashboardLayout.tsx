@@ -40,28 +40,12 @@ function matchesPrefix(path: string, to: string) {
   return path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
 }
 
-function SidebarLink({ to, label, allPaths }: Item & { allPaths: string[] }) {
-  const location = useLocation();
-  const path = location.pathname;
-  // Deterministic winner: of all sibling paths that prefix-match the current
-  // pathname, pick the one with the longest `to`. Ties (same length) are broken
-  // by first occurrence in `allPaths` to avoid flickering active states.
-  const candidates = allPaths.filter((p) => matchesPrefix(path, p));
-  let winner: string | null = null;
-  let winnerIdx = -1;
-  for (let i = 0; i < candidates.length; i++) {
-    const c = candidates[i];
-    const idx = allPaths.indexOf(c);
-    if (
-      winner === null ||
-      c.length > winner.length ||
-      (c.length === winner.length && idx < winnerIdx)
-    ) {
-      winner = c;
-      winnerIdx = idx;
-    }
-  }
-  const isActive = winner === to;
+function SidebarLink({
+  to,
+  label,
+  activePath,
+}: Item & { activePath: string | null }) {
+  const isActive = activePath === to;
 
   return (
     <NavLink
