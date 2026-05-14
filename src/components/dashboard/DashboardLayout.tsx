@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
+import { pickLongestPrefixMatch, useNormalizedPath } from '@/hooks/usePathMatching';
 
 interface DashboardLayoutProps {
   children: ReactNode;
