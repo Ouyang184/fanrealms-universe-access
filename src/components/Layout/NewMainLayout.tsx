@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
 import {
   Search,
   Bell,
