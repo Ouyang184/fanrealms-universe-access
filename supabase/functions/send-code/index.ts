@@ -29,15 +29,20 @@ async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
 }
 
 async function sendEmail(to: string, code: string) {
-  const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY')
-  if (!sendGridApiKey) throw new Error('Missing SendGrid API key')
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (!resendApiKey) throw new Error('Missing Resend API key')
 
-  const emailPayload = {
-    personalizations: [{ to: [{ email: to }], subject: 'Your FanRealms Login Code' }],
-    from: { email: Deno.env.get('SENDGRID_SENDER_EMAIL') || 'noreply@fanrealms.com', name: 'FanRealms' },
-    content: [{
-      type: 'text/html',
-      value: `
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'FanRealms <noreply@fanrealms.com>',
+      to: [to],
+      subject: 'Your FanRealms Login Code',
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #333; text-align: center;">Your FanRealms Login Code</h1>
           <p style="font-size: 16px; color: #555; text-align: center;">Use this code to complete your login:</p>
@@ -48,19 +53,13 @@ async function sendEmail(to: string, code: string) {
             This code will expire in 5 minutes. If you didn't request this code, please ignore this email.
           </p>
         </div>
-      `
-    }]
-  }
-
-  const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${sendGridApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(emailPayload)
+      `,
+    }),
   })
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(`SendGrid API error: ${response.status} - ${errorText}`)
+    throw new Error(`Resend API error: ${response.status} - ${errorText}`)
   }
 }
 
