@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -36,19 +36,27 @@ function Section({ label }: { label: string }) {
   );
 }
 
-function SidebarLink({ to, label, end }: Item & { end?: boolean }) {
+function SidebarLink({ to, label, allPaths }: Item & { allPaths: string[] }) {
+  const location = useLocation();
+  const path = location.pathname;
+  // Active if exact match, or current path is a sub-route of `to` AND no other
+  // sibling path is a more specific prefix of the current path.
+  const isPrefix = path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
+  const hasMoreSpecific = allPaths.some(
+    (p) => p !== to && p.startsWith(to.endsWith('/') ? to : to + '/') &&
+      (path === p || path.startsWith(p + '/'))
+  );
+  const isActive = isPrefix && !hasMoreSpecific;
+
   return (
     <NavLink
       to={to}
-      end={end}
-      className={({ isActive }) =>
-        cn(
-          'flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
-          isActive
-            ? 'bg-[#f0f0f0] text-[#111]'
-            : 'text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]'
-        )
-      }
+      className={cn(
+        'flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
+        isActive
+          ? 'bg-[#f0f0f0] text-[#111]'
+          : 'text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]'
+      )}
     >
       <span className="truncate">{label}</span>
     </NavLink>
@@ -77,20 +85,27 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <MainLayout fullWidth>
       <div className="flex gap-6 -mx-4 sm:-mx-6 -my-6 sm:-my-8 min-h-[calc(100vh-3.5rem)]">
         <aside className="hidden md:block w-60 flex-shrink-0 border-r border-[#eee] bg-white py-4">
-          <Section label="Explore" />
-          {EXPLORE.map((it) => (
-            <SidebarLink key={it.to} {...it} end={it.to === '/marketplace'} />
-          ))}
+          {(() => {
+            const allPaths = [...EXPLORE, ...CREATE, ...ACCOUNT].map((i) => i.to);
+            return (
+              <>
+                <Section label="Explore" />
+                {EXPLORE.map((it) => (
+                  <SidebarLink key={it.to} {...it} allPaths={allPaths} />
+                ))}
 
-          <Section label="Create" />
-          {CREATE.map((it) => (
-            <SidebarLink key={it.to} {...it} end={it.to === '/dashboard'} />
-          ))}
+                <Section label="Create" />
+                {CREATE.map((it) => (
+                  <SidebarLink key={it.to} {...it} allPaths={allPaths} />
+                ))}
 
-          <Section label="Account" />
-          {ACCOUNT.map((it) => (
-            <SidebarLink key={it.label} {...it} />
-          ))}
+                <Section label="Account" />
+                {ACCOUNT.map((it) => (
+                  <SidebarLink key={it.label} {...it} allPaths={allPaths} />
+                ))}
+              </>
+            );
+          })()}
           <button
             onClick={() => signOut()}
             className="w-full flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]"
