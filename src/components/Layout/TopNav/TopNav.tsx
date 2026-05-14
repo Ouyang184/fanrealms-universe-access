@@ -29,6 +29,8 @@ function DesktopNavLink({
   return (
     <Link
       to={to}
+      data-nav-item={to}
+      data-active={isActive ? 'true' : 'false'}
       className={cn(
         'px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors',
         isActive ? 'text-[#111]' : 'text-[#666] hover:text-[#111]'

@@ -53,6 +53,8 @@ function SidebarLink({
   return (
     <NavLink
       to={to}
+      data-nav-item={to}
+      data-active={isActive ? 'true' : 'false'}
       className={cn(
         'flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
         isActive
