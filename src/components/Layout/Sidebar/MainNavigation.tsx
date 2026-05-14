@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, Gamepad2, MessagesSquare, Briefcase, Library, LayoutDashboard, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,8 @@ const ACCOUNT_ITEMS = [
   { path: "/dashboard/assets", icon: Package, label: "My Assets" },
 ];
 
+const ALL_PATHS: string[] = [...DISCOVER_ITEMS, ...ACCOUNT_ITEMS].map((i) => i.path);
+
 function SectionLabel({ label, collapsed, isMobile }: { label: string; collapsed: boolean; isMobile: boolean }) {
   if (collapsed && !isMobile) return null;
   return (
@@ -31,13 +34,10 @@ function SectionLabel({ label, collapsed, isMobile }: { label: string; collapsed
   );
 }
 
-function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick }: {
+function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick, isActive }: {
   path: string; icon: React.ElementType; label: string;
-  collapsed: boolean; isMobile: boolean; onClick?: () => void;
+  collapsed: boolean; isMobile: boolean; onClick?: () => void; isActive: boolean;
 }) {
-  const pathname = useNormalizedPath();
-  const isActive = matchesPrefix(pathname, path);
-
   return (
     <Link
       to={path}
@@ -60,15 +60,53 @@ function NavItem({ path, icon: Icon, label, collapsed, isMobile, onClick }: {
 }
 
 export function MainNavigation({ collapsed, onMobileNavClick, isMobile = false }: MainNavigationProps) {
+  const pathname = useNormalizedPath();
+
+  // Longest-prefix winner so /dashboard/assets highlights "My Assets" only,
+  // not both "Dashboard" and "My Assets". Matches DashboardLayout semantics.
+  const activePath = useMemo<string | null>(() => {
+    let winner: string | null = null;
+    let winnerLen = -1;
+    let winnerIdx = -1;
+    for (let i = 0; i < ALL_PATHS.length; i++) {
+      const p = ALL_PATHS[i];
+      if (!matchesPrefix(pathname, p)) continue;
+      if (
+        winner === null ||
+        p.length > winnerLen ||
+        (p.length === winnerLen && i < winnerIdx)
+      ) {
+        winner = p;
+        winnerLen = p.length;
+        winnerIdx = i;
+      }
+    }
+    return winner;
+  }, [pathname]);
+
   return (
     <div className="py-2">
       <SectionLabel label="Browse" collapsed={collapsed} isMobile={isMobile} />
       {DISCOVER_ITEMS.map((item) => (
-        <NavItem key={item.path} {...item} collapsed={collapsed} isMobile={isMobile} onClick={onMobileNavClick} />
+        <NavItem
+          key={item.path}
+          {...item}
+          collapsed={collapsed}
+          isMobile={isMobile}
+          onClick={onMobileNavClick}
+          isActive={activePath === item.path}
+        />
       ))}
       <SectionLabel label="Sell" collapsed={collapsed} isMobile={isMobile} />
       {ACCOUNT_ITEMS.map((item) => (
-        <NavItem key={item.path} {...item} collapsed={collapsed} isMobile={isMobile} onClick={onMobileNavClick} />
+        <NavItem
+          key={item.path}
+          {...item}
+          collapsed={collapsed}
+          isMobile={isMobile}
+          onClick={onMobileNavClick}
+          isActive={activePath === item.path}
+        />
       ))}
     </div>
   );
