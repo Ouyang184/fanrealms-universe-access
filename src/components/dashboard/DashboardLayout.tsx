@@ -1,10 +1,11 @@
 import { ReactNode, useMemo } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
 
 interface DashboardLayoutProps {
   children: ReactNode;
