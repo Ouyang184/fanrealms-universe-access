@@ -44,3 +44,44 @@ export function useNormalizedPath(): string {
   const { pathname } = useLocation();
   return useMemo(() => normalizePath(pathname), [pathname]);
 }
+
+/**
+ * Pick the single longest-prefix winner from `candidates` for the given
+ * `path`. Earlier entries beat later ones on ties so callers control
+ * priority via list order. Returns null when nothing matches.
+ *
+ * Used so every nav surface highlights exactly one item — e.g.
+ * /dashboard/assets → "Assets", never both "Dashboard" and "Assets".
+ */
+export function pickLongestPrefixMatch(
+  path: unknown,
+  candidates: readonly string[]
+): string | null {
+  let winner: string | null = null;
+  let winnerLen = -1;
+  let winnerIdx = -1;
+  for (let i = 0; i < candidates.length; i++) {
+    const p = candidates[i];
+    if (!matchesPrefix(path, p)) continue;
+    if (
+      winner === null ||
+      p.length > winnerLen ||
+      (p.length === winnerLen && i < winnerIdx)
+    ) {
+      winner = p;
+      winnerLen = p.length;
+      winnerIdx = i;
+    }
+  }
+  return winner;
+}
+
+/**
+ * Hook variant that memoizes the longest-prefix winner against the
+ * current normalized pathname. Pass a stable `candidates` array (module
+ * constant or useMemo result) to avoid recomputing every render.
+ */
+export function useActivePath(candidates: readonly string[]): string | null {
+  const path = useNormalizedPath();
+  return useMemo(() => pickLongestPrefixMatch(path, candidates), [path, candidates]);
+}
