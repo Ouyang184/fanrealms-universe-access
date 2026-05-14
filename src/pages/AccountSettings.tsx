@@ -51,6 +51,7 @@ export default function AccountSettings() {
   // Account settings state
   const [accountSettings, setAccountSettings] = useState({
     username: "",
+    displayName: "",
     email: "",
     saving: false
   });
@@ -96,6 +97,7 @@ export default function AccountSettings() {
     if (profile) {
       setAccountSettings({
         username: profile.username || "",
+        displayName: (profile as any).display_name || "",
         email: user?.email || "",
         saving: false
       });
@@ -199,11 +201,14 @@ export default function AccountSettings() {
         if (error) throw error;
       }
       
-      // Update the profile (username)
-      if (profile?.username !== accountSettings.username) {
+      // Update username and/or display name
+      const usernameChanged = profile?.username !== accountSettings.username;
+      const displayNameChanged = (profile as any)?.display_name !== accountSettings.displayName;
+      if (usernameChanged || displayNameChanged) {
         await updateProfile({
-          username: accountSettings.username
-        });
+          username: accountSettings.username,
+          display_name: accountSettings.displayName,
+        } as any);
       }
       
       toast({
@@ -225,21 +230,35 @@ export default function AccountSettings() {
   const handleChangePassword = async (values: PasswordFormValues) => {
     setIsChangingPassword(true);
     try {
+      // Verify current password first before allowing change
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email ?? "",
+        password: values.currentPassword,
+      });
+
+      if (signInError) {
+        toast({
+          title: "Incorrect current password",
+          description: "The current password you entered is wrong. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: values.newPassword,
       });
-      
+
       if (error) throw error;
-      
+
       toast({
         title: "Password updated",
         description: "Your password has been changed successfully."
       });
-      
-      // Reset form and close dialog
+
       form.reset();
       setChangePasswordOpen(false);
-      
+
     } catch (error: any) {
       toast({
         title: "Failed to update password",
@@ -330,14 +349,30 @@ export default function AccountSettings() {
                   </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="displayName">Display name</Label>
+                    <Input
+                      id="displayName"
+                      name="displayName"
+                      value={accountSettings.displayName}
+                      onChange={handleAccountChange}
+                      placeholder="Your name shown on the site"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Shown on your profile and asset listings
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="username">Username</Label>
-                    <Input 
-                      id="username" 
-                      name="username" 
+                    <Input
+                      id="username"
+                      name="username"
                       value={accountSettings.username}
                       onChange={handleAccountChange}
                       placeholder="Enter your username"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Your unique URL: fanrealms.com/{accountSettings.username || "username"}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
