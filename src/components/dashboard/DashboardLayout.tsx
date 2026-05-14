@@ -28,6 +28,11 @@ const CREATE: Item[] = [
   { to: '/dashboard/sales', label: 'Sales & bundles' },
 ];
 
+// Static portion of sidebar paths (everything except the username-dependent
+// "View profile" entry). Hoisted so we don't rebuild these arrays per render.
+const STATIC_PATHS: string[] = [...EXPLORE, ...CREATE].map((i) => i.to);
+const SETTINGS_PATH = '/settings';
+
 function Section({ label }: { label: string }) {
   return (
     <div className="px-3 pt-5 pb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#aaa]">
