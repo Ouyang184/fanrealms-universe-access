@@ -36,17 +36,32 @@ function Section({ label }: { label: string }) {
   );
 }
 
+function matchesPrefix(path: string, to: string) {
+  return path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
+}
+
 function SidebarLink({ to, label, allPaths }: Item & { allPaths: string[] }) {
   const location = useLocation();
   const path = location.pathname;
-  // Active if exact match, or current path is a sub-route of `to` AND no other
-  // sibling path is a more specific prefix of the current path.
-  const isPrefix = path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
-  const hasMoreSpecific = allPaths.some(
-    (p) => p !== to && p.startsWith(to.endsWith('/') ? to : to + '/') &&
-      (path === p || path.startsWith(p + '/'))
-  );
-  const isActive = isPrefix && !hasMoreSpecific;
+  // Deterministic winner: of all sibling paths that prefix-match the current
+  // pathname, pick the one with the longest `to`. Ties (same length) are broken
+  // by first occurrence in `allPaths` to avoid flickering active states.
+  const candidates = allPaths.filter((p) => matchesPrefix(path, p));
+  let winner: string | null = null;
+  let winnerIdx = -1;
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const idx = allPaths.indexOf(c);
+    if (
+      winner === null ||
+      c.length > winner.length ||
+      (c.length === winner.length && idx < winnerIdx)
+    ) {
+      winner = c;
+      winnerIdx = idx;
+    }
+  }
+  const isActive = winner === to;
 
   return (
     <NavLink
