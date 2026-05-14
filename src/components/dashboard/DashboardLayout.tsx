@@ -66,16 +66,6 @@ function SidebarLink({
     </NavLink>
   );
 }
-        'flex items-center px-3 py-1.5 mx-1 rounded-md text-[13px] font-medium transition-colors',
-        isActive
-          ? 'bg-[#f0f0f0] text-[#111]'
-          : 'text-[#555] hover:bg-[#f5f5f5] hover:text-[#111]'
-      )}
-    >
-      <span className="truncate">{label}</span>
-    </NavLink>
-  );
-}
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
