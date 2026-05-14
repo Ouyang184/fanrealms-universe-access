@@ -83,8 +83,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { to: SETTINGS_PATH, label: 'Settings' },
   ];
 
-  const location = useLocation();
-  const path = location.pathname;
+  const path = useNormalizedPath();
   const profilePath = ACCOUNT[0].to;
 
   // Recompute when either the pathname OR the profile path changes. The
