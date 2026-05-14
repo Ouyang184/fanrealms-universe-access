@@ -1,4 +1,4 @@
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useMemo, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,13 +89,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const path = location.pathname;
   const profilePath = ACCOUNT[0].to;
 
-  // Recompute the deterministic active path only when the pathname or the
-  // (username-derived) profile path actually change.
+  // Keep the latest profile path in a ref so the memo below depends only on
+  // pathname. The profile path is read lazily inside the memo when it actually
+  // recomputes (i.e. on a route change), so a username arriving later just
+  // updates the ref — it doesn't invalidate the memo on its own. The memo is
+  // re-evaluated on the next route change, which is when the highlight matters.
+  const profilePathRef = useRef(profilePath);
+  profilePathRef.current = profilePath;
+
   const activePath = useMemo<string | null>(() => {
+    const pp = profilePathRef.current;
     const allPaths =
-      profilePath === '/dashboard'
+      pp === '/dashboard'
         ? [...STATIC_PATHS, SETTINGS_PATH]
-        : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
+        : [...STATIC_PATHS, pp, SETTINGS_PATH];
 
     let winner: string | null = null;
     let winnerLen = -1;
@@ -114,7 +121,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       }
     }
     return winner;
-  }, [path, profilePath]);
+  }, [path]);
 
   return (
     <MainLayout fullWidth>
