@@ -97,24 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       profilePath === '/dashboard'
         ? [...STATIC_PATHS, SETTINGS_PATH]
         : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
-
-    let winner: string | null = null;
-    let winnerLen = -1;
-    let winnerIdx = -1;
-    for (let i = 0; i < allPaths.length; i++) {
-      const p = allPaths[i];
-      if (!matchesPrefix(path, p)) continue;
-      if (
-        winner === null ||
-        p.length > winnerLen ||
-        (p.length === winnerLen && i < winnerIdx)
-      ) {
-        winner = p;
-        winnerLen = p.length;
-        winnerIdx = i;
-      }
-    }
-    return winner;
+    return pickLongestPrefixMatch(path, allPaths);
   }, [path, profilePath]);
 
   return (
