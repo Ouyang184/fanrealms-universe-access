@@ -87,36 +87,34 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const location = useLocation();
   const path = location.pathname;
-
-  // Append the (dynamic) profile path to the hoisted static paths. The index
-  // map gives O(1) sibling lookups so we never call indexOf inside the loop.
   const profilePath = ACCOUNT[0].to;
-  const allPaths =
-    profilePath === '/dashboard'
-      ? [...STATIC_PATHS, SETTINGS_PATH]
-      : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
 
-  const pathIndex = new Map<string, number>();
-  for (let i = 0; i < allPaths.length; i++) {
-    if (!pathIndex.has(allPaths[i])) pathIndex.set(allPaths[i], i);
-  }
-  let activePath: string | null = null;
-  let activeLen = -1;
-  let activeIdx = -1;
-  for (let i = 0; i < allPaths.length; i++) {
-    const p = allPaths[i];
-    if (!matchesPrefix(path, p)) continue;
-    const idx = pathIndex.get(p)!;
-    if (
-      activePath === null ||
-      p.length > activeLen ||
-      (p.length === activeLen && idx < activeIdx)
-    ) {
-      activePath = p;
-      activeLen = p.length;
-      activeIdx = idx;
+  // Recompute the deterministic active path only when the pathname or the
+  // (username-derived) profile path actually change.
+  const activePath = useMemo<string | null>(() => {
+    const allPaths =
+      profilePath === '/dashboard'
+        ? [...STATIC_PATHS, SETTINGS_PATH]
+        : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
+
+    let winner: string | null = null;
+    let winnerLen = -1;
+    let winnerIdx = -1;
+    for (let i = 0; i < allPaths.length; i++) {
+      const p = allPaths[i];
+      if (!matchesPrefix(path, p)) continue;
+      if (
+        winner === null ||
+        p.length > winnerLen ||
+        (p.length === winnerLen && i < winnerIdx)
+      ) {
+        winner = p;
+        winnerLen = p.length;
+        winnerIdx = i;
+      }
     }
-  }
+    return winner;
+  }, [path, profilePath]);
 
   return (
     <MainLayout fullWidth>
