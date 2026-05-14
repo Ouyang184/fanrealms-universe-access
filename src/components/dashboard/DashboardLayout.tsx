@@ -41,8 +41,21 @@ function Section({ label }: { label: string }) {
   );
 }
 
+// Normalize a pathname for matching: collapse repeated slashes, strip a
+// trailing slash (except for the root "/"), and lowercase. This way
+// "/Dashboard/Assets/", "/dashboard//assets" and "/dashboard/assets" all
+// match the same sidebar entry.
+function normalizePath(p: string) {
+  if (!p) return '/';
+  let n = p.replace(/\/{2,}/g, '/').toLowerCase();
+  if (n.length > 1 && n.endsWith('/')) n = n.slice(0, -1);
+  return n;
+}
+
 function matchesPrefix(path: string, to: string) {
-  return path === to || path.startsWith(to.endsWith('/') ? to : to + '/');
+  const a = normalizePath(path);
+  const b = normalizePath(to);
+  return a === b || a.startsWith(b + '/');
 }
 
 function SidebarLink({
