@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Store, Gamepad2, MessagesSquare, Briefcase, Library, LayoutDashboard, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { matchesPrefix, useNormalizedPath } from "@/hooks/usePathMatching";
+import { useActivePath } from "@/hooks/usePathMatching";
 
 interface MainNavigationProps {
   collapsed: boolean;
