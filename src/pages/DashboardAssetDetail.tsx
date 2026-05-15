@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
@@ -75,6 +75,9 @@ export default function DashboardAssetDetail() {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [assetFile, setAssetFile] = useState<File | null>(null);
+  // Existing storage path from the DB (null = no file uploaded yet)
+  const [assetFilePath, setAssetFilePath] = useState<string | null>(null);
 
   // Revoke object URL when coverPreview changes to prevent memory leaks
   useEffect(() => {
@@ -101,6 +104,7 @@ export default function DashboardAssetDetail() {
       setGodotVersion(p.godot_version ?? 'Godot 4.3+');
       setTagsStr((p.tags ?? []).join(', '));
       setDownloadUrl(p.asset_url ?? '');
+      setAssetFilePath(p.asset_file_path ?? null);
       setTrailerUrl(p.trailer_url ?? '');
       setVersion(p.version ?? '');
       setLicense(p.license ?? 'Standard');
@@ -136,6 +140,34 @@ export default function DashboardAssetDetail() {
     return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl;
   };
 
+  const uploadAssetFile = async (productId: string): Promise<string | null> => {
+    if (!assetFile || !user) return null;
+
+    // Fetch creator ID for the storage path
+    const { data: creator } = await supabase
+      .from('creators')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!creator) {
+      toast.error('Creator profile not found');
+      return null;
+    }
+
+    const path = `${creator.id}/${productId}/${assetFile.name}`;
+    const { error } = await supabase.storage
+      .from('product-files')
+      .upload(path, assetFile, { upsert: true });
+
+    if (error) {
+      toast.error('File upload failed: ' + error.message);
+      return null;
+    }
+
+    return path; // storage path, not a public URL
+  };
+
   const addScreenshot = () => setScreenshots(s => [...s, '']);
   const removeScreenshot = (i: number) => setScreenshots(s => s.filter((_, idx) => idx !== i));
   const updateScreenshot = (i: number, val: string) =>
@@ -160,7 +192,9 @@ export default function DashboardAssetDetail() {
       category,
       godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
-      asset_url: downloadUrl.trim() || undefined,
+      // Only one download source at a time: file upload takes priority
+      asset_file_path: assetFile ? undefined : (assetFilePath ?? undefined), // set after upload in doSave
+      asset_url: assetFile ? undefined : (downloadUrl.trim() || undefined), // cleared when file uploaded
       trailer_url: trailerUrl.trim() || undefined,
       screenshots: screenshots.map(s => s.trim()).filter(Boolean),
       version: version.trim() || undefined,
@@ -173,8 +207,9 @@ export default function DashboardAssetDetail() {
   const doSave = async (overrideStatus?: 'draft' | 'published'): Promise<string | null> => {
     if (!title.trim()) { toast.error('Title is required'); return null; }
     const finalStatus = overrideStatus ?? status;
-    if (finalStatus === 'published' && !downloadUrl.trim()) {
-      toast.error('A download URL is required to publish');
+    const hasDownload = assetFile || assetFilePath || downloadUrl.trim();
+    if (finalStatus === 'published' && !hasDownload) {
+      toast.error('A download file or URL is required to publish');
       return null;
     }
     const payload = buildPayload(overrideStatus);
@@ -194,13 +229,47 @@ export default function DashboardAssetDetail() {
         if (!uploaded) return null; // uploadCover already showed error toast
         coverImageUrl = uploaded;
       }
-      const fullPayload = { ...payload, cover_image_url: coverImageUrl ?? undefined };
 
       if (isNew) {
-        const created = await createProduct.mutateAsync(fullPayload);
-        return (created as any).id;
+        // Step 1: Create product without file path
+        const created = await createProduct.mutateAsync({
+          ...payload,
+          cover_image_url: coverImageUrl ?? undefined,
+          asset_file_path: undefined, // set after upload
+        });
+        const newId = (created as any).id;
+
+        // Step 2: Upload file if selected, then update product
+        if (assetFile) {
+          const filePath = await uploadAssetFile(newId);
+          if (!filePath) return null;
+          await updateProduct.mutateAsync({
+            id: newId,
+            asset_file_path: filePath,
+            asset_url: undefined, // clear external URL
+          });
+          setAssetFilePath(filePath);
+          setAssetFile(null);
+        }
+        return newId;
       } else {
-        await updateProduct.mutateAsync({ id: assetId!, ...fullPayload });
+        // For existing assets: upload file first, then save everything together
+        let finalFilePath = assetFilePath;
+        if (assetFile) {
+          const filePath = await uploadAssetFile(assetId!);
+          if (!filePath) return null;
+          finalFilePath = filePath;
+          setAssetFilePath(filePath);
+          setAssetFile(null);
+        }
+
+        await updateProduct.mutateAsync({
+          id: assetId!,
+          ...payload,
+          cover_image_url: coverImageUrl ?? undefined,
+          asset_file_path: finalFilePath ?? undefined,
+          asset_url: finalFilePath ? undefined : (downloadUrl.trim() || undefined),
+        });
         return assetId!;
       }
     } catch {
@@ -403,19 +472,104 @@ export default function DashboardAssetDetail() {
                 </div>
               </div>
 
-              <div>
-                <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
-                  Download URL <span className="text-red-500">*</span>
+              {/* Download — file upload (primary) or external URL (fallback) */}
+              <div className="space-y-3">
+                <label className="text-[13px] font-semibold text-[#333] block">
+                  Download file <span className="text-red-500">*</span>
                 </label>
-                <Input
-                  value={downloadUrl}
-                  onChange={e => setDownloadUrl(e.target.value)}
-                  placeholder="https://drive.google.com/... or https://mega.nz/..."
-                  type="url"
-                />
-                <p className="text-[11px] text-[#aaa] mt-0.5">
-                  Google Drive, MEGA, Dropbox, or any direct link. Buyers see this only after purchase.
-                </p>
+
+                {/* Uploaded / selected file display */}
+                {(assetFilePath || assetFile) ? (
+                  <div className="flex items-center gap-3 px-3 py-2.5 bg-[#f5f5f5] border border-[#e5e5e5] rounded-lg">
+                    <Package className="w-4 h-4 text-[#888] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium truncate">
+                        {assetFile
+                          ? `${assetFile.name} (${(assetFile.size / 1024 / 1024).toFixed(1)} MB)`
+                          : assetFilePath?.split('/').pop()
+                        }
+                      </div>
+                      {assetFilePath && !assetFile && (
+                        <div className="text-[11px] text-[#aaa]">Uploaded to secure storage</div>
+                      )}
+                      {assetFile && (
+                        <div className="text-[11px] text-[#aaa]">Will upload on save</div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('asset-file-input')?.click()}
+                        className="text-[12px] text-primary hover:underline font-medium"
+                      >
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setAssetFile(null); setAssetFilePath(null); }}
+                        className="text-[12px] text-red-500 hover:text-red-600 transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <input
+                      id="asset-file-input"
+                      type="file"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 50 * 1024 * 1024) {
+                          toast.error('File must be smaller than 50 MB');
+                          return;
+                        }
+                        setAssetFile(file);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('asset-file-input')?.click()}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-semibold border border-[#e5e5e5] rounded-lg hover:bg-[#fafafa] transition-colors text-[#333]"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload file
+                    </button>
+                    <p className="text-[11px] text-[#aaa] mt-1">Max 50 MB. ZIP, PDF, or any file type.</p>
+                    <input
+                      id="asset-file-input"
+                      type="file"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 50 * 1024 * 1024) {
+                          toast.error('File must be smaller than 50 MB');
+                          return;
+                        }
+                        setAssetFile(file);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* External URL fallback — only shown when no file is uploaded */}
+                {!assetFilePath && !assetFile && (
+                  <div>
+                    <p className="text-[12px] text-[#888] mb-1.5">— or use an external URL —</p>
+                    <Input
+                      value={downloadUrl}
+                      onChange={e => setDownloadUrl(e.target.value)}
+                      placeholder="https://drive.google.com/... or https://mega.nz/..."
+                      type="url"
+                    />
+                    <p className="text-[11px] text-[#aaa] mt-0.5">
+                      Google Drive, MEGA, Dropbox, or any direct link.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>
