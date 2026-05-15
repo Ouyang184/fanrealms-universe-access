@@ -72,7 +72,10 @@ export const useAuthFunctions = () => {
           
           if (emailError) {
             console.error("useAuthFunctions: Error sending 2FA email:", emailError);
-            throw new Error("Failed to send 2FA verification code");
+            // Sign out the orphaned session before surfacing the error —
+            // otherwise the user is secretly logged in but stuck on the login page.
+            await supabase.auth.signOut();
+            throw new Error("Failed to send 2FA verification code. Please try again.");
           }
           
           return {
