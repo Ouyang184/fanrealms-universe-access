@@ -851,6 +851,7 @@ export type Database = {
       }
       digital_products: {
         Row: {
+          asset_file_path: string | null
           asset_url: string | null
           category: string | null
           cover_image_url: string | null
@@ -873,6 +874,7 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          asset_file_path?: string | null
           asset_url?: string | null
           category?: string | null
           cover_image_url?: string | null
@@ -895,6 +897,7 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          asset_file_path?: string | null
           asset_url?: string | null
           category?: string | null
           cover_image_url?: string | null

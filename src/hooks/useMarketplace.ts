@@ -101,6 +101,7 @@ export function useCreateProduct() {
       cover_image_url?: string;
       asset_url?: string;
       trailer_url?: string;
+      asset_file_path?: string;
       screenshots?: string[];
       version?: string;
       license?: string;
@@ -190,6 +191,7 @@ export function useUpdateProduct() {
       cover_image_url?: string;
       asset_url?: string;
       trailer_url?: string;
+      asset_file_path?: string;
       screenshots?: string[];
       version?: string;
       license?: string;
