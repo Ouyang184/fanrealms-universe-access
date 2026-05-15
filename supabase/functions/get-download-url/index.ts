@@ -1,6 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4'
 import { corsHeaders } from '../_shared/cors.ts'
 
+const SIGNED_URL_TTL_SECONDS = 3600 // 1 hour
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -15,7 +18,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY')!
     const supabaseService = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -32,11 +35,18 @@ Deno.serve(async (req) => {
       )
     }
 
-    const body = await req.json()
-    const product_id: string | undefined = body?.product_id
-    if (!product_id) {
+    const body = await req.json().catch(() => null)
+    if (!body) {
       return new Response(
-        JSON.stringify({ error: 'product_id is required' }),
+        JSON.stringify({ error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const product_id: string | undefined = body?.product_id
+    if (!product_id || !UUID_RE.test(product_id)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid product_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -64,29 +74,32 @@ Deno.serve(async (req) => {
       )
     }
 
-    // No file in Storage — fall back to external URL
-    if (!product.asset_file_path) {
-      if (!product.asset_url) {
-        return new Response(
-          JSON.stringify({ error: 'No download available for this product' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
+    // No download available at all
+    if (!product.asset_file_path && !product.asset_url) {
       return new Response(
-        JSON.stringify({ url: product.asset_url }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'No download available for this product' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // For paid products, verify the caller has a completed purchase
-    if (Number(product.price) > 0) {
-      const { data: purchase } = await serviceClient
+    // For paid products, verify purchase BEFORE returning any URL (covers both storage and external URL paths)
+    const price = parseFloat(String(product.price ?? '0'))
+    if (isFinite(price) && price > 0) {
+      const { data: purchase, error: purchaseError } = await serviceClient
         .from('purchases')
         .select('id')
         .eq('product_id', product_id)
         .eq('buyer_id', user.id)
         .eq('status', 'completed')
         .maybeSingle()
+
+      if (purchaseError) {
+        console.error('purchase query error:', purchaseError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to verify purchase. Please try again.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
 
       if (!purchase) {
         return new Response(
@@ -96,10 +109,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Generate 1-hour signed URL using service role
+    // No file in Storage — return external URL (purchase already verified above if paid)
+    if (!product.asset_file_path) {
+      return new Response(
+        JSON.stringify({ url: product.asset_url }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Generate signed URL using service role
     const { data: signedData, error: signedError } = await serviceClient.storage
       .from('product-files')
-      .createSignedUrl(product.asset_file_path, 3600)
+      .createSignedUrl(product.asset_file_path, SIGNED_URL_TTL_SECONDS)
 
     if (signedError || !signedData?.signedUrl) {
       console.error('createSignedUrl error:', signedError)
