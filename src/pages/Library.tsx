@@ -40,6 +40,10 @@ function DownloadButton({ productId }: { productId: string }) {
   const [downloading, setDownloading] = useState(false);
 
   const handleDownload = async () => {
+    if (!productId) {
+      toast.error('Product not found');
+      return;
+    }
     setDownloading(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-download-url', {
@@ -60,7 +64,7 @@ function DownloadButton({ productId }: { productId: string }) {
   return (
     <button
       onClick={handleDownload}
-      disabled={downloading}
+      disabled={downloading || !productId}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50"
     >
       {downloading

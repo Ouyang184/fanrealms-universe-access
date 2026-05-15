@@ -267,12 +267,18 @@ export default function DashboardAssetDetail() {
           id: assetId!,
           ...payload,
           cover_image_url: coverImageUrl ?? undefined,
-          asset_file_path: finalFilePath ?? undefined,
+          // Pass null explicitly when file was removed so DB column is cleared
+          asset_file_path: finalFilePath,
           asset_url: finalFilePath ? undefined : (downloadUrl.trim() || undefined),
         });
         return assetId!;
       }
-    } catch {
+    } catch (err: any) {
+      // Mutation onError handlers show toasts for DB/network errors.
+      // This fallback catches anything not handled upstream.
+      if (err?.message && !err.message.includes('Failed to')) {
+        toast.error('Save failed: ' + err.message);
+      }
       return null;
     } finally {
       setSaving(false);

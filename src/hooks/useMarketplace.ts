@@ -166,7 +166,7 @@ export function useUserPurchases() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchases')
-        .select('*, digital_products(title, cover_image_url, asset_url), creators(username, display_name)')
+        .select('*, digital_products(title, cover_image_url), creators(username, display_name)')
         .eq('buyer_id', user!.id)
         .order('created_at', { ascending: false });
 
@@ -191,7 +191,7 @@ export function useUpdateProduct() {
       cover_image_url?: string;
       asset_url?: string;
       trailer_url?: string;
-      asset_file_path?: string;
+      asset_file_path?: string | null;
       screenshots?: string[];
       version?: string;
       license?: string;
