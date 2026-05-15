@@ -7,8 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Download, Tag, FileText, Shield, Package, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, Tag, FileText, Shield, Package, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSection';
 import { useProductRatingSummary } from '@/hooks/useProductRatings';
 import { RatingSummary } from '@/components/ratings/StarRating';
@@ -22,6 +23,7 @@ export default function ProductDetail() {
   const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const { data: hasPurchased } = useHasPurchased(productId || '');
   const [activeImg, setActiveImg] = useState(0);
+  const [downloading, setDownloading] = useState(false);
 
   const isFree = !product?.price || Number(product.price) === 0;
   const canDownload = isFree || hasPurchased;
@@ -39,9 +41,23 @@ export default function ProductDetail() {
     }
   }, []);
 
-  const handleDownload = () => {
-    if (!(product as any)?.asset_url) { toast.error('Download link not available.'); return; }
-    window.open((product as any).asset_url, '_blank', 'noopener,noreferrer');
+  const handleDownload = async () => {
+    if (!productId) return;
+    setDownloading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-download-url', {
+        body: { product_id: productId },
+      });
+      if (error || !data?.url) {
+        toast.error(data?.error || 'Download unavailable. Please try again.');
+        return;
+      }
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch {
+      toast.error('Download failed. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (isLoading) {
@@ -173,9 +189,11 @@ export default function ProductDetail() {
               </div>
 
               {canDownload ? (
-                <Button size="lg" className="w-full" onClick={handleDownload} disabled={!p.asset_url}>
-                  <Download className="h-4 w-4 mr-2" />
-                  {isFree ? 'Download' : 'Download your purchase'}
+                <Button size="lg" className="w-full" onClick={handleDownload} disabled={downloading}>
+                  {downloading
+                    ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Getting link…</>
+                    : <><Download className="h-4 w-4 mr-2" />{isFree ? 'Download' : 'Download your purchase'}</>
+                  }
                 </Button>
               ) : user ? (
                 <Button size="lg" className="w-full" onClick={() => checkout(p.id)} disabled={checkoutLoading}>
