@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useUserPurchases } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShoppingBag, ExternalLink } from 'lucide-react';
+import { ShoppingBag, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const TABS = [
   { to: '/library', label: 'My Library', end: true },
@@ -33,18 +36,38 @@ export function LibraryTabs() {
   );
 }
 
-function DownloadButton({ assetUrl }: { assetUrl: string | null | undefined }) {
-  if (!assetUrl) return <span className="text-[11px] text-[#aaa]">No file linked</span>;
+function DownloadButton({ productId }: { productId: string }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-download-url', {
+        body: { product_id: productId },
+      });
+      if (error || !data?.url) {
+        toast.error(data?.error || 'Download unavailable');
+        return;
+      }
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch {
+      toast.error('Download failed. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <a
-      href={assetUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+    <button
+      onClick={handleDownload}
+      disabled={downloading}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50"
     >
-      <ExternalLink className="w-3.5 h-3.5" />
-      Download
-    </a>
+      {downloading
+        ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Getting link…</>
+        : <><ExternalLink className="w-3.5 h-3.5" />Download</>
+      }
+    </button>
   );
 }
 
@@ -86,7 +109,7 @@ export default function LibraryPage() {
                     by {p.creators?.display_name || p.creators?.username}
                   </div>
                 </div>
-                <DownloadButton assetUrl={p.digital_products?.asset_url} />
+                <DownloadButton productId={p.product_id ?? ''} />
               </div>
             ))}
           </div>
