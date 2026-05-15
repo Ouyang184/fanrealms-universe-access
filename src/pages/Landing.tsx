@@ -48,8 +48,8 @@ export default function LandingPage() {
 
       {/* HERO */}
       <section className="border-b border-[#eee] bg-white">
-        <div className="px-4 sm:px-6 py-16 flex items-center justify-between gap-12">
-          <div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="md:col-span-7">
             <h1 className="text-5xl font-bold tracking-[-1.5px] leading-[1.1]">
               Where Godot devs<br />
               <span className="text-primary">buy, sell & ship.</span>
@@ -67,19 +67,21 @@ export default function LandingPage() {
             </div>
             <p className="mt-4 text-[12px] text-[#aaa]">Free to join · Payments secured by Stripe · No hidden fees</p>
           </div>
-          <div className="hidden md:grid grid-cols-2 gap-3 flex-shrink-0 w-[320px]">
+          <div className="md:col-span-5 grid grid-cols-2 gap-4">
             {[
               { Icon: ShoppingBag, title: "Godot Assets", desc: "Plugins, shaders, sprites & tools" },
               { Icon: Gamepad2,    title: "Indie Games",  desc: "Play & discover Godot-made games" },
               { Icon: Briefcase,   title: "Jobs & Gigs",  desc: "Hire or get hired as a Godot dev" },
               { Icon: MessageSquare, title: "Community",  desc: "Forum, devlogs & help" },
             ].map(({ Icon, title, desc }) => (
-              <div key={title} className="bg-[#fafafa] border border-[#eee] rounded-xl p-4">
-                <div className="w-8 h-8 rounded-lg bg-white border border-[#eee] flex items-center justify-center mb-2.5">
-                  <Icon className="w-4 h-4 text-[#555]" />
+              <div key={title} className="aspect-square p-5 rounded-2xl bg-[#fafafa] border border-[#eee] hover:border-primary/30 transition-colors flex flex-col justify-between">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-primary" />
                 </div>
-                <div className="text-[13px] font-bold text-[#111]">{title}</div>
-                <div className="text-[11px] text-[#888] mt-0.5 leading-relaxed">{desc}</div>
+                <div>
+                  <div className="text-[14px] font-bold text-[#111]">{title}</div>
+                  <div className="text-[12px] text-[#888] mt-1 leading-relaxed">{desc}</div>
+                </div>
               </div>
             ))}
           </div>
