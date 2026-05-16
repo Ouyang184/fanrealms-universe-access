@@ -195,13 +195,8 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   // If we're going to navigate this tick, hide stale UI for one frame so
-  // the user never sees a flash of the wrong page.
-  const pendingTarget = decideTarget({
-    hasUser: !!user,
-    isComplete: isProfileComplete,
-    pathname: location.pathname,
-    search: location.search,
-  });
+  // the user never sees a flash of the wrong page. Reuses the memoized
+  // decision from above so the effect and this guard never disagree.
   if (pendingTarget && pendingTarget !== location.pathname + location.search) {
     return (
       <div
