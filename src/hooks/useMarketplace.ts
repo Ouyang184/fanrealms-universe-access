@@ -67,6 +67,26 @@ export function useProduct(productId: string) {
   });
 }
 
+/**
+ * Creator-only product fetch — calls get_creator_product() SECURITY DEFINER RPC
+ * which returns the full row including asset_url and asset_file_path (columns
+ * that are revoked from the anon/authenticated roles on the base table).
+ * Returns null when the caller is not the product owner.
+ */
+export function useCreatorProduct(productId: string) {
+  return useQuery({
+    queryKey: ['creator-product', productId],
+    enabled: !!productId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('get_creator_product', { p_product_id: productId });
+      if (error) throw error;
+      // rpc returns an array; we want a single row
+      return (data as any[])?.[0] ?? null;
+    },
+  });
+}
+
 export function useHasPurchased(productId: string) {
   const { user } = useAuth();
   return useQuery({

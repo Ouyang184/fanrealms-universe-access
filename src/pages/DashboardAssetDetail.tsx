@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import {
-  useProduct,
+  useCreatorProduct,
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
@@ -45,7 +45,9 @@ export default function DashboardAssetDetail() {
   const { user } = useAuth();
   const isNew = assetId === 'new';
 
-  const { data: product, isLoading: productLoading } = useProduct(isNew ? '' : assetId ?? '');
+  // useCreatorProduct calls get_creator_product() RPC (SECURITY DEFINER) which
+  // returns the full row including asset_url / asset_file_path for the product owner.
+  const { data: product, isLoading: productLoading } = useCreatorProduct(isNew ? '' : assetId ?? '');
   const { data: salesData } = useSellerSales();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
