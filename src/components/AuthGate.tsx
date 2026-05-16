@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
@@ -98,20 +98,33 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   // bounce them straight to /dashboard on their existing account, which
   // looks like "signup logged me in as someone else".
   const signedOutForSignupRef = useRef(false);
+  const signupSignOutInFlightRef = useRef(false);
   useEffect(() => {
     const onSignup =
       location.pathname === "/signup" || location.pathname.startsWith("/signup/");
     if (!onSignup) {
       signedOutForSignupRef.current = false;
+      signupSignOutInFlightRef.current = false;
       return;
     }
-    if (authReady && user && !signingOut && !signedOutForSignupRef.current) {
+    if (
+      authReady &&
+      user &&
+      !signingOut &&
+      !signedOutForSignupRef.current &&
+      !signupSignOutInFlightRef.current
+    ) {
       signedOutForSignupRef.current = true;
+      signupSignOutInFlightRef.current = true;
       // signOut() navigates to /login when it resolves; immediately bounce
       // back to /signup so the user lands on the page they asked for.
-      void signOut().then(() => navigate("/signup", { replace: true }));
+      void signOut()
+        .then(() => navigate("/signup", { replace: true }))
+        .finally(() => {
+          signupSignOutInFlightRef.current = false;
+        });
     }
-  }, [location.pathname, authReady, user, signingOut, signOut]);
+  }, [location.pathname, authReady, user, signingOut, signOut, navigate]);
 
   const sensitive = isAuthSensitive(location.pathname);
   // Block only for session restoration/sign-out. Profile fetches happen in
@@ -125,36 +138,47 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   // that drive the redirect decision. Within a single transition we
   // dispatch AT MOST ONE navigation. The next render with the same key
   // is a no-op even if React re-runs the effect.
+  const MAX_REDIRECTS_PER_KEY = 1;
   const transitionKeyRef = useRef<string | null>(null);
+  const dispatchCountRef = useRef(0);
+  const lastDispatchedTargetRef = useRef<string | null>(null);
   const transitionKey = [
     user?.id ?? "anon",
     isProfileComplete ? "complete" : "incomplete",
     location.pathname + location.search,
   ].join("|");
 
+  // Reset per-key counters whenever the transition key changes.
+  if (transitionKeyRef.current !== transitionKey) {
+    transitionKeyRef.current = transitionKey;
+    dispatchCountRef.current = 0;
+    lastDispatchedTargetRef.current = null;
+  }
+
+  // Memoize the redirect decision so it only recomputes when the inputs
+  // that actually drive it change. Used by both the effect and the
+  // pre-render flash guard so they stay perfectly in sync.
+  const pendingTarget = useMemo(
+    () =>
+      decideTarget({
+        hasUser: !!user,
+        isComplete: isProfileComplete,
+        pathname: location.pathname,
+        search: location.search,
+      }),
+    [user, isProfileComplete, location.pathname, location.search]
+  );
+
   useEffect(() => {
     if (blocked) return;
-    if (transitionKeyRef.current === transitionKey) return;
-    transitionKeyRef.current = transitionKey;
-
-    const target = decideTarget({
-      hasUser: !!user,
-      isComplete: isProfileComplete,
-      pathname: location.pathname,
-      search: location.search,
-    });
-    if (!target) return;
-    if (target === location.pathname + location.search) return;
-    navigate(target, { replace: true });
-  }, [
-    blocked,
-    transitionKey,
-    user,
-    isProfileComplete,
-    location.pathname,
-    location.search,
-    navigate,
-  ]);
+    if (dispatchCountRef.current >= MAX_REDIRECTS_PER_KEY) return;
+    if (!pendingTarget) return;
+    if (pendingTarget === location.pathname + location.search) return;
+    if (lastDispatchedTargetRef.current === pendingTarget) return;
+    lastDispatchedTargetRef.current = pendingTarget;
+    dispatchCountRef.current += 1;
+    navigate(pendingTarget, { replace: true });
+  }, [blocked, pendingTarget, location.pathname, location.search, navigate]);
 
   if (blocked) {
     return (
@@ -171,13 +195,8 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
   }
 
   // If we're going to navigate this tick, hide stale UI for one frame so
-  // the user never sees a flash of the wrong page.
-  const pendingTarget = decideTarget({
-    hasUser: !!user,
-    isComplete: isProfileComplete,
-    pathname: location.pathname,
-    search: location.search,
-  });
+  // the user never sees a flash of the wrong page. Reuses the memoized
+  // decision from above so the effect and this guard never disagree.
   if (pendingTarget && pendingTarget !== location.pathname + location.search) {
     return (
       <div

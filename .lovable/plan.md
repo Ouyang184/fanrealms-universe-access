@@ -1,44 +1,43 @@
-## Problem
+# Plan: One-Shot Auth Redirect Safeguards
 
-When the user switches tabs and returns, Supabase fires `TOKEN_REFRESHED` (and sometimes `SIGNED_IN` / `INITIAL_SESSION`) on the existing session. `AuthContext.applySession` currently treats every event the same way: it bumps the request token, flips `profileLoading = true`, and re-fetches the profile from scratch. `AuthGate` blocks any sensitive route while `profileLoading` is true, so the user sees the full-screen "Verifying your session…" spinner every time they refocus the tab.
+Goal: prevent the auth-check effect from firing repeated navigations, repeated `purgeSupabaseAuthStorage` calls, or repeated login redirects within a single navigation/auth transition.
 
-This is not how Gmail/Twitter/itch.io behave. The session check should be silent when the user hasn't actually changed.
+## Scope
 
-## Fix
+Two files own this behavior:
+- `src/components/AuthGate.tsx` — global gate + redirect dispatcher
+- `src/lib/hooks/useAuthCheck.ts` — per-page auth check (used by `Settings`, `AccountSettings`)
 
-Make `applySession` a no-op for the profile fetch when the user id hasn't changed. The session/access token still updates (so future API calls use the fresh token), but we don't clear or re-fetch the profile, and `profileLoading` never flips to true.
+No other files change. No business logic, no auth flow changes.
 
-### Changes
+## Changes
 
-**`src/contexts/AuthContext.tsx`**
-1. In `applySession`, compare the incoming `userId` to `userRef.current?.id`.
-   - If both are non-null and equal → just update the session/user state (token rotation) and return. Do **not** bump `profileRequestRef`, do **not** set `profileLoading`, do **not** refetch the profile.
-   - If the user id changed (sign-in, account switch, sign-out) → existing behavior (bump token, fetch profile, manage `profileLoading`).
-2. The `INITIAL_SESSION` dedupe block already short-circuits the first duplicate; this new check covers `TOKEN_REFRESHED`, `SIGNED_IN` re-fires on tab focus, and `USER_UPDATED` for the same user.
+### 1. `src/components/AuthGate.tsx`
+Today `transitionKeyRef` tracks `user.id | complete | pathname+search`, but the effect can still re-enter on the same key if React re-runs it after a fast state change, and the post-render `decideTarget()` call runs every render with no guard.
 
-No changes needed to `AuthGate` or `AuthGuard` — once `profileLoading` stops flipping on refocus, the spinner stops appearing.
+Add:
+- A `lastDispatchedTargetRef` that stores the last `target` we navigated to. If the effect computes the same target for the same key, no-op.
+- A hard cap `MAX_REDIRECTS_PER_KEY = 1` per transition key, with a counter ref `dispatchCountRef` reset whenever the key changes. Second attempt within the same key logs once and bails.
+- Move the "flash prevention" `decideTarget` call into a `useMemo` keyed on the same inputs so it only recomputes when inputs change, and gate the loading splash on `pendingTarget !== null && pendingTarget !== current && !alreadyDispatched`.
+- Guard the `/signup` sign-out effect with the existing `signedOutForSignupRef` plus an additional check that `signingOut` is false AND we haven't already initiated — preventing a second `signOut()` if React re-runs the effect before `signingOut` flips.
 
-### Out of scope
+### 2. `src/lib/hooks/useAuthCheck.ts`
+Today it has `lastNavRef` + `MAX_REDIRECTS = 3`, but it resets only on unmount and can still dispatch on every render until `isChecking` clears.
 
-- The initial page-load spinner (when `authReady` is false) stays — that's the legitimate first session check.
-- The cross-tab `SIGNED_OUT` flow stays — that's a real auth change.
-- Sign-in / account-switch profile fetches stay — those are user-id changes.
+Add:
+- A composite `transitionKey` = `${user?.id ?? 'anon'}|${requireAuth}|${location.pathname}${location.search}`.
+- A `dispatchedKeyRef`: once we navigate for a key, mark it and skip until the key changes.
+- Reset `redirectCountRef` when the key changes (currently it only grows for the component's lifetime, which can wedge legitimate later redirects).
+- Remove the unused `cancelled` variable.
 
-## Technical detail
+### 3. No new tests required
+Existing Playwright specs cover the loop cases:
+- `e2e/auth-redirect-when-logged-in.spec.ts`
+- `e2e/incomplete-profile-loop.spec.ts`
+- `e2e/session-restore-on-reload.spec.ts`
 
-```ts
-// Inside applySession, after computing userId:
-const sameUser =
-  userId !== null && userRef.current?.id === userId;
+They should continue to pass; if any regress, fix forward.
 
-setSessionSafe(currentSession);
-setUserSafe(currentSession?.user ?? null);
-
-if (sameUser) {
-  // Token rotation / silent refresh — keep existing profile, no spinner.
-  return;
-}
-
-const requestId = ++profileRequestRef.current;
-// …rest of existing fetch logic unchanged…
-```
+## Out of scope
+- AuthContext, useAuthFunctions, edge functions, RLS — untouched.
+- No visual / UX changes (spinner copy stays the same).
