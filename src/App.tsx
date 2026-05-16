@@ -177,7 +177,6 @@ export default function App() {
                 {/* Dashboard (protected) — uncomment as each page is built */}
                 <Route path="/dashboard" element={<AuthGuard><DashboardPage /></AuthGuard>} />
                 <Route path="/dashboard/assets" element={<AuthGuard><DashboardAssetsPage /></AuthGuard>} />
-                <Route path="/dashboard/assets/new" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
                 <Route path="/dashboard/assets/:assetId" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
                 <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} />
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
