@@ -10,9 +10,9 @@ export function useSellerProfile(username: string) {
         .from('creators')
         .select('id, user_id, username, display_name, bio, profile_image_url, banner_url, created_at, follower_count')
         .eq('username', username)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      return data; // null when creator doesn't exist
     },
   });
 }

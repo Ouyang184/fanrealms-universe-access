@@ -25,7 +25,7 @@ export default function SellerProfilePage() {
     if (typeof seller?.follower_count === 'number') setFollowerCount(seller.follower_count);
   }, [seller?.follower_count]);
 
-  if (isError) {
+  if (isError || (!sellerLoading && seller === null)) {
     return (
       <MainLayout>
         <div className="max-w-5xl mx-auto py-20 text-center">
