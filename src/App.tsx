@@ -52,6 +52,7 @@ import LibraryReviewsPage from "./pages/LibraryReviews";
 import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
 import DashboardDevlogsPage from "./pages/DashboardDevlogs";
 import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
+import JamPage from './pages/JamPage';
 
 
 
@@ -139,6 +140,7 @@ export default function App() {
                 <Route path="/jobs/:jobId" element={<JobDetail />} />
                 <Route path="/forum" element={<Forum />} />
                 <Route path="/forum/:threadId" element={<ForumThread />} />
+                <Route path="/jam/:jamId" element={<JamPage />} />
                 <Route path="/games" element={<GamesPage />} />
                 <Route path="/explore" element={<Navigate to="/marketplace" replace />} />
                 <Route path="/explore/*" element={<Navigate to="/marketplace" replace />} />
