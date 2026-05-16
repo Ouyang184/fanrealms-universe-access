@@ -150,14 +150,32 @@ Deno.serve(async (req) => {
       // Still return success since verification was successful
     }
 
-    console.log(`✅ Successful 2FA verification`)
+    console.log(`✅ Successful 2FA verification — issuing magic-link token`)
+
+    // Issue a single-use magic-link token the client can exchange for a
+    // session via supabase.auth.verifyOtp. The original password session was
+    // destroyed client-side before this call, so this is the only path to a
+    // valid session after 2FA succeeds.
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    })
+
+    if (linkError || !linkData?.properties?.hashed_token) {
+      console.error('Failed to generate post-2FA magic link:', linkError)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Could not finalize 2FA session' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Verification successful' 
+      JSON.stringify({
+        success: true,
+        message: 'Verification successful',
+        token_hash: linkData.properties.hashed_token,
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )

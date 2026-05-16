@@ -37,16 +37,18 @@ export const useAgeVerification = () => {
     mutationFn: async (dateOfBirth: string) => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('users')
-        .update({
-          age_verified: true,
-          date_of_birth: dateOfBirth,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+      // Server-side validation: the RPC re-checks DOB >= 18 years ago
+      // under SECURITY DEFINER. The DB trigger blocks any direct client
+      // update to age_verified that doesn't satisfy the same rule.
+      const { data, error } = await supabase.rpc('verify_age_with_dob', {
+        p_date_of_birth: dateOfBirth,
+      });
 
       if (error) throw error;
+      const result = data as { success: boolean; error?: string };
+      if (!result?.success) {
+        throw new Error(result?.error || 'Age verification failed');
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(['age-verification', user?.id], true);

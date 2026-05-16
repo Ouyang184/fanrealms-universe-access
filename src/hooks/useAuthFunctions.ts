@@ -57,34 +57,30 @@ export const useAuthFunctions = () => {
         if (userError) {
           console.error("useAuthFunctions: Error checking email 2FA status:", userError);
         } else if (userData?.email_2fa_enabled) {
-          console.log("useAuthFunctions: Email 2FA required, signing out temporarily");
-          
-          // Don't sign out - keep the session and show 2FA challenge
-          console.log("useAuthFunctions: Email 2FA required, keeping session active");
-          
-          // Trigger email 2FA challenge
-          console.log("useAuthFunctions: Calling send-code function...");
-          const { data: emailData, error: emailError } = await supabase.functions.invoke('send-code', {
-            body: { email: data.user.email }
+          console.log("useAuthFunctions: Email 2FA required — signing out and issuing challenge");
+
+          const userEmail = data.user.email;
+
+          // CRITICAL: sign out BEFORE returning so the JWT does not sit in
+          // localStorage where another tab could ride it past protected routes.
+          // The session is only re-established after the 2FA code is verified.
+          await supabase.auth.signOut({ scope: 'local' });
+          purgeSupabaseAuthStorage();
+
+          const { error: emailError } = await supabase.functions.invoke('send-code', {
+            body: { email: userEmail }
           });
-          
-          console.log("useAuthFunctions: Send-code response:", { emailData, emailError });
-          
+
           if (emailError) {
             console.error("useAuthFunctions: Error sending 2FA email:", emailError);
-            // Sign out the orphaned session before surfacing the error —
-            // otherwise the user is secretly logged in but stuck on the login page.
-            await supabase.auth.signOut();
             throw new Error("Failed to send 2FA verification code. Please try again.");
           }
-          
+
           return {
             success: false,
             error: { message: "EMAIL_2FA_REQUIRED" },
             emailMfaRequired: true,
-            email: data.user.email,
-            user: data.user,
-            session: data.session
+            email: userEmail,
           };
         }
       }

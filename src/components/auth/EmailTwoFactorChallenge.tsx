@@ -53,9 +53,36 @@ export function EmailTwoFactorChallenge({ email, onSuccess, onCancel }: EmailTwo
         return;
       }
 
-      // Code verified successfully - 2FA is complete
+      // Exchange the single-use token returned by verify-code for a real
+      // Supabase session. The original password session was wiped before
+      // the 2FA challenge, so this is what actually signs the user in.
+      const tokenHash = verifyResponse.token_hash;
+      if (!tokenHash) {
+        toast({
+          title: "Verification failed",
+          description: "Could not finalize sign-in. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { error: otpError } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'magiclink',
+      });
+
+      if (otpError) {
+        console.error('Post-2FA session exchange failed:', otpError);
+        toast({
+          title: "Sign-in failed",
+          description: otpError.message || "Could not establish session.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       toast({
-        title: "Verification successful", 
+        title: "Verification successful",
         description: "2FA verification completed successfully"
       });
 
