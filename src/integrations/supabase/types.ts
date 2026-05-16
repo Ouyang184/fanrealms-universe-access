@@ -2928,6 +2928,32 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_creator_product: {
+        Args: { p_product_id: string }
+        Returns: {
+          asset_file_path: string
+          asset_url: string
+          category: string
+          cover_image_url: string
+          created_at: string
+          creator_id: string
+          description: string
+          godot_version: string
+          id: string
+          license: string
+          price: number
+          project_id: string
+          screenshots: string[]
+          short_description: string
+          status: string
+          stripe_price_id: string
+          tags: string[]
+          title: string
+          trailer_url: string
+          updated_at: string
+          version: string
+        }[]
+      }
       get_creator_profile_public: {
         Args: { p_creator_id: string }
         Returns: {
@@ -3801,6 +3827,7 @@ export type Database = {
           is_secure: boolean
         }[]
       }
+      verify_age_with_dob: { Args: { p_date_of_birth: string }; Returns: Json }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
