@@ -1,5 +1,5 @@
 // src/components/jam/JamSubmissionCard.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useVoteOnSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
 
@@ -106,6 +106,12 @@ export function JamSubmissionCard({
   const [quality, setQuality] = useState(myVote?.quality ?? 0);
   const [creativity, setCreativity] = useState(myVote?.creativity ?? 0);
 
+  useEffect(() => {
+    setUsefulness(myVote?.usefulness ?? 0);
+    setQuality(myVote?.quality ?? 0);
+    setCreativity(myVote?.creativity ?? 0);
+  }, [myVote?.usefulness, myVote?.quality, myVote?.creativity]);
+
   const handleVoteChange = async (
     category: 'usefulness' | 'quality' | 'creativity',
     value: number
@@ -120,11 +126,18 @@ export function JamSubmissionCard({
     if (category === 'creativity') setCreativity(value);
 
     if (next.usefulness > 0 && next.quality > 0 && next.creativity > 0) {
-      await voteOnSubmission.mutateAsync({
-        submissionId: submission.id,
-        jamId,
-        ...next,
-      });
+      try {
+        await voteOnSubmission.mutateAsync({
+          submissionId: submission.id,
+          jamId,
+          ...next,
+        });
+      } catch {
+        // Roll back to last confirmed vote
+        setUsefulness(myVote?.usefulness ?? 0);
+        setQuality(myVote?.quality ?? 0);
+        setCreativity(myVote?.creativity ?? 0);
+      }
     }
   };
 

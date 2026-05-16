@@ -24,14 +24,19 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
 
   const published = (products ?? []).filter((p: any) => p.status === 'published');
 
-  const handleSubmit = async () => {
-    if (!selectedId) return;
-    await submitToJam.mutateAsync({ jamId, productId: selectedId });
+  const handleClose = () => {
+    setSelectedId(null);
     onClose();
   };
 
+  const handleSubmit = async () => {
+    if (!selectedId) return;
+    await submitToJam.mutateAsync({ jamId, productId: selectedId });
+    handleClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Submit your entry</DialogTitle>
@@ -89,7 +94,7 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
         )}
 
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">
+          <Button variant="outline" onClick={handleClose} className="flex-1">
             Cancel
           </Button>
           <Button

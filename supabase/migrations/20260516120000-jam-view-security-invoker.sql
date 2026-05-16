@@ -1,0 +1,1 @@
+ALTER VIEW public.jam_submission_scores SET (security_invoker = on);

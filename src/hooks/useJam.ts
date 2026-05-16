@@ -81,7 +81,9 @@ export function useJamSubmissions(jamId: string) {
         .from('jam_submission_scores')
         .select('*')
         .eq('jam_id', jamId)
-        .order('avg_overall', { ascending: false });
+        .order('avg_overall', { ascending: false })
+        .order('vote_count', { ascending: false })
+        .order('created_at', { ascending: true });
       if (scoresError) throw scoresError;
 
       if (!scores || scores.length === 0) return [];
@@ -92,7 +94,7 @@ export function useJamSubmissions(jamId: string) {
       const [{ data: products }, { data: users }] = await Promise.all([
         supabase
           .from('digital_products')
-          .select('id, title, short_description, cover_image_url, category')
+          .select('id, title, short_description, cover_image_url, category, status')
           .in('id', productIds),
         supabase
           .from('users')
@@ -103,11 +105,13 @@ export function useJamSubmissions(jamId: string) {
       const productMap = Object.fromEntries((products ?? []).map((p: any) => [p.id, p]));
       const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]));
 
-      return (scores as JamSubmissionScore[]).map((s) => ({
-        ...s,
-        product: productMap[s.product_id] ?? null,
-        creator: userMap[s.user_id] ?? null,
-      }));
+      return (scores as JamSubmissionScore[])
+        .filter((s) => productMap[s.product_id]?.status === 'published')
+        .map((s) => ({
+          ...s,
+          product: productMap[s.product_id] ?? null,
+          creator: userMap[s.user_id] ?? null,
+        }));
     },
   });
 }
@@ -164,6 +168,7 @@ export function useSubmitToJam() {
 
   return useMutation({
     mutationFn: async ({ jamId, productId }: { jamId: string; productId: string }) => {
+      if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('jam_submissions')
         .insert({ jam_id: jamId, user_id: user!.id, product_id: productId })
@@ -201,6 +206,7 @@ export function useVoteOnSubmission() {
       quality: number;
       creativity: number;
     }) => {
+      if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('jam_votes')
         .upsert(
