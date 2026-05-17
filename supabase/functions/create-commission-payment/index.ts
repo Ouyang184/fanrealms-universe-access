@@ -209,9 +209,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Commission payment creation error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return new Response(JSON.stringify({ 
-      error: errorMessage 
+      error: 'An unexpected error occurred' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

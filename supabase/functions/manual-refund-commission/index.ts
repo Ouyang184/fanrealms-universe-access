@@ -8,6 +8,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function jsonResponse(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -15,39 +22,29 @@ serve(async (req) => {
 
   try {
     const { commissionId, reason } = await req.json();
-    
+
     console.log('Processing manual refund for commission:', { commissionId, reason });
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
-    // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: 'Unauthorized' }, 401);
     }
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ error: 'Unauthorized' }, 401);
     }
 
-    // Fetch commission request with creator check
     const { data: commissionRequest, error: fetchError } = await supabaseService
       .from('commission_requests')
       .select(`
@@ -61,28 +58,25 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !commissionRequest) {
-      throw new Error('Commission request not found');
+      return jsonResponse({ error: 'Commission request not found' }, 404);
     }
 
-    // Verify user is the creator
     if (commissionRequest.creator.user_id !== user.id) {
-      throw new Error('Unauthorized: Only the creator can issue refunds');
+      return jsonResponse({ error: 'Only the creator can issue refunds' }, 403);
     }
 
     const paymentIntentId = commissionRequest.stripe_payment_intent_id;
-    
+
     if (!paymentIntentId) {
-      throw new Error('No payment intent found for this commission');
+      return jsonResponse({ error: 'No payment found for this commission' }, 400);
     }
 
-    // Check if commission is in a refundable state
     if (!['accepted', 'in_progress'].includes(commissionRequest.status)) {
-      throw new Error('Commission is not in a refundable state');
+      return jsonResponse({ error: 'Commission is not in a refundable state' }, 400);
     }
 
     console.log('Creating refund for payment intent:', paymentIntentId);
-    
-    // Create refund
+
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reason: 'requested_by_customer',
@@ -92,10 +86,9 @@ serve(async (req) => {
       }
     });
 
-    // Update commission status
     const { error: updateError } = await supabaseService
       .from('commission_requests')
-      .update({ 
+      .update({
         status: 'refunded',
         creator_notes: `Manual refund issued: ${reason || 'No reason provided'}`
       })
@@ -103,31 +96,23 @@ serve(async (req) => {
 
     if (updateError) {
       console.error('Failed to update commission status:', updateError);
-      throw new Error('Refund processed but failed to update commission status');
+      return jsonResponse({ error: 'Refund processed but failed to update commission status' }, 500);
     }
 
     console.log('Manual refund processed successfully:', refund.id);
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
+
+    return jsonResponse({
+      success: true,
       message: 'Refund processed successfully',
       refund: {
         id: refund.id,
         amount: refund.amount,
         status: refund.status
       }
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    });
+    }, 200);
 
   } catch (error) {
     console.error('Manual refund error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'An unexpected error occurred' 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    return jsonResponse({ error: 'An unexpected error occurred' }, 500);
   }
 });

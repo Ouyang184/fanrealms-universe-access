@@ -25,33 +25,7 @@ export const useCreatorSubscribers = (creatorId: string) => {
         return [];
       }
 
-      console.log('[useCreatorSubscribers] Raw response data:', data);
-      console.log('[useCreatorSubscribers] Subscribers data received:', data?.subscribers?.length || 0, 'subscribers');
-      
-      // Log each subscriber for debugging
-      if (data?.subscribers) {
-        data.subscribers.forEach((sub: any, index: number) => {
-          console.log(`[useCreatorSubscribers] Subscriber ${index + 1}:`, {
-            id: sub.id,
-            user_id: sub.user_id,
-            creator_id: sub.creator_id,
-            tier_id: sub.tier_id,
-            status: sub.status,
-            stripe_subscription_id: sub.stripe_subscription_id,
-            amount: sub.amount,
-            tier_title: sub.tier?.title
-          });
-        });
-      }
-      
-      // Log status breakdown for debugging
-      const statusBreakdown = data?.subscribers?.reduce((counts: any, sub: any) => {
-        counts[sub.status] = (counts[sub.status] || 0) + 1;
-        return counts;
-      }, {}) || {};
-      
-      console.log('[useCreatorSubscribers] Status breakdown:', statusBreakdown);
-
+      console.log('[useCreatorSubscribers] Subscribers received:', data?.subscribers?.length || 0);
       return data?.subscribers || [];
     },
     enabled: !!creatorId && !!user,
