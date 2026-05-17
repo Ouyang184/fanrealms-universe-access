@@ -150,10 +150,10 @@ export async function handleCancelSubscription(
         } catch (stripeError) {
           console.error('Stripe delayed cancel error:', stripeError);
           return new Response(JSON.stringify({
-            error: stripeError?.message || 'Stripe update failed',
+            error: 'Failed to update subscription with payment provider',
           }), {
             headers: corsHeaders,
-            status: stripeError?.statusCode || 502,
+            status: 502,
           });
         }
       } else {
