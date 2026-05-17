@@ -131,7 +131,7 @@ export const useAuthFunctions = () => {
           description: "Your account has been created successfully.",
         });
 
-        navigate('/library', { replace: true });
+        navigate('/marketplace', { replace: true });
 
         return {
           success: true,

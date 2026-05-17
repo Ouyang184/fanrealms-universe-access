@@ -99,7 +99,7 @@ export default function CompleteProfile() {
       await refreshProfile();
 
       const params = new URLSearchParams(location.search);
-      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/library');
+      const returnTo = sanitizeReturnTo(params.get('returnTo'), '/marketplace');
       const target = resolveCompletionRoute(true, returnTo);
       navigate(target, { replace: true });
     } catch (err: any) {

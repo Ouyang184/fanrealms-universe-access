@@ -65,9 +65,9 @@ const CreatorRedirect = () => {
 const HomeRedirect = () => {
   const { user, authReady } = useAuth();
   if (!authReady) return null;
-  // Logged-in users land on their library (itch.io pattern) — buyers see what
-  // they own, creators navigate to /dashboard explicitly from the sidebar.
-  if (user) return <Navigate to="/library" replace />;
+  // Logged-in users land on the marketplace — better first impression than
+  // an empty library. Library is always reachable from the sidebar.
+  if (user) return <Navigate to="/marketplace" replace />;
   return <LandingPage />;
 };
 

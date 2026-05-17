@@ -25,7 +25,7 @@ const SocialLoginOptions = ({ mode = 'login' }: SocialLoginOptionsProps) => {
 
   const signInWith = async (provider: 'google' | 'discord') => {
     const params = new URLSearchParams(location.search);
-    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/library');
+    const returnTo = sanitizeReturnTo(params.get('returnTo'), '/marketplace');
     storeOAuthReturnTo(returnTo);
     storeOAuthIntent(mode);
 

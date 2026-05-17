@@ -64,13 +64,13 @@ const decideTarget = (params: {
 
   // Authed user on /login or /signup → honor returnTo if present, else /library.
   if (hasUser && isAuthPath(pathname) && pathname !== "/complete-profile") {
-    const returnTo = new URLSearchParams(search).get("returnTo") || "/library";
+    const returnTo = new URLSearchParams(search).get("returnTo") || "/marketplace";
     return isComplete ? returnTo : resolveCompletionRoute(false, returnTo);
   }
 
   // Authed user on /complete-profile but already complete → honor returnTo.
   if (hasUser && isComplete && pathname === "/complete-profile") {
-    const returnTo = new URLSearchParams(search).get("returnTo") || "/library";
+    const returnTo = new URLSearchParams(search).get("returnTo") || "/marketplace";
     return returnTo === here ? null : returnTo;
   }
 
