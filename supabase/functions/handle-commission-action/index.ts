@@ -355,8 +355,8 @@ serve(async (req) => {
 
       } catch (stripeError) {
         console.error('Stripe error during payment cancellation:', stripeError);
-        return new Response(JSON.stringify({ 
-          error: 'Failed to cancel payment: ' + stripeError.message 
+        return new Response(JSON.stringify({
+          error: 'Failed to cancel payment'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
