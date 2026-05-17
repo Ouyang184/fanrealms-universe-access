@@ -36,6 +36,7 @@ const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Go
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_COVER_SIZE_MB = 5;
+const MAX_ASSET_SIZE_MB = 500;
 
 type PriceMode = 'free' | 'paid' | 'name_your_price';
 
@@ -527,8 +528,8 @@ export default function DashboardAssetDetail() {
                       onChange={e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (file.size > 50 * 1024 * 1024) {
-                          toast.error('File must be smaller than 50 MB');
+                        if (file.size > MAX_ASSET_SIZE_MB * 1024 * 1024) {
+                          toast.error(`File must be smaller than ${MAX_ASSET_SIZE_MB} MB`);
                           return;
                         }
                         setAssetFile(file);
@@ -545,7 +546,7 @@ export default function DashboardAssetDetail() {
                       <Upload className="w-4 h-4" />
                       Upload file
                     </button>
-                    <p className="text-[11px] text-[#aaa] mt-1">Max 50 MB. ZIP, PDF, or any file type.</p>
+                    <p className="text-[11px] text-[#aaa] mt-1">Max 500 MB. ZIP, PDF, or any file type.</p>
                     <input
                       id="asset-file-input"
                       type="file"
@@ -553,8 +554,8 @@ export default function DashboardAssetDetail() {
                       onChange={e => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        if (file.size > 50 * 1024 * 1024) {
-                          toast.error('File must be smaller than 50 MB');
+                        if (file.size > MAX_ASSET_SIZE_MB * 1024 * 1024) {
+                          toast.error(`File must be smaller than ${MAX_ASSET_SIZE_MB} MB`);
                           return;
                         }
                         setAssetFile(file);
