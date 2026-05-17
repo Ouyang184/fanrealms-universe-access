@@ -170,7 +170,6 @@ export function useCreateProduct() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
-      toast.success('Product created successfully');
     },
     onError: (error) => {
       toast.error('Failed to create product: ' + error.message);
@@ -233,7 +232,6 @@ export function useUpdateProduct() {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
       queryClient.invalidateQueries({ queryKey: ['product', (data as any).id] });
-      toast.success('Asset updated');
     },
     onError: (error: Error) => {
       toast.error('Failed to update: ' + error.message);
@@ -255,7 +253,6 @@ export function useDeleteProduct() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
-      toast.success('Asset deleted');
     },
     onError: (error: Error) => {
       toast.error('Failed to delete: ' + error.message);

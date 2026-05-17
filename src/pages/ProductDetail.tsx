@@ -37,7 +37,6 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      toast.success('Purchase complete! Your download is ready below.');
     }
   }, []);
 

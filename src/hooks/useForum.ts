@@ -156,7 +156,6 @@ export function useCreateThread() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forum-threads'] });
-      toast.success('Thread created');
     },
     onError: (error) => {
       toast.error('Failed to create thread: ' + error.message);
@@ -186,7 +185,6 @@ export function useCreateReply() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['forum-replies', variables.thread_id] });
       queryClient.invalidateQueries({ queryKey: ['forum-threads'] });
-      toast.success('Reply posted');
     },
     onError: (error) => {
       toast.error('Failed to post reply: ' + error.message);

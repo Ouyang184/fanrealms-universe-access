@@ -110,7 +110,6 @@ const AuthCallback = () => {
         }
       }
 
-      toast.success('Signed in successfully!');
       finish(returnTo);
     };
 
@@ -147,7 +146,6 @@ const AuthCallback = () => {
         resolved = true;
         console.warn('[AUTH][Callback] No session after timeout', { intent: intentState });
         if (isSignupConfirmation) {
-          toast.success('Email confirmed', { description: 'Your account is active. Please sign in.' });
           navigate('/login', { replace: true });
         } else if (intentState === 'signup') {
           toast.error('Sign up failed', { description: 'Please try again.' });
