@@ -17,10 +17,14 @@ export async function handleGetUserSubscriptions(
 
   try {
     // Get all active subscriptions from user_subscriptions table
+    // SECURITY: Explicit field list — never expose Stripe identifiers or billing email to the browser.
+    const SAFE_SUBSCRIPTION_FIELDS =
+      'id, user_id, creator_id, tier_id, status, amount, cancel_at_period_end, current_period_start, current_period_end, created_at, updated_at';
+
     const { data: userSubscriptions, error: userSubsError } = await supabaseService
       .from('user_subscriptions')
       .select(`
-        *,
+        ${SAFE_SUBSCRIPTION_FIELDS},
         creators!fk_user_subscriptions_creator_id (
           id,
           display_name,
