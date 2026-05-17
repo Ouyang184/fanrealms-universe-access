@@ -65,9 +65,9 @@ export function useJam(jamId: string) {
         .from('jams')
         .select('*')
         .eq('id', jamId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as Jam;
+      return data as Jam | null;
     },
   });
 }

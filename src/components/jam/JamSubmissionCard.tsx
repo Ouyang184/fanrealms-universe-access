@@ -105,6 +105,9 @@ export function JamSubmissionCard({
   const [usefulness, setUsefulness] = useState(myVote?.usefulness ?? 0);
   const [quality, setQuality] = useState(myVote?.quality ?? 0);
   const [creativity, setCreativity] = useState(myVote?.creativity ?? 0);
+  const [voteSaved, setVoteSaved] = useState(
+    (myVote?.usefulness ?? 0) > 0 && (myVote?.quality ?? 0) > 0 && (myVote?.creativity ?? 0) > 0
+  );
 
   useEffect(() => {
     setUsefulness(myVote?.usefulness ?? 0);
@@ -132,11 +135,13 @@ export function JamSubmissionCard({
           jamId,
           ...next,
         });
+        setVoteSaved(true);
       } catch {
         // Roll back to last confirmed vote
         setUsefulness(myVote?.usefulness ?? 0);
         setQuality(myVote?.quality ?? 0);
         setCreativity(myVote?.creativity ?? 0);
+        setVoteSaved(false);
       }
     }
   };
@@ -201,7 +206,7 @@ export function JamSubmissionCard({
             <StarPicker label="Usefulness" value={usefulness} onChange={v => handleVoteChange('usefulness', v)} />
             <StarPicker label="Quality"    value={quality}    onChange={v => handleVoteChange('quality', v)} />
             <StarPicker label="Creativity" value={creativity} onChange={v => handleVoteChange('creativity', v)} />
-            {usefulness > 0 && quality > 0 && creativity > 0 && (
+            {voteSaved && (
               <p className="text-[11px] text-green-600 font-medium">Vote saved</p>
             )}
             {(usefulness === 0 || quality === 0 || creativity === 0) && (

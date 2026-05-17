@@ -41,19 +41,17 @@ export function useJobListing(jobId: string) {
         .from('job_listings')
         .select('*')
         .eq('id', jobId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) return null;
 
-      if (data) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('username, profile_picture')
-          .eq('id', data.poster_id)
-          .single();
-        return { ...data, users: userData };
-      }
-      return data;
+      const { data: userData } = await supabase
+        .from('users')
+        .select('username, profile_picture')
+        .eq('id', data.poster_id)
+        .maybeSingle();
+      return { ...data, users: userData ?? null };
     },
   });
 }

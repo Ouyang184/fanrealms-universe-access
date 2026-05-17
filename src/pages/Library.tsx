@@ -110,10 +110,10 @@ export default function LibraryPage() {
                     {p.digital_products?.title ?? 'Asset'}
                   </div>
                   <div className="text-[11px] text-[#aaa]">
-                    by {p.creators?.display_name || p.creators?.username}
+                    by {p.creators?.display_name || p.creators?.username || 'Unknown'}
                   </div>
                 </div>
-                <DownloadButton productId={p.product_id ?? ''} />
+                {p.product_id && <DownloadButton productId={p.product_id} />}
               </div>
             ))}
           </div>

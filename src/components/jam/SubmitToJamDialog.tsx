@@ -31,8 +31,12 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
 
   const handleSubmit = async () => {
     if (!selectedId) return;
-    await submitToJam.mutateAsync({ jamId, productId: selectedId });
-    handleClose();
+    try {
+      await submitToJam.mutateAsync({ jamId, productId: selectedId });
+      handleClose();
+    } catch {
+      // onError toast already shown by useSubmitToJam — keep dialog open
+    }
   };
 
   return (

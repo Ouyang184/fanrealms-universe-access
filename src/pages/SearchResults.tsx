@@ -16,14 +16,10 @@ export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get("q") || "";
 
-  console.log("SearchResults - searchQuery:", searchQuery);
 
   // Always call the hook, but only search when there's a valid query
   const { data: creators = [], isLoading, error } = useCreators(searchQuery.trim());
 
-  console.log("SearchResults - creators data:", creators);
-  console.log("SearchResults - isLoading:", isLoading);
-  console.log("SearchResults - error:", error);
 
   useEffect(() => {
     document.title = searchQuery ? `"${searchQuery}" - Search Results | FanRealms` : "Search Results | FanRealms";

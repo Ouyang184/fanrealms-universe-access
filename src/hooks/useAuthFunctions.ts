@@ -12,8 +12,6 @@ export const useAuthFunctions = () => {
 
   const signIn = useCallback(async (email: string, password: string, captchaToken?: string): Promise<AuthResult> => {
     try {
-      console.log("useAuthFunctions: Attempting sign in for:", email);
-      console.log("useAuthFunctions: Captcha token:", captchaToken ? `${captchaToken.substring(0, 20)}...` : "none");
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -24,15 +22,12 @@ export const useAuthFunctions = () => {
       });
 
       if (error) {
-        console.error("useAuthFunctions: Sign in error:", error);
         throw error;
       }
       
-      console.log("useAuthFunctions: Sign in result:", data);
       
       // Check if MFA is required
       if (data.session === null && data.user?.factors?.length) {
-        console.log("useAuthFunctions: MFA challenge required");
         
         return {
           success: false,
@@ -45,19 +40,16 @@ export const useAuthFunctions = () => {
       
       // If we have a session, check for email 2FA
       if (data.session && data.user) {
-        console.log("useAuthFunctions: Checking for email 2FA requirement");
         
         // Check if user has email 2FA enabled
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('email_2fa_enabled')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle();
         
         if (userError) {
-          console.error("useAuthFunctions: Error checking email 2FA status:", userError);
         } else if (userData?.email_2fa_enabled) {
-          console.log("useAuthFunctions: Email 2FA required — signing out and issuing challenge");
 
           const userEmail = data.user.email;
 
@@ -72,7 +64,6 @@ export const useAuthFunctions = () => {
           });
 
           if (emailError) {
-            console.error("useAuthFunctions: Error sending 2FA email:", emailError);
             throw new Error("Failed to send 2FA verification code. Please try again.");
           }
 
@@ -85,7 +76,6 @@ export const useAuthFunctions = () => {
         }
       }
       
-      console.log("useAuthFunctions: Sign in successful:", data.user?.email);
       
       toast({
         title: "Login successful",
@@ -98,7 +88,6 @@ export const useAuthFunctions = () => {
         session: data.session
       };
     } catch (error: any) {
-      console.error("useAuthFunctions: Login error:", error);
       
       const errorMessage = error.message?.includes("Invalid login") 
         ? "Invalid email or password. Please check your credentials."
@@ -166,7 +155,6 @@ export const useAuthFunctions = () => {
         };
       }
     } catch (error: any) {
-      console.error("Signup error:", error);
       
       const errorMessage = error.message?.includes("already registered")
         ? "This email is already registered. Please try logging in instead."
@@ -212,7 +200,6 @@ export const useAuthFunctions = () => {
   }, [toast]);
 
   const signOut = useCallback(async () => {
-    console.log("useAuthFunctions: Attempting sign out");
 
     // Wait for the SIGNED_OUT event before navigating, so AuthContext's
     // user/session state is already null when /login mounts. This avoids
@@ -239,11 +226,9 @@ export const useAuthFunctions = () => {
       if (error) {
         // Network/server failure — fall back to local-only sign out so the
         // browser session is still cleared.
-        console.warn("useAuthFunctions: Global sign out failed, falling back to local", error);
         await supabase.auth.signOut({ scope: 'local' });
       }
     } catch (error: any) {
-      console.error("useAuthFunctions: Sign out error:", error);
       try {
         await supabase.auth.signOut({ scope: 'local' });
       } catch {

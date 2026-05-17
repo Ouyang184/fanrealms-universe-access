@@ -59,7 +59,7 @@ export function useProduct(productId: string) {
         .from('digital_products')
         .select('*, creators(id, username, display_name, profile_image_url)')
         .eq('id', productId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

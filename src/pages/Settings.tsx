@@ -37,19 +37,16 @@ export default function Settings() {
     handleAgeVerified
   } = useAgeVerification();
 
-  console.log('🏠 Settings Page - Age verification state:', {
     isAgeVerified,
     showVerificationModal,
     userId: user?.id
   });
 
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
-    console.log('🎯 Settings - Age verification success callback');
     await handleAgeVerified(dateOfBirth);
   };
 
   const handleAgeVerificationCancel = () => {
-    console.log('❌ Settings - Age verification cancelled');
     setShowVerificationModal(false);
   };
 

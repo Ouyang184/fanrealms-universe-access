@@ -37,8 +37,9 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
+      toast.success('Purchase successful! You can now download this asset.');
     }
-  }, []);
+  }, [searchParams]);
 
   const handleDownload = async () => {
     if (!productId) return;
@@ -201,7 +202,7 @@ export default function ProductDetail() {
               ) : (
                 <div className="space-y-2">
                   <Button size="lg" className="w-full" asChild>
-                    <Link to={`/login?redirect=/marketplace/${productId}`}>
+                    <Link to={`/login?returnTo=${encodeURIComponent(`/marketplace/${productId}`)}`}>
                       Sign in to {isFree ? 'download' : 'buy'}
                     </Link>
                   </Button>
