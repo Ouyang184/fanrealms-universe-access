@@ -1189,6 +1189,134 @@ export type Database = {
         }
         Relationships: []
       }
+      jam_submissions: {
+        Row: {
+          created_at: string
+          id: string
+          jam_id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jam_id: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jam_id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jam_submissions_jam_id_fkey"
+            columns: ["jam_id"]
+            isOneToOne: false
+            referencedRelation: "jams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jam_submissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jam_votes: {
+        Row: {
+          created_at: string
+          creativity: number
+          id: string
+          quality: number
+          submission_id: string
+          usefulness: number
+          voter_id: string
+        }
+        Insert: {
+          created_at?: string
+          creativity: number
+          id?: string
+          quality: number
+          submission_id: string
+          usefulness: number
+          voter_id: string
+        }
+        Update: {
+          created_at?: string
+          creativity?: number
+          id?: string
+          quality?: number
+          submission_id?: string
+          usefulness?: number
+          voter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jam_votes_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "jam_submission_scores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jam_votes_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "jam_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jams: {
+        Row: {
+          created_at: string
+          description: string | null
+          ends_at: string
+          id: string
+          prize_pool: Json
+          starts_at: string
+          thread_id: string | null
+          title: string
+          voting_ends_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          id?: string
+          prize_pool?: Json
+          starts_at: string
+          thread_id?: string | null
+          title: string
+          voting_ends_at: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          id?: string
+          prize_pool?: Json
+          starts_at?: string
+          thread_id?: string | null
+          title?: string
+          voting_ends_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jams_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_applications: {
         Row: {
           applicant_id: string
@@ -2701,6 +2829,36 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jam_submission_scores: {
+        Row: {
+          avg_creativity: number | null
+          avg_overall: number | null
+          avg_quality: number | null
+          avg_usefulness: number | null
+          created_at: string | null
+          id: string | null
+          jam_id: string | null
+          product_id: string | null
+          user_id: string | null
+          vote_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jam_submissions_jam_id_fkey"
+            columns: ["jam_id"]
+            isOneToOne: false
+            referencedRelation: "jams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jam_submissions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
             referencedColumns: ["id"]
           },
         ]
