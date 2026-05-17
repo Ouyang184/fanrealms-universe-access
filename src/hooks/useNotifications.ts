@@ -25,11 +25,9 @@ export const useNotifications = () => {
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user?.id) {
-        console.log('No user ID found for notifications query');
         return [];
       }
       
-      console.log('Fetching notifications for user:', user.id);
       
       // Only fetch relevant notifications - exclude post/content notifications completely
       const { data, error } = await supabase
@@ -40,11 +38,9 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching notifications:', error);
         throw error;
       }
 
-      console.log('Relevant notifications from database:', data);
       return data as Notification[];
     },
     enabled: !!user?.id,
@@ -140,7 +136,6 @@ export const useNotifications = () => {
         queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] });
       }
     } catch (error) {
-      console.error('Error auto-marking notifications as read:', error);
     }
   };
 

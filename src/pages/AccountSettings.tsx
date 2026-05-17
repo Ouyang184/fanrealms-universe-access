@@ -221,7 +221,6 @@ export default function AccountSettings() {
         description: "Something went wrong. Please try again.",
         variant: "destructive"
       });
-      console.error(error);
     } finally {
       setAccountSettings(prev => ({ ...prev, saving: false }));
     }

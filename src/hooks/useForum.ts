@@ -103,10 +103,10 @@ export function useForumThread(threadId: string) {
         .from('forum_threads')
         .select('*')
         .eq('id', threadId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      if (!data) return data;
+      if (!data) return null;
 
       const usersMap = await fetchPublicUserProfiles([data.author_id]);
       return { ...data, users: usersMap.get(data.author_id) ?? null };

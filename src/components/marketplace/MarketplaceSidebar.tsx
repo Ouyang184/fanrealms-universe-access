@@ -112,7 +112,7 @@ export function MarketplaceSidebar({
             ))}
           </div>
           <Link
-            to="/marketplace/tags"
+            to="/marketplace"
             className="block px-1 mt-2 text-[12px] text-muted-foreground hover:underline"
           >
             View all tags →

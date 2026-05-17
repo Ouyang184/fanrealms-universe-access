@@ -20,7 +20,6 @@ export function useCreatorProfileData() {
     queryFn: async () => {
       if (!user?.id || !creatorProfile) return null;
       
-      console.log('[useCreatorProfileData] Fetching creator profile details for user:', user.id);
       
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -29,7 +28,6 @@ export function useCreatorProfileData() {
         .single();
       
       if (userError || !userData) {
-        console.error('[useCreatorProfileData] Error fetching user:', userError);
         toast({
           title: "Error",
           description: "Failed to load user profile",
@@ -46,7 +44,6 @@ export function useCreatorProfileData() {
         .single();
       
       if (creatorError) {
-        console.error('[useCreatorProfileData] Error fetching latest creator data:', creatorError);
       }
       
       const creatorProfileData = {
@@ -69,7 +66,6 @@ export function useCreatorProfileData() {
         commission_tos: latestCreatorData?.commission_tos
       } as CreatorProfile & { displayName: string };
       
-      console.log('[useCreatorProfileData] Creator profile data assembled:', {
         id: creatorProfileData.id,
         accepts_commissions: creatorProfileData.accepts_commissions,
         commission_base_rate: creatorProfileData.commission_base_rate,
@@ -92,7 +88,6 @@ export function useCreatorProfileData() {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('[useCreatorProfileData] Fetching posts for creator user ID:', user.id);
       
       const { data: postsData, error } = await supabase
         .from('posts')
@@ -112,7 +107,6 @@ export function useCreatorProfileData() {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching posts:', error);
         toast({
           title: "Error",
           description: "Failed to load posts",
@@ -121,7 +115,6 @@ export function useCreatorProfileData() {
         return [];
       }
       
-      console.log('[useCreatorProfileData] Raw posts data:', {
         postsCount: postsData?.length,
         samplePosts: postsData?.slice(0, 2).map(p => ({ 
           id: p.id, 
@@ -142,7 +135,6 @@ export function useCreatorProfileData() {
           tierInfo: post.membership_tiers
         } as Post;
         
-        console.log('[useCreatorProfileData] ENHANCED Mapped post with creator access logic:', {
           id: mappedPost.id,
           title: mappedPost.title,
           authorId: mappedPost.authorId,
@@ -172,7 +164,6 @@ export function useCreatorProfileData() {
         .rpc('get_public_membership_tiers', { p_creator_id: creatorProfile.id });
       
       if (error) {
-        console.error('Error fetching tiers:', error);
         toast({
           title: "Error",
           description: "Failed to load membership tiers",
@@ -207,7 +198,6 @@ export function useCreatorProfileData() {
   
   // Log any errors for debugging
   if (creatorError) {
-    console.error('[useCreatorProfileData] Creator query error:', creatorError);
   }
   
   return {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useDevlog, useSaveDevlog } from '@/hooks/useDevlogs';
@@ -32,7 +33,12 @@ export default function DashboardDevlogEditPage() {
   }, [existing]);
 
   const onSave = (overrideStatus?: 'draft' | 'published') => {
-    if (!projectId || !title.trim() || !content.trim()) return;
+    if (!projectId || !title.trim() || !content.trim()) {
+      if (!projectId) toast.error('Please select a project');
+      else if (!title.trim()) toast.error('Title is required');
+      else toast.error('Content is required');
+      return;
+    }
     const finalStatus = overrideStatus ?? status;
     save.mutate(
       { id, project_id: projectId, title: title.trim(), content, status: finalStatus },

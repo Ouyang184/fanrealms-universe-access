@@ -27,7 +27,6 @@ export function useMessages(userId: string | undefined) {
     queryFn: async () => {
       if (!userId) return [];
 
-      console.log('useMessages: Fetching messages for user:', userId);
 
       // Fetch all messages (no need to filter by deleted_at since we're doing hard deletes)
       const { data: messagesData, error } = await supabase
@@ -43,12 +42,10 @@ export function useMessages(userId: string | undefined) {
             description: "Failed to load messages",
             variant: "destructive",
           });
-          console.error("Error loading messages:", error);
         }
         return [];
       }
 
-      console.log('useMessages: Fetched messages count:', messagesData?.length || 0);
 
       // Get unique user IDs
       const userIds = new Set<string>();
@@ -64,7 +61,6 @@ export function useMessages(userId: string | undefined) {
         .in('id', Array.from(userIds));
 
       if (usersError) {
-        console.error("Error loading users:", usersError);
         return [];
       }
 
@@ -112,7 +108,6 @@ export function useMessages(userId: string | undefined) {
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
     onError: (error) => {
-      console.error('Error marking messages as read:', error);
     }
   });
 
@@ -120,7 +115,6 @@ export function useMessages(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    console.log('useMessages: Setting up realtime subscription for user:', userId);
 
     const channel = supabase
       .channel(`messages-${userId}`)
@@ -132,7 +126,6 @@ export function useMessages(userId: string | undefined) {
           filter: `receiver_id=eq.${userId}` 
         }, 
         (payload) => {
-          console.log('useMessages: New message received via realtime:', payload);
           refetch();
         }
       )
@@ -144,7 +137,6 @@ export function useMessages(userId: string | undefined) {
           filter: `receiver_id=eq.${userId}` 
         }, 
         (payload) => {
-          console.log('useMessages: Message updated via realtime:', payload);
           refetch();
         }
       )
@@ -157,14 +149,12 @@ export function useMessages(userId: string | undefined) {
           filter: `sender_id=eq.${userId}` 
         }, 
         (payload) => {
-          console.log('useMessages: Message was deleted, refreshing...');
           refetch();
         }
       )
       .subscribe();
 
     return () => {
-      console.log('useMessages: Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [userId, refetch]);

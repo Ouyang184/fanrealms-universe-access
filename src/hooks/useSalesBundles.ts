@@ -64,6 +64,7 @@ export function useDeleteSale() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['creator-sales'] }),
+    onError: (e: Error) => toast.error('Failed to delete sale: ' + e.message),
   });
 }
 
@@ -124,6 +125,7 @@ export function useUpdateBundleStatus() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['creator-bundles'] }),
+    onError: (e: Error) => toast.error('Failed to update bundle: ' + e.message),
   });
 }
 
@@ -135,5 +137,6 @@ export function useDeleteBundle() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['creator-bundles'] }),
+    onError: (e: Error) => toast.error('Failed to delete bundle: ' + e.message),
   });
 }

@@ -14,7 +14,6 @@ export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>
 
     setIsCancelling(true);
     try {
-      console.log('Cancelling subscription:', subscriptionId);
       
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
         body: {
@@ -24,11 +23,9 @@ export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>
       });
 
       if (error) {
-        console.error('Error cancelling subscription:', error);
         throw error;
       }
 
-      console.log('Subscription cancelled successfully:', data);
       
       // Refresh subscription data
       if (refetchSubscriptions) {
@@ -46,7 +43,6 @@ export const useCancelSubscription = (refetchSubscriptions?: () => Promise<void>
       });
 
     } catch (error) {
-      console.error('Failed to cancel subscription:', error);
       toast({
         title: "Error",
         description: "Failed to cancel subscription. Please try again.",

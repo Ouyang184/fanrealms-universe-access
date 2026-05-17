@@ -83,9 +83,9 @@ export function useProject(projectId?: string) {
         .from('projects')
         .select('*')
         .eq('id', projectId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as Project;
+      return data as Project | null;
     },
     enabled: !!projectId
   });

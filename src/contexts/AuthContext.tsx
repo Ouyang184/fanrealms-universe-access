@@ -132,7 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
 
-    console.log('[AUTH][Context] Setting up auth state management', {
       href: window.location.href,
       pathname: window.location.pathname,
     });
@@ -163,7 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // id has changed mid-flight (e.g. fast user switch).
             if (requestId !== profileRequestRef.current) return;
             if (userRef.current?.id !== userId) return;
-            console.log('[AUTH][Context] Profile fetch', { source, found: !!userProfile });
             setProfileSafe(userProfile);
             setProfileLoading(false);
           }).catch(() => {
@@ -181,7 +179,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up listener before getSession so session restoration events cannot be missed.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        console.log('[AUTH][Context] onAuthStateChange', {
           event,
           hasSession: !!currentSession,
           userId: currentSession?.user?.id,
@@ -244,7 +241,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.auth.getSession()
         .then(({ data: { session: initialSession }, error }) => {
           if (cancelled) return;
-          console.log('[AUTH][Context] Initial getSession()', {
             hasSession: !!initialSession,
             userId: initialSession?.user?.id,
             error: error?.message,
@@ -256,7 +252,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
         .catch(error => {
           if (cancelled) return;
-          console.error('[AUTH][Context] Error getting session:', error);
           applySession(null, 'getSession:error');
           setLoading(false);
           gotInitialSessionRef.current = true;

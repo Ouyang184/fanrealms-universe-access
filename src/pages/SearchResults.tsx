@@ -148,7 +148,6 @@ export default function SearchResultsPage() {
                     </div>
                     <div className="flex items-center gap-2 mt-4">
                       <h3 className="text-xl font-bold text-[#111]">{displayName}</h3>
-                      {creator.is_nsfw && <NSFWBadge variant="card" />}
                     </div>
                     <p className="text-[#666] text-sm mt-1 line-clamp-2">{creator.bio || "Seller on FanRealms"}</p>
 

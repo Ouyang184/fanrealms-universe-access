@@ -170,6 +170,8 @@ function NewProjectForm() {
         repository_url: repository.trim() || undefined,
       });
       navigate('/dashboard/projects');
+    } catch {
+      // onError in the mutation already shows a toast — just stop the spinner
     } finally {
       setBusy(false);
     }

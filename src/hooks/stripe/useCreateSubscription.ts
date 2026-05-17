@@ -31,7 +31,6 @@ export const useCreateSubscription = () => {
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
-    console.log('[useCreateSubscription] Starting subscription creation with params:', {
       tierId,
       creatorId,
       userId: user?.id,
@@ -41,7 +40,6 @@ export const useCreateSubscription = () => {
     });
 
     if (!user || isProcessing) {
-      console.log('[useCreateSubscription] Cannot create subscription: user not authenticated or already processing', {
         hasUser: !!user,
         isProcessing
       });
@@ -49,11 +47,9 @@ export const useCreateSubscription = () => {
     }
 
     const lockKey = `${user.id}-${creatorId}-${tierId}`;
-    console.log('[useCreateSubscription] Generated lock key:', lockKey);
     
     // Check if this subscription is locked (already being processed)
     if (lockedSubscriptions.has(lockKey)) {
-      console.log('[useCreateSubscription] Subscription already being processed for:', lockKey);
       toast({
         title: "Payment in Progress",
         description: "Please wait, your payment is already being processed.",
@@ -65,10 +61,8 @@ export const useCreateSubscription = () => {
     // Check cache first
     const cacheKey = `${user.id}-${creatorId}-${tierId}`;
     const cachedSession = sessionCache.get(cacheKey);
-    console.log('[useCreateSubscription] Checking cache for:', cacheKey, 'found:', !!cachedSession);
     
     if (cachedSession && (Date.now() - cachedSession.timestamp) < SESSION_CACHE_DURATION) {
-      console.log('[useCreateSubscription] Using cached session for:', cacheKey, cachedSession);
       
       // Navigate to payment page with cached data
       navigate('/payment', {
@@ -91,9 +85,7 @@ export const useCreateSubscription = () => {
     // Lock this subscription
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
-    console.log('[useCreateSubscription] Locked subscription and set processing state');
     
-    console.log('[useCreateSubscription] About to call stripe-subscriptions edge function with body:', {
       action: 'create_subscription',
       tierId: tierId,
       creatorId: creatorId
@@ -108,7 +100,6 @@ export const useCreateSubscription = () => {
         }
       });
 
-      console.log('[useCreateSubscription] Edge function response received:', { 
         data, 
         error,
         hasData: !!data,
@@ -117,7 +108,6 @@ export const useCreateSubscription = () => {
       });
 
       if (error) {
-        console.error('[useCreateSubscription] Edge function error:', error);
         toast({
           title: "Network Error",
           description: `Failed to connect to subscription service: ${error.message}`,
@@ -127,7 +117,6 @@ export const useCreateSubscription = () => {
       }
 
       if (data?.error) {
-        console.error('[useCreateSubscription] Function returned error:', data.error);
         
         // Handle duplicate subscription errors gracefully
         if (data.shouldRefresh) {
@@ -156,7 +145,6 @@ export const useCreateSubscription = () => {
       }
 
       if (!data) {
-        console.error('[useCreateSubscription] No data returned from function');
         toast({
           title: "Service Error",
           description: "No response from subscription service",
@@ -165,11 +153,9 @@ export const useCreateSubscription = () => {
         throw new Error('No response from subscription service');
       }
 
-      console.log('[useCreateSubscription] Function returned valid data:', data);
 
       // Check if we should use custom payment page
       if (data.useCustomPaymentPage && data.clientSecret) {
-        console.log('useCreateSubscription: Navigating to custom payment page');
         
         // Cache the session data
         const sessionData = {
@@ -224,16 +210,13 @@ export const useCreateSubscription = () => {
 
       // Fallback to checkout URL (shouldn't happen with new flow)
       if (data.checkout_url) {
-        console.log('useCreateSubscription: Redirecting to Stripe Checkout');
         window.location.href = data.checkout_url;
         return data;
       }
 
-      console.log('useCreateSubscription: Subscription creation successful');
       return data;
 
     } catch (error) {
-      console.error('useCreateSubscription: Failed to create subscription:', error);
       toast({
         title: "Subscription Failed",
         description: error instanceof Error ? error.message : 'An unexpected error occurred',
@@ -259,7 +242,6 @@ export const useCreateSubscription = () => {
     
     const cacheKey = `${user.id}-${creatorId}-${tierId}`;
     sessionCache.delete(cacheKey);
-    console.log('Cleared subscription cache for:', cacheKey);
   }, [user]);
 
   return {
