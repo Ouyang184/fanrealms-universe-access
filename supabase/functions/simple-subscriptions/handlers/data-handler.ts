@@ -65,11 +65,16 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
   console.log('[SimpleSubscriptions] Raw user_subscriptions data:', allUserSubs);
   console.log('[SimpleSubscriptions] Raw user_subscriptions error:', allSubsError);
 
+  // SECURITY: Explicit field list — never expose Stripe identifiers, billing
+  // emails, or subscriber email/PII to the creator's browser.
+  const SAFE_SUBSCRIPTION_FIELDS =
+    'id, user_id, creator_id, tier_id, status, amount, cancel_at_period_end, current_period_start, current_period_end, created_at, updated_at';
+
   const { data: subscribers, error: subscribersError } = await supabase
     .from('user_subscriptions')
     .select(`
-      *,
-      users!fk_user_subscriptions_user_id(id, username, email, profile_picture),
+      ${SAFE_SUBSCRIPTION_FIELDS},
+      users!fk_user_subscriptions_user_id(id, username, profile_picture),
       membership_tiers!fk_user_subscriptions_tier_id(id, title, price)
     `)
     .eq('creator_id', creatorId)
@@ -77,41 +82,31 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
     .order('created_at', { ascending: false });
 
   console.log('[SimpleSubscriptions] Subscribers query error:', subscribersError);
-    console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
-  
+  console.log('[SimpleSubscriptions] Final subscribers count:', subscribers?.length || 0);
+
   if (subscribers && subscribers.length > 0) {
-    // Map the response to match expected structure
     const mappedSubscribers = subscribers.map(sub => ({
       ...sub,
       user: sub.users,
       tier: sub.membership_tiers
     }));
-    
-    mappedSubscribers.forEach((sub, index) => {
-      console.log(`[SimpleSubscriptions] Final subscriber ${index + 1}:`, {
-        user_email: sub.user?.email,
-        tier_title: sub.tier?.title,
-        status: sub.status,
-        cancel_at_period_end: sub.cancel_at_period_end,
-        amount: sub.amount,
-        stripe_subscription_id: sub.stripe_subscription_id,
-        user_data_exists: !!sub.user,
-        tier_data_exists: !!sub.tier
-      });
-    });
-    
+
     return { subscribers: mappedSubscribers };
   } else {
     console.log('[SimpleSubscriptions] No subscribers found in final query, but raw data shows:', allUserSubs?.length || 0, 'records');
-    
+
     if (allUserSubs && allUserSubs.length > 0) {
-      console.log('[SimpleSubscriptions] Returning raw subscription data without user/tier details');
-      const rawSubscribers = allUserSubs.map(sub => ({
-        ...sub,
-        user: null,
-        tier: null
-      }));
-      
+      // Strip sensitive fields before returning fallback data.
+      const rawSubscribers = allUserSubs.map((sub: any) => {
+        const {
+          stripe_subscription_id: _ssi,
+          stripe_customer_id: _sci,
+          billing_email: _be,
+          ...safe
+        } = sub;
+        return { ...safe, user: null, tier: null };
+      });
+
       return { subscribers: rawSubscribers };
     }
   }
