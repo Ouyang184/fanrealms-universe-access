@@ -957,6 +957,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          page_url: string | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          page_url?: string | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          page_url?: string | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       feeds: {
         Row: {
           created_at: string
@@ -1364,6 +1394,7 @@ export type Database = {
           budget_min: number | null
           budget_type: string
           category: string
+          contact_info: string | null
           created_at: string
           deadline: string | null
           description: string | null
@@ -1380,6 +1411,7 @@ export type Database = {
           budget_min?: number | null
           budget_type?: string
           category?: string
+          contact_info?: string | null
           created_at?: string
           deadline?: string | null
           description?: string | null
@@ -1396,6 +1428,7 @@ export type Database = {
           budget_min?: number | null
           budget_type?: string
           category?: string
+          contact_info?: string | null
           created_at?: string
           deadline?: string | null
           description?: string | null
@@ -3845,6 +3878,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_thread_view_count: {
+        Args: { thread_id: string }
+        Returns: undefined
       }
       is_creator_owner: { Args: { _creator_id: string }; Returns: boolean }
       is_project_sale_eligible: {
