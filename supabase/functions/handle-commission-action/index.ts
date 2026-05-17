@@ -307,8 +307,8 @@ serve(async (req) => {
 
       } catch (stripeError) {
         console.error('Stripe error during payment capture:', stripeError);
-        return new Response(JSON.stringify({ 
-          error: 'Failed to capture payment: ' + stripeError.message 
+        return new Response(JSON.stringify({
+          error: 'Failed to capture payment'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
