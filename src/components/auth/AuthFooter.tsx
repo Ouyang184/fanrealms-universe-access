@@ -9,7 +9,7 @@ const AuthFooter = () => {
         Terms of Service
       </Link>{" "}
       and{" "}
-      <Link to="/privacy" className="text-purple-400 hover:text-purple-300">
+      <Link to="/privacy-policy" className="text-purple-400 hover:text-purple-300">
         Privacy Policy
       </Link>
       . See our{" "}

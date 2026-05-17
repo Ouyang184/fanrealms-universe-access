@@ -83,10 +83,10 @@ export function HeaderNotifications() {
     <div className="flex items-center gap-2">
       {/* Notifications button - only show for creators */}
       {isCreator && (
-        <Link to="/creator-studio/notifications">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+        <Link to="/dashboard">
+          <Button
+            variant="ghost"
+            size="icon"
             className="text-muted-foreground hover:text-foreground relative"
           >
             <Bell className="h-5 w-5" />
@@ -99,12 +99,12 @@ export function HeaderNotifications() {
           </Button>
         </Link>
       )}
-      
-      {/* Messages button */}
-      <Link to="/messages">
-        <Button 
-          variant="ghost" 
-          size="icon"  
+
+      {/* Messages button — links to forum until a dedicated messages page exists */}
+      <Link to="/forum">
+        <Button
+          variant="ghost"
+          size="icon"
           className="text-muted-foreground hover:text-foreground relative"
         >
           <MessageSquare className="h-5 w-5" />

@@ -69,7 +69,7 @@ export default function Logout() {
               <p>© {new Date().getFullYear()} FanRealms. All rights reserved.</p>
               <div className="flex justify-center gap-4 mt-2">
                 <Link to="/terms" className="text-primary hover:text-primary/80">Terms</Link>
-                <Link to="/privacy" className="text-primary hover:text-primary/80">Privacy</Link>
+                <Link to="/privacy-policy" className="text-primary hover:text-primary/80">Privacy</Link>
                 <Link to="/help" className="text-primary hover:text-primary/80">Help Center</Link>
               </div>
             </div>

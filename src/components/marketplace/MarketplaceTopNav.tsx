@@ -76,7 +76,7 @@ export function MarketplaceTopNav() {
             </Link>
           )}
           <Link
-            to="/purchases"
+            to="/library"
             className="p-2 rounded-md hover:bg-muted text-muted-foreground"
             aria-label="Library"
           >
