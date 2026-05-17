@@ -180,7 +180,6 @@ export function useSubmitToJam() {
     onSuccess: (_, { jamId }) => {
       queryClient.invalidateQueries({ queryKey: ['jam-submissions', jamId] });
       queryClient.invalidateQueries({ queryKey: ['my-jam-submission', jamId] });
-      toast.success('Entry submitted!');
     },
     onError: (err: Error) => {
       toast.error('Failed to submit: ' + err.message);
@@ -221,7 +220,6 @@ export function useVoteOnSubmission() {
     onSuccess: ({ jamId }) => {
       queryClient.invalidateQueries({ queryKey: ['jam-submissions', jamId] });
       queryClient.invalidateQueries({ queryKey: ['my-jam-votes', jamId] });
-      toast.success('Vote saved');
     },
     onError: (err: Error) => {
       toast.error('Vote failed: ' + err.message);

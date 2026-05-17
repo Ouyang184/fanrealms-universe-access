@@ -51,7 +51,6 @@ export function useCreateSale() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['creator-sales'] });
-      toast.success('Sale created');
     },
     onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
@@ -112,7 +111,6 @@ export function useCreateBundle() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['creator-bundles'] });
-      toast.success('Bundle created');
     },
     onError: (e: Error) => toast.error('Failed: ' + e.message),
   });

@@ -83,7 +83,6 @@ const Signup = () => {
       }
 
       // Session already active (email confirmation disabled in Supabase).
-      toast.success("Account created successfully!");
       navigate("/dashboard", { replace: true });
 
     } catch (error: any) {

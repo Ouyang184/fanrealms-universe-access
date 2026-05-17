@@ -65,7 +65,6 @@ export function useSaveDevlog() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['user-devlogs'] });
-      toast.success('Devlog saved');
     },
     onError: (e: Error) => toast.error('Failed: ' + e.message),
   });
@@ -80,7 +79,6 @@ export function useDeleteDevlog() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['user-devlogs'] });
-      toast.success('Devlog deleted');
     },
     onError: (e: Error) => toast.error('Failed to delete: ' + e.message),
   });

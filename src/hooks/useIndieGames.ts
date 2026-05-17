@@ -71,7 +71,6 @@ export function useAddGame() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['indie-games'] });
       queryClient.invalidateQueries({ queryKey: ['user-games'] });
-      toast.success('Game added!');
     },
     onError: () => {
       toast.error('Failed to add game. Please try again.');

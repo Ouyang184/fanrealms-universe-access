@@ -204,9 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Single source of truth for the "Signed out" toast — fires
           // exactly once per SIGNED_OUT event regardless of whether the
           // sign-out was initiated in this tab or another.
-          toast.success('Signed out', {
-            description: 'You have been signed out.',
-          });
 
 
           // Cross-tab sync: Supabase mirrors auth state across tabs via
