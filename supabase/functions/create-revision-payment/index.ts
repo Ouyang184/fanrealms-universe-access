@@ -165,7 +165,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating revision payment:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'An unexpected error occurred' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
