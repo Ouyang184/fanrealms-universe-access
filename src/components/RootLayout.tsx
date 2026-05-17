@@ -3,6 +3,7 @@ import type React from "react"
 import "../globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { CookieConsent } from "@/components/CookieConsent"
+import { FeedbackButton } from "@/components/FeedbackButton"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <div className="min-h-screen">
         {children}
         <CookieConsent />
+        <FeedbackButton />
       </div>
     </ThemeProvider>
   )
