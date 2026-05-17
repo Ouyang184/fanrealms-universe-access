@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "./SearchBar";
 import { HeaderNotifications } from "./HeaderNotifications";
 import { UserDropdownMenu } from "./UserDropdownMenu";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { buildLoginUrl } from "@/utils/auth-redirects";
 
 export function Header() {
   const { user } = useAuth();
+  const location = useLocation();
 
   return (
     <header className="border-b border-border bg-background z-10 flex-shrink-0">
@@ -22,7 +24,7 @@ export function Header() {
             <UserDropdownMenu />
           ) : (
             <Button asChild variant="default" size="sm">
-              <Link to="/login">Login</Link>
+              <Link to={buildLoginUrl(location.pathname, location.search)}>Login</Link>
             </Button>
           )}
         </div>

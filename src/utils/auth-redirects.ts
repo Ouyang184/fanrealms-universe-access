@@ -22,7 +22,7 @@ export function isAuthPath(pathname: string): boolean {
  */
 export function sanitizeReturnTo(
   raw: string | null | undefined,
-  fallback: string = '/dashboard'
+  fallback: string = '/library'
 ): string {
   if (!raw) return fallback;
   let value = raw.trim();

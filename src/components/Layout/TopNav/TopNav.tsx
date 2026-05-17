@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ import { SearchBar } from '../Header/SearchBar';
 import { HeaderNotifications } from '../Header/HeaderNotifications';
 import { UserDropdownMenu } from '../Header/UserDropdownMenu';
 import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
+import { buildLoginUrl } from '@/utils/auth-redirects';
 
 const NAV_ITEMS = [
   { to: '/marketplace', label: 'Marketplace' },
@@ -72,6 +73,7 @@ export function TopNav() {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useNormalizedPath();
+  const location = useLocation();
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
@@ -124,14 +126,14 @@ export function TopNav() {
           ) : (
             <>
               <Button asChild variant="ghost" size="sm" className="text-[13px]">
-                <Link to="/login">Log in</Link>
+                <Link to={buildLoginUrl(location.pathname, location.search)}>Log in</Link>
               </Button>
               <Button
                 asChild
                 size="sm"
                 className="bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold"
               >
-                <Link to="/signup">Sign up</Link>
+                <Link to={`/signup?returnTo=${encodeURIComponent(location.pathname + location.search)}`}>Sign up</Link>
               </Button>
             </>
           )}

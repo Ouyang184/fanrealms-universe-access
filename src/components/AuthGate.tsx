@@ -62,9 +62,10 @@ const decideTarget = (params: {
     return buildLoginUrl(pathname, search);
   }
 
-  // Authed user on /login or /signup → straight to correct destination.
+  // Authed user on /login or /signup → honor returnTo if present, else /library.
   if (hasUser && isAuthPath(pathname) && pathname !== "/complete-profile") {
-    return isComplete ? "/dashboard" : resolveCompletionRoute(false, "/dashboard");
+    const returnTo = new URLSearchParams(search).get("returnTo") || "/library";
+    return isComplete ? returnTo : resolveCompletionRoute(false, returnTo);
   }
 
   // Authed user on /complete-profile but already complete → honor returnTo.
