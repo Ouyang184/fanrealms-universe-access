@@ -69,7 +69,7 @@ const decideTarget = (params: {
 
   // Authed user on /complete-profile but already complete → honor returnTo.
   if (hasUser && isComplete && pathname === "/complete-profile") {
-    const returnTo = new URLSearchParams(search).get("returnTo") || "/dashboard";
+    const returnTo = new URLSearchParams(search).get("returnTo") || "/library";
     return returnTo === here ? null : returnTo;
   }
 

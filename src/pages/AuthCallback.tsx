@@ -14,7 +14,7 @@ const AuthCallback = () => {
 
   const returnTo = sanitizeReturnTo(
     searchParams.get('returnTo'),
-    getStoredOAuthReturnTo('/dashboard')
+    getStoredOAuthReturnTo('/library')
   );
   const flow = searchParams.get('flow');
   const isSignupConfirmation =

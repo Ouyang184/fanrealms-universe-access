@@ -92,7 +92,7 @@ const OAuthCallbackRedirector = () => {
     if (!hasOAuthPayload) return;
 
     if (!searchParams.has('returnTo')) {
-      searchParams.set('returnTo', '/dashboard');
+      searchParams.set('returnTo', '/library');
     }
 
     navigate(

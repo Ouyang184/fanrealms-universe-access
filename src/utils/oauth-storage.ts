@@ -41,13 +41,13 @@ export const clearStoredOAuthIntent = () => {
 
 export const storeOAuthReturnTo = (returnTo: string) => {
   try {
-    window.localStorage.setItem(OAUTH_RETURN_TO_KEY, sanitizeReturnTo(returnTo, "/dashboard"));
+    window.localStorage.setItem(OAUTH_RETURN_TO_KEY, sanitizeReturnTo(returnTo, "/library"));
   } catch {
     // Ignore storage failures; the callback will use its safe default.
   }
 };
 
-export const getStoredOAuthReturnTo = (fallback = "/dashboard") => {
+export const getStoredOAuthReturnTo = (fallback = "/library") => {
   try {
     return sanitizeReturnTo(window.localStorage.getItem(OAUTH_RETURN_TO_KEY), fallback);
   } catch {

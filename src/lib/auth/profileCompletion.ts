@@ -91,13 +91,13 @@ export const fetchProfileCompletion = async (
  */
 export const resolveCompletionRoute = (
   complete: boolean,
-  returnTo: string = '/dashboard'
+  returnTo: string = '/library'
 ): string => {
-  const safeReturn = sanitizeInternalPath(returnTo, '/dashboard');
+  const safeReturn = sanitizeInternalPath(returnTo, '/library');
   if (complete) return safeReturn;
   // Never return to /complete-profile from /complete-profile — would loop.
   const safeForCompletion = safeReturn.startsWith('/complete-profile')
-    ? '/dashboard'
+    ? '/library'
     : safeReturn;
   return `/complete-profile?returnTo=${encodeURIComponent(safeForCompletion)}`;
 };
