@@ -135,7 +135,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const rngBuf = new Uint32Array(1)
+    crypto.getRandomValues(rngBuf)
+    const code = (100000 + (rngBuf[0] % 900000)).toString()
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
 
     const { error: insertError } = await supabase
