@@ -129,8 +129,7 @@ serve(async (req) => {
     );
   } catch (e) {
     console.error("[create-commission-payment-intent] Error:", e);
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: "An unexpected error occurred" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 400,
     });
