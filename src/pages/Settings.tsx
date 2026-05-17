@@ -36,12 +36,6 @@ export default function Settings() {
     setShowVerificationModal,
     handleAgeVerified
   } = useAgeVerification();
-
-    isAgeVerified,
-    showVerificationModal,
-    userId: user?.id
-  });
-
   const handleAgeVerificationSuccess = async (dateOfBirth: string) => {
     await handleAgeVerified(dateOfBirth);
   };
