@@ -1,7 +1,9 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useForumThread, useForumReplies } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +48,12 @@ export default function ForumThread() {
   const location = useLocation();
   const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '') as { data: any; isLoading: boolean };
   const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '') as { data: any[] | undefined; isLoading: boolean };
+
+  // Increment view count once per page load
+  useEffect(() => {
+    if (!threadId) return;
+    supabase.rpc('increment_thread_view_count', { thread_id: threadId });
+  }, [threadId]);
 
   if (threadLoading) {
     return (

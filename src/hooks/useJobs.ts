@@ -54,7 +54,6 @@ export function useJobListing(jobId: string) {
         return { ...data, users: userData };
       }
       return data;
-      return data;
     },
   });
 }
