@@ -16,7 +16,18 @@ import {
   resolveCompletionRoute,
 } from '@/lib/auth/profileCompletion';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Singleton across HMR reloads. Without this, hot-reloading this file creates
+// a new context object while existing consumers (rendered by parents that
+// didn't reload) still reference the previous one, causing useContext to
+// return undefined and throwing "useAuth must be used within an AuthProvider".
+const AUTH_CONTEXT_SINGLETON_KEY = '__fanrealms_auth_context__';
+type GlobalWithAuthContext = typeof globalThis & {
+  [AUTH_CONTEXT_SINGLETON_KEY]?: React.Context<AuthContextType | undefined>;
+};
+const globalRef = globalThis as GlobalWithAuthContext;
+const AuthContext: React.Context<AuthContextType | undefined> =
+  globalRef[AUTH_CONTEXT_SINGLETON_KEY] ??
+  (globalRef[AUTH_CONTEXT_SINGLETON_KEY] = createContext<AuthContextType | undefined>(undefined));
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
