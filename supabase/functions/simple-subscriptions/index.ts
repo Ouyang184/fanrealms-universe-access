@@ -77,8 +77,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[SimpleSubscriptions] Error (TEST MODE):', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+    return new Response(JSON.stringify({
+      error: 'Internal server error'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
