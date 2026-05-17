@@ -17,6 +17,7 @@ export function CreateJobDialog() {
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
   const [budgetType, setBudgetType] = useState('fixed');
+  const [contactInfo, setContactInfo] = useState('');
   const createJob = useCreateJobListing();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -30,6 +31,7 @@ export function CreateJobDialog() {
         budget_min: budgetMin ? parseFloat(budgetMin) : undefined,
         budget_max: budgetMax ? parseFloat(budgetMax) : undefined,
         budget_type: budgetType,
+        contact_info: contactInfo || undefined,
       },
       {
         onSuccess: () => {
@@ -99,6 +101,15 @@ export function CreateJobDialog() {
               <Label htmlFor="budget-max">Budget Max ($)</Label>
               <Input id="budget-max" type="number" min="0" value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact-info">How to contact you <span className="text-muted-foreground font-normal">(Discord, email, Twitter…)</span></Label>
+            <Input
+              id="contact-info"
+              placeholder="e.g. discord: yourname#1234 or email@example.com"
+              value={contactInfo}
+              onChange={(e) => setContactInfo(e.target.value)}
+            />
           </div>
           <Button type="submit" className="w-full" disabled={createJob.isPending}>
             {createJob.isPending ? 'Posting...' : 'Post Job'}

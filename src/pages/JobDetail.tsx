@@ -2,15 +2,17 @@ import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useJobListing } from '@/hooks/useJobs';
 import { JobApplicationDialog } from '@/components/jobs/JobApplicationDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
+  const { user } = useAuth();
   const { data: listing, isLoading } = useJobListing(jobId || '') as { data: any; isLoading: boolean };
 
   if (isLoading) {
@@ -85,6 +87,30 @@ export default function JobDetail() {
             )}
           </CardContent>
         </Card>
+
+        {/* Contact info — visible to signed-in users only */}
+        {listing.contact_info && (
+          user ? (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-4 flex items-start gap-3">
+                <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold mb-0.5">How to reach the poster</p>
+                  <p className="text-sm text-muted-foreground">{listing.contact_info}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="p-4 flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">Sign in to view contact details</p>
+                <Button asChild size="sm" variant="outline">
+                  <Link to={`/login?returnTo=/jobs/${jobId}`}>Log in</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        )}
 
         <JobApplicationDialog listingId={listing.id} jobTitle={listing.title} />
       </div>

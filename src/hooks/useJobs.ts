@@ -73,6 +73,7 @@ export function useCreateJobListing() {
       budget_type?: string;
       tags?: string[];
       deadline?: string;
+      contact_info?: string;
     }) => {
       const { data, error } = await supabase
         .from('job_listings')
