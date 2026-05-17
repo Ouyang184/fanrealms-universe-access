@@ -204,8 +204,7 @@ export async function handleCancelSubscription(
   } catch (error) {
     console.error('Unexpected cancel subscription error:', error);
     return new Response(JSON.stringify({
-      error: error?.message || 'An unexpected error occurred',
-      stack: error?.stack || null,
+      error: 'An unexpected error occurred',
     }), {
       headers: corsHeaders,
       status: 500,
