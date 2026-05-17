@@ -307,8 +307,8 @@ serve(async (req) => {
 
       } catch (stripeError) {
         console.error('Stripe error during payment capture:', stripeError);
-        return new Response(JSON.stringify({ 
-          error: 'Failed to capture payment: ' + stripeError.message 
+        return new Response(JSON.stringify({
+          error: 'Failed to capture payment'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
@@ -355,8 +355,8 @@ serve(async (req) => {
 
       } catch (stripeError) {
         console.error('Stripe error during payment cancellation:', stripeError);
-        return new Response(JSON.stringify({ 
-          error: 'Failed to cancel payment: ' + stripeError.message 
+        return new Response(JSON.stringify({
+          error: 'Failed to cancel payment'
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500,
@@ -366,9 +366,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Commission action error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-    return new Response(JSON.stringify({ 
-      error: errorMessage 
+    return new Response(JSON.stringify({
+      error: 'An unexpected error occurred'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,

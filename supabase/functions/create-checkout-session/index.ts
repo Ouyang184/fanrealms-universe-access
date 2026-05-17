@@ -113,9 +113,9 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    console.error("[create-checkout-session] Error:", err.message);
+    console.error("[create-checkout-session] Error:", err);
     return new Response(
-      JSON.stringify({ error: err.message ?? "Internal server error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

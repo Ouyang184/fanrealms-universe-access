@@ -156,8 +156,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error creating/updating Stripe product:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to create/update Stripe product' 
+    return new Response(JSON.stringify({
+      error: 'Failed to create/update Stripe product'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
