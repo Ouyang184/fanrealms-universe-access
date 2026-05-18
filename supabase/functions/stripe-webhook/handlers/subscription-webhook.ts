@@ -225,7 +225,7 @@ export async function handleSubscriptionWebhook(
     console.error('[WebhookHandler] Error stack:', error.stack);
     return createJsonResponse({ 
       error: 'Failed to process subscription webhook',
-      details: error.message 
+      // details intentionally omitted to avoid leaking internals
     }, 500);
   }
 }
