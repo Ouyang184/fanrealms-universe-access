@@ -177,11 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up listener before getSession so session restoration events cannot be missed.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-          event,
-          hasSession: !!currentSession,
-          userId: currentSession?.user?.id,
-          pathname: window.location.pathname,
-        });
 
         // INITIAL_SESSION fires right after getSession() resolves with the
         // same data. Skip re-applying it to avoid a duplicate profile
