@@ -132,9 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
 
-      href: window.location.href,
-      pathname: window.location.pathname,
-    });
+
 
     const applySession = (currentSession: Session | null, source: string) => {
       if (cancelled) return;
@@ -179,11 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up listener before getSession so session restoration events cannot be missed.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-          event,
-          hasSession: !!currentSession,
-          userId: currentSession?.user?.id,
-          pathname: window.location.pathname,
-        });
 
         // INITIAL_SESSION fires right after getSession() resolves with the
         // same data. Skip re-applying it to avoid a duplicate profile
@@ -241,10 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.auth.getSession()
         .then(({ data: { session: initialSession }, error }) => {
           if (cancelled) return;
-            hasSession: !!initialSession,
-            userId: initialSession?.user?.id,
-            error: error?.message,
-          });
           applySession(initialSession, 'getSession');
           setLoading(false);
           gotInitialSessionRef.current = true;

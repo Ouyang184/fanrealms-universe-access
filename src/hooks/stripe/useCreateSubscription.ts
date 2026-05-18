@@ -31,18 +31,8 @@ export const useCreateSubscription = () => {
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
-      tierId,
-      creatorId,
-      userId: user?.id,
-      userEmail: user?.email,
-      isProcessing,
-      timestamp: new Date().toISOString()
-    });
 
     if (!user || isProcessing) {
-        hasUser: !!user,
-        isProcessing
-      });
       return null;
     }
 
@@ -86,10 +76,6 @@ export const useCreateSubscription = () => {
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
     
-      action: 'create_subscription',
-      tierId: tierId,
-      creatorId: creatorId
-    });
     
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
@@ -100,12 +86,6 @@ export const useCreateSubscription = () => {
         }
       });
 
-        data, 
-        error,
-        hasData: !!data,
-        hasError: !!error,
-        dataKeys: data ? Object.keys(data) : null
-      });
 
       if (error) {
         toast({
