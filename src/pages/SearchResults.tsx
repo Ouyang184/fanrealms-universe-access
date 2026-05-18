@@ -175,8 +175,17 @@ export default function SearchResultsPage() {
         ) : (
           <div className="text-center py-20">
             <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
-            <h3 className="text-xl font-semibold mb-2 text-[#666]">No Sellers Found</h3>
-            <p className="text-[#666]">No sellers found matching "{searchQuery}". Try searching with different keywords.</p>
+            {searchQuery.length > 0 && searchQuery.trim().length < 2 ? (
+              <>
+                <h3 className="text-xl font-semibold mb-2 text-[#666]">Keep typing…</h3>
+                <p className="text-[#666]">Enter at least 2 characters to search.</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold mb-2 text-[#666]">No Sellers Found</h3>
+                <p className="text-[#666]">No sellers found matching "{searchQuery}". Try different keywords or <Link to="/marketplace" className="text-primary hover:underline">browse the marketplace</Link>.</p>
+              </>
+            )}
           </div>
         )}
       </div>

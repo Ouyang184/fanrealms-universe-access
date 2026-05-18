@@ -9,6 +9,7 @@ import {
   useSubmitProductRating,
   useDeleteProductRating,
 } from '@/hooks/useProductRatings';
+import { useHasPurchased } from '@/hooks/useMarketplace';
 import { StarRating, RatingSummary } from './StarRating';
 import { RatingForm } from './RatingForm';
 
@@ -23,6 +24,7 @@ export function ProductRatingsSection({ productId }: ProductRatingsSectionProps)
   const myRating = useMyProductRating(productId);
   const submitMutation = useSubmitProductRating(productId);
   const deleteMutation = useDeleteProductRating(productId);
+  const { data: hasPurchased } = useHasPurchased(productId);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleSubmit = async (rating: number, review?: string) => {
@@ -45,7 +47,7 @@ export function ProductRatingsSection({ productId }: ProductRatingsSectionProps)
             <RatingSummary average={summary.average} count={summary.count} />
           )}
         </div>
-        {user && !myRating && !isEditing && (
+        {user && hasPurchased && !myRating && !isEditing && (
           <button
             onClick={() => setIsEditing(true)}
             className="text-[12px] font-semibold text-primary hover:underline"

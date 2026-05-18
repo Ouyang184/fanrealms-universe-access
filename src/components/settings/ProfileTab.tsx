@@ -124,6 +124,7 @@ export function ProfileTab({ user }: ProfileTabProps) {
         .update({
           username: profileSettings.username,
           website: profileSettings.website,
+          bio: profileSettings.bio,
           updated_at: new Date().toISOString()
         })
         .eq('id', user?.id);

@@ -53,6 +53,8 @@ import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
 import DashboardDevlogsPage from "./pages/DashboardDevlogs";
 import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
 import JamPage from './pages/JamPage';
+import PaymentPage from './pages/PaymentPage';
+import CommissionPaymentPage from './pages/CommissionPaymentPage';
 
 
 
@@ -190,6 +192,10 @@ export default function App() {
                 <Route path="/dashboard/devlogs" element={<AuthGuard><DashboardDevlogsPage /></AuthGuard>} />
                 <Route path="/dashboard/devlogs/new" element={<AuthGuard><DashboardDevlogEditPage /></AuthGuard>} />
                 <Route path="/dashboard/devlogs/:id/edit" element={<AuthGuard><DashboardDevlogEditPage /></AuthGuard>} />
+
+                {/* Payment flows */}
+                <Route path="/payment" element={<AuthGuard><PaymentPage /></AuthGuard>} />
+                <Route path="/commissions/:id/pay" element={<AuthGuard><CommissionPaymentPage /></AuthGuard>} />
 
                 {/* Library (buyer side) */}
                 <Route path="/library" element={<AuthGuard><LibraryPage /></AuthGuard>} />
