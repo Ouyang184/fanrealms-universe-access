@@ -76,10 +76,6 @@ export const useCreateSubscription = () => {
     setLockedSubscriptions(prev => new Set(prev).add(lockKey));
     setIsProcessing(true);
     
-      action: 'create_subscription',
-      tierId: tierId,
-      creatorId: creatorId
-    });
     
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscriptions', {
@@ -90,12 +86,6 @@ export const useCreateSubscription = () => {
         }
       });
 
-        data, 
-        error,
-        hasData: !!data,
-        hasError: !!error,
-        dataKeys: data ? Object.keys(data) : null
-      });
 
       if (error) {
         toast({
