@@ -98,7 +98,7 @@ export default function DashboardAssetDetail() {
       const price = p.price ?? 0;
       if (price > 0) {
         setPriceMode('paid');
-        setPriceStr((price / 100).toFixed(2));
+        setPriceStr(Number(price).toFixed(2));
       } else {
         setPriceMode('free');
         setPriceStr('');
@@ -178,10 +178,10 @@ export default function DashboardAssetDetail() {
 
   const buildPayload = (overrideStatus?: 'draft' | 'published') => {
     const finalStatus = overrideStatus ?? status;
-    let priceInCents = 0;
+    let priceDollars = 0;
     if (priceMode === 'paid') {
-      priceInCents = Math.round(parseFloat(priceStr || '0') * 100);
-      if (isNaN(priceInCents) || priceInCents <= 0) {
+      priceDollars = parseFloat(priceStr || '0');
+      if (isNaN(priceDollars) || priceDollars <= 0) {
         toast.error('Please enter a valid price greater than $0');
         return null;
       }
@@ -191,7 +191,7 @@ export default function DashboardAssetDetail() {
       title: title.trim(),
       short_description: shortDescription.trim() || undefined,
       description: description.trim() || undefined,
-      price: priceInCents,
+      price: priceDollars,
       category,
       godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
