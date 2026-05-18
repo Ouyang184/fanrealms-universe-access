@@ -234,10 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       supabase.auth.getSession()
         .then(({ data: { session: initialSession }, error }) => {
           if (cancelled) return;
-            hasSession: !!initialSession,
-            userId: initialSession?.user?.id,
-            error: error?.message,
-          });
           applySession(initialSession, 'getSession');
           setLoading(false);
           gotInitialSessionRef.current = true;
