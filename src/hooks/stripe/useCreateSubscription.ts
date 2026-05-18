@@ -31,13 +31,6 @@ export const useCreateSubscription = () => {
   const [lockedSubscriptions, setLockedSubscriptions] = useState(new Set<string>());
 
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
-      tierId,
-      creatorId,
-      userId: user?.id,
-      userEmail: user?.email,
-      isProcessing,
-      timestamp: new Date().toISOString()
-    });
 
     if (!user || isProcessing) {
         hasUser: !!user,
