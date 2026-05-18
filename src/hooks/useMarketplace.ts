@@ -232,6 +232,7 @@ export function useUpdateProduct() {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
       queryClient.invalidateQueries({ queryKey: ['product', (data as any).id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-product', (data as any).id] });
     },
     onError: (error: Error) => {
       toast.error('Failed to update: ' + error.message);

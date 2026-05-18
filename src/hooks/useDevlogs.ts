@@ -63,8 +63,9 @@ export function useSaveDevlog() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, input) => {
       qc.invalidateQueries({ queryKey: ['user-devlogs'] });
+      toast.success(input.status === 'published' ? 'Post published' : 'Draft saved');
     },
     onError: (e: Error) => toast.error('Failed: ' + e.message),
   });

@@ -91,7 +91,7 @@ export default function DashboardAssetsPage() {
                 </Link>
 
                 <div className="text-[13px] font-bold text-right">
-                  {asset.price === 0 ? 'Free' : `$${(asset.price / 100).toFixed(2)}`}
+                  {asset.price === 0 ? 'Free' : `$${Number(asset.price).toFixed(2)}`}
                 </div>
 
                 <div>

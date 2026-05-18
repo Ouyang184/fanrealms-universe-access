@@ -97,7 +97,7 @@ export default function DashboardPage() {
                     {(a as any).status === 'published' ? 'LIVE' : 'DRAFT'}
                   </span>
                   <div className="text-[13px] font-semibold text-[#333] w-16 text-right">
-                    {(a as any).price === 0 ? 'Free' : fmt((a as any).price)}
+                    {(a as any).price === 0 ? 'Free' : `$${Number((a as any).price).toFixed(2)}`}
                   </div>
                 </Link>
               ))}

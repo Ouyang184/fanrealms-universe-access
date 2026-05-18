@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useDevlog, useSaveDevlog } from '@/hooks/useDevlogs';
 import { useCreatorProjects } from '@/hooks/useProjects';
@@ -54,12 +54,21 @@ export default function DashboardDevlogEditPage() {
         <div className="space-y-4 bg-white border border-[#eee] rounded-xl p-6">
           <div>
             <Label className="text-[12px] font-semibold">Project</Label>
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select a project" /></SelectTrigger>
-              <SelectContent>
-                {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {projects.length === 0 ? (
+              <p className="mt-1.5 text-[12px] text-[#999]">
+                You need a project first.{' '}
+                <Link to="/dashboard/projects/new" className="text-primary hover:underline font-medium">
+                  Create one →
+                </Link>
+              </p>
+            ) : (
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select a project" /></SelectTrigger>
+                <SelectContent>
+                  {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div>
             <Label className="text-[12px] font-semibold">Title</Label>

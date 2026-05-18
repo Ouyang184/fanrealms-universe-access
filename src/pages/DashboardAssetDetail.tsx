@@ -245,7 +245,12 @@ export default function DashboardAssetDetail() {
         // Step 2: Upload file if selected, then update product
         if (assetFile) {
           const filePath = await uploadAssetFile(newId);
-          if (!filePath) return null;
+          if (!filePath) {
+            // Clean up the orphaned product row so the creator isn't left
+            // with an invisible draft they can't find.
+            await deleteProduct.mutateAsync(newId).catch(() => {});
+            return null;
+          }
           await updateProduct.mutateAsync({
             id: newId,
             asset_file_path: filePath,
