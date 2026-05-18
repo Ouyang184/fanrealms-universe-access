@@ -97,7 +97,7 @@ serve(async (req) => {
         console.error('Payment intent webhook error:', error);
         return new Response(JSON.stringify({ 
           error: 'Payment intent webhook failed',
-          details: error.message 
+          // details intentionally omitted to avoid leaking internals
         }), { 
           status: 500, 
           headers: corsHeaders 
@@ -116,7 +116,7 @@ serve(async (req) => {
         console.error('Subscription webhook error:', error);
         return new Response(JSON.stringify({ 
           error: 'Subscription webhook failed',
-          details: error.message 
+          // details intentionally omitted to avoid leaking internals
         }), { 
           status: 500, 
           headers: corsHeaders 
@@ -187,7 +187,7 @@ serve(async (req) => {
     console.error('Error stack:', error.stack);
     return new Response(JSON.stringify({ 
       error: 'Webhook processing failed',
-      details: error.message 
+      // details intentionally omitted to avoid leaking internals
     }), { 
       status: 500, 
       headers: corsHeaders 

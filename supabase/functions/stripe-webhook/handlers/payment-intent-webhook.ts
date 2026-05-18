@@ -211,7 +211,7 @@ export async function handlePaymentIntentWebhook(
     console.error('[PaymentIntentWebhook] Error stack:', error.stack);
     return createJsonResponse({ 
       error: 'Failed to process payment intent webhook',
-      details: error.message 
+      // details intentionally omitted to avoid leaking internals
     }, 500);
   }
 }
