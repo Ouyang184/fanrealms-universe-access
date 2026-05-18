@@ -66,11 +66,6 @@ export function useCreatorProfileData() {
         commission_tos: latestCreatorData?.commission_tos
       } as CreatorProfile & { displayName: string };
       
-        id: creatorProfileData.id,
-        accepts_commissions: creatorProfileData.accepts_commissions,
-        commission_base_rate: creatorProfileData.commission_base_rate,
-        hasCommissionData: !!(creatorProfileData.accepts_commissions || creatorProfileData.commission_base_rate)
-      });
       
       return creatorProfileData;
     },
@@ -115,14 +110,6 @@ export function useCreatorProfileData() {
         return [];
       }
       
-        postsCount: postsData?.length,
-        samplePosts: postsData?.slice(0, 2).map(p => ({ 
-          id: p.id, 
-          title: p.title, 
-          tier_id: p.tier_id,
-          author_id: p.author_id
-        }))
-      });
       
       // CRITICAL FIX: Ensure proper authorId mapping for creator access logic
       return postsData.map((post: any) => {
@@ -135,15 +122,6 @@ export function useCreatorProfileData() {
           tierInfo: post.membership_tiers
         } as Post;
         
-          id: mappedPost.id,
-          title: mappedPost.title,
-          authorId: mappedPost.authorId,
-          authorIdType: typeof mappedPost.authorId,
-          authorIdValue: JSON.stringify(mappedPost.authorId),
-          tier_id: mappedPost.tier_id,
-          rawAuthorId: post.author_id,
-          message: 'Creator profile post mapped with consistent authorId for creator access logic'
-        });
         
         return mappedPost;
       });
