@@ -132,9 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let cancelled = false;
 
-      href: window.location.href,
-      pathname: window.location.pathname,
-    });
+
 
     const applySession = (currentSession: Session | null, source: string) => {
       if (cancelled) return;
