@@ -33,9 +33,6 @@ export const useCreateSubscription = () => {
   const createSubscription = useCallback(async ({ tierId, creatorId }: { tierId: string; creatorId: string }) => {
 
     if (!user || isProcessing) {
-        hasUser: !!user,
-        isProcessing
-      });
       return null;
     }
 
