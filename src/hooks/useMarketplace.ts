@@ -13,7 +13,7 @@ export function useProductSearch(query: string) {
         .from('digital_products')
         .select('id, title, short_description, cover_image_url, price, category, creators(id, username, display_name)')
         .eq('status', 'published')
-        .or(`title.ilike.%${term}%,short_description.ilike.%${term}%,tags.cs.{${term}}`)
+        .or(`title.ilike.%${term}%,short_description.ilike.%${term}%,tags.cs.{"${term}"}`)
         .order('created_at', { ascending: false })
         .limit(24);
       if (error) throw error;
