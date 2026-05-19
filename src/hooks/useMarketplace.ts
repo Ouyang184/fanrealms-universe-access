@@ -3,6 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+export function useProductSearch(query: string) {
+  return useQuery({
+    queryKey: ['product-search', query],
+    enabled: query.trim().length >= 2,
+    queryFn: async () => {
+      const term = query.trim();
+      const { data, error } = await supabase
+        .from('digital_products')
+        .select('id, title, short_description, cover_image_url, price, category, creators(id, username, display_name)')
+        .eq('status', 'published')
+        .or(`title.ilike.%${term}%,short_description.ilike.%${term}%,tags.cs.{${term}}`)
+        .order('created_at', { ascending: false })
+        .limit(24);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
 export function useMarketplaceProducts(category?: string) {
   return useQuery({
     queryKey: ['marketplace-products', category],

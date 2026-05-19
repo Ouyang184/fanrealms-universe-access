@@ -1,192 +1,237 @@
 
-import { MainLayout } from "@/components/Layout/MainLayout";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { MainLayout } from "@/components/Layout/MainLayout";
 import { useCreators } from "@/hooks/useCreators";
+import { useProductSearch } from "@/hooks/useMarketplace";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, Package } from "lucide-react";
 import { NSFWBadge } from "@/components/ui/nsfw-badge";
 import { CreatorProfile } from "@/types";
+
+function ProductCard({ product }: { product: any }) {
+  const creator = product.creators;
+  const isFree = !product.price || Number(product.price) === 0;
+
+  return (
+    <Link to={`/marketplace/${product.id}`}>
+      <Card className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:border-[#ddd] transition-all h-full">
+        <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden">
+          {product.cover_image_url ? (
+            <img src={product.cover_image_url} alt={product.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Package className="w-10 h-10 text-[#ccc]" />
+            </div>
+          )}
+        </div>
+        <CardContent className="p-4 space-y-1">
+          <p className="text-[13px] font-semibold text-[#111] line-clamp-1">{product.title}</p>
+          {creator && (
+            <p className="text-[11px] text-[#999]">
+              by {creator.display_name || creator.username}
+            </p>
+          )}
+          <div className="flex items-center justify-between pt-1">
+            {product.category && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f5f5f5] text-[#666]">
+                {product.category}
+              </span>
+            )}
+            <span className="text-[13px] font-bold text-primary ml-auto">
+              {isFree ? 'Free' : `$${Number(product.price).toFixed(2)}`}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function CreatorCard({ creator }: { creator: CreatorProfile }) {
+  const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
+  const avatarUrl = creator.profile_image_url || creator.avatar_url;
+  const creatorLink = creator.username ? `/${creator.username}` : `/${creator.id}`;
+
+  return (
+    <Card className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all">
+      <div className="h-20 bg-[#f5f5f5] relative">
+        {creator.banner_url && (
+          <img src={creator.banner_url} alt={displayName} className="w-full h-full object-cover" />
+        )}
+        {creator.is_nsfw && (
+          <div className="absolute top-2 left-2">
+            <NSFWBadge variant="card" />
+          </div>
+        )}
+      </div>
+      <CardContent className="pt-0 -mt-10 px-4 pb-4">
+        <Avatar className="h-16 w-16 border-[4px] border-white">
+          <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
+          <AvatarFallback>{displayName[0]?.toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <h3 className="text-[15px] font-bold text-[#111] mt-2">{displayName}</h3>
+        <p className="text-[#666] text-[12px] mt-0.5 line-clamp-2">{creator.bio || "Seller on FanRealms"}</p>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-[11px] text-[#aaa]">{creator.follower_count || 0} followers</span>
+          <Button asChild className="bg-primary hover:bg-[#3a7aab]" size="sm">
+            <Link to={creatorLink}>View shop</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SkeletonGrid({ count = 4 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      {Array(count).fill(0).map((_, i) => (
+        <Card key={i} className="overflow-hidden">
+          <Skeleton className="aspect-[4/3] w-full rounded-none" />
+          <CardContent className="p-4 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get("q") || "";
+  const trimmed = searchQuery.trim();
+  const hasQuery = trimmed.length >= 2;
 
+  const { data: creators = [], isLoading: creatorsLoading } = useCreators(trimmed);
+  const { data: products = [], isLoading: productsLoading } = useProductSearch(trimmed);
 
-  // Always call the hook, but only search when there's a valid query
-  const { data: creators = [], isLoading, error } = useCreators(searchQuery.trim());
-
+  const isLoading = creatorsLoading || productsLoading;
+  const totalResults = creators.length + products.length;
 
   useEffect(() => {
-    document.title = searchQuery ? `"${searchQuery}" - Search Results | FanRealms` : "Search Results | FanRealms";
+    document.title = searchQuery
+      ? `"${searchQuery}" — Search Results | FanRealms`
+      : "Search Results | FanRealms";
   }, [searchQuery]);
-
-  const getCreatorTags = (creator: CreatorProfile) => {
-    const defaultTags = ["Game Dev"];
-
-    if (!creator) return defaultTags;
-
-    if (creator.tags && creator.tags.length > 0) {
-      return creator.tags.slice(0, 3);
-    }
-
-    const bio = creator.bio || "";
-    const extractedTags = bio.match(/#\w+/g) || [];
-    const formattedTags = extractedTags.map(tag => tag.replace('#', ''));
-
-    if (formattedTags.length === 0 && bio) {
-      const keywords = bio.split(' ')
-        .filter(word => word.length > 4)
-        .slice(0, 3);
-      return keywords.length > 0 ? keywords : defaultTags;
-    }
-
-    return formattedTags.length > 0 ? formattedTags : defaultTags;
-  };
 
   return (
     <MainLayout fullWidth>
-      <div className="w-full">
+      <div className="w-full space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <Link to="/marketplace">
-            <Button variant="ghost" className="mb-4">
+            <Button variant="ghost" className="mb-4 -ml-2">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Marketplace
             </Button>
           </Link>
-
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-1">
             <Search className="h-6 w-6 text-[#aaa]" />
-            <h1 className="text-3xl font-bold text-[#111]">
-              {searchQuery ? `Search Results for "${searchQuery}"` : "Search Results"}
+            <h1 className="text-[26px] font-bold text-[#111]">
+              {searchQuery ? `"${searchQuery}"` : "Search Results"}
             </h1>
           </div>
-
-          {searchQuery && !isLoading && (
-            <p className="text-[#666]">
-              Found {creators.length} seller{creators.length !== 1 ? 's' : ''} matching your search
+          {hasQuery && !isLoading && (
+            <p className="text-[13px] text-[#999] ml-9">
+              {totalResults} result{totalResults !== 1 ? 's' : ''} —{' '}
+              {products.length} asset{products.length !== 1 ? 's' : ''},{' '}
+              {creators.length} seller{creators.length !== 1 ? 's' : ''}
             </p>
           )}
         </div>
 
+        {/* No query state */}
+        {!searchQuery && (
+          <div className="text-center py-20">
+            <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
+            <h3 className="text-xl font-semibold mb-2 text-[#666]">Search FanRealms</h3>
+            <p className="text-[#999]">Find assets, tools, plugins, and creators</p>
+          </div>
+        )}
+
+        {/* Too short */}
+        {searchQuery && !hasQuery && (
+          <div className="text-center py-20">
+            <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
+            <h3 className="text-xl font-semibold mb-2 text-[#666]">Keep typing…</h3>
+            <p className="text-[#999]">Enter at least 2 characters to search.</p>
+          </div>
+        )}
+
+        {/* Loading */}
+        {hasQuery && isLoading && (
+          <div className="space-y-8">
+            <div>
+              <Skeleton className="h-5 w-24 mb-4" />
+              <SkeletonGrid count={5} />
+            </div>
+            <div>
+              <Skeleton className="h-5 w-24 mb-4" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {Array(4).fill(0).map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="h-20 w-full rounded-none" />
+                    <CardContent className="p-4 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Results */}
-        {!searchQuery ? (
-          <div className="text-center py-20">
-            <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
-            <h3 className="text-xl font-semibold mb-2 text-[#666]">Start Your Search</h3>
-            <p className="text-[#666]">Search for sellers, games, and assets</p>
-          </div>
-        ) : isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array(8).fill(0).map((_, i) => (
-              <Card key={`search-skeleton-${i}`} className="bg-[#fafafa] border border-[#eee] overflow-hidden">
-                <div className="h-24 bg-[#f5f5f5]" />
-                <CardContent className="pt-0 -mt-12 p-6">
-                  <div className="flex justify-between items-start">
-                    <Skeleton className="h-20 w-20 rounded-md" />
-                  </div>
-                  <Skeleton className="h-6 w-3/4 mt-4" />
-                  <Skeleton className="h-4 w-full mt-2" />
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-5 w-20" />
-                  </div>
-                  <div className="mt-6 flex items-center justify-between">
-                    <Skeleton className="h-5 w-16" />
-                    <Skeleton className="h-10 w-24" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 text-red-400">
-            <Search className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">Search Error</h3>
-            <p>There was an error searching for sellers. Please try again.</p>
-          </div>
-        ) : creators.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {creators.map((creator) => {
-              const displayName = creator.displayName || creator.display_name || creator.username || "Creator";
-              const avatarUrl = creator.profile_image_url || creator.avatar_url;
-              const creatorLink = creator.username
-                ? `/creator/${creator.username}`
-                : `/creator/${creator.id}`;
-              const avatarFallback = displayName.substring(0, 1).toUpperCase();
-
-              return (
-                <Card key={creator.id} className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-all">
-                  <div className="h-24 bg-[#f5f5f5] relative">
-                    {creator.banner_url && (
-                      <img
-                        src={creator.banner_url}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                    {/* NSFW Badge */}
-                    {creator.is_nsfw && (
-                      <div className="absolute top-2 left-2">
-                        <NSFWBadge variant="card" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="pt-0 -mt-12 p-6">
-                    <div className="flex justify-between items-start">
-                      <Avatar className="h-20 w-20 border-[4px] border-white">
-                        <AvatarImage src={avatarUrl || '/lovable-uploads/a88120a6-4c72-4539-b575-22350a7045c1.png'} alt={displayName} />
-                        <AvatarFallback className="text-xl">
-                          {avatarFallback}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div className="flex items-center gap-2 mt-4">
-                      <h3 className="text-xl font-bold text-[#111]">{displayName}</h3>
-                    </div>
-                    <p className="text-[#666] text-sm mt-1 line-clamp-2">{creator.bio || "Seller on FanRealms"}</p>
-
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {getCreatorTags(creator).map((tag, index) => (
-                        <span key={index} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f5f5f5] text-[#666]">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 flex items-center justify-between">
-                      <div className="text-sm text-[#aaa]">
-                        {creator.follower_count || 0} followers
-                      </div>
-                      <Link to={creatorLink}>
-                        <Button className="bg-primary hover:bg-[#3a7aab]" size="sm">View shop</Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
-            {searchQuery.length > 0 && searchQuery.trim().length < 2 ? (
-              <>
-                <h3 className="text-xl font-semibold mb-2 text-[#666]">Keep typing…</h3>
-                <p className="text-[#666]">Enter at least 2 characters to search.</p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-xl font-semibold mb-2 text-[#666]">No Sellers Found</h3>
-                <p className="text-[#666]">No sellers found matching "{searchQuery}". Try different keywords or <Link to="/marketplace" className="text-primary hover:underline">browse the marketplace</Link>.</p>
-              </>
+        {hasQuery && !isLoading && (
+          <>
+            {/* Assets */}
+            {products.length > 0 && (
+              <section>
+                <h2 className="text-[15px] font-bold text-[#111] mb-4">
+                  Assets <span className="text-[#aaa] font-normal">({products.length})</span>
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {products.map((p: any) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+              </section>
             )}
-          </div>
+
+            {/* Sellers */}
+            {creators.length > 0 && (
+              <section>
+                <h2 className="text-[15px] font-bold text-[#111] mb-4">
+                  Sellers <span className="text-[#aaa] font-normal">({creators.length})</span>
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {creators.map((creator: CreatorProfile) => (
+                    <CreatorCard key={creator.id} creator={creator} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* No results */}
+            {products.length === 0 && creators.length === 0 && (
+              <div className="text-center py-20">
+                <Search className="h-16 w-16 mx-auto mb-4 text-[#bbb]" />
+                <h3 className="text-xl font-semibold mb-2 text-[#666]">No results found</h3>
+                <p className="text-[#999]">
+                  Nothing matched "{searchQuery}". Try different keywords or{' '}
+                  <Link to="/marketplace" className="text-primary hover:underline">browse the marketplace</Link>.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </MainLayout>
