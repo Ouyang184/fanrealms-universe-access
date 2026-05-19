@@ -17,7 +17,7 @@ export function useEmailMFA() {
         .from('users')
         .select('email_2fa_enabled')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setIsEnabled(data?.email_2fa_enabled || false);

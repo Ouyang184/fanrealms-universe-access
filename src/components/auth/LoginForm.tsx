@@ -63,13 +63,11 @@ const LoginForm = () => {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setLoginError(null);
-      console.log("LoginForm: Attempting to sign in with:", values.email);
       
       const result: AuthResult = await signIn(values.email, values.password, values.captcha);
       
       if (result.success === false) {
         if (result.mfaRequired && result.factors?.length) {
-          console.log("LoginForm: MFA challenge required");
           const factor = result.factors[0]; // Use first TOTP factor
           try {
             const challengeId = await createChallenge(factor.id);
@@ -83,13 +81,11 @@ const LoginForm = () => {
         }
         
         if (result.emailMfaRequired && result.email) {
-          console.log("LoginForm: Email 2FA challenge required");
           setEmailMfaEmail(result.email);
           setShowEmailMFAChallenge(true);
           return;
         }
         
-        console.log("LoginForm: Sign in failed:", result.error.message);
         setLoginError(result.error.message);
         
         // Reset captcha on failed login attempts
@@ -101,12 +97,10 @@ const LoginForm = () => {
         return;
       }
       
-      console.log("LoginForm: Sign in successful, redirecting...");
       const params = new URLSearchParams(location.search);
       const returnTo = sanitizeReturnTo(params.get('returnTo'), '/home');
       navigate(returnTo, { replace: true });
     } catch (error: any) {
-      console.error("LoginForm: Login error:", error);
       setLoginError(error?.message || "Unexpected error occurred");
       
       // Reset captcha on error
@@ -119,7 +113,6 @@ const LoginForm = () => {
   };
 
   const handleMFASuccess = () => {
-    console.log("LoginForm: MFA verification successful, redirecting...");
     const params = new URLSearchParams(location.search);
     const returnTo = sanitizeReturnTo(params.get('returnTo'), '/home');
     navigate(returnTo, { replace: true });
@@ -132,7 +125,6 @@ const LoginForm = () => {
   };
 
   const handleEmailMFASuccess = () => {
-    console.log("LoginForm: Email 2FA verification successful, user should already be authenticated");
     
     // Clear 2FA state
     setShowEmailMFAChallenge(false);

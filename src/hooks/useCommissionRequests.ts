@@ -26,7 +26,6 @@ export const useCommissionRequests = () => {
     queryFn: async () => {
       if (!creatorProfile?.id) return [];
       
-      console.log('🔍 Fetching commission requests for creator:', creatorProfile.id);
       
       const { data, error } = await supabase
         .from('commission_requests')
@@ -40,15 +39,12 @@ export const useCommissionRequests = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Commission requests query error:', error);
         throw error;
       }
       
-      console.log('📋 Raw commission requests data:', data);
       
       // Transform the data and remove duplicates
       const transformedData = (data || []).map(request => {
-        console.log('🔄 Processing request:', request.id, 'Customer data:', request.customer);
         return {
           ...request,
           status: request.status as CommissionRequestStatus,
@@ -84,7 +80,6 @@ export const useCommissionRequests = () => {
       });
     },
     onError: (error) => {
-      console.error('Error updating commission request:', error);
       toast({
         title: "Error",
         description: "Failed to update commission request",

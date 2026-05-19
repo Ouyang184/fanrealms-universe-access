@@ -20,7 +20,7 @@ export default function CommissionPaymentPage() {
   useEffect(() => {
     if (!id) return;
     supabase.functions
-      .invoke('create-commission-payment', { body: { commissionId: id } })
+      .invoke('create-commission-payment-intent', { body: { commissionId: id } })
       .then(({ data, error: fnError }) => {
         if (fnError || !data?.clientSecret) {
           setError('Failed to initialise payment. Please try again.');

@@ -50,7 +50,6 @@ export function useConversations() {
         .order('last_message_at', { ascending: false });
 
       if (participantsError) {
-        console.error('Error fetching conversation participants:', participantsError);
         throw participantsError;
       }
 
@@ -64,7 +63,6 @@ export function useConversations() {
           .rpc('get_user_public_profiles' as any, { ids: otherUserIds });
 
       if (usersError) {
-        console.error('Error fetching users:', usersError);
         throw usersError;
       }
 
@@ -124,11 +122,9 @@ export function useConversations() {
       // Validate that the user ID matches the logged-in user
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (currentUser?.id !== user.id) {
-        console.error("Auth mismatch: user ID does not match logged-in user");
         throw new Error("Authentication error");
       }
 
-      console.log('Attempting to send message:', { senderId: user.id, receiverId, messageText });
 
       // Send the message - the trigger will handle conversation participants
       const { data, error } = await supabase
@@ -143,15 +139,12 @@ export function useConversations() {
         .single();
 
       if (error) {
-        console.error('Message sending error:', error);
         throw error;
       }
 
-      console.log('Message sent successfully:', data);
       return data;
     },
     onSuccess: () => {
-      console.log('Message sent, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
       queryClient.invalidateQueries({ queryKey: ['user-messages'] });
       toast({
@@ -160,7 +153,6 @@ export function useConversations() {
       });
     },
     onError: (error) => {
-      console.error('Send message error:', error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",

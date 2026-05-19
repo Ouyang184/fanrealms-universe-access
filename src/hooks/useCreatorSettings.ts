@@ -49,7 +49,7 @@ export const useCreatorSettings = (creatorId?: string) => {
           .from('users')
           .select('username')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         const { data: newCreator, error: createError } = await supabase
           .from('creators')
@@ -63,7 +63,7 @@ export const useCreatorSettings = (creatorId?: string) => {
             tags: []
           })
           .select('*, users:user_id(username, email)')
-          .single();
+          .maybeSingle();
           
         if (createError) {
           console.error('Error creating creator:', createError);

@@ -33,7 +33,7 @@ export const useNotificationPreferences = () => {
           .from('users')
           .select('notification_preferences')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Error loading notification preferences:', error);

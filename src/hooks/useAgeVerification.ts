@@ -20,7 +20,7 @@ export const useAgeVerification = () => {
         .from('users')
         .select('age_verified')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching age verification status:', error);

@@ -46,7 +46,6 @@ export const useUserSubscriptions = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('Fetching active subscriptions for user:', user.id);
       
       const { data: subscriptions, error } = await supabase
         .from('user_subscriptions')
@@ -77,11 +76,9 @@ export const useUserSubscriptions = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching subscriptions:', error);
         return [];
       }
 
-      console.log('Found subscriptions:', subscriptions?.length || 0);
       return (subscriptions || []) as UserSubscriptionWithDetails[];
     },
     enabled: !!user?.id,

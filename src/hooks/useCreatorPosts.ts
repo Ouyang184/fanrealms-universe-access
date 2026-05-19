@@ -23,7 +23,6 @@ export function useCreatorPosts() {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      console.log('[useCreatorPosts] Fetching posts for user:', user.id);
       
       let query = supabase
         .from('posts')
@@ -61,7 +60,6 @@ export function useCreatorPosts() {
       const { data, error } = await query;
         
       if (error) {
-        console.error('Error fetching posts:', error);
         toast({
           title: "Error fetching posts",
           description: "Failed to load your posts. Please try again.",
@@ -70,14 +68,12 @@ export function useCreatorPosts() {
         return [];
       }
 
-      console.log('[useCreatorPosts] Creator posts raw data:', data);
       
       // Transform to CreatorPost format with real engagement data and multiple tiers
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
         
-        console.log('[useCreatorPosts] CRITICAL - Processing post with author_id:', {
           postId: post.id,
           postTitle: post.title,
           author_id: post.author_id,
@@ -113,7 +109,6 @@ export function useCreatorPosts() {
         const hasLegacyTier = !!post.tier_id;
         const isLocked = hasMultipleTiers || hasLegacyTier;
 
-        console.log('[useCreatorPosts] Creator post visibility check:', {
           postId: post.id,
           postTitle: post.title,
           tierId: post.tier_id,
@@ -161,7 +156,6 @@ export function useCreatorPosts() {
             // If the scheduled time has passed, this should be treated as published
             // But since this is creator's own posts view, they can see all their posts regardless
             if (scheduledTime <= now) {
-              console.log('[useCreatorPosts] Scheduled post time has passed, but keeping as scheduled for creator view:', {
                 postId: post.id,
                 scheduledFor: post.scheduled_for,
                 currentTime: now.toISOString()
@@ -221,7 +215,6 @@ export function useCreatorPosts() {
           attachments: attachments
         };
 
-        console.log('[useCreatorPosts] FINAL transformed post with multiple tiers:', {
           postId: transformedPost.id,
           authorId: transformedPost.authorId,
           availableTiers: transformedPost.availableTiers,

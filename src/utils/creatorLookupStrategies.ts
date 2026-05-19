@@ -41,49 +41,42 @@ const firstRow = (data: unknown): any | null => {
 // Strategy 1: Find by creator.id (primary key)
 export const findByCreatorId = async (identifier?: string) => {
   if (!identifier) return null;
-  console.log(`Looking up creator by creator.id: "${identifier}"`);
 
   const { data } = await supabase
     .rpc('get_public_creator_profile', { p_creator_id: identifier });
   const row = firstRow(data);
   if (!row) return null;
 
-  console.log("Found creator by creator.id (RPC):", row);
   return mapRowToCreatorProfile(row, identifier);
 };
 
 // Strategy 2: Find by username
 export const findByUsername = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
-  console.log(`Looking up creator by username: "${cleanedIdentifier}"`);
 
   const { data } = await supabase
     .rpc('get_public_creator_profile', { p_username: cleanedIdentifier });
   const row = firstRow(data);
   if (!row) return null;
 
-  console.log("Found creator by username (RPC):", row);
   return mapRowToCreatorProfile(row);
 };
 
 // Strategy 3: Find by user_id
 export const findByUserId = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
-  console.log(`Looking up creator by user_id: "${cleanedIdentifier}"`);
 
   const { data } = await supabase
     .rpc('get_public_creator_profile', { p_user_id: cleanedIdentifier });
   const row = firstRow(data);
   if (!row) return null;
 
-  console.log("Found creator by user_id (RPC):", row);
   return mapRowToCreatorProfile(row);
 };
 
 // Strategy 4: Find by display_name
 export const findByDisplayName = async (cleanedIdentifier?: string) => {
   if (!cleanedIdentifier) return null;
-  console.log(`Looking up creator by display_name: "${cleanedIdentifier}"`);
 
   const { data: allCreators } = await supabase
     .rpc('get_public_creators_list', {
@@ -100,14 +93,12 @@ export const findByDisplayName = async (cleanedIdentifier?: string) => {
   );
   if (!match) return null;
 
-  console.log("Found creator by display_name:", match);
   return mapRowToCreatorProfile(match);
 };
 
 // Strategy 5: Find by shortened user_id (with "user-" prefix)
 export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
   if (!originalIdentifier?.startsWith('user-')) return null;
-  console.log(`Looking up creator by abbreviated user_id: "${originalIdentifier}"`);
 
   const { data: allCreators } = await supabase
     .rpc('get_public_creators_list', {
@@ -125,6 +116,5 @@ export const findByAbbreviatedUserId = async (originalIdentifier?: string) => {
   });
   if (!match) return null;
 
-  console.log("Found creator by abbreviated ID:", match);
   return mapRowToCreatorProfile(match);
 };
