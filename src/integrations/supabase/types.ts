@@ -2608,6 +2608,7 @@ export type Database = {
       users: {
         Row: {
           age_verified: boolean | null
+          bio: string | null
           created_at: string
           creator_name: string | null
           date_of_birth: string | null
@@ -2624,6 +2625,7 @@ export type Database = {
         }
         Insert: {
           age_verified?: boolean | null
+          bio?: string | null
           created_at?: string
           creator_name?: string | null
           date_of_birth?: string | null
@@ -2640,6 +2642,7 @@ export type Database = {
         }
         Update: {
           age_verified?: boolean | null
+          bio?: string | null
           created_at?: string
           creator_name?: string | null
           date_of_birth?: string | null
