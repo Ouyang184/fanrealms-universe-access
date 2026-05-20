@@ -102,7 +102,7 @@ export default function ProductDetail() {
           {p.short_description && (
             <p className="text-[15px] text-muted-foreground mt-1">{p.short_description}</p>
           )}
-          <div className="flex items-center gap-3 mt-2">
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
             {p.creators && (
               <span className="text-[13px] text-muted-foreground">
                 by{' '}
@@ -116,7 +116,7 @@ export default function ProductDetail() {
         </div>
 
         {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start lg:grid-flow-col">
 
           {/* Left: image gallery */}
           <div className="space-y-3">
@@ -175,8 +175,8 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          {/* Right: sticky sidebar */}
-          <aside className="lg:sticky lg:top-20 space-y-4">
+          {/* Right: sticky sidebar — renders first on mobile via order */}
+          <aside className="lg:sticky lg:top-20 space-y-4 order-first lg:order-last">
 
             {/* Price + CTA card */}
             <div className="rounded-xl border border-border bg-card p-5 space-y-4">

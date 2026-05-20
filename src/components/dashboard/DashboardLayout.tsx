@@ -129,6 +129,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </aside>
 
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 sm:py-8">
+          {/* Mobile-only horizontal scroll nav — sidebar is hidden below md */}
+          <nav className="md:hidden flex overflow-x-auto gap-2 pb-3 mb-5 border-b border-[#eee] -mx-4 px-4 scrollbar-hide">
+            {[...EXPLORE, ...CREATE, ...ACCOUNT].map((it) => (
+              <NavLink
+                key={it.to + it.label}
+                to={it.to}
+                className={({ isActive }) =>
+                  `whitespace-nowrap px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors flex-shrink-0 ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-[#e5e5e5] text-[#555] hover:border-[#ccc]'
+                  }`
+                }
+              >
+                {it.label}
+              </NavLink>
+            ))}
+          </nav>
           {children}
         </main>
       </div>

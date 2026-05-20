@@ -92,7 +92,7 @@ export default function LandingPage() {
       <section className="border-b border-[#eee] bg-[#fafafa]">
         <div className="px-4 sm:px-6 py-12">
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px] text-center mb-8">How it works</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 step: "1",

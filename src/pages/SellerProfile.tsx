@@ -52,7 +52,7 @@ export default function SellerProfilePage() {
             <img src={seller.banner_url} alt="" className="w-full h-full object-cover" />
           </div>
         ) : (
-          <div className="w-full h-24 sm:h-32 bg-gradient-to-br from-[#e8eef4] to-[#f5f7fa]" />
+          <div className="w-full h-32 sm:h-44 bg-gradient-to-br from-[#e8eef4] to-[#f5f7fa]" />
         )}
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10 sm:-mt-12 relative">
@@ -182,7 +182,7 @@ export default function SellerProfilePage() {
           <section className="mt-10">
             <h2 className="text-[16px] font-bold tracking-[-0.3px] mb-4">Assets</h2>
             {productsLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="space-y-2">
                     <Skeleton className="aspect-[4/3] w-full rounded-xl" />
@@ -192,7 +192,7 @@ export default function SellerProfilePage() {
                 ))}
               </div>
             ) : products && products.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

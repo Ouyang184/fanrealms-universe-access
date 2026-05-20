@@ -128,7 +128,7 @@ function CreateSaleDialog() {
         <DialogHeader><DialogTitle>Create a sale</DialogTitle></DialogHeader>
         <div className="space-y-4">
           <div><Label>Name</Label><Input className="mt-1.5" value={name} onChange={(e) => setName(e.target.value)} placeholder="Spring Sale" /></div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div><Label>Discount %</Label><Input type="number" min={1} max={90} className="mt-1.5" value={discount} onChange={(e) => setDiscount(Number(e.target.value))} /></div>
             <div><Label>Starts</Label><Input type="datetime-local" className="mt-1.5" value={starts} onChange={(e) => setStarts(e.target.value)} /></div>
             <div><Label>Ends</Label><Input type="datetime-local" className="mt-1.5" value={ends} onChange={(e) => setEnds(e.target.value)} /></div>
@@ -269,9 +269,9 @@ function HistoryTab() {
   return (
     <div className="space-y-8">
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-[#eee] rounded-xl p-5">
             <div className="text-[11px] font-bold text-[#aaa] uppercase tracking-[0.5px] mb-1">Gross revenue</div>
             <div className="text-[24px] font-bold tracking-[-0.5px]">{fmt(totals.gross)}</div>
@@ -293,9 +293,9 @@ function HistoryTab() {
         {isLoading ? (
           <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
         ) : sales.length > 0 ? (
-          <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
+          <div className="bg-white border border-[#eee] rounded-xl overflow-x-auto">
             {sales.map((sale: any, i: number) => (
-              <div key={sale.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3.5 ${i < sales.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
+              <div key={sale.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3.5 min-w-[380px] ${i < sales.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold truncate">{sale.digital_products?.title ?? 'Asset'}</div>
                   <div className="text-[11px] text-[#aaa]">{formatDistanceToNow(new Date(sale.created_at), { addSuffix: true })}</div>

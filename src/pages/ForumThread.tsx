@@ -19,7 +19,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function MarkdownContent({ content }: { content: string }) {
   return (
-    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-h1:text-2xl prose-h1:mt-2 prose-h2:text-xl prose-h3:text-lg prose-p:leading-relaxed prose-table:text-sm prose-hr:my-6 prose-li:my-1">
+    <div className="prose prose-sm max-w-none overflow-x-auto prose-headings:font-semibold prose-h1:text-2xl prose-h1:mt-2 prose-h2:text-xl prose-h3:text-lg prose-p:leading-relaxed prose-table:text-sm prose-hr:my-6 prose-li:my-1">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

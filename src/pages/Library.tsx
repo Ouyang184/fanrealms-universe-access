@@ -16,7 +16,7 @@ const TABS = [
 
 export function LibraryTabs() {
   return (
-    <div className="border-b border-[#eee] mb-6 flex gap-6">
+    <div className="border-b border-[#eee] mb-6 flex gap-6 overflow-x-auto scrollbar-hide">
       {TABS.map((t) => (
         <NavLink
           key={t.to}

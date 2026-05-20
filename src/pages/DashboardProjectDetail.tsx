@@ -92,7 +92,7 @@ function ProjectDetail() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-[#eee] rounded-xl p-4">
           <div className="text-[11px] font-bold text-[#aaa] uppercase tracking-[0.5px] mb-1">Assets</div>
           <div className="text-[20px] font-bold tracking-[-0.5px]">{assets.length}</div>

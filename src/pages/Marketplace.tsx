@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
@@ -32,6 +33,7 @@ export default function Marketplace() {
   const [sort, setSort] = useState<string>('newest');
   const [godotVersion, setGodotVersion] = useState<string>('all');
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Read ?tag= from URL on mount and when URL changes
   useEffect(() => {
@@ -85,7 +87,17 @@ export default function Marketplace() {
           </Link>
         </div>
 
+        {/* Mobile filter toggle */}
+        <button
+          className="lg:hidden flex items-center gap-2 px-3 py-2 text-[13px] font-semibold border border-[#e5e5e5] rounded-lg hover:border-[#ccc] transition-colors mb-2"
+          onClick={() => setFiltersOpen(v => !v)}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {filtersOpen ? 'Hide filters' : 'Filters'}
+        </button>
+
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
+          <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
           <MarketplaceSidebar
             category={category}
             maxPriceCents={maxPriceCents}
@@ -97,6 +109,7 @@ export default function Marketplace() {
             onSort={setSort}
             onGodotVersion={setGodotVersion}
           />
+          </div>
 
           <main className="space-y-6 min-w-0">
             {isLoading ? (
@@ -246,7 +259,7 @@ function EmptyState({
               See all →
             </Link>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
             {topCreators.map((c: any) => (
               <Link
                 key={c.id}
