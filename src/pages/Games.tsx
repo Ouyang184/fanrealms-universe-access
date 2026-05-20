@@ -50,7 +50,7 @@ export default function GamesPage() {
         </div>
 
         {/* Segmented genre bar */}
-        <div className="border border-border bg-card overflow-x-auto">
+        <div className="border border-border bg-card overflow-x-auto [mask-image:linear-gradient(to_right,black_90%,transparent)]">
           <div className="flex divide-x divide-border min-w-max">
             {GAME_GENRES.map((g) => {
               const active = genre === g;

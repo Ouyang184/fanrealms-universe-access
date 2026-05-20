@@ -36,7 +36,7 @@ export default function Forum() {
         </div>
 
         {/* Segmented category bar */}
-        <div className="border border-border bg-card overflow-x-auto">
+        <div className="border border-border bg-card overflow-x-auto [mask-image:linear-gradient(to_right,black_90%,transparent)]">
           <div className="flex divide-x divide-border min-w-max">
             {ALL_CATEGORIES.map((c) => {
               const active = category === c;

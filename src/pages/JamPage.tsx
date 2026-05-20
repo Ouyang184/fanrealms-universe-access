@@ -65,7 +65,7 @@ export default function JamPage() {
 
         <JamHeader jam={jam} />
 
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <h2 className="text-[16px] font-bold text-[#111]">
             Submissions{' '}
             {submissions && (

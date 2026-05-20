@@ -74,7 +74,7 @@ function StarPicker({
             onMouseEnter={() => setHovered(n)}
             onMouseLeave={() => setHovered(0)}
             onClick={() => onChange(n)}
-            className={`text-[20px] leading-none transition-colors ${
+            className={`w-9 h-9 flex items-center justify-center text-[20px] leading-none transition-colors ${
               n <= (hovered || value) ? 'text-yellow-400' : 'text-[#ddd]'
             }`}
           >
