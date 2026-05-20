@@ -87,14 +87,35 @@ export default function Marketplace() {
           </Link>
         </div>
 
-        {/* Mobile filter toggle */}
-        <button
-          className="lg:hidden flex items-center gap-2 px-3 py-2 text-[13px] font-semibold border border-[#e5e5e5] rounded-lg hover:border-[#ccc] transition-colors mb-2"
-          onClick={() => setFiltersOpen(v => !v)}
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          {filtersOpen ? 'Hide filters' : 'Filters'}
-        </button>
+        {/* Mobile: quick category + sort dropdowns always visible */}
+        <div className="lg:hidden flex gap-2 mb-3">
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="flex-1 px-3 py-2 text-[13px] font-medium border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:border-primary"
+          >
+            <option value="all">All categories</option>
+            {BROWSE_CATEGORIES.map(c => (
+              <option key={c.name} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value)}
+            className="px-3 py-2 text-[13px] font-medium border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:border-primary"
+          >
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price ↑</option>
+            <option value="price_desc">Price ↓</option>
+          </select>
+          <button
+            className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium border border-[#e5e5e5] rounded-lg hover:border-[#ccc] transition-colors whitespace-nowrap"
+            onClick={() => setFiltersOpen(v => !v)}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            {filtersOpen ? 'Less' : 'More'}
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6">
           <div className={`${filtersOpen ? 'block' : 'hidden'} lg:block`}>
