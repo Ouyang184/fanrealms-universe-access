@@ -73,14 +73,8 @@ export function useCreatorPosts() {
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
-        
-          postId: post.id,
-          postTitle: post.title,
-          author_id: post.author_id,
-          authorIdType: typeof post.author_id,
-          userId: user.id,
-          userIdType: typeof user.id
-        });
+
+
         
         // Determine post type based on tags or content keywords
         let postType: "article" | "image" | "video" | "audio" = "article";
@@ -107,15 +101,8 @@ export function useCreatorPosts() {
         // Check if post has multiple tiers or legacy single tier
         const hasMultipleTiers = post.post_tiers && post.post_tiers.length > 0;
         const hasLegacyTier = !!post.tier_id;
-        const isLocked = hasMultipleTiers || hasLegacyTier;
 
-          postId: post.id,
-          postTitle: post.title,
-          tierId: post.tier_id,
-          postTiers: post.post_tiers,
-          authorId: post.author_id,
-          isCreatorOwnPost: true,
-          canViewPost,
+
           isLocked
         });
 
@@ -151,12 +138,10 @@ export function useCreatorPosts() {
           // Additional check: if status is 'scheduled' but scheduled_for time has passed, treat as published
           if (status === 'scheduled' && post.scheduled_for) {
             const scheduledTime = new Date(post.scheduled_for);
-            const now = new Date();
-            
-            // If the scheduled time has passed, this should be treated as published
-            // But since this is creator's own posts view, they can see all their posts regardless
             if (scheduledTime <= now) {
-                postId: post.id,
+              // scheduled time has passed
+            }
+
                 scheduledFor: post.scheduled_for,
                 currentTime: now.toISOString()
               });
