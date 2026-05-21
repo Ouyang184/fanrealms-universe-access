@@ -215,14 +215,7 @@ export function useCreatorPosts() {
           attachments: attachments
         };
 
-          postId: transformedPost.id,
-          authorId: transformedPost.authorId,
-          availableTiers: transformedPost.availableTiers,
-          engagement: transformedPost.engagement,
-          status: transformedPost.status,
-          scheduleDate: transformedPost.scheduleDate
-        });
-          
+
         return transformedPost;
       });
     },
