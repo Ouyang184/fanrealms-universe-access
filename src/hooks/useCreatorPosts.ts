@@ -142,11 +142,9 @@ export function useCreatorPosts() {
             if (scheduledTime <= now) {
               // scheduled time has passed; creator still sees their own post
             }
-
-              });
-            }
           }
         }
+
         
         // Use REAL engagement data from the database
         const realEngagement = {
