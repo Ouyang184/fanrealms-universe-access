@@ -138,16 +138,13 @@ export function useCreatorPosts() {
           // Additional check: if status is 'scheduled' but scheduled_for time has passed, treat as published
           if (status === 'scheduled' && post.scheduled_for) {
             const scheduledTime = new Date(post.scheduled_for);
+            const now = new Date();
             if (scheduledTime <= now) {
-              // scheduled time has passed
-            }
-
-                scheduledFor: post.scheduled_for,
-                currentTime: now.toISOString()
-              });
+              // scheduled time has passed; creator still sees their own post
             }
           }
         }
+
         
         // Use REAL engagement data from the database
         const realEngagement = {
