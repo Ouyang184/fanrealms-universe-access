@@ -25,7 +25,7 @@ export const useCreatorMembership = (creatorId: string) => {
       console.log('[CreatorMembership] Fetching membership tiers for creator:', creatorId);
       
       const { data: tiersData, error: tiersError } = await supabase
-        .rpc('get_public_membership_tiers', { p_creator_id: creatorId });
+        .rpc('get_public_membership_tiers', { p_creator_id: creatorId, p_limit: 50, p_offset: 0 });
 
       if (tiersError) {
         console.error('[CreatorMembership] Error fetching tiers:', tiersError);
