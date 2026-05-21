@@ -90,10 +90,7 @@ export async function handleCreateSubscription(
     // Get tier details
     const { data: tier, error: tierError } = await supabaseService
       .from('membership_tiers')
-      .select(`
-        *,
-        creators!inner(stripe_account_id, display_name)
-      `)
+      .select(`*, creators!inner(display_name)`)
       .eq('id', tierId)
       .single();
 
@@ -102,7 +99,18 @@ export async function handleCreateSubscription(
       return createJsonResponse({ error: 'Membership tier not found' }, 404);
     }
 
-    if (!tier.creators.stripe_account_id) {
+    // Look up creator's Stripe Connect account from the dedicated table
+    const { data: creatorStripe } = await supabaseService
+      .from('creator_stripe_accounts')
+      .select('stripe_account_id, stripe_charges_enabled')
+      .eq('creator_id', creatorId)
+      .maybeSingle();
+
+    const stripeAccountId = creatorStripe?.stripe_account_id ?? null;
+    const isTestMode = (Deno.env.get('STRIPE_SECRET_KEY') || '').startsWith('sk_test_');
+
+    // In live mode, require a connected Stripe account
+    if (!isTestMode && !stripeAccountId) {
       console.error('[CreateSubscription] Creator Stripe account not set up');
       return createJsonResponse({ error: 'Creator payments not set up' }, 400);
     }
@@ -127,14 +135,12 @@ export async function handleCreateSubscription(
         .eq('id', tierId);
     }
 
-    // Create Stripe subscription
-    const subscription = await stripe.subscriptions.create({
+    // Build subscription params — only add transfer_data when a connected account exists
+    const subscriptionParams: any = {
       customer: stripeCustomerId,
       items: [{ price: stripePriceId }],
-      application_fee_percent: 1,
-      transfer_data: { destination: tier.creators.stripe_account_id },
       payment_behavior: 'default_incomplete',
-      payment_settings: { 
+      payment_settings: {
         save_default_payment_method: 'on_subscription',
         payment_method_types: ['card']
       },
@@ -145,7 +151,15 @@ export async function handleCreateSubscription(
         tier_id: tierId,
         platform_fee_percent: '1'
       }
-    });
+    };
+
+    if (stripeAccountId) {
+      subscriptionParams.application_fee_percent = 1;
+      subscriptionParams.transfer_data = { destination: stripeAccountId };
+    }
+
+    // Create Stripe subscription
+    const subscription = await stripe.subscriptions.create(subscriptionParams);
 
     console.log('[CreateSubscription] Stripe subscription created:', subscription.id);
 
