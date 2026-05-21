@@ -104,6 +104,7 @@ export function useCreatorPosts() {
         const isLocked = hasMultipleTiers || hasLegacyTier;
 
 
+
         // Create tier display info from multiple tiers
         let availableTiers: Array<{ id: string; name: string; color: string; }> = [];
         
@@ -137,6 +138,7 @@ export function useCreatorPosts() {
           if (status === 'scheduled' && post.scheduled_for) {
             const scheduledTime = new Date(post.scheduled_for);
             const now = new Date();
+            
             if (scheduledTime <= now) {
               // scheduled time has passed; creator still sees their own post
             }

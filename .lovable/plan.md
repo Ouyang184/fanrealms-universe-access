@@ -1,43 +1,43 @@
-# Why the Jobs page feels slow
+# Plan: One-Shot Auth Redirect Safeguards
 
-I profiled the running preview. The Jobs route itself is fine — the `useJobListings` query hits Supabase once and returns quickly. The slowness is **not** caused by the Jobs page code or by a slow DB query.
+Goal: prevent the auth-check effect from firing repeated navigations, repeated `purgeSupabaseAuthStorage` calls, or repeated login redirects within a single navigation/auth transition.
 
-What's actually happening:
+## Scope
 
-- **First Contentful Paint: ~11.6s**
-- **250 script requests** on first load, totaling ~2 MB
-- The largest single script is `DashboardAssetDetail.tsx` (39 KB, 1.6s) — a page that has nothing to do with `/jobs`
+Two files own this behavior:
+- `src/components/AuthGate.tsx` — global gate + redirect dispatcher
+- `src/lib/hooks/useAuthCheck.ts` — per-page auth check (used by `Settings`, `AccountSettings`)
 
-## Root cause
+No other files change. No business logic, no auth flow changes.
 
-`src/App.tsx` eagerly imports **every** page in the app at the top of the file (56 imports — Landing, Login, Dashboard, all Dashboard sub-pages, Marketplace, ProductDetail, Forum, Games, Subscriptions, Payment pages, etc.). So when a user opens `/jobs` cold, Vite has to fetch and parse the JS for *every* route in the app before the Jobs page can render. In dev that means 250 individual module requests; in production it means one big bundle that includes pages the user will never visit on this navigation.
+## Changes
 
-## Plan
+### 1. `src/components/AuthGate.tsx`
+Today `transitionKeyRef` tracks `user.id | complete | pathname+search`, but the effect can still re-enter on the same key if React re-runs it after a fast state change, and the post-render `decideTarget()` call runs every render with no guard.
 
-Convert the per-page imports in `src/App.tsx` to `React.lazy(...)` and wrap `<Routes>` in a `<Suspense fallback={<LoadingPage />}>`. Keep eager imports only for the small set of things needed on every render:
+Add:
+- A `lastDispatchedTargetRef` that stores the last `target` we navigated to. If the effect computes the same target for the same key, no-op.
+- A hard cap `MAX_REDIRECTS_PER_KEY = 1` per transition key, with a counter ref `dispatchCountRef` reset whenever the key changes. Second attempt within the same key logs once and bails.
+- Move the "flash prevention" `decideTarget` call into a `useMemo` keyed on the same inputs so it only recomputes when inputs change, and gate the loading splash on `pendingTarget !== null && pendingTarget !== current && !alreadyDispatched`.
+- Guard the `/signup` sign-out effect with the existing `signedOutForSignupRef` plus an additional check that `signingOut` is false AND we haven't already initiated — preventing a second `signOut()` if React re-runs the effect before `signingOut` flips.
 
-- `LandingPage`, `Login`, `Signup`, `NotFound`, `LoadingPage` (used as Suspense fallback)
-- Layout / provider components (`RootLayout`, `MainLayout`, `AuthProvider`, `AuthGuard`, `AuthGate`, `Toaster`, `TooltipProvider`, `QueryClientProvider`)
+### 2. `src/lib/hooks/useAuthCheck.ts`
+Today it has `lastNavRef` + `MAX_REDIRECTS = 3`, but it resets only on unmount and can still dispatch on every render until `isChecking` clears.
 
-Everything else — Dashboard pages, Marketplace, ProductDetail, Jobs, JobDetail, Forum, Games, Library pages, Devlogs, Jam, Payments, Subscriptions, Settings pages, legal pages — becomes:
+Add:
+- A composite `transitionKey` = `${user?.id ?? 'anon'}|${requireAuth}|${location.pathname}${location.search}`.
+- A `dispatchedKeyRef`: once we navigate for a key, mark it and skip until the key changes.
+- Reset `redirectCountRef` when the key changes (currently it only grows for the component's lifetime, which can wedge legitimate later redirects).
+- Remove the unused `cancelled` variable.
 
-```ts
-const Jobs = lazy(() => import("./pages/Jobs"));
-```
+### 3. No new tests required
+Existing Playwright specs cover the loop cases:
+- `e2e/auth-redirect-when-logged-in.spec.ts`
+- `e2e/incomplete-profile-loop.spec.ts`
+- `e2e/session-restore-on-reload.spec.ts`
 
-### Expected impact
+They should continue to pass; if any regress, fix forward.
 
-- `/jobs` cold load drops from ~250 scripts to only the modules it actually needs (Jobs + MainLayout + shared deps)
-- FCP should drop from ~11s to ~2–3s in dev, with a similar proportional win in production
-- Other heavy pages (Dashboard, ProductDetail) get the same benefit
-- No behavior or UI change — only how chunks are loaded
-
-### Out of scope
-
-- No changes to `useJobs.ts`, the Jobs UI, or the DB query
-- No design changes
-- No new dependencies
-
-### Files touched
-
-- `src/App.tsx` (only)
+## Out of scope
+- AuthContext, useAuthFunctions, edge functions, RLS — untouched.
+- No visual / UX changes (spinner copy stays the same).

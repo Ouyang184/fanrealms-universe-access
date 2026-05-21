@@ -10,11 +10,16 @@ import AuthGuard from "@/components/AuthGuard";
 import AuthGate from "@/components/AuthGate";
 import { MainLayout } from "@/components/Layout/MainLayout";
 
-// Eager — needed on first paint / auth flows
+// Eager — first-paint / common landing routes. Keeping these eager avoids
+// HMR fast-refresh "suspended while responding to synchronous input" errors.
 import LandingPage from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import Marketplace from "./pages/Marketplace";
+import Jobs from "./pages/Jobs";
+import Forum from "./pages/Forum";
+import GamesPage from "./pages/Games";
 
 // Lazy — split per route to keep cold loads small
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
@@ -34,13 +39,9 @@ const CreatorGuidelines = lazy(() => import("./pages/CreatorGuidelines"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
-const Marketplace = lazy(() => import("./pages/Marketplace"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Jobs = lazy(() => import("./pages/Jobs"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
-const Forum = lazy(() => import("./pages/Forum"));
 const ForumThread = lazy(() => import("./pages/ForumThread"));
-const GamesPage = lazy(() => import("./pages/Games"));
 const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const DashboardAssetsPage = lazy(() => import("./pages/DashboardAssets"));
 const DashboardAssetDetail = lazy(() => import("./pages/DashboardAssetDetail"));
