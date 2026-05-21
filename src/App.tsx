@@ -1,19 +1,17 @@
-import LandingPage from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import AuthCallback from "./pages/AuthCallback";
-
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// Eager — needed on first paint / auth flows / common landing routes.
-// Keeping these eager avoids Suspense fallbacks (and HMR fast-refresh
-// "suspended while responding to synchronous input" errors) on the
-// routes users hit first.
+import { TooltipProvider } from "@/components/ui/tooltip";
+import RootLayout from "@/components/RootLayout";
+import AuthGuard from "@/components/AuthGuard";
+import AuthGate from "@/components/AuthGate";
+import { MainLayout } from "@/components/Layout/MainLayout";
+
+// Eager — first-paint / common landing routes. Keeping these eager avoids
+// HMR fast-refresh "suspended while responding to synchronous input" errors.
 import LandingPage from "./pages/Landing";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -44,26 +42,24 @@ const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const JobDetail = lazy(() => import("./pages/JobDetail"));
 const ForumThread = lazy(() => import("./pages/ForumThread"));
+const DashboardPage = lazy(() => import("./pages/Dashboard"));
+const DashboardAssetsPage = lazy(() => import("./pages/DashboardAssets"));
+const DashboardAssetDetail = lazy(() => import("./pages/DashboardAssetDetail"));
+const DashboardSalesPage = lazy(() => import("./pages/DashboardSales"));
+const DashboardProjectsPage = lazy(() => import("./pages/DashboardProjects"));
+const DashboardProjectNewPage = lazy(() => import("./pages/DashboardProjectNew"));
+const DashboardProjectDetailPage = lazy(() => import("./pages/DashboardProjectDetail"));
+const SellerProfilePage = lazy(() => import("./pages/SellerProfile"));
+const LibraryPage = lazy(() => import("./pages/Library"));
+const LibraryReviewsPage = lazy(() => import("./pages/LibraryReviews"));
+const LibraryRecommendationsPage = lazy(() => import("./pages/LibraryRecommendations"));
+const DashboardDevlogsPage = lazy(() => import("./pages/DashboardDevlogs"));
+const DashboardDevlogEditPage = lazy(() => import("./pages/DashboardDevlogEdit"));
+const JamPage = lazy(() => import("./pages/JamPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const CommissionPaymentPage = lazy(() => import("./pages/CommissionPaymentPage"));
+const SubscriptionsPage = lazy(() => import("./pages/Subscriptions"));
 
-import GamesPage from "./pages/Games";
-// New pages — will be uncommented as each is built in subsequent tasks
-import DashboardPage from "./pages/Dashboard";
-import DashboardAssetsPage from "./pages/DashboardAssets";
-import DashboardAssetDetail from "./pages/DashboardAssetDetail";
-import DashboardSalesPage from "./pages/DashboardSales";
-import DashboardProjectsPage from "./pages/DashboardProjects";
-import DashboardProjectNewPage from "./pages/DashboardProjectNew";
-import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
-import SellerProfilePage from "./pages/SellerProfile";
-import LibraryPage from "./pages/Library";
-import LibraryReviewsPage from "./pages/LibraryReviews";
-import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
-import DashboardDevlogsPage from "./pages/DashboardDevlogs";
-import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
-import JamPage from './pages/JamPage';
-import PaymentPage from './pages/PaymentPage';
-import CommissionPaymentPage from './pages/CommissionPaymentPage';
-import SubscriptionsPage from './pages/Subscriptions';
 
 
 
