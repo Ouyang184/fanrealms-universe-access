@@ -138,6 +138,7 @@ export default function App() {
             <RootLayout>
               <OAuthCallbackRedirector />
               <AuthGate>
+              <Suspense fallback={<LoadingPage />}>
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<HomeRedirect />} />
@@ -233,6 +234,7 @@ export default function App() {
                 {/* 404 */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
               </AuthGate>
               <Toaster />
             </RootLayout>
