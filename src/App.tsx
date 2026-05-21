@@ -1,12 +1,6 @@
-import LandingPage from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import AuthCallback from "./pages/AuthCallback";
-
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,48 +8,57 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import RootLayout from "@/components/RootLayout";
 import AuthGuard from "@/components/AuthGuard";
 import AuthGate from "@/components/AuthGate";
-import SearchResultsPage from "./pages/SearchResults";
-import Logout from "./pages/Logout";
-import LogoutLoading from "./pages/LogoutLoading";
-import AccountSettings from "./pages/AccountSettings";
 import { MainLayout } from "@/components/Layout/MainLayout";
-import Terms from "./pages/Terms";
-import Support from "./pages/Support";
-import CookiePolicy from "./pages/CookiePolicy";
-import About from "./pages/About";
-import Payments from "./pages/Payments";
-import Security from "./pages/Security";
-import CommunityGuidelines from "./pages/CommunityGuidelines";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CreatorGuidelines from "./pages/CreatorGuidelines";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import CompleteProfile from "./pages/CompleteProfile";
-import Marketplace from "./pages/Marketplace";
-import ProductDetail from "./pages/ProductDetail";
-import Jobs from "./pages/Jobs";
-import JobDetail from "./pages/JobDetail";
-import Forum from "./pages/Forum";
-import ForumThread from "./pages/ForumThread";
-import GamesPage from "./pages/Games";
-// New pages — will be uncommented as each is built in subsequent tasks
-import DashboardPage from "./pages/Dashboard";
-import DashboardAssetsPage from "./pages/DashboardAssets";
-import DashboardAssetDetail from "./pages/DashboardAssetDetail";
-import DashboardSalesPage from "./pages/DashboardSales";
-import DashboardProjectsPage from "./pages/DashboardProjects";
-import DashboardProjectNewPage from "./pages/DashboardProjectNew";
-import DashboardProjectDetailPage from "./pages/DashboardProjectDetail";
-import SellerProfilePage from "./pages/SellerProfile";
-import LibraryPage from "./pages/Library";
-import LibraryReviewsPage from "./pages/LibraryReviews";
-import LibraryRecommendationsPage from "./pages/LibraryRecommendations";
-import DashboardDevlogsPage from "./pages/DashboardDevlogs";
-import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
-import JamPage from './pages/JamPage';
-import PaymentPage from './pages/PaymentPage';
-import CommissionPaymentPage from './pages/CommissionPaymentPage';
-import SubscriptionsPage from './pages/Subscriptions';
+
+// Eager — needed on first paint / auth flows
+import LandingPage from "./pages/Landing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import NotFound from "./pages/NotFound";
+
+// Lazy — split per route to keep cold loads small
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const SearchResultsPage = lazy(() => import("./pages/SearchResults"));
+const Logout = lazy(() => import("./pages/Logout"));
+const LogoutLoading = lazy(() => import("./pages/LogoutLoading"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Support = lazy(() => import("./pages/Support"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const About = lazy(() => import("./pages/About"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Security = lazy(() => import("./pages/Security"));
+const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const CreatorGuidelines = lazy(() => import("./pages/CreatorGuidelines"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Jobs = lazy(() => import("./pages/Jobs"));
+const JobDetail = lazy(() => import("./pages/JobDetail"));
+const Forum = lazy(() => import("./pages/Forum"));
+const ForumThread = lazy(() => import("./pages/ForumThread"));
+const GamesPage = lazy(() => import("./pages/Games"));
+const DashboardPage = lazy(() => import("./pages/Dashboard"));
+const DashboardAssetsPage = lazy(() => import("./pages/DashboardAssets"));
+const DashboardAssetDetail = lazy(() => import("./pages/DashboardAssetDetail"));
+const DashboardSalesPage = lazy(() => import("./pages/DashboardSales"));
+const DashboardProjectsPage = lazy(() => import("./pages/DashboardProjects"));
+const DashboardProjectNewPage = lazy(() => import("./pages/DashboardProjectNew"));
+const DashboardProjectDetailPage = lazy(() => import("./pages/DashboardProjectDetail"));
+const SellerProfilePage = lazy(() => import("./pages/SellerProfile"));
+const LibraryPage = lazy(() => import("./pages/Library"));
+const LibraryReviewsPage = lazy(() => import("./pages/LibraryReviews"));
+const LibraryRecommendationsPage = lazy(() => import("./pages/LibraryRecommendations"));
+const DashboardDevlogsPage = lazy(() => import("./pages/DashboardDevlogs"));
+const DashboardDevlogEditPage = lazy(() => import("./pages/DashboardDevlogEdit"));
+const JamPage = lazy(() => import("./pages/JamPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const CommissionPaymentPage = lazy(() => import("./pages/CommissionPaymentPage"));
+const SubscriptionsPage = lazy(() => import("./pages/Subscriptions"));
+
 
 
 
