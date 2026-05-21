@@ -101,10 +101,8 @@ export function useCreatorPosts() {
         // Check if post has multiple tiers or legacy single tier
         const hasMultipleTiers = post.post_tiers && post.post_tiers.length > 0;
         const hasLegacyTier = !!post.tier_id;
+        const isLocked = hasMultipleTiers || hasLegacyTier;
 
-
-          isLocked
-        });
 
         // Create tier display info from multiple tiers
         let availableTiers: Array<{ id: string; name: string; color: string; }> = [];
