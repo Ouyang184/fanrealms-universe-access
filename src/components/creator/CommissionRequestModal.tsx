@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ExistingRequestDialog } from './ExistingRequestDialog';
 import { Button } from '@/components/ui/button';
 import { FileText, Clock } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface CommissionRequestModalProps {
   children: React.ReactNode;
@@ -25,6 +26,8 @@ export function CommissionRequestModal({
   specificCommissionType 
 }: CommissionRequestModalProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [showExistingDialog, setShowExistingDialog] = useState(false);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
@@ -60,6 +63,12 @@ export function CommissionRequestModal({
 
   // Handle opening the modal with smart logic
   const handleOpenModal = () => {
+    // Require login — redirect back here after sign-in
+    if (!user) {
+      navigate(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
+      return;
+    }
+
     if (isCheckingExisting) return;
     
     // Check for existing requests first

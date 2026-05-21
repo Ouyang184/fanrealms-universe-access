@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useCreateSubscription } from '@/hooks/stripe/useCreateSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface ActiveSubscribeButtonProps {
   tierId: string;
@@ -21,6 +22,8 @@ export function ActiveSubscribeButton({
   const { user } = useAuth();
   const { createSubscription, isProcessing } = useCreateSubscription();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isButtonLocked, setIsButtonLocked] = useState(false);
 
   const handleSubscribe = async () => {
@@ -36,12 +39,8 @@ export function ActiveSubscribeButton({
     });
 
     if (!user) {
-      console.log('[ActiveSubscribeButton] No user authenticated');
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to subscribe to creators.",
-        variant: "destructive"
-      });
+      // Redirect to login with returnTo so they come back here after signing in
+      navigate(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
       return;
     }
 
