@@ -44,6 +44,7 @@ export function useCreatorProfileData() {
         .maybeSingle();
       
       if (creatorError) {
+        return null;
       }
       
       const creatorProfileData = {

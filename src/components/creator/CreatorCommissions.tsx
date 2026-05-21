@@ -153,11 +153,6 @@ export function CreatorCommissions({ creator }: CreatorCommissionsProps) {
           <p className="text-muted-foreground">
             This creator hasn't set up any commission types yet.
           </p>
-          <div className="mt-4 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              Debug info: Creator accepts commissions: {creator.accepts_commissions ? 'Yes' : 'No'}, but no commission types found.
-            </p>
-          </div>
         </div>
       );
     }

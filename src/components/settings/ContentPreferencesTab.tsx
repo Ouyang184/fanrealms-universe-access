@@ -112,19 +112,6 @@ export function ContentPreferencesTab({
           </div>
         )}
         
-        {/* Debug information */}
-        <div className="p-4 bg-gray-100 border border-gray-200 rounded-lg">
-          <p className="text-xs text-gray-600 font-mono mb-2">
-            Debug Info:
-          </p>
-          <div className="text-xs text-gray-600 font-mono space-y-1">
-            <div>Age Verified: {String(isAgeVerified)}</div>
-            <div>NSFW Enabled: {showNSFW ? 'Yes' : 'No'}</div>
-            <div>Modal Open: {showVerificationModal ? 'Yes' : 'No'}</div>
-            <div>Loading: {isUpdating ? 'Yes' : 'No'}</div>
-            <div>User ID: {user?.id || 'None'}</div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

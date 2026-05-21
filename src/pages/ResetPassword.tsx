@@ -68,6 +68,8 @@ const ResetPassword = () => {
 
           if (data.session) {
             setHasValidSession(true);
+            setIsValidatingSession(false);
+            return;
           }
         } else {
           const { data: { session }, error } = await supabase.auth.getSession();

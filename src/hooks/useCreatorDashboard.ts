@@ -21,7 +21,7 @@ export function useCreatorDashboard() {
         .from('creators')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching creator profile:', error);

@@ -2,6 +2,7 @@ import { DollarSign, Clock, Calendar, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSecureCommissionInfo } from '@/hooks/useSecureCommissionInfo';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface SecureCommissionDisplayProps {
   creatorId: string;
@@ -9,6 +10,7 @@ interface SecureCommissionDisplayProps {
 
 export function SecureCommissionDisplay({ creatorId }: SecureCommissionDisplayProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { commissionInfo, isLoading, error, isAuthenticated } = useSecureCommissionInfo(creatorId);
 
   if (isLoading) {
@@ -31,7 +33,7 @@ export function SecureCommissionDisplay({ creatorId }: SecureCommissionDisplayPr
         <p className="text-sm text-muted-foreground">
           Sign in to view pricing, turnaround times, and availability
         </p>
-        <Button variant="outline" size="sm" onClick={() => window.location.href = '/login'}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/login')}>
           Sign In to View Details
         </Button>
       </div>

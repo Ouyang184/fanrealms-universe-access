@@ -1,13 +1,15 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface ServiceNotificationBannerProps {
   hasPendingCancellations: boolean;
 }
 
-export const ServiceNotificationBanner: React.FC<ServiceNotificationBannerProps> = ({ 
-  hasPendingCancellations 
+export const ServiceNotificationBanner: React.FC<ServiceNotificationBannerProps> = ({
+  hasPendingCancellations
 }) => {
+  const navigate = useNavigate();
   if (!hasPendingCancellations) {
     return null;
   }
@@ -24,7 +26,7 @@ export const ServiceNotificationBanner: React.FC<ServiceNotificationBannerProps>
             You'll continue to have access until then. To prevent cancellation, go to{" "}
             <button 
               className="underline font-medium"
-              onClick={() => window.location.href = '/subscriptions'}
+              onClick={() => navigate('/subscriptions')}
             >
               Your Subscriptions
             </button>
