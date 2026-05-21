@@ -19,6 +19,7 @@ interface Item {
 const EXPLORE: Item[] = [
   { to: '/marketplace', label: 'Marketplace' },
   { to: '/library', label: 'My library' },
+  { to: '/subscriptions', label: 'My subscriptions' },
 ];
 
 const CREATE: Item[] = [

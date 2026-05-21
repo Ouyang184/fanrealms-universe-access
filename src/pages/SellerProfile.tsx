@@ -8,11 +8,12 @@ import {
 } from '@/hooks/useSellerProfile';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-react';
+import { Package, CalendarDays, Users, Globe, FileText, Gamepad2, CrownIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { SocialLinks } from '@/components/SocialLinks';
 import { useState, useEffect } from 'react';
+import { CreatorMembership } from '@/components/creator/CreatorMembership';
 
 export default function SellerProfilePage() {
   const { username } = useParams<{ username: string }>();
@@ -204,6 +205,17 @@ export default function SellerProfilePage() {
               </div>
             )}
           </section>
+
+          {/* Membership Tiers */}
+          {seller && (
+            <section className="mt-10">
+              <div className="flex items-center gap-2 mb-4">
+                <CrownIcon className="w-4 h-4 text-amber-500" />
+                <h2 className="text-[16px] font-bold tracking-[-0.3px]">Membership</h2>
+              </div>
+              <CreatorMembership creatorId={seller.id} />
+            </section>
+          )}
 
           {/* Latest posts */}
           <section className="mt-10 mb-12">

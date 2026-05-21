@@ -55,6 +55,7 @@ import DashboardDevlogEditPage from "./pages/DashboardDevlogEdit";
 import JamPage from './pages/JamPage';
 import PaymentPage from './pages/PaymentPage';
 import CommissionPaymentPage from './pages/CommissionPaymentPage';
+import SubscriptionsPage from './pages/Subscriptions';
 
 
 
@@ -196,6 +197,7 @@ export default function App() {
                 {/* Payment flows */}
                 <Route path="/payment" element={<AuthGuard><PaymentPage /></AuthGuard>} />
                 <Route path="/commissions/:id/pay" element={<AuthGuard><CommissionPaymentPage /></AuthGuard>} />
+                <Route path="/subscriptions" element={<AuthGuard><SubscriptionsPage /></AuthGuard>} />
 
                 {/* Library (buyer side) */}
                 <Route path="/library" element={<AuthGuard><LibraryPage /></AuthGuard>} />
