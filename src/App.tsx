@@ -10,33 +10,41 @@ import NotFound from "./pages/NotFound";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import RootLayout from "@/components/RootLayout";
-import AuthGuard from "@/components/AuthGuard";
-import AuthGate from "@/components/AuthGate";
-import SearchResultsPage from "./pages/SearchResults";
-import Logout from "./pages/Logout";
-import LogoutLoading from "./pages/LogoutLoading";
-import AccountSettings from "./pages/AccountSettings";
-import { MainLayout } from "@/components/Layout/MainLayout";
-import Terms from "./pages/Terms";
-import Support from "./pages/Support";
-import CookiePolicy from "./pages/CookiePolicy";
-import About from "./pages/About";
-import Payments from "./pages/Payments";
-import Security from "./pages/Security";
-import CommunityGuidelines from "./pages/CommunityGuidelines";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CreatorGuidelines from "./pages/CreatorGuidelines";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import CompleteProfile from "./pages/CompleteProfile";
+// Eager — needed on first paint / auth flows / common landing routes.
+// Keeping these eager avoids Suspense fallbacks (and HMR fast-refresh
+// "suspended while responding to synchronous input" errors) on the
+// routes users hit first.
+import LandingPage from "./pages/Landing";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
-import ProductDetail from "./pages/ProductDetail";
 import Jobs from "./pages/Jobs";
-import JobDetail from "./pages/JobDetail";
 import Forum from "./pages/Forum";
-import ForumThread from "./pages/ForumThread";
+import GamesPage from "./pages/Games";
+
+// Lazy — split per route to keep cold loads small
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const SearchResultsPage = lazy(() => import("./pages/SearchResults"));
+const Logout = lazy(() => import("./pages/Logout"));
+const LogoutLoading = lazy(() => import("./pages/LogoutLoading"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Support = lazy(() => import("./pages/Support"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const About = lazy(() => import("./pages/About"));
+const Payments = lazy(() => import("./pages/Payments"));
+const Security = lazy(() => import("./pages/Security"));
+const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const CreatorGuidelines = lazy(() => import("./pages/CreatorGuidelines"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const JobDetail = lazy(() => import("./pages/JobDetail"));
+const ForumThread = lazy(() => import("./pages/ForumThread"));
+
 import GamesPage from "./pages/Games";
 // New pages — will be uncommented as each is built in subsequent tasks
 import DashboardPage from "./pages/Dashboard";
