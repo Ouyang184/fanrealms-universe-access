@@ -137,6 +137,7 @@ export default function App() {
             <RootLayout>
               <OAuthCallbackRedirector />
               <AuthGate>
+              <Suspense fallback={<LoadingPage />}>
               <Routes>
                 {/* Public */}
                 <Route path="/" element={<HomeRedirect />} />
