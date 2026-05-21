@@ -73,14 +73,8 @@ export function useCreatorPosts() {
       return data.map((post): CreatorPost => {
         const username = post.users?.username || 'Unknown Creator';
         const profilePicture = post.users?.profile_picture || null;
-        
-          postId: post.id,
-          postTitle: post.title,
-          author_id: post.author_id,
-          authorIdType: typeof post.author_id,
-          userId: user.id,
-          userIdType: typeof user.id
-        });
+
+
         
         // Determine post type based on tags or content keywords
         let postType: "article" | "image" | "video" | "audio" = "article";
