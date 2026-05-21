@@ -103,15 +103,7 @@ export function useCreatorPosts() {
         const hasLegacyTier = !!post.tier_id;
         const isLocked = hasMultipleTiers || hasLegacyTier;
 
-          postId: post.id,
-          postTitle: post.title,
-          tierId: post.tier_id,
-          postTiers: post.post_tiers,
-          authorId: post.author_id,
-          isCreatorOwnPost: true,
-          canViewPost,
-          isLocked
-        });
+
 
         // Create tier display info from multiple tiers
         let availableTiers: Array<{ id: string; name: string; color: string; }> = [];
@@ -147,12 +139,10 @@ export function useCreatorPosts() {
             const scheduledTime = new Date(post.scheduled_for);
             const now = new Date();
             
-            // If the scheduled time has passed, this should be treated as published
-            // But since this is creator's own posts view, they can see all their posts regardless
             if (scheduledTime <= now) {
-                postId: post.id,
-                scheduledFor: post.scheduled_for,
-                currentTime: now.toISOString()
+              // scheduled time has passed; creator still sees their own post
+            }
+
               });
             }
           }
