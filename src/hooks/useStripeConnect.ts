@@ -11,20 +11,25 @@ export const useStripeConnect = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get creator's Stripe Connect status
+  // Get creator's Stripe Connect status (boolean flags only, never the raw account id)
   const { data: connectStatus, isLoading: statusLoading } = useQuery({
     queryKey: ['stripeConnectStatus', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await (supabase as any)
         .from('creator_stripe_status')
-        .select('stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled')
+        .select('is_connected, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as {
+        is_connected: boolean | null;
+        stripe_onboarding_complete: boolean | null;
+        stripe_charges_enabled: boolean | null;
+        stripe_payouts_enabled: boolean | null;
+      } | null;
     },
     enabled: !!user?.id
   });
@@ -40,7 +45,6 @@ export const useStripeConnect = () => {
       return data;
     },
     onSuccess: (data) => {
-      // Redirect to Stripe onboarding
       window.location.href = data.onboardingUrl;
     },
     onError: (error) => {
@@ -53,17 +57,16 @@ export const useStripeConnect = () => {
     }
   });
 
-  // Create login link to Stripe Dashboard
-  const createLoginLink = async (accountId: string) => {
+  // Create login link to Stripe Dashboard — server resolves the account id
+  const createLoginLink = async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'create_login_link', accountId }
+        body: { action: 'create_login_link' }
       });
 
       if (error) throw error;
-      
-      // Open Stripe dashboard in new tab
+
       window.open(data.loginUrl, '_blank');
     } catch (error) {
       console.error('Error creating login link:', error);
@@ -77,20 +80,18 @@ export const useStripeConnect = () => {
     }
   };
 
-  // Get account balance
+  // Get account balance — server resolves the account id
   const { data: balance, refetch: refetchBalance } = useQuery({
-    queryKey: ['stripeBalance', connectStatus?.stripe_account_id],
+    queryKey: ['stripeBalance', user?.id],
     queryFn: async () => {
-      if (!connectStatus?.stripe_account_id) return null;
-      
       const { data, error } = await supabase.functions.invoke('stripe-connect', {
-        body: { action: 'get_balance', accountId: connectStatus.stripe_account_id }
+        body: { action: 'get_balance' }
       });
 
       if (error) throw error;
       return data.balance;
     },
-    enabled: !!connectStatus?.stripe_account_id && connectStatus.stripe_charges_enabled
+    enabled: !!connectStatus?.is_connected && !!connectStatus?.stripe_charges_enabled
   });
 
   return {
