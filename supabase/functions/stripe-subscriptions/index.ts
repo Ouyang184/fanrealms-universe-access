@@ -35,31 +35,6 @@ serve(async (req) => {
   try {
     console.log('📥 [STRIPE-SUBSCRIPTIONS] Processing request...');
 
-    // Parse request body with detailed error handling
-    let body;
-    try {
-      const bodyText = await req.text();
-      console.log('📝 [STRIPE-SUBSCRIPTIONS] Raw body received:', bodyText.length > 0 ? 'Non-empty' : 'Empty');
-      
-      if (!bodyText) {
-        console.log('❌ [STRIPE-SUBSCRIPTIONS] Empty request body');
-        return createJsonResponse({ error: 'Request body is required' }, 400);
-      }
-      
-      body = JSON.parse(bodyText);
-      console.log('📦 [STRIPE-SUBSCRIPTIONS] Request body parsed successfully:', {
-        action: body?.action,
-        hasClientSecret: !!body?.clientSecret,
-        bodyKeys: Object.keys(body || {})
-      });
-    } catch (parseError) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Body parse error:', {
-        message: parseError.message,
-        name: parseError.name
-      });
-      return createJsonResponse({ error: 'Invalid JSON body' }, 400);
-    }
-
     // Validate environment variables - USE TEST/SANDBOX KEYS FIRST
     const stripeKey =
       Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
@@ -68,64 +43,46 @@ serve(async (req) => {
       Deno.env.get('STRIPE_SECRET_KEY_LIVE');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    console.log('🔑 [STRIPE-SUBSCRIPTIONS] Environment check (TEST MODE):', {
-      hasStripeKey: !!stripeKey,
-      stripeKeyPrefix: stripeKey ? stripeKey.substring(0, 12) + '...' : 'N/A',
-      hasSupabaseUrl: !!supabaseUrl,
-      supabaseUrlDomain: supabaseUrl ? new URL(supabaseUrl).hostname : 'N/A',
-      hasServiceKey: !!supabaseServiceKey,
-      serviceKeyPrefix: supabaseServiceKey ? supabaseServiceKey.substring(0, 12) + '...' : 'N/A'
-    });
 
     if (!stripeKey) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Stripe test key');
-      return createJsonResponse({ error: 'Missing Stripe test configuration' }, 500);
+      return createJsonResponse({ error: 'Missing Stripe configuration' }, 500);
     }
-
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Missing Supabase config');
       return createJsonResponse({ error: 'Missing Supabase configuration' }, 500);
     }
 
-    // Test Stripe key validity
-    try {
-      const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
-      console.log('🔧 [STRIPE-SUBSCRIPTIONS] Testing Stripe key...');
-      await stripe.balance.retrieve();
-      console.log('✅ [STRIPE-SUBSCRIPTIONS] Stripe key is valid');
-    } catch (stripeTestError) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Stripe key test failed:', {
-        message: stripeTestError.message,
-        type: stripeTestError.type,
-        code: stripeTestError.code
-      });
-      return createJsonResponse({ error: 'Payment service unavailable' }, 500);
-    }
-
-    // Initialize clients
-    const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
+    // Initialize Supabase client (needed to authenticate user)
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    console.log('🔧 [STRIPE-SUBSCRIPTIONS] Clients initialized successfully');
 
-    // Authenticate user with detailed logging
+    // AUTH FIRST: Authenticate user before parsing body or calling Stripe
     let user;
     try {
       user = await authenticateUser(req, supabase);
-      console.log('👤 [STRIPE-SUBSCRIPTIONS] User authenticated successfully:', {
-        userId: user.id,
-        email: user.email,
-        hasEmail: !!user.email
-      });
     } catch (authError) {
-      console.log('❌ [STRIPE-SUBSCRIPTIONS] Authentication failed:', {
-        message: authError.message,
-        name: authError.name,
-        stack: authError.stack?.substring(0, 200) + '...'
-      });
+      console.log('❌ [STRIPE-SUBSCRIPTIONS] Authentication failed:', authError?.message);
       return createJsonResponse({ error: 'Authentication failed' }, 401);
     }
+
+    // Limit pre-parse body size
+    const contentLength = parseInt(req.headers.get('content-length') || '0', 10);
+    if (contentLength > 16 * 1024) {
+      return createJsonResponse({ error: 'Request body too large' }, 413);
+    }
+
+    // Parse request body (post-auth)
+    let body;
+    try {
+      const bodyText = await req.text();
+      if (!bodyText) {
+        return createJsonResponse({ error: 'Request body is required' }, 400);
+      }
+      body = JSON.parse(bodyText);
+    } catch (parseError) {
+      return createJsonResponse({ error: 'Invalid JSON body' }, 400);
+    }
+
+    // Initialize Stripe client
+    const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
     // Handle different actions
     const action = body.action;
