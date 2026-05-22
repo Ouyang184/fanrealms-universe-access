@@ -8,8 +8,6 @@ interface UserSubscriptionWithDetails {
   user_id: string;
   creator_id: string;
   tier_id: string;
-  stripe_subscription_id: string | null;
-  stripe_customer_id: string | null;
   status: string;
   amount: number;
   current_period_start: string | null;
@@ -45,12 +43,22 @@ export const useUserSubscriptions = () => {
     queryKey: ['userActiveSubscriptions', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      
+
+
       const { data: subscriptions, error } = await supabase
         .from('user_subscriptions')
         .select(`
-          *,
+          id,
+          user_id,
+          creator_id,
+          tier_id,
+          status,
+          amount,
+          current_period_start,
+          current_period_end,
+          cancel_at_period_end,
+          created_at,
+          updated_at,
           creators!fk_user_subscriptions_creator_id (
             id,
             display_name,

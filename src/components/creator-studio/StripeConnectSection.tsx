@@ -37,7 +37,7 @@ export function StripeConnectSection() {
     );
   }
 
-  const isConnected = connectStatus?.stripe_account_id;
+  const isConnected = !!connectStatus?.is_connected;
   const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
   const canReceivePayments = connectStatus?.stripe_charges_enabled;
 
@@ -104,7 +104,7 @@ export function StripeConnectSection() {
             // Only show dashboard access for fully onboarded accounts
             <Button
               variant="outline"
-              onClick={() => createLoginLink(connectStatus.stripe_account_id)}
+              onClick={() => createLoginLink()}
               disabled={isLoading}
             >
               <ExternalLink className="mr-2 h-4 w-4" />

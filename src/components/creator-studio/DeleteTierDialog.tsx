@@ -35,23 +35,10 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
     try {
       console.log('Starting tier deletion process for tier:', tierId);
 
-      // First, get the tier details including Stripe IDs
-      const { data: tierData, error: tierFetchError } = await supabase
-        .from("membership_tiers")
-        .select("stripe_product_id, stripe_price_id, title")
-        .eq("id", tierId)
-        .single();
-
-      if (tierFetchError) {
-        throw new Error("Could not fetch tier details");
-      }
-
-      console.log('Tier data to delete:', tierData);
-
       // Check if there are active subscriptions for this tier
       const { data: activeSubscriptions, error: subscriptionsError } = await supabase
         .from("user_subscriptions")
-        .select("id, stripe_subscription_id")
+        .select("id")
         .eq("tier_id", tierId)
         .eq("status", "active");
 
@@ -81,7 +68,7 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
       // If there are posts, remove the tier association from them
       if (associatedPosts && associatedPosts.length > 0) {
         console.log(`Found ${associatedPosts.length} posts associated with this tier. Removing tier association...`);
-        
+
         const { error: updatePostsError } = await supabase
           .from("posts")
           .update({ tier_id: null })
@@ -95,32 +82,25 @@ export function DeleteTierDialog({ isOpen, onClose, tierId, tierName }: DeleteTi
         console.log('Successfully removed tier association from posts');
       }
 
-      // Delete from Stripe first (completely, not just archive)
-      if (tierData.stripe_product_id) {
-        try {
-          console.log('Deleting Stripe product completely:', tierData.stripe_product_id);
-          
-          const { error: stripeError } = await supabase.functions.invoke('delete-stripe-product', {
-            body: { 
-              productId: tierData.stripe_product_id
-            }
-          });
+      // Delete from Stripe — edge function resolves the product id server-side from tierId
+      try {
+        console.log('Deleting Stripe product for tier:', tierId);
+        const { error: stripeError } = await supabase.functions.invoke('delete-stripe-product', {
+          body: { tierId },
+        });
 
-          if (stripeError) {
-            console.error('Error deleting Stripe product:', stripeError);
-            // Continue with database deletion even if Stripe deletion fails
-            toast({
-              title: "Warning",
-              description: "Tier deleted from database, but Stripe product could not be completely removed. You may need to manually delete it in Stripe.",
-              variant: "destructive",
-            });
-          } else {
-            console.log('Stripe product deleted successfully');
-          }
-        } catch (stripeError) {
-          console.error('Error with Stripe deletion:', stripeError);
-          // Continue with database deletion
+        if (stripeError) {
+          console.error('Error deleting Stripe product:', stripeError);
+          toast({
+            title: "Warning",
+            description: "Tier deleted from database, but Stripe product could not be completely removed. You may need to manually delete it in Stripe.",
+            variant: "destructive",
+          });
+        } else {
+          console.log('Stripe product deleted successfully');
         }
+      } catch (stripeError) {
+        console.error('Error with Stripe deletion:', stripeError);
       }
 
       // Delete the tier from database completely
