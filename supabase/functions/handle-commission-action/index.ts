@@ -15,16 +15,45 @@ serve(async (req) => {
 
   try {
     console.log('Handle commission action function started');
-    
+
+    // Authenticate FIRST — before touching the body or initializing heavy clients.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration missing');
+      return new Response(JSON.stringify({ error: 'Supabase configuration missing' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
+    }
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    // Now safe to parse body and init Stripe.
     const { commissionId, action } = await req.json();
-    
     console.log('Handling commission action:', { commissionId, action });
 
-    // Validate input
     if (!commissionId || !action) {
       console.error('Missing required parameters:', { commissionId, action });
-      return new Response(JSON.stringify({ 
-        error: 'Missing required parameters: commissionId and action are required' 
+      return new Response(JSON.stringify({
+        error: 'Missing required parameters: commissionId and action are required'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
@@ -33,70 +62,25 @@ serve(async (req) => {
 
     if (!['accept', 'reject'].includes(action)) {
       console.error('Invalid action:', action);
-      return new Response(JSON.stringify({ 
-        error: 'Invalid action. Must be "accept" or "reject"' 
+      return new Response(JSON.stringify({
+        error: 'Invalid action. Must be "accept" or "reject"'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       });
     }
 
-    // Initialize Stripe
     const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
     if (!stripeKey) {
       console.error('STRIPE_SECRET_KEY not found');
-      return new Response(JSON.stringify({ 
-        error: 'Stripe configuration missing' 
-      }), {
+      return new Response(JSON.stringify({ error: 'Stripe configuration missing' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       });
     }
+    const stripe = new Stripe(stripeKey, { apiVersion: '2023-10-16' });
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16',
-    });
 
-    // Initialize Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Supabase configuration missing');
-      return new Response(JSON.stringify({ 
-        error: 'Supabase configuration missing' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
-
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('No authorization header');
-      return new Response(JSON.stringify({ 
-        error: 'Authentication required' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
-    
-    if (authError || !user) {
-      console.error('Authentication failed:', authError);
-      return new Response(JSON.stringify({ 
-        error: 'Authentication failed' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
 
     console.log('User authenticated:', user.id);
 

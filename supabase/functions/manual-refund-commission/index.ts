@@ -21,29 +21,30 @@ serve(async (req) => {
   }
 
   try {
-    const { commissionId, reason } = await req.json();
-
-    console.log('Processing manual refund for commission:', { commissionId, reason });
-
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    });
+    // Authenticate FIRST — before parsing the body or initializing Stripe.
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
+    }
 
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return jsonResponse({ error: 'Unauthorized' }, 401);
-    }
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
-
     if (authError || !user) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
+
+    const { commissionId, reason } = await req.json();
+    console.log('Processing manual refund for commission:', { commissionId, reason });
+
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    });
+
 
     const { data: commissionRequest, error: fetchError } = await supabaseService
       .from('commission_requests')

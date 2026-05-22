@@ -1848,6 +1848,24 @@ export type Database = {
           },
         ]
       }
+      pending_2fa_challenges: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+        }
+        Relationships: []
+      }
       post_reads: {
         Row: {
           created_at: string
@@ -3062,7 +3080,6 @@ export type Database = {
           id: string
           is_nsfw: boolean
           profile_image_url: string
-          stripe_account_id: string
           stripe_charges_enabled: boolean
           stripe_onboarding_complete: boolean
           stripe_payouts_enabled: boolean
@@ -3206,7 +3223,6 @@ export type Database = {
               is_nsfw: boolean
               is_owner: boolean
               profile_image_url: string
-              stripe_account_id: string
               stripe_charges_enabled: boolean
               stripe_onboarding_complete: boolean
               stripe_payouts_enabled: boolean
@@ -3251,7 +3267,6 @@ export type Database = {
           id: string
           is_nsfw: boolean
           profile_image_url: string
-          stripe_account_id: string
           stripe_charges_enabled: boolean
           stripe_onboarding_complete: boolean
           stripe_payouts_enabled: boolean

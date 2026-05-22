@@ -135,6 +135,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Require proof of password authentication: an Authorization header with a valid
+    // user session whose email matches. Prevents 2FA from being used as a passwordless
+    // backdoor (the emailed code alone could otherwise sign a user in).
+    const authHeader = req.headers.get('Authorization') || ''
+    const accessToken = authHeader.replace(/^Bearer\s+/i, '').trim()
+    if (!accessToken) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required before requesting a 2FA code' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const { data: userData, error: userErr } = await supabase.auth.getUser(accessToken)
+    if (userErr || !userData?.user || (userData.user.email || '').toLowerCase() !== email.toLowerCase()) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid session for this email' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const rngBuf = new Uint32Array(1)
     crypto.getRandomValues(rngBuf)
     const code = (100000 + (rngBuf[0] % 900000)).toString()
@@ -150,6 +169,12 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Record a pending 2FA challenge — verify-code requires this row to exist,
+    // gating session issuance behind the proven password sign-in above.
+    await supabase
+      .from('pending_2fa_challenges')
+      .upsert({ email, expires_at: expiresAt })
 
     try {
       await sendEmail(email, code)
