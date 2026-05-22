@@ -34,7 +34,7 @@ export function useMarketplaceProducts(category?: string) {
     queryFn: async () => {
       let query = supabase
         .from('digital_products')
-        .select('*, creators(id, username, display_name, profile_image_url)')
+        .select(`${DIGITAL_PRODUCT_COLUMNS}, creators(id, username, display_name, profile_image_url)`)
         .eq('status', 'published')
         .order('created_at', { ascending: false });
 
