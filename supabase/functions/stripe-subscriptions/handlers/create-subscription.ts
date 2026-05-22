@@ -107,7 +107,13 @@ export async function handleCreateSubscription(
       .maybeSingle();
 
     const stripeAccountId = creatorStripe?.stripe_account_id ?? null;
-    const isTestMode = (Deno.env.get('STRIPE_SECRET_KEY') || '').startsWith('sk_test_');
+    // Determine test mode using the same key priority as index.ts
+    const activeKey =
+      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
+      Deno.env.get('STRIPE_SECRET_KEY') ||
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '';
+    const isTestMode = activeKey.startsWith('sk_test_');
 
     // In live mode, require a connected Stripe account
     if (!isTestMode && !stripeAccountId) {
@@ -153,7 +159,9 @@ export async function handleCreateSubscription(
       }
     };
 
-    if (stripeAccountId) {
+    // Only route payments to connected account in live mode with a fully-onboarded account.
+    // In test mode skip transfer_data — the test Express account isn't onboarded.
+    if (!isTestMode && stripeAccountId) {
       subscriptionParams.application_fee_percent = 1;
       subscriptionParams.transfer_data = { destination: stripeAccountId };
     }
@@ -245,7 +253,7 @@ export async function handleCreateSubscription(
       }, 400);
     }
 
-    return createJsonResponse({ error: 'Failed to create subscription' }, 500);
+    return createJsonResponse({ error: 'Failed to create subscription', debug: message }, 500);
   }
 }
 
