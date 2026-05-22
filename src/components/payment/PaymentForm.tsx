@@ -68,11 +68,11 @@ export function PaymentForm() {
 
   if (!clientSecret) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-        <Card className="bg-gray-900 border-gray-800 max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Loading payment information...</p>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading payment information...</p>
           </CardContent>
         </Card>
       </div>
@@ -80,17 +80,17 @@ export function PaymentForm() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - Payment Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
+              <h1 className="text-3xl font-bold mb-2 text-foreground">
                 {isUpgrade ? 'Upgrade Payment' : 'Payment details'}
               </h1>
               {isUpgrade && (
-                <p className="text-gray-400">
+                <p className="text-muted-foreground">
                   Upgrading from {currentTierName} to {tierName}
                 </p>
               )}

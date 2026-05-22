@@ -42,7 +42,7 @@ export function PaymentButtons({
       <Button 
         type="submit"
         disabled={!stripe || isProcessing}
-        className="w-full bg-white text-black hover:bg-gray-100 text-lg py-6 rounded-lg font-medium"
+        className="w-full text-lg py-6 rounded-lg font-medium"
         size="lg"
       >
         {isProcessing ? (
@@ -63,7 +63,7 @@ export function PaymentButtons({
         onClick={handleCancel}
         disabled={isProcessing}
         variant="outline"
-        className="w-full border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white text-lg py-6 rounded-lg font-medium"
+        className="w-full text-lg py-6 rounded-lg font-medium"
         size="lg"
       >
         <ArrowLeft className="mr-2 h-5 w-5" />
