@@ -12,7 +12,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { RichDescriptionEditor } from '@/components/editor/RichDescriptionEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import {

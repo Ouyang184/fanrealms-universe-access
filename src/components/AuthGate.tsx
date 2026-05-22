@@ -36,6 +36,8 @@ const AUTH_SENSITIVE_PREFIXES = [
   "/settings",
   "/library",
   "/payment",
+  "/payment-success",
+  "/purchase-success",
   "/subscriptions",
   "/commissions",
 ];
