@@ -63,7 +63,7 @@ export function RequestRevisionModal({
 
       if (data.requiresPayment) {
         // Redirect to Stripe payment
-        window.open(data.paymentUrl, '_blank');
+        window.open(data.paymentUrl, '_blank', 'noopener,noreferrer');
         toast({
           title: "Payment Required",
           description: "Please complete the payment to submit your revision request"
