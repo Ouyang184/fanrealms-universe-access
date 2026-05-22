@@ -94,22 +94,51 @@ const handler = async (req: Request): Promise<Response> => {
     // Get post details and verify it belongs to this creator
     const { data: post, error: postError } = await supabase
       .from('posts')
-      .select('title, content, created_at, creator_id, author_id')
+      .select('title, content, created_at, creator_id, author_id, status, tier_id')
       .eq('id', postId)
       .single();
 
-    if (post && post.creator_id && post.creator_id !== creatorId) {
+    if (postError || !post) {
+      console.error('Error fetching post:', postError);
+      return new Response('Post not found', {
+        status: 404,
+        headers: corsHeaders
+      });
+    }
+
+    // Require post.creator_id and match (no null-bypass)
+    if (!post.creator_id || post.creator_id !== creatorId) {
       return new Response(JSON.stringify({ error: 'Post does not belong to this creator' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (postError || !post) {
-      console.error('Error fetching post:', postError);
-      return new Response('Post not found', { 
-        status: 404, 
-        headers: corsHeaders 
+    // Only notify for published, fully-public posts (no tier gating)
+    if (post.status !== 'published' || post.tier_id != null) {
+      return new Response(JSON.stringify({ error: 'Post is not eligible for public notifications' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { count: tierRowCount, error: tierCountError } = await supabase
+      .from('post_tiers')
+      .select('post_id', { count: 'exact', head: true })
+      .eq('post_id', postId);
+
+    if (tierCountError) {
+      console.error('Error checking post_tiers:', tierCountError);
+      return new Response(JSON.stringify({ error: 'Failed to verify post visibility' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if ((tierRowCount ?? 0) > 0) {
+      return new Response(JSON.stringify({ error: 'Tier-gated posts cannot be sent to all followers' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
