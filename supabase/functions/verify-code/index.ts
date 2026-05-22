@@ -92,6 +92,22 @@ Deno.serve(async (req) => {
       action: 'verify_code'
     });
 
+    // Require a pending challenge row — this is created by send-code only after
+    // the caller proved password authentication. Without it, this endpoint must
+    // not issue a session (would otherwise be a passwordless backdoor).
+    const { data: pending, error: pendingErr } = await supabase
+      .from('pending_2fa_challenges')
+      .select('email, expires_at')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (pendingErr || !pending || new Date(pending.expires_at) < new Date()) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'No active 2FA challenge for this email' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Check if code exists and is valid
     const { data: codeData, error: fetchError } = await supabase
       .from('email_2fa_codes')
