@@ -113,7 +113,8 @@ export function CommissionRequestCard({
   };
 
   const canAcceptOrReject = request.status === 'payment_pending';
-  const canRefund = ['accepted', 'in_progress'].includes(request.status) && request.stripe_payment_intent_id;
+  // stripe_payment_intent_id is revoked from client — use status as proxy for "payment was made"
+  const canRefund = ['accepted', 'in_progress', 'revision_requested', 'delivered'].includes(request.status);
 
   return (
     <Card className="border-l-4 border-l-blue-500">
