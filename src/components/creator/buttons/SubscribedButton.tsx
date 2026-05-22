@@ -80,9 +80,7 @@ export function SubscribedButton({
       return;
     }
 
-    const subscriptionId = subscription?.stripe_subscription_id || 
-                          subscription?.id || 
-                          subscription?.subscription_id;
+    const subscriptionId = subscription?.id || subscription?.subscription_id;
 
     if (!subscriptionId) {
       toast({
