@@ -8,19 +8,25 @@ export const useCreatorStripeStatus = (creatorId: string) => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from('creator_stripe_status')
-        .select('stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled')
+        .select('is_connected, stripe_onboarding_complete, stripe_charges_enabled')
         .eq('creator_id', creatorId)
         .maybeSingle();
 
       if (error) throw error;
-      return data as { stripe_account_id: string | null; stripe_onboarding_complete: boolean | null; stripe_charges_enabled: boolean | null } | null;
+      return data as {
+        is_connected: boolean | null;
+        stripe_onboarding_complete: boolean | null;
+        stripe_charges_enabled: boolean | null;
+      } | null;
     },
     enabled: !!creatorId
   });
 
-  const isCreatorStripeReady = creatorStripeStatus?.stripe_account_id && 
-                              creatorStripeStatus?.stripe_onboarding_complete && 
-                              creatorStripeStatus?.stripe_charges_enabled;
+  const isCreatorStripeReady = !!(
+    creatorStripeStatus?.is_connected &&
+    creatorStripeStatus?.stripe_onboarding_complete &&
+    creatorStripeStatus?.stripe_charges_enabled
+  );
 
   return {
     creatorStripeStatus,
