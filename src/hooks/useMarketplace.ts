@@ -65,7 +65,7 @@ export function useCreatorProducts() {
 
       const { data, error } = await supabase
         .from('digital_products')
-        .select('*')
+        .select(DIGITAL_PRODUCT_COLUMNS)
         .eq('creator_id', creator.id)
         .order('created_at', { ascending: false });
 
