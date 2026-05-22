@@ -116,6 +116,25 @@ serve(async (req) => {
       stripePriceId = ownedTier.stripe_price_id; // Keep the existing price ID
 
       console.log('Updated Stripe product (no new price created):', { stripeProductId, stripePriceId });
+
+      // SECURITY: Persist tier updates server-side. Client never writes stripe IDs.
+      const { error: updateError } = await supabaseService
+        .from('membership_tiers')
+        .update({
+          title: tierData.name,
+          price: tierData.price,
+          description: tierData.features.join('|'),
+        })
+        .eq('id', tierId)
+        .eq('creator_id', creatorData.id);
+
+      if (updateError) {
+        console.error('Tier update failed:', updateError);
+        return new Response(JSON.stringify({ error: 'Failed to update tier' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
     } else {
       // Create new Stripe product (for new tiers or when no existing product)
       const product = await stripe.products.create({
@@ -146,16 +165,38 @@ serve(async (req) => {
       stripePriceId = price.id;
 
       console.log('Created new Stripe product and price:', { stripeProductId, stripePriceId });
+
+      // SECURITY: Insert tier server-side with verified Stripe IDs. Client never writes stripe IDs.
+      const { error: insertError } = await supabaseService
+        .from('membership_tiers')
+        .insert({
+          creator_id: creatorData.id,
+          title: tierData.name,
+          price: tierData.price,
+          description: tierData.features.join('|'),
+          stripe_product_id: stripeProductId,
+          stripe_price_id: stripePriceId,
+        });
+
+      if (insertError) {
+        console.error('Tier insert failed:', insertError);
+        // Best-effort: deactivate the orphaned Stripe price/product
+        try { await stripe.prices.update(stripePriceId, { active: false }); } catch (_) {}
+        try { await stripe.products.update(stripeProductId, { active: false }); } catch (_) {}
+        return new Response(JSON.stringify({ error: 'Failed to create tier' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
     }
 
     return new Response(JSON.stringify({
       success: true,
-      stripeProductId,
-      stripePriceId
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
+
 
   } catch (error) {
     console.error('Error creating/updating Stripe product:', error);
