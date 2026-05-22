@@ -22,19 +22,8 @@ serve(async (req) => {
   try {
     const reqOrigin = req.headers.get("Origin") ?? "";
     const SAFE_ORIGIN = ALLOWED_ORIGINS.includes(reqOrigin) ? reqOrigin : DEFAULT_ORIGIN;
-    const { commissionRequestId, revisionNotes } = await req.json();
 
-    if (!commissionRequestId || !revisionNotes) {
-      throw new Error("Commission request ID and revision notes are required");
-    }
-
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
-
-    // Get authenticated user
+    // AUTH FIRST: validate Authorization header before parsing body or initializing clients
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -42,6 +31,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Create Supabase client (used for auth verification)
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
@@ -50,6 +46,21 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Pre-parse body size guard
+    const contentLength = parseInt(req.headers.get("content-length") || "0", 10);
+    if (contentLength > 8 * 1024) {
+      return new Response(JSON.stringify({ error: "Request body too large" }), {
+        status: 413,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { commissionRequestId, revisionNotes } = await req.json();
+
+    if (!commissionRequestId || !revisionNotes) {
+      throw new Error("Commission request ID and revision notes are required");
     }
 
     // Get commission request and check if extra revision payment is needed
