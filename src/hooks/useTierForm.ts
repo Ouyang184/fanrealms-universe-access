@@ -87,63 +87,46 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
       const features = data.features.split("\n").filter(feature => feature.trim() !== "");
       
       if (editingTier) {
-        // Get the existing tier data from database to check for Stripe IDs
-        const { data: existingTierData, error: tierFetchError } = await supabase
-          .from("membership_tiers")
-          .select("stripe_product_id, stripe_price_id")
-          .eq("id", editingTier.id)
-          .single();
-
-        if (tierFetchError) {
-          throw new Error("Could not fetch existing tier data");
-        }
-
-        // Update existing tier - keep existing Stripe IDs and just update the product details
+        // Update existing tier: edge function resolves existing Stripe IDs server-side
         const tierUpdateData = {
           name: data.name,
           price: data.price,
           features: features,
-          existingStripeProductId: existingTierData?.stripe_product_id,
-          existingStripePriceId: existingTierData?.stripe_price_id
         };
 
-        console.log('Updating existing Stripe product for tier:', tierUpdateData);
+        console.log('Updating existing Stripe product for tier:', editingTier.id);
 
-        // Only call Stripe if we have existing product/price IDs to update
-        if (existingTierData?.stripe_product_id) {
-          const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
-            body: { 
-              tierData: tierUpdateData,
-              tierId: editingTier.id,
-              isUpdate: true // Flag to indicate this is an update operation
-            }
-          });
+        const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
+          body: {
+            tierData: tierUpdateData,
+            tierId: editingTier.id,
+            isUpdate: true,
+          },
+        });
 
-          if (stripeError) {
-            console.error('Stripe product update error:', stripeError);
-            throw new Error('Failed to update Stripe product: ' + stripeError.message);
-          }
-
-          if (!stripeResult?.success) {
-            throw new Error('Failed to update Stripe product');
-          }
-
-          console.log('Stripe product updated successfully:', stripeResult);
+        if (stripeError) {
+          console.error('Stripe product update error:', stripeError);
+          throw new Error('Failed to update Stripe product: ' + stripeError.message);
         }
 
-        // Update the tier in database (keeping existing Stripe IDs since we only updated the product details)
+        if (!stripeResult?.success) {
+          throw new Error('Failed to update Stripe product');
+        }
+
+        console.log('Stripe product updated successfully');
+
+        // Update the tier in database (Stripe IDs unchanged)
         const { error: updateError } = await supabase
           .from("membership_tiers")
           .update({
             title: data.name,
             price: data.price,
-            description: features.join("|"), // Store features as pipe-separated string
-            // Keep the existing Stripe IDs - no changes needed since we only updated the product details
+            description: features.join("|"),
           })
           .eq("id", editingTier.id);
-        
+
         if (updateError) throw updateError;
-        
+
         toast({
           title: "Success",
           description: "Membership tier updated successfully",
