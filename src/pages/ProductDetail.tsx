@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSection';
 import { useProductRatingSummary } from '@/hooks/useProductRatings';
 import { RatingSummary } from '@/components/ratings/StarRating';
+import { MarkdownContent } from '@/components/editor/RichDescriptionEditor';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
@@ -165,7 +166,7 @@ export default function ProductDetail() {
             {p.description && (
               <div className="pt-4">
                 <h2 className="text-[15px] font-bold text-foreground mb-3">About this asset</h2>
-                <p className="text-[14px] text-muted-foreground leading-relaxed whitespace-pre-wrap">{p.description}</p>
+                <MarkdownContent>{p.description}</MarkdownContent>
               </div>
             )}
 

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { RichDescriptionEditor } from '@/components/editor/RichDescriptionEditor';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog,
@@ -591,11 +592,11 @@ export default function DashboardAssetDetail() {
                   Full description{' '}
                   <span className="font-normal text-[#999]">(shown on product page)</span>
                 </label>
-                <Textarea
+                <RichDescriptionEditor
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={setDescription}
                   placeholder={"What's included?\nWho is it for?\nHow do you use it?"}
-                  rows={6}
+                  rows={8}
                 />
               </div>
 
