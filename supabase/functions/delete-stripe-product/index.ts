@@ -37,20 +37,26 @@ serve(async (req) => {
       );
     }
 
-    const { productId } = await req.json();
-    if (!productId || typeof productId !== 'string') {
+    const body = await req.json();
+    const tierId: string | undefined = body?.tierId;
+    // Back-compat: still accept productId, but tierId is preferred (no client Stripe ID)
+    const requestedProductId: string | undefined = body?.productId;
+
+    if (!tierId && !requestedProductId) {
       return new Response(
         JSON.stringify({ error: 'Invalid request', success: false }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Ownership verification: ensure this product belongs to a tier owned by the caller
-    const { data: tier, error: tierError } = await supabaseService
+    // Ownership verification: look up the tier by tierId (preferred) or by stripe_product_id
+    const tierQuery = supabaseService
       .from('membership_tiers')
-      .select('id, creator_id')
-      .eq('stripe_product_id', productId)
-      .maybeSingle();
+      .select('id, creator_id, stripe_product_id');
+
+    const { data: tier, error: tierError } = tierId
+      ? await tierQuery.eq('id', tierId).maybeSingle()
+      : await tierQuery.eq('stripe_product_id', requestedProductId!).maybeSingle();
 
     if (tierError || !tier) {
       console.error('Ownership lookup failed (tier not found)');
@@ -72,6 +78,15 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Forbidden', success: false }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
+    }
+
+    const productId = tier.stripe_product_id;
+    if (!productId) {
+      // Nothing to delete in Stripe — treat as success
+      return new Response(
+        JSON.stringify({ success: true, productId: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
