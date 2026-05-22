@@ -64,17 +64,17 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    let stripeProductId = null;
-    let stripePriceId = null;
+    let stripeProductId: string | null = null;
+    let stripePriceId: string | null = null;
 
-    if (isUpdate && tierId && tierData.existingStripeProductId) {
-      // SECURITY: Verify the tier + Stripe product belong to this creator before mutating Stripe
+    if (isUpdate && tierId) {
+      // SECURITY: Resolve existing Stripe IDs server-side from the tier owned by this creator.
+      // Never trust client-supplied stripe_product_id / stripe_price_id.
       const { data: ownedTier, error: ownershipError } = await supabaseService
         .from('membership_tiers')
-        .select('id, creator_id, stripe_product_id')
+        .select('id, creator_id, stripe_product_id, stripe_price_id')
         .eq('id', tierId)
         .eq('creator_id', creatorData.id)
-        .eq('stripe_product_id', tierData.existingStripeProductId)
         .maybeSingle();
 
       if (ownershipError) {
@@ -86,21 +86,24 @@ serve(async (req) => {
       }
 
       if (!ownedTier) {
-        console.warn('Forbidden: tier/product does not belong to creator', {
-          tierId,
-          creatorId: creatorData.id,
-          stripeProductId: tierData.existingStripeProductId,
-        });
+        console.warn('Forbidden: tier does not belong to creator', { tierId, creatorId: creatorData.id });
         return new Response(JSON.stringify({ error: 'Forbidden' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 403,
         });
       }
 
+      if (!ownedTier.stripe_product_id) {
+        return new Response(JSON.stringify({ error: 'Tier has no Stripe product to update' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
       // Update existing Stripe product without creating a new price
-      console.log('Updating existing Stripe product:', tierData.existingStripeProductId);
-      
-      const updatedProduct = await stripe.products.update(tierData.existingStripeProductId, {
+      console.log('Updating existing Stripe product:', ownedTier.stripe_product_id);
+
+      const updatedProduct = await stripe.products.update(ownedTier.stripe_product_id, {
         name: tierData.name,
         description: tierData.features.join(' | '),
         metadata: {
@@ -108,9 +111,9 @@ serve(async (req) => {
           tier_id: tierId
         }
       });
-      
+
       stripeProductId = updatedProduct.id;
-      stripePriceId = tierData.existingStripePriceId; // Keep the existing price ID
+      stripePriceId = ownedTier.stripe_price_id; // Keep the existing price ID
 
       console.log('Updated Stripe product (no new price created):', { stripeProductId, stripePriceId });
     } else {
