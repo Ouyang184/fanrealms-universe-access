@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Code is valid, delete it from database
+    // Code is valid, delete it and consume the pending challenge.
     const { error: deleteError } = await supabase
       .from('email_2fa_codes')
       .delete()
@@ -165,6 +165,11 @@ Deno.serve(async (req) => {
       console.error('Error deleting 2FA code:', deleteError)
       // Still return success since verification was successful
     }
+
+    await supabase
+      .from('pending_2fa_challenges')
+      .delete()
+      .eq('email', email)
 
     console.log(`✅ Successful 2FA verification — issuing magic-link token`)
 
