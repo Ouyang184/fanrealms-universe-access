@@ -62,7 +62,7 @@ serve(async (req) => {
     // Fetch product
     const { data: product, error: productError } = await supabaseServiceClient
       .from("digital_products")
-      .select("id, title, price, creator_id, creators(user_id)")
+      .select("id, title, price, creator_id, short_description, cover_image_url, creators(user_id)")
       .eq("id", productId)
       .eq("status", "published")
       .maybeSingle();
@@ -93,7 +93,11 @@ serve(async (req) => {
           price_data: {
             currency: "usd",
             unit_amount: amountCents,
-            product_data: { name: product.title },
+            product_data: {
+              name: product.title,
+              description: (product as any).short_description || undefined,
+              images: (product as any).cover_image_url ? [(product as any).cover_image_url] : undefined,
+            },
           },
           quantity: 1,
         },
