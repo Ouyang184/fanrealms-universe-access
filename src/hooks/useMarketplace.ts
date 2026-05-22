@@ -82,7 +82,7 @@ export function useProduct(productId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('digital_products')
-        .select('*, creators(id, username, display_name, profile_image_url)')
+        .select(`${DIGITAL_PRODUCT_COLUMNS}, creators(id, username, display_name, profile_image_url)`)
         .eq('id', productId)
         .maybeSingle();
 
