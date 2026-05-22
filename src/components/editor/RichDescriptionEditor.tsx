@@ -141,7 +141,7 @@ export function RichDescriptionEditor({ value, onChange, placeholder, rows = 8 }
         />
       ) : (
         <div
-          className="px-4 py-3 bg-white min-h-[8rem] prose prose-sm max-w-none"
+          className="px-4 py-3 bg-white min-h-[8rem]"
           style={{ minHeight: `${rows * 1.6}rem` }}
         >
           {value.trim() ? (
