@@ -2846,7 +2846,7 @@ export type Database = {
       creator_stripe_status: {
         Row: {
           creator_id: string | null
-          stripe_account_id: string | null
+          is_connected: boolean | null
           stripe_charges_enabled: boolean | null
           stripe_onboarding_complete: boolean | null
           stripe_payouts_enabled: boolean | null
@@ -3260,6 +3260,15 @@ export type Database = {
           user_id: string
           users: Json
           website: string
+        }[]
+      }
+      get_creator_stripe_ready: {
+        Args: { _creator_id: string }
+        Returns: {
+          charges_enabled: boolean
+          is_connected: boolean
+          onboarding_complete: boolean
+          payouts_enabled: boolean
         }[]
       }
       get_featured_commissions: {
