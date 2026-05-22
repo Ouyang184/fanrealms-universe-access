@@ -197,9 +197,8 @@ serve(async (req) => {
 
       console.log('Account link created:', accountLink.url)
 
-      return new Response(JSON.stringify({ 
-        accountId: accountId,
-        onboardingUrl: accountLink.url 
+      return new Response(JSON.stringify({
+        onboardingUrl: accountLink.url
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
