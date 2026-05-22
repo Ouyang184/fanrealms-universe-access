@@ -248,7 +248,7 @@ export function useUpdateProduct() {
         .from('digital_products')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
-        .select()
+        .select(DIGITAL_PRODUCT_COLUMNS)
         .single();
       if (error) throw error;
       return data;
