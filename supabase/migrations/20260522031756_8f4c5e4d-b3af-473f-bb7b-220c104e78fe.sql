@@ -1,0 +1,2 @@
+REVOKE SELECT (stripe_price_id, stripe_product_id) ON public.membership_tiers FROM anon, authenticated, public;
+REVOKE SELECT (stripe_price_id) ON public.digital_products FROM anon, authenticated, public;
