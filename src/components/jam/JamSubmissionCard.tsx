@@ -1,6 +1,7 @@
 // src/components/jam/JamSubmissionCard.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 import { useVoteOnSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
 
 interface Submission {
@@ -151,12 +152,12 @@ export function JamSubmissionCard({
 
   return (
     <div className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-[#ddd] transition-colors">
-      <div className="relative aspect-video bg-[#f5f5f5] flex items-center justify-center">
+      <Link to={`/marketplace/${submission.product_id}`} className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
         {product?.cover_image_url ? (
           <img
             src={product.cover_image_url}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
           />
         ) : (
           <span className="text-[12px] text-[#bbb]">No preview</span>
@@ -164,16 +165,30 @@ export function JamSubmissionCard({
         <div className="absolute top-2 left-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-[12px] font-bold text-[#555] shadow-sm border border-[#eee]">
           {rank}
         </div>
-      </div>
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
+          <span className="bg-white text-[12px] font-semibold text-[#111] px-3 py-1.5 rounded-full shadow flex items-center gap-1.5">
+            <ExternalLink className="w-3 h-3" /> View asset
+          </span>
+        </div>
+      </Link>
 
       <div className="p-4 space-y-3">
         <div>
-          <Link
-            to={`/marketplace/${submission.product_id}`}
-            className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1"
-          >
-            {product?.title ?? 'Untitled'}
-          </Link>
+          <div className="flex items-start justify-between gap-2">
+            <Link
+              to={`/marketplace/${submission.product_id}`}
+              className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
+            >
+              {product?.title ?? 'Untitled'}
+            </Link>
+            <Link
+              to={`/marketplace/${submission.product_id}`}
+              className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              View
+            </Link>
+          </div>
           <div className="text-[12px] text-[#888]">
             by {creator?.display_name || creator?.username || 'Unknown'}
             {product?.category && (
