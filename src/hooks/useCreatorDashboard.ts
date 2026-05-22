@@ -85,7 +85,7 @@ export function useCreatorDashboard() {
       
       const { data, error } = await supabase
         .from('membership_tiers')
-        .select('*')
+        .select('id, creator_id, title, description, price, active, created_at, updated_at')
         .eq('creator_id', creatorProfile.id)
         .order('price', { ascending: true });
         
