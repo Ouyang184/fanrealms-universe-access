@@ -29,8 +29,8 @@ export const useCreatorSubscribers = (creatorId: string) => {
       return data?.subscribers || [];
     },
     enabled: !!creatorId && !!user,
-    staleTime: 0, // Always fetch fresh data to debug the issue
-    refetchInterval: false, // Disable auto-refetch for now to avoid spam
+    staleTime: 1000 * 30, // 30 seconds
+    refetchInterval: false,
     refetchOnWindowFocus: true,
     retry: 3
   });

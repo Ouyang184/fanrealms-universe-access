@@ -81,7 +81,7 @@ export function PostAttachments({ attachments }: PostAttachmentsProps) {
                 src={attachment.url}
                 alt={attachment.name}
                 className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => window.open(attachment.url, '_blank')}
+                onClick={() => window.open(attachment.url, '_blank', 'noopener,noreferrer')}
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <Button
@@ -160,7 +160,7 @@ export function PostAttachments({ attachments }: PostAttachmentsProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => window.open(attachment.url, '_blank')}
+                  onClick={() => window.open(attachment.url, '_blank', 'noopener,noreferrer')}
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>

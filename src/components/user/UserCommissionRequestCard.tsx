@@ -225,7 +225,7 @@ export function UserCommissionRequestCard({
                           onClick={async () => {
                             try {
                               const url = await getSignedUrl(path);
-                              window.open(url, '_blank');
+                              window.open(url, '_blank', 'noopener,noreferrer');
                             } catch (e) {
                               console.error('Failed to get download link', e);
                             }
@@ -250,7 +250,7 @@ export function UserCommissionRequestCard({
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => window.open(link, '_blank')}
+                              onClick={() => window.open(link, '_blank', 'noopener,noreferrer')}
                               className="flex items-center gap-2"
                             >
                               <ExternalLink className="h-4 w-4" /> Open

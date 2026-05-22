@@ -67,7 +67,7 @@ export const useStripeConnect = () => {
 
       if (error) throw error;
 
-      window.open(data.loginUrl, '_blank');
+      window.open(data.loginUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
       console.error('Error creating login link:', error);
       toast({

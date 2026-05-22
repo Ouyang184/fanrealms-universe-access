@@ -93,7 +93,7 @@ export function DeliverablesView({ commissionRequestId }: DeliverablesViewProps)
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(url, '_blank')}
+                      onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
