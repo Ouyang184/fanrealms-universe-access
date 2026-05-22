@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+// Safe column list for digital_products — excludes stripe_price_id which is
+// revoked from anon/authenticated. Using this prevents PostgREST `select=*`
+// from failing with "permission denied".
+const DIGITAL_PRODUCT_COLUMNS =
+  'id, creator_id, title, description, short_description, cover_image_url, asset_url, asset_file_path, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, created_at, updated_at';
+
 export function useProductSearch(query: string) {
   return useQuery({
     queryKey: ['product-search', query],
