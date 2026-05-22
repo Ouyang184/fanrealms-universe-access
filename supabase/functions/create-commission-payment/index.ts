@@ -89,43 +89,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     });
 
-    // Initialize Supabase
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return new Response(JSON.stringify({ 
-        error: 'Supabase configuration missing' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      });
-    }
 
-    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ 
-        error: 'Authentication required' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseService.auth.getUser(token);
-    
-    if (authError || !user) {
-      return new Response(JSON.stringify({ 
-        error: 'Authentication failed' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
 
     // Fetch commission request
     const { data: commissionRequest, error: fetchError } = await supabaseService
