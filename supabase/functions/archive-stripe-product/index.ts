@@ -38,7 +38,7 @@ serve(async (req) => {
       );
     }
 
-    const { productId, priceId } = await req.json();
+    const { productId } = await req.json();
     if (!productId || typeof productId !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Invalid request' }),
@@ -46,10 +46,10 @@ serve(async (req) => {
       );
     }
 
-    // Ownership verification
+    // Ownership verification — also resolve price id server-side
     const { data: tier, error: tierError } = await supabaseService
       .from('membership_tiers')
-      .select('id, creator_id')
+      .select('id, creator_id, stripe_price_id')
       .eq('stripe_product_id', productId)
       .maybeSingle();
 
@@ -80,9 +80,10 @@ serve(async (req) => {
 
     const archivedProduct = await stripe.products.update(productId, { active: false });
 
-    if (priceId && typeof priceId === 'string') {
+    const ownedPriceId = tier.stripe_price_id;
+    if (ownedPriceId && typeof ownedPriceId === 'string') {
       try {
-        await stripe.prices.update(priceId, { active: false });
+        await stripe.prices.update(ownedPriceId, { active: false });
       } catch (priceError) {
         console.error('Error deactivating price (continuing anyway):', priceError);
       }
