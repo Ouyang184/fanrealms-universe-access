@@ -90,8 +90,7 @@ export const useUserSubscriptions = () => {
       return (subscriptions || []) as UserSubscriptionWithDetails[];
     },
     enabled: !!user?.id,
-    staleTime: 0, // Force refresh - no cache for subscription updates
-    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 1000 * 15, // 15 seconds — fresh enough for subscription state
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   });

@@ -123,6 +123,7 @@ const queryClient = new QueryClient({
     queries: {
       networkMode: 'online',
       refetchOnWindowFocus: false,
+      staleTime: 1000 * 30, // 30 seconds — avoids refetching data that was just loaded
     },
   },
 });

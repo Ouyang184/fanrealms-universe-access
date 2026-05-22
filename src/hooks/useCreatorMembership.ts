@@ -89,8 +89,7 @@ export const useCreatorMembership = (creatorId: string) => {
       return tiersWithCounts;
     },
     enabled: !!creatorId,
-    staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // 1 minute to keep counts fresh
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
   // Get user subscriptions from user_subscriptions table only
@@ -117,8 +116,7 @@ export const useCreatorMembership = (creatorId: string) => {
       return data || [];
     },
     enabled: !!user?.id && !!creatorId,
-    staleTime: 30000,
-    refetchInterval: 60000,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
   // Check if user is subscribed to ANY tier of this creator

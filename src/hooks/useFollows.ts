@@ -44,8 +44,7 @@ export const useFollows = () => {
       return followedCreators;
     },
     enabled: !!user?.id,
-    staleTime: 30000, // Cache for 30 seconds instead of longer
-    refetchInterval: 60000, // Refetch every minute to get updates
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    staleTime: 1000 * 60 * 2, // 2 minutes — follows don't change frequently
+    refetchOnWindowFocus: true,
   });
 };
