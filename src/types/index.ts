@@ -49,7 +49,7 @@ export interface CreatorProfile {
   created_at?: string;
   tiers?: Tier[];
   website?: string;
-  stripe_account_id?: string | null;
+  // stripe_account_id intentionally omitted — never exposed to clients.
   stripe_onboarding_complete?: boolean | null;
   stripe_charges_enabled?: boolean | null;
   stripe_payouts_enabled?: boolean | null;
@@ -69,7 +69,7 @@ export interface Tier {
   price: number;
   features: string[];
   subscriberCount?: number;
-  stripe_price_id?: string | null;
+  // stripe_price_id intentionally omitted — server-side only.
 }
 
 export interface Subscription {
