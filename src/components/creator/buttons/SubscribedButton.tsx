@@ -143,9 +143,7 @@ export function SubscribedButton({
       return;
     }
 
-    const subscriptionId = subscription?.stripe_subscription_id || 
-                          subscription?.id || 
-                          subscription?.subscription_id;
+    const subscriptionId = subscription?.id || subscription?.subscription_id;
 
     if (!subscriptionId) {
       console.log('No subscription ID found, trying to cancel via stripe-subscriptions');
