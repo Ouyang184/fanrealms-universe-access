@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables — never commit secrets
+.env
+.env.local
+.env.*.local
+
 # Local tooling
 .claude/
 supabase/.temp/

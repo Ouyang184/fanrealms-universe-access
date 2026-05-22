@@ -71,7 +71,7 @@ export default function SubscriptionsPage() {
                           ) : (
                             <p className="font-semibold text-sm">{creatorName}</p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-0.5">{tierTitle} · ${price}/mo</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{tierTitle} · ${Number(price).toFixed(2)}/mo</p>
                           {renewsAt && (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {isCancelling
