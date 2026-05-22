@@ -23,9 +23,9 @@ export function OrderSummary({
 }: OrderSummaryProps) {
   return (
     <div className="lg:pl-8">
-      <Card className="bg-gray-900 border-gray-800 sticky top-6">
+      <Card className="sticky top-6">
         <CardHeader>
-          <CardTitle className="text-white">
+          <CardTitle>
             {isUpgrade ? 'Upgrade summary' : 'Order summary'}
           </CardTitle>
         </CardHeader>
@@ -33,56 +33,56 @@ export function OrderSummary({
           {/* Creator Info */}
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
+              <span className="text-primary-foreground text-sm font-medium">
                 {tierName?.charAt(0) || 'C'}
               </span>
             </div>
             <div>
-              <div className="text-white font-medium">{tierName || 'Creator'}</div>
-              <div className="text-gray-400 text-sm">ULTRA Gamer</div>
+              <div className="font-medium">{tierName || 'Creator'}</div>
+              <div className="text-muted-foreground text-sm">ULTRA Gamer</div>
             </div>
           </div>
 
           {/* Pricing Breakdown */}
-          <div className="space-y-3 pt-4 border-t border-gray-700">
+          <div className="space-y-3 pt-4 border-t border-border">
             {isUpgrade ? (
               <>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Current tier ({currentTierName})</span>
-                  <span className="text-gray-500 line-through">
+                  <span className="text-muted-foreground">Current tier ({currentTierName})</span>
+                  <span className="text-muted-foreground line-through">
                     ${(fullTierMonthlyAmount - monthlyAmount).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">New tier ({tierName})</span>
-                  <span className="text-white">${fullTierMonthlyAmount.toFixed(2)}</span>
+                  <span className="text-muted-foreground">New tier ({tierName})</span>
+                  <span>${fullTierMonthlyAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Upgrade difference</span>
-                  <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                  <span className="text-muted-foreground">Upgrade difference</span>
+                  <span>${monthlyAmount.toFixed(2)}</span>
                 </div>
               </>
             ) : (
               <div className="flex justify-between">
-                <span className="text-gray-400">Monthly payment</span>
-                <span className="text-white">${monthlyAmount.toFixed(2)}</span>
+                <span className="text-muted-foreground">Monthly payment</span>
+                <span>${monthlyAmount.toFixed(2)}</span>
               </div>
             )}
-            
+
             <div className="flex justify-between">
-              <span className="text-gray-400">Sales Tax</span>
-              <span className="text-white">${salesTax.toFixed(2)}</span>
+              <span className="text-muted-foreground">Sales Tax</span>
+              <span>${salesTax.toFixed(2)}</span>
             </div>
-            
-            <div className="flex justify-between pt-3 border-t border-gray-700">
-              <span className="text-white font-semibold">
+
+            <div className="flex justify-between pt-3 border-t border-border">
+              <span className="font-semibold">
                 {isUpgrade ? "Upgrade cost today" : "Total due today"}
               </span>
-              <span className="text-white font-semibold">${totalToday.toFixed(2)}</span>
+              <span className="font-semibold">${totalToday.toFixed(2)}</span>
             </div>
-            
+
             {isUpgrade && (
-              <div className="text-xs text-gray-400 pt-2">
+              <div className="text-xs text-muted-foreground pt-2">
                 After upgrade: ${fullTierMonthlyAmount.toFixed(2)}/month on your existing billing date
               </div>
             )}
@@ -91,8 +91,8 @@ export function OrderSummary({
       </Card>
 
       {/* Help Section */}
-      <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
-        <button className="hover:text-white">Help Centre</button>
+      <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
+        <button className="hover:text-foreground">Help Centre</button>
         <span>$ USD</span>
       </div>
     </div>
