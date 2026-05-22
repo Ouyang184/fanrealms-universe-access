@@ -33,7 +33,7 @@ function ProjectDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('digital_products')
-        .select('*')
+        .select('id, creator_id, title, description, short_description, cover_image_url, asset_url, asset_file_path, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, created_at, updated_at')
         .eq('project_id', projectId!)
         .order('created_at', { ascending: false });
       if (error) throw error;
