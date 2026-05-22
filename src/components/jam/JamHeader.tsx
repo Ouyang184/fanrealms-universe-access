@@ -15,6 +15,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 function fmt(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
+    timeZone: 'UTC',
   });
 }
 
