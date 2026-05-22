@@ -87,7 +87,7 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
       const features = data.features.split("\n").filter(feature => feature.trim() !== "");
       
       if (editingTier) {
-        // Update existing tier: edge function resolves existing Stripe IDs server-side
+        // Update existing tier: edge function performs the DB update server-side with verified Stripe IDs
         const tierUpdateData = {
           name: data.name,
           price: data.price,
@@ -113,26 +113,14 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
           throw new Error('Failed to update Stripe product');
         }
 
-        console.log('Stripe product updated successfully');
-
-        // Update the tier in database (Stripe IDs unchanged)
-        const { error: updateError } = await supabase
-          .from("membership_tiers")
-          .update({
-            title: data.name,
-            price: data.price,
-            description: features.join("|"),
-          })
-          .eq("id", editingTier.id);
-
-        if (updateError) throw updateError;
+        console.log('Tier updated successfully');
 
         toast({
           title: "Success",
           description: "Membership tier updated successfully",
         });
       } else {
-        // Create new tier (existing logic)
+        // Create new tier: edge function creates Stripe product/price AND inserts the tier row server-side
         const tierData = {
           name: data.name,
           price: data.price,
@@ -141,11 +129,10 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
 
         console.log('Creating new Stripe product for tier:', tierData);
 
-        // Create new Stripe product
         const { data: stripeResult, error: stripeError } = await supabase.functions.invoke('create-stripe-product', {
-          body: { 
+          body: {
             tierData,
-            isUpdate: false // Flag to indicate this is a create operation
+            isUpdate: false
           }
         });
 
@@ -158,27 +145,14 @@ export function useTierForm({ editingTier, onClose }: UseTierFormProps) {
           throw new Error('Failed to create Stripe product');
         }
 
-        console.log('Stripe product created:', stripeResult);
+        console.log('Tier created successfully');
 
-        // Create new tier
-        const { error: insertError } = await supabase
-          .from("membership_tiers")
-          .insert({
-            creator_id: creatorData.id,
-            title: data.name,
-            price: data.price,
-            description: features.join("|"), // Store features as pipe-separated string
-            stripe_product_id: stripeResult.stripeProductId,
-            stripe_price_id: stripeResult.stripePriceId,
-          });
-        
-        if (insertError) throw insertError;
-        
         toast({
           title: "Success",
           description: "New membership tier created successfully",
         });
       }
+
       
       // Refresh tiers data
       queryClient.invalidateQueries({ queryKey: ["tiers"] });
