@@ -8,8 +8,9 @@ export function PaymentMethodSection() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-foreground">Payment method</h2>
 
-      <div className="bg-muted border border-border rounded-lg p-4">
-        <div className="border border-border rounded-md p-3 bg-background">
+      {/* Payment Element */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <div className="border border-border rounded-md p-3">
           <PaymentElement
             options={{
               layout: 'tabs',

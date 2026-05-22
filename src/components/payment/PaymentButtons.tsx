@@ -39,7 +39,7 @@ export function PaymentButtons({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <Button 
+      <Button
         type="submit"
         disabled={!stripe || isProcessing}
         className="w-full text-lg py-6 rounded-lg font-medium"
@@ -58,7 +58,7 @@ export function PaymentButtons({
         )}
       </Button>
 
-      <Button 
+      <Button
         type="button"
         onClick={handleCancel}
         disabled={isProcessing}

@@ -38,7 +38,7 @@ export function OrderSummary({
               </span>
             </div>
             <div>
-              <div className="font-medium text-foreground">{tierName || 'Creator'}</div>
+              <div className="font-medium">{tierName || 'Creator'}</div>
               <div className="text-muted-foreground text-sm">ULTRA Gamer</div>
             </div>
           </div>
@@ -55,30 +55,30 @@ export function OrderSummary({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">New tier ({tierName})</span>
-                  <span className="text-foreground">${fullTierMonthlyAmount.toFixed(2)}</span>
+                  <span>${fullTierMonthlyAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Upgrade difference</span>
-                  <span className="text-foreground">${monthlyAmount.toFixed(2)}</span>
+                  <span>${monthlyAmount.toFixed(2)}</span>
                 </div>
               </>
             ) : (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monthly payment</span>
-                <span className="text-foreground">${monthlyAmount.toFixed(2)}</span>
+                <span>${monthlyAmount.toFixed(2)}</span>
               </div>
             )}
 
             <div className="flex justify-between">
               <span className="text-muted-foreground">Sales Tax</span>
-              <span className="text-foreground">${salesTax.toFixed(2)}</span>
+              <span>${salesTax.toFixed(2)}</span>
             </div>
 
             <div className="flex justify-between pt-3 border-t border-border">
-              <span className="font-semibold text-foreground">
-                {isUpgrade ? 'Upgrade cost today' : 'Total due today'}
+              <span className="font-semibold">
+                {isUpgrade ? "Upgrade cost today" : "Total due today"}
               </span>
-              <span className="font-semibold text-foreground">${totalToday.toFixed(2)}</span>
+              <span className="font-semibold">${totalToday.toFixed(2)}</span>
             </div>
 
             {isUpgrade && (
@@ -92,7 +92,7 @@ export function OrderSummary({
 
       {/* Help Section */}
       <div className="mt-6 flex items-center justify-between text-sm text-muted-foreground">
-        <button className="hover:text-foreground transition-colors">Help Centre</button>
+        <button className="hover:text-foreground">Help Centre</button>
         <span>$ USD</span>
       </div>
     </div>

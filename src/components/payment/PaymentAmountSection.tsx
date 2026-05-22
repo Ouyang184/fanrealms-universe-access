@@ -26,21 +26,21 @@ export function PaymentAmountSection({
       <div>
         <h2 className="text-xl font-semibold mb-2">Payment amount</h2>
         <p className="text-muted-foreground text-sm mb-4">
-          {isUpgrade 
+          {isUpgrade
             ? "Pay only the difference between your current tier and the new tier."
             : "Pay the set price or you can choose to pay more."
           }
         </p>
-        
+
         <div className="space-y-3">
-          <div className="bg-muted border border-border rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-sm text-muted-foreground">
                   {isUpgrade ? "Upgrade difference" : "Monthly payment"}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {isUpgrade 
+                  {isUpgrade
                     ? `$${monthlyAmount.toFixed(2)} (${tierName}: $${fullTierMonthlyAmount.toFixed(2)}/month)`
                     : `$${monthlyAmount.toFixed(2)}/month`
                   }
@@ -52,7 +52,7 @@ export function PaymentAmountSection({
                   type="number"
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-20 bg-transparent text-right"
+                  className="w-20 text-right"
                   step="0.01"
                   min={monthlyAmount}
                 />
