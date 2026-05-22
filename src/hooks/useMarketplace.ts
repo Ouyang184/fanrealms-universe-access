@@ -186,7 +186,7 @@ export function useCreateProduct() {
           creator_id: creator.id,
           status: product.status || 'draft',
         })
-        .select()
+        .select(DIGITAL_PRODUCT_COLUMNS)
         .single();
 
       if (error) throw error;
