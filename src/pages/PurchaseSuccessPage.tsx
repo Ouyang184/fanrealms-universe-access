@@ -13,7 +13,7 @@ export default function PurchaseSuccessPage() {
   const productId = searchParams.get('product_id');
 
   const [state, setState] = useState<State>('loading');
-  const [product, setProduct] = useState<{ title: string; price: string } | null>(null);
+  const [product, setProduct] = useState<{ title: string; price: number } | null>(null);
   const [downloading, setDownloading] = useState(false);
 
   // Fetch product info + wait for purchase to be recorded (webhook can be a second or two behind)
