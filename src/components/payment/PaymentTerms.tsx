@@ -15,7 +15,7 @@ export function PaymentTerms({
   fullTierMonthlyAmount 
 }: PaymentTermsProps) {
   return (
-    <div className="text-sm text-gray-400 space-y-2">
+    <div className="text-sm text-muted-foreground space-y-2">
       {isUpgrade ? (
         <p>
           You'll pay ${totalToday.toFixed(2)} today for the upgrade difference. 
