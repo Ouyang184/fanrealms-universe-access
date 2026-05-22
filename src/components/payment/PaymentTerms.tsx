@@ -23,8 +23,7 @@ export function PaymentTerms({
         </p>
       ) : (
         <p>
-          You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} monthly on the 1st. 
-          Your next charge will be on 1 June.
+          You'll pay ${totalToday.toFixed(2)} today, and then ${monthlyAmount.toFixed(2)} every month on the same date.
         </p>
       )}
       <p>

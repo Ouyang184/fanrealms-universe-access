@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Props {
   requestId: string;
@@ -29,7 +30,7 @@ export default function CommissionElementsForm({ requestId, amount }: Props) {
     });
 
     if (error) {
-      console.error('Stripe confirmation error:', error);
+      toast.error(error.message || 'Payment could not be processed. Please try again.');
       setIsProcessing(false);
       return;
     }

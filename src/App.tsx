@@ -58,6 +58,8 @@ const DashboardDevlogEditPage = lazy(() => import("./pages/DashboardDevlogEdit")
 const JamPage = lazy(() => import("./pages/JamPage"));
 const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const CommissionPaymentPage = lazy(() => import("./pages/CommissionPaymentPage"));
+const CommissionPaymentSuccess = lazy(() => import("./pages/CommissionPaymentSuccess"));
+const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const SubscriptionsPage = lazy(() => import("./pages/Subscriptions"));
 
 
@@ -201,7 +203,9 @@ export default function App() {
 
                 {/* Payment flows */}
                 <Route path="/payment" element={<AuthGuard><PaymentPage /></AuthGuard>} />
+                <Route path="/payment-success" element={<AuthGuard><PaymentSuccessPage /></AuthGuard>} />
                 <Route path="/commissions/:id/pay" element={<AuthGuard><CommissionPaymentPage /></AuthGuard>} />
+                <Route path="/commissions/:id/payment-success" element={<AuthGuard><CommissionPaymentSuccess /></AuthGuard>} />
                 <Route path="/subscriptions" element={<AuthGuard><SubscriptionsPage /></AuthGuard>} />
 
                 {/* Library (buyer side) */}
