@@ -104,7 +104,7 @@ serve(async (req) => {
         buyer_id: user.id,
         creator_id: product.creator_id,
       },
-      success_url: `${origin}/marketplace/${productId}?success=true`,
+      success_url: `${origin}/purchase-success?product_id=${productId}`,
       cancel_url: `${origin}/marketplace/${productId}`,
     });
 

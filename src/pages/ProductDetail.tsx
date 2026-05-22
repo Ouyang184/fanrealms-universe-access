@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useProduct, useHasPurchased } from '@/hooks/useMarketplace';
 import { useMarketplaceCheckout } from '@/hooks/useMarketplaceCheckout';
@@ -20,8 +20,7 @@ export default function ProductDetail() {
   const { user } = useAuth();
   const { data: product, isLoading } = useProduct(productId || '');
   const ratingSummary = useProductRatingSummary(productId || '');
-  const [searchParams] = useSearchParams();
-  const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
+const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const { data: hasPurchased } = useHasPurchased(productId || '');
   const [activeImg, setActiveImg] = useState(0);
   const [downloading, setDownloading] = useState(false);
@@ -36,11 +35,6 @@ export default function ProductDetail() {
 
   useEffect(() => { setActiveImg(0); }, [productId]);
 
-  useEffect(() => {
-    if (searchParams.get('success') === 'true') {
-      toast.success('Purchase successful! You can now download this asset.');
-    }
-  }, [searchParams]);
 
   const handleDownload = async () => {
     if (!productId) return;

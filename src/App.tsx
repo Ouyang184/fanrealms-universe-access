@@ -60,6 +60,7 @@ const PaymentPage = lazy(() => import("./pages/PaymentPage"));
 const CommissionPaymentPage = lazy(() => import("./pages/CommissionPaymentPage"));
 const CommissionPaymentSuccess = lazy(() => import("./pages/CommissionPaymentSuccess"));
 const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
+const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
 const SubscriptionsPage = lazy(() => import("./pages/Subscriptions"));
 
 
@@ -204,6 +205,7 @@ export default function App() {
                 {/* Payment flows */}
                 <Route path="/payment" element={<AuthGuard><PaymentPage /></AuthGuard>} />
                 <Route path="/payment-success" element={<AuthGuard><PaymentSuccessPage /></AuthGuard>} />
+                <Route path="/purchase-success" element={<AuthGuard><PurchaseSuccessPage /></AuthGuard>} />
                 <Route path="/commissions/:id/pay" element={<AuthGuard><CommissionPaymentPage /></AuthGuard>} />
                 <Route path="/commissions/:id/payment-success" element={<AuthGuard><CommissionPaymentSuccess /></AuthGuard>} />
                 <Route path="/subscriptions" element={<AuthGuard><SubscriptionsPage /></AuthGuard>} />
