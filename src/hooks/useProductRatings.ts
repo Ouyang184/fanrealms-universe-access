@@ -31,6 +31,7 @@ export function useProductRatings(productId: string) {
       return (data ?? []) as unknown as ProductRating[];
     },
     enabled: !!productId,
+    staleTime: 1000 * 60 * 2, // cache for 2 minutes
   });
 }
 
