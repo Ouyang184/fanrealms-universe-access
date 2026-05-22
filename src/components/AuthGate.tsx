@@ -35,6 +35,9 @@ const AUTH_SENSITIVE_PREFIXES = [
   "/dashboard",
   "/settings",
   "/library",
+  "/payment",
+  "/subscriptions",
+  "/commissions",
 ];
 
 const isAuthSensitive = (pathname: string) =>

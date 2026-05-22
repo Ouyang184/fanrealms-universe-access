@@ -124,13 +124,13 @@ export function StripeConnectSection() {
               <div>
                 <p className="text-green-600">Available:</p>
                 <p className="font-mono font-medium text-green-800">
-                  ${(balance.available?.[0]?.amount || 0) / 100}
+                  ${((balance.available?.[0]?.amount || 0) / 100).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-green-600">Pending:</p>
                 <p className="font-mono font-medium text-green-800">
-                  ${(balance.pending?.[0]?.amount || 0) / 100}
+                  ${((balance.pending?.[0]?.amount || 0) / 100).toFixed(2)}
                 </p>
               </div>
             </div>
