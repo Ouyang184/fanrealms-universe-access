@@ -99,7 +99,7 @@ export function JamSubmissionCard({
   const isOwnEntry = submission.user_id === currentUserId;
   const canVote =
     jamStatus === 'voting' &&
-    !!mySubmissionId &&
+    !!currentUserId &&
     !isOwnEntry;
 
   const [usefulness, setUsefulness] = useState(myVote?.usefulness ?? 0);
@@ -219,9 +219,9 @@ export function JamSubmissionCard({
           <p className="text-[11px] text-[#aaa] pt-1 border-t border-[#f0f0f0]">This is your entry</p>
         )}
 
-        {jamStatus === 'voting' && !mySubmissionId && currentUserId && (
+        {jamStatus === 'voting' && !currentUserId && (
           <p className="text-[11px] text-[#aaa] pt-1 border-t border-[#f0f0f0]">
-            Submit an entry to unlock voting
+            Sign in to vote
           </p>
         )}
       </div>
