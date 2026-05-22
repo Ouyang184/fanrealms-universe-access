@@ -37,7 +37,7 @@ export function StripeConnectSection() {
     );
   }
 
-  const isConnected = connectStatus?.stripe_account_id;
+  const isConnected = !!connectStatus?.is_connected;
   const isOnboardingComplete = connectStatus?.stripe_onboarding_complete;
   const canReceivePayments = connectStatus?.stripe_charges_enabled;
 
