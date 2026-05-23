@@ -3701,6 +3701,7 @@ export type Database = {
       get_public_user_profiles: {
         Args: { _user_ids: string[] }
         Returns: {
+          display_name: string
           id: string
           profile_picture: string
           username: string
