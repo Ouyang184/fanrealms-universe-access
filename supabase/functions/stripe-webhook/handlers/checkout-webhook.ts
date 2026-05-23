@@ -9,9 +9,7 @@ export async function handleCheckoutWebhook(
   console.log('[CheckoutHandler] Processing checkout session completed:', event.id);
 
   const session = event.data.object;
-  console.log('[CheckoutHandler] Session ID:', session.id);
-  console.log('[CheckoutHandler] Customer ID:', session.customer);
-  console.log('[CheckoutHandler] Subscription ID:', session.subscription);
+  console.log('[CheckoutHandler] Session mode:', session.mode, '| has subscription:', !!session.subscription);
 
   if (!session.subscription) {
     // One-time marketplace purchase
@@ -64,7 +62,6 @@ export async function handleCheckoutWebhook(
     // Get the subscription from Stripe to access metadata
     const subscription = await stripe.subscriptions.retrieve(session.subscription);
     console.log('[CheckoutHandler] Retrieved subscription:', subscription.id);
-    console.log('[CheckoutHandler] Subscription metadata:', subscription.metadata);
 
     const { user_id, creator_id, tier_id, existing_subscription_id, action } = subscription.metadata;
 
@@ -114,7 +111,7 @@ export async function handleCheckoutWebhook(
       updated_at: new Date().toISOString(),
     };
 
-    console.log('[CheckoutHandler] Creating subscription record:', subscriptionData);
+    console.log('[CheckoutHandler] Creating subscription record for tier:', tier_id);
 
     const { error: insertError } = await supabaseService
       .from('user_subscriptions')

@@ -55,7 +55,11 @@ serve(async (req) => {
     if (commission.customer_id !== user.id) throw new Error("Not authorized for this commission");
     if (!commission.agreed_price) throw new Error("No agreed price set for this commission");
 
-    const amountCents = Math.round(Number(commission.agreed_price) * 100);
+    const price = Number(commission.agreed_price);
+    if (!isFinite(price) || price <= 0) throw new Error("Commission price is invalid");
+    if (price > 50000) throw new Error("Commission price exceeds maximum ($50,000)");
+    const amountCents = Math.round(price * 100);
+    if (amountCents < 50) throw new Error("Commission price is below Stripe minimum ($0.50)");
 
     if (!stripeSecret) throw new Error("Stripe secret key not configured");
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });

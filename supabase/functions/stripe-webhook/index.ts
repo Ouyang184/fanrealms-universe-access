@@ -8,12 +8,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Initialize Stripe with test/sandbox keys when available
+// Live key takes priority — test/sandbox are fallbacks for local dev only
 const stripeSecretKey =
-  Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
-  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
   Deno.env.get('STRIPE_SECRET_KEY') ||
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+  Deno.env.get('STRIPE_SECRET_KEY_LIVE') ||
+  Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX');
 const stripe = new (await import('https://esm.sh/stripe@14.21.0')).default(
   stripeSecretKey,
   {
@@ -72,7 +72,7 @@ serve(async (req) => {
     try {
       // Use async webhook construction for Deno compatibility
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
-      console.log('Webhook signature verified successfully (TEST MODE)');
+      console.log('Webhook signature verified successfully');
     } catch (err) {
       console.error('Webhook signature verification failed');
       return new Response(JSON.stringify({ 
@@ -83,7 +83,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Webhook event type:', event.type, 'ID:', event.id, '(TEST MODE)');
+    console.log('Webhook event type:', event.type, 'ID:', event.id);
 
     // Handle payment intent webhooks FIRST - these are critical for custom payment flow
     if (event.type === 'payment_intent.succeeded') {

@@ -1,14 +1,10 @@
 
 export async function handleCommissionWebhook(event: any, supabase: any) {
   console.log('Processing commission webhook:', event.type);
-  console.log('Event data:', JSON.stringify(event.data?.object?.metadata || {}, null, 2));
 
   try {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      console.log('Session completed:', session.id);
-      console.log('Session metadata:', session.metadata);
-      console.log('Session payment_intent:', session.payment_intent);
       
       const commissionId = session.metadata?.commission_request_id;
 
