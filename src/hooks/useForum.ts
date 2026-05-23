@@ -17,6 +17,7 @@ export const FORUM_CATEGORIES = [
 export interface PublicUserProfile {
   id: string;
   username: string | null;
+  display_name: string | null;
   profile_picture: string | null;
 }
 

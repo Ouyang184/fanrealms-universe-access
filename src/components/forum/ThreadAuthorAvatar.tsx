@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 
 export interface ThreadAuthor {
   username?: string | null;
+  display_name?: string | null;
   profile_picture?: string | null;
 }
 
@@ -21,7 +22,7 @@ export function ThreadAuthorAvatar({
   fallbackClassName = 'bg-foreground/90 text-background',
   textClassName = 'text-[11px]',
 }: ThreadAuthorAvatarProps) {
-  const initials = (user?.username || '?').slice(0, 2).toUpperCase();
+  const initials = (user?.display_name || user?.username || '?').slice(0, 2).toUpperCase();
 
   return (
     <div

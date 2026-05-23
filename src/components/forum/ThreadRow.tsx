@@ -13,7 +13,7 @@ interface Thread {
   created_at: string;
   updated_at?: string;
   tags?: string[];
-  users?: { username?: string; profile_picture?: string } | null;
+  users?: { username?: string; display_name?: string; profile_picture?: string } | null;
 }
 
 interface ThreadRowProps {
@@ -21,7 +21,7 @@ interface ThreadRowProps {
 }
 
 export function ThreadRow({ thread }: ThreadRowProps) {
-  const author = thread.users?.username || 'Anonymous';
+  const author = thread.users?.display_name || thread.users?.username || 'Anonymous';
   const lastActivity = thread.updated_at || thread.created_at;
 
   return (

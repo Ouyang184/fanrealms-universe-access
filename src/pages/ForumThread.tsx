@@ -92,7 +92,7 @@ export default function ForumThread() {
               {thread.category && <Badge variant="outline">{thread.category}</Badge>}
             </div>
             <div className="text-sm text-muted-foreground mb-4">
-              by {thread.users?.username || 'Anonymous'} · {format(new Date(thread.created_at), 'MMM d, yyyy h:mm a')}
+              by {thread.users?.display_name || thread.users?.username || 'Anonymous'} · {format(new Date(thread.created_at), 'MMM d, yyyy h:mm a')}
             </div>
             <MarkdownContent content={thread.content} />
           </CardContent>
@@ -117,7 +117,7 @@ export default function ForumThread() {
               <Card key={reply.id}>
                 <CardContent className="p-6">
                   <div className="text-sm text-muted-foreground mb-4">
-                    by {reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
+                    by {reply.users?.display_name || reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
                   </div>
                   <MarkdownContent content={reply.content} />
                 </CardContent>
