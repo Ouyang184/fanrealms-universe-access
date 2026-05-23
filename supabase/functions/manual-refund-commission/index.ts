@@ -72,11 +72,11 @@ serve(async (req) => {
       return jsonResponse({ error: 'No payment found for this commission' }, 400);
     }
 
-    if (!['accepted', 'in_progress'].includes(commissionRequest.status)) {
+    if (!['accepted', 'in_progress', 'revision_requested', 'delivered'].includes(commissionRequest.status)) {
       return jsonResponse({ error: 'Commission is not in a refundable state' }, 400);
     }
 
-    console.log('Creating refund for payment intent:', paymentIntentId);
+    console.log('Creating refund for commission:', commissionId);
 
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
@@ -100,7 +100,7 @@ serve(async (req) => {
       return jsonResponse({ error: 'Refund processed but failed to update commission status' }, 500);
     }
 
-    console.log('Manual refund processed successfully:', refund.id);
+    console.log('Manual refund processed successfully for commission:', commissionId);
 
     return jsonResponse({
       success: true,

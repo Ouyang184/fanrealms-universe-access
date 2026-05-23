@@ -82,7 +82,7 @@ serve(async (req) => {
 
 
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated');
 
     // Fetch commission request with creator check
     const { data: commissionRequest, error: fetchError } = await supabaseService
@@ -118,15 +118,9 @@ serve(async (req) => {
       });
     }
 
-    console.log('Commission request found:', commissionRequest.id);
-    console.log('Creator info:', commissionRequest.creator);
-
     // Verify user is the creator
     if (commissionRequest.creator?.user_id !== user.id) {
-      console.error('Unauthorized: User is not the creator', {
-        userID: user.id,
-        creatorUserID: commissionRequest.creator?.user_id
-      });
+      console.error('Unauthorized: User is not the creator of this commission');
       return new Response(JSON.stringify({ 
         error: 'Unauthorized: Only the creator can perform this action' 
       }), {
