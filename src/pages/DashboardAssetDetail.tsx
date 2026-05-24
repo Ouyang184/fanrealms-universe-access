@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { ReleaseVersionPanel } from '@/components/marketplace/ReleaseVersionPanel';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
@@ -585,6 +586,18 @@ export default function DashboardAssetDetail() {
                   </div>
                 )}
               </div>
+
+              {/* Release a new version — only for existing assets */}
+              {!isNew && assetId && (
+                <ReleaseVersionPanel
+                  productId={assetId}
+                  onPublished={(newVersion, newFilePath) => {
+                    setVersion(newVersion);
+                    setAssetFilePath(newFilePath);
+                  }}
+                />
+              )}
+
 
               <div>
                 <label className="text-[13px] font-semibold text-[#333] block mb-1.5">
