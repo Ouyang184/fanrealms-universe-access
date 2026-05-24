@@ -79,13 +79,34 @@ serve(async (req) => {
     const amountCents = Math.round(Number(product.price) * 100);
     if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
 
+    // Fetch creator's fee rate and Stripe Connect status
+    const { data: creatorData } = await supabaseServiceClient
+      .from('creators')
+      .select('platform_fee_rate')
+      .eq('id', product.creator_id)
+      .maybeSingle();
+
+    const { data: stripeAccount } = await supabaseServiceClient
+      .from('creator_stripe_accounts')
+      .select('stripe_account_id, stripe_charges_enabled')
+      .eq('creator_id', product.creator_id)
+      .maybeSingle();
+
+    const platformFeeRate = creatorData?.platform_fee_rate ?? 5;
+    const hasConnect =
+      !!stripeAccount?.stripe_charges_enabled &&
+      !!stripeAccount?.stripe_account_id;
+    const applicationFeeAmount = hasConnect
+      ? Math.round(amountCents * platformFeeRate / 100)
+      : 0;
+
     // Use allowlist — never trust attacker-controlled Origin header
     const requestOrigin = req.headers.get("Origin") ?? "";
     const origin = ALLOWED_ORIGINS.includes(requestOrigin) ? requestOrigin : DEFAULT_ORIGIN;
 
     const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] = {
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [
@@ -96,7 +117,9 @@ serve(async (req) => {
             product_data: {
               name: product.title,
               description: (product as any).short_description || undefined,
-              images: (product as any).cover_image_url ? [(product as any).cover_image_url] : undefined,
+              images: (product as any).cover_image_url
+                ? [(product as any).cover_image_url]
+                : undefined,
             },
           },
           quantity: 1,
@@ -110,7 +133,18 @@ serve(async (req) => {
       },
       success_url: `${origin}/purchase-success?product_id=${productId}`,
       cancel_url: `${origin}/marketplace/${productId}`,
-    });
+    };
+
+    if (hasConnect && stripeAccount?.stripe_account_id) {
+      sessionParams.payment_intent_data = {
+        application_fee_amount: applicationFeeAmount,
+        transfer_data: {
+          destination: stripeAccount.stripe_account_id,
+        },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return new Response(
       JSON.stringify({ url: session.url }),
