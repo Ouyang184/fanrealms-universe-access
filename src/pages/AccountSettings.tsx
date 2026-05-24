@@ -61,6 +61,7 @@ function PayoutsTab() {
   }, [user?.id]);
 
   const handleFeeChange = async (rate: number) => {
+    if (rate === currentRate) return;
     try {
       await updateFeeRate.mutateAsync(rate);
       toast({ title: 'Fee rate updated', description: `You now keep ${100 - rate}% of each sale.` });
