@@ -1,8 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { useCreatorProducts, useSellerSales } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Upload } from 'lucide-react';
+import { EarningsCard } from '@/components/dashboard/EarningsCard';
+import { useTransferPendingEarnings } from '@/hooks/useCreatorEarnings';
+import { toast } from 'sonner';
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -16,6 +20,26 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 export default function DashboardPage() {
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
   const { data: salesData, isLoading: salesLoading } = useSellerSales();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const transferMutation = useTransferPendingEarnings();
+
+  // Handle redirect back from Stripe Connect onboarding
+  useEffect(() => {
+    if (searchParams.get('stripe_success') !== 'true') return;
+    setSearchParams({}, { replace: true });
+    transferMutation.mutateAsync()
+      .then((result) => {
+        if (result.transferred > 0) {
+          toast.success(`Stripe connected! $${result.amount.toFixed(2)} transferred to your account.`);
+        } else {
+          toast.success('Stripe connected! Future earnings will be paid automatically.');
+        }
+      })
+      .catch(() => {
+        toast.info('Stripe connected! Your pending earnings will be transferred shortly.');
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const publishedCount = myAssets?.filter((a) => (a as any).status === 'published').length ?? 0;
   const salesCount = salesData?.sales.length ?? 0;
@@ -54,6 +78,9 @@ export default function DashboardPage() {
             <StatCard label="Total earnings" value={fmt(totalEarnings)} />
           </div>
         )}
+
+        {/* Earnings */}
+        <EarningsCard />
 
         {/* Your assets */}
         <section>
