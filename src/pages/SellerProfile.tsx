@@ -189,6 +189,35 @@ export default function SellerProfilePage() {
           {/* Assets */}
           <section className="mt-10">
             <h2 className="text-[16px] font-bold tracking-[-0.3px] mb-4">Assets</h2>
+            {!productsLoading && categories.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border transition-colors ${
+                    selectedCategory === 'all'
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-[#444] border-[#eee] hover:border-[#ccc]'
+                  }`}
+                >
+                  All
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border transition-colors ${
+                      selectedCategory === cat
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-[#444] border-[#eee] hover:border-[#ccc]'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            )}
             {productsLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -199,19 +228,22 @@ export default function SellerProfilePage() {
                   </div>
                 ))}
               </div>
-            ) : products && products.length > 0 ? (
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {products.map((product) => (
+                {filteredProducts.map((product: any) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             ) : (
               <div className="py-12 text-center border border-dashed border-[#e5e5e5] rounded-2xl">
                 <Package className="w-7 h-7 text-[#ccc] mx-auto mb-2" />
-                <p className="text-[13px] font-semibold text-[#111]">No assets listed yet</p>
+                <p className="text-[13px] font-semibold text-[#111]">
+                  {products && products.length > 0 ? 'No assets in this category' : 'No assets listed yet'}
+                </p>
               </div>
             )}
           </section>
+
 
           {/* Latest posts */}
           <section className="mt-10 mb-12">
