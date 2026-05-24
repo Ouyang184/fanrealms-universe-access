@@ -31,9 +31,10 @@ async function fetchAuthorProfiles(
 ): Promise<Map<string, CommentAuthor>> {
   const uniqueIds = [...new Set(authorIds.filter(Boolean))];
   if (uniqueIds.length === 0) return new Map();
-  const { data } = await supabase.rpc('get_public_user_profiles', {
+  const { data, error } = await supabase.rpc('get_public_user_profiles', {
     _user_ids: uniqueIds,
   });
+  if (error) console.error('[useProductComments] fetchAuthorProfiles failed:', error);
   return new Map(
     ((data as CommentAuthor[]) ?? []).map((u) => [u.id, u])
   );
@@ -109,10 +110,12 @@ export function usePostComment(productId: string) {
 }
 
 export function useSoftDeleteComment(productId: string) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (commentId: string) => {
+      if (!user) throw new Error('Not authenticated');
       const { error } = await supabase
         .from('product_comments')
         .update({ is_deleted: true })
