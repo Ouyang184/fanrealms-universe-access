@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useProductComments } from '@/hooks/useProductComments';
+import { ProductCommentsSection } from '@/components/comments/ProductCommentsSection';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useProduct, useHasPurchased } from '@/hooks/useMarketplace';
 import { useMarketplaceCheckout } from '@/hooks/useMarketplaceCheckout';
@@ -24,6 +26,10 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const { data: hasPurchased } = useHasPurchased(productId || '');
   const [activeImg, setActiveImg] = useState(0);
   const [downloading, setDownloading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab') ?? 'about') as 'about' | 'community';
+  const { data: allComments } = useProductComments(productId ?? '');
+  const commentCount = (allComments ?? []).filter((c) => !c.is_deleted).length;
 
   const isFree = !product?.price || Number(product.price) === 0;
   const canDownload = isFree || hasPurchased;
@@ -110,64 +116,102 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
           </div>
         </div>
 
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b border-border">
+          <button
+            onClick={() => setSearchParams(activeTab === 'about' ? {} : { tab: 'about' })}
+            className={`px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors ${
+              activeTab === 'about'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            About
+          </button>
+          <button
+            onClick={() => setSearchParams({ tab: 'community' })}
+            className={`px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px transition-colors ${
+              activeTab === 'community'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Community
+            {commentCount > 0 && (
+              <span className="ml-1.5 text-[11px] font-normal text-muted-foreground">
+                ({commentCount})
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start lg:grid-flow-col">
 
-          {/* Left: image gallery */}
+          {/* Left: tab content */}
           <div className="space-y-3">
-            {/* Main image */}
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
-              {allImages.length > 0 ? (
-                <img src={allImages[activeImg]} alt={p.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <Package className="w-12 h-12 opacity-30" />
+            {activeTab === 'about' ? (
+              <>
+                {/* Main image */}
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
+                  {allImages.length > 0 ? (
+                    <img src={allImages[activeImg]} alt={p.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Package className="w-12 h-12 opacity-30" />
+                    </div>
+                  )}
+                  {allImages.length > 1 && (
+                    <>
+                      <button onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                        {allImages.map((_, i) => (
+                          <button key={i} onClick={() => setActiveImg(i)}
+                            className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeImg ? 'bg-white' : 'bg-white/50'}`} />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-              {allImages.length > 1 && (
-                <>
-                  <button onClick={() => setActiveImg(i => (i - 1 + allImages.length) % allImages.length)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setActiveImg(i => (i + 1) % allImages.length)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {allImages.map((_, i) => (
+
+                {/* Thumbnail strip */}
+                {allImages.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {allImages.map((img, i) => (
                       <button key={i} onClick={() => setActiveImg(i)}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${i === activeImg ? 'bg-white' : 'bg-white/50'}`} />
+                        className={`flex-shrink-0 w-16 h-10 rounded-md overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-primary' : 'border-transparent'}`}>
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </button>
                     ))}
                   </div>
-                </>
-              )}
-            </div>
+                )}
 
-            {/* Thumbnail strip */}
-            {allImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {allImages.map((img, i) => (
-                  <button key={i} onClick={() => setActiveImg(i)}
-                    className={`flex-shrink-0 w-16 h-10 rounded-md overflow-hidden border-2 transition-colors ${i === activeImg ? 'border-primary' : 'border-transparent'}`}>
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+                {/* Description */}
+                {p.description && (
+                  <div className="pt-4">
+                    <h2 className="text-[15px] font-bold text-foreground mb-3">About this asset</h2>
+                    <MarkdownContent>{p.description}</MarkdownContent>
+                  </div>
+                )}
+
+                {/* Ratings */}
+                <div className="border-t border-border pt-6 mt-6">
+                  <ProductRatingsSection productId={p.id} />
+                </div>
+              </>
+            ) : (
+              <ProductCommentsSection
+                productId={p.id}
+                creatorUserId={p.creators?.user_id ?? null}
+              />
             )}
-
-            {/* Description */}
-            {p.description && (
-              <div className="pt-4">
-                <h2 className="text-[15px] font-bold text-foreground mb-3">About this asset</h2>
-                <MarkdownContent>{p.description}</MarkdownContent>
-              </div>
-            )}
-
-            {/* Ratings */}
-            <div className="border-t border-border pt-6 mt-6">
-              <ProductRatingsSection productId={p.id} />
-            </div>
           </div>
 
           {/* Right: sticky sidebar — renders first on mobile via order */}
