@@ -13,7 +13,6 @@ export async function handleCheckoutWebhook(
 
   if (!session.subscription) {
     // One-time marketplace purchase
-    console.log('[CheckoutHandler] No subscription — checking for one-time purchase metadata');
     const { product_id, buyer_id, creator_id } = session.metadata ?? {};
 
     if (!product_id || !buyer_id || !creator_id) {
@@ -21,10 +20,10 @@ export async function handleCheckoutWebhook(
       return createJsonResponse({ success: true });
     }
 
-    // Fetch price from digital_products (source of truth)
+    // Fetch product price AND creator fee rate together
     const { data: product, error: productFetchError } = await supabaseService
       .from('digital_products')
-      .select('price')
+      .select('price, creator_id')
       .eq('id', product_id)
       .maybeSingle();
 
@@ -33,28 +32,69 @@ export async function handleCheckoutWebhook(
       throw productFetchError;
     }
 
+    const { data: creatorRow } = await supabaseService
+      .from('creators')
+      .select('platform_fee_rate')
+      .eq('id', creator_id)
+      .maybeSingle();
+
+    const feeRate = creatorRow?.platform_fee_rate ?? 5;
     const amount = Number(product?.price ?? 0);
-    const platformFee = parseFloat((amount * 0.01).toFixed(2));   // 1% platform fee
+    const platformFee = parseFloat((amount * feeRate / 100).toFixed(2));
     const netAmount = parseFloat((amount - platformFee).toFixed(2));
 
-    const { error: insertError } = await supabaseService.from('purchases').insert({
-      buyer_id,
-      product_id,
-      creator_id,   // creators.id (FK to public.creators)
-      amount,
-      platform_fee: platformFee,
-      net_amount: netAmount,
-      stripe_session_id: session.id,
-      stripe_payment_intent_id: session.payment_intent ?? null,
-      status: 'completed',
-    });
+    // Insert purchase and capture its id
+    const { data: insertedPurchase, error: insertError } = await supabaseService
+      .from('purchases')
+      .insert({
+        buyer_id,
+        product_id,
+        creator_id,
+        amount,
+        platform_fee: platformFee,
+        net_amount: netAmount,
+        stripe_session_id: session.id,
+        stripe_payment_intent_id: session.payment_intent ?? null,
+        status: 'completed',
+      })
+      .select('id')
+      .single();
 
     if (insertError) {
       console.error('[CheckoutHandler] Error inserting purchase:', insertError);
       throw insertError;
     }
 
-    console.log('[CheckoutHandler] One-time purchase recorded for product:', product_id);
+    console.log('[CheckoutHandler] Purchase recorded:', insertedPurchase.id);
+
+    // Check if creator has Stripe Connect with charges enabled
+    const { data: stripeAcct } = await supabaseService
+      .from('creator_stripe_accounts')
+      .select('stripe_charges_enabled')
+      .eq('creator_id', creator_id)
+      .maybeSingle();
+
+    const hasConnect = !!stripeAcct?.stripe_charges_enabled;
+
+    // Record creator earnings
+    const { error: earningsError } = await supabaseService
+      .from('creator_earnings')
+      .insert({
+        creator_id,
+        purchase_id: insertedPurchase.id,
+        amount,
+        platform_fee: platformFee,
+        net_amount: netAmount,
+        earning_type: 'marketplace',
+        status: hasConnect ? 'transferred' : 'pending',
+      });
+
+    if (earningsError) {
+      // Non-fatal: purchase is recorded, log and continue
+      console.error('[CheckoutHandler] Error recording creator earnings:', earningsError);
+    }
+
+    console.log('[CheckoutHandler] Purchase and earnings recorded. Connect:', hasConnect);
     return createJsonResponse({ success: true });
   }
 
