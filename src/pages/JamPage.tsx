@@ -85,7 +85,7 @@ export default function JamPage() {
               <li className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
                 <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Come back here</strong> during the submission period (May 28 – Jun 11) and click <em>"Submit your entry"</em> to pick your asset.
+                  <strong className="text-[#111]">Come back here</strong> during the submission period (May 24 – Jun 11) and click <em>"Submit your entry"</em> to pick your asset.
                 </span>
               </li>
             </ol>
