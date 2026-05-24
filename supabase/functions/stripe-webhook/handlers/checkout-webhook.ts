@@ -32,10 +32,21 @@ export async function handleCheckoutWebhook(
       throw productFetchError;
     }
 
+    if (!product) {
+      console.error('[CheckoutHandler] Product not found:', product_id);
+      throw new Error(`Product not found: ${product_id}`);
+    }
+
+    // Verify creator_id from metadata matches the product's actual creator
+    if (product.creator_id !== creator_id) {
+      console.error('[CheckoutHandler] creator_id mismatch — metadata vs product:', creator_id, product.creator_id);
+      throw new Error('Creator ID mismatch between metadata and product record');
+    }
+
     const { data: creatorRow } = await supabaseService
       .from('creators')
       .select('platform_fee_rate')
-      .eq('id', creator_id)
+      .eq('id', product.creator_id)
       .maybeSingle();
 
     const feeRate = creatorRow?.platform_fee_rate ?? 5;
