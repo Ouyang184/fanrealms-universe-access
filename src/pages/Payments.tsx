@@ -48,10 +48,10 @@ export default function Payments() {
           <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px]">Selling & payouts</h2>
           <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
             {[
-              'FanRealms takes a 10% platform fee on each sale',
+              'Creators choose their own platform fee: 1% to 5% (default 5%)',
               "Stripe's processing fee (~2.9% + 30¢) is separate and deducted automatically",
               'Payouts go through Stripe Connect directly to your bank account',
-              'Payout timing: typically 2–7 business days depending on your bank',
+              'Connect Stripe in your dashboard settings to receive earnings',
               'You are responsible for your own taxes and VAT',
             ].map((item, i, arr) => (
               <div
