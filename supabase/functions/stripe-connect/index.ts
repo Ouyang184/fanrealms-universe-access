@@ -122,6 +122,16 @@ serve(async (req) => {
     console.log('Origin:', origin)
     console.log('Action:', action)
 
+    const jsonOk = (body: unknown) =>
+      new Response(JSON.stringify(body), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    const jsonErr = (msg: string, status = 400) =>
+      new Response(JSON.stringify({ error: msg }), {
+        status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
     switch (action) {
       case 'create_account': {
         // Verify creator access
@@ -278,9 +288,79 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
       }
+
+      case 'transfer_pending_earnings': {
+        // Resolve the caller's creator id from their user session
+        const transferCreatorId = await verifyCreatorAccess(supabaseService, user.id);
+
+        // Get their Stripe account id from the database (from creators table)
+        const { data: transferCreator } = await supabaseService
+          .from('creators')
+          .select('stripe_account_id')
+          .eq('id', transferCreatorId)
+          .single();
+
+        if (!transferCreator?.stripe_account_id) {
+          return jsonErr('No Stripe account connected', 400);
+        }
+
+        // Fetch all pending marketplace earnings for this creator
+        const { data: pendingEarnings, error: pendingErr } = await supabaseService
+          .from('creator_earnings')
+          .select('id, net_amount')
+          .eq('creator_id', transferCreatorId)
+          .eq('status', 'pending');
+
+        if (pendingErr) throw pendingErr;
+
+        if (!pendingEarnings || pendingEarnings.length === 0) {
+          return jsonOk({ transferred: 0, amount: 0 });
+        }
+
+        const totalCents = Math.round(
+          pendingEarnings.reduce((sum, e) => sum + Number(e.net_amount), 0) * 100
+        );
+
+        // Stripe minimum transfer is $1.00 (100 cents)
+        if (totalCents < 100) {
+          return jsonOk({ transferred: 0, amount: 0, reason: 'Below $1.00 minimum' });
+        }
+
+        // Create the Stripe transfer from platform account to creator's account
+        const transfer = await stripe.transfers.create({
+          amount: totalCents,
+          currency: 'usd',
+          destination: transferCreator.stripe_account_id,
+          description: `FanRealms pending earnings — ${pendingEarnings.length} sale(s)`,
+        });
+
+        // Mark all pending earnings as transferred
+        const earningIds = pendingEarnings.map((e: any) => e.id);
+        const { error: updateErr } = await supabaseService
+          .from('creator_earnings')
+          .update({ status: 'transferred', stripe_transfer_id: transfer.id })
+          .in('id', earningIds);
+
+        if (updateErr) {
+          console.error('[stripe-connect] Failed to update earnings status after transfer:', updateErr);
+          // Transfer succeeded — log error but don't fail the response
+        }
+
+        logSecurityEvent('PENDING_EARNINGS_TRANSFERRED', {
+          creatorId: transferCreatorId,
+          count: pendingEarnings.length,
+          totalCents,
+        }, user.id);
+
+        return jsonOk({
+          transferred: pendingEarnings.length,
+          amount: totalCents / 100,
+          transferId: transfer.id,
+        });
+      }
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action' }), { 
+    return new Response(JSON.stringify({ error: 'Invalid action' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
