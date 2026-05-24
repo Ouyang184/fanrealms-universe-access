@@ -65,6 +65,36 @@ export default function JamPage() {
 
         <JamHeader jam={jam} />
 
+        {/* How to enter — shown while jam is upcoming or accepting submissions */}
+        {(status === 'upcoming' || status === 'active') && (
+          <div className="bg-[#f8fafc] border border-[#e5edf5] rounded-xl p-5 mb-8">
+            <h2 className="text-[14px] font-bold text-[#111] mb-3">How to enter</h2>
+            <ol className="space-y-2.5">
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">Create a free account</strong> on FanRealms if you haven't already.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">Upload and publish a 2D asset</strong> to the FanRealms marketplace — sprites, tilesets, UI elements, animations, or anything 2D made for Godot. Free or paid, your choice.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">Come back here</strong> during the submission period (May 28 – Jun 11) and click <em>"Submit your entry"</em> to pick your asset.
+                </span>
+              </li>
+            </ol>
+            <p className="text-[12px] text-[#888] mt-3 pt-3 border-t border-[#eaeff5]">
+              One submission per person · Must be original work · Asset must remain published for the duration of the jam
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <h2 className="text-[16px] font-bold text-[#111]">
             Submissions{' '}
