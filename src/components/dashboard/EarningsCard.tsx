@@ -30,7 +30,7 @@ const fmt = (n: number) => `$${n.toFixed(2)}`;
 
 export function EarningsCard() {
   const { data: summary, isLoading } = useCreatorEarnings();
-  const { connectStatus, createConnectAccount, createLoginLink, isLoading: connectLoading } = useStripeConnect();
+  const { connectStatus, createConnectAccount, createLoginLink, isLoading: connectLoading, statusLoading } = useStripeConnect();
   const { data: creatorId } = useCreatorId();
   const transferMutation = useTransferPendingEarnings();
 
@@ -55,7 +55,7 @@ export function EarningsCard() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || statusLoading) {
     return (
       <div className="bg-white border border-[#eee] rounded-xl p-5 space-y-3">
         <Skeleton className="h-4 w-24" />
@@ -152,9 +152,11 @@ export function EarningsCard() {
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
                   e.status === 'transferred'
                     ? 'bg-green-100 text-green-700'
+                    : e.status === 'failed'
+                    ? 'bg-red-100 text-red-700'
                     : 'bg-amber-100 text-amber-700'
                 }`}>
-                  {e.status === 'transferred' ? 'paid' : 'pending'}
+                  {e.status === 'transferred' ? 'paid' : e.status === 'failed' ? 'failed' : 'pending'}
                 </span>
                 <span className="text-[13px] font-semibold text-[#111]">
                   {fmt(Number(e.net_amount))}
