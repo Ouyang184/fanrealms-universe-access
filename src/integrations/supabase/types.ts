@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -544,6 +544,8 @@ export type Database = {
           net_amount: number
           payment_date: string | null
           platform_fee: number
+          purchase_id: string | null
+          status: string
           stripe_transfer_id: string | null
           subscription_id: string | null
         }
@@ -557,6 +559,8 @@ export type Database = {
           net_amount: number
           payment_date?: string | null
           platform_fee: number
+          purchase_id?: string | null
+          status?: string
           stripe_transfer_id?: string | null
           subscription_id?: string | null
         }
@@ -570,6 +574,8 @@ export type Database = {
           net_amount?: number
           payment_date?: string | null
           platform_fee?: number
+          purchase_id?: string | null
+          status?: string
           stripe_transfer_id?: string | null
           subscription_id?: string | null
         }
@@ -600,6 +606,13 @@ export type Database = {
             columns: ["creator_id"]
             isOneToOne: false
             referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creator_earnings_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -736,6 +749,7 @@ export type Database = {
           follower_count: number
           id: string
           is_nsfw: boolean
+          platform_fee_rate: number
           profile_image_url: string | null
           tags: string[] | null
           updated_at: string | null
@@ -758,6 +772,7 @@ export type Database = {
           follower_count?: number
           id?: string
           is_nsfw?: boolean
+          platform_fee_rate?: number
           profile_image_url?: string | null
           tags?: string[] | null
           updated_at?: string | null
@@ -780,6 +795,7 @@ export type Database = {
           follower_count?: number
           id?: string
           is_nsfw?: boolean
+          platform_fee_rate?: number
           profile_image_url?: string | null
           tags?: string[] | null
           updated_at?: string | null
