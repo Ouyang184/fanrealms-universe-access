@@ -162,6 +162,25 @@ export function useMyJamVotes(jamId: string) {
   });
 }
 
+/** Fetches the most recent jam that hasn't fully ended (upcoming / active / voting). */
+export function useActiveJam() {
+  return useQuery({
+    queryKey: ['active-jam'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('jams')
+        .select('*')
+        .order('starts_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      const jams = (data ?? []) as Jam[];
+      // Return the first jam that isn't ended
+      return jams.find((j) => getJamStatus(j) !== 'ended') ?? null;
+    },
+  });
+}
+
 export function useSubmitToJam() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

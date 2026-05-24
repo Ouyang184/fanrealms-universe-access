@@ -1,4 +1,5 @@
 import { TopNav } from "./TopNav/TopNav";
+import { JamAnnouncementBanner } from "@/components/jam/JamAnnouncementBanner";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ export function MainLayout({ children, fullWidth = false }: MainLayoutProps) {
   return (
     <div className="min-h-screen bg-[#fafafa] text-foreground flex flex-col">
       <TopNav />
+      <JamAnnouncementBanner />
       <main className="flex-1 w-full">
         <div
           className={
