@@ -21,9 +21,17 @@ export default function SellerProfilePage() {
   const { data: projects, isLoading: projectsLoading } = useSellerProjects(seller?.id ?? '');
   const { data: devlogs } = useSellerDevlogs(seller?.user_id ?? '');
   const [followerCount, setFollowerCount] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   useEffect(() => {
     if (typeof seller?.follower_count === 'number') setFollowerCount(seller.follower_count);
   }, [seller?.follower_count]);
+
+  const categories = Array.from(
+    new Set((products ?? []).map((p: any) => p.category).filter(Boolean))
+  ) as string[];
+  const filteredProducts = selectedCategory === 'all'
+    ? (products ?? [])
+    : (products ?? []).filter((p: any) => p.category === selectedCategory);
 
   if (isError || (!sellerLoading && seller === null)) {
     return (
