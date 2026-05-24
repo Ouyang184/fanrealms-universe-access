@@ -80,17 +80,19 @@ serve(async (req) => {
     if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
 
     // Fetch creator's fee rate and Stripe Connect status
-    const { data: creatorData } = await supabaseServiceClient
+    const { data: creatorData, error: creatorFetchErr } = await supabaseServiceClient
       .from('creators')
       .select('platform_fee_rate')
       .eq('id', product.creator_id)
       .maybeSingle();
+    if (creatorFetchErr) console.warn('[create-checkout-session] creator fetch error:', creatorFetchErr.message);
 
-    const { data: stripeAccount } = await supabaseServiceClient
+    const { data: stripeAccount, error: stripeAcctErr } = await supabaseServiceClient
       .from('creator_stripe_accounts')
       .select('stripe_account_id, stripe_charges_enabled')
       .eq('creator_id', product.creator_id)
       .maybeSingle();
+    if (stripeAcctErr) console.warn('[create-checkout-session] stripe account fetch error:', stripeAcctErr.message);
 
     const platformFeeRate = creatorData?.platform_fee_rate ?? 5;
     const hasConnect =
@@ -135,7 +137,7 @@ serve(async (req) => {
       cancel_url: `${origin}/marketplace/${productId}`,
     };
 
-    if (hasConnect && stripeAccount?.stripe_account_id) {
+    if (hasConnect) {
       sessionParams.payment_intent_data = {
         application_fee_amount: applicationFeeAmount,
         transfer_data: {
