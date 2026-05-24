@@ -16,6 +16,7 @@ import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSectio
 import { useProductRatingSummary } from '@/hooks/useProductRatings';
 import { RatingSummary } from '@/components/ratings/StarRating';
 import { MarkdownContent } from '@/components/editor/RichDescriptionEditor';
+import { ProductChangelogSection } from '@/components/marketplace/ProductChangelogSection';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
@@ -205,6 +206,9 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
                 <div className="border-t border-border pt-6 mt-6">
                   <ProductRatingsSection productId={p.id} />
                 </div>
+
+                {/* Changelog */}
+                <ProductChangelogSection productId={p.id} />
               </>
             ) : (
               <ProductCommentsSection
