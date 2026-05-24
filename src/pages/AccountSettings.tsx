@@ -24,6 +24,9 @@ import { MFAEnrollment } from "@/components/auth/MFAEnrollment";
 import { useMFA } from "@/hooks/useMFA";
 import { useEmailMFA } from "@/hooks/useEmailMFA";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCreatorFeeRate, useUpdateCreatorFeeRate } from '@/hooks/useCreatorEarnings';
+import { useStripeConnect } from '@/hooks/useStripeConnect';
 
 // Password change form schema
 const passwordFormSchema = z.object({
@@ -42,6 +45,105 @@ const passwordFormSchema = z.object({
 });
 
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
+
+function PayoutsTab() {
+  const { data: feeRate, isLoading: feeLoading } = useCreatorFeeRate();
+  const updateFeeRate = useUpdateCreatorFeeRate();
+  const { connectStatus, createConnectAccount, createLoginLink, isLoading: connectLoading } = useStripeConnect();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [creatorId, setCreatorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from('creators').select('id').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setCreatorId(data?.id ?? null));
+  }, [user?.id]);
+
+  const handleFeeChange = async (rate: number) => {
+    try {
+      await updateFeeRate.mutateAsync(rate);
+      toast({ title: 'Fee rate updated', description: `You now keep ${100 - rate}% of each sale.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update fee rate.', variant: 'destructive' });
+    }
+  };
+
+  const isConnected = !!connectStatus?.stripe_charges_enabled;
+  const currentRate = feeRate ?? 5;
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-[15px]">Stripe Payouts</CardTitle>
+          <CardDescription className="text-[13px]">
+            Connect your Stripe account to receive earnings from asset sales.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isConnected ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-[13px] font-medium">Stripe connected</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={createLoginLink} disabled={connectLoading}>
+                Open Stripe Dashboard
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="text-[13px] text-muted-foreground">Not connected</span>
+              </div>
+              <Button size="sm" onClick={() => creatorId && createConnectAccount(creatorId)} disabled={connectLoading || !creatorId}>
+                Connect Stripe
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-[15px]">Platform Fee</CardTitle>
+          <CardDescription className="text-[13px]">
+            The percentage FanRealms keeps from each sale. You keep the rest.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {feeLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((rate) => (
+                  <button
+                    key={rate}
+                    onClick={() => handleFeeChange(rate)}
+                    disabled={updateFeeRate.isPending}
+                    className={`flex-1 py-2 rounded-lg text-[13px] font-semibold border transition-colors ${
+                      currentRate === rate
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-[#555] border-[#eee] hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {rate}%
+                  </button>
+                ))}
+              </div>
+              <p className="text-[12px] text-muted-foreground">
+                At {currentRate}% — you keep <strong>{100 - currentRate}%</strong> of each sale (before Stripe's ~2.9% + 30¢ processing fee).
+              </p>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 export default function AccountSettings() {
   const { isChecking } = useAuthCheck();
@@ -293,6 +395,7 @@ export default function AccountSettings() {
             <TabsTrigger value="account">Account</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
           </TabsList>
           <div className="mt-6 space-y-6">
             <TabsContent value="account" className="m-0">
@@ -573,7 +676,11 @@ export default function AccountSettings() {
 
               </div>
             </TabsContent>
-            
+
+            <TabsContent value="payouts" className="space-y-6 mt-6">
+              <PayoutsTab />
+            </TabsContent>
+
           </div>
         </Tabs>
 
