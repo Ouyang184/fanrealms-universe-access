@@ -326,16 +326,23 @@ serve(async (req) => {
           return jsonOk({ transferred: 0, amount: 0, reason: 'Below $1.00 minimum' });
         }
 
-        // Create the Stripe transfer from platform account to creator's account
-        const transfer = await stripe.transfers.create({
-          amount: totalCents,
-          currency: 'usd',
-          destination: transferCreator.stripe_account_id,
-          description: `FanRealms pending earnings — ${pendingEarnings.length} sale(s)`,
-        });
-
         // Mark all pending earnings as transferred
-        const earningIds = pendingEarnings.map((e: any) => e.id);
+        const earningIds = pendingEarnings.map((e) => e.id);
+
+        // Create the Stripe transfer from platform account to creator's account
+        // Deterministic idempotency key based on creator + sorted earning IDs
+        // prevents double-transfer if two requests fire concurrently
+        const idempotencyKey = `transfer-${transferCreatorId}-${earningIds.sort().join('-')}`.slice(0, 255);
+
+        const transfer = await stripe.transfers.create(
+          {
+            amount: totalCents,
+            currency: 'usd',
+            destination: transferCreator.stripe_account_id,
+            description: `FanRealms pending earnings — ${pendingEarnings.length} sale(s)`,
+          },
+          { idempotencyKey }
+        );
         const { error: updateErr } = await supabaseService
           .from('creator_earnings')
           .update({ status: 'transferred', stripe_transfer_id: transfer.id })
