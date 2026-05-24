@@ -2173,6 +2173,41 @@ export type Database = {
           },
         ]
       }
+      product_versions: {
+        Row: {
+          created_at: string
+          file_path: string
+          id: string
+          product_id: string
+          release_notes: string | null
+          version_number: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          id?: string
+          product_id: string
+          release_notes?: string | null
+          version_number: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          id?: string
+          product_id?: string
+          release_notes?: string | null
+          version_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_versions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           ai_disclosure: string | null
@@ -3976,6 +4011,7 @@ export type Database = {
         Returns: undefined
       }
       is_creator_owner: { Args: { _creator_id: string }; Returns: boolean }
+      is_product_owner: { Args: { _product_id: string }; Returns: boolean }
       is_project_sale_eligible: {
         Args: { _project_id: string }
         Returns: boolean
