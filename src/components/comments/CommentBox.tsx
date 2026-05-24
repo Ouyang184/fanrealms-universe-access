@@ -45,8 +45,12 @@ export function CommentBox({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || isSubmitting) return;
-    await onSubmit(content.trim());
-    setContent('');
+    try {
+      await onSubmit(content.trim());
+      setContent('');
+    } catch {
+      // caller is responsible for surfacing the error via toast
+    }
   };
 
   const authorName =
