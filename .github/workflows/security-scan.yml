@@ -1,0 +1,213 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly scan every Monday at 06:00 UTC to catch drift
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  supabase-linter:
+    name: Supabase DB Linter (RLS, auth, storage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Run Supabase database linter
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ] || [ -z "${SUPABASE_PROJECT_REF:-}" ]; then
+            echo "::error::Missing SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF GitHub secrets."
+            echo "Add them at: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+          # Run all linter levels — fail the build on ERROR, warn on WARN/INFO
+          supabase db lint --level error --linked | tee lint-error.txt
+          ERROR_COUNT=$(grep -c "Level:" lint-error.txt || true)
+
+          echo "---- Warnings (non-blocking) ----"
+          supabase db lint --level warn --linked || true
+
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "::error::Supabase linter found $ERROR_COUNT ERROR-level issues (RLS disabled, security definer views, etc.)"
+            exit 1
+          fi
+
+      - name: Upload linter report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-lint-report
+          path: lint-error.txt
+          if-no-files-found: ignore
+
+  rls-policy-audit:
+    name: RLS Policy Audit (static checks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan migrations for risky patterns
+        run: |
+          set -euo pipefail
+          MIGRATIONS_DIR="supabase/migrations"
+          FAIL=0
+
+          if [ ! -d "$MIGRATIONS_DIR" ]; then
+            echo "No migrations directory; skipping."
+            exit 0
+          fi
+
+          echo "::group::Tables created without ENABLE ROW LEVEL SECURITY"
+          # Flag CREATE TABLE statements in migrations that don't enable RLS in the same file
+          for f in "$MIGRATIONS_DIR"/*.sql; do
+            if grep -iE "create table (if not exists )?(public\.)?[a-z_]+" "$f" > /dev/null; then
+              if ! grep -iE "enable row level security" "$f" > /dev/null; then
+                echo "::warning file=$f::CREATE TABLE without ENABLE ROW LEVEL SECURITY in same migration"
+              fi
+            fi
+          done
+          echo "::endgroup::"
+
+          echo "::group::Overly permissive RLS policies (using true)"
+          if grep -rniE "using \(\s*true\s*\)" "$MIGRATIONS_DIR" ; then
+            echo "::error::Found RLS policy with USING (true) — review for unintended public access"
+            FAIL=1
+          fi
+          echo "::endgroup::"
+
+          echo "::group::SECURITY DEFINER functions missing search_path"
+          # Any function declared SECURITY DEFINER should pin search_path
+          awk '
+            /security definer/ { sd=1; ctx=$0; next }
+            sd && /set search_path/ { sd=0; next }
+            sd && /\$\$/ { print "::error::SECURITY DEFINER function without SET search_path: " FILENAME; sd=0; rc=1 }
+            END { exit rc+0 }
+          ' "$MIGRATIONS_DIR"/*.sql || FAIL=1
+          echo "::endgroup::"
+
+          echo "::group::Roles stored on profile/users tables"
+          if grep -rniE "alter table (public\.)?(users|profiles).*add column.*role" "$MIGRATIONS_DIR" ; then
+            echo "::error::Roles must live in a separate user_roles table — never on users/profiles"
+            FAIL=1
+          fi
+          echo "::endgroup::"
+
+          exit $FAIL
+
+  edge-function-auth-audit:
+    name: Edge Function Auth Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify edge functions validate auth
+        run: |
+          set -euo pipefail
+          FN_DIR="supabase/functions"
+          FAIL=0
+
+          if [ ! -d "$FN_DIR" ]; then
+            echo "No edge functions; skipping."
+            exit 0
+          fi
+
+          # Functions explicitly allowed to be public (must have public-by-design comment)
+          ALLOWLIST="_shared|stripe-webhook|get-stripe-publishable-key"
+
+          for fn in "$FN_DIR"/*/; do
+            name=$(basename "$fn")
+            if echo "$name" | grep -qE "^($ALLOWLIST)$"; then
+              continue
+            fi
+            entry="$fn/index.ts"
+            [ -f "$entry" ] || continue
+
+            # Each non-public function must either call auth.getUser or import an auth helper
+            if ! grep -qE "auth\.getUser|authenticateUser|verifyJWT" "$entry"; then
+              echo "::error file=$entry::Edge function '$name' does not appear to validate caller JWT (no auth.getUser / authenticateUser)"
+              FAIL=1
+            fi
+          done
+
+          echo "::group::service_role_key must never reach the client"
+          if grep -rniE "service_role" src/ 2>/dev/null ; then
+            echo "::error::service_role reference found in src/ — service role key must never reach the browser"
+            FAIL=1
+          fi
+          echo "::endgroup::"
+
+          exit $FAIL
+
+  storage-config-audit:
+    name: Storage Bucket Config Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check public buckets are documented
+        run: |
+          set -euo pipefail
+          MIGRATIONS_DIR="supabase/migrations"
+          [ -d "$MIGRATIONS_DIR" ] || exit 0
+
+          # Buckets intentionally public — must match @security-memory
+          ALLOWED_PUBLIC="avatars|banners|product-images"
+
+          echo "::group::Public bucket declarations"
+          # Find storage.buckets inserts with public=true
+          MATCHES=$(grep -rniE "insert into storage\.buckets.*('|\")(.*)('|\").*true" "$MIGRATIONS_DIR" || true)
+          if [ -n "$MATCHES" ]; then
+            echo "$MATCHES"
+            # Flag any public bucket not in allowlist
+            FAIL=0
+            while IFS= read -r line; do
+              # Extract bucket id between quotes
+              bucket=$(echo "$line" | grep -oE "'[a-z0-9_-]+'" | head -1 | tr -d "'")
+              if [ -n "$bucket" ] && ! echo "$bucket" | grep -qE "^($ALLOWED_PUBLIC)$"; then
+                echo "::error::Public storage bucket '$bucket' is not in the documented allowlist ($ALLOWED_PUBLIC). Update @security-memory or make it private."
+                FAIL=1
+              fi
+            done <<< "$MATCHES"
+            exit $FAIL
+          fi
+          echo "::endgroup::"
+
+  dependency-audit:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run npm audit (high+critical)
+        run: |
+          npm audit --audit-level=high --omit=dev || {
+            echo "::warning::npm audit found high/critical vulnerabilities — review and update affected packages"
+            exit 0
+          }
