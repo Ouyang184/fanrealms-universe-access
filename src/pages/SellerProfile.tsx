@@ -12,6 +12,7 @@ import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-
 import { formatDistanceToNow } from 'date-fns';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { SocialLinks } from '@/components/SocialLinks';
+import { safeHref } from '@/lib/safeHref';
 import { useState, useEffect } from 'react';
 
 export default function SellerProfilePage() {
