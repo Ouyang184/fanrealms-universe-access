@@ -8,6 +8,8 @@ import {
   useJamSubmissions,
   useMyJamSubmission,
   useMyJamVotes,
+  useIsAdmin,
+  useAnnounceJamWinners,
   getJamStatus,
 } from '@/hooks/useJam';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +26,8 @@ export default function JamPage() {
   const { data: submissions, isLoading: subsLoading } = useJamSubmissions(jamId ?? '');
   const { data: mySubmission } = useMyJamSubmission(jamId ?? '');
   const { data: myVotes = {} } = useMyJamVotes(jamId ?? '');
+  const { data: isAdmin = false } = useIsAdmin();
+  const announceWinners = useAnnounceJamWinners();
 
   if (jamLoading) {
     return (
@@ -52,6 +56,19 @@ export default function JamPage() {
 
   const status = getJamStatus(jam);
   const canSubmit = status === 'active' && !!user && !mySubmission;
+
+  const handleAnnounceWinners = () => {
+    if (!submissions || submissions.length === 0) return;
+    const prizes = jam.prize_pool ?? [];
+    const top3 = submissions.slice(0, 3).map((s, i) => ({
+      rank: i + 1,
+      productTitle: s.product?.title ?? 'Untitled',
+      creatorName: s.creator?.display_name || s.creator?.username || 'Unknown',
+      prize: prizes[i]?.prize ?? '—',
+    }));
+    if (!confirm('Post winner announcement to the forum thread?')) return;
+    announceWinners.mutate({ jam, winners: top3 });
+  };
 
   return (
     <MainLayout>
@@ -120,6 +137,16 @@ export default function JamPage() {
                 <Button variant="outline">Sign in to submit</Button>
               </Link>
             )}
+            {isAdmin && status === 'ended' && submissions && submissions.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={handleAnnounceWinners}
+                disabled={announceWinners.isPending}
+                className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              >
+                🏆 Announce winners
+              </Button>
+            )}
           </div>
         </div>
 
@@ -148,6 +175,7 @@ export default function JamPage() {
                 myVote={myVotes[s.id] ?? null}
                 currentUserId={user?.id ?? null}
                 rank={i + 1}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

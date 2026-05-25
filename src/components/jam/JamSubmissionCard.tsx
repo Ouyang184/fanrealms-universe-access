@@ -1,8 +1,8 @@
 // src/components/jam/JamSubmissionCard.tsx
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink } from 'lucide-react';
-import { useVoteOnSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
+import { ExternalLink, Trash2 } from 'lucide-react';
+import { useVoteOnSubmission, useRemoveJamSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
 
 interface Submission {
   id: string;
@@ -35,6 +35,7 @@ interface Props {
   myVote: JamVote | null;
   currentUserId: string | null;
   rank: number;
+  isAdmin?: boolean;
 }
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -95,8 +96,10 @@ export function JamSubmissionCard({
   myVote,
   currentUserId,
   rank,
+  isAdmin = false,
 }: Props) {
   const voteOnSubmission = useVoteOnSubmission();
+  const removeSubmission = useRemoveJamSubmission();
   const isOwnEntry = submission.user_id === currentUserId;
   const canVote =
     jamStatus === 'voting' &&
@@ -238,6 +241,24 @@ export function JamSubmissionCard({
           <p className="text-[11px] text-[#aaa] pt-1 border-t border-[#f0f0f0]">
             Sign in to vote
           </p>
+        )}
+
+        {isAdmin && (
+          <div className="pt-2 border-t border-red-100">
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`Remove "${submission.product?.title ?? 'this submission'}" from the jam?`)) {
+                  removeSubmission.mutate({ submissionId: submission.id, jamId });
+                }
+              }}
+              disabled={removeSubmission.isPending}
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-red-500 hover:text-red-600 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="w-3 h-3" />
+              Remove submission
+            </button>
+          </div>
         )}
       </div>
     </div>

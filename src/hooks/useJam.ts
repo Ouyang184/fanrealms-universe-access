@@ -162,6 +162,24 @@ export function useMyJamVotes(jamId: string) {
   });
 }
 
+/** Returns true if the current user has is_admin = true. */
+export function useIsAdmin() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['is-admin', user?.id],
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', user!.id)
+        .maybeSingle();
+      return (data as any)?.is_admin === true;
+    },
+  });
+}
+
 /** Fetches the most recent jam that hasn't fully ended (upcoming / active / voting). */
 export function useActiveJam() {
   return useQuery({
@@ -242,6 +260,60 @@ export function useVoteOnSubmission() {
     },
     onError: (err: Error) => {
       toast.error('Vote failed: ' + err.message);
+    },
+  });
+}
+
+/** Admin: hide a submission from the jam. */
+export function useRemoveJamSubmission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ submissionId, jamId }: { submissionId: string; jamId: string }) => {
+      const { error } = await supabase
+        .from('jam_submissions')
+        .update({ is_removed: true })
+        .eq('id', submissionId);
+      if (error) throw error;
+      return jamId;
+    },
+    onSuccess: (jamId) => {
+      queryClient.invalidateQueries({ queryKey: ['jam-submissions', jamId] });
+      toast.success('Submission removed');
+    },
+    onError: (err: Error) => {
+      toast.error('Failed to remove: ' + err.message);
+    },
+  });
+}
+
+/** Admin: post a winners announcement reply to the jam's forum thread. */
+export function useAnnounceJamWinners() {
+  return useMutation({
+    mutationFn: async ({
+      jam,
+      winners,
+    }: {
+      jam: Jam;
+      winners: Array<{ rank: number; productTitle: string; creatorName: string; prize: string }>;
+    }) => {
+      if (!jam.thread_id) throw new Error('This jam has no linked forum thread');
+
+      const lines = winners
+        .map((w) => `${w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'} **${w.rank === 1 ? '1st' : w.rank === 2 ? '2nd' : '3rd'} place — ${w.productTitle}** by ${w.creatorName} · ${w.prize}`)
+        .join('\n');
+
+      const content = `🏆 **Winners Announced!**\n\nThank you to everyone who entered and voted in FanRealms Asset Jam #1. Here are your winners:\n\n${lines}\n\nPrizes will be paid out within 48 hours. Congratulations! 🎉`;
+
+      const { error } = await supabase
+        .from('forum_replies')
+        .insert({ thread_id: jam.thread_id, content });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Winners announced in forum thread!');
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
     },
   });
 }
