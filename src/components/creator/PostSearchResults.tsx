@@ -31,7 +31,7 @@ export function PostSearchResults({ posts, isLoading, searchQuery, isCreatorStud
         <p className="text-muted-foreground">Try searching something else!</p>
         {isCreatorStudio && (
           <Button asChild className="mt-4">
-            <Link to="/creator-studio/posts">Create Your First Post</Link>
+            <Link to="/dashboard">Create Your First Post</Link>
           </Button>
         )}
       </div>

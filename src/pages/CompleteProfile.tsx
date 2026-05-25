@@ -49,7 +49,7 @@ export default function CompleteProfile() {
       // Check username uniqueness via SECURITY DEFINER RPC (direct users query is
       // blocked by RLS — the policy only lets users read their own row).
       const { data: isAvailable } = await supabase
-        .rpc('check_username_available', { p_username: cleanUsername, p_user_id: user!.id });
+        .rpc('check_username_available' as any, { p_username: cleanUsername, p_user_id: user!.id });
 
       if (isAvailable === false) {
         setFieldErrors({ username: 'That username is already taken. Please choose another.' });

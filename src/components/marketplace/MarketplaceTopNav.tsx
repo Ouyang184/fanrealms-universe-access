@@ -54,7 +54,7 @@ export function MarketplaceTopNav() {
 
         <div className="flex items-center gap-2 ml-auto">
           <Link
-            to="/creator-studio/products"
+            to="/dashboard/assets/new"
             className="hidden sm:inline-flex items-center px-3 py-1.5 text-xs font-semibold text-primary border border-primary/30 rounded-md hover:bg-primary/5 transition-colors"
           >
             Sell on FanRealms
