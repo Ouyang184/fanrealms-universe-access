@@ -200,8 +200,8 @@ serve(async (req) => {
       console.log('Creating account link for:', accountId)
       const accountLink = await stripe.accountLinks.create({
         account: accountId,
-        refresh_url: `${origin}/creator-studio/settings?stripe_refresh=true`,
-        return_url: `${origin}/creator-studio/settings?stripe_success=true`,
+        refresh_url: `${origin}/settings`,
+        return_url: `${origin}/dashboard?stripe_success=true`,
         type: 'account_onboarding',
       })
 
