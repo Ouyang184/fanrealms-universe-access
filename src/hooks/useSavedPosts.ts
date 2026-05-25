@@ -62,15 +62,14 @@ export const useSavedPosts = () => {
         creatorsData = creators || [];
       }
 
-      // Get user info for posts without creators
-      const authorIds = postsData?.map(p => p.author_id) || [];
-      let usersData = [];
+      // Get user info for posts — use SECURITY DEFINER RPC since users
+      // table RLS only allows reading own row
+      const authorIds = [...new Set((postsData?.map(p => p.author_id) || []).filter(Boolean))];
+      let usersData: any[] = [];
       if (authorIds.length > 0) {
         const { data: users } = await supabase
-          .from('users')
-          .select('id, username, profile_picture')
-          .in('id', authorIds);
-        usersData = users || [];
+          .rpc('get_public_user_profiles', { _user_ids: authorIds });
+        usersData = (users as any[]) || [];
       }
 
       // Combine the data
