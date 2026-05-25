@@ -1238,26 +1238,38 @@ export type Database = {
       jam_submissions: {
         Row: {
           created_at: string
+          external_cover_url: string | null
+          external_description: string | null
+          external_title: string | null
+          external_url: string | null
           id: string
           is_removed: boolean
           jam_id: string
-          product_id: string
+          product_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          external_cover_url?: string | null
+          external_description?: string | null
+          external_title?: string | null
+          external_url?: string | null
           id?: string
           is_removed?: boolean
           jam_id: string
-          product_id: string
+          product_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          external_cover_url?: string | null
+          external_description?: string | null
+          external_title?: string | null
+          external_url?: string | null
           id?: string
           is_removed?: boolean
           jam_id?: string
-          product_id?: string
+          product_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2999,6 +3011,10 @@ export type Database = {
           avg_quality: number | null
           avg_usefulness: number | null
           created_at: string | null
+          external_cover_url: string | null
+          external_description: string | null
+          external_title: string | null
+          external_url: string | null
           id: string | null
           jam_id: string | null
           product_id: string | null
