@@ -288,6 +288,7 @@ export function useRemoveJamSubmission() {
 
 /** Admin: post a winners announcement reply to the jam's forum thread. */
 export function useAnnounceJamWinners() {
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async ({
       jam,
@@ -297,16 +298,17 @@ export function useAnnounceJamWinners() {
       winners: Array<{ rank: number; productTitle: string; creatorName: string; prize: string }>;
     }) => {
       if (!jam.thread_id) throw new Error('This jam has no linked forum thread');
+      if (!user) throw new Error('Not signed in');
 
       const lines = winners
         .map((w) => `${w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'} **${w.rank === 1 ? '1st' : w.rank === 2 ? '2nd' : '3rd'} place — ${w.productTitle}** by ${w.creatorName} · ${w.prize}`)
         .join('\n');
 
-      const content = `🏆 **Winners Announced!**\n\nThank you to everyone who entered and voted in FanRealms Asset Jam #1. Here are your winners:\n\n${lines}\n\nPrizes will be paid out within 48 hours. Congratulations! 🎉`;
+      const content = `🏆 **Winners Announced!**\n\nThank you to everyone who entered and voted in ${jam.title}. Here are your winners:\n\n${lines}\n\nPrizes will be paid out within 48 hours. Congratulations! 🎉`;
 
       const { error } = await supabase
         .from('forum_replies')
-        .insert({ thread_id: jam.thread_id, content });
+        .insert({ thread_id: jam.thread_id, author_id: user.id, content });
       if (error) throw error;
     },
     onSuccess: () => {
