@@ -69,7 +69,7 @@ function ProjectsList() {
               </Link>
               {p.website_url && (
                 <a
-                  href={p.website_url}
+                  href={safeHref(p.website_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#777] hover:text-primary"
