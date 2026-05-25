@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { X, Upload } from 'lucide-react';
+import { safeHref } from '@/lib/safeHref';
 
 const AVAILABLE_TAGS = [
   "Gaming", "Art", "Music", "Writing", "Photography", "Education",
