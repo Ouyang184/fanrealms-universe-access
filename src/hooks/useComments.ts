@@ -25,17 +25,10 @@ export const useComments = (postId: string) => {
   const { data: comments = [], isLoading, error } = useQuery({
     queryKey: ['comments', postId],
     queryFn: async () => {
-      console.log('Fetching comments for post:', postId);
-      
+      // Fetch comments without the users join (users RLS blocks other users' rows)
       const { data, error } = await supabase
         .from('comments')
-        .select(`
-          *,
-          users (
-            username,
-            profile_picture
-          )
-        `)
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
@@ -43,9 +36,27 @@ export const useComments = (postId: string) => {
         console.error('Error fetching comments:', error);
         throw error;
       }
-      
-      console.log('Fetched comments:', data);
-      return data as Comment[];
+
+      if (!data || data.length === 0) return [];
+
+      // Fetch author profiles via SECURITY DEFINER RPC (bypasses users RLS)
+      const userIds = [...new Set(data.map((c) => c.user_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: userIds });
+
+      const profileMap = new Map(
+        ((profiles as any[]) ?? []).map((p) => [p.id, p])
+      );
+
+      return data.map((c) => ({
+        ...c,
+        users: profileMap.get(c.user_id)
+          ? {
+              username: profileMap.get(c.user_id).username,
+              profile_picture: profileMap.get(c.user_id).profile_picture,
+            }
+          : null,
+      })) as Comment[];
     },
     enabled: !!postId
   });
@@ -54,37 +65,21 @@ export const useComments = (postId: string) => {
     mutationFn: async (content: string) => {
       if (!user?.id) throw new Error('Must be logged in to comment');
 
-      console.log('Adding comment:', { postId, userId: user.id, content });
-
       const { data, error } = await supabase
         .from('comments')
-        .insert({
-          post_id: postId,
-          user_id: user.id,
-          content
-        })
-        .select(`
-          *,
-          users (
-            username,
-            profile_picture
-          )
-        `)
+        .insert({ post_id: postId, user_id: user.id, content })
+        .select('*')
         .single();
 
       if (error) {
         console.error('Error adding comment:', error);
         throw error;
       }
-      
-      console.log('Added comment:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-      toast({
-        description: "Comment added successfully",
-      });
+      toast({ description: "Comment added successfully" });
     },
     onError: (error) => {
       console.error('Comment mutation error:', error);
@@ -99,25 +94,16 @@ export const useComments = (postId: string) => {
   const deleteCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       if (!user?.id) throw new Error('Must be logged in to delete comment');
-
-      console.log('Deleting comment:', commentId);
-
       const { error } = await supabase
         .from('comments')
         .delete()
         .eq('id', commentId)
         .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error deleting comment:', error);
-        throw error;
-      }
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
-      toast({
-        description: "Comment deleted successfully",
-      });
+      toast({ description: "Comment deleted successfully" });
     },
     onError: (error) => {
       console.error('Delete comment error:', error);
