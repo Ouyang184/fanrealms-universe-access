@@ -131,7 +131,7 @@ export default function SellerProfilePage() {
                     </span>
                     {(seller as any)?.website && (
                       <a
-                        href={(seller as any).website}
+                        href={safeHref((seller as any).website)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-[12px] text-primary hover:underline"
