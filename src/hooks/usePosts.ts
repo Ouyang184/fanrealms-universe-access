@@ -15,11 +15,6 @@ export function usePosts() {
         .from('posts')
         .select(`
           *,
-          users!posts_author_id_fkey (
-            id,
-            username,
-            profile_picture
-          ),
           creators!posts_creator_id_fkey (
             id,
             display_name,
@@ -54,8 +49,8 @@ export function usePosts() {
       console.log('[usePosts] Current time for scheduling filter:', now);
 
       return data.map((post): Post => {
-        // Safely handle user data with proper typing
-        const userData = post.users as { id: string; username: string; profile_picture: string | null } | null;
+        // users join intentionally omitted — users RLS blocks cross-user reads.
+        // Use creator display data which is always accessible.
         const creatorData = post.creators as { id: string; display_name: string; profile_image_url: string | null } | null;
         
         // Handle tier information
@@ -79,9 +74,8 @@ export function usePosts() {
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
           
-          // Set authorName and authorAvatar from the fetched user data
-          authorName: userData?.username || creatorData?.display_name || "Creator",
-          authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
+          authorName: creatorData?.display_name || "Creator",
+          authorAvatar: creatorData?.profile_image_url || null,
           
           // Add tags from DB column if present
           tags: Array.isArray(post.tags) ? post.tags : [],

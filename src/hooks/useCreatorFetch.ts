@@ -102,10 +102,6 @@ export function useCreatorFetch(identifier?: string) {
         .from('posts')
         .select(`
           *,
-          users!posts_author_id_fkey (
-            username,
-            profile_picture
-          ),
           membership_tiers (
             id,
             title,
@@ -141,8 +137,6 @@ export function useCreatorFetch(identifier?: string) {
       console.log('[useCreatorFetch] Posts data:', data);
       
       return data.map((post): Post => {
-        const userData = post.users as { username: string; profile_picture: string | null } | null;
-        
         return {
           id: post.id,
           title: post.title,
@@ -152,8 +146,9 @@ export function useCreatorFetch(identifier?: string) {
           createdAt: post.created_at,
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
-          authorName: userData?.username || creator.display_name || "Creator",
-          authorAvatar: userData?.profile_picture || creator.profile_image_url || null,
+          // users join omitted — RLS blocks cross-user reads; use creator profile data instead
+          authorName: creator.display_name || "Creator",
+          authorAvatar: creator.profile_image_url || null,
           date: formatRelativeDate(post.created_at),
           tags: post.title
             ?.split(' ')

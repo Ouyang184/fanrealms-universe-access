@@ -46,16 +46,12 @@ export default function CompleteProfile() {
     try {
       const cleanUsername = username.trim().toLowerCase();
 
-      // Check username uniqueness against public.users (the source of truth
-      // for ALL accounts, not just creators). Exclude this user's own row.
-      const { data: existing } = await supabase
-        .from('users')
-        .select('id')
-        .ilike('username', cleanUsername)
-        .neq('id', user!.id)
-        .maybeSingle();
+      // Check username uniqueness via SECURITY DEFINER RPC (direct users query is
+      // blocked by RLS — the policy only lets users read their own row).
+      const { data: isAvailable } = await supabase
+        .rpc('check_username_available', { p_username: cleanUsername, p_user_id: user!.id });
 
-      if (existing) {
+      if (isAvailable === false) {
         setFieldErrors({ username: 'That username is already taken. Please choose another.' });
         return;
       }

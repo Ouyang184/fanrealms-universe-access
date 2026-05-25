@@ -31,8 +31,8 @@ export default function SubscriptionsPage() {
         ) : (
           <div className="space-y-4">
             {userSubscriptions.map((sub) => {
-              const creatorName = sub.creators?.display_name || sub.creators?.users?.username || 'Unknown Creator';
-              const creatorUsername = sub.creators?.users?.username;
+              const creatorName = sub.creators?.display_name || sub.creators?.username || 'Unknown Creator';
+              const creatorUsername = sub.creators?.username;
               const tierTitle = sub.membership_tiers?.title || 'Membership';
               const price = sub.membership_tiers?.price ?? sub.amount / 100;
               const renewsAt = sub.current_period_end

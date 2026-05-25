@@ -34,10 +34,8 @@ export const useSubscriptions = () => {
             creator:creators (
               id,
               display_name,
-              profile_image_url,
-              users (
-                username
-              )
+              username,
+              profile_image_url
             ),
             tier:membership_tiers (
               id,

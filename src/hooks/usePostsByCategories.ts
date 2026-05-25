@@ -22,11 +22,6 @@ export function usePostsByCategories(categoryIds: number[]) {
         .from('posts')
         .select(`
           *,
-          users!posts_author_id_fkey (
-            id,
-            username,
-            profile_picture
-          ),
           creators!posts_creator_id_fkey (
             id,
             display_name,
@@ -92,9 +87,9 @@ export function usePostsByCategories(categoryIds: number[]) {
       });
 
       return filteredPosts.map((post): Post => {
-        const userData = post.users as { id: string; username: string; profile_picture: string | null } | null;
+        // users join intentionally omitted — users RLS blocks cross-user reads.
         const creatorData = post.creators as { id: string; display_name: string; profile_image_url: string | null } | null;
-        
+
         return {
           id: post.id,
           title: post.title,
@@ -104,8 +99,8 @@ export function usePostsByCategories(categoryIds: number[]) {
           createdAt: post.created_at,
           attachments: post.attachments || [],
           is_nsfw: post.is_nsfw || false,
-          authorName: userData?.username || creatorData?.display_name || "Creator",
-          authorAvatar: userData?.profile_picture || creatorData?.profile_image_url || null,
+          authorName: creatorData?.display_name || "Creator",
+          authorAvatar: creatorData?.profile_image_url || null,
           date: formatRelativeDate(post.created_at),
           tags: post.title
             ?.split(' ')

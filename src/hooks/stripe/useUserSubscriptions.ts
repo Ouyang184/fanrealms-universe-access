@@ -21,12 +21,7 @@ interface UserSubscriptionWithDetails {
     bio: string | null;
     profile_image_url: string | null;
     banner_url: string | null;
-    users?: {
-      id: string;
-      username: string;
-      email: string;
-      profile_picture: string | null;
-    } | null;
+    username: string;
   } | null;
   membership_tiers?: {
     id: string;
@@ -65,12 +60,7 @@ export const useUserSubscriptions = () => {
             bio,
             profile_image_url,
             banner_url,
-            users (
-              id,
-              username,
-              email,
-              profile_picture
-            )
+            username
           ),
           membership_tiers!fk_user_subscriptions_tier_id (
             id,
