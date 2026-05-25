@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSocialLinks, SocialLink } from "@/hooks/useSocialLinks";
+import { safeHref } from "@/lib/safeHref";
 
 interface SocialLinksProps {
   creatorId?: string;
