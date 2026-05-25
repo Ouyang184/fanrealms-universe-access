@@ -4,6 +4,7 @@ import { Search, ShoppingBag, User } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useActiveJam, getJamStatus } from "@/hooks/useJam";
 
 const PRIMARY_LINKS = [
   { to: "/marketplace", label: "Browse" },
@@ -19,6 +20,9 @@ export function MarketplaceTopNav() {
   const { user } = useAuth();
   const [q, setQ] = useState("");
   const location = useLocation();
+  const { data: activeJam } = useActiveJam();
+  const jamStatus = activeJam ? getJamStatus(activeJam) : null;
+  const showJam = jamStatus === 'upcoming' || jamStatus === 'active';
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +120,23 @@ export function MarketplaceTopNav() {
         >
           Forum
         </Link>
+        {showJam && activeJam && (
+          <>
+            <div className="mx-2 h-4 w-px bg-border" />
+            <Link
+              to={`/jam/${activeJam.id}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+            >
+              🏆 Asset Jam
+              {jamStatus === 'active' && (
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+                </span>
+              )}
+            </Link>
+          </>
+        )}
       </nav>
     </header>
   );

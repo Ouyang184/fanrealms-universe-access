@@ -6,6 +6,7 @@ import { ThreadRow } from '@/components/forum/ThreadRow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useActiveJam, getJamStatus } from '@/hooks/useJam';
 
 const PAGE_SIZE = 24;
 const ALL_CATEGORIES = ['All', ...FORUM_CATEGORIES] as const;
@@ -23,10 +24,39 @@ export default function Forum() {
 
   const visibleThreads = threads?.slice(0, visibleCount) ?? [];
   const remaining = (threads?.length ?? 0) - visibleThreads.length;
+  const { data: activeJam } = useActiveJam();
+  const jamStatus = activeJam ? getJamStatus(activeJam) : null;
 
   return (
     <MainLayout fullWidth>
       <div className="w-full space-y-4">
+        {/* Jam banner — shown while active */}
+        {activeJam && (jamStatus === 'upcoming' || jamStatus === 'active') && (
+          <Link
+            to={`/jam/${activeJam.id}`}
+            className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="text-xl flex-shrink-0">🏆</span>
+              <div className="min-w-0">
+                <div className="text-[13px] font-bold text-amber-900 truncate">
+                  {activeJam.title} is {jamStatus === 'active' ? 'now open' : 'coming soon'}!
+                </div>
+                <div className="text-[12px] text-amber-700">
+                  {jamStatus === 'active'
+                    ? 'Submit your Godot 2D asset — prizes up for grabs. Click to enter →'
+                    : `Starts ${new Date(activeJam.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — get your assets ready!`}
+                </div>
+              </div>
+            </div>
+            {jamStatus === 'active' && (
+              <span className="flex-shrink-0 px-3 py-1 text-[11px] font-bold text-white bg-amber-500 rounded-full group-hover:bg-amber-600 transition-colors whitespace-nowrap">
+                Enter now
+              </span>
+            )}
+          </Link>
+        )}
+
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3 flex items-center justify-between gap-4 flex-wrap">
           <span>
