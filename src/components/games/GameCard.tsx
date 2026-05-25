@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { useGameRatingSummary, useSubmitGameRating, useGameRatings } from '@/hooks/useGameRatings';
 import { useAuth } from '@/contexts/AuthContext';
 import { StarRating, RatingSummary } from '@/components/ratings/StarRating';
+import { safeHref } from '@/lib/safeHref';
 
 interface GameCardProps {
   game: IndieGame;
