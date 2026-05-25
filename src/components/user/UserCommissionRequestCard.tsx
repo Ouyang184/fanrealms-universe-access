@@ -11,6 +11,7 @@ import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 import { RequestRevisionModal } from './RequestRevisionModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCommissionDeliverables } from '@/hooks/useCommissionDeliverables';
+import { safeHref } from '@/lib/safeHref';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
