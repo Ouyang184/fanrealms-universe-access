@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Globe } from "lucide-react";
 import { SocialLinks } from "@/components/SocialLinks";
+import { safeHref } from "@/lib/safeHref";
 
 interface ProfileHeaderProps {
   creator: {
@@ -125,7 +126,7 @@ export function ProfileHeader({ creator }: ProfileHeaderProps) {
               <div className="flex items-center gap-2 text-sm">
                 <Globe className="w-4 h-4 text-muted-foreground" />
                 <a 
-                  href={creator.website} 
+                  href={safeHref(creator.website)} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:text-primary/80 transition-colors font-medium"

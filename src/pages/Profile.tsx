@@ -17,6 +17,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { X, Upload } from 'lucide-react';
+import { safeHref } from '@/lib/safeHref';
 
 const AVAILABLE_TAGS = [
   "Gaming", "Art", "Music", "Writing", "Photography", "Education",
@@ -412,7 +413,7 @@ const ProfilePage: React.FC = () => {
                       <p className="text-muted-foreground">@{profileData?.username}</p>
                       {profileData?.website && (
                         <a 
-                          href={profileData.website}
+                          href={safeHref(profileData.website)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline text-sm block mt-1"

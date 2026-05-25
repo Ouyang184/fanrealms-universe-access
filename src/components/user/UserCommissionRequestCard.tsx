@@ -11,6 +11,7 @@ import { DeleteCommissionRequestDialog } from './DeleteCommissionRequestDialog';
 import { RequestRevisionModal } from './RequestRevisionModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCommissionDeliverables } from '@/hooks/useCommissionDeliverables';
+import { safeHref } from '@/lib/safeHref';
 
 interface UserCommissionRequestWithRelations extends Omit<CommissionRequest, 'status' | 'selected_addons'> {
   status: string;
@@ -244,13 +245,16 @@ export function UserCommissionRequestCard({
                       <ul className="space-y-2 mt-1">
                         {d.external_links.map((link, i) => (
                           <li key={i} className="flex items-center justify-between text-sm">
-                            <a href={link} target="_blank" rel="noopener noreferrer" className="truncate mr-2 underline">
+                            <a href={safeHref(link)} target="_blank" rel="noopener noreferrer" className="truncate mr-2 underline">
                               {link}
                             </a>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => window.open(link, '_blank', 'noopener,noreferrer')}
+                              onClick={() => {
+                                const safe = safeHref(link);
+                                if (safe !== '#') window.open(safe, '_blank', 'noopener,noreferrer');
+                              }}
                               className="flex items-center gap-2"
                             >
                               <ExternalLink className="h-4 w-4" /> Open

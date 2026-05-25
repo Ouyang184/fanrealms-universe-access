@@ -12,6 +12,7 @@ import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-
 import { formatDistanceToNow } from 'date-fns';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { SocialLinks } from '@/components/SocialLinks';
+import { safeHref } from '@/lib/safeHref';
 import { useState, useEffect } from 'react';
 
 export default function SellerProfilePage() {
@@ -130,7 +131,7 @@ export default function SellerProfilePage() {
                     </span>
                     {(seller as any)?.website && (
                       <a
-                        href={(seller as any).website}
+                        href={safeHref((seller as any).website)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-[12px] text-primary hover:underline"
