@@ -10,6 +10,7 @@ import { HeaderNotifications } from '../Header/HeaderNotifications';
 import { UserDropdownMenu } from '../Header/UserDropdownMenu';
 import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
 import { buildLoginUrl } from '@/utils/auth-redirects';
+import { useActiveJam, getJamStatus } from '@/hooks/useJam';
 
 const NAV_ITEMS = [
   { to: '/marketplace', label: 'Marketplace' },
@@ -74,6 +75,9 @@ export function TopNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useNormalizedPath();
   const location = useLocation();
+  const { data: activeJam } = useActiveJam();
+  const jamStatus = activeJam ? getJamStatus(activeJam) : null;
+  const showJam = jamStatus === 'upcoming' || jamStatus === 'active';
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
@@ -92,6 +96,23 @@ export function TopNav() {
               isActive={matchesPrefix(pathname, item.to)}
             />
           ))}
+          {showJam && activeJam && (
+            <Link
+              to={`/jam/${activeJam.id}`}
+              className={cn(
+                'relative px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors flex items-center gap-1.5',
+                matchesPrefix(pathname, '/jam') ? 'text-[#111]' : 'text-[#666] hover:text-[#111]'
+              )}
+            >
+              Jam
+              {jamStatus === 'active' && (
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                </span>
+              )}
+            </Link>
+          )}
           {user && (
             <DesktopNavLink
               to="/dashboard"
@@ -164,6 +185,26 @@ export function TopNav() {
                 onClick={() => setMobileOpen(false)}
               />
             ))}
+            {showJam && activeJam && (
+              <Link
+                to={`/jam/${activeJam.id}`}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'px-3 py-2 rounded-md text-[14px] font-medium transition-colors flex items-center gap-2',
+                  matchesPrefix(pathname, '/jam')
+                    ? 'bg-[#f5f5f5] text-[#111]'
+                    : 'text-[#555] hover:bg-[#fafafa] hover:text-[#111]'
+                )}
+              >
+                Jam
+                {jamStatus === 'active' && (
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
+                  </span>
+                )}
+              </Link>
+            )}
             {user && (
               <>
                 <MobileNavLink
