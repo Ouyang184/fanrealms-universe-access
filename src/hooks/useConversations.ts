@@ -57,10 +57,10 @@ export function useConversations() {
         return [];
       }
 
-      // Get user data for all other users
+      // Get user data for all other users via SECURITY DEFINER RPC
       const otherUserIds = participants.map(p => p.other_user_id);
-        const { data: usersData, error: usersError } = await supabase
-          .rpc('get_user_public_profiles' as any, { ids: otherUserIds });
+      const { data: usersData, error: usersError } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: otherUserIds });
 
       if (usersError) {
         throw usersError;
