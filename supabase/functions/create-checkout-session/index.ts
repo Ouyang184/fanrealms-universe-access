@@ -24,11 +24,11 @@ serve(async (req) => {
   const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const supabaseService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const stripeSecret =
-    Deno.env.get("STRIPE_SECERT_KEY_SANDBOX") ||   // existing typo kept for compat
-    Deno.env.get("STRIPE_SECRET_KEY_SANDBOX") ||
-    Deno.env.get("STRIPE_SECRET_KEY_TEST") ||
-    Deno.env.get("STRIPE_SECRET_KEY") ||
+    Deno.env.get("STRIPE_SECRET_KEY") ||            // live (preferred)
     Deno.env.get("STRIPE_SECRET_KEY_LIVE") ||
+    Deno.env.get("STRIPE_SECRET_KEY_TEST") ||
+    Deno.env.get("STRIPE_SECERT_KEY_SANDBOX") ||    // typo kept for compat
+    Deno.env.get("STRIPE_SECRET_KEY_SANDBOX") ||
     "";
 
   if (!stripeSecret) {
