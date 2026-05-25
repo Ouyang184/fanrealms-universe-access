@@ -41,10 +41,10 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const webhookSecret =
+      Deno.env.get('STRIPE_WEBHOOK_SECRET') ||       // live (preferred)
+      Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE') ||
       Deno.env.get('STRIPE_WEBHOOK_SECRET_TEST') ||
-      Deno.env.get('STRIPE_WEBHOOK_SECRET_SANDBOX') ||
-      Deno.env.get('STRIPE_WEBHOOK_SECRET') ||
-      Deno.env.get('STRIPE_WEBHOOK_SECRET_LIVE');
+      Deno.env.get('STRIPE_WEBHOOK_SECRET_SANDBOX');
 
     // Environment variables presence checked
 
