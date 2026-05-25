@@ -31,25 +31,28 @@ export const useCommissionRequests = () => {
         .from('commission_requests')
         .select(`
           *,
-          commission_type:commission_types(name, base_price),
-          customer:users(username, profile_picture)
+          commission_type:commission_types(name, base_price)
         `)
         .eq('creator_id', creatorProfile.id)
-        .neq('status', 'rejected') // Filter out rejected requests
+        .neq('status', 'rejected')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
-      }
-      
-      
+      if (error) throw error;
+
+      // Fetch customer profiles via SECURITY DEFINER RPC (users RLS blocks direct join)
+      const customerIds = [...new Set((data || []).map(r => r.customer_id).filter(Boolean))];
+      const { data: profiles } = customerIds.length > 0
+        ? await supabase.rpc('get_public_user_profiles', { _user_ids: customerIds })
+        : { data: [] };
+      const profileMap = new Map(((profiles as any[]) ?? []).map(p => [p.id, p]));
+
       // Transform the data and remove duplicates
       const transformedData = (data || []).map(request => {
+        const profile = profileMap.get(request.customer_id);
         return {
           ...request,
+          customer: profile ? { username: profile.username, profile_picture: profile.profile_picture } : { username: 'Unknown', profile_picture: null },
           status: request.status as CommissionRequestStatus,
-          // Ensure customer data is properly structured with better fallback
-          customer: request.customer || { username: 'Unknown user', profile_picture: null }
         };
       });
       

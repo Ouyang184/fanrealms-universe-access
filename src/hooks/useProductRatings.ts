@@ -24,14 +24,25 @@ export function useProductRatings(productId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_ratings')
-        .select('*, users:user_id(username)')
+        .select('*')
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as ProductRating[];
+      if (!data || data.length === 0) return [] as ProductRating[];
+
+      // Fetch reviewer usernames via SECURITY DEFINER RPC (users RLS blocks direct join)
+      const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
+      const { data: profiles } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: userIds });
+      const profileMap = new Map(((profiles as any[]) ?? []).map(p => [p.id, p]));
+
+      return data.map(r => ({
+        ...r,
+        users: profileMap.get(r.user_id) ? { username: profileMap.get(r.user_id).username } : null,
+      })) as ProductRating[];
     },
     enabled: !!productId,
-    staleTime: 1000 * 60 * 2, // cache for 2 minutes
+    staleTime: 1000 * 60 * 2,
   });
 }
 
