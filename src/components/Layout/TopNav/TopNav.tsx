@@ -217,16 +217,14 @@ export function TopNav() {
                   isActive={matchesPrefix(pathname, '/dashboard')}
                   onClick={() => setMobileOpen(false)}
                 />
-                {isCreator && (
-                  <Link
-                    to="/dashboard/assets"
-                    onClick={() => setMobileOpen(false)}
-                    className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Upload an asset
-                  </Link>
-                )}
+                <Link
+                  to="/dashboard/assets"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Upload an asset
+                </Link>
               </>
             )}
           </div>

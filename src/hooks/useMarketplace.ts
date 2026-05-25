@@ -195,6 +195,10 @@ export function useCreateProduct() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['creator-products'] });
       queryClient.invalidateQueries({ queryKey: ['marketplace-products'] });
+      // If this was the user's first product, a creator profile was just
+      // auto-provisioned. Invalidate so Dashboard/Upload appear in the nav
+      // immediately without requiring a page refresh.
+      queryClient.invalidateQueries({ queryKey: ['creator-profile', user?.id] });
     },
     onError: (error) => {
       toast.error('Failed to create product: ' + error.message);
