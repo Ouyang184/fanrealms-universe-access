@@ -38,9 +38,15 @@ export function useJobListing(jobId: string) {
     queryKey: ['job-listing', jobId],
     enabled: !!jobId,
     queryFn: async () => {
+      // Check session first — anon can't read contact_info, so we conditionally include it
+      const { data: { session } } = await supabase.auth.getSession();
+      const columns = session
+        ? '*'
+        : 'id,title,description,requirements,category,budget_min,budget_max,budget_type,tags,deadline,status,poster_id,created_at,updated_at';
+
       const { data, error } = await supabase
         .from('job_listings')
-        .select('*')
+        .select(columns)
         .eq('id', jobId)
         .maybeSingle();
 
@@ -49,9 +55,9 @@ export function useJobListing(jobId: string) {
 
       // Use SECURITY DEFINER RPC — users table RLS only allows reading own row
       const { data: profiles } = await supabase
-        .rpc('get_public_user_profiles', { _user_ids: [data.poster_id] });
+        .rpc('get_public_user_profiles', { _user_ids: [(data as any).poster_id] });
       const userData = (profiles as any[])?.[0] ?? null;
-      return { ...data, users: userData };
+      return { ...(data as any), users: userData };
     },
   });
 }
