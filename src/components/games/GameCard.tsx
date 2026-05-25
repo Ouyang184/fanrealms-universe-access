@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { useGameRatingSummary, useSubmitGameRating, useGameRatings } from '@/hooks/useGameRatings';
 import { useAuth } from '@/contexts/AuthContext';
 import { StarRating, RatingSummary } from '@/components/ratings/StarRating';
+import { safeHref } from '@/lib/safeHref';
 
 interface GameCardProps {
   game: IndieGame;
@@ -65,7 +66,7 @@ export function GameCard({ game }: GameCardProps) {
               </span>
             )}
             <a
-              href={game.external_url}
+              href={safeHref(game.external_url)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}

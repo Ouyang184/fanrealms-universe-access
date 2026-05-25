@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSocialLinks, SocialLink } from "@/hooks/useSocialLinks";
+import { safeHref } from "@/lib/safeHref";
 
 interface SocialLinksProps {
   creatorId?: string;
@@ -113,7 +114,7 @@ export function SocialLinks({
           title={link.label || link.url}
           className={showText ? "rounded-md" : "rounded-full"}
         >
-          <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+          <a href={safeHref(link.url)} target="_blank" rel="noopener noreferrer" className="flex items-center">
             {getIconForLink(link)}
             {showText && (
               <span className="ml-2 text-sm">
