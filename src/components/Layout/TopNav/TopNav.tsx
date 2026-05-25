@@ -11,6 +11,7 @@ import { UserDropdownMenu } from '../Header/UserDropdownMenu';
 import { matchesPrefix, useNormalizedPath } from '@/hooks/usePathMatching';
 import { buildLoginUrl } from '@/utils/auth-redirects';
 import { useActiveJam, getJamStatus } from '@/hooks/useJam';
+import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 
 const NAV_ITEMS = [
   { to: '/marketplace', label: 'Marketplace' },
@@ -78,6 +79,7 @@ export function TopNav() {
   const { data: activeJam } = useActiveJam();
   const jamStatus = activeJam ? getJamStatus(activeJam) : null;
   const showJam = jamStatus === 'upcoming' || jamStatus === 'active';
+  const { isCreator } = useCreatorProfile();
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#eee] bg-white/95 backdrop-blur-sm">
@@ -113,7 +115,7 @@ export function TopNav() {
               )}
             </Link>
           )}
-          {user && (
+          {isCreator && (
             <DesktopNavLink
               to="/dashboard"
               label="Dashboard"
@@ -131,16 +133,18 @@ export function TopNav() {
         <div className="flex items-center gap-2 ml-auto sm:ml-0">
           {user ? (
             <>
-              <Button
-                asChild
-                size="sm"
-                className="hidden sm:inline-flex bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold"
-              >
-                <Link to="/dashboard/assets">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Upload
-                </Link>
-              </Button>
+              {isCreator && (
+                <Button
+                  asChild
+                  size="sm"
+                  className="hidden sm:inline-flex bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold"
+                >
+                  <Link to="/dashboard/assets">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Upload
+                  </Link>
+                </Button>
+              )}
               <HeaderNotifications />
               <UserDropdownMenu />
             </>
@@ -205,7 +209,7 @@ export function TopNav() {
                 )}
               </Link>
             )}
-            {user && (
+            {isCreator && (
               <>
                 <MobileNavLink
                   to="/dashboard"
@@ -213,14 +217,16 @@ export function TopNav() {
                   isActive={matchesPrefix(pathname, '/dashboard')}
                   onClick={() => setMobileOpen(false)}
                 />
-                <Link
-                  to="/dashboard/assets"
-                  onClick={() => setMobileOpen(false)}
-                  className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Upload an asset
-                </Link>
+                {isCreator && (
+                  <Link
+                    to="/dashboard/assets"
+                    onClick={() => setMobileOpen(false)}
+                    className="mt-2 px-3 py-2 rounded-md text-[14px] font-semibold bg-primary text-white flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Upload an asset
+                  </Link>
+                )}
               </>
             )}
           </div>
