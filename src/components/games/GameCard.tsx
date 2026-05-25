@@ -66,7 +66,7 @@ export function GameCard({ game }: GameCardProps) {
               </span>
             )}
             <a
-              href={game.external_url}
+              href={safeHref(game.external_url)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
