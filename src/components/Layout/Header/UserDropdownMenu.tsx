@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
+import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 
 const menuItemClass = cn(
   "flex items-center gap-2 p-2 rounded-md text-sm",
@@ -21,6 +22,7 @@ export function UserDropdownMenu() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { getAvatarUrl } = useUnifiedAvatar();
+  const { isCreator } = useCreatorProfile();
 
   if (!user) return null;
 
@@ -70,15 +72,23 @@ export function UserDropdownMenu() {
           <Link to="/library" className={menuItemClass}>
             <span>My Library</span>
           </Link>
-          <Link to="/dashboard" className={menuItemClass}>
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/dashboard/assets" className={menuItemClass}>
-            <span>My Assets</span>
-          </Link>
-          <Link to="/dashboard/sales" className={menuItemClass}>
-            <span>Sales</span>
-          </Link>
+          {isCreator ? (
+            <>
+              <Link to="/dashboard" className={menuItemClass}>
+                <span>Dashboard</span>
+              </Link>
+              <Link to="/dashboard/assets" className={menuItemClass}>
+                <span>My Assets</span>
+              </Link>
+              <Link to="/dashboard/sales" className={menuItemClass}>
+                <span>Sales</span>
+              </Link>
+            </>
+          ) : (
+            <Link to="/dashboard/assets/new" className={menuItemClass}>
+              <span>Start selling</span>
+            </Link>
+          )}
         </div>
         <Separator />
 
