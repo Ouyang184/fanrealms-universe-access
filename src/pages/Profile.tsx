@@ -413,7 +413,7 @@ const ProfilePage: React.FC = () => {
                       <p className="text-muted-foreground">@{profileData?.username}</p>
                       {profileData?.website && (
                         <a 
-                          href={profileData.website}
+                          href={safeHref(profileData.website)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline text-sm block mt-1"
