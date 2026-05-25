@@ -89,21 +89,26 @@ export function useJamSubmissions(jamId: string) {
       if (!scores || scores.length === 0) return [];
 
       const productIds = scores.map((s: any) => s.product_id);
-      const userIds = scores.map((s: any) => s.user_id);
+      const userIds = [...new Set(scores.map((s: any) => s.user_id))];
 
       const [{ data: products }, { data: users }] = await Promise.all([
         supabase
           .from('digital_products')
           .select('id, title, short_description, cover_image_url, category, status')
           .in('id', productIds),
-        supabase
-          .from('users')
-          .select('id, username, display_name, profile_image_url')
-          .in('id', userIds),
+        // Use SECURITY DEFINER RPC — users table has auth.uid()=id RLS so
+        // direct queries would only return the current user's own row.
+        supabase.rpc('get_public_user_profiles', { _user_ids: userIds }),
       ]);
 
       const productMap = Object.fromEntries((products ?? []).map((p: any) => [p.id, p]));
-      const userMap = Object.fromEntries((users ?? []).map((u: any) => [u.id, u]));
+      // RPC returns profile_picture; card expects profile_image_url — normalise here
+      const userMap = Object.fromEntries(
+        ((users ?? []) as any[]).map((u) => [
+          u.id,
+          { ...u, profile_image_url: u.profile_picture ?? null },
+        ])
+      );
 
       return (scores as JamSubmissionScore[])
         .filter((s) => productMap[s.product_id]?.status === 'published')
