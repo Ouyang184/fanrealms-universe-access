@@ -15,9 +15,10 @@ export function useJobListings(category?: string) {
   return useQuery({
     queryKey: ['job-listings', category],
     queryFn: async () => {
+      // Exclude contact_info — anon role no longer has column-level SELECT on it
       let query = supabase
         .from('job_listings')
-        .select('*')
+        .select('id,title,description,requirements,category,budget_min,budget_max,budget_type,tags,deadline,status,poster_id,created_at,updated_at')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
