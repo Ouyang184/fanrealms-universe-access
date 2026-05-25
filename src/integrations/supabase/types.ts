@@ -1239,6 +1239,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_removed: boolean
           jam_id: string
           product_id: string
           user_id: string
@@ -1246,6 +1247,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_removed?: boolean
           jam_id: string
           product_id: string
           user_id: string
@@ -1253,6 +1255,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_removed?: boolean
           jam_id?: string
           product_id?: string
           user_id?: string
@@ -2733,6 +2736,7 @@ export type Database = {
           email: string
           email_2fa_enabled: boolean
           id: string
+          is_admin: boolean
           is_nsfw_enabled: boolean
           notification_preferences: Json | null
           profile_picture: string | null
@@ -2750,6 +2754,7 @@ export type Database = {
           email: string
           email_2fa_enabled?: boolean
           id?: string
+          is_admin?: boolean
           is_nsfw_enabled?: boolean
           notification_preferences?: Json | null
           profile_picture?: string | null
@@ -2767,6 +2772,7 @@ export type Database = {
           email?: string
           email_2fa_enabled?: boolean
           id?: string
+          is_admin?: boolean
           is_nsfw_enabled?: boolean
           notification_preferences?: Json | null
           profile_picture?: string | null
