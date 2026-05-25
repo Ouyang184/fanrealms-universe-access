@@ -6,8 +6,12 @@ import { useVoteOnSubmission, useRemoveJamSubmission, type JamVote, type JamStat
 
 interface Submission {
   id: string;
-  product_id: string;
+  product_id: string | null;
   user_id: string;
+  external_title: string | null;
+  external_url: string | null;
+  external_cover_url: string | null;
+  external_description: string | null;
   avg_usefulness: number;
   avg_quality: number;
   avg_creativity: number;
@@ -152,14 +156,35 @@ export function JamSubmissionCard({
 
   const product = submission.product;
   const creator = submission.creator;
+  const isExternal = !submission.product_id;
+
+  // Resolve display fields: prefer FanRealms product data, fall back to external fields
+  const title      = product?.title      ?? submission.external_title      ?? 'Untitled';
+  const coverUrl   = product?.cover_image_url ?? submission.external_cover_url ?? null;
+  const category   = product?.category   ?? null;
+  const assetHref  = isExternal
+    ? (submission.external_url ?? '#')
+    : `/marketplace/${submission.product_id}`;
+
+  const CoverWrapper = ({ children }: { children: React.ReactNode }) =>
+    isExternal ? (
+      <a href={assetHref} target="_blank" rel="noopener noreferrer"
+        className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
+        {children}
+      </a>
+    ) : (
+      <Link to={assetHref} className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
+        {children}
+      </Link>
+    );
 
   return (
     <div className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-[#ddd] transition-colors">
-      <Link to={`/marketplace/${submission.product_id}`} className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
-        {product?.cover_image_url ? (
+      <CoverWrapper>
+        {coverUrl ? (
           <img
-            src={product.cover_image_url}
-            alt={product.title}
+            src={coverUrl}
+            alt={title}
             className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
           />
         ) : (
@@ -168,34 +193,62 @@ export function JamSubmissionCard({
         <div className="absolute top-2 left-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-[12px] font-bold text-[#555] shadow-sm border border-[#eee]">
           {rank}
         </div>
+        {isExternal && (
+          <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-black/60 rounded text-[10px] font-semibold text-white">
+            External
+          </div>
+        )}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
           <span className="bg-white text-[12px] font-semibold text-[#111] px-3 py-1.5 rounded-full shadow flex items-center gap-1.5">
             <ExternalLink className="w-3 h-3" /> View asset
           </span>
         </div>
-      </Link>
+      </CoverWrapper>
 
       <div className="p-4 space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2">
-            <Link
-              to={`/marketplace/${submission.product_id}`}
-              className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
-            >
-              {product?.title ?? 'Untitled'}
-            </Link>
-            <Link
-              to={`/marketplace/${submission.product_id}`}
-              className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-            >
-              <ExternalLink className="w-3 h-3" />
-              View
-            </Link>
+            {isExternal ? (
+              <a
+                href={assetHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
+              >
+                {title}
+              </a>
+            ) : (
+              <Link
+                to={assetHref}
+                className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
+              >
+                {title}
+              </Link>
+            )}
+            {isExternal ? (
+              <a
+                href={assetHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                View
+              </a>
+            ) : (
+              <Link
+                to={assetHref}
+                className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                View
+              </Link>
+            )}
           </div>
           <div className="text-[12px] text-[#888]">
             by {creator?.display_name || creator?.username || 'Unknown'}
-            {product?.category && (
-              <span className="ml-2 text-[#bbb]">· {product.category}</span>
+            {category && (
+              <span className="ml-2 text-[#bbb]">· {category}</span>
             )}
           </div>
         </div>
@@ -248,7 +301,7 @@ export function JamSubmissionCard({
             <button
               type="button"
               onClick={() => {
-                if (confirm(`Remove "${submission.product?.title ?? 'this submission'}" from the jam?`)) {
+                if (confirm(`Remove "${title}" from the jam?`)) {
                   removeSubmission.mutate({ submissionId: submission.id, jamId });
                 }
               }}

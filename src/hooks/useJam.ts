@@ -23,8 +23,12 @@ export interface JamSubmissionScore {
   id: string;
   jam_id: string;
   user_id: string;
-  product_id: string;
+  product_id: string | null;
   created_at: string;
+  external_title: string | null;
+  external_url: string | null;
+  external_cover_url: string | null;
+  external_description: string | null;
   avg_usefulness: number;
   avg_quality: number;
   avg_creativity: number;
@@ -88,20 +92,24 @@ export function useJamSubmissions(jamId: string) {
 
       if (!scores || scores.length === 0) return [];
 
-      const productIds = scores.map((s: any) => s.product_id);
+      const productIds = scores.map((s: any) => s.product_id).filter(Boolean);
       const userIds = [...new Set(scores.map((s: any) => s.user_id))];
 
-      const [{ data: products }, { data: users }] = await Promise.all([
-        supabase
-          .from('digital_products')
-          .select('id, title, short_description, cover_image_url, category, status')
-          .in('id', productIds),
+      const [productResult, { data: users }] = await Promise.all([
+        productIds.length > 0
+          ? supabase
+              .from('digital_products')
+              .select('id, title, short_description, cover_image_url, category, status')
+              .in('id', productIds)
+          : Promise.resolve({ data: [] }),
         // Use SECURITY DEFINER RPC — users table has auth.uid()=id RLS so
         // direct queries would only return the current user's own row.
         supabase.rpc('get_public_user_profiles', { _user_ids: userIds }),
       ]);
 
-      const productMap = Object.fromEntries((products ?? []).map((p: any) => [p.id, p]));
+      const productMap = Object.fromEntries(
+        ((productResult.data ?? []) as any[]).map((p: any) => [p.id, p])
+      );
       // RPC returns profile_picture; card expects profile_image_url — normalise here
       const userMap = Object.fromEntries(
         ((users ?? []) as any[]).map((u) => [
@@ -111,10 +119,14 @@ export function useJamSubmissions(jamId: string) {
       );
 
       return (scores as JamSubmissionScore[])
-        .filter((s) => productMap[s.product_id]?.status === 'published')
+        .filter((s) => {
+          // Always show external submissions; FanRealms products must be published
+          if (!s.product_id) return true;
+          return productMap[s.product_id]?.status === 'published';
+        })
         .map((s) => ({
           ...s,
-          product: productMap[s.product_id] ?? null,
+          product: s.product_id ? (productMap[s.product_id] ?? null) : null,
           creator: userMap[s.user_id] ?? null,
         }));
     },
@@ -209,11 +221,33 @@ export function useSubmitToJam() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ jamId, productId }: { jamId: string; productId: string }) => {
+    mutationFn: async ({
+      jamId,
+      productId,
+      externalTitle,
+      externalUrl,
+      externalCoverUrl,
+      externalDescription,
+    }: {
+      jamId: string;
+      productId?: string | null;
+      externalTitle?: string | null;
+      externalUrl?: string | null;
+      externalCoverUrl?: string | null;
+      externalDescription?: string | null;
+    }) => {
       if (!user) throw new Error('Not authenticated');
       const { data, error } = await supabase
         .from('jam_submissions')
-        .insert({ jam_id: jamId, user_id: user!.id, product_id: productId })
+        .insert({
+          jam_id: jamId,
+          user_id: user!.id,
+          product_id: productId ?? null,
+          external_title: externalTitle ?? null,
+          external_url: externalUrl ?? null,
+          external_cover_url: externalCoverUrl ?? null,
+          external_description: externalDescription ?? null,
+        })
         .select()
         .single();
       if (error) throw error;

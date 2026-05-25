@@ -96,18 +96,18 @@ export default function JamPage() {
               <li className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
                 <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Upload and publish a 2D asset</strong> to the FanRealms marketplace — sprites, tilesets, UI elements, animations, or anything 2D made for Godot. Free or paid, your choice.
+                  <strong className="text-[#111]">Have a Godot 2D asset ready</strong> — sprites, tilesets, UI elements, animations, shaders, or anything 2D made for Godot. It can be hosted <strong className="text-[#111]">anywhere</strong>: itch.io, GitHub, Godot Asset Library, or right here on FanRealms.
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
                 <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Come back here</strong> during the submission period (May 24 – Jun 11) and click <em>"Submit your entry"</em> to pick your asset.
+                  <strong className="text-[#111]">Click "Submit your entry"</strong> below and paste a link to your asset. That's it — no platform switch required.
                 </span>
               </li>
             </ol>
             <p className="text-[12px] text-[#888] mt-3 pt-3 border-t border-[#eaeff5]">
-              One submission per person · Must be original work · Asset must remain published for the duration of the jam
+              One submission per person · Must be original work · Asset must remain publicly accessible during the jam
             </p>
           </div>
         )}
