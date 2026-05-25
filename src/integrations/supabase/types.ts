@@ -3064,6 +3064,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_username_available: {
+        Args: { p_user_id?: string; p_username: string }
+        Returns: boolean
+      }
       cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
       cleanup_old_payment_audit_logs: { Args: never; Returns: number }
       detect_payment_intrusion: {
