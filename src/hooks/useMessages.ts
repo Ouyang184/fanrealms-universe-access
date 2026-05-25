@@ -54,11 +54,9 @@ export function useMessages(userId: string | undefined) {
         userIds.add(message.receiver_id);
       });
 
-      // Fetch user data
+      // Use SECURITY DEFINER RPC — users table RLS only allows reading own row
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, username, profile_picture')
-        .in('id', Array.from(userIds));
+        .rpc('get_public_user_profiles', { _user_ids: Array.from(userIds) });
 
       if (usersError) {
         return [];
@@ -66,7 +64,7 @@ export function useMessages(userId: string | undefined) {
 
       // Create user lookup map
       const userMap = new Map();
-      usersData?.forEach(user => {
+      (usersData ?? []).forEach((user: any) => {
         userMap.set(user.id, user);
       });
 

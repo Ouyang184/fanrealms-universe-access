@@ -46,12 +46,11 @@ export function useJobListing(jobId: string) {
       if (error) throw error;
       if (!data) return null;
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('username, profile_picture')
-        .eq('id', data.poster_id)
-        .maybeSingle();
-      return { ...data, users: userData ?? null };
+      // Use SECURITY DEFINER RPC — users table RLS only allows reading own row
+      const { data: profiles } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: [data.poster_id] });
+      const userData = (profiles as any[])?.[0] ?? null;
+      return { ...data, users: userData };
     },
   });
 }
