@@ -10,12 +10,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use test/sandbox Stripe secret key for subscription payments
+// Live key takes priority — test/sandbox are fallbacks for local dev only
 const stripeSecretKey =
+  Deno.env.get('STRIPE_SECRET_KEY') ||      // live (preferred)
+  Deno.env.get('STRIPE_SECRET_KEY_LIVE') ||
   Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
-  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
-  Deno.env.get('STRIPE_SECRET_KEY') ||
-  Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+  Deno.env.get('STRIPE_SECRET_KEY_SANDBOX');
 const stripe = (await import('https://esm.sh/stripe@14.21.0')).default(stripeSecretKey);
 
 serve(async (req) => {

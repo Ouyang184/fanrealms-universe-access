@@ -107,12 +107,12 @@ export async function handleCreateSubscription(
       .maybeSingle();
 
     const stripeAccountId = creatorStripe?.stripe_account_id ?? null;
-    // Determine test mode using the same key priority as index.ts
+    // Determine test mode using the same key priority as index.ts (live first)
     const activeKey =
-      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
-      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
       Deno.env.get('STRIPE_SECRET_KEY') ||
-      Deno.env.get('STRIPE_SECRET_KEY_LIVE') || '';
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE') ||
+      Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') || '';
     const isTestMode = activeKey.startsWith('sk_test_');
 
     // In live mode, require a connected Stripe account

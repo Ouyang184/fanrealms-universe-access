@@ -15,7 +15,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started (TEST MODE)');
+  console.log('🚀 [STRIPE-SUBSCRIPTIONS] Function started');
   console.log('📍 [STRIPE-SUBSCRIPTIONS] Request details:', {
     method: req.method,
     url: req.url,
@@ -35,12 +35,12 @@ serve(async (req) => {
   try {
     console.log('📥 [STRIPE-SUBSCRIPTIONS] Processing request...');
 
-    // Validate environment variables - USE TEST/SANDBOX KEYS FIRST
+    // Validate environment variables - live key takes priority
     const stripeKey =
+      Deno.env.get('STRIPE_SECRET_KEY') ||      // live (preferred)
+      Deno.env.get('STRIPE_SECRET_KEY_LIVE') ||
       Deno.env.get('STRIPE_SECRET_KEY_TEST') ||
-      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX') ||
-      Deno.env.get('STRIPE_SECRET_KEY') ||
-      Deno.env.get('STRIPE_SECRET_KEY_LIVE');
+      Deno.env.get('STRIPE_SECRET_KEY_SANDBOX');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
