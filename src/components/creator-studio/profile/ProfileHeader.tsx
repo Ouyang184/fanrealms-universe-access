@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Globe } from "lucide-react";
 import { SocialLinks } from "@/components/SocialLinks";
+import { safeHref } from "@/lib/safeHref";
 
 interface ProfileHeaderProps {
   creator: {
