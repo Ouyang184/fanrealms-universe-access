@@ -40,6 +40,22 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
     ...((product as any)?.screenshots ?? []),
   ];
 
+  /** Convert a YouTube or Vimeo watch URL into an embed URL. Returns null if not recognised. */
+  const getEmbedUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    // YouTube: youtu.be/ID or youtube.com/watch?v=ID or youtube.com/shorts/ID
+    const ytShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    const ytWatch = url.match(/youtube\.com\/(?:watch\?v=|shorts\/)([a-zA-Z0-9_-]{11})/);
+    const ytId = (ytShort || ytWatch)?.[1];
+    if (ytId) return `https://www.youtube.com/embed/${ytId}`;
+    // Vimeo: vimeo.com/ID
+    const vimeo = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}`;
+    return null;
+  };
+
+  const embedUrl = getEmbedUrl((product as any)?.trailer_url);
+
   useEffect(() => { setActiveImg(0); }, [productId]);
 
 
@@ -191,6 +207,21 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
                         <img src={img} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
+                  </div>
+                )}
+
+                {/* Trailer video */}
+                {embedUrl && (
+                  <div className="pt-2">
+                    <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+                      <iframe
+                        src={embedUrl}
+                        title="Trailer"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0 w-full h-full"
+                      />
+                    </div>
                   </div>
                 )}
 
