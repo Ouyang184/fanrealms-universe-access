@@ -16,14 +16,17 @@ type Tab = 'fanrealms' | 'external';
 
 interface Props {
   jamId: string;
+  jamType?: 'asset' | 'game';
   open: boolean;
   onClose: () => void;
 }
 
-export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
+export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: Props) {
   const { data: products, isLoading } = useCreatorProducts();
   const submitToJam = useSubmitToJam();
+  const isGame = jamType === 'game';
 
+  // Game jams are always external; asset jams default to external but offer FanRealms tab
   const [tab, setTab] = useState<Tab>('external');
 
   // FanRealms tab state
@@ -97,45 +100,49 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
         <DialogHeader>
           <DialogTitle>Submit your entry</DialogTitle>
           <DialogDescription>
-            Submit a Godot 2D asset — hosted anywhere.
+            {isGame
+              ? 'Submit your Godot game — hosted anywhere (itch.io, GitHub, etc.)'
+              : 'Submit a Godot 2D asset — hosted anywhere.'}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tab switcher */}
-        <div className="flex rounded-lg border border-[#e5e5e5] overflow-hidden text-[13px] font-semibold">
-          <button
-            type="button"
-            onClick={() => setTab('external')}
-            className={`flex-1 py-2 transition-colors ${
-              tab === 'external'
-                ? 'bg-primary text-white'
-                : 'text-[#666] hover:bg-[#fafafa]'
-            }`}
-          >
-            External (itch.io, GitHub…)
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('fanrealms')}
-            className={`flex-1 py-2 transition-colors border-l border-[#e5e5e5] ${
-              tab === 'fanrealms'
-                ? 'bg-primary text-white'
-                : 'text-[#666] hover:bg-[#fafafa]'
-            }`}
-          >
-            My FanRealms Asset
-          </button>
-        </div>
+        {/* Tab switcher — hidden for game jams (external only) */}
+        {!isGame && (
+          <div className="flex rounded-lg border border-[#e5e5e5] overflow-hidden text-[13px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setTab('external')}
+              className={`flex-1 py-2 transition-colors ${
+                tab === 'external'
+                  ? 'bg-primary text-white'
+                  : 'text-[#666] hover:bg-[#fafafa]'
+              }`}
+            >
+              External (itch.io, GitHub…)
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('fanrealms')}
+              className={`flex-1 py-2 transition-colors border-l border-[#e5e5e5] ${
+                tab === 'fanrealms'
+                  ? 'bg-primary text-white'
+                  : 'text-[#666] hover:bg-[#fafafa]'
+              }`}
+            >
+              My FanRealms Asset
+            </button>
+          </div>
+        )}
 
-        {/* External tab */}
-        {tab === 'external' && (
+        {/* External tab (always shown for game jams; shown when tab=external for asset jams) */}
+        {(tab === 'external' || isGame) && (
           <div className="space-y-3">
             <div className="space-y-1">
               <label className="text-[12px] font-semibold text-[#555]">
-                Asset title <span className="text-red-400">*</span>
+                {isGame ? 'Game name' : 'Asset title'} <span className="text-red-400">*</span>
               </label>
               <Input
-                placeholder="e.g. Pixel Dungeon Tileset"
+                placeholder={isGame ? 'e.g. Dungeon Crawler' : 'e.g. Pixel Dungeon Tileset'}
                 value={extTitle}
                 onChange={(e) => setExtTitle(e.target.value)}
                 maxLength={120}
@@ -143,23 +150,26 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
             </div>
             <div className="space-y-1">
               <label className="text-[12px] font-semibold text-[#555]">
-                Asset URL <span className="text-red-400">*</span>
+                {isGame ? 'Game URL' : 'Asset URL'} <span className="text-red-400">*</span>
               </label>
               <Input
-                placeholder="https://yourname.itch.io/asset"
+                placeholder={isGame ? 'https://yourname.itch.io/your-game' : 'https://yourname.itch.io/asset'}
                 value={extUrl}
                 onChange={(e) => { setExtUrl(e.target.value); setUrlError(''); }}
               />
               <p className="text-[11px] text-[#888]">
-                itch.io, GitHub, GameDev Marketplace, Godot Asset Library — anywhere publicly accessible
+                {isGame
+                  ? 'itch.io page with a playable or downloadable build'
+                  : 'itch.io, GitHub, Godot Asset Library, or any public URL'}
               </p>
             </div>
             <div className="space-y-1">
               <label className="text-[12px] font-semibold text-[#555]">
-                Preview image URL <span className="text-[#bbb] font-normal">(optional)</span>
+                {isGame ? 'Screenshot URL' : 'Preview image URL'}{' '}
+                <span className="text-[#bbb] font-normal">(optional)</span>
               </label>
               <Input
-                placeholder="https://img.itch.zone/…/cover.png"
+                placeholder={isGame ? 'https://img.itch.zone/…/screenshot.png' : 'https://img.itch.zone/…/cover.png'}
                 value={extCoverUrl}
                 onChange={(e) => { setExtCoverUrl(e.target.value); setUrlError(''); }}
               />
@@ -169,7 +179,7 @@ export function SubmitToJamDialog({ jamId, open, onClose }: Props) {
                 Short description <span className="text-[#bbb] font-normal">(optional)</span>
               </label>
               <Input
-                placeholder="A quick summary of your asset"
+                placeholder={isGame ? 'What is your game about?' : 'A quick summary of your asset'}
                 value={extDescription}
                 onChange={(e) => setExtDescription(e.target.value)}
                 maxLength={200}

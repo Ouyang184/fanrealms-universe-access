@@ -12,6 +12,7 @@ export interface Jam {
   title: string;
   description: string | null;
   thread_id: string | null;
+  jam_type: 'asset' | 'game';
   starts_at: string;
   ends_at: string;
   voting_ends_at: string;
@@ -197,7 +198,8 @@ export function useIsAdmin() {
   });
 }
 
-/** Fetches the most recent jam that hasn't fully ended (upcoming / active / voting). */
+/** Returns the best jam to feature in the nav:
+ *  Prefers an 'active' jam; falls back to 'upcoming'; ignores 'voting'/'ended'. */
 export function useActiveJam() {
   return useQuery({
     queryKey: ['active-jam'],
@@ -207,11 +209,15 @@ export function useActiveJam() {
         .from('jams')
         .select('*')
         .order('starts_at', { ascending: false })
-        .limit(5);
+        .limit(10);
       if (error) throw error;
       const jams = (data ?? []) as Jam[];
-      // Return the first jam that isn't ended
-      return jams.find((j) => getJamStatus(j) !== 'ended') ?? null;
+      // Prefer a currently active jam; fall back to the nearest upcoming one
+      return (
+        jams.find((j) => getJamStatus(j) === 'active') ??
+        jams.find((j) => getJamStatus(j) === 'upcoming') ??
+        null
+      );
     },
   });
 }

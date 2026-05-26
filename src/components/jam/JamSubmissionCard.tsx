@@ -35,6 +35,7 @@ interface Props {
   submission: Submission;
   jamId: string;
   jamStatus: JamStatus;
+  jamType?: 'asset' | 'game';
   mySubmissionId: string | null;
   myVote: JamVote | null;
   currentUserId: string | null;
@@ -96,12 +97,18 @@ export function JamSubmissionCard({
   submission,
   jamId,
   jamStatus,
+  jamType = 'asset',
   mySubmissionId,
   myVote,
   currentUserId,
   rank,
   isAdmin = false,
 }: Props) {
+  const isGame = jamType === 'game';
+  // Vote category labels differ between asset jams and game jams
+  const voteLabels = isGame
+    ? { usefulness: 'Fun', quality: 'Visuals', creativity: 'Creativity' }
+    : { usefulness: 'Usefulness', quality: 'Quality', creativity: 'Creativity' };
   const voteOnSubmission = useVoteOnSubmission();
   const removeSubmission = useRemoveJamSubmission();
   const isOwnEntry = submission.user_id === currentUserId;
@@ -200,7 +207,7 @@ export function JamSubmissionCard({
         )}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/10">
           <span className="bg-white text-[12px] font-semibold text-[#111] px-3 py-1.5 rounded-full shadow flex items-center gap-1.5">
-            <ExternalLink className="w-3 h-3" /> View asset
+            <ExternalLink className="w-3 h-3" /> {isGame ? 'Play game' : 'View asset'}
           </span>
         </div>
       </CoverWrapper>
@@ -254,9 +261,9 @@ export function JamSubmissionCard({
         </div>
 
         <div className="space-y-2">
-          <ScoreBar label="Usefulness" value={submission.avg_usefulness} />
-          <ScoreBar label="Quality"    value={submission.avg_quality} />
-          <ScoreBar label="Creativity" value={submission.avg_creativity} />
+          <ScoreBar label={voteLabels.usefulness} value={submission.avg_usefulness} />
+          <ScoreBar label={voteLabels.quality}    value={submission.avg_quality} />
+          <ScoreBar label={voteLabels.creativity} value={submission.avg_creativity} />
         </div>
 
         <div className="flex items-center justify-between text-[12px]">
@@ -274,9 +281,9 @@ export function JamSubmissionCard({
             <p className="text-[11px] font-semibold text-[#888] uppercase tracking-wide">
               Your rating
             </p>
-            <StarPicker label="Usefulness" value={usefulness} onChange={v => handleVoteChange('usefulness', v)} />
-            <StarPicker label="Quality"    value={quality}    onChange={v => handleVoteChange('quality', v)} />
-            <StarPicker label="Creativity" value={creativity} onChange={v => handleVoteChange('creativity', v)} />
+            <StarPicker label={voteLabels.usefulness} value={usefulness} onChange={v => handleVoteChange('usefulness', v)} />
+            <StarPicker label={voteLabels.quality}    value={quality}    onChange={v => handleVoteChange('quality', v)} />
+            <StarPicker label={voteLabels.creativity} value={creativity} onChange={v => handleVoteChange('creativity', v)} />
             {voteSaved && (
               <p className="text-[11px] text-green-600 font-medium">Vote saved</p>
             )}

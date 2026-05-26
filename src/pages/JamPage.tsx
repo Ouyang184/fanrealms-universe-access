@@ -86,28 +86,53 @@ export default function JamPage() {
         {(status === 'upcoming' || status === 'active') && (
           <div className="bg-[#f8fafc] border border-[#e5edf5] rounded-xl p-5 mb-8">
             <h2 className="text-[14px] font-bold text-[#111] mb-3">How to enter</h2>
-            <ol className="space-y-2.5">
-              <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
-                <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Create a free account</strong> on FanRealms if you haven't already.
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
-                <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Have a Godot 2D asset ready</strong> — sprites, tilesets, UI elements, animations, shaders, or anything 2D made for Godot. It can be hosted <strong className="text-[#111]">anywhere</strong>: itch.io, GitHub, Godot Asset Library, or right here on FanRealms.
-                </span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
-                <span className="text-[13px] text-[#444]">
-                  <strong className="text-[#111]">Click "Submit your entry"</strong> below and paste a link to your asset. That's it — no platform switch required.
-                </span>
-              </li>
-            </ol>
+            {jam.jam_type === 'game' ? (
+              <ol className="space-y-2.5">
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Create a free account</strong> on FanRealms if you haven't already.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Make a Godot game</strong> — any genre, any style, any skill level. You have 2 weeks. Build something playable and publish it on itch.io, GitHub, or anywhere accessible.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Click "Submit your entry"</strong> and paste a link to your game. The community votes on Fun, Visuals, and Creativity.
+                  </span>
+                </li>
+              </ol>
+            ) : (
+              <ol className="space-y-2.5">
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Create a free account</strong> on FanRealms if you haven't already.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Have a Godot 2D asset ready</strong> — sprites, tilesets, UI elements, animations, shaders, or anything 2D made for Godot. It can be hosted <strong className="text-[#111]">anywhere</strong>: itch.io, GitHub, Godot Asset Library, or right here on FanRealms.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
+                  <span className="text-[13px] text-[#444]">
+                    <strong className="text-[#111]">Click "Submit your entry"</strong> below and paste a link to your asset. That's it — no platform switch required.
+                  </span>
+                </li>
+              </ol>
+            )}
             <p className="text-[12px] text-[#888] mt-3 pt-3 border-t border-[#eaeff5]">
-              One submission per person · Must be original work · Asset must remain publicly accessible during the jam
+              {jam.jam_type === 'game'
+                ? 'One submission per person · Must be made with Godot · Game must remain playable during voting'
+                : 'One submission per person · Must be original work · Asset must remain publicly accessible during the jam'}
             </p>
           </div>
         )}
@@ -160,7 +185,9 @@ export default function JamPage() {
           <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-12 text-center">
             <p className="text-[15px] font-semibold text-[#111] mb-1">No submissions yet</p>
             <p className="text-[13px] text-[#999]">
-              Be the first to upload a Godot asset and enter the jam.
+              {jam.jam_type === 'game'
+                ? 'Be the first to submit a Godot game.'
+                : 'Be the first to upload a Godot asset and enter the jam.'}
             </p>
           </div>
         ) : (
@@ -171,6 +198,7 @@ export default function JamPage() {
                 submission={s}
                 jamId={jamId!}
                 jamStatus={status}
+                jamType={jam.jam_type}
                 mySubmissionId={mySubmission?.id ?? null}
                 myVote={myVotes[s.id] ?? null}
                 currentUserId={user?.id ?? null}
@@ -183,6 +211,7 @@ export default function JamPage() {
 
         <SubmitToJamDialog
           jamId={jamId!}
+          jamType={jam.jam_type}
           open={showSubmitDialog}
           onClose={() => setShowSubmitDialog(false)}
         />

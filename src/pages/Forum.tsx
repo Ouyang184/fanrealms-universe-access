@@ -44,8 +44,10 @@ export default function Forum() {
                 </div>
                 <div className="text-[12px] text-amber-700">
                   {jamStatus === 'active'
-                    ? 'Submit your Godot 2D asset — prizes up for grabs. Click to enter →'
-                    : `Starts ${new Date(activeJam.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — get your assets ready!`}
+                    ? (activeJam.jam_type === 'game'
+                        ? 'Make a Godot game in 2 weeks — prizes up for grabs. Click to enter →'
+                        : 'Submit your Godot 2D asset — prizes up for grabs. Click to enter →')
+                    : `Starts ${new Date(activeJam.starts_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${activeJam.jam_type === 'game' ? ' — start planning your game!' : ' — get your assets ready!'}`}
                 </div>
               </div>
             </div>
