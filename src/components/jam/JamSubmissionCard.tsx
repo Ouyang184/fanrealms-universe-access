@@ -1,5 +1,5 @@
 // src/components/jam/JamSubmissionCard.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ExternalLink, Trash2 } from 'lucide-react';
 import { useVoteOnSubmission, useRemoveJamSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
@@ -173,7 +173,7 @@ export function JamSubmissionCard({
     ? (submission.external_url ?? '#')
     : `/marketplace/${submission.product_id}`;
 
-  const CoverWrapper = ({ children }: { children: React.ReactNode }) =>
+  const CoverWrapper = ({ children }: { children: ReactNode }) =>
     isExternal ? (
       <a href={assetHref} target="_blank" rel="noopener noreferrer"
         className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
