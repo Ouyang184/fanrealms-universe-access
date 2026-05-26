@@ -1340,6 +1340,7 @@ export type Database = {
           description: string | null
           ends_at: string
           id: string
+          jam_type: string
           prize_pool: Json
           starts_at: string
           thread_id: string | null
@@ -1351,6 +1352,7 @@ export type Database = {
           description?: string | null
           ends_at: string
           id?: string
+          jam_type?: string
           prize_pool?: Json
           starts_at: string
           thread_id?: string | null
@@ -1362,6 +1364,7 @@ export type Database = {
           description?: string | null
           ends_at?: string
           id?: string
+          jam_type?: string
           prize_pool?: Json
           starts_at?: string
           thread_id?: string | null
