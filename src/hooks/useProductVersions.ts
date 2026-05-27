@@ -8,7 +8,6 @@ export interface ProductVersion {
   product_id: string;
   version_number: string;
   release_notes: string | null;
-  file_path: string;
   created_at: string;
 }
 
@@ -19,7 +18,7 @@ export function useProductVersions(productId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_versions')
-        .select('*')
+        .select('id, product_id, version_number, release_notes, created_at')
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
       if (error) throw error;
