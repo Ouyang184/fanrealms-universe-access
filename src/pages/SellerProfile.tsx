@@ -9,6 +9,7 @@ import {
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, CalendarDays, Users, Globe, FileText, Gamepad2 } from 'lucide-react';
+import { useBundlesByCreator } from '@/hooks/useBundles';
 import { formatDistanceToNow } from 'date-fns';
 import { FollowButton } from '@/components/profile/FollowButton';
 import { SocialLinks } from '@/components/SocialLinks';
