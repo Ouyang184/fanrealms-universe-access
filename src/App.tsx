@@ -52,7 +52,6 @@ const DashboardProjectDetailPage = lazy(() => import("./pages/DashboardProjectDe
 const SellerProfilePage = lazy(() => import("./pages/SellerProfile"));
 const LibraryPage = lazy(() => import("./pages/Library"));
 const LibraryReviewsPage = lazy(() => import("./pages/LibraryReviews"));
-const LibraryRecommendationsPage = lazy(() => import("./pages/LibraryRecommendations"));
 const DashboardDevlogsPage = lazy(() => import("./pages/DashboardDevlogs"));
 const DashboardDevlogEditPage = lazy(() => import("./pages/DashboardDevlogEdit"));
 const JamPage = lazy(() => import("./pages/JamPage"));
@@ -214,7 +213,7 @@ export default function App() {
                 {/* Library (buyer side) */}
                 <Route path="/library" element={<AuthGuard><LibraryPage /></AuthGuard>} />
                 <Route path="/library/reviews" element={<AuthGuard><LibraryReviewsPage /></AuthGuard>} />
-                <Route path="/library/recommendations" element={<AuthGuard><LibraryRecommendationsPage /></AuthGuard>} />
+
 
                 <Route path="/home" element={<Navigate to="/dashboard" replace />} />
 

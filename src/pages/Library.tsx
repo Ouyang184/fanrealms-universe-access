@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 const TABS = [
   { to: '/library', label: 'My Library', end: true },
   { to: '/library/reviews', label: 'Ratings & Reviews' },
-  { to: '/library/recommendations', label: 'Recommendations' },
 ];
 
 export function LibraryTabs() {
