@@ -133,7 +133,20 @@ Deno.serve(async (req) => {
     });
   } catch (err: any) {
     console.error("[create-bundle-checkout]", err?.message);
-    return new Response(JSON.stringify({ error: err?.message || "Failed" }), {
+    // Allowlist of safe, user-facing validation messages. Any other error is masked.
+    const safeMessages = new Set([
+      "Missing Authorization",
+      "Unauthorized",
+      "Invalid bundleId",
+      "Bundle not found",
+      "You cannot purchase your own bundle",
+      "Bundle price below Stripe minimum ($0.50)",
+      "You already own this bundle",
+    ]);
+    const message = safeMessages.has(err?.message)
+      ? err.message
+      : "Checkout failed. Please try again.";
+    return new Response(JSON.stringify({ error: message }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
