@@ -30,7 +30,7 @@ export default function DashboardPage() {
   // was added (itch.io model: everyone is a creator by default).
   useEffect(() => {
     if (!user?.id) return;
-    supabase.rpc('ensure_creator_row' as any).catch(() => {/* silent — row already exists */});
+    void (supabase.rpc('ensure_creator_row' as any) as unknown as Promise<unknown>).catch(() => {/* silent — row already exists */});
   }, [user?.id]);
 
   // Handle redirect back from Stripe Connect onboarding
