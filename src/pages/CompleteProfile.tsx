@@ -71,14 +71,17 @@ export default function CompleteProfile() {
       }
 
       // Update the user row (auto-created by on_auth_user_created trigger).
-      // Becoming a creator is a separate, opt-in flow — we do NOT create a
-      // creators row here. Non-creators can use marketplace/forum/jobs without one.
       const { error: updateError } = await supabase
         .from('users')
         .update({ username: cleanUsername, social_links: normalizedLinks })
         .eq('id', user!.id);
 
       if (updateError) throw updateError;
+
+      // Everyone is a creator by default (itch.io model) — auto-create the
+      // creators row so they can publish assets, projects, and take commissions
+      // immediately without a separate activation step.
+      await supabase.rpc('ensure_creator_row' as any);
 
       // Verify completion against the freshly-persisted Supabase row, not
       // React state. Only navigate when the database itself agrees the

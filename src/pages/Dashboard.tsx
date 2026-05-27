@@ -7,6 +7,8 @@ import { Plus, Upload } from 'lucide-react';
 import { EarningsCard } from '@/components/dashboard/EarningsCard';
 import { useTransferPendingEarnings } from '@/hooks/useCreatorEarnings';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -18,10 +20,18 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data: myAssets, isLoading: assetsLoading } = useCreatorProducts();
   const { data: salesData, isLoading: salesLoading } = useSellerSales();
   const [searchParams, setSearchParams] = useSearchParams();
   const transferMutation = useTransferPendingEarnings();
+
+  // Ensure creator row exists for users who signed up before the auto-creation
+  // was added (itch.io model: everyone is a creator by default).
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.rpc('ensure_creator_row' as any).catch(() => {/* silent — row already exists */});
+  }, [user?.id]);
 
   // Handle redirect back from Stripe Connect onboarding
   useEffect(() => {

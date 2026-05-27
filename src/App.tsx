@@ -46,6 +46,7 @@ const DashboardPage = lazy(() => import("./pages/Dashboard"));
 const DashboardAssetsPage = lazy(() => import("./pages/DashboardAssets"));
 const DashboardAssetDetail = lazy(() => import("./pages/DashboardAssetDetail"));
 const DashboardSalesPage = lazy(() => import("./pages/DashboardSales"));
+const DashboardCommissionsPage = lazy(() => import("./pages/DashboardCommissions"));
 const DashboardProjectsPage = lazy(() => import("./pages/DashboardProjects"));
 const DashboardProjectNewPage = lazy(() => import("./pages/DashboardProjectNew"));
 const DashboardProjectDetailPage = lazy(() => import("./pages/DashboardProjectDetail"));
@@ -194,6 +195,7 @@ export default function App() {
                 <Route path="/dashboard/assets" element={<AuthGuard><DashboardAssetsPage /></AuthGuard>} />
                 <Route path="/dashboard/assets/:assetId" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
                 <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} />
+                <Route path="/dashboard/commissions" element={<AuthGuard><DashboardCommissionsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/:projectId" element={<AuthGuard><DashboardProjectDetailPage /></AuthGuard>} />
