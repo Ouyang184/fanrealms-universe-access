@@ -1,5 +1,5 @@
 // src/components/jam/SubmitToJamDialog.tsx
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -11,16 +11,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCreatorProducts } from '@/hooks/useMarketplace';
 import { useSubmitToJam } from '@/hooks/useJam';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { Upload, X, FileArchive, ImageIcon } from 'lucide-react';
 
-type Tab = 'upload' | 'fanrealms';
+type Tab = 'fanrealms' | 'link';
 
-const ACCEPTED_ASSET = '.zip,.png,.jpg,.jpeg,.gif,.webp';
-const ACCEPTED_IMAGE = '.png,.jpg,.jpeg,.gif,.webp';
-const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-const MAX_BYTES = 50 * 1024 * 1024; // 50 MB
+// Domains we trust enough to render as clickable links
+export const TRUSTED_DOMAINS = [
+  'itch.io', 'github.com', 'github.io', 'godotengine.org',
+  'gamedevmarket.net', 'unity.com', 'assetstore.unity.com',
+  'opengameart.org', 'kenney.nl', 'gitlab.com', 'ldjam.com', 'gamejolt.com',
+];
 
 interface Props {
   jamId: string;
@@ -32,98 +31,80 @@ interface Props {
 export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: Props) {
   const { data: products, isLoading } = useCreatorProducts();
   const submitToJam = useSubmitToJam();
-  const { user } = useAuth();
   const isGame = jamType === 'game';
 
-  const [tab, setTab] = useState<Tab>('upload');
+  const [tab, setTab] = useState<Tab>('fanrealms');
 
-  // Upload tab state
-  const [assetFile, setAssetFile] = useState<File | null>(null);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-
-  // FanRealms tab state
+  // FanRealms tab
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const assetInputRef = useRef<HTMLInputElement>(null);
-  const coverInputRef = useRef<HTMLInputElement>(null);
+  // Link tab
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkCoverUrl, setLinkCoverUrl] = useState('');
+  const [linkDescription, setLinkDescription] = useState('');
+  const [linkError, setLinkError] = useState('');
 
   const published = (products ?? []).filter((p: any) => p.status === 'published');
-  const assetIsImage = assetFile && IMAGE_TYPES.includes(assetFile.type);
 
   const handleClose = () => {
-    setAssetFile(null);
-    setCoverFile(null);
-    setTitle('');
-    setDescription('');
-    setUploadError('');
     setSelectedId(null);
+    setLinkTitle('');
+    setLinkUrl('');
+    setLinkCoverUrl('');
+    setLinkDescription('');
+    setLinkError('');
     onClose();
   };
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
-    const { error } = await supabase.storage
-      .from('jam-entries')
-      .upload(path, file, { upsert: true });
-    if (error) throw new Error(`Upload failed: ${error.message}`);
-    const { data } = supabase.storage.from('jam-entries').getPublicUrl(path);
-    return data.publicUrl;
+  const isValidUrl = (url: string) => {
+    try { new URL(url); return true; } catch { return false; }
   };
 
-  const handleUploadSubmit = async () => {
-    setUploadError('');
-
-    if (!assetFile) { setUploadError('Please select a file to upload.'); return; }
-    if (!title.trim()) { setUploadError('Please enter a title.'); return; }
-    if (assetFile.size > MAX_BYTES) { setUploadError('File must be under 50 MB.'); return; }
-    if (coverFile && coverFile.size > 10 * 1024 * 1024) { setUploadError('Preview image must be under 10 MB.'); return; }
-
-    setUploading(true);
+  const isTrustedUrl = (url: string) => {
     try {
-      const base = `${jamId}/${user!.id}`;
-      const assetPath = `${base}/${assetFile.name}`;
-      const assetUrl = await uploadFile(assetFile, assetPath);
+      const hostname = new URL(url).hostname.replace(/^www\./, '');
+      return TRUSTED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
+    } catch { return false; }
+  };
 
-      let coverUrl: string | null = null;
-      if (coverFile) {
-        coverUrl = await uploadFile(coverFile, `${base}/cover_${coverFile.name}`);
-      } else if (assetIsImage) {
-        coverUrl = assetUrl; // image IS the preview
+  const handleSubmit = async () => {
+    if (tab === 'fanrealms') {
+      if (!selectedId) return;
+      try {
+        await submitToJam.mutateAsync({ jamId, productId: selectedId });
+        handleClose();
+      } catch { /* toast shown by hook */ }
+    } else {
+      if (!linkTitle.trim()) { setLinkError('Please enter a title.'); return; }
+      if (!isValidUrl(linkUrl.trim())) { setLinkError('Please enter a valid URL.'); return; }
+      if (!isTrustedUrl(linkUrl.trim())) {
+        setLinkError(
+          `For safety, only links from trusted platforms are allowed: ${TRUSTED_DOMAINS.join(', ')}.`
+        );
+        return;
       }
-
-      await submitToJam.mutateAsync({
-        jamId,
-        externalTitle: title.trim(),
-        externalUrl: assetUrl,
-        externalCoverUrl: coverUrl,
-        externalDescription: description.trim() || null,
-      });
-      handleClose();
-    } catch (err: any) {
-      setUploadError(err.message || 'Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
+      if (linkCoverUrl.trim() && !isValidUrl(linkCoverUrl.trim())) {
+        setLinkError('Preview image URL is not a valid URL.');
+        return;
+      }
+      setLinkError('');
+      try {
+        await submitToJam.mutateAsync({
+          jamId,
+          externalTitle: linkTitle.trim(),
+          externalUrl: linkUrl.trim(),
+          externalCoverUrl: linkCoverUrl.trim() || null,
+          externalDescription: linkDescription.trim() || null,
+        });
+        handleClose();
+      } catch { /* toast shown by hook */ }
     }
   };
 
-  const handleFanRealmsSubmit = async () => {
-    if (!selectedId) return;
-    try {
-      await submitToJam.mutateAsync({ jamId, productId: selectedId });
-      handleClose();
-    } catch {
-      // onError toast already shown
-    }
-  };
-
-  const canSubmit = tab === 'upload'
-    ? !!assetFile && !!title.trim()
-    : !!selectedId;
-
-  const isPending = uploading || submitToJam.isPending;
+  const canSubmit = tab === 'fanrealms'
+    ? !!selectedId
+    : !!linkTitle.trim() && !!linkUrl.trim();
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -132,8 +113,8 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
           <DialogTitle>Submit your entry</DialogTitle>
           <DialogDescription>
             {isGame
-              ? 'Upload your Godot game or pick an existing FanRealms asset.'
-              : 'Upload your 2D game asset directly — any engine, any format.'}
+              ? 'Submit your Godot game — upload it to FanRealms or link from itch.io.'
+              : 'Submit your 2D game asset — upload to FanRealms or link from another platform.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -141,158 +122,44 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
         <div className="flex rounded-lg border border-[#e5e5e5] overflow-hidden text-[13px] font-semibold">
           <button
             type="button"
-            onClick={() => setTab('upload')}
-            className={`flex-1 py-2 transition-colors ${
-              tab === 'upload' ? 'bg-primary text-white' : 'text-[#666] hover:bg-[#fafafa]'
-            }`}
-          >
-            Upload file
-          </button>
-          <button
-            type="button"
             onClick={() => setTab('fanrealms')}
-            className={`flex-1 py-2 transition-colors border-l border-[#e5e5e5] ${
+            className={`flex-1 py-2 transition-colors ${
               tab === 'fanrealms' ? 'bg-primary text-white' : 'text-[#666] hover:bg-[#fafafa]'
             }`}
           >
-            My FanRealms Asset
+            Upload to FanRealms
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab('link')}
+            className={`flex-1 py-2 transition-colors border-l border-[#e5e5e5] ${
+              tab === 'link' ? 'bg-primary text-white' : 'text-[#666] hover:bg-[#fafafa]'
+            }`}
+          >
+            Submit a link
           </button>
         </div>
-
-        {/* Upload tab */}
-        {tab === 'upload' && (
-          <div className="space-y-3">
-            {/* Asset file picker */}
-            <div className="space-y-1">
-              <label className="text-[12px] font-semibold text-[#555]">
-                {isGame ? 'Game file' : 'Asset file'}{' '}
-                <span className="text-red-400">*</span>
-                <span className="text-[#bbb] font-normal ml-1">· max 50 MB</span>
-              </label>
-              {assetFile ? (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#eee] bg-[#fafafa]">
-                  {assetIsImage
-                    ? <ImageIcon className="w-4 h-4 text-[#888] flex-shrink-0" />
-                    : <FileArchive className="w-4 h-4 text-[#888] flex-shrink-0" />}
-                  <span className="text-[13px] text-[#444] truncate flex-1">{assetFile.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setAssetFile(null)}
-                    className="text-[#aaa] hover:text-[#555] flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => assetInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center gap-2 py-6 rounded-lg border-2 border-dashed border-[#ddd] hover:border-primary hover:bg-primary/5 transition-colors"
-                >
-                  <Upload className="w-5 h-5 text-[#aaa]" />
-                  <span className="text-[12px] text-[#888]">
-                    Click to upload · ZIP, PNG, JPG, GIF, WebP
-                  </span>
-                </button>
-              )}
-              <input
-                ref={assetInputRef}
-                type="file"
-                accept={ACCEPTED_ASSET}
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) { setAssetFile(f); setUploadError(''); }
-                  e.target.value = '';
-                }}
-              />
-            </div>
-
-            {/* Cover image — only shown if main file is a zip */}
-            {assetFile && !assetIsImage && (
-              <div className="space-y-1">
-                <label className="text-[12px] font-semibold text-[#555]">
-                  Preview image{' '}
-                  <span className="text-[#bbb] font-normal">(optional)</span>
-                </label>
-                {coverFile ? (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[#eee] bg-[#fafafa]">
-                    <ImageIcon className="w-4 h-4 text-[#888] flex-shrink-0" />
-                    <span className="text-[13px] text-[#444] truncate flex-1">{coverFile.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => setCoverFile(null)}
-                      className="text-[#aaa] hover:text-[#555] flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => coverInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-[#ddd] hover:border-primary hover:bg-primary/5 transition-colors text-[12px] text-[#888]"
-                  >
-                    <Upload className="w-4 h-4" /> Upload a screenshot or preview
-                  </button>
-                )}
-                <input
-                  ref={coverInputRef}
-                  type="file"
-                  accept={ACCEPTED_IMAGE}
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) { setCoverFile(f); setUploadError(''); }
-                    e.target.value = '';
-                  }}
-                />
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <label className="text-[12px] font-semibold text-[#555]">
-                Title <span className="text-red-400">*</span>
-              </label>
-              <Input
-                placeholder={isGame ? 'e.g. Dungeon Crawler' : 'e.g. Pixel Dungeon Tileset'}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={120}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[12px] font-semibold text-[#555]">
-                Short description{' '}
-                <span className="text-[#bbb] font-normal">(optional)</span>
-              </label>
-              <Input
-                placeholder="What's included? What engine?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={200}
-              />
-            </div>
-
-            {uploadError && (
-              <p className="text-[12px] text-red-500">{uploadError}</p>
-            )}
-          </div>
-        )}
 
         {/* FanRealms tab */}
         {tab === 'fanrealms' && (
           isLoading ? (
             <p className="text-[13px] text-[#888] py-4">Loading your assets…</p>
           ) : published.length === 0 ? (
-            <div className="py-4 space-y-2">
+            <div className="py-4 space-y-3">
               <p className="text-[13px] text-[#555]">
-                No published assets yet. Upload one first or use the Upload file tab.
+                You don't have any published assets on FanRealms yet.
               </p>
-              <a href="/dashboard/assets/new" className="text-[13px] text-primary hover:underline">
-                Upload an asset →
+              <a
+                href="/dashboard/assets/new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-primary hover:underline"
+              >
+                Upload your asset to FanRealms →
               </a>
+              <p className="text-[12px] text-[#aaa]">
+                Once published, come back here and it will appear in this list.
+              </p>
             </div>
           ) : (
             <div className="space-y-2 max-h-56 overflow-y-auto py-1">
@@ -325,16 +192,76 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
           )
         )}
 
+        {/* Link tab */}
+        {tab === 'link' && (
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-[12px] font-semibold text-[#555]">
+                Title <span className="text-red-400">*</span>
+              </label>
+              <Input
+                placeholder={isGame ? 'e.g. Dungeon Crawler' : 'e.g. Pixel Dungeon Tileset'}
+                value={linkTitle}
+                onChange={e => setLinkTitle(e.target.value)}
+                maxLength={120}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[12px] font-semibold text-[#555]">
+                Link <span className="text-red-400">*</span>
+              </label>
+              <Input
+                placeholder={isGame ? 'https://yourname.itch.io/your-game' : 'https://yourname.itch.io/your-asset'}
+                value={linkUrl}
+                onChange={e => { setLinkUrl(e.target.value); setLinkError(''); }}
+              />
+              <p className="text-[11px] text-[#888]">
+                Accepted: {TRUSTED_DOMAINS.join(', ')}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[12px] font-semibold text-[#555]">
+                Preview image URL{' '}
+                <span className="text-[#bbb] font-normal">(optional)</span>
+              </label>
+              <Input
+                placeholder="https://img.itch.zone/…/cover.png"
+                value={linkCoverUrl}
+                onChange={e => { setLinkCoverUrl(e.target.value); setLinkError(''); }}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[12px] font-semibold text-[#555]">
+                Short description{' '}
+                <span className="text-[#bbb] font-normal">(optional)</span>
+              </label>
+              <Input
+                placeholder={isGame ? 'What is your game about?' : "What's included?"}
+                value={linkDescription}
+                onChange={e => setLinkDescription(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+
+            {linkError && (
+              <p className="text-[12px] text-red-500">{linkError}</p>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-2 pt-1">
-          <Button variant="outline" onClick={handleClose} className="flex-1" disabled={isPending}>
+          <Button variant="outline" onClick={handleClose} className="flex-1">
             Cancel
           </Button>
           <Button
-            onClick={tab === 'upload' ? handleUploadSubmit : handleFanRealmsSubmit}
-            disabled={!canSubmit || isPending}
+            onClick={handleSubmit}
+            disabled={!canSubmit || submitToJam.isPending}
             className="flex-1"
           >
-            {isPending ? 'Uploading…' : 'Submit entry'}
+            {submitToJam.isPending ? 'Submitting…' : 'Submit entry'}
           </Button>
         </div>
       </DialogContent>
