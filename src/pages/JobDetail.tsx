@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Calendar, DollarSign, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { JobApplicationDialog } from '@/components/jobs/JobApplicationDialog';
+import { JobApplicantsList } from '@/components/jobs/JobApplicantsList';
 
 export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
