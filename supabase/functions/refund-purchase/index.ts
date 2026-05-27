@@ -75,6 +75,6 @@ serve(async (req) => {
     return json({ success: true, refundId: refund.id }, 200);
   } catch (error: any) {
     console.error('refund-purchase error:', error);
-    return json({ error: error?.message ?? 'Refund failed' }, 500);
+    return json({ error: 'Refund failed. Please try again or contact support.' }, 500);
   }
 });
