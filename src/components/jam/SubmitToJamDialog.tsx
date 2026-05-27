@@ -102,7 +102,7 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
           <DialogDescription>
             {isGame
               ? 'Submit your Godot game — hosted anywhere (itch.io, GitHub, etc.)'
-              : 'Submit a Godot 2D asset — hosted anywhere.'}
+              : 'Submit any original 2D game asset — hosted anywhere.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +160,7 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
               <p className="text-[11px] text-[#888]">
                 {isGame
                   ? 'itch.io page with a playable or downloadable build'
-                  : 'itch.io, GitHub, Godot Asset Library, or any public URL'}
+                  : 'itch.io, GitHub, Unity Asset Store, GameDev Market — any public URL'}
               </p>
             </div>
             <div className="space-y-1">
