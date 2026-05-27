@@ -131,6 +131,18 @@ export function ProfileTab({ user }: ProfileTabProps) {
 
       if (userError) throw userError;
 
+      // Mirror display_name, bio, username, and website to creators table so the
+      // public profile page (which reads from creators) stays in sync.
+      await supabase
+        .from('creators')
+        .update({
+          display_name: profileSettings.name || null,
+          bio: profileSettings.bio || null,
+          username: profileSettings.username,
+          website: profileSettings.website || null,
+        })
+        .eq('user_id', user?.id);
+
       toast({
         title: "Profile updated",
         description: "Your profile information has been saved.",

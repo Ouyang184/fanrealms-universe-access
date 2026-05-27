@@ -50,6 +50,7 @@ const DashboardProjectsPage = lazy(() => import("./pages/DashboardProjects"));
 const DashboardProjectNewPage = lazy(() => import("./pages/DashboardProjectNew"));
 const DashboardProjectDetailPage = lazy(() => import("./pages/DashboardProjectDetail"));
 const ProjectPage = lazy(() => import("./pages/ProjectPage"));
+const DevlogPage = lazy(() => import("./pages/DevlogPage"));
 const SellerProfilePage = lazy(() => import("./pages/SellerProfile"));
 const LibraryPage = lazy(() => import("./pages/Library"));
 const LibraryReviewsPage = lazy(() => import("./pages/LibraryReviews"));
@@ -196,6 +197,7 @@ export default function App() {
                 <Route path="/dashboard/assets/:assetId" element={<AuthGuard><DashboardAssetDetail /></AuthGuard>} />
                 <Route path="/dashboard/sales" element={<AuthGuard><DashboardSalesPage /></AuthGuard>} />
                 <Route path="/projects/:slug" element={<ProjectPage />} />
+                <Route path="/devlogs/:devlogId" element={<DevlogPage />} />
                 <Route path="/dashboard/projects" element={<AuthGuard><DashboardProjectsPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/new" element={<AuthGuard><DashboardProjectNewPage /></AuthGuard>} />
                 <Route path="/dashboard/projects/:projectId" element={<AuthGuard><DashboardProjectDetailPage /></AuthGuard>} />

@@ -58,7 +58,7 @@ export function useSellerDevlogs(creatorUserId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('devlogs')
-        .select('id, title, created_at, projects:project_id(id, title, slug)')
+        .select('id, title, content, created_at, projects:project_id(id, title, slug)')
         .eq('author_id', creatorUserId)
         .eq('status', 'published')
         .order('created_at', { ascending: false })

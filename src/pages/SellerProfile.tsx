@@ -256,18 +256,22 @@ export default function SellerProfilePage() {
             {devlogs && devlogs.length > 0 ? (
               <div className="bg-white border border-[#eee] rounded-xl overflow-hidden">
                 {devlogs.map((d: any, i: number) => (
-                  <div
+                  <Link
                     key={d.id}
-                    className={`flex items-center gap-3 px-4 py-3 ${i < devlogs.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
+                    to={`/devlogs/${d.id}`}
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-[#fafafa] transition-colors ${i < devlogs.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}
                   >
-                    <FileText className="w-4 h-4 text-[#aaa] flex-shrink-0" />
+                    <FileText className="w-4 h-4 text-[#aaa] flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold truncate">{d.title}</div>
-                      <div className="text-[11px] text-[#aaa]">
+                      <div className="text-[13px] font-semibold truncate hover:text-primary transition-colors">{d.title}</div>
+                      {d.content && (
+                        <div className="text-[12px] text-[#666] line-clamp-2 mt-0.5">{d.content}</div>
+                      )}
+                      <div className="text-[11px] text-[#aaa] mt-0.5">
                         {d.projects?.title ?? 'Project'} · {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
