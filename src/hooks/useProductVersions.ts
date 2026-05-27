@@ -8,7 +8,6 @@ export interface ProductVersion {
   product_id: string;
   version_number: string;
   release_notes: string | null;
-  file_path: string;
   created_at: string;
 }
 
@@ -19,7 +18,7 @@ export function useProductVersions(productId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('product_versions')
-        .select('*')
+        .select('id, product_id, version_number, release_notes, created_at')
         .eq('product_id', productId)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -66,7 +65,7 @@ export function usePublishProductVersion() {
           release_notes: releaseNotes.trim() || null,
           file_path: path,
         })
-        .select('*')
+        .select('id, product_id, version_number, release_notes, created_at')
         .single();
       if (insertErr) throw new Error('Failed to record version: ' + insertErr.message);
 
@@ -81,7 +80,7 @@ export function usePublishProductVersion() {
         .eq('id', productId);
       if (updateErr) throw new Error('Failed to update product: ' + updateErr.message);
 
-      return inserted as ProductVersion;
+      return { ...(inserted as ProductVersion), file_path: path };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['product-versions', data.product_id] });
