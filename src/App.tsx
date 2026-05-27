@@ -63,6 +63,7 @@ const CommissionPaymentSuccess = lazy(() => import("./pages/CommissionPaymentSuc
 const PaymentSuccessPage = lazy(() => import("./pages/PaymentSuccessPage"));
 const PurchaseSuccessPage = lazy(() => import("./pages/PurchaseSuccessPage"));
 const SubscriptionsPage = lazy(() => import("./pages/Subscriptions"));
+const BundleDetailPage = lazy(() => import("./pages/BundleDetail"));
 
 
 
