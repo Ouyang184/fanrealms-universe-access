@@ -105,7 +105,6 @@ export async function handleGetCreatorSubscribers(stripe: any, supabase: any, cr
         const {
           stripe_subscription_id: _ssi,
           stripe_customer_id: _sci,
-          billing_email: _be,
           ...safe
         } = sub;
         return { ...safe, user: null, tier: null };
