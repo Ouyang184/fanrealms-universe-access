@@ -235,6 +235,13 @@ function NewProjectForm() {
                 className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary">
                 {CLASSIFICATIONS.map(c => <option key={c.v} value={c.v}>{c.l}</option>)}
               </select>
+              {classification === 'game' && (
+                <p className="text-[11px] text-[#888] mt-0.5">
+                  <span className="bg-green-100 text-green-700 text-[10px] font-semibold px-1.5 py-0.5 rounded mr-1">Games page</span>
+                  Published games appear automatically on the{' '}
+                  <a href="/games" target="_blank" rel="noopener noreferrer" className="underline">Games showcase</a>.
+                </p>
+              )}
             </Section>
 
             <Section>

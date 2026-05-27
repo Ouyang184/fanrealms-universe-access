@@ -1,192 +1,90 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/Layout/MainLayout';
-import { useIndieGames, useAddGame, GAME_GENRES } from '@/hooks/useIndieGames';
-import { GameCard } from '@/components/games/GameCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { Gamepad2 } from 'lucide-react';
 
 const PAGE_SIZE = 24;
 
-// Detect platform label from URL
-function detectPlatform(url: string): string {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, '');
-    if (hostname.endsWith('itch.io'))      return 'itch.io';
-    if (hostname === 'github.com')         return 'GitHub';
-    if (hostname.endsWith('github.io'))    return 'GitHub';
-    if (hostname === 'gamejolt.com')       return 'Game Jolt';
-    if (hostname === 'ldjam.com')          return 'Ludum Dare';
-    if (hostname === 'newgrounds.com')     return 'Newgrounds';
-    return 'Play';
-  } catch {
-    return 'Play';
-  }
+// Matches the genres in DashboardProjectNew — projects with classification='game'
+// are filtered by these values.
+const GENRES = [
+  'All',
+  'Action', 'Adventure', 'Card Game', 'Fighting', 'Interactive Fiction',
+  'Platformer', 'Puzzle', 'Racing', 'Rhythm', 'Role Playing',
+  'Shooter', 'Simulation', 'Sports', 'Strategy', 'Survival',
+  'Visual Novel', 'Other',
+];
+
+function usePublishedGames(genre?: string) {
+  return useQuery({
+    queryKey: ['published-games', genre],
+    queryFn: async () => {
+      let query = supabase
+        .from('projects')
+        .select('id, title, slug, short_description, cover_image_url, genre, tags, creator_id, creators(id, username, display_name)')
+        .eq('status', 'published')
+        .eq('classification', 'game')
+        .order('created_at', { ascending: false });
+
+      if (genre && genre !== 'All') {
+        query = query.eq('genre', genre);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
 }
 
-function isValidUrl(url: string) {
-  try { new URL(url); return true; } catch { return false; }
-}
+// ── Game card ──────────────────────────────────────────────────────────────────
 
-// ── Submit game dialog ────────────────────────────────────────────────────────
-
-function SubmitGameDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const addGame = useAddGame();
-  const [title, setTitle]         = useState('');
-  const [url, setUrl]             = useState('');
-  const [genre, setGenre]         = useState('Other');
-  const [description, setDescription] = useState('');
-  const [thumbnail, setThumbnail] = useState('');
-  const [error, setError]         = useState('');
-
-  const reset = () => {
-    setTitle(''); setUrl(''); setGenre('Other');
-    setDescription(''); setThumbnail(''); setError('');
-  };
-
-  const handleClose = () => { reset(); onClose(); };
-
-  const handleSubmit = async () => {
-    if (!title.trim())        { setError('Please enter a title.');         return; }
-    if (!isValidUrl(url.trim())) { setError('Please enter a valid URL.');  return; }
-    if (thumbnail.trim() && !isValidUrl(thumbnail.trim())) {
-      setError('Thumbnail URL is not a valid URL.'); return;
-    }
-    setError('');
-    try {
-      await addGame.mutateAsync({
-        title:             title.trim(),
-        external_url:      url.trim(),
-        genre,
-        description:       description.trim() || undefined,
-        thumbnail_url:     thumbnail.trim()   || undefined,
-        external_platform: detectPlatform(url.trim()),
-      });
-      toast.success('Game added to the showcase!');
-      handleClose();
-    } catch {
-      // error toast shown by hook
-    }
-  };
-
-  const genres = GAME_GENRES.filter(g => g !== 'All');
-
+function GameProjectCard({ project }: { project: any }) {
+  const creator = project.creators;
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add your game</DialogTitle>
-          <DialogDescription>
-            Submit your Godot game to the FanRealms showcase. Paste a link from
-            itch.io, GitHub, Game Jolt, or anywhere else it's hosted.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-3">
-          {/* Title */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-semibold text-[#555]">
-              Title <span className="text-red-400">*</span>
-            </label>
-            <Input
-              placeholder="e.g. Space Crawler"
-              value={title}
-              onChange={e => { setTitle(e.target.value); setError(''); }}
-              maxLength={100}
+    <Link to={`/projects/${project.slug}`} className="group block">
+      <div className="bg-card border border-border rounded-xl overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] hover:border-[#ccc] transition-all">
+        <div className="aspect-video bg-[#111] overflow-hidden">
+          {project.cover_image_url ? (
+            <img
+              src={project.cover_image_url}
+              alt={project.title}
+              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
             />
-          </div>
-
-          {/* URL */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-semibold text-[#555]">
-              Link to play <span className="text-red-400">*</span>
-            </label>
-            <Input
-              placeholder="https://yourname.itch.io/your-game"
-              value={url}
-              onChange={e => { setUrl(e.target.value); setError(''); }}
-            />
-          </div>
-
-          {/* Genre */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-semibold text-[#555]">Genre</label>
-            <select
-              value={genre}
-              onChange={e => setGenre(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-[13px] focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              {genres.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-
-          {/* Thumbnail */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-semibold text-[#555]">
-              Thumbnail URL{' '}
-              <span className="text-[#bbb] font-normal">(optional)</span>
-            </label>
-            <Input
-              placeholder="https://img.itch.zone/…/cover.png"
-              value={thumbnail}
-              onChange={e => { setThumbnail(e.target.value); setError(''); }}
-            />
-            <p className="text-[11px] text-[#aaa]">
-              Paste a direct image URL from itch.io or elsewhere.
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Gamepad2 className="w-10 h-10 text-[#444]" />
+            </div>
+          )}
+        </div>
+        <div className="p-3 space-y-1">
+          <p className="text-[13px] font-semibold truncate">{project.title}</p>
+          {creator && (
+            <p className="text-[11px] text-muted-foreground">
+              by {creator.display_name || creator.username}
             </p>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-1">
-            <label className="text-[12px] font-semibold text-[#555]">
-              Short description{' '}
-              <span className="text-[#bbb] font-normal">(optional)</span>
-            </label>
-            <Input
-              placeholder="What is your game about?"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              maxLength={200}
-            />
-          </div>
-
-          {error && <p className="text-[12px] text-red-500">{error}</p>}
+          )}
+          {project.genre && project.genre !== 'No genre' && (
+            <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f5f5f5] text-[#555] mt-1">
+              {project.genre}
+            </span>
+          )}
         </div>
-
-        <div className="flex gap-2 pt-1">
-          <Button variant="outline" onClick={handleClose} className="flex-1">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!title.trim() || !url.trim() || addGame.isPending}
-            className="flex-1"
-          >
-            {addGame.isPending ? 'Submitting…' : 'Submit game'}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </Link>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function GamesPage() {
   const [genre, setGenre]               = useState('All');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const [showDialog, setShowDialog]     = useState(false);
-  const { data: games, isLoading }      = useIndieGames(genre);
+  const { data: games, isLoading }      = usePublishedGames(genre);
   const { user }                        = useAuth();
 
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [genre]);
@@ -195,13 +93,12 @@ export default function GamesPage() {
   const remaining    = (games?.length ?? 0) - visibleGames.length;
 
   const addButton = user ? (
-    <button
-      type="button"
-      onClick={() => setShowDialog(true)}
+    <Link
+      to="/dashboard/projects/new"
       className="inline-flex items-center px-3 h-8 bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
     >
       Add your game
-    </button>
+    </Link>
   ) : (
     <Link
       to="/signup"
@@ -219,7 +116,7 @@ export default function GamesPage() {
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="space-y-1">
             <div>
-              Indie games made with Godot — discover, play, and share what the community is building.
+              Indie games — discover and play what the community is building.
             </div>
             <div className="text-[11.5px]">
               Free showcase —{' '}
@@ -235,13 +132,13 @@ export default function GamesPage() {
         {/* Genre bar */}
         <div className="border border-border bg-card overflow-x-auto [mask-image:linear-gradient(to_right,black_90%,transparent)]">
           <div className="flex divide-x divide-border min-w-max">
-            {GAME_GENRES.map((g) => {
+            {GENRES.map((g) => {
               const active = genre === g;
               return (
                 <button
                   key={g}
                   onClick={() => setGenre(g)}
-                  className={`flex-1 px-4 h-9 text-[12px] font-semibold whitespace-nowrap transition-colors ${
+                  className={`px-4 h-9 text-[12px] font-semibold whitespace-nowrap transition-colors ${
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:bg-accent'
@@ -271,7 +168,7 @@ export default function GamesPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                  <Skeleton className="aspect-video w-full rounded-xl" />
                   <Skeleton className="h-3 w-3/4" />
                   <Skeleton className="h-3 w-1/2" />
                 </div>
@@ -281,7 +178,7 @@ export default function GamesPage() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {visibleGames.map((game) => (
-                  <GameCard key={game.id} game={game} />
+                  <GameProjectCard key={game.id} project={game} />
                 ))}
               </div>
 
@@ -298,9 +195,9 @@ export default function GamesPage() {
 
               <div className="mt-6 border border-border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <h3 className="text-[13px] font-semibold text-foreground">Built something in Godot?</h3>
+                  <h3 className="text-[13px] font-semibold text-foreground">Built something?</h3>
                   <p className="text-[12px] text-muted-foreground">
-                    Add your game to the showcase and get discovered by other devs.
+                    Create a project page and it'll show up here automatically.
                   </p>
                 </div>
                 {addButton}
@@ -309,9 +206,9 @@ export default function GamesPage() {
           ) : (
             <div className="border border-border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <h3 className="text-[13px] font-semibold text-foreground">No games listed yet</h3>
+                <h3 className="text-[13px] font-semibold text-foreground">No games yet</h3>
                 <p className="text-[12px] text-muted-foreground">
-                  Showcase your Godot game and get it discovered by other devs.
+                  Publish a project and it'll appear here automatically.
                 </p>
               </div>
               {addButton}
@@ -319,8 +216,6 @@ export default function GamesPage() {
           )}
         </section>
       </div>
-
-      <SubmitGameDialog open={showDialog} onClose={() => setShowDialog(false)} />
     </MainLayout>
   );
 }
