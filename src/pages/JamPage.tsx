@@ -62,7 +62,7 @@ export default function JamPage() {
     const prizes = jam.prize_pool ?? [];
     const top3 = submissions.slice(0, 3).map((s, i) => ({
       rank: i + 1,
-      productTitle: s.product?.title ?? 'Untitled',
+      productTitle: s.product?.title ?? s.external_title ?? 'Untitled',
       creatorName: s.creator?.display_name || s.creator?.username || 'Unknown',
       prize: prizes[i]?.prize ?? '—',
     }));
@@ -81,6 +81,52 @@ export default function JamPage() {
         </Link>
 
         <JamHeader jam={jam} />
+
+        {/* How voting works — shown during voting period */}
+        {status === 'voting' && (
+          <div className="bg-[#f8fafc] border border-[#e5edf5] rounded-xl p-5 mb-8">
+            <h2 className="text-[14px] font-bold text-[#111] mb-3">How voting works</h2>
+            <ol className="space-y-2.5">
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">1</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">Browse the entries below.</strong> Click any entry to view the full asset or play the game before rating.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">Rate each entry 1–5 stars</strong> across{' '}
+                  {jam.jam_type === 'game'
+                    ? 'Fun, Visuals, and Creativity.'
+                    : 'Usefulness, Quality, and Creativity.'}
+                  {' '}All three must be filled for your vote to count.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">3</span>
+                <span className="text-[13px] text-[#444]">
+                  <strong className="text-[#111]">You can update your vote</strong> any time before voting closes. The entry with the highest average score wins.
+                </span>
+              </li>
+            </ol>
+            <p className="text-[12px] text-[#888] mt-3 pt-3 border-t border-[#eaeff5]">
+              You cannot vote on your own entry · One vote per entry per person
+            </p>
+          </div>
+        )}
+
+        {/* Sign in to vote banner — shown to non-logged-in visitors during voting */}
+        {status === 'voting' && !user && (
+          <div className="flex items-center justify-between gap-4 bg-primary/5 border border-primary/20 rounded-xl px-5 py-4 mb-6">
+            <p className="text-[13px] text-[#444]">
+              <strong className="text-[#111]">Sign in to vote</strong> — it's free and takes 30 seconds.
+            </p>
+            <Link to="/login" className="flex-shrink-0 px-4 py-2 text-[13px] font-semibold text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors">
+              Sign in
+            </Link>
+          </div>
+        )}
 
         {/* How to enter — shown while jam is upcoming or accepting submissions */}
         {(status === 'upcoming' || status === 'active') && (
@@ -187,7 +233,7 @@ export default function JamPage() {
             <p className="text-[13px] text-[#999]">
               {jam.jam_type === 'game'
                 ? 'Be the first to submit a Godot game.'
-                : 'Be the first to upload a Godot asset and enter the jam.'}
+                : 'Be the first to submit a 2D game asset.'}
             </p>
           </div>
         ) : (
