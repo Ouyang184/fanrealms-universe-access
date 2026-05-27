@@ -1,36 +1,42 @@
 // src/components/jam/JamSubmissionCard.tsx
 import { useState, useEffect } from 'react';
-import { ExternalLink, Trash2 } from 'lucide-react';
+import { Download, ExternalLink, Trash2 } from 'lucide-react';
 
-// Domains we trust enough to render as clickable links.
-// Any URL not matching these is shown as plain text only.
+// Our own Supabase storage URL — always safe to link
+const SUPABASE_STORAGE_URL = 'supabase.co/storage';
+
+// Other trusted hosting platforms
 const TRUSTED_DOMAINS = [
-  'itch.io',
-  'github.com',
-  'github.io',
-  'godotengine.org',
-  'gamedevmarket.net',
-  'unity.com',
-  'assetstore.unity.com',
-  'opengameart.org',
-  'kenney.nl',
-  'gitlab.com',
-  'ldjam.com',
-  'gamejolt.com',
+  'itch.io', 'github.com', 'github.io', 'godotengine.org',
+  'gamedevmarket.net', 'unity.com', 'assetstore.unity.com',
+  'opengameart.org', 'kenney.nl', 'gitlab.com', 'ldjam.com', 'gamejolt.com',
 ];
 
-function getTrustedUrl(url: string | null): { href: string; domain: string } | null {
+function classifyUrl(url: string | null): {
+  href: string;
+  label: string;
+  isDownload: boolean;
+  trusted: boolean;
+} | null {
   if (!url) return null;
   try {
     const parsed = new URL(url);
     const hostname = parsed.hostname.replace(/^www\./, '');
-    const match = TRUSTED_DOMAINS.find(
-      (d) => hostname === d || hostname.endsWith('.' + d)
-    );
-    if (!match) return null;
-    // Capitalise the base domain for the label, e.g. "itch.io" → "Itch.io"
-    const label = match.charAt(0).toUpperCase() + match.slice(1);
-    return { href: url, domain: label };
+
+    // Our own storage — always trusted
+    if (url.includes(SUPABASE_STORAGE_URL) || url.includes('/storage/v1/object/public/jam-entries')) {
+      const isZip = parsed.pathname.toLowerCase().endsWith('.zip');
+      return { href: url, label: isZip ? 'Download' : 'View file', isDownload: isZip, trusted: true };
+    }
+
+    // Trusted external domains
+    const match = TRUSTED_DOMAINS.find(d => hostname === d || hostname.endsWith('.' + d));
+    if (match) {
+      const label = match.charAt(0).toUpperCase() + match.slice(1);
+      return { href: url, label: `View on ${label}`, isDownload: false, trusted: true };
+    }
+
+    return null; // unknown — don't link
   } catch {
     return null;
   }
@@ -204,11 +210,11 @@ export function JamSubmissionCard({
   const category   = product?.category   ?? null;
   const description = product?.short_description ?? submission.external_description ?? null;
 
-  // For FanRealms products, link to the marketplace page (same-origin, safe).
-  // For external submissions, only link if the domain is on the trusted list.
-  const trustedLink = isExternal
-    ? getTrustedUrl(submission.external_url)
-    : { href: `/marketplace/${submission.product_id}`, domain: 'FanRealms' };
+  // For FanRealms products, link to the marketplace page (same-origin, always safe).
+  // For external/uploaded submissions, classify the URL — only show link if trusted/ours.
+  const linkInfo = isExternal
+    ? classifyUrl(submission.external_url)
+    : { href: `/marketplace/${submission.product_id}`, label: 'View on FanRealms', isDownload: false, trusted: true };
 
   return (
     <div className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-[#ddd] transition-colors">
@@ -243,16 +249,18 @@ export function JamSubmissionCard({
             <p className="text-[12px] text-[#666] line-clamp-2 mt-1">{description}</p>
           )}
 
-          {/* View link — only for trusted domains */}
-          {trustedLink ? (
+          {/* View / Download link */}
+          {linkInfo ? (
             <a
-              href={trustedLink.href}
-              target={isExternal ? '_blank' : '_self'}
-              rel={isExternal ? 'noopener noreferrer' : undefined}
+              href={linkInfo.href}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-primary hover:underline"
             >
-              <ExternalLink className="w-3 h-3" />
-              View on {trustedLink.domain}
+              {linkInfo.isDownload
+                ? <Download className="w-3 h-3" />
+                : <ExternalLink className="w-3 h-3" />}
+              {linkInfo.label}
             </a>
           ) : isExternal && submission.external_url ? (
             <p className="text-[11px] text-[#aaa] mt-1.5">
