@@ -49,7 +49,7 @@ export async function handleCheckoutWebhook(
       .eq('id', product.creator_id)
       .maybeSingle();
 
-    const feeRate = creatorRow?.platform_fee_rate ?? 5;
+    const feeRate = Math.min(Math.max(creatorRow?.platform_fee_rate ?? 5, 1), 5);
     const amount = Number(product?.price ?? 0);
     const platformFee = parseFloat((amount * feeRate / 100).toFixed(2));
     const netAmount = parseFloat((amount - platformFee).toFixed(2));

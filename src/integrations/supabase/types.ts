@@ -878,6 +878,7 @@ export type Database = {
           id: string
           license: string | null
           price: number
+          pricing_model: string | null
           project_id: string | null
           screenshots: string[] | null
           short_description: string | null
@@ -901,6 +902,7 @@ export type Database = {
           id?: string
           license?: string | null
           price?: number
+          pricing_model?: string | null
           project_id?: string | null
           screenshots?: string[] | null
           short_description?: string | null
@@ -924,6 +926,7 @@ export type Database = {
           id?: string
           license?: string | null
           price?: number
+          pricing_model?: string | null
           project_id?: string | null
           screenshots?: string[] | null
           short_description?: string | null
