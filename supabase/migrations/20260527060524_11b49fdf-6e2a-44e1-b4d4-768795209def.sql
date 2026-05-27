@@ -1,6 +1,3 @@
-
--- Create a function to insert messages
--- Guarded: callers can only send messages as themselves; auth.uid() must match p_sender_id.
 CREATE OR REPLACE FUNCTION public.insert_message(
   p_sender_id UUID,
   p_receiver_id UUID,

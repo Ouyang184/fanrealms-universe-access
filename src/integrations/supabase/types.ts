@@ -4040,6 +4040,15 @@ export type Database = {
         Args: { thread_id: string }
         Returns: undefined
       }
+      insert_message: {
+        Args: {
+          p_is_read: boolean
+          p_message_text: string
+          p_receiver_id: string
+          p_sender_id: string
+        }
+        Returns: Json
+      }
       is_creator_owner: { Args: { _creator_id: string }; Returns: boolean }
       is_product_owner: { Args: { _product_id: string }; Returns: boolean }
       is_project_sale_eligible: {
