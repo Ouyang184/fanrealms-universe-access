@@ -4158,6 +4158,10 @@ export type Database = {
           website: string
         }[]
       }
+      record_free_download: {
+        Args: { p_product_id: string }
+        Returns: undefined
+      }
       search_creators_public: {
         Args: {
           p_is_nsfw?: boolean
