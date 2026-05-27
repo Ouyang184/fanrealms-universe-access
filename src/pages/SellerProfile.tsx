@@ -166,17 +166,21 @@ export default function SellerProfilePage() {
             ) : projects && projects.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {projects.map((p: any) => (
-                  <div key={p.id} className="group">
+                  <Link key={p.id} to={`/projects/${p.slug}`} className="group block">
                     <div className="aspect-[4/3] rounded-xl bg-[#f5f5f5] overflow-hidden mb-2">
-                      {p.cover_image_url && (
+                      {p.cover_image_url ? (
                         <img src={p.cover_image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Gamepad2 className="w-8 h-8 text-[#ccc]" />
+                        </div>
                       )}
                     </div>
-                    <div className="text-[13px] font-semibold truncate">{p.title}</div>
+                    <div className="text-[13px] font-semibold truncate group-hover:text-primary transition-colors">{p.title}</div>
                     {p.short_description && (
                       <div className="text-[11px] text-[#888] line-clamp-2">{p.short_description}</div>
                     )}
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
