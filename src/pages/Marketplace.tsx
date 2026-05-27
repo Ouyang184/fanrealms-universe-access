@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { SlidersHorizontal, Search } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { useMarketplaceProducts } from '@/hooks/useMarketplace';
 import { usePopularTags } from '@/hooks/useTags';
@@ -28,6 +28,8 @@ const BROWSE_CATEGORIES: { name: string; tagline: string }[] = [
 
 export default function Marketplace() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
@@ -86,6 +88,25 @@ export default function Marketplace() {
             Create an account
           </Link>
         </div>
+
+        {/* Search bar */}
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            const q = searchInput.trim();
+            if (q.length >= 2) navigate(`/search?q=${encodeURIComponent(q)}`);
+          }}
+          className="relative"
+        >
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="search"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder="Search assets, projects, creators…"
+            className="w-full h-10 pl-9 pr-4 text-[13px] border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </form>
 
         {/* Mobile: quick category + sort dropdowns always visible */}
         <div className="lg:hidden flex gap-2 mb-3">

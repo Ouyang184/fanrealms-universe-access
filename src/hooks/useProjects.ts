@@ -223,6 +223,30 @@ export function useCreateDevlog() {
   });
 }
 
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+      const { error } = await supabase
+        .from('projects')
+        .update(updates)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: 'Project updated' });
+      queryClient.invalidateQueries({ queryKey: ['project', variables.id] });
+      queryClient.invalidateQueries({ queryKey: ['creator-projects'] });
+      queryClient.invalidateQueries({ queryKey: ['published-games'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useDeleteProject() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
