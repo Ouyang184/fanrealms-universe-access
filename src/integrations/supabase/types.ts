@@ -3090,6 +3090,7 @@ export type Database = {
         Args: { p_suspicious_behavior: string; p_table_accessed: string }
         Returns: undefined
       }
+      ensure_creator_row: { Args: never; Returns: undefined }
       get_commission_request_secure_v2: {
         Args: { p_request_id: string }
         Returns: {

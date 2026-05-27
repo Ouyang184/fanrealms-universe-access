@@ -238,7 +238,7 @@ export default function DashboardCommissionsPage() {
             <p className="text-[15px] font-semibold text-[#111] mb-1">No requests here</p>
             <p className="text-[13px] text-[#999]">
               {filter === 'pending'
-                ? 'No pending requests — you're all caught up.'
+                ? "No pending requests — you're all caught up."
                 : filter === 'active'
                 ? 'No active commissions right now.'
                 : 'Commission requests will appear here once customers submit them.'}
