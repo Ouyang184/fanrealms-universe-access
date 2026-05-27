@@ -31,7 +31,7 @@ export default function Forum() {
     <MainLayout fullWidth>
       <div className="w-full space-y-4">
         {/* Jam banner — shown while active */}
-        {activeJam && (jamStatus === 'upcoming' || jamStatus === 'active') && (
+        {activeJam && (jamStatus === 'upcoming' || jamStatus === 'active' || jamStatus === 'voting') && (
           <Link
             to={`/jam/${activeJam.id}`}
             className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors group"
@@ -43,7 +43,9 @@ export default function Forum() {
                   {activeJam.title} is {jamStatus === 'active' ? 'now open' : 'coming soon'}!
                 </div>
                 <div className="text-[12px] text-amber-700">
-                  {jamStatus === 'active'
+                  {jamStatus === 'voting'
+                    ? `Voting is open! Rate the entries and help pick the winner →`
+                    : jamStatus === 'active'
                     ? (activeJam.jam_type === 'game'
                         ? 'Make a Godot game in 2 weeks — prizes up for grabs. Click to enter →'
                         : 'Submit any original 2D game asset — prizes up for grabs. Click to enter →')

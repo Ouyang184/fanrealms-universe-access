@@ -212,9 +212,10 @@ export function useActiveJam() {
         .limit(10);
       if (error) throw error;
       const jams = (data ?? []) as Jam[];
-      // Prefer a currently active jam; fall back to the nearest upcoming one
+      // Priority: active → voting (still needs visibility) → upcoming
       return (
         jams.find((j) => getJamStatus(j) === 'active') ??
+        jams.find((j) => getJamStatus(j) === 'voting') ??
         jams.find((j) => getJamStatus(j) === 'upcoming') ??
         null
       );
