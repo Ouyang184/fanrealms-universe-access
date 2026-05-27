@@ -71,21 +71,11 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
     if (!productId) return;
     setDownloading(true);
     try {
-      // For free assets: ensure a purchase record exists so the item
-      // appears in the user's Library and can be re-downloaded later.
+      // For free assets: record a purchase so the item appears in the
+      // user's Library and can be re-downloaded anytime. Uses a
+      // SECURITY DEFINER RPC so authenticated users can't fake paid purchases.
       if (isFree && user) {
-        await supabase.from('purchases').upsert(
-          {
-            product_id: productId,
-            buyer_id: user.id,
-            creator_id: (product as any)?.creator_id,
-            amount: 0,
-            platform_fee: 0,
-            net_amount: 0,
-            status: 'completed',
-          },
-          { onConflict: 'product_id,buyer_id', ignoreDuplicates: true }
-        );
+        await supabase.rpc('record_free_download' as any, { p_product_id: productId });
       }
 
       const { data, error } = await supabase.functions.invoke('get-download-url', {
