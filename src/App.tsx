@@ -150,6 +150,7 @@ export default function App() {
                 <Route path="/" element={<HomeRedirect />} />
                 <Route path="/marketplace" element={<Marketplace />} />
                 <Route path="/marketplace/:productId" element={<ProductDetail />} />
+                <Route path="/bundles/:bundleId" element={<BundleDetailPage />} />
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/jobs/:jobId" element={<JobDetail />} />
                 <Route path="/forum" element={<Forum />} />
