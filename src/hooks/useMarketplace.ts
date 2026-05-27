@@ -309,17 +309,38 @@ export function useSellerSales() {
         .from('purchases')
         .select('*, digital_products(title, cover_image_url, project_id, projects:project_id(id, title))')
         .eq('creator_id', creator.id)
-        .eq('status', 'completed')
+        .in('status', ['completed', 'refunded'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const sales = data ?? [];
-      const gross = sales.reduce((sum, p) => sum + ((p as any).amount ?? 0), 0);
-      const fees = sales.reduce((sum, p) => sum + ((p as any).platform_fee ?? 0), 0);
-      const net = sales.reduce((sum, p) => sum + ((p as any).net_amount ?? 0), 0);
+      const completed = sales.filter((p: any) => p.status === 'completed');
+      const gross = completed.reduce((sum, p: any) => sum + (p.amount ?? 0), 0);
+      const fees = completed.reduce((sum, p: any) => sum + (p.platform_fee ?? 0), 0);
+      const net = completed.reduce((sum, p: any) => sum + (p.net_amount ?? 0), 0);
 
       return { sales, totals: { gross, fees, net } };
     },
+  });
+}
+
+export function useRefundPurchase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ purchaseId, reason }: { purchaseId: string; reason?: string }) => {
+      const { data, error } = await supabase.functions.invoke('refund-purchase', {
+        body: { purchaseId, reason },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Refund issued');
+      queryClient.invalidateQueries({ queryKey: ['seller-sales'] });
+      queryClient.invalidateQueries({ queryKey: ['user-purchases'] });
+    },
+    onError: (e: Error) => toast.error('Refund failed: ' + e.message),
   });
 }
