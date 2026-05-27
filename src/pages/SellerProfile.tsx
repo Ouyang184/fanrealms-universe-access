@@ -14,7 +14,6 @@ import { FollowButton } from '@/components/profile/FollowButton';
 import { SocialLinks } from '@/components/SocialLinks';
 import { safeHref } from '@/lib/safeHref';
 import { useState, useEffect } from 'react';
-import { CreatorCommissions } from '@/components/creator/CreatorCommissions';
 
 export default function SellerProfilePage() {
   const { username } = useParams<{ username: string }>();
@@ -246,31 +245,6 @@ export default function SellerProfilePage() {
             )}
           </section>
 
-
-          {/* Commissions */}
-          {seller && (
-            <section className="mt-10">
-              <CreatorCommissions
-                creator={{
-                  id: seller.id,
-                  user_id: seller.user_id,
-                  username: seller.username ?? undefined,
-                  display_name: seller.display_name ?? undefined,
-                  bio: seller.bio ?? undefined,
-                  profile_image_url: seller.profile_image_url ?? undefined,
-                  banner_url: seller.banner_url ?? undefined,
-                  follower_count: seller.follower_count ?? undefined,
-                  website: (seller as any).website ?? undefined,
-                  accepts_commissions: (seller as any).accepts_commissions ?? false,
-                  commission_slots_available: (seller as any).commission_slots_available ?? undefined,
-                  commission_base_rate: (seller as any).commission_base_rate ?? undefined,
-                  commission_turnaround_days: (seller as any).commission_turnaround_days ?? undefined,
-                  commission_tos: (seller as any).commission_tos ?? undefined,
-                  created_at: seller.created_at ?? undefined,
-                }}
-              />
-            </section>
-          )}
 
           {/* Latest posts */}
           <section className="mt-10 mb-12">

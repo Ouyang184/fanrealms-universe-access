@@ -27,8 +27,7 @@ const CREATE: Item[] = [
   { to: '/dashboard/projects/new', label: 'Upload new project' },
   { to: '/dashboard/devlogs', label: 'Posts' },
   { to: '/dashboard/assets', label: 'Assets' },
-  { to: '/dashboard/commissions', label: 'Commissions' },
-  { to: '/dashboard/sales', label: 'Sales & bundles' },
+{ to: '/dashboard/sales', label: 'Sales & bundles' },
 ];
 
 // Static portion of sidebar paths (everything except the username-dependent
