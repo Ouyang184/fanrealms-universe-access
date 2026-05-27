@@ -1,0 +1,1 @@
+ALTER TABLE public.digital_products ADD COLUMN IF NOT EXISTS pricing_model text DEFAULT 'paid';
