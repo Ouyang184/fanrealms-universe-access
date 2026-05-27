@@ -111,7 +111,7 @@ serve(async (req) => {
       .maybeSingle();
     if (stripeAcctErr) console.warn('[create-checkout-session] stripe account fetch error:', stripeAcctErr.message);
 
-    const platformFeeRate = creatorData?.platform_fee_rate ?? 5;
+    const platformFeeRate = Math.min(Math.max(creatorData?.platform_fee_rate ?? 5, 1), 5);
     const hasConnect =
       !!stripeAccount?.stripe_charges_enabled &&
       !!stripeAccount?.stripe_account_id;
