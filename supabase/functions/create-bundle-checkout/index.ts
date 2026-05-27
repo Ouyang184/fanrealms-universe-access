@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         creator_id: bundle.creator_id,
         kind: "bundle",
       },
-      success_url: `${origin}/purchase-success?bundle_id=${bundle.id}`,
+      success_url: `${origin}/library?bundle_id=${bundle.id}`,
       cancel_url: `${origin}/bundles/${bundle.id}`,
     };
 
