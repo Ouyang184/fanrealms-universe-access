@@ -265,6 +265,13 @@ function CreateBundleDialog() {
 function HistoryTab() {
   const { data, isLoading } = useSellerSales();
   const { sales, totals } = data ?? { sales: [], totals: { gross: 0, fees: 0, net: 0 } };
+  const refund = useRefundPurchase();
+
+  const handleRefund = (id: string, title: string) => {
+    const reason = window.prompt(`Refund "${title}"? Optional reason for your records:`, '');
+    if (reason === null) return;
+    refund.mutate({ purchaseId: id, reason });
+  };
 
   return (
     <div className="space-y-8">
@@ -275,7 +282,7 @@ function HistoryTab() {
           <div className="bg-white border border-[#eee] rounded-xl p-5">
             <div className="text-[11px] font-bold text-[#aaa] uppercase tracking-[0.5px] mb-1">Gross revenue</div>
             <div className="text-[24px] font-bold tracking-[-0.5px]">{fmt(totals.gross)}</div>
-            <div className="text-[11px] text-[#aaa] mt-0.5">{sales.length} sale{sales.length !== 1 ? 's' : ''}</div>
+            <div className="text-[11px] text-[#aaa] mt-0.5">{sales.filter((s: any) => s.status === 'completed').length} sale(s)</div>
           </div>
           <div className="bg-white border border-[#eee] rounded-xl p-5">
             <div className="text-[11px] font-bold text-[#aaa] uppercase tracking-[0.5px] mb-1">Platform fees (10%)</div>
@@ -294,17 +301,34 @@ function HistoryTab() {
           <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div>
         ) : sales.length > 0 ? (
           <div className="bg-white border border-[#eee] rounded-xl overflow-x-auto">
-            {sales.map((sale: any, i: number) => (
-              <div key={sale.id} className={`grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3.5 min-w-[380px] ${i < sales.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-semibold truncate">{sale.digital_products?.title ?? 'Asset'}</div>
-                  <div className="text-[11px] text-[#aaa]">{formatDistanceToNow(new Date(sale.created_at), { addSuffix: true })}</div>
+            {sales.map((sale: any, i: number) => {
+              const isRefunded = sale.status === 'refunded';
+              return (
+                <div key={sale.id} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3.5 min-w-[460px] ${i < sales.length - 1 ? 'border-b border-[#f5f5f5]' : ''}`}>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold truncate flex items-center gap-2">
+                      {sale.digital_products?.title ?? 'Asset'}
+                      {isRefunded && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-[#f5f5f5] text-[#888] border-[#ddd]">REFUNDED</span>}
+                    </div>
+                    <div className="text-[11px] text-[#aaa]">{formatDistanceToNow(new Date(sale.created_at), { addSuffix: true })}</div>
+                  </div>
+                  <div className={`text-[13px] font-semibold text-right ${isRefunded ? 'line-through text-[#aaa]' : ''}`}>{fmt(sale.amount)}</div>
+                  <div className="text-[13px] text-[#aaa] text-right">{fmt(sale.platform_fee)}</div>
+                  <div className={`text-[13px] font-bold text-right ${isRefunded ? 'text-[#aaa] line-through' : 'text-primary'}`}>{fmt(sale.net_amount)}</div>
+                  <div className="text-right">
+                    {!isRefunded && (
+                      <button
+                        onClick={() => handleRefund(sale.id, sale.digital_products?.title ?? 'Asset')}
+                        disabled={refund.isPending}
+                        className="text-[11px] font-semibold text-[#888] hover:text-red-600 disabled:opacity-50"
+                      >
+                        Refund
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="text-[13px] font-semibold text-right">{fmt(sale.amount)}</div>
-                <div className="text-[13px] text-[#aaa] text-right">{fmt(sale.platform_fee)}</div>
-                <div className="text-[13px] font-bold text-primary text-right">{fmt(sale.net_amount)}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <EmptyState icon={<TrendingUp className="w-8 h-8 text-[#ccc] mx-auto mb-3" />} title="No sales yet" hint="Publish a project to start earning." />
