@@ -12,8 +12,15 @@ export async function handleCheckoutWebhook(
   console.log('[CheckoutHandler] Session mode:', session.mode, '| has subscription:', !!session.subscription);
 
   if (!session.subscription) {
+    const meta = session.metadata ?? {};
+
+    // Bundle purchase branch
+    if (meta.kind === 'bundle' || meta.bundle_id) {
+      return await handleBundlePurchase(session, supabaseService);
+    }
+
     // One-time marketplace purchase
-    const { product_id, buyer_id, creator_id } = session.metadata ?? {};
+    const { product_id, buyer_id, creator_id } = meta;
 
     if (!product_id || !buyer_id || !creator_id) {
       console.log('[CheckoutHandler] Missing metadata for one-time purchase, skipping');
