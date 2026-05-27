@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect, useRef } from "react";
@@ -231,11 +232,14 @@ export function ProfileTab({ user }: ProfileTabProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="bio">Bio</Label>
-          <Input 
-            id="bio" 
-            name="bio" 
+          <Textarea
+            id="bio"
+            name="bio"
             value={profileSettings.bio}
-            onChange={handleProfileChange}
+            onChange={handleProfileChange as any}
+            rows={4}
+            placeholder="Tell people a bit about yourself…"
+            className="resize-none"
           />
         </div>
         <div className="space-y-2">
