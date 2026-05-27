@@ -56,13 +56,13 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { productId } = body as { productId?: string };
+    const { productId, customPrice } = body as { productId?: string; customPrice?: number };
     if (!productId) throw new Error("productId is required");
 
     // Fetch product
     const { data: product, error: productError } = await supabaseServiceClient
       .from("digital_products")
-      .select("id, title, price, creator_id, short_description, cover_image_url, creators(user_id)")
+      .select("id, title, price, pricing_model, creator_id, short_description, cover_image_url, creators(user_id)")
       .eq("id", productId)
       .eq("status", "published")
       .maybeSingle();
@@ -76,8 +76,25 @@ serve(async (req) => {
       throw new Error("You cannot purchase your own product");
     }
 
-    const amountCents = Math.round(Number(product.price) * 100);
-    if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
+    // Determine final amount:
+    // - name_your_price: use customPrice supplied by buyer (validated below)
+    // - paid: use product.price
+    let amountCents: number;
+    const pricingModel = (product as any).pricing_model ?? 'paid';
+
+    if (pricingModel === 'name_your_price') {
+      if (customPrice === undefined || customPrice === null) {
+        throw new Error("Please enter a price.");
+      }
+      const customCents = Math.round(Number(customPrice) * 100);
+      if (isNaN(customCents) || customCents < 50) {
+        throw new Error("Minimum price is $0.50.");
+      }
+      amountCents = customCents;
+    } else {
+      amountCents = Math.round(Number(product.price) * 100);
+      if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
+    }
 
     // Fetch creator's fee rate and Stripe Connect status
     const { data: creatorData, error: creatorFetchErr } = await supabaseServiceClient

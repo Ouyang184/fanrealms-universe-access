@@ -32,8 +32,16 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const { data: allComments } = useProductComments(productId ?? '');
   const commentCount = (allComments ?? []).filter((c) => !c.is_deleted).length;
 
-  const isFree = !product?.price || Number(product.price) === 0;
+  const pricingModel = (product as any)?.pricing_model ?? 'paid';
+  const isNYP = pricingModel === 'name_your_price';
+  const isFree = pricingModel === 'free' || (!isNYP && (!product?.price || Number(product.price) === 0));
   const canDownload = isFree || hasPurchased;
+
+  // Name-your-price state — default to the suggested price if set
+  const suggestedPrice = isNYP ? Number((product as any)?.price ?? 0) : 0;
+  const [nypInput, setNypInput] = useState(suggestedPrice > 0 ? suggestedPrice.toFixed(2) : '');
+  const nypCents = Math.round(parseFloat(nypInput || '0') * 100);
+  const nypValid = nypCents >= 50;
 
   const allImages = [
     ...(product?.cover_image_url ? [product.cover_image_url] : []),
@@ -257,10 +265,38 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
               <div>
                 {isFree ? (
                   <div className="text-[32px] font-bold text-green-600">Free</div>
+                ) : isNYP ? (
+                  <div>
+                    <div className="text-[13px] font-semibold text-muted-foreground mb-1">Name your price</div>
+                    {suggestedPrice > 0 && (
+                      <div className="text-[12px] text-muted-foreground mb-2">
+                        Suggested: ${suggestedPrice.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="text-[32px] font-bold text-foreground">${Number(p.price).toFixed(2)}</div>
                 )}
               </div>
+
+              {/* Name-your-price input */}
+              {isNYP && !canDownload && (
+                <div className="space-y-1">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-muted-foreground">$</span>
+                    <input
+                      type="number"
+                      min="0.50"
+                      step="0.50"
+                      placeholder={suggestedPrice > 0 ? suggestedPrice.toFixed(2) : '1.00'}
+                      value={nypInput}
+                      onChange={e => setNypInput(e.target.value)}
+                      className="w-full pl-7 pr-3 h-10 rounded-md border border-input bg-background text-[15px] font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Minimum $0.50</p>
+                </div>
+              )}
 
               {canDownload ? (
                 <Button size="lg" className="w-full" onClick={handleDownload} disabled={downloading}>
@@ -270,8 +306,17 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
                   }
                 </Button>
               ) : user ? (
-                <Button size="lg" className="w-full" onClick={() => checkout(p.id)} disabled={checkoutLoading}>
-                  {checkoutLoading ? 'Redirecting…' : `Buy Now — $${Number(p.price).toFixed(2)}`}
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => checkout(p.id, isNYP ? parseFloat(nypInput) : undefined)}
+                  disabled={checkoutLoading || (isNYP && !nypValid)}
+                >
+                  {checkoutLoading
+                    ? 'Redirecting…'
+                    : isNYP
+                    ? `Pay $${nypValid ? parseFloat(nypInput).toFixed(2) : '—'}`
+                    : `Buy Now — $${Number(p.price).toFixed(2)}`}
                 </Button>
               ) : (
                 <div className="space-y-2">

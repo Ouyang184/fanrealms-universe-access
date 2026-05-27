@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 export function useMarketplaceCheckout() {
   const [isLoading, setIsLoading] = useState(false);
 
-  async function checkout(productId: string) {
+  async function checkout(productId: string, customPrice?: number) {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -13,8 +13,13 @@ export function useMarketplaceCheckout() {
         throw new Error('You must be logged in to purchase');
       }
 
+      const body: Record<string, unknown> = { productId };
+      if (customPrice !== undefined) {
+        body.customPrice = customPrice;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { productId },
+        body,
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
@@ -27,8 +32,6 @@ export function useMarketplaceCheckout() {
         throw new Error('Invalid checkout URL received');
       }
 
-      // Redirect to Stripe-hosted checkout — no need to setIsLoading(false)
-      // because the page is navigating away
       window.location.href = data.url;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Checkout failed. Please try again.';

@@ -6,6 +6,7 @@ interface Product {
   id: string;
   title: string;
   price: number;
+  pricing_model?: string | null;
   category?: string | null;
   cover_image_url?: string | null;
   creators?: {
@@ -22,7 +23,10 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const authorName = product.creators?.display_name || product.creators?.username || 'Unknown';
-  const priceDisplay = product.price === 0 ? 'Free' : `$${(product.price / 100).toFixed(2)}`;
+  const priceDisplay =
+    product.pricing_model === 'name_your_price' ? 'Name your price' :
+    product.price === 0 ? 'Free' :
+    `$${(product.price / 100).toFixed(2)}`;
   const imageUrl = product.cover_image_url;
   const ratingSummary = useProductRatingSummary(product.id);
 

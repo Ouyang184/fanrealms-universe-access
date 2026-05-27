@@ -187,12 +187,12 @@ export default function DashboardAssetDetail() {
         return null;
       }
     }
-    // name_your_price: stores price=0 per spec (full implementation is a follow-up)
     return {
       title: title.trim(),
       short_description: shortDescription.trim() || undefined,
       description: description.trim() || undefined,
       price: priceDollars,
+      pricing_model: priceMode,
       category,
       godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
@@ -218,12 +218,6 @@ export default function DashboardAssetDetail() {
     }
     const payload = buildPayload(overrideStatus);
     if (!payload) return null;
-
-    // Name your price is not yet fully implemented — block publishing with it
-    if (priceMode === 'name_your_price' && payload.status === 'published') {
-      toast.error('"Name your price" publishing is coming soon. Please use Free or Paid to publish.');
-      return null;
-    }
 
     setSaving(true);
     try {
