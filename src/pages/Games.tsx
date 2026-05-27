@@ -41,7 +41,7 @@ export default function GamesPage() {
           </div>
           {user && (
             <Link
-              to="/dashboard"
+              to="/dashboard/projects/new"
               className="inline-flex items-center px-3 h-8 bg-primary text-primary-foreground text-[12px] font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap"
             >
               Add your game

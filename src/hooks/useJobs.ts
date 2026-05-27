@@ -109,7 +109,42 @@ export function useJobApplications(listingId: string) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      if (!data || data.length === 0) return [];
+
+      // Fetch applicant profiles via SECURITY DEFINER RPC (users table RLS blocks direct reads)
+      const applicantIds = [...new Set(data.map((a: any) => a.applicant_id))];
+      const { data: profiles } = await supabase
+        .rpc('get_public_user_profiles', { _user_ids: applicantIds });
+
+      const profileMap = new Map(
+        ((profiles as any[]) ?? []).map((p: any) => [p.id, p])
+      );
+
+      return data.map((app: any) => ({
+        ...app,
+        applicant: profileMap.get(app.applicant_id) ?? null,
+      }));
+    },
+  });
+}
+
+export function useUpdateApplicationStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ applicationId, listingId, status }: { applicationId: string; listingId: string; status: string }) => {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ status })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['job-applications', variables.listingId] });
+    },
+    onError: (error) => {
+      toast.error('Failed to update status: ' + error.message);
     },
   });
 }

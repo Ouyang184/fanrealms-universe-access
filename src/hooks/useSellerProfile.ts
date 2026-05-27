@@ -8,7 +8,7 @@ export function useSellerProfile(username: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('creators')
-        .select('id, user_id, username, display_name, bio, profile_image_url, banner_url, created_at, follower_count, website')
+        .select('id, user_id, username, display_name, bio, profile_image_url, banner_url, created_at, follower_count, website, accepts_commissions, commission_slots_available, commission_base_rate, commission_turnaround_days, commission_tos')
         .eq('username', username)
         .maybeSingle();
       if (error) throw error;
