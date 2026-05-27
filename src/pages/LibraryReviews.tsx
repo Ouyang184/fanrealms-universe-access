@@ -200,7 +200,7 @@ export default function LibraryReviewsPage() {
             <p className="text-[13px] text-[#aaa]">
               {(purchases ?? []).length === 0
                 ? "You haven't purchased any assets yet."
-                : 'You've rated all your purchases — nice!'}
+                : "You've rated all your purchases — nice!"}
             </p>
           )}
         </section>
