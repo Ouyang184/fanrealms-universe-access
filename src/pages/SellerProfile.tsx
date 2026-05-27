@@ -22,6 +22,7 @@ export default function SellerProfilePage() {
   const { data: products, isLoading: productsLoading } = useSellerProducts(seller?.id ?? '');
   const { data: projects, isLoading: projectsLoading } = useSellerProjects(seller?.id ?? '');
   const { data: devlogs } = useSellerDevlogs(seller?.user_id ?? '');
+  const { data: bundles } = useBundlesByCreator(seller?.id ?? '');
   const [followerCount, setFollowerCount] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   useEffect(() => {
