@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Calendar, DollarSign, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { JobApplicationDialog } from '@/components/jobs/JobApplicationDialog';
+import { JobApplicantsList } from '@/components/jobs/JobApplicantsList';
 
 export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -87,35 +89,49 @@ export default function JobDetail() {
           </CardContent>
         </Card>
 
-        {/* How to apply — contact info visible to signed-in users only */}
-        {listing.contact_info ? (
-          user ? (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-4 flex items-start gap-3">
+        {/* Apply / Applicants */}
+        {user && user.id === listing.poster_id ? (
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Applicants
+            </h3>
+            <JobApplicantsList listingId={listing.id} />
+            {listing.contact_info && (
+              <p className="text-xs text-muted-foreground">
+                Your listed contact info: <span className="text-foreground">{listing.contact_info}</span>
+              </p>
+            )}
+          </div>
+        ) : user ? (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-start gap-3">
                 <MessageCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold mb-0.5">How to apply</p>
-                  <p className="text-sm text-muted-foreground">{listing.contact_info}</p>
+                  <p className="text-sm font-semibold mb-0.5">Interested?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Send the poster a cover letter and (optionally) a link to your portfolio.
+                  </p>
+                  {listing.contact_info && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Or reach out directly: {listing.contact_info}
+                    </p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="h-5 w-5 text-primary shrink-0" />
-                  <p className="text-sm font-semibold">Sign in to see how to apply</p>
-                </div>
-                <Button asChild size="sm">
-                  <Link to={`/login?returnTo=/jobs/${jobId}`}>Sign in</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )
+              </div>
+              <JobApplicationDialog listingId={listing.id} jobTitle={listing.title} />
+            </CardContent>
+          </Card>
         ) : (
-          <Card className="border-dashed">
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">No contact info provided. Try reaching out to the poster directly.</p>
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <MessageCircle className="h-5 w-5 text-primary shrink-0" />
+                <p className="text-sm font-semibold">Sign in to apply</p>
+              </div>
+              <Button asChild size="sm">
+                <Link to={`/login?returnTo=/jobs/${jobId}`}>Sign in</Link>
+              </Button>
             </CardContent>
           </Card>
         )}

@@ -1,61 +1,52 @@
-# Plan: Asset Versions & Creator Profile Category Filter
+## Other incomplete end-to-end flows (besides Notifications & Commissions)
 
-## Feature 1 — Asset version updates + changelog
+After auditing the codebase, here are the flows where infrastructure exists but the end-to-end experience is broken or never wired up.
 
-### Database (migration)
-New table `public.product_versions`:
-- `id` uuid pk
-- `product_id` uuid → `digital_products.id` on delete cascade
-- `version_number` text not null
-- `release_notes` text
-- `file_path` text not null (storage path in the product assets bucket)
-- `created_at` timestamptz default now()
-- Index on `(product_id, created_at desc)`
+### 1. Jobs — applying & managing applicants (most broken)
+- `job_applications` table exists with RLS for applicants and posters.
+- Hooks `useApplyToJob`, `useJobApplications`, `useUpdateApplicationStatus` exist in `src/hooks/useJobs.ts`.
+- `src/components/jobs/JobApplicationDialog.tsx` exists but is **never imported anywhere**.
+- `src/pages/JobDetail.tsx` only shows the poster's contact info — no "Apply" button.
+- Posters have no UI to view applicants or update status (accept/reject).
 
-RLS:
-- Enable RLS.
-- SELECT public: rows are readable when the parent `digital_products` row is `status = 'published'` (so buyers can read changelog) OR the caller owns the product (creator preview).
-- INSERT/UPDATE/DELETE only by the owning creator (`creator_id` of parent product matches `creators.user_id = auth.uid()`).
+Result: the entire application workflow is dead code. Jobs is currently a "post a contact email" board.
 
-No changes to `digital_products` columns — we already have `version` and `asset_file_path` and will continue updating them when a new version ships.
+### 2. Bundles — purchase flow
+- `bundles` and `bundle_purchases` tables exist with RLS, plus `bundle_items` join table.
+- `useSalesBundles` hooks and dashboard UI let creators create/list bundles in `DashboardSales`.
+- But: no public bundle detail page, no "Buy bundle" button, no checkout edge function for bundles, no webhook handler inserting into `bundle_purchases`.
 
-### Creator dashboard — `src/pages/DashboardAssetDetail.tsx`
-- Add a `<Collapsible>` panel below the existing file upload section, only when editing an existing asset (skip on "new").
-- Title: "Release a new version".
-- Fields: version number (Input), release notes (Textarea), file picker (reuse existing direct-upload helper used elsewhere on this page).
-- "Publish update" button:
-  1. Uploads file via the existing storage helper, gets the new `file_path`.
-  2. Inserts row into `product_versions` (`product_id`, `version_number`, `release_notes`, `file_path`).
-  3. Calls `useUpdateProduct` to set `version` and `asset_file_path` to the new values.
-  4. Invalidates `['product-versions', productId]` and existing product queries; toasts success; resets the panel.
-- New hook `src/hooks/useProductVersions.ts` exporting `useProductVersions(productId)` (list) and `usePublishProductVersion()` (mutation that wraps upload + insert + product update).
+Result: creators can build bundles that nobody can actually buy.
 
-### Product page — `src/pages/ProductDetail.tsx`
-- Below the existing ratings section, add a `Changelog` section.
-- Uses `useProductVersions(productId)`; lists newest-first.
-- Each entry: version number (bold), date (`formatDistanceToNow`), release notes (preserve newlines).
-- If the list has 0 or 1 entries, render nothing (per spec: "Empty if only one version exists").
+### 3. Direct messages / inbox
+- `conversations`, `conversation_participants`, `messages` tables exist.
+- Hooks: `useMessages`, `useConversations`, `useDeleteMessage`.
+- But: **no `/messages` or `/inbox` page** anywhere in `src/pages`, no nav entry, no message composer.
 
-### Types
-After the migration runs, `src/integrations/supabase/types.ts` will be regenerated automatically.
+Result: messaging backend is fully unreachable from the UI.
 
----
+### 4. Marketplace refunds / disputes
+- `manual-refund-commission` edge function handles commission refunds only.
+- Marketplace purchases have no in-app refund or dispute flow — `Payments.tsx` punts to `disputes@fanrealms.com`.
+- No "request refund" button on `Library` items, no admin/creator-side refund UI.
 
-## Feature 2 — Category filter on creator profile
+Result: every marketplace dispute is manual email work outside the app.
 
-Pure frontend, in `src/pages/SellerProfile.tsx`:
-- Derive `categories` from `products` via `Array.from(new Set(products.map(p => p.category).filter(Boolean)))`.
-- Local state `selectedCategory: string` defaulting to `'all'`.
-- Render a row of chip buttons above the Assets grid: `All` + one chip per derived category. Hide the row entirely if there are 0 or 1 categories.
-- Filter `products` by `selectedCategory` before mapping to `<ProductCard />`.
-- Chip styling matches existing minimal aesthetic (pill, `border-[#eee]`, active state uses `bg-primary text-white`).
+### 5. Library → Recommendations (cosmetic)
+- `src/pages/LibraryRecommendations.tsx` just returns the first 12 marketplace products from `useMarketplaceProducts`. No personalisation, no ranking, no signal from purchases/follows.
 
-No backend, no hook changes.
+Result: tab works but the name is misleading; it's just "latest products".
+
+### What's actually solid end-to-end
+For reference, these flows are wired through: marketplace browse → checkout → download, subscriptions, follows + follower counts, forum threads/replies/view counts, jams (submit + vote), devlogs (CRUD), creator Stripe Connect + earnings, auth + profile completion.
 
 ---
 
-## Out of scope
-- No download-URL changes; buyers continue to download the current `asset_file_path` (the latest version). Per-version downloads from the changelog can be a follow-up.
-- No notifications to buyers on new version (follow-up).
+### Suggested order of attack (when you switch to build mode)
+1. **Jobs application flow** — biggest user-facing gap, hooks already exist; just needs to wire `JobApplicationDialog` into `JobDetail` and add a posters' "Applicants" view.
+2. **Messages page** — backend is ready; needs `/messages` page + entry points from creator/profile pages.
+3. **Bundles purchase** — needs a new `create-bundle-checkout` edge function, a public bundle page, and webhook updates.
+4. **Marketplace refunds** — needs an edge function (analogous to `manual-refund-commission`) and minimal UI in Library + dashboard.
+5. **Real Library recommendations** — lower priority, more of a polish/algorithm task.
 
-Confirm and I'll build both.
+Tell me which of these you want me to tackle (or pick a different priority) and I'll start.

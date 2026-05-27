@@ -170,6 +170,7 @@ export function useApplyToJob() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['job-applications', variables.listing_id] });
+      toast.success('Application submitted!');
     },
     onError: (error) => {
       toast.error('Failed to apply: ' + error.message);
