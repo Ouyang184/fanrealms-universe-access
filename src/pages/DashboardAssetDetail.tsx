@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import {
   useCreatorProduct,
@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { ReleaseVersionPanel } from '@/components/marketplace/ReleaseVersionPanel';
+import { useCreatorProjects } from '@/hooks/useProjects';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
@@ -43,9 +44,12 @@ type PriceMode = 'free' | 'paid' | 'name_your_price';
 
 export default function DashboardAssetDetail() {
   const { assetId } = useParams<{ assetId: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isNew = assetId === 'new';
+  // Pre-select project when arriving from /dashboard/projects/:id → "New asset"
+  const preselectedProjectId = isNew ? (searchParams.get('project') ?? null) : null;
 
   // useCreatorProduct calls get_creator_product() RPC (SECURITY DEFINER) which
   // returns the full row including asset_url / asset_file_path for the product owner.
@@ -54,6 +58,8 @@ export default function DashboardAssetDetail() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+
+  const { projects: creatorProjects } = useCreatorProjects();
 
   const assetSales = (salesData?.sales ?? []).filter((s: any) => s.product_id === assetId);
   const assetGross = assetSales.reduce((sum: number, s: any) => sum + (s.amount ?? 0), 0);
@@ -64,6 +70,7 @@ export default function DashboardAssetDetail() {
   const [title, setTitle] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
+  const [projectId, setProjectId] = useState<string | null>(preselectedProjectId);
   const [priceMode, setPriceMode] = useState<PriceMode>('free');
   const [priceStr, setPriceStr] = useState('');
   const [category, setCategory] = useState('Plugins & Addons');
@@ -115,6 +122,7 @@ export default function DashboardAssetDetail() {
       setScreenshots(p.screenshots?.length ? p.screenshots : ['']);
       setStatus(p.status === 'published' ? 'published' : 'draft');
       setCoverPreview(p.cover_image_url ?? null);
+      setProjectId(p.project_id ?? null);
     }
   }, [product, isNew]);
 
@@ -196,6 +204,7 @@ export default function DashboardAssetDetail() {
       category,
       godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
+      project_id: projectId ?? undefined,
       // Only one download source at a time: file upload takes priority
       asset_file_path: assetFile ? undefined : (assetFilePath ?? undefined), // set after upload in doSave
       asset_url: assetFile ? undefined : (downloadUrl.trim() || undefined), // cleared when file uploaded
@@ -751,6 +760,24 @@ export default function DashboardAssetDetail() {
                 />
                 <p className="text-[11px] text-[#aaa]">YouTube or Vimeo link shown on the product page</p>
               </div>
+
+              {/* Project association */}
+              {creatorProjects.length > 0 && (
+                <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Project</h3>
+                  <select
+                    value={projectId ?? ''}
+                    onChange={e => setProjectId(e.target.value || null)}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">— No project —</option>
+                    {creatorProjects.map(p => (
+                      <option key={p.id} value={p.id}>{(p as any).title}</option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-[#aaa]">Link this asset to one of your projects</p>
+                </div>
+              )}
 
               {/* Screenshots */}
               <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -157,6 +158,7 @@ export default function AccountSettings() {
     username: "",
     displayName: "",
     email: "",
+    bio: "",
     saving: false
   });
   
@@ -208,6 +210,7 @@ export default function AccountSettings() {
         username: profile.username || "",
         displayName: (profile as any).display_name || "",
         email: user?.email || "",
+        bio: (profile as any).bio || "",
         saving: false
       });
     }
@@ -235,7 +238,7 @@ export default function AccountSettings() {
       });
   }, [user?.id]);
 
-  const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAccountSettings(prev => ({ ...prev, [name]: value }));
   };
@@ -335,13 +338,23 @@ export default function AccountSettings() {
       // Update username and/or display name
       const usernameChanged = profile?.username !== accountSettings.username;
       const displayNameChanged = (profile as any)?.display_name !== accountSettings.displayName;
-      if (usernameChanged || displayNameChanged) {
+      const bioChanged = (profile as any)?.bio !== accountSettings.bio;
+      if (usernameChanged || displayNameChanged || bioChanged) {
         await updateProfile({
           username: accountSettings.username,
           display_name: accountSettings.displayName,
+          bio: accountSettings.bio,
         } as any);
       }
-      
+
+      // Sync bio to creators table as well
+      if (bioChanged) {
+        await supabase
+          .from('creators')
+          .update({ bio: accountSettings.bio || null })
+          .eq('user_id', user!.id);
+      }
+
       toast({
         title: "Settings saved",
         description: "Your account settings have been updated successfully"
@@ -540,6 +553,21 @@ export default function AccountSettings() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Shown on your profile and asset listings
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      name="bio"
+                      value={accountSettings.bio}
+                      onChange={handleAccountChange}
+                      placeholder="Tell visitors a little about yourself…"
+                      rows={3}
+                      maxLength={300}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {accountSettings.bio.length}/300 characters — shown on your public profile
                     </p>
                   </div>
                   <div className="space-y-2">
