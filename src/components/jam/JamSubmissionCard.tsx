@@ -1,6 +1,40 @@
 // src/components/jam/JamSubmissionCard.tsx
 import { useState, useEffect } from 'react';
-import { Trash2 } from 'lucide-react';
+import { ExternalLink, Trash2 } from 'lucide-react';
+
+// Domains we trust enough to render as clickable links.
+// Any URL not matching these is shown as plain text only.
+const TRUSTED_DOMAINS = [
+  'itch.io',
+  'github.com',
+  'github.io',
+  'godotengine.org',
+  'gamedevmarket.net',
+  'unity.com',
+  'assetstore.unity.com',
+  'opengameart.org',
+  'kenney.nl',
+  'gitlab.com',
+  'ldjam.com',
+  'gamejolt.com',
+];
+
+function getTrustedUrl(url: string | null): { href: string; domain: string } | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    const match = TRUSTED_DOMAINS.find(
+      (d) => hostname === d || hostname.endsWith('.' + d)
+    );
+    if (!match) return null;
+    // Capitalise the base domain for the label, e.g. "itch.io" → "Itch.io"
+    const label = match.charAt(0).toUpperCase() + match.slice(1);
+    return { href: url, domain: label };
+  } catch {
+    return null;
+  }
+}
 import { useVoteOnSubmission, useRemoveJamSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
 
 interface Submission {
@@ -170,9 +204,15 @@ export function JamSubmissionCard({
   const category   = product?.category   ?? null;
   const description = product?.short_description ?? submission.external_description ?? null;
 
+  // For FanRealms products, link to the marketplace page (same-origin, safe).
+  // For external submissions, only link if the domain is on the trusted list.
+  const trustedLink = isExternal
+    ? getTrustedUrl(submission.external_url)
+    : { href: `/marketplace/${submission.product_id}`, domain: 'FanRealms' };
+
   return (
     <div className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-[#ddd] transition-colors">
-      {/* Cover — not a link for safety */}
+      {/* Cover — not clickable; keeps voters on the jam page */}
       <div className="relative aspect-video bg-[#f5f5f5] flex items-center justify-center">
         {coverUrl ? (
           <img
@@ -202,6 +242,23 @@ export function JamSubmissionCard({
           {description && (
             <p className="text-[12px] text-[#666] line-clamp-2 mt-1">{description}</p>
           )}
+
+          {/* View link — only for trusted domains */}
+          {trustedLink ? (
+            <a
+              href={trustedLink.href}
+              target={isExternal ? '_blank' : '_self'}
+              rel={isExternal ? 'noopener noreferrer' : undefined}
+              className="inline-flex items-center gap-1 mt-1.5 text-[11px] font-semibold text-primary hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              View on {trustedLink.domain}
+            </a>
+          ) : isExternal && submission.external_url ? (
+            <p className="text-[11px] text-[#aaa] mt-1.5">
+              Hosted externally · link not shown for safety
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">
