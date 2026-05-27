@@ -1,6 +1,5 @@
 // src/components/jam/JamSubmissionCard.tsx
 import { useState, useEffect, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { ExternalLink, Trash2 } from 'lucide-react';
 import { useVoteOnSubmission, useRemoveJamSubmission, type JamVote, type JamStatus } from '@/hooks/useJam';
 
@@ -169,21 +168,17 @@ export function JamSubmissionCard({
   const title      = product?.title      ?? submission.external_title      ?? 'Untitled';
   const coverUrl   = product?.cover_image_url ?? submission.external_cover_url ?? null;
   const category   = product?.category   ?? null;
+  // All asset links open in a new tab so voters don't lose their place on the jam page
   const assetHref  = isExternal
     ? (submission.external_url ?? '#')
-    : `/marketplace/${submission.product_id}`;
+    : `${window.location.origin}/marketplace/${submission.product_id}`;
 
-  const CoverWrapper = ({ children }: { children: ReactNode }) =>
-    isExternal ? (
-      <a href={assetHref} target="_blank" rel="noopener noreferrer"
-        className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
-        {children}
-      </a>
-    ) : (
-      <Link to={assetHref} className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
-        {children}
-      </Link>
-    );
+  const CoverWrapper = ({ children }: { children: ReactNode }) => (
+    <a href={assetHref} target="_blank" rel="noopener noreferrer"
+      className="block relative aspect-video bg-[#f5f5f5] flex items-center justify-center group">
+      {children}
+    </a>
+  );
 
   return (
     <div className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-[#ddd] transition-colors">
@@ -215,42 +210,23 @@ export function JamSubmissionCard({
       <div className="p-4 space-y-3">
         <div>
           <div className="flex items-start justify-between gap-2">
-            {isExternal ? (
-              <a
-                href={assetHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
-              >
-                {title}
-              </a>
-            ) : (
-              <Link
-                to={assetHref}
-                className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
-              >
-                {title}
-              </Link>
-            )}
-            {isExternal ? (
-              <a
-                href={assetHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-              >
-                <ExternalLink className="w-3 h-3" />
-                View
-              </a>
-            ) : (
-              <Link
-                to={assetHref}
-                className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-              >
-                <ExternalLink className="w-3 h-3" />
-                View
-              </Link>
-            )}
+            <a
+              href={assetHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[14px] font-bold text-[#111] hover:text-primary transition-colors line-clamp-1 flex-1"
+            >
+              {title}
+            </a>
+            <a
+              href={assetHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
+            >
+              <ExternalLink className="w-3 h-3" />
+              View
+            </a>
           </div>
           <div className="text-[12px] text-[#888]">
             by {creator?.display_name || creator?.username || 'Unknown'}
