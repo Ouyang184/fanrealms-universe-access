@@ -192,3 +192,42 @@ export function useCreateReply() {
     },
   });
 }
+
+export function useDeleteReply() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ replyId, threadId }: { replyId: string; threadId: string }) => {
+      const { error } = await supabase
+        .from('forum_replies')
+        .delete()
+        .eq('id', replyId);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['forum-replies', variables.threadId] });
+      queryClient.invalidateQueries({ queryKey: ['forum-threads'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete reply: ' + error.message);
+    },
+  });
+}
+
+export function useDeleteThread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (threadId: string) => {
+      const { error } = await supabase
+        .from('forum_threads')
+        .delete()
+        .eq('id', threadId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['forum-threads'] });
+    },
+    onError: (error) => {
+      toast.error('Failed to delete thread: ' + error.message);
+    },
+  });
+}

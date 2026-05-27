@@ -1,7 +1,7 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
-import { useForumThread, useForumReplies } from '@/hooks/useForum';
+import { useForumThread, useForumReplies, useDeleteReply, useDeleteThread } from '@/hooks/useForum';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { ReplyEditor } from '@/components/forum/ReplyEditor';
@@ -10,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -46,6 +47,9 @@ export default function ForumThread() {
   const { threadId } = useParams<{ threadId: string }>();
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const deleteThread = useDeleteThread();
+  const deleteReply = useDeleteReply();
   const { data: thread, isLoading: threadLoading } = useForumThread(threadId || '') as { data: any; isLoading: boolean };
   const { data: replies, isLoading: repliesLoading } = useForumReplies(threadId || '') as { data: any[] | undefined; isLoading: boolean };
 
@@ -87,9 +91,28 @@ export default function ForumThread() {
 
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-2">
-              <h1 className="text-xl font-bold">{thread.title}</h1>
-              {thread.category && <Badge variant="outline">{thread.category}</Badge>}
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-xl font-bold">{thread.title}</h1>
+                {thread.category && <Badge variant="outline">{thread.category}</Badge>}
+              </div>
+              {user?.id === thread.author_id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Delete this thread and all its replies?')) {
+                      deleteThread.mutate(thread.id, {
+                        onSuccess: () => navigate('/forum'),
+                      });
+                    }
+                  }}
+                  disabled={deleteThread.isPending}
+                  className="p-1.5 text-[#ccc] hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-50"
+                  title="Delete thread"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
             <div className="text-sm text-muted-foreground mb-4">
               by {thread.users?.display_name || thread.users?.username || 'Anonymous'} · {format(new Date(thread.created_at), 'MMM d, yyyy h:mm a')}
@@ -116,8 +139,25 @@ export default function ForumThread() {
             replies.map((reply) => (
               <Card key={reply.id}>
                 <CardContent className="p-6">
-                  <div className="text-sm text-muted-foreground mb-4">
-                    by {reply.users?.display_name || reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
+                  <div className="flex items-center justify-between gap-2 mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      by {reply.users?.display_name || reply.users?.username || 'Anonymous'} · {format(new Date(reply.created_at), 'MMM d, yyyy h:mm a')}
+                    </div>
+                    {user?.id === reply.author_id && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Delete this reply?')) {
+                            deleteReply.mutate({ replyId: reply.id, threadId: thread.id });
+                          }
+                        }}
+                        disabled={deleteReply.isPending}
+                        className="p-1 text-[#ccc] hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-50"
+                        title="Delete reply"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                   <MarkdownContent content={reply.content} />
                 </CardContent>

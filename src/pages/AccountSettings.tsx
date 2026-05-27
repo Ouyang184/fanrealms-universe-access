@@ -213,17 +213,25 @@ export default function AccountSettings() {
     }
   }, [profile, user]);
 
-  // Load current social links from users table
+  // Load current social links from creator_links table (matches what the public profile reads)
   useEffect(() => {
     if (!user?.id) return;
     supabase
-      .from('users')
-      .select('social_links')
-      .eq('id', user.id)
+      .from('creators')
+      .select('id')
+      .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => {
-        const links = (data?.social_links as SocialLinkDraft[]) ?? [];
-        setSocialLinks(links.length > 0 ? links : []);
+      .then(({ data: creator }) => {
+        if (!creator?.id) return;
+        supabase
+          .from('creator_links')
+          .select('label, url, position')
+          .eq('creator_id', creator.id)
+          .order('position', { ascending: true })
+          .then(({ data }) => {
+            const links = (data ?? []).map(l => ({ label: l.label ?? '', url: l.url }));
+            setSocialLinks(links);
+          });
       });
   }, [user?.id]);
 
@@ -353,6 +361,7 @@ export default function AccountSettings() {
     setSocialLinksError('');
     setSocialLinksSaving(true);
     try {
+      // Validate and normalize
       const normalized: SocialLinkDraft[] = [];
       for (let i = 0; i < socialLinks.length; i++) {
         const link = socialLinks[i];
@@ -365,11 +374,30 @@ export default function AccountSettings() {
         }
         normalized.push({ label: link.label.trim().slice(0, 60), url });
       }
-      const { error } = await supabase
-        .from('users')
-        .update({ social_links: normalized })
-        .eq('id', user!.id);
-      if (error) throw error;
+
+      // Get creator ID
+      const { data: creator } = await supabase
+        .from('creators')
+        .select('id')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      if (!creator?.id) throw new Error('Creator profile not found');
+
+      // Replace all links: delete existing, insert new ones
+      await supabase.from('creator_links').delete().eq('creator_id', creator.id);
+
+      if (normalized.length > 0) {
+        const rows = normalized.map((l, i) => ({
+          creator_id: creator.id,
+          url: l.url,
+          label: l.label || null,
+          position: i,
+        }));
+        const { error } = await supabase.from('creator_links').insert(rows);
+        if (error) throw error;
+      }
+
       setSocialLinks(normalized);
       toast({ title: 'Social links saved' });
     } catch (err: any) {
