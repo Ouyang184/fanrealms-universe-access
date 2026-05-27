@@ -16,6 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Shield, Camera, Mail, ArrowRight, Smartphone, X } from "lucide-react";
+import { SocialLinksEditor, normalizeSocialUrl, type SocialLinkDraft } from '@/components/profile/SocialLinksEditor';
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUnifiedAvatar } from "@/hooks/useUnifiedAvatar";
@@ -159,6 +160,11 @@ export default function AccountSettings() {
     saving: false
   });
   
+  // Social links state
+  const [socialLinks, setSocialLinks] = useState<SocialLinkDraft[]>([]);
+  const [socialLinksSaving, setSocialLinksSaving] = useState(false);
+  const [socialLinksError, setSocialLinksError] = useState('');
+
   // Change password dialog state
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -206,6 +212,20 @@ export default function AccountSettings() {
       });
     }
   }, [profile, user]);
+
+  // Load current social links from users table
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from('users')
+      .select('social_links')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const links = (data?.social_links as SocialLinkDraft[]) ?? [];
+        setSocialLinks(links.length > 0 ? links : []);
+      });
+  }, [user?.id]);
 
   const handleAccountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -326,6 +346,36 @@ export default function AccountSettings() {
       });
     } finally {
       setAccountSettings(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  const saveSocialLinks = async () => {
+    setSocialLinksError('');
+    setSocialLinksSaving(true);
+    try {
+      const normalized: SocialLinkDraft[] = [];
+      for (let i = 0; i < socialLinks.length; i++) {
+        const link = socialLinks[i];
+        const rawUrl = link.url.trim();
+        if (!rawUrl && !link.label.trim()) continue;
+        const url = normalizeSocialUrl(rawUrl);
+        if (!url) {
+          setSocialLinksError(`Link #${i + 1} has an invalid URL.`);
+          return;
+        }
+        normalized.push({ label: link.label.trim().slice(0, 60), url });
+      }
+      const { error } = await supabase
+        .from('users')
+        .update({ social_links: normalized })
+        .eq('id', user!.id);
+      if (error) throw error;
+      setSocialLinks(normalized);
+      toast({ title: 'Social links saved' });
+    } catch (err: any) {
+      toast({ title: 'Error saving links', description: err.message, variant: 'destructive' });
+    } finally {
+      setSocialLinksSaving(false);
     }
   };
 
@@ -509,6 +559,35 @@ export default function AccountSettings() {
                   </Button>
                  </CardFooter>
                </Card>
+
+                {/* Social Links */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Social Links</CardTitle>
+                    <CardDescription>
+                      Links shown on your public profile — website, Twitter, YouTube, etc.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SocialLinksEditor
+                      links={socialLinks}
+                      onChange={(next) => {
+                        setSocialLinks(next);
+                        setSocialLinksError('');
+                      }}
+                      disabled={socialLinksSaving}
+                    />
+                    {socialLinksError && (
+                      <p className="text-sm text-destructive mt-2">{socialLinksError}</p>
+                    )}
+                  </CardContent>
+                  <CardFooter>
+                    <Button onClick={saveSocialLinks} disabled={socialLinksSaving}>
+                      {socialLinksSaving ? 'Saving…' : 'Save links'}
+                    </Button>
+                  </CardFooter>
+                </Card>
+
                </div>
              </TabsContent>
             
