@@ -154,6 +154,36 @@ export default function SellerProfilePage() {
             )}
           </div>
 
+          {/* Bundles */}
+          {bundles && bundles.length > 0 && (
+            <section className="mt-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[16px] font-bold tracking-[-0.3px]">Bundles</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {bundles.map((b: any) => (
+                  <Link key={b.id} to={`/bundles/${b.id}`} className="group block bg-white border border-[#eee] rounded-xl overflow-hidden hover:border-primary/40 transition-colors">
+                    <div className="aspect-[16/9] bg-[#f5f5f5] overflow-hidden">
+                      {b.cover_image_url ? (
+                        <img src={b.cover_image_url} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Package className="w-8 h-8 text-[#ccc]" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <div className="text-[13px] font-semibold truncate group-hover:text-primary">{b.title}</div>
+                      <div className="text-[11px] text-[#888] mt-0.5">
+                        {b.bundle_items?.length ?? 0} item{(b.bundle_items?.length ?? 0) === 1 ? '' : 's'} · ${(b.bundle_price / 100).toFixed(2)}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Projects */}
           <section className="mt-10">
             <div className="flex items-center justify-between mb-4">
