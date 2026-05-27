@@ -186,10 +186,15 @@ function BundlesTab() {
                 </span>
               </div>
               {b.description && <p className="text-[12px] text-[#666] mb-3 line-clamp-2">{b.description}</p>}
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Button size="sm" variant="outline" onClick={() => updateStatus.mutate({ id: b.id, status: b.status === 'published' ? 'draft' : 'published' })}>
                   {b.status === 'published' ? 'Unpublish' : 'Publish'}
                 </Button>
+                {b.status === 'published' && (
+                  <a href={`/bundles/${b.id}`} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-primary hover:underline">
+                    View
+                  </a>
+                )}
                 <button onClick={() => { if (confirm('Delete bundle?')) del.mutate(b.id); }} className="ml-auto text-[#aaa] hover:text-red-500 p-1">
                   <Trash2 className="w-4 h-4" />
                 </button>
