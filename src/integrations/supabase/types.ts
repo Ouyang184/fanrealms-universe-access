@@ -95,6 +95,13 @@ export type Database = {
             referencedRelation: "bundles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bundle_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bundle_purchases: {
@@ -166,7 +173,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bundles_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
