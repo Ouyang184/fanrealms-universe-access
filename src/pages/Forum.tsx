@@ -35,6 +35,8 @@ export default function Forum() {
         description="Join the FanRealms forum to share Godot devlogs, ask GDScript questions, and connect with indie game developers building with Godot."
       />
       <div className="w-full space-y-4">
+        <h1 className="text-[15px] font-bold text-foreground">Community Forum</h1>
+
         {/* Jam banner — shown while active */}
         {activeJam && (jamStatus === 'upcoming' || jamStatus === 'active' || jamStatus === 'voting') && (
           <Link

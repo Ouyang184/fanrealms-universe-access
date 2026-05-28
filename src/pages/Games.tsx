@@ -111,6 +111,7 @@ export default function GamesPage() {
   return (
     <MainLayout fullWidth>
       <div className="w-full space-y-4">
+        <h1 className="text-[15px] font-bold text-foreground">Indie Games Showcase</h1>
 
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3 flex items-center justify-between gap-4 flex-wrap">
