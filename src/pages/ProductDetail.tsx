@@ -17,6 +17,7 @@ import { useProductRatingSummary } from '@/hooks/useProductRatings';
 import { RatingSummary } from '@/components/ratings/StarRating';
 import { MarkdownContent } from '@/components/editor/RichDescriptionEditor';
 import { ProductChangelogSection } from '@/components/marketplace/ProductChangelogSection';
+import { PageSeo } from '@/components/PageSeo';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
@@ -129,8 +130,45 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
 
   const p = product as any;
 
+  const productImage = p.cover_image_url || ((p as any).screenshots?.[0]) || undefined;
+  const productPrice = Number(p.price ?? 0);
+  const productJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.title,
+    description: p.short_description || p.description || p.title,
+    ...(productImage ? { image: productImage } : {}),
+    ...(p.creators
+      ? { brand: { "@type": "Brand", name: p.creators.display_name || p.creators.username } }
+      : {}),
+    ...(ratingSummary.count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: ratingSummary.average,
+            reviewCount: ratingSummary.count,
+          },
+        }
+      : {}),
+    offers: {
+      "@type": "Offer",
+      price: isFree ? 0 : productPrice,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: `https://fanrealms.com/marketplace/${productId}`,
+    },
+  };
+
   return (
     <MainLayout>
+      <PageSeo
+        title={p.title}
+        description={p.short_description || (typeof p.description === 'string' ? p.description.slice(0, 155) : `${p.title} — a Godot asset on FanRealms.`)}
+        canonicalPath={`/marketplace/${productId}`}
+        ogType="product"
+        ogImage={productImage}
+        jsonLd={productJsonLd}
+      />
       <div className="max-w-5xl mx-auto space-y-8">
 
         {/* Back */}
