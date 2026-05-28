@@ -4,6 +4,12 @@ import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import {
   useJam,
   useJamSubmissions,
   useMyJamSubmission,
@@ -182,6 +188,66 @@ export default function JamPage() {
             </p>
           </div>
         )}
+
+        {/* Rules & FAQ */}
+        <div className="mb-8">
+          <h2 className="text-[14px] font-bold text-[#111] mb-2">Rules & FAQ</h2>
+          <Accordion type="multiple" className="border border-[#e5e5e5] rounded-xl overflow-hidden divide-y divide-[#e5e5e5]">
+            <AccordionItem value="ownership" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                Who owns the assets after the jam?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                You do. 100%. FanRealms takes zero ownership of anything you submit. Your asset stays on your profile under whatever license and pricing you choose — free, paid, or name-your-price. The jam is just a showcase.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="free" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                Are submitted assets free for everyone to use?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                Only if you make them free. Licensing is entirely up to you. You can submit a paid asset, a free asset, or anything in between — the jam doesn't change your asset's license or pricing.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="fanrealms" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                Will FanRealms use or sell my assets?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                No. FanRealms does not use, sell, redistribute, or claim rights to any assets submitted to the jam. We host your work — we don't own it.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="after" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                What happens after the jam ends?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                Winners are announced on the forum thread. Your submission stays on your creator profile exactly as you left it. You can update it, change the price, or take it down at any time — the jam ending has no effect on your asset.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="who" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                Who can enter?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                Anyone with a free FanRealms account. One submission per person. Assets must be original work made by you (solo or as a team), and must remain publicly accessible during the voting period.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="team" className="border-none px-4">
+              <AccordionTrigger className="text-[13px] font-semibold text-[#111] py-3 hover:no-underline">
+                Can I enter as a team?
+              </AccordionTrigger>
+              <AccordionContent className="text-[13px] text-[#555] pb-4">
+                Yes. One team member submits on behalf of the group. If you win, coordinate internally on how to split any prize — FanRealms pays out to the submitting account.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <h2 className="text-[16px] font-bold text-[#111]">
