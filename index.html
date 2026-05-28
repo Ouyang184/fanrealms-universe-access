@@ -49,14 +49,43 @@
       };
     </script>
     
-  
-  
-  
+
+
   <meta property="og:title" content="FanRealms: Marketplace and Jobs for Godot Creators">
   <meta name="twitter:title" content="FanRealms: Marketplace and Jobs for Godot Creators">
   <meta property="og:description" content="The marketplace, job board, and community for Godot game creators to sell assets, find work, and collaborate on projects.">
   <meta name="twitter:description" content="The marketplace, job board, and community for Godot game creators to sell assets, find work, and collaborate on projects.">
+
+  <!-- Sitewide structured data: Organization + WebSite (with SearchAction) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://fanrealms.com/#organization",
+        "name": "FanRealms",
+        "url": "https://fanrealms.com/",
+        "logo": "https://fanrealms.com/apple-touch-icon.png",
+        "sameAs": ["https://twitter.com/fanrealms"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://fanrealms.com/#website",
+        "url": "https://fanrealms.com/",
+        "name": "FanRealms",
+        "publisher": { "@id": "https://fanrealms.com/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://fanrealms.com/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
 </head>
+
 
   <body>
     <div id="root"></div>

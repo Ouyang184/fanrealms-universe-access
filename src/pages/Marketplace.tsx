@@ -162,7 +162,7 @@ export default function Marketplace() {
           />
           </div>
 
-          <main className="space-y-6 min-w-0">
+          <section className="space-y-6 min-w-0">
             {isLoading ? (
               <LoadingState />
             ) : products.length === 0 ? (
