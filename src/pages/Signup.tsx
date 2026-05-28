@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
+import { PageSeo } from "@/components/PageSeo";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
