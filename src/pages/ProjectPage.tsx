@@ -148,7 +148,7 @@ export default function ProjectPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               {project.website_url && (
                 <a
-                  href={project.website_url}
+                  href={safeHref(project.website_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border border-[#ddd] rounded-lg text-[#444] hover:border-[#aaa] transition-colors"
@@ -159,7 +159,7 @@ export default function ProjectPage() {
               )}
               {project.repository_url && (
                 <a
-                  href={project.repository_url}
+                  href={safeHref(project.repository_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border border-[#ddd] rounded-lg text-[#444] hover:border-[#aaa] transition-colors"
