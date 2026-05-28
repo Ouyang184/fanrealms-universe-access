@@ -189,17 +189,21 @@ export default function ProjectPage() {
         </div>
 
         {/* Video */}
-        {project.video_url && (
-          <div className="aspect-video rounded-xl overflow-hidden bg-black">
-            <iframe
-              src={project.video_url}
-              className="w-full h-full"
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              title="Project video"
-            />
-          </div>
-        )}
+        {(() => {
+          const videoInfo = parseVideoUrl(project.video_url);
+          if (!videoInfo || videoInfo.platform === 'unknown') return null;
+          return (
+            <div className="aspect-video rounded-xl overflow-hidden bg-black">
+              <iframe
+                src={videoInfo.embedUrl}
+                className="w-full h-full"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title="Project video"
+              />
+            </div>
+          );
+        })()}
 
         {/* Description */}
         {(project.description || project.short_description) && (
