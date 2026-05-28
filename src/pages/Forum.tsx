@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveJam, getJamStatus } from '@/hooks/useJam';
+import { PageSeo } from '@/components/PageSeo';
 
 const PAGE_SIZE = 24;
 const ALL_CATEGORIES = ['All', ...FORUM_CATEGORIES] as const;
@@ -29,6 +30,10 @@ export default function Forum() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title="Forum — Godot Devlogs, Help, and Community"
+        description="Join the FanRealms forum to share Godot devlogs, ask GDScript questions, and connect with indie game developers building with Godot."
+      />
       <div className="w-full space-y-4">
         {/* Jam banner — shown while active */}
         {activeJam && (jamStatus === 'upcoming' || jamStatus === 'active' || jamStatus === 'voting') && (

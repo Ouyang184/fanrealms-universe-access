@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
+import { PageSeo } from "@/components/PageSeo";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -154,6 +155,10 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-4">
+      <PageSeo
+        title="Create Your FanRealms Account"
+        description="Sign up for FanRealms to sell Godot assets, post freelance gigs, join the forum, and connect with the indie game developer community."
+      />
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="inline-block">

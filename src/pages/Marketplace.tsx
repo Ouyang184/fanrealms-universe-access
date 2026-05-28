@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MarketplaceSidebar, PRICE_MAX_CENTS } from '@/components/marketplace/MarketplaceSidebar';
 import { FeaturedSpotlight } from '@/components/marketplace/FeaturedSpotlight';
 import { ProductGridDense } from '@/components/marketplace/ProductGridDense';
+import { PageSeo } from '@/components/PageSeo';
 
 const BROWSE_CATEGORIES: { name: string; tagline: string }[] = [
   { name: 'Plugins & Addons', tagline: 'GDExtensions, editor plugins' },
@@ -77,6 +78,10 @@ export default function Marketplace() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title="Marketplace — Godot Assets, Plugins, and Tools"
+        description="Browse and buy Godot plugins, shaders, sprites, 3D models, templates, music, and complete game projects from indie creators on FanRealms."
+      />
       <div className="w-full space-y-4">
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">

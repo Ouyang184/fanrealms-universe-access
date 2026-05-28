@@ -6,6 +6,7 @@ import { JobListingCard } from '@/components/jobs/JobListingCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageSeo } from '@/components/PageSeo';
 
 const PAGE_SIZE = 24;
 const ALL_CATEGORIES = [...JOB_CATEGORIES] as const;
@@ -25,6 +26,10 @@ export default function Jobs() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title="Jobs — Godot Freelance Gigs and Bounties"
+        description="Find or post Godot freelance gigs, contract work, and bounties. Hire Godot developers, artists, and designers on the FanRealms job board."
+      />
       <div className="w-full space-y-4">
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3 flex items-center justify-between gap-4 flex-wrap">
