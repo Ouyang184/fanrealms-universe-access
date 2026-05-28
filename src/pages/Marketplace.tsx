@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MarketplaceSidebar, PRICE_MAX_CENTS } from '@/components/marketplace/MarketplaceSidebar';
 import { FeaturedSpotlight } from '@/components/marketplace/FeaturedSpotlight';
 import { ProductGridDense } from '@/components/marketplace/ProductGridDense';
+import { PageSeo } from '@/components/PageSeo';
 
 const BROWSE_CATEGORIES: { name: string; tagline: string }[] = [
   { name: 'Plugins & Addons', tagline: 'GDExtensions, editor plugins' },
