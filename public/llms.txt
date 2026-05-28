@@ -1,0 +1,24 @@
+# FanRealms
+
+> FanRealms is the marketplace, job board, and community for Godot game creators — buy and sell assets, find freelance work, and share projects.
+
+FanRealms helps indie game developers using the Godot engine sell their plugins, shaders, sprites, and tools; discover gigs and bounties; showcase indie games and devlogs; and discuss the craft in a focused community forum.
+
+## Pages
+
+- [Marketplace](/marketplace): Browse and buy Godot assets — plugins, shaders, art, sound, and full project templates.
+- [Indie Games](/games): Discover games made with Godot, with screenshots, devlogs, and developer profiles.
+- [Jobs & Bounties](/jobs): Hire Godot developers or find paid freelance work and bounties.
+- [Forum](/forum): Community discussions, devlogs, tutorials, and help threads for Godot creators.
+- [About](/about): What FanRealms is and who it's for.
+- [Help & Support](/help): Answers to common questions about buying, selling, and using the platform.
+
+## Optional
+
+- [Creator Guidelines](/creator-guidelines): Rules and best practices for selling assets and posting projects.
+- [Community Guidelines](/community-guidelines): Forum and community conduct rules.
+- [Payments](/payments): How payments, payouts, and Stripe Connect work on FanRealms.
+- [Security](/security): How we protect accounts, payments, and content.
+- [Terms](/terms): Terms of service.
+- [Privacy Policy](/privacy-policy): How we handle personal data.
+- [Cookie Policy](/cookie-policy): How we use cookies.

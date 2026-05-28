@@ -17,6 +17,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { PageSeo } from '@/components/PageSeo';
 
 function MarkdownContent({ content }: { content: string }) {
   return (
@@ -84,6 +85,12 @@ export default function ForumThread() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title={thread.title}
+        description={(thread.content || thread.title).toString().replace(/[#*`>_-]/g, '').slice(0, 155)}
+        canonicalPath={`/forum/${threadId}`}
+        ogType="article"
+      />
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/forum"><ArrowLeft className="h-4 w-4 mr-2" />Back to Forum</Link>

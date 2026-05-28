@@ -10,6 +10,7 @@ import { ArrowLeft, Calendar, DollarSign, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { JobApplicationDialog } from '@/components/jobs/JobApplicationDialog';
 import { JobApplicantsList } from '@/components/jobs/JobApplicantsList';
+import { PageSeo } from '@/components/PageSeo';
 
 export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -46,8 +47,46 @@ export default function JobDetail() {
     return 'Negotiable';
   };
 
+  const jobJsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: listing.title,
+    description: listing.description || listing.title,
+    datePosted: listing.created_at,
+    ...(listing.deadline ? { validThrough: listing.deadline } : {}),
+    employmentType: "CONTRACTOR",
+    hiringOrganization: {
+      "@type": "Organization",
+      name: listing.users?.username || "FanRealms Client",
+      sameAs: listing.users?.username ? `https://fanrealms.com/${listing.users.username}` : undefined,
+    },
+    jobLocationType: "TELECOMMUTE",
+    applicantLocationRequirements: { "@type": "Country", name: "Worldwide" },
+    ...(listing.budget_min || listing.budget_max
+      ? {
+          baseSalary: {
+            "@type": "MonetaryAmount",
+            currency: "USD",
+            value: {
+              "@type": "QuantitativeValue",
+              ...(listing.budget_min ? { minValue: listing.budget_min } : {}),
+              ...(listing.budget_max ? { maxValue: listing.budget_max } : {}),
+              unitText: listing.budget_type === "hourly" ? "HOUR" : "PROJECT",
+            },
+          },
+        }
+      : {}),
+  };
+
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title={listing.title}
+        description={(listing.description || `${listing.title} — a Godot job on FanRealms.`).slice(0, 155)}
+        canonicalPath={`/jobs/${jobId}`}
+        ogType="article"
+        jsonLd={jobJsonLd}
+      />
       <div className="max-w-3xl mx-auto space-y-6">
         <Button variant="ghost" asChild>
           <Link to="/jobs"><ArrowLeft className="h-4 w-4 mr-2" />Back to Jobs</Link>

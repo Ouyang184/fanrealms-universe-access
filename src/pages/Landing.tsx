@@ -52,6 +52,7 @@ export default function LandingPage() {
         </div>
       </header>
 
+      <main>
       {/* HERO */}
       <section className="border-b border-[#eee] bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -71,7 +72,7 @@ export default function LandingPage() {
                 Sell your work
               </Link>
             </div>
-            <p className="mt-4 text-[12px] text-[#aaa]">Free to join · Payments secured by Stripe · No hidden fees</p>
+            <p className="mt-4 text-[12px] text-[#666]">Free to join · Payments secured by Stripe · No hidden fees</p>
           </div>
           <div className="md:col-span-5 grid grid-cols-2 gap-4">
             {[
@@ -86,7 +87,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <div className="text-[14px] font-bold text-[#111]">{title}</div>
-                  <div className="text-[12px] text-[#888] mt-1 leading-relaxed">{desc}</div>
+                  <div className="text-[12px] text-[#666] mt-1 leading-relaxed">{desc}</div>
                 </div>
               </div>
             ))}
@@ -97,7 +98,7 @@ export default function LandingPage() {
       {/* HOW IT WORKS */}
       <section className="border-b border-[#eee] bg-[#fafafa]">
         <div className="px-4 sm:px-6 py-12">
-          <h2 className="text-[13px] font-bold text-[#aaa] uppercase tracking-[1px] text-center mb-8">How it works</h2>
+          <h2 className="text-[13px] font-bold text-[#666] uppercase tracking-[1px] text-center mb-8">How it works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
@@ -156,7 +157,7 @@ export default function LandingPage() {
                 </div>
                 <div className="p-3">
                   <div className="text-[13px] font-semibold leading-snug truncate">{product.title}</div>
-                  <div className="text-[11px] text-[#aaa] mt-0.5 truncate">
+                  <div className="text-[11px] text-[#666] mt-0.5 truncate">
                     {product.creators?.display_name || product.creators?.username}
                   </div>
                   <div className="flex items-center justify-between mt-2">
@@ -176,10 +177,10 @@ export default function LandingPage() {
         <section className="px-4 sm:px-6 py-10">
           <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-10 text-center">
             <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-3">
-              <ShoppingBag className="w-4 h-4 text-[#bbb]" />
+              <ShoppingBag className="w-4 h-4 text-[#666]" />
             </div>
             <div className="text-[16px] font-bold text-[#111] mb-1">Be the first to list a Godot asset</div>
-            <div className="text-[13px] text-[#888] mb-4 max-w-sm mx-auto">
+            <div className="text-[13px] text-[#666] mb-4 max-w-sm mx-auto">
               Upload a plugin, shader pack, or sprite set — and be the first seller on the marketplace.
             </div>
             <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
@@ -209,7 +210,7 @@ export default function LandingPage() {
                     <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold truncate">{job.title}</div>
-                      <div className="text-[11px] text-[#aaa] mt-0.5">
+                      <div className="text-[11px] text-[#666] mt-0.5">
                         {job.category} · {formatDistanceToNow(new Date(job.created_at), { addSuffix: true })}
                       </div>
                     </div>
@@ -243,13 +244,13 @@ export default function LandingPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-semibold leading-snug truncate">{thread.title}</div>
-                      <div className="text-[11px] text-[#aaa] mt-0.5">
+                      <div className="text-[11px] text-[#666] mt-0.5">
                         {thread.category} · {formatDistanceToNow(new Date(thread.created_at), { addSuffix: true })}
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <div className="text-[13px] font-bold">{thread.reply_count ?? 0}</div>
-                      <div className="text-[10px] text-[#ccc]">replies</div>
+                      <div className="text-[10px] text-[#666]">replies</div>
                     </div>
                   </Link>
                 ))}
@@ -262,20 +263,20 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
               <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
-                <Briefcase className="w-4 h-4 text-[#bbb]" />
+                <Briefcase className="w-4 h-4 text-[#666]" />
               </div>
               <div className="text-[15px] font-bold text-[#111] mb-1">Post a Godot gig</div>
-              <div className="text-[12px] text-[#999] mb-4">Looking for a GDScript dev, pixel artist, or sound designer?</div>
+              <div className="text-[12px] text-[#666] mb-4">Looking for a GDScript dev, pixel artist, or sound designer?</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
                 Post a job
               </Link>
             </div>
             <div className="border border-dashed border-[#e5e5e5] rounded-2xl p-8 text-center">
               <div className="w-9 h-9 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-2">
-                <MessageSquare className="w-4 h-4 text-[#bbb]" />
+                <MessageSquare className="w-4 h-4 text-[#666]" />
               </div>
               <div className="text-[15px] font-bold text-[#111] mb-1">Start the first Godot thread</div>
-              <div className="text-[12px] text-[#999] mb-4">Ask a question, share a devlog, or introduce your project.</div>
+              <div className="text-[12px] text-[#666] mb-4">Ask a question, share a devlog, or introduce your project.</div>
               <Link to="/signup" className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors">
                 Start a thread
               </Link>
@@ -283,13 +284,14 @@ export default function LandingPage() {
           </div>
         </section>
       )}
+      </main>
 
       {/* FOOTER */}
       <footer className="bg-[#fafafa] border-t border-[#eee] text-[#777]">
         <div className="px-4 sm:px-6 py-8 flex items-center justify-between">
           <div>
             <Logo />
-            <div className="text-[11px] text-[#888] mt-1">The Godot asset hub.</div>
+            <div className="text-[11px] text-[#666] mt-1">The Godot asset hub.</div>
           </div>
           <div className="flex gap-6 text-[12px]">
             {[
@@ -301,7 +303,7 @@ export default function LandingPage() {
               <Link key={label} to={to} className="hover:text-[#111] transition-colors">{label}</Link>
             ))}
           </div>
-          <div className="text-[12px] text-[#aaa]">© 2026 FanRealms</div>
+          <div className="text-[12px] text-[#666]">© 2026 FanRealms</div>
         </div>
       </footer>
     </div>
