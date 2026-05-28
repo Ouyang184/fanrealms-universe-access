@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/Layout/MainLayout";
 import { ShoppingBag, Gamepad2, Briefcase, MessageSquare, Shield } from "lucide-react";
+import { PageSeo } from "@/components/PageSeo";
 
 export default function About() {
   return (
     <MainLayout>
+      <PageSeo
+        title="About FanRealms — A Godot-First Asset Hub"
+        description="Learn about FanRealms, the Godot-first marketplace, job board, and community where game developers, artists, and freelancers build together."
+      />
       <div className="max-w-2xl mx-auto py-8 space-y-10">
 
         {/* Header */}
