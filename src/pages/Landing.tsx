@@ -52,6 +52,7 @@ export default function LandingPage() {
         </div>
       </header>
 
+      <main>
       {/* HERO */}
       <section className="border-b border-[#eee] bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -283,6 +284,7 @@ export default function LandingPage() {
           </div>
         </section>
       )}
+      </main>
 
       {/* FOOTER */}
       <footer className="bg-[#fafafa] border-t border-[#eee] text-[#777]">

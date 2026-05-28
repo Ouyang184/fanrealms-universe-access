@@ -196,7 +196,7 @@ export default function Marketplace() {
                 )}
               </>
             )}
-          </main>
+          </section>
         </div>
 
         <FooterStrip />
