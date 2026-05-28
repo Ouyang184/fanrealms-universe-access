@@ -35,7 +35,8 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const pricingModel = (product as any)?.pricing_model ?? 'paid';
   const isNYP = pricingModel === 'name_your_price';
   const isFree = pricingModel === 'free' || (!isNYP && (!product?.price || Number(product.price) === 0));
-  const canDownload = isFree || hasPurchased;
+  // Guests can't download free assets (need account so item is saved to library)
+  const canDownload = (isFree && !!user) || hasPurchased;
 
   // Name-your-price state — default to the suggested price if set
   const suggestedPrice = isNYP ? Number((product as any)?.price ?? 0) : 0;
