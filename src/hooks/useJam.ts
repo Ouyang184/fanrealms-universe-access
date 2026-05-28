@@ -346,16 +346,11 @@ export function useAnnounceJamWinners() {
       if (!jam.thread_id) throw new Error('This jam has no linked forum thread');
       if (!user) throw new Error('Not signed in');
 
-      const lines = winners
-        .map((w) => `${w.rank === 1 ? '🥇' : w.rank === 2 ? '🥈' : '🥉'} **${w.rank === 1 ? '1st' : w.rank === 2 ? '2nd' : '3rd'} place — ${w.productTitle}** by ${w.creatorName} · ${w.prize}`)
-        .join('\n');
-
-      const content = `🏆 **Winners Announced!**\n\nThank you to everyone who entered and voted in ${jam.title}. Here are your winners:\n\n${lines}\n\nPrizes will be paid out within 48 hours. Congratulations! 🎉`;
-
-      const { error } = await supabase
-        .from('forum_replies')
-        .insert({ thread_id: jam.thread_id, author_id: user.id, content });
+      const { data, error } = await supabase.functions.invoke('announce-jam-winners', {
+        body: { jamId: jam.id, winners },
+      });
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
     },
     onSuccess: () => {
       toast.success('Winners announced in forum thread!');
