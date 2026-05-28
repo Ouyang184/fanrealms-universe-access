@@ -129,7 +129,9 @@ export default function PurchaseSuccessPage() {
                 <div>
                   <p className="font-semibold text-[15px]">{product.title}</p>
                   <p className="text-sm text-muted-foreground mt-0.5">
-                    ${Number(product.price).toFixed(2)} · one-time purchase
+                    {Number(product.price) === 0
+                      ? 'Free'
+                      : `$${Number(product.price).toFixed(2)} · one-time purchase`}
                   </p>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />

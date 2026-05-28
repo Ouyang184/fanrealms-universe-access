@@ -86,6 +86,14 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
         return;
       }
       window.open(data.url, '_blank', 'noopener,noreferrer');
+
+      // Confirm to the user that the item is saved to their library
+      if (isFree && user) {
+        toast.success('Added to your library!', {
+          description: 'You can re-download this anytime from your Library.',
+          duration: 5000,
+        });
+      }
     } catch {
       toast.error('Download failed. Please try again.');
     } finally {
