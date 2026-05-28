@@ -6,6 +6,8 @@ import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Github, Globe, FileText, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
+import { parseVideoUrl } from '@/utils/videoUtils';
 
 function usePublicProject(slug: string) {
   return useQuery({
@@ -146,7 +148,7 @@ export default function ProjectPage() {
             <div className="flex items-center gap-2 flex-shrink-0">
               {project.website_url && (
                 <a
-                  href={project.website_url}
+                  href={safeHref(project.website_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border border-[#ddd] rounded-lg text-[#444] hover:border-[#aaa] transition-colors"
@@ -157,7 +159,7 @@ export default function ProjectPage() {
               )}
               {project.repository_url && (
                 <a
-                  href={project.repository_url}
+                  href={safeHref(project.repository_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border border-[#ddd] rounded-lg text-[#444] hover:border-[#aaa] transition-colors"
@@ -187,17 +189,21 @@ export default function ProjectPage() {
         </div>
 
         {/* Video */}
-        {project.video_url && (
-          <div className="aspect-video rounded-xl overflow-hidden bg-black">
-            <iframe
-              src={project.video_url}
-              className="w-full h-full"
-              allow="autoplay; fullscreen"
-              allowFullScreen
-              title="Project video"
-            />
-          </div>
-        )}
+        {(() => {
+          const videoInfo = parseVideoUrl(project.video_url);
+          if (!videoInfo || videoInfo.platform === 'unknown') return null;
+          return (
+            <div className="aspect-video rounded-xl overflow-hidden bg-black">
+              <iframe
+                src={videoInfo.embedUrl}
+                className="w-full h-full"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                title="Project video"
+              />
+            </div>
+          );
+        })()}
 
         {/* Description */}
         {(project.description || project.short_description) && (
