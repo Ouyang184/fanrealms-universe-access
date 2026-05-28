@@ -325,17 +325,16 @@ export default function AccountSettings() {
   const saveAccountSettings = async () => {
     setAccountSettings(prev => ({ ...prev, saving: true }));
     try {
-      // For email updates, we would need to call the appropriate Supabase auth method
-      if (user?.email !== accountSettings.email) {
-        // This is where you would update the email
+      const emailChanged = user?.email !== accountSettings.email;
+
+      if (emailChanged) {
         const { error } = await supabase.auth.updateUser({
           email: accountSettings.email,
         });
-        
         if (error) throw error;
       }
-      
-      // Update username and/or display name
+
+      // Update username, display name, and/or bio
       const usernameChanged = profile?.username !== accountSettings.username;
       const displayNameChanged = (profile as any)?.display_name !== accountSettings.displayName;
       const bioChanged = (profile as any)?.bio !== accountSettings.bio;
@@ -355,10 +354,17 @@ export default function AccountSettings() {
           .eq('user_id', user!.id);
       }
 
-      toast({
-        title: "Settings saved",
-        description: "Your account settings have been updated successfully"
-      });
+      if (emailChanged) {
+        toast({
+          title: "Verification email sent",
+          description: `Check ${accountSettings.email} and click the link to confirm your new address.`,
+        });
+      } else {
+        toast({
+          title: "Settings saved",
+          description: "Your account settings have been updated successfully.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Error saving settings",

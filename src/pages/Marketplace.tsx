@@ -34,13 +34,14 @@ export default function Marketplace() {
   const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
   const [godotVersion, setGodotVersion] = useState<string>('all');
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  // Initialise directly from URL so the first render already applies the filter
+  // (useEffect fires after paint, causing an unfiltered flicker otherwise)
+  const [activeTag, setActiveTag] = useState<string | null>(() => searchParams.get('tag') || null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Read ?tag= from URL on mount and when URL changes
+  // Keep in sync when the URL changes (browser back/forward navigation)
   useEffect(() => {
-    const tag = searchParams.get('tag');
-    setActiveTag(tag || null);
+    setActiveTag(searchParams.get('tag') || null);
   }, [searchParams]);
 
   const { data: allProducts, isLoading } = useMarketplaceProducts(category);
