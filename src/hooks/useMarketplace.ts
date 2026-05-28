@@ -216,6 +216,7 @@ export function useUserPurchases() {
         .from('purchases')
         .select('*, digital_products(title, cover_image_url), creators(username, display_name)')
         .eq('buyer_id', user!.id)
+        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

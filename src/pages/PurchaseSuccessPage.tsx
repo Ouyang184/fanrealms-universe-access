@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Download, ArrowLeft, Loader2, CheckCircle2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,6 +12,7 @@ type State = 'loading' | 'ready' | 'error';
 export default function PurchaseSuccessPage() {
   const [searchParams] = useSearchParams();
   const productId = searchParams.get('product_id');
+  const { user } = useAuth();
 
   const [state, setState] = useState<State>('loading');
   const [product, setProduct] = useState<{ title: string; price: number } | null>(null);
@@ -41,12 +43,15 @@ export default function PurchaseSuccessPage() {
           if (cancelled) return;
           attempts++;
 
-          const { data: purchase } = await supabase
+          const purchaseQuery = supabase
             .from('purchases')
             .select('id')
             .eq('product_id', productId)
-            .eq('status', 'completed')
-            .maybeSingle();
+            .eq('status', 'completed');
+          // Scope to the current buyer when known so concurrent purchases
+          // from other users don't trigger a false-positive "ready" state.
+          if (user?.id) purchaseQuery.eq('buyer_id', user.id);
+          const { data: purchase } = await purchaseQuery.maybeSingle();
 
           if (purchase) {
             if (!cancelled) setState('ready');

@@ -179,7 +179,25 @@ serve(async (req) => {
       }
     }
 
-    
+    // Sync Stripe Connect account status when capabilities change
+    if (event.type === 'account.updated') {
+      console.log('Handling account.updated for Connect account', event.account);
+      try {
+        const account = event.data.object as any;
+        const stripeAccountId = account.id;
+        const chargesEnabled = !!account.charges_enabled;
+        const { error: updateErr } = await supabase
+          .from('creator_stripe_accounts')
+          .update({ stripe_charges_enabled: chargesEnabled })
+          .eq('stripe_account_id', stripeAccountId);
+        if (updateErr) console.error('account.updated DB sync error:', updateErr);
+        else console.log(`account.updated: ${stripeAccountId} charges_enabled=${chargesEnabled}`);
+      } catch (error) {
+        console.error('account.updated handler error:', error);
+      }
+    }
+
+
     return new Response('OK', { status: 200, headers: corsHeaders });
 
   } catch (error) {
