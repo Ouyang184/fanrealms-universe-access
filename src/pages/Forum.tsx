@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CreateThreadDialog } from '@/components/forum/CreateThreadDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useActiveJam, getJamStatus } from '@/hooks/useJam';
+import { PageSeo } from '@/components/PageSeo';
 
 const PAGE_SIZE = 24;
 const ALL_CATEGORIES = ['All', ...FORUM_CATEGORIES] as const;
