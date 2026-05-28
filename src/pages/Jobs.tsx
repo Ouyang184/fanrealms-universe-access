@@ -6,6 +6,7 @@ import { JobListingCard } from '@/components/jobs/JobListingCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CreateJobDialog } from '@/components/jobs/CreateJobDialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { PageSeo } from '@/components/PageSeo';
 
 const PAGE_SIZE = 24;
 const ALL_CATEGORIES = [...JOB_CATEGORIES] as const;
