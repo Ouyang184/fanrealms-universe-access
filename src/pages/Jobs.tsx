@@ -26,6 +26,10 @@ export default function Jobs() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title="Jobs — Godot Freelance Gigs and Bounties"
+        description="Find or post Godot freelance gigs, contract work, and bounties. Hire Godot developers, artists, and designers on the FanRealms job board."
+      />
       <div className="w-full space-y-4">
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3 flex items-center justify-between gap-4 flex-wrap">
