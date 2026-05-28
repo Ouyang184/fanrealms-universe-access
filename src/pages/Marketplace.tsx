@@ -78,6 +78,10 @@ export default function Marketplace() {
 
   return (
     <MainLayout fullWidth>
+      <PageSeo
+        title="Marketplace — Godot Assets, Plugins, and Tools"
+        description="Browse and buy Godot plugins, shaders, sprites, 3D models, templates, music, and complete game projects from indie creators on FanRealms."
+      />
       <div className="w-full space-y-4">
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">
