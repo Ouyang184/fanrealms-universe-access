@@ -147,7 +147,7 @@ function NewProjectForm() {
       const cleanLinks: Record<string, string> = {};
       activeStores.forEach(k => { if (storeLinks[k]?.trim()) cleanLinks[k] = storeLinks[k].trim(); });
 
-      await create.mutateAsync({
+      const newProject = await create.mutateAsync({
         creator_id: creatorProfile.id,
         title: title.trim(),
         short_description: shortDescription.trim() || undefined,
@@ -169,7 +169,8 @@ function NewProjectForm() {
         website_url: website.trim() || undefined,
         repository_url: repository.trim() || undefined,
       });
-      navigate('/dashboard/projects');
+      // Navigate to the new project's detail page so creator can add assets immediately
+      navigate(`/dashboard/projects/${(newProject as any).id}`);
     } catch {
       // onError in the mutation already shows a toast — just stop the spinner
     } finally {
