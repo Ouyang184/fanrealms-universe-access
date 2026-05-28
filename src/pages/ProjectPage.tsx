@@ -6,6 +6,8 @@ import { ProductCard } from '@/components/marketplace/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Github, Globe, FileText, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
+import { parseVideoUrl } from '@/utils/videoUtils';
 
 function usePublicProject(slug: string) {
   return useQuery({
