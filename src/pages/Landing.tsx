@@ -6,6 +6,7 @@ import { useForumThreads } from "@/hooks/useForum";
 import { formatDistanceToNow } from "date-fns";
 import { ShoppingBag, Gamepad2, Briefcase, MessageSquare } from "lucide-react";
 import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
+import { PageSeo } from "@/components/PageSeo";
 
 export default function LandingPage() {
   const { data: products } = useMarketplaceProducts("all");
@@ -14,6 +15,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
+      <PageSeo
+        title="FanRealms: Marketplace and Jobs for Godot Creators"
+        description="Buy and sell Godot assets, find freelance work, and connect with indie game developers on FanRealms — the home for Godot creators."
+        canonicalPath="/"
+      />
 
       {/* NAV */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-[#eee]">
