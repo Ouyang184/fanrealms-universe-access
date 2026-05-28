@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreatorProfile } from '@/hooks/useCreatorProfile';
 import { useProfile } from '@/hooks/useProfile';
@@ -10,6 +11,7 @@ export const useUnifiedAvatar = () => {
   const { creatorProfile } = useCreatorProfile();
   const { uploadProfileImage } = useProfile();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Avatar hierarchy: creator avatar > user avatar
   const getAvatarUrl = useCallback((userProfile?: any) => {
@@ -57,6 +59,12 @@ export const useUnifiedAvatar = () => {
           
         if (userError) throw userError;
       }
+
+      // Invalidate all profile-related caches so avatar updates immediately
+      // in the top nav, settings page, and seller profile without a reload.
+      await queryClient.invalidateQueries({ queryKey: ['creator-profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['userCreator'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile'] });
 
       toast({
         title: "Avatar updated",
