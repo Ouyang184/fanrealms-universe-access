@@ -154,6 +154,10 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-4">
+      <PageSeo
+        title="Create Your FanRealms Account"
+        description="Sign up for FanRealms to sell Godot assets, post freelance gigs, join the forum, and connect with the indie game developer community."
+      />
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <Link to="/" className="inline-block">
