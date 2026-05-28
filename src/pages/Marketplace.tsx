@@ -83,6 +83,8 @@ export default function Marketplace() {
         description="Browse and buy Godot plugins, shaders, sprites, 3D models, templates, music, and complete game projects from indie creators on FanRealms."
       />
       <div className="w-full space-y-4">
+        <h1 className="text-[15px] font-bold text-foreground">Godot Asset Marketplace</h1>
+
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">
           FanRealms is a marketplace for indie creators — keep 95% of every sale.{' '}
@@ -107,6 +109,7 @@ export default function Marketplace() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             type="search"
+            aria-label="Search assets, projects, and creators"
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
             placeholder="Search assets, projects, creators…"
