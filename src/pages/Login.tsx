@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import LoginForm from "@/components/auth/LoginForm";
 import SocialLoginOptions from "@/components/auth/SocialLoginOptions";
 import AuthFooter from "@/components/auth/AuthFooter";
+import { PageSeo } from "@/components/PageSeo";
 
 // Auth/profile redirect logic lives in AuthGuard (wrapping /login in
 // App.tsx). This page just renders the form; the guard handles every
@@ -11,6 +12,10 @@ import AuthFooter from "@/components/auth/AuthFooter";
 const Login = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <PageSeo
+        title="Log In to FanRealms"
+        description="Sign in to your FanRealms account to buy and sell Godot assets, manage your projects, and join the community."
+      />
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <Link to="/" className="text-xl font-bold">FanRealms</Link>
