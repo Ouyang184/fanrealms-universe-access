@@ -130,7 +130,7 @@ export function MarketplaceSidebar({
       </Section>
 
       <Section title="Quick links">
-        <Link to="/jam/ebfea603-ca6a-4efa-abd5-28d9e6d33a93" className="block px-1 py-1 text-[13px] font-semibold text-primary hover:underline">Asset Jam #1 - $100 Prize</Link>
+        <Link to="/jam/ebfea603-ca6a-4efa-abd5-28d9e6d33a93" className="block px-1 py-1 text-[13px] font-semibold text-primary hover:underline">Asset Pack Jam #1 — $100 Prize</Link>
         <Link to="/forum" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Forum</Link>
         <Link to="/jobs" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Jobs</Link>
         <Link to="/marketplace" className="block px-1 py-1 text-[13px] text-foreground hover:underline">Discover creators</Link>

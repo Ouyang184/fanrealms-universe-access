@@ -103,7 +103,7 @@ export function TopNav() {
               to={`/jam/${activeJam.id}`}
               className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-semibold whitespace-nowrap text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
             >
-              {jamStatus === 'voting' ? 'Vote Now' : 'Asset Jam'}
+              {jamStatus === 'voting' ? 'Vote Now' : 'Asset Pack Jam'}
               {(jamStatus === 'active' || jamStatus === 'voting') && (
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
@@ -192,7 +192,7 @@ export function TopNav() {
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-md text-[14px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
               >
-                {jamStatus === 'voting' ? 'Vote Now' : 'Asset Jam'}
+                {jamStatus === 'voting' ? 'Vote Now' : 'Asset Pack Jam'}
                 {(jamStatus === 'active' || jamStatus === 'voting') && (
                   <span className="relative flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />

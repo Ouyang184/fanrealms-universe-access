@@ -170,7 +170,7 @@ export default function JamPage() {
                 <li className="flex items-start gap-3">
                   <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center mt-0.5">2</span>
                   <span className="text-[13px] text-[#444]">
-                    <strong className="text-[#111]">Have an original 2D game asset ready</strong> — sprites, tilesets, UI elements, animations, shaders, fonts, or any 2D art made for games. Any engine. Hosted <strong className="text-[#111]">anywhere</strong>: itch.io, GitHub, Unity Asset Store, FanRealms — wherever it lives.
+                    <strong className="text-[#111]">Create an original 2D game asset pack</strong> — sprites, tilesets, UI elements, animations, shaders, fonts, or any 2D art made for games. Any engine, any style. Hosted <strong className="text-[#111]">anywhere</strong>: itch.io, GitHub, Unity Asset Store, FanRealms — wherever it lives.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
@@ -299,7 +299,7 @@ export default function JamPage() {
             <p className="text-[13px] text-[#999]">
               {jam.jam_type === 'game'
                 ? 'Be the first to submit a Godot game.'
-                : 'Be the first to submit a 2D game asset.'}
+                : 'Be the first to submit a 2D game asset pack.'}
             </p>
           </div>
         ) : (

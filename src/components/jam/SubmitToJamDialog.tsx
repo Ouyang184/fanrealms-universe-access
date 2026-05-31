@@ -114,7 +114,7 @@ export function SubmitToJamDialog({ jamId, jamType = 'asset', open, onClose }: P
           <DialogDescription>
             {isGame
               ? 'Submit your Godot game — upload it to FanRealms or link from itch.io.'
-              : 'Submit your 2D game asset — upload to FanRealms or link from another platform.'}
+              : 'Submit your 2D game asset pack — upload to FanRealms or link from itch.io, GitHub, or any platform.'}
           </DialogDescription>
         </DialogHeader>
 
