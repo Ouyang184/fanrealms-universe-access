@@ -83,7 +83,7 @@ export default function Marketplace() {
         description="Browse and buy Godot plugins, shaders, sprites, 3D models, templates, music, and complete game projects from indie creators on FanRealms."
       />
       <div className="w-full space-y-4">
-        <h1 className="text-[15px] font-bold text-foreground">Godot Asset Marketplace</h1>
+        <h1 className="text-[15px] font-bold text-foreground">Game Asset Marketplace</h1>
 
         {/* Slim info strip */}
         <div className="text-[12.5px] text-muted-foreground border-b border-border pb-3">

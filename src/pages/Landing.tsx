@@ -76,11 +76,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-12 items-center">
           <div className="md:col-span-7">
             <h1 className="text-5xl font-bold tracking-[-1.5px] leading-[1.1]">
-              Where Godot devs<br />
-              <span className="text-primary">buy, sell & ship.</span>
+              The marketplace for<br />
+              <span className="text-primary">indie game creators.</span>
             </h1>
             <p className="mt-4 text-[15px] text-[#777] leading-relaxed max-w-md">
-              Assets, indie games, freelance gigs, and a community — all built around the Godot engine.
+              Buy and sell game assets, find freelance work, and connect with other indie developers — built with Godot creators in mind, open to everyone.
             </p>
             <div className="flex gap-3 mt-6">
               <Link to="/marketplace" className="px-5 py-2.5 text-[14px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
@@ -94,9 +94,9 @@ export default function LandingPage() {
           </div>
           <div className="md:col-span-5 grid grid-cols-2 gap-4">
             {[
-              { Icon: ShoppingBag, title: "Godot Assets", desc: "Plugins, shaders, sprites & tools" },
-              { Icon: Gamepad2,    title: "Indie Games",  desc: "Play & discover Godot-made games" },
-              { Icon: Briefcase,   title: "Jobs & Gigs",  desc: "Hire or get hired as a Godot dev" },
+              { Icon: ShoppingBag, title: "Game Assets", desc: "Sprites, tilesets, shaders, plugins & more" },
+              { Icon: Gamepad2,    title: "Indie Games",  desc: "Play & discover community-made games" },
+              { Icon: Briefcase,   title: "Jobs & Gigs",  desc: "Hire developers, artists & designers" },
               { Icon: MessageSquare, title: "Community",  desc: "Forum, devlogs & help" },
             ].map(({ Icon, title, desc }) => (
               <div key={title} className="aspect-square p-5 rounded-2xl bg-[#fafafa] border border-[#eee] hover:border-primary/30 transition-colors flex flex-col justify-between">
@@ -127,8 +127,8 @@ export default function LandingPage() {
               },
               {
                 step: "2",
-                title: "Find or list Godot assets",
-                desc: "Buy plugins, shaders, and sprites — or upload your own packs for sale.",
+                title: "Find or list game assets",
+                desc: "Buy sprites, tilesets, shaders & plugins — or upload your own packs for sale.",
                 color: "bg-blue-50 text-blue-600",
               },
               {
@@ -154,7 +154,7 @@ export default function LandingPage() {
       {products && products.length > 0 ? (
         <section className="px-4 sm:px-6 py-10">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-bold tracking-[-0.3px]">New Godot assets</h2>
+            <h2 className="text-[15px] font-bold tracking-[-0.3px]">New assets</h2>
             <Link to="/marketplace" className="text-[13px] font-semibold text-primary hover:underline">See all</Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -197,9 +197,9 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl bg-[#f5f5f5] flex items-center justify-center mx-auto mb-3">
               <ShoppingBag className="w-4 h-4 text-[#666]" />
             </div>
-            <div className="text-[16px] font-bold text-[#111] mb-1">Be the first to list a Godot asset</div>
+            <div className="text-[16px] font-bold text-[#111] mb-1">Be the first to list an asset</div>
             <div className="text-[13px] text-[#666] mb-4 max-w-sm mx-auto">
-              Upload a plugin, shader pack, or sprite set — and be the first seller on the marketplace.
+              Upload a sprite pack, tileset, shader, or plugin — and be the first seller on the marketplace.
             </div>
             <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
               Start selling →
