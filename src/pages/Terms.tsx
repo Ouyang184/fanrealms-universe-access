@@ -18,7 +18,7 @@ export default function Terms() {
       <main className="max-w-2xl mx-auto px-6 py-10 space-y-8">
         <div>
           <h1 className="text-[24px] font-bold tracking-[-0.5px] mb-1">Terms of Service</h1>
-          <p className="text-[12px] text-[#aaa]">Last updated: April 2026</p>
+          <p className="text-[12px] text-[#aaa]">Last updated: June 2026</p>
         </div>
 
         <p className="text-[14px] text-[#555] leading-relaxed">
@@ -37,19 +37,22 @@ export default function Terms() {
 
         <Section title="2. Selling on the marketplace">
           <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
-            <li>You keep ownership of your work. You grant us a license to host and display it.</li>
-            <li>You must own or have the right to sell every asset you list.</li>
-            <li>FanRealms takes a <strong className="text-[#111] font-semibold">10% platform fee</strong> on each sale. Stripe's processing fee (~2.9% + 30¢) is separate.</li>
-            <li>Payouts are handled by Stripe Connect. You're responsible for your own taxes.</li>
-            <li>No pirated content, stolen assets, malware, or AI-generated content that violates third-party rights.</li>
+            <li>You keep full ownership of your work. By listing on FanRealms you grant us a non-exclusive, worldwide license to host, display, and distribute your content solely for the purpose of operating the platform.</li>
+            <li>You must own or have the legal right to sell every asset you list. Do not upload content you did not create or do not have rights to.</li>
+            <li>FanRealms charges a <strong className="text-[#111] font-semibold">platform fee of 1–5%</strong> per sale — you choose your own rate in your account settings. The default is 5%. Stripe's payment processing fee (~2.9% + 30¢) is separate and deducted by Stripe.</li>
+            <li>You keep the remaining revenue after fees. Payouts are processed via Stripe Connect. You are solely responsible for reporting and paying any applicable taxes on your earnings.</li>
+            <li>If you delete your account, your listed assets will be removed from the marketplace. Existing buyers retain access to assets they have already purchased.</li>
+            <li>No pirated content, stolen assets, malware, AI-generated content that violates third-party rights, or content you do not have rights to distribute.</li>
+            <li>Your content may not be listed on FanRealms at a higher price than on other platforms without good reason. Buyers on FanRealms should get a fair deal.</li>
           </ul>
         </Section>
 
         <Section title="3. Buying on the marketplace">
           <ul className="text-[13px] text-[#555] leading-relaxed space-y-1.5 list-disc pl-5">
-            <li>Digital products are generally final-sale. Refunds are handled case-by-case for broken or misrepresented items.</li>
-            <li>Licenses for purchased assets are defined by the seller on each listing.</li>
-            <li>Don't redistribute or resell purchased assets unless the license explicitly allows it.</li>
+            <li>Digital products are generally final-sale. Refunds are handled case-by-case for items that are broken, misrepresented, or fail to deliver as described — contact us at <a href="mailto:jack520088@gmail.com" className="text-primary hover:underline">jack520088@gmail.com</a>.</li>
+            <li>When you purchase an asset you receive a personal, non-exclusive license to use it in your projects as described by the seller on the listing page.</li>
+            <li>You may not redistribute, resell, sublicense, or share purchased assets unless the seller's license explicitly permits it.</li>
+            <li>FanRealms is not responsible for the quality, accuracy, or fitness for purpose of third-party assets. All sales involve a transaction between you and the creator — FanRealms facilitates but is not a party to that agreement.</li>
           </ul>
         </Section>
 
@@ -88,10 +91,19 @@ export default function Terms() {
           </p>
         </Section>
 
-        <Section title="8. Changes">
+        <Section title="8. Governing law">
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            These terms are governed by applicable law. Disputes will be resolved in good faith.
+            Nothing in these terms limits your rights under applicable consumer protection laws
+            in your jurisdiction.
+          </p>
+        </Section>
+
+        <Section title="9. Changes">
           <p className="text-[13px] text-[#555] leading-relaxed">
             We may update these terms as the platform evolves. Material changes will be announced
-            via email or a site notice.
+            via email or a site notice at least 7 days before taking effect. Continued use of
+            FanRealms after changes constitutes acceptance of the updated terms.
           </p>
         </Section>
 
