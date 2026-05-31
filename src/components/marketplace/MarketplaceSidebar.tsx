@@ -120,8 +120,9 @@ export function MarketplaceSidebar({
         </Section>
       )}
 
-      <Section title="Godot version">
-        <UtilLink active={godotVersion === 'all'} onClick={() => onGodotVersion('all')}>Any version</UtilLink>
+      <Section title="Engine">
+        <UtilLink active={godotVersion === 'all'} onClick={() => onGodotVersion('all')}>Any / All engines</UtilLink>
+        <UtilLink active={godotVersion === 'Any / Not applicable'} onClick={() => onGodotVersion('Any / Not applicable')}>Not engine-specific</UtilLink>
         {['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x'].map((v) => (
           <UtilLink key={v} active={godotVersion === v} onClick={() => onGodotVersion(v)}>
             {v}

@@ -34,7 +34,7 @@ const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
   'Complete Games', 'Templates', 'Tools', 'Tutorials', 'Music & SFX', 'Other',
 ];
-const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x', 'Any / Not applicable'];
+const GODOT_VERSIONS = ['Any / Not applicable', 'Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x'];
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_COVER_SIZE_MB = 5;
@@ -74,7 +74,7 @@ export default function DashboardAssetDetail() {
   const [priceMode, setPriceMode] = useState<PriceMode>('free');
   const [priceStr, setPriceStr] = useState('');
   const [category, setCategory] = useState('Plugins & Addons');
-  const [godotVersion, setGodotVersion] = useState('Godot 4.3+');
+  const [godotVersion, setGodotVersion] = useState('Any / Not applicable');
   const [tagsStr, setTagsStr] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [trailerUrl, setTrailerUrl] = useState('');
@@ -408,7 +408,7 @@ export default function DashboardAssetDetail() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
+                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Engine</label>
                   <select
                     value={godotVersion}
                     onChange={e => setGodotVersion(e.target.value)}
