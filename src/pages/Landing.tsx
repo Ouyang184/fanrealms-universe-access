@@ -3,6 +3,7 @@ import { Logo } from "@/components/Logo";
 import { useMarketplaceProducts } from "@/hooks/useMarketplace";
 import { useJobListings } from "@/hooks/useJobs";
 import { useForumThreads } from "@/hooks/useForum";
+import { useActiveJam, getJamStatus } from "@/hooks/useJam";
 import { formatDistanceToNow } from "date-fns";
 import { ShoppingBag, Gamepad2, Briefcase, MessageSquare } from "lucide-react";
 import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
@@ -12,6 +13,9 @@ export default function LandingPage() {
   const { data: products } = useMarketplaceProducts("all");
   const { data: jobs } = useJobListings("all") as { data: any[] | undefined };
   const { data: threads } = useForumThreads("all") as { data: any[] | undefined };
+  const { data: activeJam } = useActiveJam();
+  const jamStatus = activeJam ? getJamStatus(activeJam) : null;
+  const showJam = jamStatus === 'upcoming' || jamStatus === 'active' || jamStatus === 'voting';
 
   return (
     <div className="min-h-screen bg-white text-[#111] font-sans">
@@ -40,6 +44,20 @@ export default function LandingPage() {
                 {label}
               </Link>
             ))}
+            {showJam && activeJam && (
+              <Link
+                to={`/jam/${activeJam.id}`}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-semibold whitespace-nowrap text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+              >
+                {jamStatus === 'voting' ? 'Vote Now' : 'Asset Jam'}
+                {(jamStatus === 'active' || jamStatus === 'voting') && (
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
+                  </span>
+                )}
+              </Link>
+            )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <Link to="/login" className="px-4 py-2 text-[13px] font-semibold text-[#555] border border-[#e5e5e5] rounded-lg hover:border-[#ccc] transition-colors">
