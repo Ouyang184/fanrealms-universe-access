@@ -159,6 +159,7 @@ export default function AccountSettings() {
     displayName: "",
     email: "",
     bio: "",
+    website: "",
     saving: false
   });
   
@@ -211,6 +212,7 @@ export default function AccountSettings() {
         displayName: (profile as any).display_name || "",
         email: user?.email || "",
         bio: (profile as any).bio || "",
+        website: (profile as any).website || "",
         saving: false
       });
     }
@@ -338,6 +340,7 @@ export default function AccountSettings() {
       const usernameChanged = profile?.username !== accountSettings.username;
       const displayNameChanged = (profile as any)?.display_name !== accountSettings.displayName;
       const bioChanged = (profile as any)?.bio !== accountSettings.bio;
+      const websiteChanged = (profile as any)?.website !== accountSettings.website;
       if (usernameChanged || displayNameChanged || bioChanged) {
         await updateProfile({
           username: accountSettings.username,
@@ -346,11 +349,14 @@ export default function AccountSettings() {
         } as any);
       }
 
-      // Sync bio to creators table as well
-      if (bioChanged) {
+      // Sync bio and website to creators table
+      if (bioChanged || websiteChanged) {
         await supabase
           .from('creators')
-          .update({ bio: accountSettings.bio || null })
+          .update({
+            bio: accountSettings.bio || null,
+            website: accountSettings.website.trim() || null,
+          })
           .eq('user_id', user!.id);
       }
 
@@ -574,6 +580,20 @@ export default function AccountSettings() {
                     />
                     <p className="text-xs text-muted-foreground">
                       {accountSettings.bio.length}/300 characters — shown on your public profile
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      value={accountSettings.website}
+                      onChange={handleAccountChange}
+                      placeholder="https://yoursite.com"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Shown on your public profile
                     </p>
                   </div>
                   <div className="space-y-2">
