@@ -179,8 +179,17 @@ export default function LandingPage() {
                     {product.creators?.display_name || product.creators?.username}
                   </div>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[14px] font-bold">
-                      {product.price === 0 ? "Free" : `$${(product.price / 100).toFixed(2)}`}
+                    <span className="flex items-center gap-1">
+                      <span className="text-[14px] font-bold">
+                        {product.price === 0
+                          ? "Free"
+                          : product.sale_price != null && Number(product.sale_price) < Number(product.price)
+                          ? `$${Number(product.sale_price).toFixed(2)}`
+                          : `$${Number(product.price).toFixed(2)}`}
+                      </span>
+                      {product.sale_price != null && Number(product.sale_price) < Number(product.price) && (
+                        <span className="text-[11px] text-[#999] line-through">${Number(product.price).toFixed(2)}</span>
+                      )}
                     </span>
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eef4fb] text-primary">
                       {product.category}

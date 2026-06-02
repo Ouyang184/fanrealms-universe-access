@@ -6,6 +6,7 @@ interface FeaturedProduct {
   title: string;
   description?: string | null;
   price: number;
+  sale_price?: number | null;
   category?: string | null;
   cover_image_url?: string | null;
   creators?: {
@@ -16,7 +17,11 @@ interface FeaturedProduct {
 
 export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
   const author = product.creators?.display_name || product.creators?.username || 'Unknown';
-  const price = product.price === 0 ? 'Free' : `$${(product.price / 100).toFixed(2)}`;
+  const hasSale = product.sale_price != null && Number(product.sale_price) < Number(product.price);
+  const price =
+    product.price === 0 ? 'Free'
+    : hasSale ? `$${Number(product.sale_price).toFixed(2)}`
+    : `$${Number(product.price).toFixed(2)}`;
 
   return (
     <section className="border border-border bg-card">
@@ -61,6 +66,14 @@ export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             <span className="text-[15px] font-bold">{price}</span>
+            {hasSale && (
+              <>
+                <span className="text-[12px] text-muted-foreground line-through">${Number(product.price).toFixed(2)}</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">
+                  {Math.round((1 - Number(product.sale_price) / Number(product.price)) * 100)}% OFF
+                </span>
+              </>
+            )}
             {product.category && (
               <span className="text-[11px] text-muted-foreground">· {product.category}</span>
             )}
