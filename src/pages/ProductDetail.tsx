@@ -328,6 +328,14 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
                       </div>
                     )}
                   </div>
+                ) : p.sale_price != null && Number(p.sale_price) < Number(p.price) ? (
+                  <div className="flex items-end gap-2">
+                    <div className="text-[32px] font-bold text-primary">${Number(p.sale_price).toFixed(2)}</div>
+                    <div className="text-[18px] text-muted-foreground line-through mb-1">${Number(p.price).toFixed(2)}</div>
+                    <span className="mb-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                      {Math.round((1 - Number(p.sale_price) / Number(p.price)) * 100)}% OFF
+                    </span>
+                  </div>
                 ) : (
                   <div className="text-[32px] font-bold text-foreground">${Number(p.price).toFixed(2)}</div>
                 )}
@@ -370,7 +378,7 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
                     ? 'Redirecting…'
                     : isNYP
                     ? `Pay $${nypValid ? parseFloat(nypInput).toFixed(2) : '—'}`
-                    : `Buy Now — $${Number(p.price).toFixed(2)}`}
+                    : `Buy Now — $${p.sale_price != null && Number(p.sale_price) < Number(p.price) ? Number(p.sale_price).toFixed(2) : Number(p.price).toFixed(2)}`}
                 </Button>
               ) : (
                 <div className="space-y-2">

@@ -62,7 +62,7 @@ serve(async (req) => {
     // Fetch product
     const { data: product, error: productError } = await supabaseServiceClient
       .from("digital_products")
-      .select("id, title, price, pricing_model, creator_id, short_description, cover_image_url, creators(user_id)")
+      .select("id, title, price, sale_price, pricing_model, creator_id, short_description, cover_image_url, creators(user_id)")
       .eq("id", productId)
       .eq("status", "published")
       .maybeSingle();
@@ -92,7 +92,11 @@ serve(async (req) => {
       }
       amountCents = customCents;
     } else {
-      amountCents = Math.round(Number(product.price) * 100);
+      // Use sale_price if active and lower than regular price
+      const effectivePrice = (product.sale_price != null && Number(product.sale_price) < Number(product.price))
+        ? Number(product.sale_price)
+        : Number(product.price);
+      amountCents = Math.round(effectivePrice * 100);
       if (amountCents < 50) throw new Error("Product price is below Stripe minimum ($0.50)");
     }
 

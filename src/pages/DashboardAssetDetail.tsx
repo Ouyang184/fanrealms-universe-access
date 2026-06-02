@@ -73,6 +73,7 @@ export default function DashboardAssetDetail() {
   const [projectId, setProjectId] = useState<string | null>(preselectedProjectId);
   const [priceMode, setPriceMode] = useState<PriceMode>('free');
   const [priceStr, setPriceStr] = useState('');
+  const [salePriceStr, setSalePriceStr] = useState('');
   const [category, setCategory] = useState('Plugins & Addons');
   const [godotVersion, setGodotVersion] = useState('Any / Not applicable');
   const [tagsStr, setTagsStr] = useState('');
@@ -121,6 +122,7 @@ export default function DashboardAssetDetail() {
       setLicense(p.license ?? 'Standard');
       setScreenshots(p.screenshots?.length ? p.screenshots : ['']);
       setStatus(p.status === 'published' ? 'published' : 'draft');
+      setSalePriceStr(p.sale_price != null ? Number(p.sale_price).toFixed(2) : '');
       setCoverPreview(p.cover_image_url ?? null);
       setProjectId(p.project_id ?? null);
     }
@@ -205,6 +207,9 @@ export default function DashboardAssetDetail() {
       godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
       project_id: projectId ?? undefined,
+      sale_price: (priceMode === 'paid' && salePriceStr && parseFloat(salePriceStr) > 0 && parseFloat(salePriceStr) < parseFloat(priceStr || '0'))
+        ? parseFloat(salePriceStr)
+        : null,
       // Only one download source at a time: file upload takes priority
       asset_file_path: assetFile ? undefined : (assetFilePath ?? undefined), // set after upload in doSave
       asset_url: assetFile ? undefined : (downloadUrl.trim() || undefined), // cleared when file uploaded
@@ -461,6 +466,32 @@ export default function DashboardAssetDetail() {
                       </div>
                     )}
                   </label>
+
+                  {/* Sale price — only shown for paid assets */}
+                  {priceMode === 'paid' && (
+                    <div className="ml-6 mt-1 flex items-center gap-2">
+                      <span className="text-[12px] font-semibold text-amber-600">Sale price</span>
+                      <span className="text-[12px] text-[#555]">$</span>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={salePriceStr}
+                        onChange={e => setSalePriceStr(e.target.value)}
+                        placeholder="Leave blank for no sale"
+                        className="w-40 h-7 text-[13px]"
+                      />
+                      {salePriceStr && parseFloat(salePriceStr) < parseFloat(priceStr || '0') && (
+                        <span className="text-[11px] text-green-600 font-semibold">
+                          {Math.round((1 - parseFloat(salePriceStr) / parseFloat(priceStr)) * 100)}% off
+                        </span>
+                      )}
+                      {salePriceStr && parseFloat(salePriceStr) >= parseFloat(priceStr || '0') && (
+                        <span className="text-[11px] text-red-500">Must be less than full price</span>
+                      )}
+                      <p className="text-[11px] text-[#aaa]">Clear to end sale</p>
+                    </div>
+                  )}
 
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
