@@ -141,6 +141,7 @@ export function useCreateProduct() {
       description?: string;
       short_description?: string;
       price: number;
+      sale_price?: number | null;
       category?: string;
       tags?: string[];
       cover_image_url?: string;
@@ -235,6 +236,7 @@ export function useUpdateProduct() {
       description?: string;
       short_description?: string;
       price?: number;
+      sale_price?: number | null;
       category?: string;
       tags?: string[];
       cover_image_url?: string;
