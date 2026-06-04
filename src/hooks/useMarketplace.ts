@@ -3,18 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-// Safe column list for digital_products — excludes stripe_price_id which is
-// revoked from anon/authenticated. Using this prevents PostgREST `select=*`
-// from failing with "permission denied".
+// Safe column list for digital_products — excludes stripe_price_id, asset_url,
+// and asset_file_path which are revoked from anon/authenticated at the DB
+// level. Download links are issued only by the `get-download-url` edge
+// function after verifying purchase. Creators read their full product (with
+// asset_url / asset_file_path) via the get_creator_product() RPC.
 const DIGITAL_PRODUCT_COLUMNS =
-  'id, creator_id, title, description, short_description, cover_image_url, asset_url, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, sale_price, pricing_model, created_at, updated_at';
+  'id, creator_id, title, description, short_description, cover_image_url, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, sale_price, pricing_model, created_at, updated_at';
+
+// Strip characters that have special meaning inside PostgREST filter strings
+// to prevent search-term breakage or filter injection.
+function escapePostgrestTerm(term: string): string {
+  return term.replace(/[\\"(),{}*]/g, '').slice(0, 100);
+}
 
 export function useProductSearch(query: string) {
   return useQuery({
     queryKey: ['product-search', query],
     enabled: query.trim().length >= 2,
     queryFn: async () => {
-      const term = query.trim();
+      const term = escapePostgrestTerm(query.trim());
+      if (term.length < 2) return [];
       const { data, error } = await supabase
         .from('digital_products')
         .select('id, title, short_description, cover_image_url, price, category, creators(id, username, display_name)')
