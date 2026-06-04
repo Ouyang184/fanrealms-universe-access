@@ -1,0 +1,1 @@
+REVOKE SELECT (asset_url, asset_file_path) ON public.digital_products FROM anon, authenticated;
