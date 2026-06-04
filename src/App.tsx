@@ -36,6 +36,7 @@ const Security = lazy(() => import("./pages/Security"));
 const CommunityGuidelines = lazy(() => import("./pages/CommunityGuidelines"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const CreatorGuidelines = lazy(() => import("./pages/CreatorGuidelines"));
+const CreatorFAQ = lazy(() => import("./pages/CreatorFAQ"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CompleteProfile = lazy(() => import("./pages/CompleteProfile"));
@@ -233,6 +234,8 @@ export default function App() {
                 <Route path="/community-guidelines" element={<CommunityGuidelines />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/creator-guidelines" element={<CreatorGuidelines />} />
+                <Route path="/creator-faq" element={<CreatorFAQ />} />
+                <Route path="/sell" element={<CreatorFAQ />} />
 
                 <Route path="/loading" element={<LoadingPage />} />
 
