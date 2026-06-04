@@ -19,70 +19,69 @@ export default function CreatorFAQ() {
         <div>
           <h1 className="text-[26px] font-bold tracking-[-0.5px] mb-2">Creator FAQ</h1>
           <p className="text-[14px] text-[#666] leading-relaxed">
-            Everything you need to know about selling your work on FanRealms — fees,
-            payouts, ownership, and getting started.
+            Common questions about selling your work on FanRealms. If something isn't
+            covered here, just send us a message.
           </p>
         </div>
 
         <Faq q="How much of each sale do I keep?">
-          Up to <strong>99%</strong>. You set your own platform fee between 1% and 5% in
-          your account settings — the default is 5%, so you keep 95%. The only other
-          deduction is Stripe's standard payment processing fee (~2.9% + 30¢), which goes
-          to Stripe, not us.
+          Up to <strong>99%</strong>. You pick your own platform fee between 1% and 5% in
+          your settings. The default is 5%, so you keep 95%. The only other deduction is
+          Stripe's payment processing fee (about 2.9% + 30¢), which goes to Stripe, not us.
         </Faq>
 
         <Faq q="Does my asset have to be exclusive to FanRealms?">
-          No. There's no exclusivity. You can keep selling the exact same asset on itch.io,
-          GitHub, your own site, or anywhere else. FanRealms is just one more place to sell.
+          Nope, there's no exclusivity. Keep selling the same asset on itch.io, GitHub, your
+          own site, wherever you like. FanRealms is just one more place to sell it.
         </Faq>
 
         <Faq q="Who owns my work?">
-          You do — 100%. By listing on FanRealms you grant us a license to host and display
-          your asset so we can sell it for you, but you keep full ownership and all rights.
-          We never use, resell, or claim your work as our own. Delete your listing anytime.
+          You do, 100%. Listing on FanRealms just lets us host and display your asset so we
+          can sell it for you. You keep full ownership and all rights. We never use, resell,
+          or claim your work as our own, and you can delete your listing whenever you want.
         </Faq>
 
         <Faq q="How do I get paid?">
-          Payouts run through <strong>Stripe Connect</strong>. You connect your Stripe
-          account once in your dashboard (Settings → Payouts), and earnings from your sales
-          are paid out to your bank automatically. You're responsible for your own taxes.
+          Payouts go through <strong>Stripe Connect</strong>. You connect your Stripe account
+          once in your dashboard (Settings, then Payouts), and your earnings get paid out to
+          your bank automatically. You handle your own taxes.
         </Faq>
 
         <Faq q="How do I start selling?">
-          Three steps: <strong>1)</strong> Create a free account and pick a username.{' '}
-          <strong>2)</strong> Go to your dashboard and click “Upload an asset.”{' '}
-          <strong>3)</strong> Add a title, description, price, cover image, and your file
-          (or an external download link), then publish. That's it — your asset is live on
-          the marketplace.
+          Make a free account and pick a username, then go to your dashboard and click
+          “Upload an asset.” Add a title, description, price, cover image, and your file
+          (or a download link if it's hosted elsewhere), then hit publish. Your asset goes
+          live on the marketplace right away.
         </Faq>
 
         <Faq q="What can I sell?">
-          Game assets of any kind — sprites, tilesets, UI kits, shaders, fonts, animations,
-          3D models, music, sound effects, plugins, templates, and complete projects. Built
-          for Godot creators, but assets for any engine are welcome.
+          Pretty much any game asset: sprites, tilesets, UI kits, shaders, fonts,
+          animations, 3D models, music, sound effects, plugins, templates, even complete
+          projects. We're built for Godot creators, but assets for any engine are welcome.
         </Faq>
 
         <Faq q="Can I run my own sales and discounts?">
-          Yes. When editing a paid asset you can set a <strong>sale price</strong> — buyers
-          see the original price crossed out, your discounted price, and a “% OFF” badge.
-          Clear the field anytime to end the sale. You control your own pricing completely.
+          Yes. When you edit a paid asset you can set a <strong>sale price</strong>. Buyers
+          then see the original price crossed out next to your sale price, with a “% OFF”
+          tag. Clear the field whenever you want to end the sale. Your pricing is always your
+          call.
         </Faq>
 
         <Faq q="How do refunds work?">
-          Digital products are generally final-sale, but refunds are handled case-by-case for
-          items that are broken or not as described. As the creator you're the first point of
-          contact, and we'll help mediate if needed.
+          Digital products are usually final sale, but we handle refunds case by case if
+          something's broken or not as described. As the creator you're the first point of
+          contact, and we'll step in to help if it's needed.
         </Faq>
 
         <Faq q="Is there a cost to list?">
-          No. Listing is completely free. We only take your chosen 1–5% platform fee when an
-          asset actually sells. No monthly fees, no listing fees.
+          Nope, listing is free. We only take your chosen 1% to 5% fee when an asset actually
+          sells. No monthly fees, no listing fees.
         </Faq>
 
         <Faq q="Can I sell AI-assisted assets?">
-          Yes, as long as you have the rights to everything in the pack and it doesn't
-          infringe anyone else's work. Be honest in your description about how it was made —
-          buyers appreciate transparency.
+          Yes, as long as you have the rights to everything in the pack and it doesn't copy
+          anyone else's work. Just be upfront in the description about how it was made.
+          Buyers appreciate the honesty.
         </Faq>
 
         <div className="border-t border-[#eee] pt-8">
