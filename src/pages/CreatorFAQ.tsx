@@ -1,17 +1,24 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function CreatorFAQ() {
   const { user } = useAuth();
-  const backTo = user ? '/home' : '/';
+  const navigate = useNavigate();
+
+  // Go back to wherever the visitor came from (e.g. the marketplace footer).
+  // Falls back to the marketplace if there's no history (direct visit).
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate(user ? '/marketplace' : '/');
+  };
 
   return (
     <div className="min-h-screen bg-white text-[#111]">
       <header className="border-b border-[#eee]">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link to="/"><Logo /></Link>
-          <Link to={backTo} className="text-[13px] text-[#777] hover:text-[#111]">← Back</Link>
+          <button onClick={handleBack} className="text-[13px] text-[#777] hover:text-[#111]">← Back</button>
         </div>
       </header>
 

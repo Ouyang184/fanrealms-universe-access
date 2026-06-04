@@ -9,6 +9,7 @@ import RootLayout from "@/components/RootLayout";
 import AuthGuard from "@/components/AuthGuard";
 import AuthGate from "@/components/AuthGate";
 import { MainLayout } from "@/components/Layout/MainLayout";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 // Eager — first-paint / common landing routes. Keeping these eager avoids
 // HMR fast-refresh "suspended while responding to synchronous input" errors.
@@ -143,6 +144,7 @@ export default function App() {
             <RootLayout>
               <OAuthCallbackRedirector />
               <AuthGate>
+              <RouteErrorBoundary>
               <Suspense fallback={<LoadingPage />}>
               <Routes>
                 {/* Public */}
@@ -246,6 +248,7 @@ export default function App() {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
+              </RouteErrorBoundary>
               </AuthGate>
               <Toaster />
             </RootLayout>
