@@ -13,6 +13,7 @@ const Footer = () => {
             <ul className="space-y-1.5">
               <li><Link to="/about" className="hover:text-primary/80">About Us</Link></li>
               <li><Link to="/payments" className="hover:text-primary/80">Pricing</Link></li>
+              <li><Link to="/creator-faq" className="hover:text-primary/80">Sell on FanRealms</Link></li>
               <li><Link to="/creator-guidelines" className="hover:text-primary/80">Creator Guidelines</Link></li>
             </ul>
           </div>

@@ -462,6 +462,7 @@ function FooterStrip() {
       <div>
         <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground mb-2">About</h4>
         <ul className="space-y-1 text-muted-foreground">
+          <li><Link to="/creator-faq" className="hover:text-foreground hover:underline">Sell on FanRealms</Link></li>
           <li><Link to="/about" className="hover:text-foreground hover:underline">About FanRealms</Link></li>
           <li><Link to="/terms" className="hover:text-foreground hover:underline">Terms</Link></li>
           <li><Link to="/privacy-policy" className="hover:text-foreground hover:underline">Privacy</Link></li>
