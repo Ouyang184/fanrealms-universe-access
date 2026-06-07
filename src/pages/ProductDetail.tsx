@@ -9,7 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Download, Tag, FileText, Shield, Package, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ArrowLeft, Download, Tag, FileText, Shield, Package, ChevronLeft, ChevronRight, Loader2, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductRatingsSection } from '@/components/ratings/ProductRatingsSection';
@@ -44,6 +45,23 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
   const [nypInput, setNypInput] = useState(suggestedPrice > 0 ? suggestedPrice.toFixed(2) : '');
   const nypCents = Math.round(parseFloat(nypInput || '0') * 100);
   const nypValid = nypCents >= 50;
+
+  // Donation (tip) state — optional support on a free asset
+  const [donateOpen, setDonateOpen] = useState(false);
+  const [donateInput, setDonateInput] = useState('5');
+  const donateCents = Math.round(parseFloat(donateInput || '0') * 100);
+  const donateValid = donateCents >= 50;
+
+  // Thank-you toast after returning from a successful donation checkout
+  useEffect(() => {
+    if (searchParams.get('donated') === '1') {
+      toast.success('Thank you for your support! 💚', {
+        description: 'Your tip went straight to the creator.',
+      });
+      searchParams.delete('donated');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const allImages = [
     ...(product?.cover_image_url ? [product.cover_image_url] : []),
@@ -396,6 +414,24 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
               <p className="text-[11px] text-muted-foreground text-center">
                 {isFree ? 'Free forever · no account required to browse' : 'Secure checkout via Stripe · instant download'}
               </p>
+
+              {/* Optional tip — only on free assets, for logged-in visitors */}
+              {isFree && user && (
+                <div className="pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                    onClick={() => setDonateOpen(true)}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    Support the creator
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground text-center mt-1.5">
+                    This asset is free — tipping is totally optional
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Asset details */}
@@ -464,6 +500,68 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
           </aside>
         </div>
       </div>
+
+      {/* Donation dialog */}
+      <Dialog open={donateOpen} onOpenChange={setDonateOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-rose-500" />
+              Support {p.creators?.display_name || p.creators?.username || 'the creator'}
+            </DialogTitle>
+            <DialogDescription>
+              "{p.title}" is free. If it helped you, you can leave an optional tip — it goes straight to the creator.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              {['3', '5', '10'].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => setDonateInput(amt)}
+                  className={`flex-1 py-2 rounded-lg text-[14px] font-semibold border transition-colors ${
+                    donateInput === amt
+                      ? 'bg-rose-500 text-white border-rose-500'
+                      : 'bg-background text-foreground border-input hover:border-rose-300'
+                  }`}
+                >
+                  ${amt}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[14px] font-semibold text-muted-foreground">$</span>
+                <input
+                  type="number"
+                  min="0.50"
+                  step="0.50"
+                  value={donateInput}
+                  onChange={e => setDonateInput(e.target.value)}
+                  className="w-full pl-7 pr-3 h-10 rounded-md border border-input bg-background text-[15px] font-semibold focus:outline-none focus:ring-2 focus:ring-rose-400"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">Minimum $0.50</p>
+            </div>
+
+            <Button
+              className="w-full bg-rose-500 hover:bg-rose-600"
+              disabled={!donateValid || checkoutLoading}
+              onClick={() => checkout(p.id, parseFloat(donateInput), true)}
+            >
+              {checkoutLoading
+                ? 'Redirecting…'
+                : <><Heart className="h-4 w-4 mr-2" />Tip ${donateValid ? parseFloat(donateInput).toFixed(2) : '—'}</>}
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Secure payment via Stripe. The download stays free either way.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

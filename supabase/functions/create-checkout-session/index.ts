@@ -56,8 +56,9 @@ serve(async (req) => {
 
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { productId, customPrice } = body as { productId?: string; customPrice?: number };
+    const { productId, customPrice, donation } = body as { productId?: string; customPrice?: number; donation?: boolean };
     if (!productId) throw new Error("productId is required");
+    const isDonation = donation === true;
 
     // Fetch product
     const { data: product, error: productError } = await supabaseServiceClient
@@ -82,7 +83,17 @@ serve(async (req) => {
     let amountCents: number;
     const pricingModel = (product as any).pricing_model ?? 'paid';
 
-    if (pricingModel === 'name_your_price') {
+    if (isDonation) {
+      // Optional tip on a (typically free) asset. Buyer chooses the amount.
+      if (customPrice === undefined || customPrice === null) {
+        throw new Error("Please enter a donation amount.");
+      }
+      const customCents = Math.round(Number(customPrice) * 100);
+      if (isNaN(customCents) || customCents < 50) {
+        throw new Error("Minimum donation is $0.50.");
+      }
+      amountCents = customCents;
+    } else if (pricingModel === 'name_your_price') {
       if (customPrice === undefined || customPrice === null) {
         throw new Error("Please enter a price.");
       }
@@ -138,8 +149,10 @@ serve(async (req) => {
             currency: "usd",
             unit_amount: amountCents,
             product_data: {
-              name: product.title,
-              description: (product as any).short_description || undefined,
+              name: isDonation ? `Tip for "${product.title}"` : product.title,
+              description: isDonation
+                ? "Optional support for the creator"
+                : ((product as any).short_description || undefined),
               images: (product as any).cover_image_url
                 ? [(product as any).cover_image_url]
                 : undefined,
@@ -150,11 +163,14 @@ serve(async (req) => {
       ],
       customer_email: user.email,
       metadata: {
+        kind: isDonation ? 'donation' : 'purchase',
         product_id: product.id,
         buyer_id: user.id,
         creator_id: product.creator_id,
       },
-      success_url: `${origin}/purchase-success?product_id=${productId}`,
+      success_url: isDonation
+        ? `${origin}/marketplace/${productId}?donated=1`
+        : `${origin}/purchase-success?product_id=${productId}`,
       cancel_url: `${origin}/marketplace/${productId}`,
     };
 

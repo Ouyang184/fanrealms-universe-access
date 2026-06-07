@@ -5,17 +5,20 @@ import { toast } from 'sonner';
 export function useMarketplaceCheckout() {
   const [isLoading, setIsLoading] = useState(false);
 
-  async function checkout(productId: string, customPrice?: number) {
+  async function checkout(productId: string, customPrice?: number, donation?: boolean) {
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('You must be logged in to purchase');
+        throw new Error(donation ? 'You must be logged in to donate' : 'You must be logged in to purchase');
       }
 
       const body: Record<string, unknown> = { productId };
       if (customPrice !== undefined) {
         body.customPrice = customPrice;
+      }
+      if (donation) {
+        body.donation = true;
       }
 
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {

@@ -19,6 +19,13 @@ export async function handleCheckoutWebhook(
       return await handleBundlePurchase(session, supabaseService);
     }
 
+    // Donation (tip) branch — optional support on a free asset. Recorded in
+    // the donations table (NOT purchases) plus a creator_earnings row so it
+    // shows in the creator's balance.
+    if (meta.kind === 'donation') {
+      return await handleDonation(session, supabaseService);
+    }
+
     // One-time marketplace purchase
     const { product_id, buyer_id, creator_id } = meta;
 
@@ -196,6 +203,82 @@ export async function handleCheckoutWebhook(
     console.error('[CheckoutHandler] Error processing checkout webhook:', error);
     return createJsonResponse({ error: 'Failed to process checkout webhook' }, 500);
   }
+}
+
+async function handleDonation(session: any, supabaseService: any) {
+  const { product_id, buyer_id, creator_id } = session.metadata ?? {};
+  if (!buyer_id || !creator_id) {
+    console.log('[DonationHandler] Missing metadata, skipping');
+    return createJsonResponse({ success: true });
+  }
+
+  // Idempotency: skip if this session was already recorded
+  const { data: existing } = await supabaseService
+    .from('donations')
+    .select('id')
+    .eq('stripe_session_id', session.id)
+    .maybeSingle();
+  if (existing) {
+    console.log('[DonationHandler] Already processed', session.id);
+    return createJsonResponse({ success: true });
+  }
+
+  const amount = Number(session.amount_total ?? 0) / 100;
+  if (amount <= 0) {
+    console.log('[DonationHandler] Zero amount, skipping');
+    return createJsonResponse({ success: true });
+  }
+
+  const { data: creatorRow } = await supabaseService
+    .from('creators')
+    .select('platform_fee_rate')
+    .eq('id', creator_id)
+    .maybeSingle();
+  const feeRate = Math.min(Math.max(creatorRow?.platform_fee_rate ?? 5, 1), 5);
+  const platformFee = parseFloat((amount * feeRate / 100).toFixed(2));
+  const netAmount = parseFloat((amount - platformFee).toFixed(2));
+
+  const { data: stripeAcct } = await supabaseService
+    .from('creator_stripe_accounts')
+    .select('stripe_charges_enabled')
+    .eq('creator_id', creator_id)
+    .maybeSingle();
+  const hasConnect = !!stripeAcct?.stripe_charges_enabled;
+
+  // Record the donation (donor record + idempotency key)
+  const { error: donErr } = await supabaseService
+    .from('donations')
+    .insert({
+      donor_id: buyer_id,
+      creator_id,
+      product_id: product_id ?? null,
+      amount,
+      platform_fee: platformFee,
+      net_amount: netAmount,
+      stripe_session_id: session.id,
+      status: 'completed',
+    });
+  if (donErr) {
+    console.error('[DonationHandler] Insert donation failed:', donErr);
+    throw donErr;
+  }
+
+  // Add to the creator's earnings so the tip shows in their balance
+  const { error: earnErr } = await supabaseService
+    .from('creator_earnings')
+    .insert({
+      creator_id,
+      purchase_id: null,
+      amount,
+      platform_fee: platformFee,
+      net_amount: netAmount,
+      earning_type: 'donation',
+      status: hasConnect ? 'transferred' : 'pending',
+    });
+  if (earnErr) console.error('[DonationHandler] earnings insert failed:', earnErr);
+
+  console.log('[DonationHandler] Donation recorded:', amount, 'Connect:', hasConnect);
+  return createJsonResponse({ success: true });
 }
 
 async function handleBundlePurchase(session: any, supabaseService: any) {
