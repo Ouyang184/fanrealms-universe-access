@@ -88,13 +88,11 @@ export function useCreatorFeeRate() {
     enabled: !!user?.id,
     staleTime: 1000 * 60 * 5,
     queryFn: async (): Promise<number> => {
-      const { data, error } = await supabase
-        .from('creators')
-        .select('platform_fee_rate')
-        .eq('user_id', user!.id)
-        .maybeSingle();
+      // platform_fee_rate is revoked from anon/authenticated on the creators
+      // table; use the SECURITY DEFINER RPC that returns only the caller's rate.
+      const { data, error } = await supabase.rpc('get_creator_fee_rate');
       if (error) throw error;
-      return data?.platform_fee_rate ?? 5;
+      return (data as number | null) ?? 5;
     },
   });
 }

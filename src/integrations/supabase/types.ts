@@ -3551,6 +3551,10 @@ export type Database = {
           total_platform_fees: number
         }[]
       }
+      get_my_job_listing_contact: {
+        Args: { _listing_id: string }
+        Returns: string
+      }
       get_payment_method_for_processing: {
         Args: { p_operation: string; p_payment_method_id: string }
         Returns: {
