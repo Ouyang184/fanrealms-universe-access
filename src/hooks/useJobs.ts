@@ -38,26 +38,32 @@ export function useJobListing(jobId: string) {
     queryKey: ['job-listing', jobId],
     enabled: !!jobId,
     queryFn: async () => {
-      // Check session first — anon can't read contact_info, so we conditionally include it
-      const { data: { session } } = await supabase.auth.getSession();
-      const columns = session
-        ? '*'
-        : 'id,title,description,requirements,category,budget_min,budget_max,budget_type,tags,deadline,status,poster_id,created_at,updated_at';
-
+      // contact_info is revoked from anon/authenticated on job_listings. The
+      // poster reads their own contact_info via get_my_job_listing_contact RPC.
       const { data, error } = await supabase
         .from('job_listings')
-        .select(columns)
+        .select('id,title,description,requirements,category,budget_min,budget_max,budget_type,tags,deadline,status,poster_id,created_at,updated_at')
         .eq('id', jobId)
         .maybeSingle();
 
       if (error) throw error;
       if (!data) return null;
 
+      const row: any = data;
+
+      // If the caller is the poster, fetch contact_info via the SECURITY DEFINER RPC.
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser && authUser.id === row.poster_id) {
+        const { data: contact } = await supabase
+          .rpc('get_my_job_listing_contact', { _listing_id: jobId });
+        row.contact_info = (contact as string | null) ?? null;
+      }
+
       // Use SECURITY DEFINER RPC — users table RLS only allows reading own row
       const { data: profiles } = await supabase
-        .rpc('get_public_user_profiles', { _user_ids: [(data as any).poster_id] });
+        .rpc('get_public_user_profiles', { _user_ids: [row.poster_id] });
       const userData = (profiles as any[])?.[0] ?? null;
-      return { ...(data as any), users: userData };
+      return { ...row, users: userData };
     },
   });
 }
