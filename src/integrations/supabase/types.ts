@@ -973,6 +973,60 @@ export type Database = {
           },
         ]
       }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string
+          creator_id: string
+          donor_id: string
+          id: string
+          net_amount: number
+          platform_fee: number
+          product_id: string | null
+          status: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          creator_id: string
+          donor_id: string
+          id?: string
+          net_amount?: number
+          platform_fee?: number
+          product_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          creator_id?: string
+          donor_id?: string
+          id?: string
+          net_amount?: number
+          platform_fee?: number
+          product_id?: string | null
+          status?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donations_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "digital_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_2fa_codes: {
         Row: {
           code: string
