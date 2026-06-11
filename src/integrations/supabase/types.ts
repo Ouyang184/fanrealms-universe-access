@@ -3324,6 +3324,7 @@ export type Database = {
           tags: string[]
         }[]
       }
+      get_creator_fee_rate: { Args: never; Returns: number }
       get_creator_followers: {
         Args: { p_creator_id: string; p_limit?: number; p_offset?: number }
         Returns: {
