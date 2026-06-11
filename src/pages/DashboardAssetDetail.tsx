@@ -85,6 +85,10 @@ export default function DashboardAssetDetail() {
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  // Page customization
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [accentColor, setAccentColor] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [assetFile, setAssetFile] = useState<File | null>(null);
@@ -97,6 +101,12 @@ export default function DashboardAssetDetail() {
       if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
     };
   }, [coverPreview]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview?.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    };
+  }, [bannerPreview]);
 
   useEffect(() => {
     if (product && !isNew) {
@@ -124,6 +134,8 @@ export default function DashboardAssetDetail() {
       setStatus(p.status === 'published' ? 'published' : 'draft');
       setSalePriceStr(p.sale_price != null ? Number(p.sale_price).toFixed(2) : '');
       setCoverPreview(p.cover_image_url ?? null);
+      setBannerPreview(p.banner_image_url ?? null);
+      setAccentColor(p.accent_color ?? '');
       setProjectId(p.project_id ?? null);
     }
   }, [product, isNew]);
@@ -153,6 +165,35 @@ export default function DashboardAssetDetail() {
     if (error) { toast.error('Cover upload failed: ' + error.message); return null; }
     return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl;
   };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error('Banner must be a JPEG, PNG, WebP, or GIF image');
+      return;
+    }
+    if (file.size > MAX_COVER_SIZE_MB * 1024 * 1024) {
+      toast.error(`Banner image must be smaller than ${MAX_COVER_SIZE_MB}MB`);
+      return;
+    }
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  };
+
+  const uploadBanner = async (): Promise<string | null> => {
+    if (!bannerFile || !user) return null;
+    const ext = bannerFile.name.split('.').pop();
+    const path = `${user.id}/banner-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(path, bannerFile, { upsert: true });
+    if (error) { toast.error('Banner upload failed: ' + error.message); return null; }
+    return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+  };
+
+  // Validate a hex color (#rgb or #rrggbb) to avoid injecting arbitrary CSS
+  const isValidHex = (c: string) => /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c.trim());
 
   const uploadAssetFile = async (productId: string): Promise<string | null> => {
     if (!assetFile || !user) return null;
@@ -210,6 +251,8 @@ export default function DashboardAssetDetail() {
       sale_price: (priceMode === 'paid' && salePriceStr && parseFloat(salePriceStr) > 0 && parseFloat(salePriceStr) < parseFloat(priceStr || '0'))
         ? parseFloat(salePriceStr)
         : null,
+      // Page customization (banner_image_url set after upload in doSave)
+      accent_color: accentColor.trim() && isValidHex(accentColor) ? accentColor.trim().toLowerCase() : null,
       // Only one download source at a time: file upload takes priority
       asset_file_path: assetFile ? undefined : (assetFilePath ?? undefined), // set after upload in doSave
       asset_url: assetFile ? undefined : (downloadUrl.trim() || undefined), // cleared when file uploaded
@@ -242,11 +285,19 @@ export default function DashboardAssetDetail() {
         coverImageUrl = uploaded;
       }
 
+      let bannerImageUrl = (product as any)?.banner_image_url ?? bannerPreview ?? null;
+      if (bannerFile) {
+        const uploaded = await uploadBanner();
+        if (!uploaded) return null; // uploadBanner already showed error toast
+        bannerImageUrl = uploaded;
+      }
+
       if (isNew) {
         // Step 1: Create product without file path
         const created = await createProduct.mutateAsync({
           ...payload,
           cover_image_url: coverImageUrl ?? undefined,
+          banner_image_url: bannerImageUrl ?? undefined,
           asset_file_path: undefined, // set after upload
         });
         const newId = (created as any).id;
@@ -284,6 +335,7 @@ export default function DashboardAssetDetail() {
           id: assetId!,
           ...payload,
           cover_image_url: coverImageUrl ?? undefined,
+          banner_image_url: bannerImageUrl ?? null,
           // Pass null explicitly when file was removed so DB column is cleared
           asset_file_path: finalFilePath,
           asset_url: finalFilePath ? undefined : (downloadUrl.trim() || undefined),
@@ -777,6 +829,66 @@ export default function DashboardAssetDetail() {
                     className="hidden"
                     onChange={handleCoverChange}
                   />
+                </div>
+              </div>
+
+              {/* Page customization — banner + accent color */}
+              <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-3">
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Page banner</h3>
+                <div
+                  className="w-full aspect-[3/1] bg-[#f5f5f5] border border-[#eee] rounded-lg overflow-hidden flex items-center justify-center cursor-pointer hover:bg-[#eee] transition-colors relative"
+                  onClick={() => document.getElementById('banner-input-page')?.click()}
+                  style={!bannerPreview && accentColor && isValidHex(accentColor) ? { backgroundColor: accentColor } : undefined}
+                >
+                  {bannerPreview ? (
+                    <img src={bannerPreview} className="w-full h-full object-cover" alt="" />
+                  ) : (
+                    <div className="text-center text-[#aaa] p-4">
+                      <Upload className="w-5 h-5 mx-auto mb-1" />
+                      <span className="text-[11px]">Wide header shown atop your page</span>
+                    </div>
+                  )}
+                  <input
+                    id="banner-input-page"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleBannerChange}
+                  />
+                </div>
+                {bannerPreview && (
+                  <button
+                    type="button"
+                    onClick={() => { setBannerPreview(null); setBannerFile(null); }}
+                    className="text-[11px] text-red-500 hover:underline"
+                  >
+                    Remove banner
+                  </button>
+                )}
+
+                <div className="pt-1">
+                  <label className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa] block mb-1.5">Accent color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={isValidHex(accentColor) ? accentColor : '#4a90d9'}
+                      onChange={e => setAccentColor(e.target.value)}
+                      className="w-9 h-9 rounded border border-[#e5e5e5] cursor-pointer bg-white p-0.5"
+                    />
+                    <Input
+                      value={accentColor}
+                      onChange={e => setAccentColor(e.target.value)}
+                      placeholder="#4a90d9"
+                      className="flex-1 h-9 text-[13px]"
+                    />
+                    {accentColor && (
+                      <button type="button" onClick={() => setAccentColor('')} className="text-[11px] text-[#aaa] hover:text-red-500">Clear</button>
+                    )}
+                  </div>
+                  {accentColor && !isValidHex(accentColor) && (
+                    <p className="text-[11px] text-red-500 mt-1">Use a hex color like #4a90d9</p>
+                  )}
+                  <p className="text-[11px] text-[#aaa] mt-1">Tints your page header and highlights</p>
                 </div>
               </div>
 

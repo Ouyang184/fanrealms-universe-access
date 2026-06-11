@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 // function after verifying purchase. Creators read their full product (with
 // asset_url / asset_file_path) via the get_creator_product() RPC.
 const DIGITAL_PRODUCT_COLUMNS =
-  'id, creator_id, title, description, short_description, cover_image_url, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, sale_price, pricing_model, created_at, updated_at';
+  'id, creator_id, title, description, short_description, cover_image_url, banner_image_url, accent_color, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, sale_price, pricing_model, created_at, updated_at';
 
 // Strip characters that have special meaning inside PostgREST filter strings
 // to prevent search-term breakage or filter injection.
@@ -154,6 +154,8 @@ export function useCreateProduct() {
       category?: string;
       tags?: string[];
       cover_image_url?: string;
+      banner_image_url?: string | null;
+      accent_color?: string | null;
       asset_url?: string;
       trailer_url?: string;
       asset_file_path?: string;
@@ -249,6 +251,8 @@ export function useUpdateProduct() {
       category?: string;
       tags?: string[];
       cover_image_url?: string;
+      banner_image_url?: string | null;
+      accent_color?: string | null;
       asset_url?: string;
       trailer_url?: string;
       asset_file_path?: string | null;

@@ -148,6 +148,14 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
 
   const p = product as any;
 
+  // Creator page customization — validate the accent color so we never inject
+  // arbitrary CSS, and only show a banner if one was set.
+  const accent: string | null =
+    typeof p.accent_color === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(p.accent_color)
+      ? p.accent_color
+      : null;
+  const bannerUrl: string | null = typeof p.banner_image_url === 'string' && p.banner_image_url ? p.banner_image_url : null;
+
   const productImage = p.cover_image_url || ((p as any).screenshots?.[0]) || undefined;
   const productPrice = Number(p.price ?? 0);
   const productJsonLd: Record<string, unknown> = {
@@ -194,9 +202,26 @@ const { checkout, isLoading: checkoutLoading } = useMarketplaceCheckout();
           <Link to="/marketplace"><ArrowLeft className="h-4 w-4 mr-1" />Marketplace</Link>
         </Button>
 
+        {/* Creator banner (custom page header) */}
+        {(bannerUrl || accent) && (
+          <div
+            className="w-full aspect-[4/1] rounded-xl overflow-hidden border border-border flex items-center justify-center"
+            style={{ backgroundColor: accent ?? undefined }}
+          >
+            {bannerUrl && (
+              <img src={bannerUrl} alt={`${p.title} banner`} className="w-full h-full object-cover" />
+            )}
+          </div>
+        )}
+
         {/* Title row */}
         <div>
-          <h1 className="text-[26px] font-bold tracking-tight text-foreground">{p.title}</h1>
+          <h1
+            className="text-[26px] font-bold tracking-tight text-foreground"
+            style={accent ? { color: accent } : undefined}
+          >
+            {p.title}
+          </h1>
           {p.short_description && (
             <p className="text-[15px] text-muted-foreground mt-1">{p.short_description}</p>
           )}
