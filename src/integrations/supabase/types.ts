@@ -882,8 +882,10 @@ export type Database = {
       }
       digital_products: {
         Row: {
+          accent_color: string | null
           asset_file_path: string | null
           asset_url: string | null
+          banner_image_url: string | null
           category: string | null
           cover_image_url: string | null
           created_at: string
@@ -907,8 +909,10 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          accent_color?: string | null
           asset_file_path?: string | null
           asset_url?: string | null
+          banner_image_url?: string | null
           category?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -932,8 +936,10 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          accent_color?: string | null
           asset_file_path?: string | null
           asset_url?: string | null
+          banner_image_url?: string | null
           category?: string | null
           cover_image_url?: string | null
           created_at?: string
@@ -3344,8 +3350,10 @@ export type Database = {
       get_creator_product: {
         Args: { p_product_id: string }
         Returns: {
+          accent_color: string
           asset_file_path: string
           asset_url: string
+          banner_image_url: string
           category: string
           cover_image_url: string
           created_at: string
