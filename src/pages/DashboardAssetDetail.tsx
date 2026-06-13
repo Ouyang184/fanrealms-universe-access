@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { ArrowLeft, Upload, Plus, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
+import { ArrowLeft, Upload, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { ReleaseVersionPanel } from '@/components/marketplace/ReleaseVersionPanel';
 import { useCreatorProjects } from '@/hooks/useProjects';
 
@@ -81,7 +81,8 @@ export default function DashboardAssetDetail() {
   const [trailerUrl, setTrailerUrl] = useState('');
   const [version, setVersion] = useState('');
   const [license, setLicense] = useState('Standard');
-  const [screenshots, setScreenshots] = useState<string[]>(['']);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [uploadingShot, setUploadingShot] = useState(false);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -130,7 +131,7 @@ export default function DashboardAssetDetail() {
       setTrailerUrl(p.trailer_url ?? '');
       setVersion(p.version ?? '');
       setLicense(p.license ?? 'Standard');
-      setScreenshots(p.screenshots?.length ? p.screenshots : ['']);
+      setScreenshots(p.screenshots ?? []);
       setStatus(p.status === 'published' ? 'published' : 'draft');
       setSalePriceStr(p.sale_price != null ? Number(p.sale_price).toFixed(2) : '');
       setCoverPreview(p.cover_image_url ?? null);
@@ -223,10 +224,39 @@ export default function DashboardAssetDetail() {
     return path; // storage path, not a public URL
   };
 
-  const addScreenshot = () => setScreenshots(s => [...s, '']);
+  const MAX_SCREENSHOTS = 8;
   const removeScreenshot = (i: number) => setScreenshots(s => s.filter((_, idx) => idx !== i));
-  const updateScreenshot = (i: number, val: string) =>
-    setScreenshots(s => s.map((v, idx) => (idx === i ? val : v)));
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length || !user) return;
+    const room = MAX_SCREENSHOTS - screenshots.length;
+    if (room <= 0) { toast.error(`You can add up to ${MAX_SCREENSHOTS} screenshots`); return; }
+    const toUpload = files.slice(0, room);
+    setUploadingShot(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+          toast.error(`${file.name}: must be a JPEG, PNG, WebP, or GIF image`);
+          continue;
+        }
+        if (file.size > MAX_COVER_SIZE_MB * 1024 * 1024) {
+          toast.error(`${file.name}: must be smaller than ${MAX_COVER_SIZE_MB}MB`);
+          continue;
+        }
+        const ext = file.name.split('.').pop();
+        const path = `${user.id}/shot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true });
+        if (error) { toast.error('Screenshot upload failed: ' + error.message); continue; }
+        uploaded.push(supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl);
+      }
+      if (uploaded.length) setScreenshots(s => [...s, ...uploaded]);
+    } finally {
+      setUploadingShot(false);
+      e.target.value = ''; // allow re-selecting the same file
+    }
+  };
 
   const buildPayload = (overrideStatus?: 'draft' | 'published') => {
     const finalStatus = overrideStatus ?? status;
@@ -819,7 +849,7 @@ export default function DashboardAssetDetail() {
                   ) : (
                     <div className="text-center text-[#aaa] p-4">
                       <Upload className="w-5 h-5 mx-auto mb-1" />
-                      <span className="text-[11px]">Click to upload (16:9)</span>
+                      <span className="text-[11px]">Click to upload (any size)</span>
                     </div>
                   )}
                   <input
@@ -830,6 +860,7 @@ export default function DashboardAssetDetail() {
                     onChange={handleCoverChange}
                   />
                 </div>
+                <p className="text-[11px] text-[#aaa]">Shown on listing cards. Any size works — reuse your itch.io/Unity art.</p>
               </div>
 
               {/* Page customization — banner + accent color */}
@@ -924,38 +955,44 @@ export default function DashboardAssetDetail() {
 
               {/* Screenshots */}
               <div className="bg-white border border-[#eee] rounded-xl p-4 space-y-2">
-                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">Screenshots</h3>
-                <div className="space-y-2">
-                  {screenshots.map((url, i) => (
-                    <div key={i} className="flex gap-2">
-                      <Input
-                        value={url}
-                        onChange={e => updateScreenshot(i, e.target.value)}
-                        placeholder="https://i.imgur.com/..."
-                        type="url"
-                        className="text-[12px]"
-                      />
-                      {screenshots.length > 1 && (
+                <h3 className="text-[11px] font-bold uppercase tracking-[0.5px] text-[#aaa]">
+                  Screenshots <span className="text-[#ccc] font-normal">{screenshots.length}/{MAX_SCREENSHOTS}</span>
+                </h3>
+                {screenshots.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {screenshots.map((url, i) => (
+                      <div key={i} className="relative group aspect-video bg-[#f5f5f5] border border-[#eee] rounded-lg overflow-hidden">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeScreenshot(i)}
-                          className="p-1.5 text-[#aaa] hover:text-red-500 transition-colors flex-shrink-0"
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/55 text-white hover:bg-red-500 transition-colors"
+                          aria-label="Remove screenshot"
                         >
-                          <X className="w-3.5 h-3.5" />
+                          <X className="w-3 h-3" />
                         </button>
-                      )}
-                    </div>
-                  ))}
-                  {screenshots.length < 5 && (
-                    <button
-                      type="button"
-                      onClick={addScreenshot}
-                      className="flex items-center gap-1 text-[12px] text-primary hover:underline"
-                    >
-                      <Plus className="w-3 h-3" /> Add screenshot
-                    </button>
-                  )}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {screenshots.length < MAX_SCREENSHOTS && (
+                  <label className="flex items-center justify-center gap-1.5 w-full py-2.5 border border-dashed border-[#ddd] rounded-lg text-[12px] text-[#888] hover:border-primary hover:text-primary cursor-pointer transition-colors">
+                    {uploadingShot ? (
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
+                    ) : (
+                      <><Upload className="w-3.5 h-3.5" /> Upload screenshots</>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      disabled={uploadingShot}
+                      onChange={handleScreenshotUpload}
+                    />
+                  </label>
+                )}
+                <p className="text-[11px] text-[#aaa]">Any size works. JPEG, PNG, WebP, or GIF.</p>
               </div>
 
               {/* Sales stats (existing assets only) */}
