@@ -38,19 +38,11 @@ function DenseCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {product.cover_image_url ? (
-          <>
-            <img
-              src={product.cover_image_url}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50"
-            />
-            <img
-              src={product.cover_image_url}
-              alt={product.title}
-              className="relative w-full h-full object-contain"
-            />
-          </>
+          <img
+            src={product.cover_image_url}
+            alt={product.title}
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-wide text-muted-foreground">
             No preview

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Upload, Plus, X } from 'lucide-react';
+import { ImageCropperDialog } from './ImageCropperDialog';
 
 const CATEGORIES = [
   'Plugins & Addons',
@@ -113,8 +114,12 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
   const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const MAX_COVER_SIZE_MB = 5;
 
+  const [pendingCropFile, setPendingCropFile] = useState<File | null>(null);
+
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset the input so picking the same file again re-opens the cropper
+    e.target.value = '';
     if (!file) return;
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error('Cover must be a JPEG, PNG, WebP, or GIF image');
@@ -124,8 +129,14 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       toast.error(`Cover image must be smaller than ${MAX_COVER_SIZE_MB}MB`);
       return;
     }
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
+    setPendingCropFile(file);
+  };
+
+  const handleCropConfirm = (cropped: File, url: string) => {
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(cropped);
+    setCoverPreview(url);
+    setPendingCropFile(null);
   };
 
   const uploadCover = async (): Promise<string | null> => {
@@ -360,6 +371,13 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
             </Button>
           </DialogFooter>
         </form>
+        <ImageCropperDialog
+          open={!!pendingCropFile}
+          file={pendingCropFile}
+          aspect={16 / 9}
+          onCancel={() => setPendingCropFile(null)}
+          onConfirm={handleCropConfirm}
+        />
       </DialogContent>
     </Dialog>
   );
