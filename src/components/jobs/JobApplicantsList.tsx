@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
 
 interface JobApplicantsListProps {
   listingId: string;
@@ -74,7 +75,7 @@ export function JobApplicantsList({ listingId }: JobApplicantsListProps) {
 
               {app.portfolio_url && (
                 <a
-                  href={app.portfolio_url}
+                  href={safeHref(app.portfolio_url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"

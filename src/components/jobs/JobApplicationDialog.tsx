@@ -19,11 +19,16 @@ export function JobApplicationDialog({ listingId, jobTitle }: JobApplicationDial
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedUrl = portfolioUrl.trim();
+    if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
+      alert('Portfolio URL must start with http:// or https://');
+      return;
+    }
     apply.mutate(
       {
         listing_id: listingId,
         cover_letter: coverLetter,
-        portfolio_url: portfolioUrl || undefined,
+        portfolio_url: trimmedUrl || undefined,
       },
       { onSuccess: () => setOpen(false) }
     );
