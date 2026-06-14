@@ -9,7 +9,7 @@ export interface EarningRow {
   platform_fee: number;
   net_amount: number;
   earning_type: string;
-  status: 'pending' | 'transferred' | 'failed';
+  status: 'pending' | 'transferred' | 'paid' | 'failed';
   created_at: string;
 }
 
@@ -49,7 +49,7 @@ export function useCreatorEarnings() {
         .filter((e) => e.status === 'pending')
         .reduce((sum, e) => sum + Number(e.net_amount), 0);
       const totalEarned = rows
-        .filter((e) => e.status === 'transferred')
+        .filter((e) => e.status === 'transferred' || e.status === 'paid')
         .reduce((sum, e) => sum + Number(e.net_amount), 0);
 
       return {

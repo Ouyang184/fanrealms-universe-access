@@ -3,6 +3,7 @@ import { DollarSign, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCreatorEarnings, useTransferPendingEarnings } from '@/hooks/useCreatorEarnings';
+import { ManualPayoutSection } from '@/components/dashboard/ManualPayoutSection';
 import { useStripeConnect } from '@/hooks/useStripeConnect';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -123,7 +124,12 @@ export function EarningsCard() {
             Connect
           </Button>
         </div>
-      ) : hasPending ? (
+      ) : null}
+
+      {/* Manual payout fallback for creators who can't use Stripe */}
+      {!isConnected && <ManualPayoutSection />}
+
+      {isConnected && hasPending ? (
         <Button
           size="sm"
           onClick={handleTransfer}
@@ -150,13 +156,13 @@ export function EarningsCard() {
               </span>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                  e.status === 'transferred'
+                  e.status === 'transferred' || e.status === 'paid'
                     ? 'bg-green-100 text-green-700'
                     : e.status === 'failed'
                     ? 'bg-red-100 text-red-700'
                     : 'bg-amber-100 text-amber-700'
                 }`}>
-                  {e.status === 'transferred' ? 'paid' : e.status === 'failed' ? 'failed' : 'pending'}
+                  {e.status === 'transferred' || e.status === 'paid' ? 'paid' : e.status === 'failed' ? 'failed' : 'pending'}
                 </span>
                 <span className="text-[13px] font-semibold text-[#111]">
                   {fmt(Number(e.net_amount))}

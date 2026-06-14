@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { pickLongestPrefixMatch, useNormalizedPath } from '@/hooks/usePathMatching';
+import { useIsAdmin } from '@/hooks/useJam';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -70,6 +71,8 @@ function SidebarLink({
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
+  const ADMIN: Item[] = isAdmin ? [{ to: '/dashboard/payouts', label: 'Payouts (owner)' }] : [];
   const { data: usernameData } = useQuery({
     queryKey: ['dash-sidebar-username', user?.id],
     queryFn: async () => {
@@ -95,13 +98,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // memo so "View profile" becomes the active winner instead of staying null
   // / stale. Including profilePath in the deps is the only way to guarantee
   // correctness — a ref would silently miss this transition.
+  const adminPaths = ADMIN.map((i) => i.to);
   const activePath = useMemo<string | null>(() => {
     const allPaths =
       profilePath === '/dashboard'
-        ? [...STATIC_PATHS, SETTINGS_PATH]
-        : [...STATIC_PATHS, profilePath, SETTINGS_PATH];
+        ? [...STATIC_PATHS, ...adminPaths, SETTINGS_PATH]
+        : [...STATIC_PATHS, ...adminPaths, profilePath, SETTINGS_PATH];
     return pickLongestPrefixMatch(path, allPaths);
-  }, [path, profilePath]);
+  }, [path, profilePath, adminPaths.join(',')]);
 
   return (
     <MainLayout fullWidth>
@@ -116,6 +120,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {CREATE.map((it) => (
             <SidebarLink key={it.to} {...it} activePath={activePath} />
           ))}
+
+          {ADMIN.length > 0 && (
+            <>
+              <Section label="Owner" />
+              {ADMIN.map((it) => (
+                <SidebarLink key={it.to} {...it} activePath={activePath} />
+              ))}
+            </>
+          )}
 
           <Section label="Account" />
           {ACCOUNT.map((it) => (
@@ -132,7 +145,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <main className="flex-1 min-w-0 px-4 sm:px-6 py-6 sm:py-8">
           {/* Mobile-only horizontal scroll nav — sidebar is hidden below md */}
           <nav className="md:hidden flex overflow-x-auto gap-2 pb-3 mb-5 border-b border-[#eee] -mx-4 px-4 scrollbar-hide">
-            {[...EXPLORE, ...CREATE, ...ACCOUNT].map((it) => (
+            {[...EXPLORE, ...CREATE, ...ADMIN, ...ACCOUNT].map((it) => (
               <NavLink
                 key={it.to + it.label}
                 to={it.to}

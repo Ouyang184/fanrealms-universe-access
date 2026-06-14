@@ -52,6 +52,7 @@ export default function Payments() {
               "Stripe's processing fee (~2.9% + 30¢) is separate and deducted automatically",
               'Payouts go through Stripe Connect directly to your bank account',
               'Connect Stripe in your dashboard settings to receive earnings',
+              "No Stripe in your country? Add a PayPal or other payout method in your dashboard and we send your earnings manually",
               'You are responsible for your own taxes and VAT',
             ].map((item, i, arr) => (
               <div
