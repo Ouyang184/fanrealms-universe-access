@@ -236,7 +236,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
               <input id="cover-input" type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
             </div>
             <p className="text-[11px] text-[#888] mt-1.5">
-              Recommended: 1600×900 (16:9), JPG/PNG/WebP, under {`${5}`}MB. Smaller images get a blurred backdrop on the featured spotlight.
+              Recommended: 1600×900 (16:9), JPG/PNG/WebP, under {MAX_COVER_SIZE_MB}MB. Smaller images get a blurred backdrop on the featured spotlight.
             </p>
           </div>
 
