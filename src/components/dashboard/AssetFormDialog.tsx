@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Upload, Plus, X } from 'lucide-react';
 import { ImageCropperDialog } from './ImageCropperDialog';
+import { ENGINES, ENGINE_VERSIONS, type Engine } from '@/lib/engines';
 
 const CATEGORIES = [
   'Plugins & Addons',
