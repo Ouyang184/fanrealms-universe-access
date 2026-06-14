@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Upload, X, Loader2, ExternalLink, Trash2, ChevronDown, ChevronRight, Package } from 'lucide-react';
 import { ReleaseVersionPanel } from '@/components/marketplace/ReleaseVersionPanel';
 import { useCreatorProjects } from '@/hooks/useProjects';
+import { ImageCropperDialog } from '@/components/dashboard/ImageCropperDialog';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
@@ -141,8 +142,11 @@ export default function DashboardAssetDetail() {
     }
   }, [product, isNew]);
 
+  const [pendingCoverCrop, setPendingCoverCrop] = useState<File | null>(null);
+
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       toast.error('Cover must be a JPEG, PNG, WebP, or GIF image');
@@ -152,8 +156,14 @@ export default function DashboardAssetDetail() {
       toast.error(`Cover image must be smaller than ${MAX_COVER_SIZE_MB}MB`);
       return;
     }
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
+    setPendingCoverCrop(file);
+  };
+
+  const handleCoverCropConfirm = (cropped: File, url: string) => {
+    if (coverPreview?.startsWith('blob:')) URL.revokeObjectURL(coverPreview);
+    setCoverFile(cropped);
+    setCoverPreview(url);
+    setPendingCoverCrop(null);
   };
 
   const uploadCover = async (): Promise<string | null> => {
