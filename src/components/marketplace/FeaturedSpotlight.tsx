@@ -25,10 +25,10 @@ export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
 
   return (
     <section className="border border-border bg-card">
-      <div className="grid grid-cols-1 md:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr]">
         <Link
           to={`/marketplace/${product.id}`}
-          className="aspect-[16/9] md:aspect-auto bg-muted overflow-hidden block"
+          className="aspect-[16/9] bg-muted overflow-hidden block max-h-[320px] w-full"
         >
           {product.cover_image_url ? (
             <img
@@ -42,15 +42,16 @@ export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
             </div>
           )}
         </Link>
-        <div className="p-5 sm:p-6 flex flex-col">
+        <div className="p-4 sm:p-5 flex flex-col">
           <div className="text-[11px] font-bold uppercase tracking-wider text-primary mb-2">
             Featured asset
           </div>
           <Link to={`/marketplace/${product.id}`}>
-            <h2 className="text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight hover:underline">
+            <h2 className="text-[18px] sm:text-[20px] font-bold leading-tight tracking-tight hover:underline">
               {product.title}
             </h2>
           </Link>
+
           <div className="text-[12px] text-muted-foreground mt-1">by {author}</div>
           {product.description && (
             <p className="text-[13px] text-foreground/80 mt-3 leading-relaxed line-clamp-4">
