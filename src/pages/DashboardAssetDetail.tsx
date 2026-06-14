@@ -514,14 +514,32 @@ export default function DashboardAssetDetail() {
                 <div>
                   <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Engine</label>
                   <select
+                    value={engine}
+                    onChange={e => {
+                      const next = e.target.value as Engine;
+                      setEngine(next);
+                      setGodotVersion('');
+                    }}
+                    className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    {ENGINES.map(eng => <option key={eng} value={eng}>{eng}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {ENGINE_VERSIONS[engine].length > 0 && (
+                <div>
+                  <label className="text-[13px] font-semibold text-[#333] block mb-1.5">{engine} version</label>
+                  <select
                     value={godotVersion}
                     onChange={e => setGodotVersion(e.target.value)}
                     className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary"
                   >
-                    {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                    <option value="">Any / Not specified</option>
+                    {ENGINE_VERSIONS[engine].map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
-              </div>
+              )}
 
               {/* Pricing radio group */}
               <div>
