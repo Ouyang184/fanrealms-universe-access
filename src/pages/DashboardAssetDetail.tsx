@@ -1075,6 +1075,13 @@ export default function DashboardAssetDetail() {
           </div>
         )}
       </div>
+      <ImageCropperDialog
+        open={!!pendingCoverCrop}
+        file={pendingCoverCrop}
+        aspect={16 / 9}
+        onCancel={() => setPendingCoverCrop(null)}
+        onConfirm={handleCoverCropConfirm}
+      />
     </DashboardLayout>
   );
 }
