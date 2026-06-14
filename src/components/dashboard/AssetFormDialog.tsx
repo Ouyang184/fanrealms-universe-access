@@ -25,7 +25,6 @@ const CATEGORIES = [
   'Music & SFX',
   'Other',
 ];
-const LICENSES_LIST = ['Standard'];
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 
 interface Asset {
