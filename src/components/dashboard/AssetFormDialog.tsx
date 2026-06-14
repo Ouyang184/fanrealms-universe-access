@@ -193,7 +193,8 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
         screenshots: cleanScreenshots.length ? cleanScreenshots : undefined,
         version: version.trim() || undefined,
         license,
-        godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
+        engine,
+        godot_version: godotVersion || undefined,
         status,
         project_id: projectId || null,
       };
@@ -308,7 +309,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
             </div>
           </div>
 
-          {/* Category + Godot Version */}
+          {/* Category + Engine + Engine Version */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Category</label>
@@ -318,13 +319,30 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
               </select>
             </div>
             <div>
-              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
-              <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
+              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Engine</label>
+              <select
+                value={engine}
+                onChange={e => {
+                  const next = e.target.value as Engine;
+                  setEngine(next);
+                  setGodotVersion(ENGINE_VERSIONS[next][0] ?? '');
+                }}
                 className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
-                {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
           </div>
+
+          {ENGINE_VERSIONS[engine].length > 0 && (
+            <div>
+              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">{engine} version</label>
+              <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="">Any / Not specified</option>
+                {ENGINE_VERSIONS[engine].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Price */}
           <div>
