@@ -25,7 +25,7 @@ const CATEGORIES = [
   'Music & SFX',
   'Other',
 ];
-const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x', 'Any / Not applicable'];
+const LICENSES_LIST = ['Standard'];
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 
 interface Asset {
