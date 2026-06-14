@@ -1,34 +1,19 @@
-# Fix "Cover upload failed: new row violates RLS"
+## Goal
+Make the "Featured Asset" spotlight on the Marketplace visually smaller. The cover image currently dominates the viewport because on desktop the image cell stretches to whatever height the grid row ends up at, with no upper bound.
 
-## Root cause
+Do **not** change:
+- Cover upload validation (`AssetFormDialog.handleCoverChange` — file type, 5MB cap, 16:9 guidance)
+- Storage bucket / RLS / upload path
+- The product data shape
 
-The most recent security migration (`20260613041718_…sql`) dropped the `product-images public read` policy from `storage.objects` and never replaced it. The bucket is still flagged `public: true`, so reads through the CDN URL still work — but the upload flow in `AssetFormDialog.uploadCover` calls:
+## Change (single file)
+Edit `src/components/marketplace/FeaturedSpotlight.tsx` only.
 
-```ts
-supabase.storage.from('product-images').upload(path, coverFile, { upsert: true })
-```
+1. Reduce the grid ratio on desktop from `1.4fr_1fr` to roughly `1fr_1fr` so the image column isn't oversized.
+2. Give the image cell a bounded aspect on desktop instead of `md:aspect-auto`, e.g. `md:aspect-[16/9]`, and add a `max-h-[360px]` (or similar) cap so it can never grow into a hero-sized banner.
+3. Slightly tighten the right-column padding / title size so the whole section feels more like an itch.io featured strip and less like a hero.
 
-With `upsert: true`, Supabase Storage needs a `SELECT` policy on `storage.objects` for that bucket so it can look up whether the object already exists before inserting/updating. With no SELECT policy at all, that pre-check fails and storage surfaces the failure as `new row violates row-level security policy`.
+No behavioral changes — this is purely presentational CSS on the spotlight container. Upload flow, image dimensions, and existing cover URLs continue to work exactly as today (object-cover still handles any aspect ratio).
 
-The INSERT/UPDATE/DELETE policies are correctly scoped (`auth.uid() = (storage.foldername(name))[1]`) — only the SELECT policy is missing.
-
-## Fix
-
-One new migration that recreates a SELECT policy for the `product-images` bucket, matching the same shape as the other policies on that bucket:
-
-```sql
-DROP POLICY IF EXISTS "product-images public read" ON storage.objects;
-
--- Public bucket: anyone may read objects (matches the bucket's public=true setting
--- and is required for storage upsert to perform its existence pre-check).
-CREATE POLICY "product-images public read" ON storage.objects
-  FOR SELECT TO public
-  USING (bucket_id = 'product-images');
-```
-
-No frontend changes needed. After the migration, cover/banner/screenshot uploads will work again.
-
-## Verification
-
-1. Reload the dashboard, open New Asset, pick a cover image, save → toast should show success, not the RLS error.
-2. The uploaded URL should resolve in the marketplace card immediately.
+## Optional follow-up (not in this change)
+If you later want the spotlight even denser, we can switch to a horizontal "strip" layout (small square thumb on the left, text on the right) — say the word and I'll do that as a second pass.
