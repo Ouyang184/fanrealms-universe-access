@@ -4,6 +4,7 @@ import { useCommissionRequests } from '@/hooks/useCommissionRequests';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
 
 const STATUS_STYLES: Record<string, string> = {
   pending:     'bg-yellow-100 text-yellow-800',
