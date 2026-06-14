@@ -34,7 +34,8 @@ export default function Marketplace() {
   const [category, setCategory] = useState<string>('all');
   const [maxPriceCents, setMaxPriceCents] = useState<number>(PRICE_MAX_CENTS);
   const [sort, setSort] = useState<string>('newest');
-  const [godotVersion, setGodotVersion] = useState<string>('all');
+  const [engine, setEngine] = useState<string>('all');
+  const [engineVersion, setEngineVersion] = useState<string>('all');
   // Initialise directly from URL so the first render already applies the filter
   // (useEffect fires after paint, causing an unfiltered flicker otherwise)
   const [activeTag, setActiveTag] = useState<string | null>(() => searchParams.get('tag') || null);
@@ -54,8 +55,13 @@ export default function Marketplace() {
     if (maxPriceCents < PRICE_MAX_CENTS) {
       list = list.filter((p: any) => (p.price ?? 0) <= maxPriceCents);
     }
-    if (godotVersion !== 'all') {
-      list = list.filter((p: any) => p.godot_version === godotVersion);
+    if (engine !== 'all') {
+      // Treat null engine rows as Godot (pre-migration default) so legacy
+      // assets still show up under the Godot filter.
+      list = list.filter((p: any) => (p.engine ?? 'Godot') === engine);
+    }
+    if (engineVersion !== 'all') {
+      list = list.filter((p: any) => p.godot_version === engineVersion);
     }
     if (activeTag) {
       list = list.filter((p: any) => Array.isArray(p.tags) && p.tags.includes(activeTag));
@@ -63,7 +69,7 @@ export default function Marketplace() {
     if (sort === 'price_asc') list.sort((a: any, b: any) => (a.price ?? 0) - (b.price ?? 0));
     if (sort === 'price_desc') list.sort((a: any, b: any) => (b.price ?? 0) - (a.price ?? 0));
     return list;
-  }, [allProducts, maxPriceCents, godotVersion, activeTag, sort]);
+  }, [allProducts, maxPriceCents, engine, engineVersion, activeTag, sort]);
 
   const featured = products[0];
   const newest = products.slice(1, 13);
@@ -154,11 +160,13 @@ export default function Marketplace() {
             maxPriceCents={maxPriceCents}
             sort={sort}
             popularTags={popularTags}
-            godotVersion={godotVersion}
+            engine={engine}
+            engineVersion={engineVersion}
             onCategory={setCategory}
             onMaxPriceCents={setMaxPriceCents}
             onSort={setSort}
-            onGodotVersion={setGodotVersion}
+            onEngine={setEngine}
+            onEngineVersion={setEngineVersion}
           />
           </div>
 
