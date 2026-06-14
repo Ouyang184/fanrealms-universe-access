@@ -113,10 +113,27 @@ const AuthGate = ({ children }: { children: React.ReactNode }) => {
       signupSignOutInFlightRef.current = false;
       return;
     }
+    // Only sign out when THIS tab is the one the user is actively on. A
+    // logged-in session is mirrored across tabs by Supabase, so a stale
+    // /signup tab left open from a prior "check your email" step would
+    // otherwise receive the SIGNED_IN event the instant the user logs in
+    // in ANOTHER tab — and then this effect would fire a global signOut(),
+    // killing the session they just created (login succeeds, then is
+    // immediately revoked, bouncing them back to /login). Guarding on
+    // visible+focused means a backgrounded /signup tab no longer self-
+    // destructs the session; AuthGate's decideTarget simply redirects it
+    // to /marketplace instead. The deliberate "I'm logged in and clicked
+    // Sign up to make a new account" flow still works because that tab is
+    // the focused one.
+    const activelyOnSignupTab =
+      typeof document === "undefined" ||
+      (document.visibilityState === "visible" && document.hasFocus());
+
     if (
       authReady &&
       user &&
       !signingOut &&
+      activelyOnSignupTab &&
       !signedOutForSignupRef.current &&
       !signupSignOutInFlightRef.current
     ) {
