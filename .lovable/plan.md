@@ -1,16 +1,17 @@
 ## Plan
 
-1. Update the marketplace display components only:
-   - `FeaturedSpotlight.tsx`
-   - `ProductGridDense.tsx`
+Add a blurred backdrop fill behind product cover images so the rectangle is always filled, without cropping the actual image.
 
-2. Change product cover images from cropped display to full-image display:
-   - Replace `object-cover` with `object-contain` so the entire uploaded image is visible.
-   - Keep the existing fixed aspect-ratio containers so the marketplace layout does not jump or break.
-   - Use the existing muted background behind images, so wider/taller images may show empty space instead of being cut off.
+### Files to update
+- `src/components/marketplace/FeaturedSpotlight.tsx`
+- `src/components/marketplace/ProductGridDense.tsx`
 
-3. Leave creator upload logic untouched:
-   - No changes to storage buckets, upload paths, database fields, or Supabase policies.
-   - Uploaded cover images will continue saving exactly as they do now; only the way they are rendered in marketplace cards/featured area changes.
+### Change
+In each image container:
+- Add a second `<img>` of the same `cover_image_url` positioned absolutely, filling the box with `object-cover`, `blur-xl`, `scale-110`, and reduced opacity (~50%). Mark it `aria-hidden`.
+- Keep the existing foreground `<img>` on top with `object-contain` so the full asset is visible.
+- Both layered inside the existing `aspect-[16/9]` / `aspect-[4/3]` container with `relative overflow-hidden`.
 
-4. Verify the marketplace preview visually after the edit to confirm the full image is shown without cropping.
+### Out of scope
+- No changes to uploads, storage, DB, or any other component.
+- No new dependencies.
