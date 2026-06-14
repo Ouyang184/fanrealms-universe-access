@@ -34,7 +34,7 @@ export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
             <img
               src={product.cover_image_url}
               alt={product.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-xs uppercase tracking-wide text-muted-foreground">

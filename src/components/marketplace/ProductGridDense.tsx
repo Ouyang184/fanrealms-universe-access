@@ -41,7 +41,7 @@ function DenseCard({ product }: { product: Product }) {
           <img
             src={product.cover_image_url}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[10px] uppercase tracking-wide text-muted-foreground">
