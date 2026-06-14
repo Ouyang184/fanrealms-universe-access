@@ -371,6 +371,13 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
             </Button>
           </DialogFooter>
         </form>
+        <ImageCropperDialog
+          open={!!pendingCropFile}
+          file={pendingCropFile}
+          aspect={16 / 9}
+          onCancel={() => setPendingCropFile(null)}
+          onConfirm={handleCropConfirm}
+        />
       </DialogContent>
     </Dialog>
   );
