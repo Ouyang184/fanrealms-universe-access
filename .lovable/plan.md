@@ -1,19 +1,33 @@
 ## Goal
-Make the "Featured Asset" spotlight on the Marketplace visually smaller. The cover image currently dominates the viewport because on desktop the image cell stretches to whatever height the grid row ends up at, with no upper bound.
+Close the 6 security findings without breaking creator workflows. The frontend already uses safe column lists and SECURITY DEFINER RPCs for sensitive data — the DB grants just haven't been tightened to match. This plan only tightens grants and one storage policy.
 
-Do **not** change:
-- Cover upload validation (`AssetFormDialog.handleCoverChange` — file type, 5MB cap, 16:9 guidance)
-- Storage bucket / RLS / upload path
-- The product data shape
+## What I verified
+- `useCreatorEarnings` already updates `platform_fee_rate` via UPDATE (not SELECT) and reads it via `get_creator_fee_rate` RPC.
+- `useMarketplace` already selects an explicit safe column list and uses `get_creator_product` RPC to fetch `asset_url` / `asset_file_path` for the owner.
+- `useJobs` already excludes `contact_info` from public SELECTs and uses `get_my_job_listing_contact` RPC for the poster.
+- `useProductVersions` already selects `id, product_id, version_number, release_notes, created_at` only (no `file_path`); the publish mutation returns `file_path` from the locally constructed value.
+- Membership tier Stripe IDs are only needed in edge functions (which use `service_role` and are unaffected by these revokes).
 
-## Change (single file)
-Edit `src/components/marketplace/FeaturedSpotlight.tsx` only.
+## Migration
 
-1. Reduce the grid ratio on desktop from `1.4fr_1fr` to roughly `1fr_1fr` so the image column isn't oversized.
-2. Give the image cell a bounded aspect on desktop instead of `md:aspect-auto`, e.g. `md:aspect-[16/9]`, and add a `max-h-[360px]` (or similar) cap so it can never grow into a hero-sized banner.
-3. Slightly tighten the right-column padding / title size so the whole section feels more like an itch.io featured strip and less like a hero.
+One migration that does all of the following:
 
-No behavioral changes — this is purely presentational CSS on the spotlight container. Upload flow, image dimensions, and existing cover URLs continue to work exactly as today (object-cover still handles any aspect ratio).
+1. **creators**: `REVOKE SELECT (platform_fee_rate) ON public.creators FROM anon, authenticated;`
+2. **digital_products**: `REVOKE SELECT (asset_file_path, asset_url, stripe_price_id) ON public.digital_products FROM anon, authenticated;`
+3. **job_listings**: `REVOKE SELECT (contact_info) ON public.job_listings FROM anon, authenticated;`
+4. **membership_tiers**: `REVOKE SELECT (stripe_price_id, stripe_product_id) ON public.membership_tiers FROM anon, authenticated;`
+5. **product_versions**: `REVOKE SELECT (file_path) ON public.product_versions FROM anon, authenticated;` (creators still write it; the `usePublishProductVersion` mutation returns the locally generated path, not a SELECT.)
+6. **storage.objects "product-images public read"**: replace the broad bucket-wide SELECT policy with an owner-scoped one — `bucket_id='product-images' AND auth.uid()::text = (storage.foldername(name))[1]`. Public reads still work because the bucket is `public: true` and uses the CDN public URL, which bypasses RLS. The owner-scoped SELECT preserves the `upsert: true` pre-check for cover/banner/screenshot uploads. This closes the "Public Bucket Allows Listing" warning.
 
-## Optional follow-up (not in this change)
-If you later want the spotlight even denser, we can switch to a horizontal "strip" layout (small square thumb on the left, text on the right) — say the word and I'll do that as a second pass.
+`service_role` keeps full access throughout (edge functions, Stripe webhooks, admin code untouched).
+
+## Why creators can still do everything
+- Uploading covers / files: INSERT/UPDATE policies are owner-scoped on `auth.uid()` — unchanged.
+- Editing their own product (including `asset_file_path`, `asset_url`, `stripe_price_id`): UPDATE is unaffected by column SELECT revokes; the dashboard reads the owner's full product row via `get_creator_product` RPC (SECURITY DEFINER).
+- Reading their own `platform_fee_rate`: continues via `get_creator_fee_rate` RPC.
+- Reading their own job listing `contact_info`: continues via `get_my_job_listing_contact` RPC.
+- Publishing new product versions: insert returns the locally constructed `file_path`; no SELECT on the column is needed.
+- Buyers downloading paid files: continues via the `get-download-url` edge function (service_role).
+
+## Out of scope
+No frontend code changes needed. If anything fails after the revoke, the fix is a targeted RPC, not undoing the grant change.
